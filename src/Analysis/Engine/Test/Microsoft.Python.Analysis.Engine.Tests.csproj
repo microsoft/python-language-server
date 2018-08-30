@@ -1,0 +1,49 @@
+﻿<Project>
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>Microsoft.PythonTools.Analysis</RootNamespace>
+    <AssemblyName>Microsoft.Python.Analysis.Engine.Tests</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- 
+      1701, 1702 - "You may need to supply assembly policy"
+      1998 - "This async method lacks 'await'"
+    -->
+    <NoWarn>1701;1702;1998;$(NoWarn)</NoWarn>
+  </PropertyGroup>
+  <Import Project="..\..\..\..\build\NetStandard.settings" />
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <ItemGroup>
+    <!--Mocks-->
+    <Compile Remove="ModuleTableTests.cs" />
+    <Compile Remove="ProcessHelperTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--PTVS-specific-->
+    <Compile Remove="BaseAnalysisTest.cs" />
+    <Compile Remove="AnalysisTest.Perf.cs" />
+    <Compile Remove="ProcessOutputTests.cs" />
+    <Compile Remove="SocketUtilsTests.cs" />
+    <Compile Remove="TestRunner.cs" />
+    <Compile Remove="StringListReaderTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="app.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.5.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="1.3.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="1.3.2" />
+    <PackageReference Include="MicroBuild.Core" Version="0.3.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\UnitTests\Core\Impl\UnitTests.Core.csproj" />
+    <ProjectReference Include="..\Impl\Microsoft.Python.Analysis.Engine.csproj" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="..\..\..\..\build\NetStandard.targets" />
+</Project>

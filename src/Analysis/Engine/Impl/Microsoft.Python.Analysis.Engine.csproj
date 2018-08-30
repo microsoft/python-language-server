@@ -11,7 +11,7 @@
     -->
     <NoWarn>1701;1702;1998;$(NoWarn)</NoWarn>
   </PropertyGroup>
-  <Import Project="..\..\..\Build\NetStandard.settings" />
+  <Import Project="..\..\..\..\Build\NetStandard.settings" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
     <PackageReference Include="MicroBuild.Core" Version="0.3.0">
@@ -47,5 +47,5 @@
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-  <Import Project="..\..\..\Build\NetStandard.targets" />
+  <Import Project="..\..\..\..\Build\NetStandard.targets" />
 </Project>
