@@ -1,0 +1,43 @@
+<Project>
+  <Target Name = "ValidateAssemblyName" >
+    <Error Condition = " '$(AssemblyName)'=='' " Text = "AssemblyName property must be specified before NetStandard.settings is referenced" />
+  </Target>
+  <Import Project="Common.Build.Core.settings" />
+
+  <PropertyGroup>
+    <BuildDependsOn>ValidateAssemblyName;$(BuildDependsOn)</BuildDependsOn>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <!-- Compilation -->
+  <PropertyGroup>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>portable</DebugType>
+    <NetStandard>true</NetStandard>
+    <DefineConstants>NETSTANDARD;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Target .NET Core Runtimes -->
+  <PropertyGroup>
+    <!-- See https://docs.microsoft.com/en-us/dotnet/core/rid-catalog -->
+    <RuntimeIdentifiers>win-x86;win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <!-- Versioning -->
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <!-- Signing -->
+  <PropertyGroup>
+    <MicroBuild_DoNotStrongNameSign>true</MicroBuild_DoNotStrongNameSign>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);SIGN</DefineConstants>
+    <SignAssembly>true</SignAssembly>
+    <DelaySign>true</DelaySign>
+    <AssemblyOriginatorKeyFile>$(BuildRoot)\build\FinalPublicKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+</Project>

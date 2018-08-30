@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27929.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Python.Analysis.Engine", "Analysis\Impl\Microsoft.Python.Analysis.Engine.csproj", "{F22010F4-950D-48F0-86FD-B0C1B14A340E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Python.LanguageServer", "LanguageServer\Impl\Microsoft.Python.LanguageServer.csproj", "{4E648207-0C9F-45DB-AA30-84BCDAFE698D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F22010F4-950D-48F0-86FD-B0C1B14A340E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F22010F4-950D-48F0-86FD-B0C1B14A340E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F22010F4-950D-48F0-86FD-B0C1B14A340E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F22010F4-950D-48F0-86FD-B0C1B14A340E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E648207-0C9F-45DB-AA30-84BCDAFE698D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E648207-0C9F-45DB-AA30-84BCDAFE698D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E648207-0C9F-45DB-AA30-84BCDAFE698D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E648207-0C9F-45DB-AA30-84BCDAFE698D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ABC12ED7-0EC8-4219-8A14-A058F7942D92}
+	EndGlobalSection
+EndGlobal
