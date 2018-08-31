@@ -15,7 +15,13 @@
 // permissions and limitations under the License.
 
 namespace Microsoft.PythonTools.Analysis {
-    interface ICanExpire {
-        bool IsAlive { get; }
+    /// <summary>
+    /// A variable def which was created on a read.  We need to create a variable def when
+    /// we read from a class/instance where the member isn't defined yet - that lets us successfully
+    /// get all of the references back if there is later an assignment.  But if there are
+    /// no assignments then the variable doesn't really exist and we won't list it in the available members.
+    /// </summary>
+    public interface IEphemeralVariableDefinition {
+        bool IsEphemeral { get; }
     }
 }

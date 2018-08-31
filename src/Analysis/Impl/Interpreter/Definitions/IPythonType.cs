@@ -17,24 +17,31 @@
 using System.Collections.Generic;
 
 namespace Microsoft.PythonTools.Interpreter {
-    /// <summary>
-    /// Represents a single overload of a function.
-    /// </summary>
-    public interface IPythonFunctionOverload {
+    public interface IPythonType : IMemberContainer, IMember {
+        IPythonFunction GetConstructors();
+
+        // PythonType.Get__name__(this);
+        string Name {
+            get;
+        }
+
         string Documentation {
             get;
         }
 
-        string ReturnDocumentation {
+        BuiltinTypeId TypeId {
             get;
         }
 
-        /// <summary>
-        /// Shouldn't include hidden parameters (e.g. codeContext)
-        /// </summary>
-        IParameterInfo[] GetParameters();
+        IPythonModule DeclaringModule {
+            get;
+        }
 
-        IList<IPythonType> ReturnType {
+        IReadOnlyList<IPythonType> Mro {
+            get;
+        }
+
+        bool IsBuiltin {
             get;
         }
     }

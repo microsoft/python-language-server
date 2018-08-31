@@ -27,6 +27,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public IPythonFunction Function { get; }
         public IPythonType SelfType { get; }
         public PythonMemberType MemberType => PythonMemberType.Method;
-        public IEnumerable<LocationInfo> Locations => (Function as ILocatedMember)?.Locations;
+        public IEnumerable<ILocationInfo> Locations => (Function as ILocatedMember)?.Locations;
     }
 }

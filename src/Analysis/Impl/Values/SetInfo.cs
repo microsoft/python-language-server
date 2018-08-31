@@ -23,10 +23,10 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class SetInfo : SequenceInfo {
-        public SetInfo(PythonAnalyzer projectState, Node node, ProjectEntry entry)
+        public SetInfo(PythonAnalyzer projectState, Node node, IPythonProjectEntry entry)
             : base(VariableDef.EmptyArray, projectState.ClassInfos[BuiltinTypeId.Set], node, entry) { }
 
-        internal SetInfo(BuiltinClassInfo seqType, Node node, ProjectEntry entry, VariableDef[] indexTypes)
+        internal SetInfo(BuiltinClassInfo seqType, Node node, IPythonProjectEntry entry, VariableDef[] indexTypes)
             : base(indexTypes, seqType, node, entry) { }
 
         public void AddTypes(AnalysisUnit unit, IAnalysisSet types) {
@@ -38,7 +38,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             switch (operation) {
                 case PythonOperator.BitwiseOr:
-                    var seq = (SetInfo)unit.Scope.GetOrMakeNodeValue(
+                    var seq = (SetInfo)unit.InterpreterScope.GetOrMakeNodeValue(
                         node,
                         NodeValueKind.Set,
                         _ => new SetInfo(ProjectState, node, unit.ProjectEntry)

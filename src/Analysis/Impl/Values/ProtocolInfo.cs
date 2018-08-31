@@ -130,20 +130,20 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
 
         internal override void AddReference(Node node, AnalysisUnit analysisUnit) {
-            _references.GetReferences(analysisUnit.ProjectEntry).AddReference(new EncodedLocation(analysisUnit, node));
+            _references.GetReferences(analysisUnit.ProjectEntry as ProjectEntry)?.AddReference(new EncodedLocation(analysisUnit, node));
         }
 
-        public override IEnumerable<LocationInfo> Locations {
+        public override IEnumerable<ILocationInfo> Locations {
             get {
                 ReferenceList defns;
                 if (!_references.TryGetValue(DeclaringModule, out defns)) {
-                    return Enumerable.Empty<LocationInfo>();
+                    return Enumerable.Empty<ILocationInfo>();
                 }
                 return defns.Definitions.Select(l => l.GetLocationInfo()).Where(l => l != null);
             }
         }
 
-        internal override IEnumerable<LocationInfo> References => _references.AllReferences;
+        internal override IEnumerable<ILocationInfo> References => _references.AllReferences;
 
         public override void AugmentAssign(AugmentedAssignStatement node, AnalysisUnit unit, IAnalysisSet value) {
             foreach (var p in _protocols) {

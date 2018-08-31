@@ -75,20 +75,20 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         internal override void AnalyzeWorker(DDG ddg, CancellationToken cancel) {
             // Resolve default parameters and decorators in the outer scope but
             // continue to associate changes with this unit.
-            ddg.Scope = _declUnit.Scope;
+            ddg.Scope = _declUnit.InterpreterScope;
             AnalyzeDefaultParameters(ddg);
 
             var funcType = ProcessFunctionDecorators(ddg);
             EnsureParameterZero();
 
-            _declUnit.Scope.AddLocatedVariable(Ast.Name, Ast.NameExpression, this);
+            _declUnit.InterpreterScope.AddLocatedVariable(Ast.Name, Ast.NameExpression, this);
 
             // Set the scope to within the function
-            ddg.Scope = Scope;
+            ddg.Scope = InterpreterScope;
 
             Ast.Body.Walk(ddg);
 
-            _declUnit.Scope.AssignVariable(Ast.Name, Ast.NameExpression, this, funcType);
+            _declUnit.InterpreterScope.AssignVariable(Ast.Name, Ast.NameExpression, this, funcType);
         }
 
 
@@ -162,10 +162,10 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                             }
                             expr = nextExpr;
                             var decorated = AnalysisSet.Empty;
-                            bool anyResults = false;
+                            var anyResults = false;
                             foreach (var ns in decorator) {
                                 var fd = ns as FunctionInfo;
-                                if (fd != null && Scope.EnumerateTowardsGlobal.Any(s => s.AnalysisValue == fd)) {
+                                if (fd != null && InterpreterScope.EnumerateTowardsGlobal.Any(s => s.AnalysisValue == fd)) {
                                     continue;
                                 }
                                 decorated = decorated.Union(ns.Call(expr, this, new[] { types }, ExpressionEvaluator.EmptyNames));
@@ -187,9 +187,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         }
 
         internal void AnalyzeDefaultParameters(DDG ddg) {
-            VariableDef param;
+            IVariableDefinition param;
             var scope = (FunctionScope)Scope;
-            for (int i = 0; i < Ast.ParametersInternal.Length; ++i) {
+            for (var i = 0; i < Ast.ParametersInternal.Length; ++i) {
                 var p = Ast.ParametersInternal[i];
                 if (p.Annotation != null) {
                     var val = ddg._eval.EvaluateAnnotation(p.Annotation);
@@ -240,7 +240,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return "{0}{1}({2})->{3}".FormatInvariant(
                 base.ToString(),
                 " def:",
-                string.Join(", ", Ast.ParametersInternal.Select(p => Scope.TryGetVariable(p.Name, out var v) ? v.TypesNoCopy.ToString() : "{}")),
+                string.Join(", ", Ast.ParametersInternal.Select(p => InterpreterScope.TryGetVariable(p.Name, out var v) ? v.TypesNoCopy.ToString() : "{}")),
                 ((FunctionScope)Scope).ReturnValue.TypesNoCopy.ToString()
             );
         }
@@ -251,11 +251,11 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         private readonly IVersioned _agg;
 
         internal FunctionClosureAnalysisUnit(IVersioned agg, FunctionAnalysisUnit originalUnit, CallChain callChain) :
-            base(originalUnit.Function, originalUnit._declUnit, originalUnit._declUnit.Scope, originalUnit.ProjectEntry, true) {
+            base(originalUnit.Function, originalUnit._declUnit, originalUnit._declUnit.InterpreterScope, originalUnit.ProjectEntry, true) {
             _originalUnit = originalUnit;
             _agg = agg;
             CallChain = callChain;
-            _originalUnit.Scope.AddLinkedScope(Scope);
+            _originalUnit.InterpreterScope.AddLinkedScope(InterpreterScope);
 
             var node = originalUnit.Function.FunctionDefinition;
             node.Body.Walk(new OverviewWalker(originalUnit.ProjectEntry, this, originalUnit.Tree));

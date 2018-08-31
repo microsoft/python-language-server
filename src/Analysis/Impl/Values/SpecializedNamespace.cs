@@ -208,7 +208,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return _original.IsOfType(klass);
         }
 
-        public override IEnumerable<LocationInfo> Locations {
+        public override IEnumerable<ILocationInfo> Locations {
             get {
                 if (_original == null) {
                     return new LocationInfo[0];
@@ -235,7 +235,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        internal override IEnumerable<LocationInfo> References {
+        internal override IEnumerable<ILocationInfo> References {
             get {
                 if (_original == null) {
                     return new LocationInfo[0];

@@ -953,7 +953,7 @@ namespace Microsoft.PythonTools.Analysis {
             var ddg = new DDG();
             ddg.Analyze(Queue, cancel, _reportQueueSize, _reportQueueInterval);
             foreach (var entry in ddg.AnalyzedEntries) {
-                entry.RaiseOnNewAnalysis();
+                (entry as ProjectEntry).RaiseOnNewAnalysis();
             }
         }
 

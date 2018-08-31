@@ -27,7 +27,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         protected override BuiltinInstanceInfo MakeInstance() => PythonType is IPythonLookupType lt ? new DictBuiltinInstanceInfo(this, lt) : new BuiltinInstanceInfo(this);
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
-            var res = (DictionaryInfo)unit.Scope.GetOrMakeNodeValue(
+            var res = (DictionaryInfo)unit.InterpreterScope.GetOrMakeNodeValue(
                 node,
                 NodeValueKind.Dictionary,
                 (node_) => new DictionaryInfo(unit.ProjectEntry, node)

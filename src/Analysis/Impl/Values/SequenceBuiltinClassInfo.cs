@@ -42,7 +42,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             if (args.Length == 1) {
-                var res = unit.Scope.GetOrMakeNodeValue(
+                var res = unit.InterpreterScope.GetOrMakeNodeValue(
                     node,
                     NodeValueKind.Sequence,
                     (node_) => MakeFromIndexes(node_, unit.ProjectEntry)
@@ -100,6 +100,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return base.UnionHashCode(strength);
         }
 
-        internal abstract SequenceInfo MakeFromIndexes(Node node, ProjectEntry entry);
+        internal abstract SequenceInfo MakeFromIndexes(Node node, IPythonProjectEntry entry);
     }
 }

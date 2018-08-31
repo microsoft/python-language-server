@@ -54,9 +54,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         /// <param name="exprText">The expression to determine the result of.</param>
         /// <param name="index">The 0-based absolute index into the file where the expression should be evaluated.</param>
-        internal IEnumerable<AnalysisValue> GetValuesByIndex(string exprText, int index) {
-            return GetValues(exprText, _unit.Tree.IndexToLocation(index));
-        }
+        internal IEnumerable<AnalysisValue> GetValuesByIndex(string exprText, int index) => GetValues(exprText, _unit.Tree.IndexToLocation(index));
 
         internal Expression GetExpressionForText(string exprText, SourceLocation location, out InterpreterScope scope, out PythonAst exprTree) {
             exprTree = null;
@@ -177,9 +175,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// The 0-based absolute index into the file where the expression should
         /// be evaluated.
         /// </param>
-        internal IEnumerable<IAnalysisVariable> GetVariablesByIndex(string exprText, int index) {
-            return GetVariables(exprText, _unit.Tree.IndexToLocation(index));
-        }
+        internal IEnumerable<IAnalysisVariable> GetVariablesByIndex(string exprText, int index) => GetVariables(exprText, _unit.Tree.IndexToLocation(index));
 
         /// <summary>
         /// Gets the variables the given expression evaluates to.  Variables
@@ -224,7 +220,7 @@ namespace Microsoft.PythonTools.Analysis {
                     return new VariablesResult(objects
                         .Where(v => v.Overloads.MaybeEnumerate().Any(o => o.Parameters.MaybeEnumerate().Any(p => p.Name == argNode.Name)))
                         .Select(v => (v as BoundMethodInfo)?.Function ?? v as FunctionInfo)
-                        .Select(f => f?.AnalysisUnit?.Scope)
+                        .Select(f => f?.AnalysisUnit?.InterpreterScope)
                         .Where(s => s != null)
                         .SelectMany(s => GetVariablesInScope(argNode, s).Distinct()),
                         unit.Tree);
@@ -333,9 +329,7 @@ namespace Microsoft.PythonTools.Analysis {
             string exprText,
             int index,
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults
-        ) {
-            return GetMembers(exprText, _unit.Tree.IndexToLocation(index), options);
-        }
+        ) => GetMembers(exprText, _unit.Tree.IndexToLocation(index), options);
 
         /// <summary>
         /// Evaluates a given expression and returns a list of members which
@@ -459,9 +453,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         /// <param name="exprText">The expression to get signatures for.</param>
         /// <param name="index">The 0-based absolute index into the file.</param>
-        internal IEnumerable<IOverloadResult> GetSignaturesByIndex(string exprText, int index) {
-            return GetSignatures(exprText, _unit.Tree.IndexToLocation(index));
-        }
+        internal IEnumerable<IOverloadResult> GetSignaturesByIndex(string exprText, int index) => GetSignatures(exprText, _unit.Tree.IndexToLocation(index));
 
         /// <summary>
         /// Gets information about the available signatures for the given expression.
@@ -560,9 +552,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// directly on the current class.
         /// </summary>
         /// <param name="index">The 0-based absolute index into the file.</param>
-        internal IEnumerable<IOverloadResult> GetOverrideableByIndex(int index) {
-            return GetOverrideable(_unit.Tree.IndexToLocation(index));
-        }
+        internal IEnumerable<IOverloadResult> GetOverrideableByIndex(int index) => GetOverrideable(_unit.Tree.IndexToLocation(index));
 
         /// <summary>
         /// Gets information about methods defined on base classes but not
@@ -647,9 +637,7 @@ namespace Microsoft.PythonTools.Analysis {
         internal IEnumerable<MemberResult> GetAllAvailableMembersByIndex(
             int index,
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults
-        ) {
-            return GetAllAvailableMembers(_unit.Tree.IndexToLocation(index), options);
-        }
+        ) => GetAllAvailableMembers(_unit.Tree.IndexToLocation(index), options);
 
         /// <summary>
         /// Gets the available names at the given location.  This includes
@@ -745,7 +733,7 @@ namespace Microsoft.PythonTools.Analysis {
             return false;
         }
 
-        private IEnumerable<MemberResult> GetKeywordMembers(GetMemberOptions options, InterpreterScope scope) {
+        private IEnumerable<MemberResult> GetKeywordMembers(GetMemberOptions options, IScope scope) {
             IEnumerable<string> keywords = null;
 
             if (options.ExpressionKeywords()) {
@@ -777,9 +765,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// should be looked up.
         /// </param>
         /// <remarks>TODO: Remove; this is only used for tests</remarks>
-        internal IEnumerable<string> GetVariablesNoBuiltinsByIndex(int index) {
-            return GetVariablesNoBuiltins(_unit.Tree.IndexToLocation(index));
-        }
+        internal IEnumerable<string> GetVariablesNoBuiltinsByIndex(int index) => GetVariablesNoBuiltins(_unit.Tree.IndexToLocation(index));
 
         /// <summary>
         /// Gets the available names at the given location.  This includes
@@ -812,15 +798,9 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        public IModuleContext InterpreterContext {
-            get {
-                return GlobalScope.InterpreterContext;
-            }
-        }
+        public IModuleContext InterpreterContext => GlobalScope.InterpreterContext;
 
-        public PythonAnalyzer ProjectState {
-            get { return GlobalScope.ProjectEntry.ProjectState; }
-        }
+        public PythonAnalyzer ProjectState => GlobalScope.ProjectEntry.ProjectState;
 
         internal InterpreterScope Scope { get; }
 
@@ -849,7 +829,7 @@ namespace Microsoft.PythonTools.Analysis {
             Dictionary<string, IEnumerable<AnalysisValue>> memberDict = null;
             Dictionary<string, IEnumerable<AnalysisValue>> ownerDict = null;
             HashSet<string> memberSet = null;
-            int namespacesCount = namespaces.Count;
+            var namespacesCount = namespaces.Count;
             foreach (AnalysisValue ns in namespaces) {
                 if (ProjectState._noneInst == ns) {
                     namespacesCount -= 1;
@@ -952,9 +932,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// evaluated.
         /// </param>
         /// <remarks>New in 1.1</remarks>
-        internal PythonAst GetAstFromTextByIndex(string exprText, int index) {
-            return GetAstFromText(exprText, _unit.Tree.IndexToLocation(index));
-        }
+        internal PythonAst GetAstFromTextByIndex(string exprText, int index) => GetAstFromText(exprText, _unit.Tree.IndexToLocation(index));
 
         /// <summary>
         /// Gets the AST for the given text as if it appeared at the specified
@@ -1114,7 +1092,7 @@ namespace Microsoft.PythonTools.Analysis {
         private static IEnumerable<MemberResult> MemberDictToResultList(
             string privatePrefix,
             GetMemberOptions options,
-            InterpreterScope scope,
+            IScope scope,
             Dictionary<string, IEnumerable<AnalysisValue>> memberDict,
             Dictionary<string, IEnumerable<AnalysisValue>> ownerDict = null,
             int maximumOwners = 0
@@ -1181,16 +1159,14 @@ namespace Microsoft.PythonTools.Analysis {
             return null;
         }
 
-        internal string GetPrivatePrefix(SourceLocation sourceLocation) {
-            return GetPrivatePrefix(FindScope(sourceLocation));
-        }
+        internal string GetPrivatePrefix(SourceLocation sourceLocation) => GetPrivatePrefix(FindScope(sourceLocation));
 
-        private static string GetPrivatePrefixClassName(InterpreterScope scope) {
-            var klass = scope.EnumerateTowardsGlobal.OfType<ClassScope>().FirstOrDefault();
+        private static string GetPrivatePrefixClassName(IScope scope) {
+            var klass = scope.EnumerateTowardsGlobal.OfType<IClassScope>().FirstOrDefault();
             return klass == null ? null : klass.Name;
         }
 
-        private static string GetPrivatePrefix(InterpreterScope scope) {
+        private static string GetPrivatePrefix(IScope scope) {
             string classScopePrefix = GetPrivatePrefixClassName(scope);
             if (classScopePrefix != null) {
                 return "_" + classScopePrefix;

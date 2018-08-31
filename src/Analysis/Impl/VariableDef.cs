@@ -463,7 +463,7 @@ namespace Microsoft.PythonTools.Analysis {
 
     }
 
-    class VariableDef : TypedDef<ReferenceableDependencyInfo>, IReferenceable {
+    class VariableDef : TypedDef<ReferenceableDependencyInfo>, IVariableDefinition {
         internal static VariableDef[] EmptyArray = new VariableDef[0];
 
 #if VARDEF_STATS
@@ -551,11 +551,11 @@ namespace Microsoft.PythonTools.Analysis {
             return false;
         }
 
-        public bool AddReference(EncodedLocation location, IVersioned module) {
+        public bool AddReference(IEncodedLocation location, IVersioned module) {
             return GetDependentItems(module).AddReference(location);
         }
 
-        public bool AddAssignment(EncodedLocation location, IVersioned entry) {
+        public bool AddAssignment(IEncodedLocation location, IVersioned entry) {
             return GetDependentItems(entry).AddAssignment(location);
         }
 
@@ -566,7 +566,7 @@ namespace Microsoft.PythonTools.Analysis {
             return false;
         }
 
-        public virtual IEnumerable<EncodedLocation> References {
+        public virtual IEnumerable<IEncodedLocation> References {
             get {
                 if (_dependencies.Count != 0) {
                     foreach (var keyValue in _dependencies) {
@@ -580,7 +580,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        public virtual IEnumerable<EncodedLocation> Definitions {
+        public virtual IEnumerable<IEncodedLocation> Definitions {
             get {
                 if (_dependencies.Count != 0) {
                     foreach (var keyValue in _dependencies) {
@@ -596,7 +596,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal virtual bool IsAlwaysAssigned { get; set; }
 
-        internal virtual bool IsAssigned => IsAlwaysAssigned || _dependencies.Any(d => d.Value._assignments.Count != 0);
+        public virtual bool IsAssigned => IsAlwaysAssigned || _dependencies.Any(d => d.Value._assignments.Count != 0);
 
 #if VARDEF_STATS
         internal static Dictionary<string, int> _variableDefStats = new Dictionary<string, int>();
@@ -634,25 +634,21 @@ namespace Microsoft.PythonTools.Analysis {
     /// get all of the references back if there is later an assignment.  But if there are
     /// no assignments then the variable doesn't really exist and we won't list it in the available members.
     /// </summary>
-    sealed class EphemeralVariableDef : VariableDef {
-        public override bool IsEphemeral {
-            get {
-                return !HasTypes;
-            }
-        }
+    sealed class EphemeralVariableDef : VariableDef, IEphemeralVariableDefinition {
+        public override bool IsEphemeral => !HasTypes;
     }
 
     /// <summary>
     /// A variable def which has a specific location where it is defined (currently just function parameters).
     /// </summary>
-    class LocatedVariableDef : VariableDef {
-        public LocatedVariableDef(ProjectEntry entry, EncodedLocation location) {
+    class LocatedVariableDef : VariableDef, ILocatedVariableDefinition {
+        public LocatedVariableDef(IPythonProjectEntry entry, EncodedLocation location) {
             Entry = entry;
             Location = location;
             DeclaringVersion = entry.AnalysisVersion;
         }
 
-        public LocatedVariableDef(ProjectEntry entry, EncodedLocation location, VariableDef copy) {
+        public LocatedVariableDef(IPythonProjectEntry entry, EncodedLocation location, VariableDef copy) {
             Entry = entry;
             Location = location;
             _dependencies = copy._dependencies;
@@ -660,11 +656,11 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public int DeclaringVersion { get; set; }
-        public ProjectEntry Entry { get; }
-        public EncodedLocation Location { get; set; }
-        internal override bool IsAssigned => true;
+        public IPythonProjectEntry Entry { get; }
+        public IEncodedLocation Location { get; set; }
+        public override bool IsAssigned => true;
 
-        public override IEnumerable<EncodedLocation> Definitions =>
+        public override IEnumerable<IEncodedLocation> Definitions =>
             Enumerable.Repeat(Location, 1).Concat(base.Definitions);
     }
 

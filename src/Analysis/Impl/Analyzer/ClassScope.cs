@@ -18,31 +18,19 @@ using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
-    sealed class ClassScope : InterpreterScope {
+    sealed class ClassScope : InterpreterScope, IClassScope {
         public ClassScope(ClassInfo classInfo, ClassDefinition ast, InterpreterScope outerScope)
             : base(classInfo, ast, outerScope) {
             classInfo.Scope = this;
         }
 
-        public ClassInfo Class {
-            get {
-                return (ClassInfo)AnalysisValue;
-            }
-        }
+        public ClassInfo Class => (ClassInfo)AnalysisValue;
 
-        public override int GetBodyStart(PythonAst ast) {
-            return ((ClassDefinition)Node).HeaderIndex;
-        }
+        public override int GetBodyStart(PythonAst ast) => ((ClassDefinition)Node).HeaderIndex;
 
-        public override string Name {
-            get { return Class.ClassDefinition.Name; }
-        }
+        public override string Name => Class.ClassDefinition.Name;
 
-        public override bool VisibleToChildren {
-            get {
-                return false;
-            }
-        }
+        public override bool VisibleToChildren => false;
 
         public override bool AssignVariable(string name, Node location, AnalysisUnit unit, IAnalysisSet values) {
             var res = base.AssignVariable(name, location, unit, values);

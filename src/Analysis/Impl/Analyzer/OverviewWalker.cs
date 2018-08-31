@@ -29,20 +29,20 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
     /// </summary>
     internal class OverviewWalker : PythonWalker {
         private InterpreterScope _scope;
-        private readonly ProjectEntry _entry;
+        private readonly IPythonProjectEntry _entry;
         private readonly PythonAst _tree;
         private readonly Stack<AnalysisUnit> _analysisStack = new Stack<AnalysisUnit>();
         private AnalysisUnit _curUnit;
         private SuiteStatement _curSuite;
 
-        public OverviewWalker(ProjectEntry entry, AnalysisUnit topAnalysis, PythonAst tree) {
+        public OverviewWalker(IPythonProjectEntry entry, AnalysisUnit topAnalysis, PythonAst tree) {
             _entry = entry;
             _curUnit = topAnalysis;
 
             _tree = tree;
             Debug.Assert(_tree != null);
 
-            _scope = topAnalysis.Scope;
+            _scope = topAnalysis.InterpreterScope;
         }
 
         // TODO: What about names being redefined?
@@ -53,7 +53,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 _analysisStack.Push(_curUnit);
                 _curUnit = cls.AnalysisUnit;
                 Debug.Assert(_scope.EnumerateTowardsGlobal.Contains(cls.AnalysisUnit.Scope.OuterScope));
-                _scope = cls.AnalysisUnit.Scope;
+                _scope = cls.AnalysisUnit.InterpreterScope;
                 return true;
             }
             return false;
@@ -61,7 +61,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         internal ClassInfo AddClass(ClassDefinition node, AnalysisUnit outerUnit) {
             InterpreterScope scope;
-            var declScope = outerUnit.Scope;
+            var declScope = outerUnit.InterpreterScope;
             if (!declScope.TryGetNodeScope(node, out scope)) {
                 if (node.Body == null || node.Name == null) {
                     return null;
@@ -100,7 +100,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 _analysisStack.Push(_curUnit);
                 _curUnit = function.AnalysisUnit;
                 Debug.Assert(_scope.EnumerateTowardsGlobal.Contains(function.AnalysisUnit.Scope.OuterScope));
-                _scope = function.AnalysisUnit.Scope;
+                _scope = function.AnalysisUnit.InterpreterScope;
                 return true;
             }
             return false;
@@ -109,7 +109,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         public override void PostWalk(FunctionDefinition node) {
             if (node.Body != null && node.Name != null) {
                 Debug.Assert(_scope.EnumerateTowardsGlobal.Contains(_curUnit.Scope.OuterScope));
-                _scope = _curUnit.Scope.OuterScope;
+                _scope = _curUnit.InterpreterScope.OuterScope;
                 _curUnit = _analysisStack.Pop();
                 Debug.Assert(_scope.EnumerateTowardsGlobal.Contains(_curUnit.Scope));
             }
@@ -169,7 +169,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
                 var func = new FunctionInfo(node, outerUnit, prevScope);
                 var unit = func.AnalysisUnit;
-                scope = unit.Scope;
+                scope = unit.InterpreterScope;
                 (unit as FunctionAnalysisUnit)?.EnsureParameters();
 
                 prevScope.Children.Add(scope);
@@ -287,7 +287,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         }
 
         private void UpdateChildRanges(Statement node) {
-            var declScope = _curUnit.Scope;
+            var declScope = _curUnit.InterpreterScope;
             var prevScope = declScope.Children.LastOrDefault();
             StatementScope prevStmtScope;
             IsInstanceScope prevInstanceScope;
@@ -358,7 +358,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         private void PushIsInstanceScope(Node node, KeyValuePair<NameExpression, Expression>[] isInstanceNames, SuiteStatement effectiveSuite) {
             InterpreterScope scope;
-            if (!_curUnit.Scope.TryGetNodeScope(node, out scope)) {
+            if (!_curUnit.InterpreterScope.TryGetNodeScope(node, out scope)) {
                 // find our parent scope, it may not be just the last entry in _scopes
                 // because that can be a StatementScope and we would start a new range.
                 var declScope = _scope.EnumerateTowardsGlobal.FirstOrDefault(s => !(s is StatementScope));

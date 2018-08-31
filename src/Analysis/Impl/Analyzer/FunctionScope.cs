@@ -21,7 +21,7 @@ using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
-    sealed class FunctionScope : InterpreterScope {
+    sealed class FunctionScope : InterpreterScope, IFunctionScope {
         private readonly AnalysisDictionary<string, VariableDef> _parameters;
 
         private ListParameterVariableDef _seqParameters;
@@ -48,6 +48,10 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 ReturnValue.AddTypes(function.ProjectEntry, Generator.SelfSet, false, declModule);
             }
         }
+
+        #region IFunctionScope
+        IVariableDefinition IFunctionScope.GetParameter(string name) => GetParameter(name);
+        #endregion
 
         public static bool IsOriginalClosureScope(InterpreterScope scope) => (scope as FunctionScope)?.Function.IsClosure == true && scope.OriginalScope == null;
 
@@ -135,7 +139,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             }
         }
 
-        private VariableDef AddParameter(AnalysisUnit unit, string name, Parameter node, VariableDef variableDef) {
+        private IVariableDefinition AddParameter(AnalysisUnit unit, string name, Parameter node, VariableDef variableDef) {
             if (variableDef != null) {
                 return AddVariable(name, variableDef);
             }

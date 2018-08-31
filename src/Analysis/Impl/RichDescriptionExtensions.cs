@@ -17,23 +17,6 @@
 using System.Collections.Generic;
 
 namespace Microsoft.PythonTools.Analysis {
-    public interface IHasRichDescription {
-        /// <summary>
-        /// Returns a sequence of Kind,Text pairs that make up the description.
-        /// </summary>
-        /// <returns></returns>
-        IEnumerable<KeyValuePair<string, string>> GetRichDescription();
-    }
-
-    public static class WellKnownRichDescriptionKinds {
-        public const string Name = "name";
-        public const string Type = "type";
-        public const string Misc = "misc";
-        public const string Comma = "comma";
-        public const string Parameter = "param";
-        public const string EndOfDeclaration = "enddecl";
-    }
-
     static class RichDescriptionExtensions {
         public static IEnumerable<KeyValuePair<string, string>> GetRichDescriptions(this IAnalysisSet set, string prefix = null, bool useLongDescription = false, string unionPrefix = null, string unionSuffix = null, bool alwaysUsePrefixSuffix = false, string defaultIfEmpty = null) {
             var items = new List<KeyValuePair<string, string>>();

@@ -1,4 +1,4 @@
-// Python Tools for Visual Studio
+﻿// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -14,20 +14,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using System;
 
-namespace Microsoft.PythonTools.Analysis.Analyzer {
-    interface IReferenceableContainer {
-        IEnumerable<IReferenceable> GetDefinitions(string name);
+namespace Microsoft.PythonTools.Analysis {
+    public interface ILocationInfo: IEquatable<ILocationInfo>, ILocationResolver {
+        string FilePath { get; }
+        Uri DocumentUri { get; }
+        int StartLine { get; }
+        int StartColumn { get; }
+        int? EndLine { get; }
+        int? EndColumn { get; }
+        SourceSpan Span { get; }
     }
-
-    interface IReferenceable {
-        IEnumerable<EncodedLocation> Definitions {
-            get;
-        }
-        IEnumerable<EncodedLocation> References {
-            get;
-        }
-    }
-
 }

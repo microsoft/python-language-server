@@ -324,7 +324,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public IAnalysisCookie Cookie { get; private set; }
 
-        internal PythonAnalyzer ProjectState { get; private set; }
+        public PythonAnalyzer ProjectState { get; private set; }
 
         public PythonAst Tree { get; private set; }
 
@@ -483,7 +483,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        internal void AddBackReference(ReferenceDict referenceDict) {
+        public void AddBackReference(ReferenceDict referenceDict) {
             _backReferences.Enqueue(new WeakReference<ReferenceDict>(referenceDict));
         }
     }
@@ -493,137 +493,6 @@ namespace Microsoft.PythonTools.Analysis {
         public int Version { get; set; }
     }
 
-    /// <summary>
-    /// Represents a unit of work which can be analyzed.
-    /// </summary>
-    public interface IAnalyzable {
-        void Analyze(CancellationToken cancel);
-    }
-
-    public interface IVersioned {
-        /// <summary>
-        /// Returns the current analysis version of the project entry.
-        /// </summary>
-        int AnalysisVersion { get; }
-    }
-
-    /// <summary>
-    /// Represents a file which is capable of being analyzed.  Can be cast to other project entry types
-    /// for more functionality.  See also IPythonProjectEntry and IXamlProjectEntry.
-    /// </summary>
-    public interface IProjectEntry : IAnalyzable, IVersioned {
-        /// <summary>
-        /// Returns true if the project entry has been parsed and analyzed.
-        /// </summary>
-        bool IsAnalyzed { get; }
-
-        /// <summary>
-        /// Returns the project entries file path.
-        /// </summary>
-        string FilePath { get; }
-
-        /// <summary>
-        /// Returns the document unique identifier
-        /// </summary>
-        Uri DocumentUri { get; }
-
-        /// <summary>
-        /// Provides storage of arbitrary properties associated with the project entry.
-        /// </summary>
-        Dictionary<object, object> Properties { get; }
-
-        /// <summary>
-        /// Called when the project entry is removed from the project.
-        /// 
-        /// Implementors of this method must ensure this method is thread safe.
-        /// </summary>
-        void RemovedFromProject();
-
-        IModuleContext AnalysisContext { get; }
-    }
-
-    /// <summary>
-    /// Represents a project entry which is created by an interpreter for additional
-    /// files which it supports analyzing.  Provides the ParseContent method which
-    /// is called when the parse queue is ready to update the file contents.
-    /// </summary>
-    public interface IExternalProjectEntry : IProjectEntry {
-        void ParseContent(TextReader content, IAnalysisCookie fileCookie);
-    }
-
-    /// <summary>
-    /// Represents a project entry which can be analyzed together with other project entries for
-    /// more efficient analysis.
-    /// 
-    /// To analyze the full group you call Analyze(true) on all the items in the same group (determined
-    /// by looking at the identity of the AnalysGroup object).  Then you call AnalyzeQueuedEntries on the
-    /// group.
-    /// </summary>
-    public interface IGroupableAnalysisProjectEntry {
-        /// <summary>
-        /// Analyzes this project entry optionally just adding it to the queue shared by the project.
-        /// </summary>
-        void Analyze(CancellationToken cancel, bool enqueueOnly);
-
-        IGroupableAnalysisProject AnalysisGroup { get; }
-    }
-
-    /// <summary>
-    /// Represents a project which can support more efficent analysis of individual items via
-    /// analyzing them together.
-    /// </summary>
-    public interface IGroupableAnalysisProject {
-        void AnalyzeQueuedEntries(CancellationToken cancel);
-    }
-
-    public interface IDocument {
-        TextReader ReadDocument(int part, out int version);
-        Stream ReadDocumentBytes(int part, out int version);
-
-        int GetDocumentVersion(int part);
-        IEnumerable<int> DocumentParts { get; }
-        Uri DocumentUri { get; }
-
-        void UpdateDocument(int part, DocumentChangeSet changes);
-        void ResetDocument(int version, string content);
-    }
-
-    public interface IPythonProjectEntry : IGroupableAnalysisProjectEntry, IProjectEntry {
-        /// <summary>
-        /// Returns the last parsed AST.
-        /// </summary>
-        PythonAst Tree { get; }
-
-        string ModuleName { get; }
-
-        ModuleAnalysis Analysis { get; }
-
-        event EventHandler<EventArgs> OnNewParseTree;
-        event EventHandler<EventArgs> OnNewAnalysis;
-
-        /// <summary>
-        /// Informs the project entry that a new tree will soon be available and will be provided by
-        /// a call to UpdateTree.  Calling this method will cause WaitForCurrentTree to block until
-        /// UpdateTree has been called.
-        /// 
-        /// To complete the parse, call either Complete or Cancel on the returned object.
-        /// </summary>
-        IPythonParse BeginParse();
-
-        IPythonParse GetCurrentParse();
-
-        /// <summary>
-        /// Returns the current tree if no parsing is currently pending, otherwise waits for the 
-        /// current parse to finish and returns the up-to-date tree.
-        /// </summary>
-        IPythonParse WaitForCurrentParse(int timeout = Timeout.Infinite, CancellationToken token = default(CancellationToken));
-    }
-
-    public interface IPythonParse : IDisposable {
-        PythonAst Tree { get; set; }
-        IAnalysisCookie Cookie { get; set; }
-        void Complete();
-    }
 
     sealed class StaticPythonParse : IPythonParse {
         public StaticPythonParse(PythonAst tree, IAnalysisCookie cookie) {

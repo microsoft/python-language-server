@@ -49,7 +49,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public string Name => _type.Name;
         public string Documentation => _type.Documentation;
         public BuiltinTypeId TypeId => _type.TypeId;
-        public IList<IPythonType> Mro => _type.Mro;
+        public IReadOnlyList<IPythonType> Mro => _type.Mro;
         public bool IsBuiltin => _type.IsBuiltin;
         public PythonMemberType MemberType => _type.MemberType;
         public IPythonFunction GetConstructors() => _type.GetConstructors();
@@ -73,7 +73,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public string Name => _type.Name;
         public string Documentation => _type.Documentation;
         public BuiltinTypeId TypeId => _type.TypeId;
-        public IList<IPythonType> Mro => _type.Mro;
+        public IReadOnlyList<IPythonType> Mro => _type.Mro;
         public bool IsBuiltin => _type.IsBuiltin;
         public PythonMemberType MemberType => _type.MemberType;
         public IPythonFunction GetConstructors() => _type.GetConstructors();

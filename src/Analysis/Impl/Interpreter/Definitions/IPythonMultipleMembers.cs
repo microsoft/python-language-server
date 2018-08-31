@@ -17,31 +17,11 @@
 using System.Collections.Generic;
 
 namespace Microsoft.PythonTools.Interpreter {
-    public interface IPythonType : IMemberContainer, IMember {
-        IPythonFunction GetConstructors();
-
-        // PythonType.Get__name__(this);
-        string Name {
-            get;
-        }
-
-        string Documentation {
-            get;
-        }
-
-        BuiltinTypeId TypeId {
-            get;
-        }
-
-        IPythonModule DeclaringModule {
-            get;
-        }
-
-        IList<IPythonType> Mro {
-            get;
-        }
-
-        bool IsBuiltin {
+    /// <summary>
+    /// Represents a collection of multiple members which can appear under a single name.
+    /// </summary>
+    public interface IPythonMultipleMembers : IMember {
+        IReadOnlyList<IMember> Members {
             get;
         }
     }

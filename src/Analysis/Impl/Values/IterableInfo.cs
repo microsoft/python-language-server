@@ -72,7 +72,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         private IAnalysisSet IterableIter(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             if (args.Length == 0) {
-                return unit.Scope.GetOrMakeNodeValue(
+                return unit.InterpreterScope.GetOrMakeNodeValue(
                     node,
                     NodeValueKind.Iterator,
                     n => MakeIteratorInfo(n, unit)
@@ -269,7 +269,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return changed ? (AnalysisValue)pi : this;
             }
 
-            if (unit.Scope.TryGetNodeValue(context.CallSite, NodeValueKind.Sequence, out var newSeq)) {
+            if (unit.InterpreterScope.TryGetNodeValue(context.CallSite, NodeValueKind.Sequence, out var newSeq)) {
                 newTypes = (newSeq as IterableValue)?.IndexTypes;
                 if (newTypes != null) {
                     ResolveIndexTypes(unit, context, newTypes);
@@ -278,7 +278,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             } else {
                 newTypes = VariableDef.Generator.Take(Math.Max(1, IndexTypes.Length)).ToArray();
                 if (ResolveIndexTypes(unit, context, newTypes)) {
-                    return unit.Scope.GetOrMakeNodeValue(context.CallSite, NodeValueKind.Sequence, n => CreateWithNewTypes(n, newTypes));
+                    return unit.InterpreterScope.GetOrMakeNodeValue(context.CallSite, NodeValueKind.Sequence, n => CreateWithNewTypes(n, newTypes));
                 }
             }
 

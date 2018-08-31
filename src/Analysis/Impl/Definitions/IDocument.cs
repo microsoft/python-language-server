@@ -1,4 +1,4 @@
-// Python Tools for Visual Studio
+﻿// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -14,15 +14,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 
-namespace Microsoft.PythonTools.Interpreter {
-    /// <summary>
-    /// Represents a collection of multiple members which can appear under a single name.
-    /// </summary>
-    public interface IPythonMultipleMembers : IMember {
-        IList<IMember> Members {
-            get;
-        }
+namespace Microsoft.PythonTools.Analysis {
+    public interface IDocument {
+        TextReader ReadDocument(int part, out int version);
+        Stream ReadDocumentBytes(int part, out int version);
+
+        int GetDocumentVersion(int part);
+        IEnumerable<int> DocumentParts { get; }
+        Uri DocumentUri { get; }
+
+        void UpdateDocument(int part, DocumentChangeSet changes);
+        void ResetDocument(int version, string content);
     }
 }

@@ -44,7 +44,7 @@ namespace Microsoft.PythonTools.Interpreter {
             get;
         }
 
-        IList<IPythonFunctionOverload> Overloads {
+        IReadOnlyList<IPythonFunctionOverload> Overloads {
             get;
         }
 

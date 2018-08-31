@@ -30,7 +30,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private readonly string _name;
         private readonly ProjectEntry _projectEntry;
         private Dictionary<Node, IAnalysisSet> _sequences;  // sequences defined in the module
-        private readonly ModuleScope _scope;
         private readonly Dictionary<Node, InterpreterScope> _scopes;    // scopes from Ast node to InterpreterScope
         private readonly WeakReference _weakModule;
         private readonly IModuleContext _context;
@@ -45,7 +44,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _name = moduleName;
             _projectEntry = projectEntry;
             _sequences = new Dictionary<Node, IAnalysisSet>();
-            _scope = new ModuleScope(this);
+            Scope = new ModuleScope(this);
             _weakModule = new WeakReference(this);
             _context = moduleContext;
             _scopes = new Dictionary<Node, InterpreterScope>();
@@ -55,9 +54,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         internal void Clear() {
             _sequences.Clear();
-            _scope.ClearLinkedVariables();
-            _scope.ClearVariables();
-            _scope.ClearNodeScopes();
+            Scope.ClearLinkedVariables();
+            Scope.ClearVariables();
+            Scope.ClearNodeScopes();
             _referencedModules.Clear();
             _unresolvedModules.Clear();
         }
@@ -65,16 +64,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
         internal void EnsureModuleVariables(PythonAnalyzer state) {
             var entry = ProjectEntry;
 
-            _scope.SetModuleVariable("__builtins__", state.ClassInfos[BuiltinTypeId.Dict].Instance);
-            _scope.SetModuleVariable("__file__", GetStr(state, entry.FilePath));
-            _scope.SetModuleVariable("__name__", GetStr(state, Name));
-            _scope.SetModuleVariable("__package__", GetStr(state, ParentPackage?.Name));
+            Scope.SetModuleVariable("__builtins__", state.ClassInfos[BuiltinTypeId.Dict].Instance);
+            Scope.SetModuleVariable("__file__", GetStr(state, entry.FilePath));
+            Scope.SetModuleVariable("__name__", GetStr(state, Name));
+            Scope.SetModuleVariable("__package__", GetStr(state, ParentPackage?.Name));
             if (state.LanguageVersion.Is3x()) {
-                _scope.SetModuleVariable("__cached__", GetStr(state));
+                Scope.SetModuleVariable("__cached__", GetStr(state));
                 if (ModulePath.IsInitPyFile(entry.FilePath)) {
-                    _scope.SetModuleVariable("__path__", state.ClassInfos[BuiltinTypeId.List].Instance);
+                    Scope.SetModuleVariable("__path__", state.ClassInfos[BuiltinTypeId.List].Instance);
                 }
-                _scope.SetModuleVariable("__spec__", state.ClassInfos[BuiltinTypeId.Object].Instance);
+                Scope.SetModuleVariable("__spec__", state.ClassInfos[BuiltinTypeId.Object].Instance);
             }
             ModuleDefinition.EnqueueDependents();
 
@@ -113,7 +112,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None) {
             var res = new Dictionary<string, IAnalysisSet>();
-            foreach (var kvp in _scope.AllVariables) {
+            foreach (var kvp in Scope.AllVariables) {
                 if (!options.ForEval()) {
                     kvp.Value.ClearOldValues();
                 }
@@ -218,7 +217,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 Scope.TryGetVariable(name.Substring(0, lastIndex), out def)) {
                 var methodName = name.Substring(lastIndex + 1, name.Length - (lastIndex + 1));
                 foreach (var v in def.TypesNoCopy) {
-                    ClassInfo ci = v as ClassInfo;
+                    var ci = v as ClassInfo;
                     if (ci != null) {
                         VariableDef methodDef;
                         if (ci.Scope.TryGetVariable(methodName, out methodDef)) {
@@ -230,7 +229,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         private static void SpecializeVariableDef(VariableDef def, CallDelegate callable, bool mergeOriginalAnalysis) {
-            List<AnalysisValue> items = new List<AnalysisValue>();
+            var items = new List<AnalysisValue>();
             foreach (var v in def.TypesNoCopy) {
                 if (!(v is SpecializedNamespace) && v.DeclaringModule != null) {
                     items.Add(v);
@@ -269,39 +268,21 @@ namespace Microsoft.PythonTools.Analysis.Values {
         /// <summary>
         /// Gets a weak reference to this module
         /// </summary>
-        public WeakReference WeakModule {
-            get {
-                return _weakModule;
-            }
-        }
+        public WeakReference WeakModule => _weakModule;
 
-        public DependentData ModuleDefinition {
-            get {
-                return _definition;
-            }
-        }
+        public DependentData ModuleDefinition => _definition;
 
-        public ModuleScope Scope {
-            get {
-                return _scope;
-            }
-        }
+        public ModuleScope Scope { get; private set; }
+        IScope IModule.Scope => Scope;
 
-        public override string Name {
-            get { return _name; }
-        }
+        public override string Name => _name;
 
-        public ProjectEntry ProjectEntry {
-            get { return _projectEntry; }
-        }
+        public ProjectEntry ProjectEntry => _projectEntry;
+        IPythonProjectEntry IModule.ProjectEntry => ProjectEntry;
 
-        public override PythonMemberType MemberType {
-            get {
-                return PythonMemberType.Module;
-            }
-        }
+        public override PythonMemberType MemberType => PythonMemberType.Module;
 
-        public override string ToString()  => $"Module {base.ToString()}";
+        public override string ToString() => $"Module {base.ToString()}";
         public override string ShortDescription => $"Python module {Name}";
 
         public override string Description {
@@ -326,7 +307,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IEnumerable<LocationInfo> Locations 
+        public override IEnumerable<ILocationInfo> Locations
              => new[] { new LocationInfo(ProjectEntry.FilePath, ProjectEntry.DocumentUri, 1, 1) };
 
         public override IPythonType PythonType
@@ -338,12 +319,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public IEnumerable<IReferenceable> GetDefinitions(string name) {
             VariableDef def;
-            if (_scope.TryGetVariable(name, out def)) {
+            if (Scope.TryGetVariable(name, out def)) {
                 yield return def;
             }
         }
 
         #endregion
+
+        IAnalysisSet IModule.GetModuleMember(Node node, AnalysisUnit unit, string name, bool addRef, IScope linkedScope, string linkedName)
+            => GetModuleMember(node, unit, name, addRef, linkedScope as InterpreterScope, linkedName);
 
         public IAnalysisSet GetModuleMember(Node node, AnalysisUnit unit, string name, bool addRef = true, InterpreterScope linkedScope = null, string linkedName = null) {
             var importedValue = Scope.CreateEphemeralVariable(node, unit, name, addRef);
@@ -361,7 +345,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public bool IsMemberDefined(IModuleContext context, string member) {
-            if (Scope.TryGetVariable(member, out VariableDef v)) {
+            if (Scope.TryGetVariable(member, out var v)) {
                 return v.TypesNoCopy.Any(m => m.DeclaringModule == _projectEntry);
             }
             return false;

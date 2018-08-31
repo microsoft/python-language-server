@@ -51,7 +51,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             private readonly SysModuleInfo _owner;
             private AnalysisValue _getOrPopMethod;
 
-            public SysModulesDictionaryInfo(SysModuleInfo owner, ProjectEntry declaringModule, Node node)
+            public SysModulesDictionaryInfo(SysModuleInfo owner, IPythonProjectEntry declaringModule, Node node)
                 : base(declaringModule, node) {
                 _owner = owner;
             }

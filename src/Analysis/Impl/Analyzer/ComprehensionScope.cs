@@ -22,32 +22,24 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             : base(comprehensionResult, comprehension, outerScope) {
         }
 
-        public override string Name {
-            get { return "<comprehension scope>";  }
-        }
+        public override string Name => "<comprehension scope>";
 
-        public override InterpreterScope AddNodeScope(Node node, InterpreterScope scope) {
-            return OuterScope.AddNodeScope(node, scope);
-        }
+        public override InterpreterScope AddNodeScope(Node node, InterpreterScope scope)
+            => OuterScope.AddNodeScope(node, scope);
 
-        internal override bool RemoveNodeScope(Node node) {
-            return OuterScope.RemoveNodeScope(node);
-        }
+        internal override bool RemoveNodeScope(Node node)
+            => OuterScope.RemoveNodeScope(node);
 
-        internal override void ClearNodeScopes() {
-            OuterScope.ClearNodeScopes();
-        }
+        internal override void ClearNodeScopes()
+            => OuterScope.ClearNodeScopes();
 
-        public override IAnalysisSet AddNodeValue(Node node, NodeValueKind kind, IAnalysisSet variable) {
-            return OuterScope.AddNodeValue(node, kind, variable);
-        }
+        public override IAnalysisSet AddNodeValue(Node node, NodeValueKind kind, IAnalysisSet variable)
+            => OuterScope.AddNodeValue(node, kind, variable);
 
-        internal override bool RemoveNodeValue(Node node) {
-            return OuterScope.RemoveNodeValue(node);
-        }
+        internal override bool RemoveNodeValue(Node node)
+            => OuterScope.RemoveNodeValue(node);
 
-        internal override void ClearNodeValues() {
-            OuterScope.ClearNodeValues();
-        }
+        internal override void ClearNodeValues()
+            => OuterScope.ClearNodeValues();
     }
 }
