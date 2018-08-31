@@ -42,7 +42,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
             }
 
             var definition = references.FirstOrDefault(r => r._kind == ReferenceKind.Definition);
-            if (definition.uri == null) {
+            if (definition == null) {
                 throw new InvalidOperationException(Resources.RenameVariable_CannotRename);
             }
 

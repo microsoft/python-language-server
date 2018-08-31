@@ -205,7 +205,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("workspace/didChangeWatchedFiles")]
         public async Task DidChangeWatchedFiles(JToken token) {
             using (await _prioritizer.DocumentChangePriorityAsync()) {
-                await _server.DidChangeWatchedFiles(token.ToObject<DidChangeWatchedFilesParams>());
+                await _server.DidChangeWatchedFiles(ToObject<DidChangeWatchedFilesParams>(token));
             }
         }
 
@@ -213,7 +213,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<SymbolInformation[]> WorkspaceSymbols(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync();
             await WaitForCompleteAnalysisAsync(cancellationToken);
-            return await _server.WorkspaceSymbols(token.ToObject<WorkspaceSymbolParams>());
+            return await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token));
         }
 
         #endregion
@@ -221,7 +221,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #region Commands
         [JsonRpcMethod("workspace/executeCommand")]
         public Task<object> ExecuteCommand(JToken token)
-           => _server.ExecuteCommand(token.ToObject<ExecuteCommandParams>());
+           => _server.ExecuteCommand(ToObject<ExecuteCommandParams>(token));
         #endregion
 
         #region TextDocument
@@ -409,7 +409,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("textDocument/rename")]
         public async Task<WorkspaceEdit> Rename(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.Rename(token.ToObject<RenameParams>());
+            return await _server.Rename(ToObject<RenameParams>(token));
         }
         #endregion
 

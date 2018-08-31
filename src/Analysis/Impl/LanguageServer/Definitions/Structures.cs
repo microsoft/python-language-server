@@ -19,19 +19,19 @@ using System.Collections.Generic;
 
 namespace Microsoft.PythonTools.Analysis.LanguageServer {
     [Serializable]
-    public struct ResponseError {
+    public class ResponseError {
         public int code;
         public string message;
     }
 
-    public struct ResponseError<T> {
+    public class ResponseError<T> {
         public int code;
         public string message;
         public T data;
     }
 
     [Serializable]
-    public struct Position {
+    public class Position {
         /// <summary>
         /// Line position in a document (zero-based).
         /// </summary>
@@ -152,26 +152,26 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
     }
 
     [Serializable]
-    public struct TextDocumentEdit {
+    public class TextDocumentEdit {
         public VersionedTextDocumentIdentifier textDocument;
         public TextEdit[] edits;
     }
 
     [Serializable]
-    public struct WorkspaceEdit {
+    public class WorkspaceEdit {
         public Dictionary<Uri, TextEdit[]> changes;
         public TextDocumentEdit[] documentChanges;
     }
 
     [Serializable]
-    public struct TextDocumentIdentifier {
+    public class TextDocumentIdentifier {
         public Uri uri;
 
         public static implicit operator TextDocumentIdentifier(Uri uri) => new TextDocumentIdentifier { uri = uri };
     }
 
     [Serializable]
-    public struct TextDocumentItem {
+    public class TextDocumentItem {
         public Uri uri;
         public string languageId;
         public int version;
@@ -179,7 +179,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
     }
 
     [Serializable]
-    public struct VersionedTextDocumentIdentifier {
+    public class VersionedTextDocumentIdentifier {
         public Uri uri;
         public int? version;
         public int? _fromVersion;
@@ -803,7 +803,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
     }
 
     [Serializable]
-    public struct DocumentHighlight {
+    public class DocumentHighlight {
         public Range range;
         public DocumentHighlightKind kind;
 
@@ -814,7 +814,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
     }
 
     [Serializable]
-    public struct DocumentSymbol {
+    public class DocumentSymbol {
         /// <summary>
         /// The name of this symbol.
         /// </summary>
@@ -862,7 +862,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
     }
 
     [Serializable]
-    public struct SymbolInformation {
+    public class SymbolInformation {
         public string name;
         public SymbolKind kind;
         public Location location;
@@ -882,7 +882,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
     }
 
     [Serializable]
-    public struct CodeLens {
+    public class CodeLens {
         public Range range;
         public Command? command;
         public object data;
@@ -894,7 +894,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
     }
 
     [Serializable]
-    public struct DocumentLink {
+    public class DocumentLink {
         public Range range;
         public Uri target;
 
@@ -905,20 +905,20 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
     }
 
     [Serializable]
-    public struct DocumentLinkRegistrationOptions : IRegistrationOptions {
+    public class DocumentLinkRegistrationOptions : IRegistrationOptions {
         public DocumentFilter? documentSelector;
         public bool resolveProvider;
     }
 
     [Serializable]
-    public struct FormattingOptions {
+    public class FormattingOptions {
         public int tabSize;
         public bool insertSpaces;
 
     }
 
     [Serializable]
-    public struct DocumentOnTypeFormattingRegistrationOptions : IRegistrationOptions {
+    public class DocumentOnTypeFormattingRegistrationOptions : IRegistrationOptions {
         public DocumentFilter? documentSelector;
         public string firstTriggerCharacter;
         public string[] moreTriggerCharacters;
