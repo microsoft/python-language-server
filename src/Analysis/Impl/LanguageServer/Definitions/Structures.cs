@@ -19,19 +19,19 @@ using System.Collections.Generic;
 
 namespace Microsoft.PythonTools.Analysis.LanguageServer {
     [Serializable]
-    public class ResponseError {
+    public struct ResponseError {
         public int code;
         public string message;
     }
 
-    public class ResponseError<T> {
+    public struct ResponseError<T> {
         public int code;
         public string message;
         public T data;
     }
 
     [Serializable]
-    public class Position {
+    public struct Position {
         /// <summary>
         /// Line position in a document (zero-based).
         /// </summary>
