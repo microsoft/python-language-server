@@ -19,7 +19,7 @@ namespace Microsoft.PythonTools.Analysis {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -147,6 +147,51 @@ namespace Microsoft.PythonTools.Analysis {
         internal static string RemoveTrailingSemicolonsShort {
             get {
                 return ResourceManager.GetString("RemoveTrailingSemicolonsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot rename.
+        /// </summary>
+        internal static string RenameVariable_CannotRename {
+            get {
+                return ResourceManager.GetString("RenameVariable_CannotRename", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot rename modules.
+        /// </summary>
+        internal static string RenameVariable_CannotRenameModuleName {
+            get {
+                return ResourceManager.GetString("RenameVariable_CannotRenameModuleName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No information is available for the variable &apos;{0}&apos;..
+        /// </summary>
+        internal static string RenameVariable_NoInformationAvailableForVariable {
+            get {
+                return ResourceManager.GetString("RenameVariable_NoInformationAvailableForVariable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Please select a symbol to be renamed..
+        /// </summary>
+        internal static string RenameVariable_SelectSymbol {
+            get {
+                return ResourceManager.GetString("RenameVariable_SelectSymbol", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to get analysis for the selected expression..
+        /// </summary>
+        internal static string RenameVariable_UnableGetExpressionAnalysis {
+            get {
+                return ResourceManager.GetString("RenameVariable_UnableGetExpressionAnalysis", resourceCulture);
             }
         }
         
