@@ -20,13 +20,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.PythonTools.Analysis.Analyzer;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
-    internal class ModuleInfo : AnalysisValue, IReferenceableContainer, IModule {
+    internal class ModuleInfo : AnalysisValue, IReferenceableContainer, IModuleInfo {
         private readonly string _name;
         private readonly ProjectEntry _projectEntry;
         private Dictionary<Node, IAnalysisSet> _sequences;  // sequences defined in the module
@@ -96,7 +95,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         /// set, and so the Count property does not accurately reflect the 
         /// actual number of imports required.
         /// </summary>
-        internal ISet<string> GetAllUnresolvedModules() {
+        public ISet<string> GetAllUnresolvedModules() {
             return _unresolvedModules;
         }
 
@@ -313,7 +312,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IPythonType PythonType
             => ProjectEntry.ProjectState.Types[BuiltinTypeId.Module];
 
-        internal override BuiltinTypeId TypeId => BuiltinTypeId.Module;
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Module;
 
         #region IVariableDefContainer Members
 

@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Interpreter;
@@ -109,7 +108,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// Used for user defined sequence types where we'll track the individual values
     /// inside of the iterable.
     /// </summary>
-    internal class IterableValue : BaseIterableValue {
+    internal class IterableValue : BaseIterableValue, IAnalysisIterableValue {
         internal readonly Node _node;
 
         public IterableValue(VariableDef[] indexTypes, BuiltinClassInfo seqType, Node node)
@@ -119,6 +118,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public VariableDef[] IndexTypes { get; protected set; }
+        IEnumerable<IVariableDefinition> IAnalysisIterableValue.IndexTypes => IndexTypes;
 
         public override IAnalysisSet GetEnumeratorTypes(Node node, AnalysisUnit unit) {
             if (IndexTypes.Length == 0) {

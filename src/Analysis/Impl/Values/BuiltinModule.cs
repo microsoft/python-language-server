@@ -79,7 +79,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public IPythonProjectEntry ProjectEntry => null;
         public IScope Scope => null;
 
-        internal override BuiltinTypeId TypeId => BuiltinTypeId.Module;
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Module;
 
         #region IReferenceableContainer Members
 

@@ -236,7 +236,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        internal override BuiltinTypeId TypeId {
+        public override BuiltinTypeId TypeId {
             get {
                 return BuiltinTypeId.Type;
             }
@@ -248,7 +248,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             return klass.Contains(_projectState.ClassInfos[BuiltinTypeId.Type]);
         }
 

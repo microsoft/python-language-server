@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
@@ -28,7 +29,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// An analysis value represents a set of variables and code.  Examples of 
     /// analysis values include top-level code, classes, and functions.
     /// </summary>
-    public class AnalysisValue : IAnalysisSet, ICanExpire {
+    public class AnalysisValue : IAnalysisValueOperations {
         [ThreadStatic]
         private static HashSet<AnalysisValue> _processing;
 
@@ -173,7 +174,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public virtual IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) => CallReverseBinaryOp(node, unit, operation, rhs);
 
-        internal IAnalysisSet CallReverseBinaryOp(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
+        public IAnalysisSet CallReverseBinaryOp(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
             switch (operation) {
                 case PythonOperator.Is:
                 case PythonOperator.IsNot:
@@ -229,7 +230,6 @@ namespace Microsoft.PythonTools.Analysis {
         /// indexing.  For lists the key values will be integers (potentially constant, potentially not), 
         /// for dicts the key values will be arbitrary analysis values.
         /// </summary>
-        /// <returns></returns>
         public virtual IEnumerable<KeyValuePair<IAnalysisSet, IAnalysisSet>> GetItems() {
             yield break;
         }
@@ -247,9 +247,9 @@ namespace Microsoft.PythonTools.Analysis {
 
         public virtual IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
 
-        internal virtual bool IsOfType(IAnalysisSet klass) => false;
+        public virtual bool IsOfType(IAnalysisSet klass) => false;
 
-        internal virtual BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
+        public virtual BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
 
         /// <summary>
         /// If required, returns the resolved version of this value. If there is nothing

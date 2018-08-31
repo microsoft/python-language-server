@@ -411,7 +411,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override string Documentation => ClassInfo.Documentation;
         public override PythonMemberType MemberType => PythonMemberType.Instance;
 
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             return klass.Contains(ClassInfo) || klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Object]);
         }
 

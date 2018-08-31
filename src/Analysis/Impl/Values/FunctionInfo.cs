@@ -750,7 +750,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IPythonType PythonType => ProjectState.Types[BuiltinTypeId.Function];
 
-        internal override bool IsOfType(IAnalysisSet klass) => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]);
+        public override bool IsOfType(IAnalysisSet klass) => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]);
 
         public override bool Equals(object obj) {
             if (obj is FunctionInfo fi) {

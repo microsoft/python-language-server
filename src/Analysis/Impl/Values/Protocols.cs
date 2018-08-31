@@ -156,7 +156,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override string Name => _name;
         public override string Documentation => _doc;
-        internal override BuiltinTypeId TypeId => _typeId;
+        public override BuiltinTypeId TypeId => _typeId;
         public override PythonMemberType MemberType { get; }
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() => _richDescription;
 
@@ -178,7 +178,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override string Name { get; }
 
-        internal override BuiltinTypeId TypeId => BuiltinTypeId.Function;
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Function;
         public override PythonMemberType MemberType { get; }
 
         protected override void EnsureMembers(IDictionary<string, IAnalysisSet> members) {

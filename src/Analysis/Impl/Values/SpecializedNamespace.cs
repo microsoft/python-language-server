@@ -201,7 +201,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return _original.GetMember(node, unit, name);
         }
 
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             if (_original == null) {
                 return false;
             }
@@ -281,7 +281,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        internal override BuiltinTypeId TypeId {
+        public override BuiltinTypeId TypeId {
             get {
                 if (_original == null) {
                     return BuiltinTypeId.Unknown;

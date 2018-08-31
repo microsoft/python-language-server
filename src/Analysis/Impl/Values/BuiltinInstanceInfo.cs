@@ -203,7 +203,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return base.GetAsyncEnumeratorTypes(node, unit);
         }
 
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             if (klass.Contains(this.ClassInfo)) {
                 return true;
             }
@@ -218,7 +218,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return false;
         }
 
-        internal override BuiltinTypeId TypeId {
+        public override BuiltinTypeId TypeId {
             get {
                 return _klass?.PythonType.TypeId ?? BuiltinTypeId.Unknown;
             }

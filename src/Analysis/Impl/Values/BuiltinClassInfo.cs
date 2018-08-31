@@ -39,11 +39,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IPythonType PythonType => _type;
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             return klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Type]);
         }
 
-        internal override BuiltinTypeId TypeId => _type.TypeId;
+        public override BuiltinTypeId TypeId => _type.TypeId;
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             // TODO: More Type propagation

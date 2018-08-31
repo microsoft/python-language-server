@@ -79,7 +79,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override AnalysisUnit AnalysisUnit => base.AnalysisUnit;
 
-        internal override BuiltinTypeId TypeId {
+        public override BuiltinTypeId TypeId {
             get {
                 if (_typeId == null) {
                     _typeId = _protocols.OfType<NameProtocol>().FirstOrDefault()?.TypeId;
