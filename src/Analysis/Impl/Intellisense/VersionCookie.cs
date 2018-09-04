@@ -96,12 +96,12 @@ namespace Microsoft.PythonTools.Intellisense {
         /// <summary>
         /// The diagnostic messages produced for this buffer
         /// </summary>
-        public readonly IReadOnlyList<Analysis.LanguageServer.Diagnostic> Diagnostics;
+        public readonly IReadOnlyList<Diagnostic> Diagnostics;
 
         public BufferVersion(
             int version,
             PythonAst ast,
-            IEnumerable<Analysis.LanguageServer.Diagnostic> diagnostics
+            IEnumerable<Diagnostic> diagnostics
         ) {
             Version = version;
             Ast = ast;

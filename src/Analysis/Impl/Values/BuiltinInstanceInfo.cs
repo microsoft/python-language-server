@@ -22,7 +22,7 @@ using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
-    class BuiltinInstanceInfo : BuiltinNamespace<IPythonType>, IReferenceableContainer {
+    internal class BuiltinInstanceInfo : BuiltinNamespace<IPythonType>, IReferenceableContainer {
         private readonly BuiltinClassInfo _klass;
 
         public BuiltinInstanceInfo(BuiltinClassInfo klass)

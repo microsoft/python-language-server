@@ -14,16 +14,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading.Tasks;
-using Microsoft.PythonTools.LanguageServer;
-using StreamJsonRpc;
+using System;
+using System.Collections.Generic;
 
-namespace Microsoft.Python.LanguageServer.Services {
-    public sealed class TelemetryService : ITelemetryService {
-        private readonly JsonRpc _rpc;
-        public TelemetryService(JsonRpc rpc) {
-            _rpc = rpc;
-        }
-        public Task SendTelemetry(object o) => _rpc.NotifyWithParameterObjectAsync("telemetry/event", o);
+namespace Microsoft.Python.LanguageServer {
+    public interface IServiceContainer {
+        /// <summary>
+        /// Provides access to global application services
+        /// </summary>
+        T GetService<T>(Type type = null) where T : class;
+
+        /// <summary>
+        /// Enumerates all available services
+        /// </summary>
+        IEnumerable<Type> AllServices { get; }
     }
 }

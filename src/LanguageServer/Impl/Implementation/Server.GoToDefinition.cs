@@ -14,16 +14,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.PythonTools.LanguageServer;
-using StreamJsonRpc;
 
-namespace Microsoft.Python.LanguageServer.Services {
-    public sealed class TelemetryService : ITelemetryService {
-        private readonly JsonRpc _rpc;
-        public TelemetryService(JsonRpc rpc) {
-            _rpc = rpc;
+namespace Microsoft.Python.LanguageServer.Implementation {
+    public sealed partial class Server {
+        public override async Task<Reference[]> GotoDefinition(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
+            var references = await FindReferences(new ReferencesParams {
+                textDocument = @params.textDocument,
+                position = @params.position,
+                context = new ReferenceContext {
+                    includeDeclaration = true,
+                    _includeValues = true
+                }
+            }, cancellationToken);
+            return references.Where(r => r._kind == ReferenceKind.Definition && r.uri != null).ToArray();
         }
-        public Task SendTelemetry(object o) => _rpc.NotifyWithParameterObjectAsync("telemetry/event", o);
     }
 }

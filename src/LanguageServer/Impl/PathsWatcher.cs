@@ -20,7 +20,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Microsoft.DsTools.Core.Disposables;
-using ILogger = Microsoft.PythonTools.Analysis.LanguageServer.ILogger;
 
 namespace Microsoft.Python.LanguageServer {
     internal sealed class PathsWatcher : IDisposable {
@@ -53,7 +52,7 @@ namespace Microsoft.Python.LanguageServer {
                 }
 
                 try {
-                    var fsw = new FileSystemWatcher(p) {
+                    var fsw = new System.IO.FileSystemWatcher(p) {
                         IncludeSubdirectories = true,
                         EnableRaisingEvents = true
                     };

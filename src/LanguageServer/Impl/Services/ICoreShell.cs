@@ -14,16 +14,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading.Tasks;
-using Microsoft.PythonTools.LanguageServer;
-using StreamJsonRpc;
+using Microsoft.Python.LanguageServer;
 
-namespace Microsoft.Python.LanguageServer.Services {
-    public sealed class TelemetryService : ITelemetryService {
-        private readonly JsonRpc _rpc;
-        public TelemetryService(JsonRpc rpc) {
-            _rpc = rpc;
-        }
-        public Task SendTelemetry(object o) => _rpc.NotifyWithParameterObjectAsync("telemetry/event", o);
+namespace Microsoft.PythonTools.LanguageServer.Services {
+    /// <summary>
+    /// Basic shell provides access to services such as 
+    /// composition container, export provider, global VS IDE
+    /// services and so on.
+    /// </summary>
+    public interface ICoreShell {
+        /// <summary>
+        /// Application-global services access
+        /// </summary>
+        IServiceContainer Services { get; }
     }
 }

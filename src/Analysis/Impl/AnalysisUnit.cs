@@ -188,7 +188,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// <summary>
         /// The chain of scopes in which this analysis is defined.
         /// </summary>
-        public IScope Scope => Scope;
+        public IScope Scope => InterpreterScope;
 
         public override string ToString() {
             return "{0}: Name={1} ({2}), NodeType={3}".FormatInvariant(
