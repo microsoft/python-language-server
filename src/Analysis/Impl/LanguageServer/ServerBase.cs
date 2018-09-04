@@ -92,7 +92,8 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
 
         public virtual Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params) => throw new NotImplementedException();
 
-        public virtual Task<WorkspaceEdit> Rename(RenameParams @params) => throw new NotImplementedException();
+        public virtual Task<WorkspaceEdit> Rename(RenameParams @params) => Rename(@params, CancellationToken.None);
+        public virtual Task<WorkspaceEdit> Rename(RenameParams @params, CancellationToken cancellationToken) => throw new NotImplementedException();
 
         public virtual Task ReloadModulesAsync(CancellationToken token) => Task.CompletedTask;
         #endregion

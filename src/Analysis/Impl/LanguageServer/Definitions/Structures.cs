@@ -783,7 +783,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
     /// the kind.
     /// </summary>
     [Serializable]
-    public struct Reference {
+    public class Reference {
         public Uri uri;
         public Range range;
 
@@ -795,10 +795,15 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
         /// The document version that range applies to
         /// </summary>
         public int? _version;
+
+        /// <summary>
+        /// Indicates that reference is a module name
+        /// </summary>
+        public bool _isModule;
     }
 
     [Serializable]
-    public struct DocumentHighlight {
+    public class DocumentHighlight {
         public Range range;
         public DocumentHighlightKind kind;
 
@@ -900,7 +905,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
     }
 
     [Serializable]
-    public struct DocumentLinkRegistrationOptions : IRegistrationOptions {
+    public class DocumentLinkRegistrationOptions : IRegistrationOptions {
         public DocumentFilter? documentSelector;
         public bool resolveProvider;
     }

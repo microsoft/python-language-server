@@ -141,6 +141,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
                 referencesProvider = true,
                 workspaceSymbolProvider = true,
                 documentSymbolProvider = true,
+                renameProvider = true,
                 executeCommandProvider = new ExecuteCommandOptions {
                     commands = new[] {
                             completionItemCommand
