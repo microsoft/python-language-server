@@ -68,7 +68,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return analysis == null ? new List<MemberResult>() : GetModuleVariables(entry, opts, prefix, analysis).ToList();
         }
 
-        private static IEnumerable<MemberResult> GetModuleVariables(ProjectEntry entry, GetMemberOptions opts, string prefix, ModuleAnalysis analysis) {
+        private static IEnumerable<MemberResult> GetModuleVariables(ProjectEntry entry, GetMemberOptions opts, string prefix, IModuleAnalysis analysis) {
             var all = analysis.GetAllAvailableMembers(SourceLocation.None, opts);
             return all
                 .Where(m => {
@@ -82,12 +82,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             .Concat(GetChildScopesVariables(analysis, analysis.Scope, opts, 0));
         }
 
-        private static IEnumerable<MemberResult> GetChildScopesVariables(ModuleAnalysis analysis, InterpreterScope scope, GetMemberOptions opts, int currentDepth)
+        private static IEnumerable<MemberResult> GetChildScopesVariables(IModuleAnalysis analysis, IScope scope, GetMemberOptions opts, int currentDepth)
             => currentDepth < _symbolHierarchyDepthLimit
                 ? scope.Children.SelectMany(c => GetScopeVariables(analysis, c, opts, currentDepth))
                 : Enumerable.Empty<MemberResult>();
 
-        private static IEnumerable<MemberResult> GetScopeVariables(ModuleAnalysis analysis, InterpreterScope scope, GetMemberOptions opts, int currentDepth)
+        private static IEnumerable<MemberResult> GetScopeVariables(IModuleAnalysis analysis, IScope scope, GetMemberOptions opts, int currentDepth)
             => analysis.GetAllAvailableMembersFromScope(scope, opts).Concat(GetChildScopesVariables(analysis, scope, opts, currentDepth + 1));
 
         private SymbolInformation ToSymbolInformation(MemberResult m) {

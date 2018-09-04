@@ -39,9 +39,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             Scope = unit.InterpreterScope;
         }
 
-        public ExpressionEvaluator(AnalysisUnit unit, InterpreterScope scope, bool mergeScopes = false) {
+        public ExpressionEvaluator(AnalysisUnit unit, IScope scope, bool mergeScopes = false) {
             _unit = unit;
-            Scope = scope;
+            Scope = scope as InterpreterScope;
             _mergeScopes = mergeScopes;
         }
 

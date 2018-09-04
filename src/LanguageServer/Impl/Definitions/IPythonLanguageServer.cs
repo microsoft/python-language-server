@@ -26,6 +26,6 @@ namespace Microsoft.Python.LanguageServer {
         Task ReloadModulesAsync(CancellationToken token);
         PythonAst GetCurrentAst(Uri documentUri);
         Task<PythonAst> GetAstAsync(Uri documentUri, CancellationToken token);
-        Task<ModuleAnalysis> GetAnalysisAsync(Uri documentUri, CancellationToken token);
+        Task<IModuleAnalysis> GetAnalysisAsync(Uri documentUri, CancellationToken token);
     }
 }

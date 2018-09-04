@@ -62,7 +62,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         public override VariableDef GetVariable(Node node, AnalysisUnit unit, string name, bool addRef = true) 
             => base.GetVariable(node, unit, name, addRef) ?? OuterScope.GetVariable(node, unit, name, addRef);
 
-        public override IEnumerable<VariableDef> GetMergedVariables(string name) 
+        public override IEnumerable<IVariableDefinition> GetMergedVariables(string name) 
             => base.GetMergedVariables(name).Concat(OuterScope.GetMergedVariables(name));
 
         public override IAnalysisSet GetMergedVariableTypes(string name) {

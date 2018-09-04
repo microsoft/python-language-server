@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
-    sealed class VariablesResult : IEnumerable<IAnalysisVariable> {
+    public sealed class VariablesResult : IEnumerable<IAnalysisVariable> {
         private readonly IEnumerable<IAnalysisVariable> _vars;
 
         internal VariablesResult(IEnumerable<IAnalysisVariable> variables, PythonAst expr) {

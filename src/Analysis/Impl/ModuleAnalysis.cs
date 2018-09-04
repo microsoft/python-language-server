@@ -34,7 +34,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// 
     /// Can be queried for various information about the resulting analysis.
     /// </summary>
-    public sealed class ModuleAnalysis {
+    internal sealed class ModuleAnalysis: IModuleAnalysis {
         private readonly AnalysisUnit _unit;
         private static Regex _otherPrivateRegex = new Regex("^_[a-zA-Z_]\\w*__[a-zA-Z_]\\w*$");
 
@@ -79,7 +79,7 @@ namespace Microsoft.PythonTools.Analysis {
             return GetValues(expr, location, scope);
         }
 
-        internal IEnumerable<AnalysisValue> GetValues(Expression expr, SourceLocation location, InterpreterScope scope = null) {
+        public IEnumerable<AnalysisValue> GetValues(Expression expr, SourceLocation location, IScope scope = null) {
             scope = scope ?? FindScope(location);
             var unit = GetNearestEnclosingAnalysisUnit(scope);
             var eval = new ExpressionEvaluator(unit.CopyForEval(), scope, mergeScopes: true);
@@ -200,7 +200,7 @@ namespace Microsoft.PythonTools.Analysis {
             return GetVariables(expr, location, exprText, scope);
         }
 
-        internal VariablesResult GetVariables(Expression expr, SourceLocation location, string originalText = null, InterpreterScope scope = null) {
+        public VariablesResult GetVariables(Expression expr, SourceLocation location, string originalText = null, IScope scope = null) {
             scope = scope ?? FindScope(location);
 
             var unit = GetNearestEnclosingAnalysisUnit(scope);
@@ -248,7 +248,7 @@ namespace Microsoft.PythonTools.Analysis {
             return new VariablesResult(variables, unit.Tree);
         }
 
-        private IEnumerable<IAnalysisVariable> GetVariablesInScope(NameExpression name, InterpreterScope scope) {
+        private IEnumerable<IAnalysisVariable> GetVariablesInScope(NameExpression name, IScope scope) {
             var result = new List<IAnalysisVariable>();
 
             result.AddRange(scope.GetMergedVariables(name.Name).SelectMany(ToVariables));
@@ -286,7 +286,7 @@ namespace Microsoft.PythonTools.Analysis {
             return result;
         }
 
-        private static bool IsFirstLineOfFunction(InterpreterScope innerScope, InterpreterScope outerScope, SourceLocation location) {
+        private static bool IsFirstLineOfFunction(IScope innerScope, IScope outerScope, SourceLocation location) {
             if (innerScope.OuterScope == outerScope && innerScope is FunctionScope) {
                 var funcScope = (FunctionScope)innerScope;
                 var def = funcScope.Function.FunctionDefinition;
@@ -361,11 +361,11 @@ namespace Microsoft.PythonTools.Analysis {
             return GetMembers(expr, location, options, scope);
         }
 
-        internal IEnumerable<MemberResult> GetMembers(
+        public IEnumerable<MemberResult> GetMembers(
             Expression expr,
             SourceLocation location,
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults,
-            InterpreterScope scope = null
+            IScope scope = null
         ) {
             if (expr is ConstantExpression && ((ConstantExpression)expr).Value is int) {
                 // no completions on integer ., the user is typing a float
@@ -471,7 +471,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        internal IEnumerable<IOverloadResult> GetSignatures(Expression expr, SourceLocation location, InterpreterScope scope = null) {
+        public IEnumerable<IOverloadResult> GetSignatures(Expression expr, SourceLocation location, IScope scope = null) {
             if (expr == null ||
                 expr is ListExpression ||
                 expr is TupleExpression ||
@@ -680,7 +680,7 @@ namespace Microsoft.PythonTools.Analysis {
             return res;
         }
 
-        internal IEnumerable<MemberResult> GetAllAvailableMembersFromScope(InterpreterScope scope, GetMemberOptions options) {
+        public IEnumerable<MemberResult> GetAllAvailableMembersFromScope(IScope scope, GetMemberOptions options) {
             var result = new Dictionary<string, IEnumerable<AnalysisValue>>();
             var scopeResult = GetAllAvailableAnalysisValuesFromScope(scope, options);
             foreach (var kvp in scopeResult) {
@@ -694,9 +694,10 @@ namespace Microsoft.PythonTools.Analysis {
             return res;
         }
 
-        private Dictionary<string, List<AnalysisValue>> GetAllAvailableAnalysisValuesFromScope(InterpreterScope scope, GetMemberOptions options) {
+        private Dictionary<string, List<AnalysisValue>> GetAllAvailableAnalysisValuesFromScope(IScope scope, GetMemberOptions options) {
             var scopeResult = new Dictionary<string, List<AnalysisValue>>();
-            foreach (var kvp in scope.GetAllMergedVariables()) {
+            var interpreterScope = scope as InterpreterScope;
+            foreach (var kvp in interpreterScope.GetAllMergedVariables()) {
                 var vars = kvp.Value.TypesNoCopy;
                 if (options.Exceptions() && !IsExceptionType(kvp.Key, vars)) {
                     continue;
@@ -803,10 +804,11 @@ namespace Microsoft.PythonTools.Analysis {
         public PythonAnalyzer ProjectState => GlobalScope.ProjectEntry.ProjectState;
 
         internal InterpreterScope Scope { get; }
+        IScope IModuleAnalysis.Scope => Scope;
 
         internal IEnumerable<MemberResult> GetMemberResults(
             IEnumerable<AnalysisValue> vars,
-            InterpreterScope scope,
+            IScope scope,
             GetMemberOptions options
         ) {
             IList<AnalysisValue> namespaces = new List<AnalysisValue>();
@@ -1188,7 +1190,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// Finds the best available analysis unit for lookup. This will be the one that is provided
         /// by the nearest enclosing scope that is capable of providing one.
         /// </summary>
-        private AnalysisUnit GetNearestEnclosingAnalysisUnit(InterpreterScope scopes) {
+        private AnalysisUnit GetNearestEnclosingAnalysisUnit(IScope scopes) {
             var units = from scope in scopes.EnumerateTowardsGlobal
                         let ns = scope.AnalysisValue
                         where ns != null

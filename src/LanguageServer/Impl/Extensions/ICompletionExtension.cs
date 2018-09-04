@@ -22,6 +22,6 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Extensions {
     public interface ICompletionExtension {
-        Task Completion(ModuleAnalysis analysis, PythonAst Tree, SourceLocation location, CompletionList completions, CancellationToken token);
+        Task Completion(IModuleAnalysis analysis, PythonAst Tree, SourceLocation location, CompletionList completions, CancellationToken token);
     }
 }

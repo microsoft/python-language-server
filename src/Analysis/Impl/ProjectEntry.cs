@@ -42,7 +42,7 @@ namespace Microsoft.PythonTools.Analysis {
         Justification = "Unclear ownership makes it unlikely this object will be disposed correctly")]
     internal sealed class ProjectEntry : IPythonProjectEntry, IAggregateableProjectEntry, IDocument {
         private AnalysisUnit _unit;
-        private TaskCompletionSource<ModuleAnalysis> _analysisTcs = new TaskCompletionSource<ModuleAnalysis>();
+        private TaskCompletionSource<IModuleAnalysis> _analysisTcs = new TaskCompletionSource<IModuleAnalysis>();
         private readonly SortedDictionary<int, DocumentBuffer> _buffers;
         private readonly ConcurrentQueue<WeakReference<ReferenceDict>> _backReferences = new ConcurrentQueue<WeakReference<ReferenceDict>>();
         internal readonly HashSet<AggregateProjectEntry> _aggregates = new HashSet<AggregateProjectEntry>();
@@ -136,8 +136,8 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        internal Task<ModuleAnalysis> GetAnalysisAsync(int waitingTimeout = -1, CancellationToken cancellationToken = default(CancellationToken)) {
-            Task<ModuleAnalysis> task;
+        internal Task<IModuleAnalysis> GetAnalysisAsync(int waitingTimeout = -1, CancellationToken cancellationToken = default(CancellationToken)) {
+            Task<IModuleAnalysis> task;
             lock (this) {
                 task = _analysisTcs.Task;
             }
@@ -163,7 +163,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal void ResetCompleteAnalysis() {
             lock (this) {
-                _analysisTcs = new TaskCompletionSource<ModuleAnalysis>();
+                _analysisTcs = new TaskCompletionSource<IModuleAnalysis>();
             }
         }
 
@@ -318,7 +318,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public IGroupableAnalysisProject AnalysisGroup => ProjectState;
 
-        public ModuleAnalysis Analysis { get; private set; }
+        public IModuleAnalysis Analysis { get; private set; }
 
         public string FilePath { get; }
 

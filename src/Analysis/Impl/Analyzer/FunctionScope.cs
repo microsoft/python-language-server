@@ -252,7 +252,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             }
         }
 
-        public override IEnumerable<VariableDef> GetMergedVariables(string name) {
+        public override IEnumerable<IVariableDefinition> GetMergedVariables(string name) {
             VariableDef res;
             FunctionScope fnScope;
 

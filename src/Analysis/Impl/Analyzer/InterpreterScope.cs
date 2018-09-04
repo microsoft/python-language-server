@@ -27,7 +27,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         private AnalysisDictionary<Node, InterpreterScope> _nodeScopes;
         private AnalysisDictionary<Node, NodeValue> _nodeValues;
         private AnalysisDictionary<string, VariableDef> _variables;
-        private AnalysisDictionary<string, HashSet<VariableDef>> _linkedVariables;
+        private AnalysisDictionary<string, HashSet<IVariableDefinition>> _linkedVariables;
 
         public InterpreterScope(AnalysisValue av, Node ast, InterpreterScope outerScope) {
             AnalysisValue = av;
@@ -39,7 +39,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             _nodeScopes = new AnalysisDictionary<Node, InterpreterScope>();
             _nodeValues = new AnalysisDictionary<Node, NodeValue>();
             _variables = new AnalysisDictionary<string, VariableDef>();
-            _linkedVariables = new AnalysisDictionary<string, HashSet<VariableDef>>();
+            _linkedVariables = new AnalysisDictionary<string, HashSet<IVariableDefinition>>();
             _linkedScopes = new List<InterpreterScope>();
         }
 
@@ -201,9 +201,8 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         public virtual IEnumerable<KeyValuePair<string, VariableDef>> GetAllMergedVariables() => _variables;
 
-        public virtual IEnumerable<VariableDef> GetMergedVariables(string name) {
-            VariableDef res;
-            if (_variables.TryGetValue(name, out res) && res != null) {
+        public virtual IEnumerable<IVariableDefinition> GetMergedVariables(string name) {
+            if (_variables.TryGetValue(name, out var res) && res != null) {
                 yield return res;
             }
         }
@@ -306,24 +305,24 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         public AnalysisValue AnalysisValue { get; }
 
-        public void ClearLinkedVariables() => _linkedVariables = new AnalysisDictionary<string, HashSet<VariableDef>>();
+        public void ClearLinkedVariables() => _linkedVariables = new AnalysisDictionary<string, HashSet<IVariableDefinition>>();
 
         internal bool AddLinkedVariable(string name, VariableDef variable) {
-            HashSet<VariableDef> links;
+            HashSet<IVariableDefinition> links;
             if (!_linkedVariables.TryGetValue(name, out links) || links == null) {
-                _linkedVariables[name] = links = new HashSet<VariableDef>();
+                _linkedVariables[name] = links = new HashSet<IVariableDefinition>();
             }
             lock (links) {
                 return links.Add(variable);
             }
         }
 
-        internal IEnumerable<VariableDef> GetLinkedVariables(string name) {
-            HashSet<VariableDef> links;
+        public IEnumerable<IVariableDefinition> GetLinkedVariables(string name) {
+            HashSet<IVariableDefinition> links;
             _linkedVariables.TryGetValue(name, out links);
 
             if (links == null) {
-                return Enumerable.Empty<VariableDef>();
+                return Enumerable.Empty<IVariableDefinition>();
             }
             return links.AsLockedEnumerable();
         }

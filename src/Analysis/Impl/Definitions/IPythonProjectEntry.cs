@@ -27,7 +27,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         string ModuleName { get; }
 
-        ModuleAnalysis Analysis { get; }
+        IModuleAnalysis Analysis { get; }
         PythonAnalyzer ProjectState { get; }
 
         event EventHandler<EventArgs> OnNewParseTree;

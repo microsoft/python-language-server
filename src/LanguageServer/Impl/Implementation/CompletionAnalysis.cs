@@ -38,7 +38,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly Func<TextReader> _openDocument;
 
         public CompletionAnalysis(
-            ModuleAnalysis analysis,
+            IModuleAnalysis analysis,
             PythonAst tree,
             SourceLocation position,
             GetMemberOptions opts,
@@ -105,7 +105,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private static readonly IEnumerable<CompletionItem> Empty = Enumerable.Empty<CompletionItem>();
 
-        public ModuleAnalysis Analysis { get; }
+        public IModuleAnalysis Analysis { get; }
         public PythonAst Tree { get; }
         public SourceLocation Position { get; }
         public int Index { get; }

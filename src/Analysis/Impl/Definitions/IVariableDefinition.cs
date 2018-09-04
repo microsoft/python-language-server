@@ -13,8 +13,7 @@
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
-using System.Collections.Generic;
-using Microsoft.PythonTools.Analysis.Analyzer;
+
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
@@ -27,6 +26,14 @@ namespace Microsoft.PythonTools.Analysis {
         bool IsAssigned { get; }
         bool HasTypes { get; }
         bool IsEphemeral { get; }
+
+        /// <summary>
+        /// Returns the set of types which currently are stored in the VariableDef.  The
+        /// resulting set will not mutate in the future even if the types in the VariableDef
+        /// change in the future.
+        /// </summary>
+        IAnalysisSet Types { get; }
+
         bool AddTypes(AnalysisUnit unit, IAnalysisSet newTypes, bool enqueue = true, IProjectEntry declaringScope = null);
     }
 }

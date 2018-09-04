@@ -142,6 +142,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 referencesProvider = true,
                 workspaceSymbolProvider = true,
                 documentSymbolProvider = true,
+                documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
+                    firstTriggerCharacter = "\n",
+                    moreTriggerCharacter = new [] {";"}
+                },
                 executeCommandProvider = new ExecuteCommandOptions {
                     commands = new[] {
                             completionItemCommand
@@ -358,7 +362,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return Task.FromResult(entry.GetCurrentParse()?.Tree);
         }
 
-        public Task<ModuleAnalysis> GetAnalysisAsync(Uri documentUri, CancellationToken token) {
+        public Task<IModuleAnalysis> GetAnalysisAsync(Uri documentUri, CancellationToken token) {
             ProjectFiles.GetEntry(documentUri, null, out var entry, out var tree);
             return entry.GetAnalysisAsync(Timeout.Infinite, token);
         }

@@ -25,6 +25,8 @@ namespace Microsoft.PythonTools.Analysis {
         IReadOnlyList<IScope> Children { get; }
         bool ContainsImportStar { get; }
         IScope GlobalScope { get; }
+        AnalysisValue AnalysisValue { get; }
+
         IEnumerable<IScope> EnumerateTowardsGlobal { get; }
         IEnumerable<IScope> EnumerateFromGlobal { get; }
         int GetBodyStart(PythonAst ast);
@@ -36,5 +38,7 @@ namespace Microsoft.PythonTools.Analysis {
         bool TryGetVariable(string name, out IVariableDefinition value);
         int VariableCount { get; }
         bool VisibleToChildren { get; }
+        IEnumerable<IVariableDefinition> GetMergedVariables(string name);
+        IEnumerable<IVariableDefinition> GetLinkedVariables(string name);
     }
 }
