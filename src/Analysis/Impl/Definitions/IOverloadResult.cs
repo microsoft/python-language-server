@@ -24,9 +24,6 @@ namespace Microsoft.PythonTools.Analysis {
         [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays",
             Justification = "breaking change")]
         ParameterResult[] Parameters { get; }
-    }
-
-    public interface IOverloadResult2 : IOverloadResult {
         IReadOnlyList<string> ReturnType { get; }
     }
 }

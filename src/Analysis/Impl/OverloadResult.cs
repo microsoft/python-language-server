@@ -23,7 +23,7 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 
 namespace Microsoft.PythonTools.Analysis {
-    public class OverloadResult : IOverloadResult2 {
+    public class OverloadResult : IOverloadResult {
         private readonly ParameterResult[] _parameters;
         private readonly string[] _returnType;
 

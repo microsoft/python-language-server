@@ -84,16 +84,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private SignatureInformation ToSignatureInformation(IOverloadResult overload) {
-            var si = new SignatureInformation();
+            var si = new SignatureInformation {
+                parameters = overload.Parameters.MaybeEnumerate().Select(p => new ParameterInformation {
+                    label = p.Name,
+                    documentation = string.IsNullOrEmpty(p.Documentation) ? null : p.Documentation,
+                    _type = p.Type,
+                    _defaultValue = p.DefaultValue
+                }).ToArray(),
 
-            si.parameters = overload.Parameters.MaybeEnumerate().Select(p => new ParameterInformation {
-                label = p.Name,
-                documentation = string.IsNullOrEmpty(p.Documentation) ? null : p.Documentation,
-                _type = p.Type,
-                _defaultValue = p.DefaultValue
-            }).ToArray();
-
-            si._returnTypes = (overload as IOverloadResult2)?.ReturnType.OrderBy(k => k).ToArray();
+                _returnTypes = overload.ReturnType.OrderBy(k => k).ToArray()
+            };
 
             if (_clientCaps?.textDocument?.signatureHelp?.signatureInformation?._shortLabel ?? false) {
                 si.label = overload.Name;
