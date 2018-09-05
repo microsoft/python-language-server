@@ -1,20 +1,21 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>Python-Language-Server$os$</id>
+    <id>Microsoft.Python.Analysis.Engine$os$</id>
     <version>$version$</version>
-    <title>Python Language Server</title>
+    <title>Microsoft Python Analysis Engine</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
     <licenseUrl>https://github.com/Microsoft/vscode-python/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/Microsoft/vscode-python</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Microsoft Python Language Server</description>
+    <description>Microsoft Python Code Analysis Engine</description>
     <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
     <copyright>Copyright (c) 2018</copyright>
     <tags>Python;VS Code</tags>
   </metadata>
   <files>
-    <file src="**/*" exclude="nuget/*;*.pdb;Python-Language-Server.nuspec" />
+    <file src="**/Microsoft.Python.Analysis.Engine.dll" />
+    <file src="**/Microsoft.Python.Analysis.Engine.pdb" />
   </files>
 </package>
