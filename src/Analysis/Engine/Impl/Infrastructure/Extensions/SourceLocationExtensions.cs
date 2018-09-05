@@ -14,19 +14,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Threading;
+using Microsoft.PythonTools.Analysis.LanguageServer;
+using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    static class ExceptionExtensions {
-        /// <summary>
-        /// Returns true if an exception should not be handled by logging code.
-        /// </summary>
-        public static bool IsCriticalException(this Exception ex) {
-            return ex is StackOverflowException ||
-                ex is OutOfMemoryException ||
-                ex is ThreadAbortException ||
-                ex is AccessViolationException;
-        }
+    public static class SourceLocationExtensions {
+        public static int ToIndex(this SourceLocation location, PythonAst ast) => ast.LocationToIndex(location);
+    }
+
+    public static class SourceSpanExtensions {
+        public static LinearSpan ToLinearSpan(this SourceSpan span, PythonAst ast)
+            => LinearSpan.FromBounds(ast.LocationToIndex(span.Start), ast.LocationToIndex(span.End));
+        public static LinearSpan ToLinearSpan(this Range range, PythonAst ast)
+            => LinearSpan.FromBounds(ast.LocationToIndex(range.start), ast.LocationToIndex(range.end));
     }
 }
