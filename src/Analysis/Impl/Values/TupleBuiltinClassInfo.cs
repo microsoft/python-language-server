@@ -32,7 +32,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return new TupleBuiltinInstanceInfo(this);
         }
 
-        internal override SequenceInfo MakeFromIndexes(Node node, ProjectEntry entry) {
+        internal override SequenceInfo MakeFromIndexes(Node node, IPythonProjectEntry entry) {
             if (_tupleTypes != null) {
                 return new SequenceInfo(_tupleTypes.Select(t => {
                     var v = new VariableDef();

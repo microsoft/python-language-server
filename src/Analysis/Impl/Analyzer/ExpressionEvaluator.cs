@@ -18,8 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Analysis.LanguageServer;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
@@ -38,12 +36,12 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         /// </summary>
         public ExpressionEvaluator(AnalysisUnit unit) {
             _unit = unit;
-            Scope = unit.Scope;
+            Scope = unit.InterpreterScope;
         }
 
-        public ExpressionEvaluator(AnalysisUnit unit, InterpreterScope scope, bool mergeScopes = false) {
+        public ExpressionEvaluator(AnalysisUnit unit, IScope scope, bool mergeScopes = false) {
             _unit = unit;
-            Scope = scope;
+            Scope = scope as InterpreterScope;
             _mergeScopes = mergeScopes;
         }
 
@@ -177,13 +175,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         #region Implementation Details
 
-        private ModuleInfo GlobalScope {
-            get { return _unit.DeclaringModule; }
-        }
+        private IModule GlobalScope => _unit.DeclaringModule;
 
-        private PythonAnalyzer ProjectState {
-            get { return _unit.State; }
-        }
+        private PythonAnalyzer ProjectState => _unit.State;
 
         /// <summary>
         /// The list of scopes which define the current context.
@@ -488,7 +482,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         private static IAnalysisSet EvaluateComprehension(ExpressionEvaluator ee, Node node) {
             InterpreterScope scope;
-            if (!ee._unit.Scope.TryGetNodeScope(node, out scope)) {
+            if (!ee._unit.InterpreterScope.TryGetNodeScope(node, out scope)) {
                 // we can fail to find the module if the underlying interpreter triggers a module
                 // reload.  In that case we're already parsing, we start to clear out all of 
                 // our module state in ModuleInfo.Clear, and then we queue the nodes to be

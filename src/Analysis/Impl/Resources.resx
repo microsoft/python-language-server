@@ -147,21 +147,6 @@
   <data name="RemoveTrailingSemicolonsShort" xml:space="preserve">
     <value>Remove unnecessary semicolons</value>
   </data>
-  <data name="RenameVariable_CannotRename" xml:space="preserve">
-    <value>Cannot rename</value>
-  </data>
-  <data name="RenameVariable_CannotRenameModuleName" xml:space="preserve">
-    <value>Cannot rename modules</value>
-  </data>
-  <data name="RenameVariable_NoInformationAvailableForVariable" xml:space="preserve">
-    <value>No information is available for the variable '{0}'.</value>
-  </data>
-  <data name="RenameVariable_SelectSymbol" xml:space="preserve">
-    <value>Please select a symbol to be renamed.</value>
-  </data>
-  <data name="RenameVariable_UnableGetExpressionAnalysis" xml:space="preserve">
-    <value>Unable to get analysis for the selected expression.</value>
-  </data>
   <data name="ReplaceMultipleImportsWithMultipleStatementsLong" xml:space="preserve">
     <value>If checked, import statements with multiple modules are separated onto individual lines. If unchecked, import statements with multiple modules are not modified.</value>
   </data>

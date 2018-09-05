@@ -16,8 +16,8 @@
 
 using System;
 using Microsoft.DsTools.Core.Diagnostics;
-using Microsoft.DsTools.Core.Services;
-using Microsoft.DsTools.Core.Services.Shell;
+using Microsoft.PythonTools.LanguageServer;
+using Microsoft.PythonTools.LanguageServer.Services;
 
 namespace Microsoft.Python.LanguageServer.Services {
     internal sealed class CoreShell : ICoreShell, IDisposable {

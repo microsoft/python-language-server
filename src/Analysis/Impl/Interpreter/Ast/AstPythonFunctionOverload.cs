@@ -25,10 +25,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public AstPythonFunctionOverload(
             IEnumerable<IParameterInfo> parameters,
-            LocationInfo loc
+            ILocationInfo loc
         ) {
             _parameters = parameters?.ToArray() ?? throw new ArgumentNullException(nameof(parameters));
-            Locations = loc != null ? new[] { loc } : Array.Empty<LocationInfo>();
+            Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
         }
 
         internal void SetDocumentation(string doc) {
@@ -43,7 +43,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public string Documentation { get; private set; }
         public string ReturnDocumentation { get; }
         public IParameterInfo[] GetParameters() => _parameters.ToArray();
-        public IList<IPythonType> ReturnType => ReturnTypes.Where(v => v.TypeId != BuiltinTypeId.Unknown).ToArray();
-        public IEnumerable<LocationInfo> Locations { get; }
+        public IReadOnlyList<IPythonType> ReturnType => ReturnTypes.Where(v => v.TypeId != BuiltinTypeId.Unknown).ToArray();
+        public IEnumerable<ILocationInfo> Locations { get; }
     }
 }

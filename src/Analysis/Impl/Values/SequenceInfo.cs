@@ -48,7 +48,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     
                     foreach (var type in rhs.Where(t => t.IsOfType(ClassInfo))) {
                         if (seq == null) {
-                            seq = (SequenceInfo)unit.Scope.GetOrMakeNodeValue(node,
+                            seq = (SequenceInfo)unit.InterpreterScope.GetOrMakeNodeValue(node,
                                 NodeValueKind.Sequence,
                                 _ => new SequenceInfo(new[] { new VariableDef() }, ClassInfo, node, unit.ProjectEntry)
                             );

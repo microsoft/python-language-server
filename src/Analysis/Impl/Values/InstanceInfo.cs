@@ -17,7 +17,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
-using Microsoft.PythonTools.Analysis.LanguageServer;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
@@ -411,7 +410,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override string Documentation => ClassInfo.Documentation;
         public override PythonMemberType MemberType => PythonMemberType.Instance;
 
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             return klass.Contains(ClassInfo) || klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Object]);
         }
 

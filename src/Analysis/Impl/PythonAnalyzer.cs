@@ -34,7 +34,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// <summary>
     /// Performs analysis of multiple Python code files and enables interrogation of the resulting analysis.
     /// </summary>
-    public partial class PythonAnalyzer : IGroupableAnalysisProject, IDisposable {
+    public partial class PythonAnalyzer : IPythonAnalyzer, IGroupableAnalysisProject, IDisposable {
         private readonly IPythonInterpreter _interpreter;
         private readonly bool _disposeInterpreter;
         private readonly IPythonInterpreterFactory _interpreterFactory;
@@ -62,7 +62,7 @@ namespace Microsoft.PythonTools.Analysis {
         private static object _nullKey = new object();
         private readonly SemaphoreSlim _reloadLock = new SemaphoreSlim(1, 1);
         private Dictionary<IProjectEntry[], AggregateProjectEntry> _aggregates = new Dictionary<IProjectEntry[], AggregateProjectEntry>(AggregateComparer.Instance);
-        private readonly Dictionary<IProjectEntry, Dictionary<Node, LanguageServer.Diagnostic>> _diagnostics = new Dictionary<IProjectEntry, Dictionary<Node, LanguageServer.Diagnostic>>();
+        private readonly Dictionary<IProjectEntry, Dictionary<Node, Diagnostic>> _diagnostics = new Dictionary<IProjectEntry, Dictionary<Node, Diagnostic>>();
 
         public const string PythonAnalysisSource = "Python (analysis)";
 
@@ -641,16 +641,16 @@ namespace Microsoft.PythonTools.Analysis {
 
         public bool EnableDiagnostics { get; set; }
 
-        public void AddDiagnostic(Node node, AnalysisUnit unit, string message, LanguageServer.DiagnosticSeverity severity, string code = null) {
+        public void AddDiagnostic(Node node, AnalysisUnit unit, string message, DiagnosticSeverity severity, string code = null) {
             if (!EnableDiagnostics) {
                 return;
             }
 
             lock (_diagnostics) {
                 if (!_diagnostics.TryGetValue(unit.ProjectEntry, out var diags)) {
-                    _diagnostics[unit.ProjectEntry] = diags = new Dictionary<Node, LanguageServer.Diagnostic>();
+                    _diagnostics[unit.ProjectEntry] = diags = new Dictionary<Node, Diagnostic>();
                 }
-                diags[node] = new LanguageServer.Diagnostic {
+                diags[node] = new Diagnostic {
                     message = message,
                     range = node.GetSpan(unit.ProjectEntry.Tree),
                     severity = severity,
@@ -660,17 +660,17 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        public IReadOnlyList<LanguageServer.Diagnostic> GetDiagnostics(IProjectEntry entry) {
+        public IReadOnlyList<Diagnostic> GetDiagnostics(IProjectEntry entry) {
             lock (_diagnostics) {
                 if (_diagnostics.TryGetValue(entry, out var diags)) {
                     return diags.OrderBy(kv => kv.Key.StartIndex).Select(kv => kv.Value).ToArray();
                 }
             }
-            return Array.Empty<LanguageServer.Diagnostic>();
+            return Array.Empty<Diagnostic>();
         }
 
-        public IReadOnlyDictionary<IProjectEntry, IReadOnlyList<LanguageServer.Diagnostic>> GetAllDiagnostics() {
-            var res = new Dictionary<IProjectEntry, IReadOnlyList<LanguageServer.Diagnostic>>();
+        public IReadOnlyDictionary<IProjectEntry, IReadOnlyList<Diagnostic>> GetAllDiagnostics() {
+            var res = new Dictionary<IProjectEntry, IReadOnlyList<Diagnostic>>();
             lock (_diagnostics) {
                 foreach (var kv in _diagnostics) {
                     res[kv.Key] = kv.Value.OrderBy(d => d.Key.StartIndex).Select(d => d.Value).ToArray();
@@ -953,7 +953,7 @@ namespace Microsoft.PythonTools.Analysis {
             var ddg = new DDG();
             ddg.Analyze(Queue, cancel, _reportQueueSize, _reportQueueInterval);
             foreach (var entry in ddg.AnalyzedEntries) {
-                entry.RaiseOnNewAnalysis();
+                (entry as ProjectEntry).RaiseOnNewAnalysis();
             }
         }
 

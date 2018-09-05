@@ -41,11 +41,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public string Name => _sequenceType?.Name ?? "tuple";
         public string Documentation => _sequenceType?.Documentation ?? string.Empty;
         public BuiltinTypeId TypeId => _sequenceType?.TypeId ?? BuiltinTypeId.Tuple;
-        public IList<IPythonType> Mro => _sequenceType?.Mro ?? Array.Empty<IPythonType>();
+        public IReadOnlyList<IPythonType> Mro => _sequenceType?.Mro ?? Array.Empty<IPythonType>();
         public bool IsBuiltin => _sequenceType?.IsBuiltin ?? true;
         public PythonMemberType MemberType => _sequenceType?.MemberType ?? PythonMemberType.Class;
         public IPythonFunction GetConstructors() => _sequenceType?.GetConstructors();
         public IMember GetMember(IModuleContext context, string name) => _sequenceType?.GetMember(context, name) ?? null;
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => _sequenceType?.GetMemberNames(moduleContext) ?? Enumerable.Empty<string>();
+        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) 
+            => _sequenceType?.GetMemberNames(moduleContext) ?? Enumerable.Empty<string>();
     }
 }

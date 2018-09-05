@@ -59,7 +59,7 @@ namespace Microsoft.PythonTools.Analysis {
             _version = -1;
         }
 
-        internal AggregateProjectEntry AggregateWith(ProjectEntry with) {
+        internal AggregateProjectEntry AggregateWith(IPythonProjectEntry with) {
             if (_aggregating.Contains(with)) {
                 // we're not adding any new types
                 return this;
@@ -78,7 +78,7 @@ namespace Microsoft.PythonTools.Analysis {
             return entry;
         }
 
-        internal static IVersioned GetAggregate(IVersioned from, ProjectEntry with) {
+        internal static IVersioned GetAggregate(IVersioned from, IPythonProjectEntry with) {
             if (from == with) {
                 // No aggregation
                 return from;

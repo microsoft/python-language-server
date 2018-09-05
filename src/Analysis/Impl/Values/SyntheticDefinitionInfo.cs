@@ -22,15 +22,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public SyntheticDefinitionInfo(
             string name,
             string doc,
-            IEnumerable<LocationInfo> locations
+            IEnumerable<ILocationInfo> locations
         ) {
             Name = name;
             Documentation = doc;
-            Locations = locations?.ToArray() ?? Enumerable.Empty<LocationInfo>();
+            Locations = locations?.ToArray() ?? Enumerable.Empty<ILocationInfo>();
         }
 
         public override string Name { get; }
         public override string Documentation { get; }
-        public override IEnumerable<LocationInfo> Locations { get; }
+        public override IEnumerable<ILocationInfo> Locations { get; }
     }
 }

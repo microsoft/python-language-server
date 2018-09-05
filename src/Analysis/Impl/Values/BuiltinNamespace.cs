@@ -109,13 +109,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public virtual ILocatedMember GetLocatedMember() {
-            return null;
-        }
+        public virtual ILocatedMember GetLocatedMember() => null;
 
-        public override IEnumerable<LocationInfo> Locations {
+        public override IEnumerable<ILocationInfo> Locations {
             get {
-                ILocatedMember locatedMem = GetLocatedMember();
+                var locatedMem = GetLocatedMember();
                 if (locatedMem != null) {
                     return locatedMem.Locations;
                 }

@@ -82,7 +82,7 @@ namespace Microsoft.Python.LanguageServer.Server {
             }
 
             if (value is Uri) {
-                var uri = ((Uri)value);
+                var uri = (Uri)value;
                 var scheme = uri.Scheme;
                 var str = uri.ToString();
                 str = uri.Scheme + "://" + str.Substring(scheme.Length + 3).Replace(":", "%3A").Replace('\\', '/');

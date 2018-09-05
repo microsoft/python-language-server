@@ -18,14 +18,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.Documentation;
 using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Analysis.LanguageServer;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 
 namespace Microsoft.PythonTools.Analysis {
-    public struct MemberResult {
+    public struct MemberResult: IMemberResult {
         private readonly Lazy<IEnumerable<AnalysisValue>> _vars;
         private readonly Lazy<PythonMemberType> _type;
 
@@ -53,7 +52,7 @@ namespace Microsoft.PythonTools.Analysis {
         public MemberResult(string name, string completion, IEnumerable<AnalysisValue> vars, PythonMemberType? type) :
             this(name, completion, null, vars, type) { }
 
-        internal MemberResult(string name, string completion, InterpreterScope scope, IEnumerable<AnalysisValue> vars, PythonMemberType? type) {
+        internal MemberResult(string name, string completion, IScope scope, IEnumerable<AnalysisValue> vars, PythonMemberType? type) {
             Name = name;
             _vars = new Lazy<IEnumerable<AnalysisValue>>(() => vars.MaybeEnumerate());
             Completion = completion;
@@ -74,23 +73,25 @@ namespace Microsoft.PythonTools.Analysis {
         }
         #endregion
 
-        public MemberResult FilterCompletion(string completion) => new MemberResult(Name, completion, Values, MemberType);
+        #region IMemberResult
+        public IMemberResult FilterCompletion(string completion) => new MemberResult(Name, completion, Values, MemberType);
 
         public string Name { get; }
         public string Completion { get; }
-        internal InterpreterScope Scope { get; }
+        public IScope Scope { get; }
 
         /// <summary>
         /// Gets the location(s) for the member(s) if they are available.
         /// 
         /// New in 1.5.
         /// </summary>
-        public IEnumerable<LocationInfo> Locations => Values.SelectMany(ns => ns.Locations);
+        public IEnumerable<ILocationInfo> Locations => Values.SelectMany(ns => ns.Locations);
 
-        internal IEnumerable<AnalysisValue> Values => _vars.Value;
+        public IEnumerable<AnalysisValue> Values => _vars.Value;
 
         public string Documentation
             => DocumentationBuilder.Create(null).GetDocumentation(SeparateMultipleMembers(Values), string.Empty);
+        #endregion
 
         private static IEnumerable<AnalysisValue> SeparateMultipleMembers(IEnumerable<AnalysisValue> values) {
             foreach (var v in values) {

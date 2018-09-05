@@ -39,11 +39,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IPythonType PythonType => _type;
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             return klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Type]);
         }
 
-        internal override BuiltinTypeId TypeId => _type.TypeId;
+        public override BuiltinTypeId TypeId => _type.TypeId;
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             // TODO: More Type propagation
@@ -329,11 +329,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 if (_references == null) {
                     _references = new ReferenceDict();
                 }
-                _references.GetReferences(unit.DeclaringModule.ProjectEntry).AddReference(new EncodedLocation(unit, node));
+                _references.GetReferences(unit.DeclaringModule.ProjectEntry as ProjectEntry)?.AddReference(new EncodedLocation(unit, node));
             }
         }
 
-        internal override IEnumerable<LocationInfo> References => _references?.AllReferences ?? new LocationInfo[0];
+        internal override IEnumerable<ILocationInfo> References => _references?.AllReferences ?? new LocationInfo[0];
         public override ILocatedMember GetLocatedMember() => _type as ILocatedMember;
     }
 }

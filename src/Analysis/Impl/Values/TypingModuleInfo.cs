@@ -55,19 +55,19 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         private IAnalysisSet NewType_Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
-            return unit.Scope.GetOrMakeNodeValue(node, Analyzer.NodeValueKind.TypeAnnotation, n => {
+            return unit.InterpreterScope.GetOrMakeNodeValue(node, Analyzer.NodeValueKind.TypeAnnotation, n => {
                 var name = PythonAnalyzer.GetArg(args, keywordArgNames, null, 0).GetConstantValueAsString().FirstOrDefault(x => !string.IsNullOrEmpty(x));
                 var baseType = PythonAnalyzer.GetArg(args, keywordArgNames, null, 1) ?? unit.State.ClassInfos[BuiltinTypeId.Object].Instance;
                 if (string.IsNullOrEmpty(name)) {
                     return baseType;
                 }
-                var instPi = new ProtocolInfo(unit.Entry, unit.State);
+                var instPi = new ProtocolInfo(unit.ProjectEntry, unit.State);
                 var np = new NameProtocol(instPi, name, memberType: PythonMemberType.Instance);
                 var cls = new NamespaceProtocol(instPi, "__class__");
                 instPi.AddProtocol(np);
                 instPi.AddProtocol(cls);
 
-                var pi = new ProtocolInfo(unit.Entry, unit.State);
+                var pi = new ProtocolInfo(unit.ProjectEntry, unit.State);
                 pi.AddProtocol(new NameProtocol(pi, name));
                 pi.AddProtocol(new InstanceProtocol(pi, Array.Empty<IAnalysisSet>(), instPi));
                 pi.AddReference(n, unit);

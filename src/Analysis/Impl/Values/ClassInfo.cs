@@ -46,11 +46,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _mro = new Mro(this);
         }
 
-        public override AnalysisUnit AnalysisUnit {
-            get {
-                return _analysisUnit;
-            }
-        }
+        public override AnalysisUnit AnalysisUnit => _analysisUnit;
 
         internal void SetAnalysisUnit(AnalysisUnit unit) {
             Debug.Assert(_analysisUnit == null);
@@ -61,8 +57,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (unit != null) {
                 return AddCall(node, keywordArgNames, unit, args);
             }
-
-            
             return _instanceInfo.SelfSet;
         }
 
@@ -98,7 +92,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                         node, unit, args, keywordArgNames
                     );
 
-                    var res = (SpecializedInstanceInfo)unit.Scope.GetOrMakeNodeValue(
+                    var res = (SpecializedInstanceInfo)unit.InterpreterScope.GetOrMakeNodeValue(
                         node,
                         NodeValueKind.SpecializedInstance,
                         (node_) => new SpecializedInstanceInfo(this, specializedInstances)
@@ -113,9 +107,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return newResult;
         }
 
-        public ClassDefinition ClassDefinition {
-            get { return _analysisUnit.Ast as ClassDefinition; }
-        }
+        public ClassDefinition ClassDefinition => _analysisUnit.Ast as ClassDefinition;
 
         private static string FormatExpression(Expression baseClass) {
             NameExpression ne = baseClass as NameExpression;
@@ -233,7 +225,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IEnumerable<LocationInfo> Locations {
+        public override IEnumerable<ILocationInfo> Locations {
             get {
                 if (_declVersion == DeclaringModule.AnalysisVersion) {
                     var start = ClassDefinition.GetStart(ClassDefinition.GlobalParent);
@@ -244,7 +236,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        internal override BuiltinTypeId TypeId {
+        public override BuiltinTypeId TypeId {
             get {
                 return BuiltinTypeId.Type;
             }
@@ -256,7 +248,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             return klass.Contains(_projectState.ClassInfos[BuiltinTypeId.Type]);
         }
 
@@ -713,7 +705,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         #region IReferenceable Members
 
-        internal override IEnumerable<LocationInfo> References {
+        internal override IEnumerable<ILocationInfo> References {
             get {
                 if (_references != null) {
                     return _references.AllReferences;
