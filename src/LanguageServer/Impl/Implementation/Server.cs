@@ -142,10 +142,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 referencesProvider = true,
                 workspaceSymbolProvider = true,
                 documentSymbolProvider = true,
-                documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
-                    firstTriggerCharacter = "\n",
-                    moreTriggerCharacter = new [] {";"}
-                },
+                renameProvider = true,
                 executeCommandProvider = new ExecuteCommandOptions {
                     commands = new[] {
                             completionItemCommand

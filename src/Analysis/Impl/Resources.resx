@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -123,11 +123,44 @@
   <data name="BreakMultipleStatementsPerLineShort" xml:space="preserve">
     <value>Place statements on separate lines</value>
   </data>
+  <data name="LinesBetweenLevelDeclarationsLong" xml:space="preserve">
+    <value>The number of empty lines to include between class or function declarations at the top level of a module.</value>
+  </data>
+  <data name="LinesBetweenLevelDeclarationsShort" xml:space="preserve">
+    <value>Lines between top-level declarations</value>
+  </data>
+  <data name="LinesBetweenMethodsInClassLong" xml:space="preserve">
+    <value>The number of empty lines to insert between method or class declarations within a class.</value>
+  </data>
+  <data name="LinesBetweenMethodsInClassShort" xml:space="preserve">
+    <value>Lines between class member declarations</value>
+  </data>
+  <data name="RemoveExtraLinesBetweenMethodsLong" xml:space="preserve">
+    <value>If checked, removes blank lines between methods and inserts the number specified below. Otherwise, lines between methods are not modified.</value>
+  </data>
+  <data name="RemoveExtraLinesBetweenMethodsShort" xml:space="preserve">
+    <value>Remove blank lines between methods</value>
+  </data>
   <data name="RemoveTrailingSemicolonsLong" xml:space="preserve">
     <value>If checked, semicolons at the end of lines will be removed. If unchecked, unnecessary semicolons are not modified.</value>
   </data>
   <data name="RemoveTrailingSemicolonsShort" xml:space="preserve">
     <value>Remove unnecessary semicolons</value>
+  </data>
+  <data name="RenameVariable_CannotRename" xml:space="preserve">
+    <value>Cannot rename</value>
+  </data>
+  <data name="RenameVariable_CannotRenameModuleName" xml:space="preserve">
+    <value>Cannot rename modules</value>
+  </data>
+  <data name="RenameVariable_NoInformationAvailableForVariable" xml:space="preserve">
+    <value>No information is available for the variable '{0}'.</value>
+  </data>
+  <data name="RenameVariable_SelectSymbol" xml:space="preserve">
+    <value>Please select a symbol to be renamed.</value>
+  </data>
+  <data name="RenameVariable_UnableGetExpressionAnalysis" xml:space="preserve">
+    <value>Unable to get analysis for the selected expression.</value>
   </data>
   <data name="ReplaceMultipleImportsWithMultipleStatementsLong" xml:space="preserve">
     <value>If checked, import statements with multiple modules are separated onto individual lines. If unchecked, import statements with multiple modules are not modified.</value>
@@ -258,43 +291,25 @@
   <data name="WrapCommentsLong" xml:space="preserve">
     <value>If checked, comments are wrapped to the specified width. If unchecked, comments are not modified.</value>
   </data>
-  <data name="WrapCommentsShort" xml:space="preserve">
-    <value>Wrap comments that are too wide</value>
-  </data>
-  <data name="WrappingWidthLong" xml:space="preserve">
-    <value>The number of the last column that should include comment text. Words after this column are moved to the following line.</value>
-  </data>
-  <data name="WrappingWidthShort" xml:space="preserve">
-    <value>Maximum comment width</value>
-  </data>
-  <data name="LinesBetweenLevelDeclarationsLong" xml:space="preserve">
-    <value>The number of empty lines to include between class or function declarations at the top level of a module.</value>
-  </data>
-  <data name="LinesBetweenLevelDeclarationsShort" xml:space="preserve">
-    <value>Lines between top-level declarations</value>
-  </data>
-  <data name="LinesBetweenMethodsInClassLong" xml:space="preserve">
-    <value>The number of empty lines to insert between method or class declarations within a class.</value>
-  </data>
-  <data name="LinesBetweenMethodsInClassShort" xml:space="preserve">
-    <value>Lines between class member declarations</value>
-  </data>
-  <data name="RemoveExtraLinesBetweenMethodsLong" xml:space="preserve">
-    <value>If checked, removes blank lines between methods and inserts the number specified below. Otherwise, lines between methods are not modified.</value>
-  </data>
-  <data name="RemoveExtraLinesBetweenMethodsShort" xml:space="preserve">
-    <value>Remove blank lines between methods</value>
-  </data>
   <data name="WrapCommentsLong_Example" xml:space="preserve">
     <value># Not wrapped:
 # There should be one-- and preferably only one --obvious way to do it.</value>
     <comment>Line breaks and # symbols must be preserved. No new line breaks should be added.</comment>
+  </data>
+  <data name="WrapCommentsShort" xml:space="preserve">
+    <value>Wrap comments that are too wide</value>
   </data>
   <data name="WrapCommentsShort_Example" xml:space="preserve">
     <value># Wrapped to 40 columns:
 # There should be one-- and preferably
 # only one --obvious way to do it.</value>
     <comment>Line breaks and # symbols must be preserved. There must be no more than 40 characters on each line of the localized text (except for the first line)</comment>
+  </data>
+  <data name="WrappingWidthLong" xml:space="preserve">
+    <value>The number of the last column that should include comment text. Words after this column are moved to the following line.</value>
+  </data>
+  <data name="WrappingWidthShort" xml:space="preserve">
+    <value>Maximum comment width</value>
   </data>
   <data name="WrappingWidth_Doc" xml:space="preserve">
     <value># Sets the width for wrapping comments
