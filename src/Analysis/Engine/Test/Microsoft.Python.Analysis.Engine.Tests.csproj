@@ -19,13 +19,10 @@
     <Compile Remove="ProcessHelperTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <!--PTVS-specific-->
+    <!--Removal candidates-->
     <Compile Remove="BaseAnalysisTest.cs" />
     <Compile Remove="AnalysisTest.Perf.cs" />
-    <Compile Remove="ProcessOutputTests.cs" />
-    <Compile Remove="SocketUtilsTests.cs" />
     <Compile Remove="TestRunner.cs" />
-    <Compile Remove="StringListReaderTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="app.config" />
