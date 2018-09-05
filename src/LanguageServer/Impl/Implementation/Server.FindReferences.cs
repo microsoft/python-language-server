@@ -21,7 +21,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Intellisense;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;

@@ -113,5 +113,12 @@ namespace Microsoft.PythonTools.Analysis {
         PythonAst GetAstFromText(string exprText, SourceLocation location);
 
         IEnumerable<MemberResult> GetAllAvailableMembersFromScope(IScope scope, GetMemberOptions options);
-    }
+
+        /// <summary>
+        /// Given source location attempts to retrieve custom prefix for mangled method names.
+        /// </summary>
+        /// <remarks>See https://en.wikipedia.org/wiki/Name_mangling, Python section.</remarks>
+        /// <param name="sourceLocation"></param>
+        string GetPrivatePrefix(SourceLocation sourceLocation);
+        }
 }

@@ -1161,7 +1161,7 @@ namespace Microsoft.PythonTools.Analysis {
             return null;
         }
 
-        internal string GetPrivatePrefix(SourceLocation sourceLocation) => GetPrivatePrefix(FindScope(sourceLocation));
+        public string GetPrivatePrefix(SourceLocation sourceLocation) => GetPrivatePrefix(FindScope(sourceLocation));
 
         private static string GetPrivatePrefixClassName(IScope scope) {
             var klass = scope.EnumerateTowardsGlobal.OfType<IClassScope>().FirstOrDefault();

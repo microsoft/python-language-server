@@ -694,7 +694,7 @@ namespace Microsoft.Python.LanguageServer {
     /// the kind.
     /// </summary>
     [Serializable]
-    public struct Reference {
+    public class Reference {
         public Uri uri;
         public Range range;
 
@@ -706,6 +706,7 @@ namespace Microsoft.Python.LanguageServer {
         /// The document version that range applies to
         /// </summary>
         public int? _version;
+        public bool _isModule;
     }
 
     [Serializable]

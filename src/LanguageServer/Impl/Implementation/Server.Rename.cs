@@ -18,15 +18,15 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
-namespace Microsoft.PythonTools.Analysis.LanguageServer {
+namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
         public override async Task<WorkspaceEdit> Rename(RenameParams @params, CancellationToken cancellationToken) {
-            ProjectFiles.GetAnalysis(@params.textDocument, @params.position, @params._version, out var entry, out var tree);
+            ProjectFiles.GetEntry(@params.textDocument, @params._version, out var entry, out var tree);
             if (entry == null || tree == null) {
                 throw new InvalidOperationException(Resources.RenameVariable_UnableGetExpressionAnalysis);
             }

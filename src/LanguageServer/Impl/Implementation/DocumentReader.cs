@@ -14,10 +14,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.PythonTools.Analysis.LanguageServer;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.PythonTools.Analysis;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
+namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed class DocumentReader : IDocumentReader {
         private readonly IDocument _doc;
         private readonly int _part;
