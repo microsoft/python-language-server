@@ -257,10 +257,6 @@ namespace Microsoft.PythonTools {
             return "(" + _line + ", " + _column + ")";
         }
 
-        internal string ToDebugString() {
-            return "({0},{1},{2})".FormatInvariant(_index, _line, _column);
-        }
-
         public bool Equals(SourceLocation other) {
             return other._line == _line && other._column == _column;
         }

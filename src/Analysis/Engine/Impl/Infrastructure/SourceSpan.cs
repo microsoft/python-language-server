@@ -118,8 +118,5 @@ namespace Microsoft.PythonTools {
             // 7 bits for each column (0-128), 9 bits for each row (0-512), xor helps if
             // we have a bigger file.
             => (Start.Column) ^ (End.Column << 7) ^ (Start.Line << 14) ^ (End.Line << 23);
-
-        internal string ToDebugString() =>
-            "{0}-{1}".FormatInvariant(Start.ToDebugString(), End.ToDebugString());
     }
 }
