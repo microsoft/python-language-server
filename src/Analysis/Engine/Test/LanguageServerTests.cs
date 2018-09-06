@@ -158,6 +158,7 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/55")]
         public async Task Initialize() {
             var s = await CreateServer(TestData.GetPath(@"TestData\HelloWorld"));
 
@@ -598,6 +599,7 @@ mc
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/54")]
         public async Task CompletionAfterLoad() {
             var s = await CreateServer();
             var mod1 = await AddModule(s, "import mod2\n\nmod2.", "mod1");
@@ -668,6 +670,7 @@ mc
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/56")]
         public async Task SignatureHelp() {
             var s = await CreateServer();
             var mod = await AddModule(s, @"f()

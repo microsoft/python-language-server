@@ -572,6 +572,7 @@ s = y['x']['y']['value']
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/50")]
         public async Task RecursiveTuples() {
             var code = @"class A(object):
     def __init__(self):
@@ -688,6 +689,7 @@ import nt,
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/49")]
         public async Task ImportStarCorrectRefs() {
             var text1 = @"
 from mod2 import *
@@ -3193,6 +3195,7 @@ f(a=1)
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/51")]
         public async Task ReferencesCrossModule() {
             var fobText = @"
 from oar import abc
@@ -3218,6 +3221,7 @@ abc()
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/53")]
         public async Task SuperclassMemberReferencesCrossModule() {
             // https://github.com/Microsoft/PTVS/issues/2271
 
@@ -3249,6 +3253,7 @@ class bcd(abc):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/62")]
         public async Task ReferencesCrossMultiModule() {
             var fobText = @"
 from oarbaz import abc
@@ -3447,6 +3452,7 @@ g = f()";
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/52")]
         public async Task ReferencesGeneratorsV2() {
             var text = @"
 [f for f in x]

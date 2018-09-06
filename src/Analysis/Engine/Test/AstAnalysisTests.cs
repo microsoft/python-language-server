@@ -382,6 +382,7 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/60")]
         public async Task AstTypeStubPaths_MergeStubs() {
             using (var server = await CreateServerAsync()) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync("import Package.Module\n\nc = Package.Module.Class()");
@@ -411,6 +412,7 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/61")]
         public async Task AstTypeStubPaths_MergeStubsPath() {
             using (var server = await CreateServerAsync()) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync("import Package.Module\n\nc = Package.Module.Class()");
@@ -436,6 +438,7 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/59")]
         public async Task AstTypeStubPaths_ExclusiveStubs() {
             using (var server = await CreateServerAsync()) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync("import Package.Module\n\nc = Package.Module.Class()");

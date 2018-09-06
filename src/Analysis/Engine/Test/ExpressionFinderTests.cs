@@ -27,6 +27,7 @@ namespace AnalysisTests {
     [TestClass]
     public class ExpressionFinderTests {
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/58")]
         public void FindExpressionsForTooltip() {
             var code = Parse(@"class C(object):
     def f(a):
@@ -181,6 +182,7 @@ C().fff", GetExpressionOptions.Complete);
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/57")]
         public void FindExpressionsForDefinition() {
             var code = Parse(@"class C(object):
     def f(a):
