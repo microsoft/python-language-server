@@ -152,19 +152,22 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }, cancellationToken);
 
-            return Task.WhenAny(timeoutTask, _analysisTcs.Task).Unwrap();
+            return Task.WhenAny(timeoutTask, task).Unwrap();
         }
 
         internal void SetCompleteAnalysis() {
             lock (this) {
-                _analysisTcs.TrySetResultOnThreadPool(Analysis);
+                _analysisTcs.TrySetResult(Analysis);
             }
         }
 
         internal void ResetCompleteAnalysis() {
+            TaskCompletionSource<ModuleAnalysis> analysisTcs;
             lock (this) {
-                _analysisTcs = new TaskCompletionSource<ModuleAnalysis>();
+                analysisTcs = _analysisTcs;
+                _analysisTcs = new TaskCompletionSource<ModuleAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
+            analysisTcs?.TrySetCanceled();
         }
 
         public void SetCurrentParse(PythonAst tree, IAnalysisCookie cookie, bool notify = true) {

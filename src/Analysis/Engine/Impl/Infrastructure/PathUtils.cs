@@ -362,6 +362,8 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
                     return null;
                 } catch (DirectoryNotFoundException) when (!create) {
                     return null;
+                } catch (UnauthorizedAccessException) {
+                    Thread.Sleep(10);
                 } catch (IOException) {
                     if (create) {
                         var dir = Path.GetDirectoryName(file);

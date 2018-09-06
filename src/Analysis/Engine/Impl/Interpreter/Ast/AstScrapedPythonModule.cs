@@ -39,6 +39,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public AstScrapedPythonModule(string name, string filePath) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
+            ParseErrors = Enumerable.Empty<string>();
             _filePath = filePath;
             _members = new Dictionary<string, IMember>();
             _scraped = false;
