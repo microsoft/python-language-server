@@ -498,6 +498,7 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/63")]
         public async Task ScrapedTypeWithWrongModule() {
             var version = PythonVersions.Versions
                 .Concat(PythonVersions.AnacondaVersions)
@@ -740,6 +741,7 @@ class BankAccount(object):
 
 
         [TestMethod, TestCategory("60s"), Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/64")]
         public async Task FullStdLibV36() {
             var v = PythonVersions.Python36 ?? PythonVersions.Python36_x64;
             await FullStdLibTest(v);
