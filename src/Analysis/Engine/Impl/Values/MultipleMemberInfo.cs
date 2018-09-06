@@ -44,6 +44,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _members = members;
         }
 
+        public IPythonProjectEntry ProjectEntry => null;
+        public IScope Scope => null;
         public AnalysisValue[] Members => _members;
 
         public override PythonMemberType MemberType => PythonMemberType.Multiple;
@@ -226,7 +228,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IEnumerable<LocationInfo> Locations => _members.SelectMany(m => m.Locations);
+        public override IEnumerable<ILocationInfo> Locations => _members.SelectMany(m => m.Locations);
 
         IModule IModule.GetChildPackage(IModuleContext context, string name) {
             var children = new List<AnalysisValue>();
@@ -262,7 +264,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        IAnalysisSet IModule.GetModuleMember(Node node, AnalysisUnit unit, string name, bool addRef, InterpreterScope linkedScope, string linkedName) {
+        IAnalysisSet IModule.GetModuleMember(Node node, AnalysisUnit unit, string name, bool addRef, IScope linkedScope, string linkedName) {
             var res = AnalysisSet.Empty;
             foreach (var member in _members.OfType<IModule>()) {
                 res = res.Union(member.GetModuleMember(node, unit, name, addRef, linkedScope, linkedName));

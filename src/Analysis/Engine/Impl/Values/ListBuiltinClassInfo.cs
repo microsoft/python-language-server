@@ -29,7 +29,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return new SequenceBuiltinInstanceInfo(this, false, false);
         }
 
-        internal override SequenceInfo MakeFromIndexes(Node node, ProjectEntry entry) {
+        internal override SequenceInfo MakeFromIndexes(Node node, IPythonProjectEntry entry) {
             if (_indexTypes.Length > 0) {
                 var vals = _indexTypes.Zip(VariableDef.Generator, (t, v) => { v.AddTypes(entry, t, false, entry); return v; }).ToArray();
                 return new ListInfo(vals, this, node, entry);

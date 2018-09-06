@@ -31,7 +31,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             IPythonModule declModule,
             IPythonType declType,
             FunctionDefinition def,
-            LocationInfo loc
+            ILocationInfo loc
         ) {
             DeclaringModule = declModule ?? throw new ArgumentNullException(nameof(declModule));
             DeclaringType = declType;
@@ -51,7 +51,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             _overloads = new List<IPythonFunctionOverload>();
 
-            Locations = loc != null ? new[] { loc } : Array.Empty<LocationInfo>();
+            Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
         }
 
         internal AstPythonFunction(IPythonFunction original) {
@@ -63,7 +63,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             IsClassMethod = original.IsClassMethod;
             IsStatic = original.IsStatic;
             _overloads = original.Overloads.ToList();
-            Locations = (original as ILocatedMember)?.Locations ?? Array.Empty<LocationInfo>();
+            Locations = (original as ILocatedMember)?.Locations ?? Array.Empty<ILocationInfo>();
         }
 
         internal void AddOverload(IPythonFunctionOverload overload) {
@@ -81,9 +81,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public PythonMemberType MemberType => DeclaringType == null ? PythonMemberType.Function : PythonMemberType.Method;
 
-        public IList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
+        public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
 
-        public IEnumerable<LocationInfo> Locations { get; }
+        public IEnumerable<ILocationInfo> Locations { get; }
 
         public string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
         public KeyValuePair<string, string> FullyQualifiedNamePair =>

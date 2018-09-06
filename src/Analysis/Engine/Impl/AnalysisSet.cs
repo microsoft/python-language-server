@@ -22,29 +22,6 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Analysis {
     /// <summary>
-    /// Represents an unordered collection of <see cref="AnalysisValue" /> objects;
-    /// in effect, a set of Python types. There are multiple implementing
-    /// classes, including <see cref="AnalysisValue" /> itself, to improve memory
-    /// usage for small sets.
-    /// 
-    /// <see cref="AnalysisSet" /> does not implement this interface, but
-    /// provides factory and extension methods.
-    /// </summary>
-    public interface IAnalysisSet : IEnumerable<AnalysisValue> {
-        IAnalysisSet Add(AnalysisValue item, bool canMutate = false);
-        IAnalysisSet Add(AnalysisValue item, out bool wasChanged, bool canMutate = false);
-        IAnalysisSet Union(IEnumerable<AnalysisValue> items, bool canMutate = false);
-        IAnalysisSet Union(IEnumerable<AnalysisValue> items, out bool wasChanged, bool canMutate = false);
-        IAnalysisSet Clone();
-
-        bool Contains(AnalysisValue item);
-        bool SetEquals(IAnalysisSet other);
-
-        int Count { get; }
-        IEqualityComparer<AnalysisValue> Comparer { get; }
-    }
-
-    /// <summary>
     /// Marker interface to indicate that an analysis set is a read-only copy on write
     /// analysis set.
     /// </summary>

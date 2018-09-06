@@ -89,7 +89,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => HaveParameters(Enumerable.Empty<string>(), because, reasonArgs);
 
         public AndConstraint<OverloadResultAssertions> HaveSingleReturnType(string type, string because = "", params object[] reasonArgs) {
-            var returnTypes = ((IOverloadResult2)Subject).ReturnType;
+            var returnTypes = ((IOverloadResult)Subject).ReturnType;
             Execute.Assertion.ForCondition(returnTypes.Count == 1)
                 .BecauseOf(because, reasonArgs)
                 .FailWith(returnTypes.Count > 0

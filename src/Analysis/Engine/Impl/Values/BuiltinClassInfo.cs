@@ -23,7 +23,7 @@ using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
-    internal class BuiltinClassInfo : BuiltinNamespace<IPythonType>, IReferenceableContainer, IHasRichDescription, IHasQualifiedName {
+    internal class BuiltinClassInfo : BuiltinNamespace<IPythonType>, IBuiltinClassInfo {
         private BuiltinInstanceInfo _inst;
         private string _doc;
         private readonly MemberReferences _referencedMembers = new MemberReferences();
@@ -39,11 +39,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IPythonType PythonType => _type;
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             return klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Type]);
         }
 
-        internal override BuiltinTypeId TypeId => _type.TypeId;
+        public override BuiltinTypeId TypeId => _type.TypeId;
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             // TODO: More Type propagation
@@ -98,16 +98,17 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IEnumerable<IAnalysisSet> Mro {
+        public override IMro Mro {
             get {
                 var mro = _type.Mro;
                 if (mro != null) {
-                    return mro.Where(t => t != null).Select(t => ProjectState.GetBuiltinType(t));
+                    return new Mro(mro.Where(t => t != null).Select(t => ProjectState.GetBuiltinType(t)));
                 }
-                return Enumerable.Empty<IAnalysisSet>();
+                return Values.Mro.Empty;
             }
         }
 
+        IBuiltinInstanceInfo IBuiltinClassInfo.Instance => Instance;
         public BuiltinInstanceInfo Instance => _inst ?? (_inst = MakeInstance());
         public override IAnalysisSet GetInstanceType() => Instance;
 
@@ -217,7 +218,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private static List<IPythonType>[] GetSequenceTypes(SequenceInfo seq) {
             List<IPythonType>[] types = new List<IPythonType>[seq.IndexTypes.Length];
             for (int i = 0; i < types.Length; i++) {
-                foreach (var seqIndexType in seq.IndexTypes[i].TypesNoCopy) {
+                foreach (var seqIndexType in seq.IndexTypes[i].Types) {
                     if (seqIndexType is BuiltinClassInfo) {
                         if (types[i] == null) {
                             types[i] = new List<IPythonType>();
@@ -329,11 +330,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 if (_references == null) {
                     _references = new ReferenceDict();
                 }
-                _references.GetReferences(unit.DeclaringModule.ProjectEntry).AddReference(new EncodedLocation(unit, node));
+                _references.GetReferences(unit.DeclaringModule.ProjectEntry as ProjectEntry)?.AddReference(new EncodedLocation(unit, node));
             }
         }
 
-        internal override IEnumerable<LocationInfo> References => _references?.AllReferences ?? new LocationInfo[0];
+        internal override IEnumerable<ILocationInfo> References => _references?.AllReferences ?? new LocationInfo[0];
         public override ILocatedMember GetLocatedMember() => _type as ILocatedMember;
     }
 }

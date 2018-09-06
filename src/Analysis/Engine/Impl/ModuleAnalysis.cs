@@ -34,7 +34,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// 
     /// Can be queried for various information about the resulting analysis.
     /// </summary>
-    public sealed class ModuleAnalysis {
+    internal sealed class ModuleAnalysis: IModuleAnalysis {
         private readonly AnalysisUnit _unit;
         private static Regex _otherPrivateRegex = new Regex("^_[a-zA-Z_]\\w*__[a-zA-Z_]\\w*$");
 
@@ -54,9 +54,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         /// <param name="exprText">The expression to determine the result of.</param>
         /// <param name="index">The 0-based absolute index into the file where the expression should be evaluated.</param>
-        internal IEnumerable<AnalysisValue> GetValuesByIndex(string exprText, int index) {
-            return GetValues(exprText, _unit.Tree.IndexToLocation(index));
-        }
+        public IEnumerable<AnalysisValue> GetValuesByIndex(string exprText, int index) => GetValues(exprText, _unit.Tree.IndexToLocation(index));
 
         internal Expression GetExpressionForText(string exprText, SourceLocation location, out InterpreterScope scope, out PythonAst exprTree) {
             exprTree = null;
@@ -81,7 +79,7 @@ namespace Microsoft.PythonTools.Analysis {
             return GetValues(expr, location, scope);
         }
 
-        internal IEnumerable<AnalysisValue> GetValues(Expression expr, SourceLocation location, InterpreterScope scope = null) {
+        public IEnumerable<AnalysisValue> GetValues(Expression expr, SourceLocation location, IScope scope = null) {
             scope = scope ?? FindScope(location);
             var unit = GetNearestEnclosingAnalysisUnit(scope);
             var eval = new ExpressionEvaluator(unit.CopyForEval(), scope, mergeScopes: true);
@@ -114,7 +112,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal IEnumerable<AnalysisVariable> ToVariables(IReferenceable referenceable) {
             if (referenceable is VariableDef def) {
-                foreach (var type in def.TypesNoCopy.WhereNotNull()) {
+                foreach (var type in def.Types.WhereNotNull()) {
                     var varType = VariableType.Value;
                     if (type.DeclaringModule == null) {
                         // For non-project values, treat "Value" as the definition.
@@ -177,9 +175,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// The 0-based absolute index into the file where the expression should
         /// be evaluated.
         /// </param>
-        internal IEnumerable<IAnalysisVariable> GetVariablesByIndex(string exprText, int index) {
-            return GetVariables(exprText, _unit.Tree.IndexToLocation(index));
-        }
+        internal IEnumerable<IAnalysisVariable> GetVariablesByIndex(string exprText, int index) => GetVariables(exprText, _unit.Tree.IndexToLocation(index));
 
         /// <summary>
         /// Gets the variables the given expression evaluates to.  Variables
@@ -204,7 +200,7 @@ namespace Microsoft.PythonTools.Analysis {
             return GetVariables(expr, location, exprText, scope);
         }
 
-        internal VariablesResult GetVariables(Expression expr, SourceLocation location, string originalText = null, InterpreterScope scope = null) {
+        public VariablesResult GetVariables(Expression expr, SourceLocation location, string originalText = null, IScope scope = null) {
             scope = scope ?? FindScope(location);
 
             var unit = GetNearestEnclosingAnalysisUnit(scope);
@@ -224,7 +220,7 @@ namespace Microsoft.PythonTools.Analysis {
                     return new VariablesResult(objects
                         .Where(v => v.Overloads.MaybeEnumerate().Any(o => o.Parameters.MaybeEnumerate().Any(p => p.Name == argNode.Name)))
                         .Select(v => (v as BoundMethodInfo)?.Function ?? v as FunctionInfo)
-                        .Select(f => f?.AnalysisUnit?.Scope)
+                        .Select(f => f?.AnalysisUnit?.InterpreterScope)
                         .Where(s => s != null)
                         .SelectMany(s => GetVariablesInScope(argNode, s).Distinct()),
                         unit.Tree);
@@ -252,7 +248,7 @@ namespace Microsoft.PythonTools.Analysis {
             return new VariablesResult(variables, unit.Tree);
         }
 
-        private IEnumerable<IAnalysisVariable> GetVariablesInScope(NameExpression name, InterpreterScope scope) {
+        private IEnumerable<IAnalysisVariable> GetVariablesInScope(NameExpression name, IScope scope) {
             var result = new List<IAnalysisVariable>();
 
             result.AddRange(scope.GetMergedVariables(name.Name).SelectMany(ToVariables));
@@ -270,7 +266,7 @@ namespace Microsoft.PythonTools.Analysis {
                         foreach (var baseNs in cls.Bases.SelectMany()) {
                             if (baseNs.Push()) {
                                 try {
-                                    ClassInfo baseClassNs = baseNs as ClassInfo;
+                                    var baseClassNs = baseNs as ClassInfo;
                                     if (baseClassNs != null) {
                                         result.AddRange(
                                             baseClassNs.Scope.GetMergedVariables(name.Name).SelectMany(ToVariables)
@@ -290,7 +286,7 @@ namespace Microsoft.PythonTools.Analysis {
             return result;
         }
 
-        private static bool IsFirstLineOfFunction(InterpreterScope innerScope, InterpreterScope outerScope, SourceLocation location) {
+        private static bool IsFirstLineOfFunction(IScope innerScope, IScope outerScope, SourceLocation location) {
             if (innerScope.OuterScope == outerScope && innerScope is FunctionScope) {
                 var funcScope = (FunctionScope)innerScope;
                 var def = funcScope.Function.FunctionDefinition;
@@ -329,13 +325,11 @@ namespace Microsoft.PythonTools.Analysis {
         /// The 0-based absolute index into the file where the expression should
         /// be evaluated.
         /// </param>
-        internal IEnumerable<MemberResult> GetMembersByIndex(
+        public IEnumerable<IMemberResult> GetMembersByIndex(
             string exprText,
             int index,
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults
-        ) {
-            return GetMembers(exprText, _unit.Tree.IndexToLocation(index), options);
-        }
+        ) => GetMembers(exprText, _unit.Tree.IndexToLocation(index), options);
 
         /// <summary>
         /// Evaluates a given expression and returns a list of members which
@@ -350,7 +344,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// The location in the file where the expression should be evaluated.
         /// </param>
         /// <remarks>New in 2.2</remarks>
-        public IEnumerable<MemberResult> GetMembers(
+        public IEnumerable<IMemberResult> GetMembers(
             string exprText,
             SourceLocation location,
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults
@@ -361,32 +355,32 @@ namespace Microsoft.PythonTools.Analysis {
 
             var expr = GetExpressionForText(exprText, location, out var scope, out var ast);
             if (expr == null) {
-                return Enumerable.Empty<MemberResult>();
+                return Enumerable.Empty<IMemberResult>();
             }
 
             return GetMembers(expr, location, options, scope);
         }
 
-        internal IEnumerable<MemberResult> GetMembers(
+        public IEnumerable<IMemberResult> GetMembers(
             Expression expr,
             SourceLocation location,
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults,
-            InterpreterScope scope = null
+            IScope scope = null
         ) {
             if (expr is ConstantExpression && ((ConstantExpression)expr).Value is int) {
                 // no completions on integer ., the user is typing a float
-                return Enumerable.Empty<MemberResult>();
+                return Enumerable.Empty<IMemberResult>();
             }
 
             if (expr == null) {
-                return Enumerable.Empty<MemberResult>();
+                return Enumerable.Empty<IMemberResult>();
             }
 
             var lookup = AnalysisSet.Create();
             var errorWalker = new ErrorWalker();
             expr.Walk(errorWalker);
             if (errorWalker.HasError) {
-                return Enumerable.Empty<MemberResult>();
+                return Enumerable.Empty<IMemberResult>();
             }
 
             // Special handling for `__import__('module.name')`
@@ -396,7 +390,7 @@ namespace Microsoft.PythonTools.Analysis {
                 ce.Args?.Count == 1 &&
                 ce.Args[0].Expression is ConstantExpression modNameExpr
             ) {
-                string modName = modNameExpr.Value as string ?? (modNameExpr.Value as AsciiString)?.String;
+                var modName = modNameExpr.Value as string ?? (modNameExpr.Value as AsciiString)?.String;
                 if (!string.IsNullOrEmpty(modName)) {
                     lookup = ResolveModule(expr, _unit.CopyForEval(), modName);
                 }
@@ -459,9 +453,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         /// <param name="exprText">The expression to get signatures for.</param>
         /// <param name="index">The 0-based absolute index into the file.</param>
-        internal IEnumerable<IOverloadResult> GetSignaturesByIndex(string exprText, int index) {
-            return GetSignatures(exprText, _unit.Tree.IndexToLocation(index));
-        }
+        public IEnumerable<IOverloadResult> GetSignaturesByIndex(string exprText, int index) => GetSignatures(exprText, _unit.Tree.IndexToLocation(index));
 
         /// <summary>
         /// Gets information about the available signatures for the given expression.
@@ -479,7 +471,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        internal IEnumerable<IOverloadResult> GetSignatures(Expression expr, SourceLocation location, InterpreterScope scope = null) {
+        public IEnumerable<IOverloadResult> GetSignatures(Expression expr, SourceLocation location, IScope scope = null) {
             if (expr == null ||
                 expr is ListExpression ||
                 expr is TupleExpression ||
@@ -534,7 +526,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// specified location.
         /// </summary>
         /// <param name="index">The 0-based absolute index into the file.</param>
-        internal IEnumerable<MemberResult> GetDefinitionTreeByIndex(int index) 
+        internal IEnumerable<IMemberResult> GetDefinitionTreeByIndex(int index) 
             => GetDefinitionTree(_unit.Tree.IndexToLocation(index));
 
         /// <summary>
@@ -543,15 +535,15 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         /// <param name="location">The location in the file.</param>
         /// <remarks>New in 2.2</remarks>
-        public IEnumerable<MemberResult> GetDefinitionTree(SourceLocation location) {
+        public IEnumerable<IMemberResult> GetDefinitionTree(SourceLocation location) {
             try {
                 return FindScope(location).EnumerateTowardsGlobal
-                        .Select(s => new MemberResult(s.Name, s.GetMergedAnalysisValues()))
+                        .Select(s => new MemberResult(s.Name, s.GetMergedAnalysisValues()) as IMemberResult)
                         .ToList();
             } catch (Exception) {
                 // TODO: log exception
                 Debug.Fail("Failed to find scope. Bad state in analysis");
-                return new[] { new MemberResult("Unknown", new AnalysisValue[] { }) };
+                return new IMemberResult[] { new MemberResult("Unknown", new AnalysisValue[] { }) };
             }
         }
 
@@ -560,9 +552,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// directly on the current class.
         /// </summary>
         /// <param name="index">The 0-based absolute index into the file.</param>
-        internal IEnumerable<IOverloadResult> GetOverrideableByIndex(int index) {
-            return GetOverrideable(_unit.Tree.IndexToLocation(index));
-        }
+        internal IEnumerable<IOverloadResult> GetOverrideableByIndex(int index) => GetOverrideable(_unit.Tree.IndexToLocation(index));
 
         /// <summary>
         /// Gets information about methods defined on base classes but not
@@ -644,12 +634,10 @@ namespace Microsoft.PythonTools.Analysis {
         /// The 0-based absolute index into the file where the available members
         /// should be looked up.
         /// </param>
-        internal IEnumerable<MemberResult> GetAllAvailableMembersByIndex(
+        internal IEnumerable<IMemberResult> GetAllAvailableMembersByIndex(
             int index,
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults
-        ) {
-            return GetAllAvailableMembers(_unit.Tree.IndexToLocation(index), options);
-        }
+        ) => GetAllAvailableMembers(_unit.Tree.IndexToLocation(index), options);
 
         /// <summary>
         /// Gets the available names at the given location.  This includes
@@ -660,7 +648,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// looked up.
         /// </param>
         /// <remarks>New in 2.2</remarks>
-        public IEnumerable<MemberResult> GetAllAvailableMembers(SourceLocation location, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults) {
+        public IEnumerable<IMemberResult> GetAllAvailableMembers(SourceLocation location, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults) {
             var result = new Dictionary<string, IEnumerable<AnalysisValue>>();
 
             // collect builtins
@@ -692,7 +680,7 @@ namespace Microsoft.PythonTools.Analysis {
             return res;
         }
 
-        internal IEnumerable<MemberResult> GetAllAvailableMembersFromScope(InterpreterScope scope, GetMemberOptions options) {
+        public IEnumerable<IMemberResult> GetAllAvailableMembersFromScope(IScope scope, GetMemberOptions options) {
             var result = new Dictionary<string, IEnumerable<AnalysisValue>>();
             var scopeResult = GetAllAvailableAnalysisValuesFromScope(scope, options);
             foreach (var kvp in scopeResult) {
@@ -706,10 +694,11 @@ namespace Microsoft.PythonTools.Analysis {
             return res;
         }
 
-        private Dictionary<string, List<AnalysisValue>> GetAllAvailableAnalysisValuesFromScope(InterpreterScope scope, GetMemberOptions options) {
+        private Dictionary<string, List<AnalysisValue>> GetAllAvailableAnalysisValuesFromScope(IScope scope, GetMemberOptions options) {
             var scopeResult = new Dictionary<string, List<AnalysisValue>>();
-            foreach (var kvp in scope.GetAllMergedVariables()) {
-                var vars = kvp.Value.TypesNoCopy;
+            var interpreterScope = scope as InterpreterScope;
+            foreach (var kvp in interpreterScope.GetAllMergedVariables()) {
+                var vars = kvp.Value.Types;
                 if (options.Exceptions() && !IsExceptionType(kvp.Key, vars)) {
                     continue;
                 }
@@ -745,7 +734,7 @@ namespace Microsoft.PythonTools.Analysis {
             return false;
         }
 
-        private IEnumerable<MemberResult> GetKeywordMembers(GetMemberOptions options, InterpreterScope scope) {
+        private IEnumerable<IMemberResult> GetKeywordMembers(GetMemberOptions options, IScope scope) {
             IEnumerable<string> keywords = null;
 
             if (options.ExpressionKeywords()) {
@@ -763,7 +752,7 @@ namespace Microsoft.PythonTools.Analysis {
                 keywords = keywords.Except(PythonKeywords.InvalidOutsideFunction(ProjectState.LanguageVersion));
             }
 
-            return keywords.Select(kw => new MemberResult(kw, PythonMemberType.Keyword));
+            return keywords.Select(kw => new MemberResult(kw, PythonMemberType.Keyword) as IMemberResult);
         }
 
         #endregion
@@ -777,9 +766,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// should be looked up.
         /// </param>
         /// <remarks>TODO: Remove; this is only used for tests</remarks>
-        internal IEnumerable<string> GetVariablesNoBuiltinsByIndex(int index) {
-            return GetVariablesNoBuiltins(_unit.Tree.IndexToLocation(index));
-        }
+        internal IEnumerable<string> GetVariablesNoBuiltinsByIndex(int index) => GetVariablesNoBuiltins(_unit.Tree.IndexToLocation(index));
 
         /// <summary>
         /// Gets the available names at the given location.  This includes
@@ -812,21 +799,16 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        public IModuleContext InterpreterContext {
-            get {
-                return GlobalScope.InterpreterContext;
-            }
-        }
+        public IModuleContext InterpreterContext => GlobalScope.InterpreterContext;
 
-        public PythonAnalyzer ProjectState {
-            get { return GlobalScope.ProjectEntry.ProjectState; }
-        }
+        public PythonAnalyzer ProjectState => GlobalScope.ProjectEntry.ProjectState;
 
         internal InterpreterScope Scope { get; }
+        IScope IModuleAnalysis.Scope => Scope;
 
-        internal IEnumerable<MemberResult> GetMemberResults(
+        internal IEnumerable<IMemberResult> GetMemberResults(
             IEnumerable<AnalysisValue> vars,
-            InterpreterScope scope,
+            IScope scope,
             GetMemberOptions options
         ) {
             IList<AnalysisValue> namespaces = new List<AnalysisValue>();
@@ -840,7 +822,7 @@ namespace Microsoft.PythonTools.Analysis {
                 // optimize for the common case of only a single namespace
                 var newMembers = namespaces[0].GetAllMembers(GlobalScope.InterpreterContext, options);
                 if (newMembers == null || newMembers.Count == 0) {
-                    return new MemberResult[0];
+                    return new IMemberResult[0];
                 }
 
                 return SingleMemberResult(GetPrivatePrefix(scope), options, newMembers);
@@ -849,8 +831,8 @@ namespace Microsoft.PythonTools.Analysis {
             Dictionary<string, IEnumerable<AnalysisValue>> memberDict = null;
             Dictionary<string, IEnumerable<AnalysisValue>> ownerDict = null;
             HashSet<string> memberSet = null;
-            int namespacesCount = namespaces.Count;
-            foreach (AnalysisValue ns in namespaces) {
+            var namespacesCount = namespaces.Count;
+            foreach (var ns in namespaces) {
                 if (ProjectState._noneInst == ns) {
                     namespacesCount -= 1;
                     continue;
@@ -928,7 +910,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             if (memberDict == null) {
-                return new MemberResult[0];
+                return new IMemberResult[0];
             }
             if (options.Intersect()) {
                 // No need for this information if we're only showing the
@@ -952,9 +934,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// evaluated.
         /// </param>
         /// <remarks>New in 1.1</remarks>
-        internal PythonAst GetAstFromTextByIndex(string exprText, int index) {
-            return GetAstFromText(exprText, _unit.Tree.IndexToLocation(index));
-        }
+        internal PythonAst GetAstFromTextByIndex(string exprText, int index) => GetAstFromText(exprText, _unit.Tree.IndexToLocation(index));
 
         /// <summary>
         /// Gets the AST for the given text as if it appeared at the specified
@@ -1009,7 +989,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return false;
             }
 
-            int index = tree.LocationToIndex(location);
+            var index = tree.LocationToIndex(location);
             if (index < function.StartIndex || index >= function.Body.StartIndex) {
                 // Not within the def line
                 return false;
@@ -1036,7 +1016,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             var isinstance = scope as IsInstanceScope;
             if (isinstance != null && isinstance._effectiveSuite != null) {
-                int col = tree.IndexToLocation(isinstance._startIndex).Column;
+                var col = tree.IndexToLocation(isinstance._startIndex).Column;
                 if (isinstance._effectiveSuite.StartIndex < isinstance._startIndex) {
                     // "assert isinstance", so scope is before the test
                     return col - 1;
@@ -1055,14 +1035,14 @@ namespace Microsoft.PythonTools.Analysis {
 
             InterpreterScope candidate = null;
 
-            for (int i = 0; i < children.Count; ++i) {
+            for (var i = 0; i < children.Count; ++i) {
                 if (IsInFunctionParameter(children[i], tree, location)) {
                     // In parameter name scope, so consider the function scope.
                     candidate = children[i];
                     continue;
                 }
 
-                int start = children[i].GetBodyStart(tree);
+                var start = children[i].GetBodyStart(tree);
 
                 if (start > index) {
                     // We've gone past index completely so our last candidate is
@@ -1070,9 +1050,9 @@ namespace Microsoft.PythonTools.Analysis {
                     break;
                 }
 
-                int end = children[i].GetStop(tree);
+                var end = children[i].GetStop(tree);
                 if (i + 1 < children.Count) {
-                    int nextStart = children[i + 1].GetStart(tree);
+                    var nextStart = children[i + 1].GetStart(tree);
                     if (nextStart > end) {
                         end = nextStart;
                     }
@@ -1088,7 +1068,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return parent;
             }
 
-            int scopeIndent = GetParentScopeIndent(candidate, tree);
+            var scopeIndent = GetParentScopeIndent(candidate, tree);
             if (location.Column <= scopeIndent) {
                 // Candidate is at deeper indentation than location and the
                 // candidate is scoped, so return the parent instead.
@@ -1111,17 +1091,17 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
 
-        private static IEnumerable<MemberResult> MemberDictToResultList(
+        private static IEnumerable<IMemberResult> MemberDictToResultList(
             string privatePrefix,
             GetMemberOptions options,
-            InterpreterScope scope,
+            IScope scope,
             Dictionary<string, IEnumerable<AnalysisValue>> memberDict,
             Dictionary<string, IEnumerable<AnalysisValue>> ownerDict = null,
             int maximumOwners = 0
         ) {
             foreach (var kvp in memberDict) {
-                string name = GetMemberName(privatePrefix, options, kvp.Key);
-                string completion = name;
+                var name = GetMemberName(privatePrefix, options, kvp.Key);
+                var completion = name;
                 if (name != null) {
                     IEnumerable<AnalysisValue> owners;
                     if (ownerDict != null && ownerDict.TryGetValue(kvp.Key, out owners) &&
@@ -1162,9 +1142,9 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        private static IEnumerable<MemberResult> SingleMemberResult(string privatePrefix, GetMemberOptions options, IDictionary<string, IAnalysisSet> memberDict) {
+        private static IEnumerable<IMemberResult> SingleMemberResult(string privatePrefix, GetMemberOptions options, IDictionary<string, IAnalysisSet> memberDict) {
             foreach (var kvp in memberDict) {
-                string name = GetMemberName(privatePrefix, options, kvp.Key);
+                var name = GetMemberName(privatePrefix, options, kvp.Key);
                 if (name != null) {
                     yield return new MemberResult(name, kvp.Value);
                 }
@@ -1181,17 +1161,15 @@ namespace Microsoft.PythonTools.Analysis {
             return null;
         }
 
-        internal string GetPrivatePrefix(SourceLocation sourceLocation) {
-            return GetPrivatePrefix(FindScope(sourceLocation));
-        }
+        public string GetPrivatePrefix(SourceLocation sourceLocation) => GetPrivatePrefix(FindScope(sourceLocation));
 
-        private static string GetPrivatePrefixClassName(InterpreterScope scope) {
-            var klass = scope.EnumerateTowardsGlobal.OfType<ClassScope>().FirstOrDefault();
+        private static string GetPrivatePrefixClassName(IScope scope) {
+            var klass = scope.EnumerateTowardsGlobal.OfType<IClassScope>().FirstOrDefault();
             return klass == null ? null : klass.Name;
         }
 
-        private static string GetPrivatePrefix(InterpreterScope scope) {
-            string classScopePrefix = GetPrivatePrefixClassName(scope);
+        private static string GetPrivatePrefix(IScope scope) {
+            var classScopePrefix = GetPrivatePrefixClassName(scope);
             if (classScopePrefix != null) {
                 return "_" + classScopePrefix;
             }
@@ -1212,7 +1190,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// Finds the best available analysis unit for lookup. This will be the one that is provided
         /// by the nearest enclosing scope that is capable of providing one.
         /// </summary>
-        private AnalysisUnit GetNearestEnclosingAnalysisUnit(InterpreterScope scopes) {
+        private AnalysisUnit GetNearestEnclosingAnalysisUnit(IScope scopes) {
             var units = from scope in scopes.EnumerateTowardsGlobal
                         let ns = scope.AnalysisValue
                         where ns != null

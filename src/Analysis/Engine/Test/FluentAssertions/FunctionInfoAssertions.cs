@@ -23,12 +23,12 @@ using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
-    internal sealed class FunctionInfoAssertions : AnalysisValueAssertions<FunctionInfo, FunctionInfoAssertions> {
-        public FunctionInfoAssertions(AnalysisValueTestInfo<FunctionInfo> subject) : base(subject) { }
+    internal sealed class FunctionInfoAssertions : AnalysisValueAssertions<IFunctionInfo, FunctionInfoAssertions> {
+        public FunctionInfoAssertions(AnalysisValueTestInfo<IFunctionInfo> subject) : base(subject) { }
 
-        protected override string Identifier => nameof(FunctionInfo);
+        protected override string Identifier => nameof(IFunctionInfo);
 
-        public AndWhichConstraint<FunctionInfoAssertions, FunctionScope> HaveFunctionScope(string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<FunctionInfoAssertions, IFunctionScope> HaveFunctionScope(string because = "", params object[] reasonArgs) {
             var unit = Subject.AnalysisUnit;
             Execute.Assertion.ForCondition(unit != null)
                 .BecauseOf(because, reasonArgs)
@@ -39,12 +39,12 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName()} analysis unit to have scope specified{{reason}}.");
 
-            var typedScope = scope as FunctionScope;
+            var typedScope = scope as IFunctionScope;
             Execute.Assertion.ForCondition(typedScope != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {GetName()} analysis unit scope to be of type {nameof(FunctionScope)}{{reason}}, but it has type {scope.GetType()}.");
+                .FailWith($"Expected {GetName()} analysis unit scope to be of type {nameof(IFunctionScope)}{{reason}}, but it has type {scope.GetType()}.");
 
-            return new AndWhichConstraint<FunctionInfoAssertions, FunctionScope>(this, typedScope);
+            return new AndWhichConstraint<FunctionInfoAssertions, IFunctionScope>(this, typedScope);
         }
 
         protected override string GetName()

@@ -19,15 +19,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
-    internal sealed class FunctionScopeAssertions : InterpreterScopeAssertions<FunctionScope, FunctionScopeAssertions> {
-        public FunctionScopeAssertions(FunctionScope interpreterScope) : base(interpreterScope) { }
+    internal sealed class FunctionScopeAssertions : ScopeAssertions<IFunctionScope, FunctionScopeAssertions> {
+        public FunctionScopeAssertions(IFunctionScope scope) : base(scope) { }
 
         public AndWhichConstraint<FunctionScopeAssertions, VariableDefTestInfo> HaveParameter(string name, string because = "", params object[] reasonArgs) {
             NotBeNull();
@@ -57,7 +56,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public AndConstraint<FunctionScopeAssertions> HaveResolvedReturnTypes(IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
             var is3X = Subject.Function.ProjectEntry.ProjectState.LanguageVersion.Is3x();
             var analysisUnit = Subject.Function.AnalysisUnit;
-            var actualTypeIds = Subject.ReturnValue.TypesNoCopy.Resolve(analysisUnit).Select(v => v.TypeId);
+            var actualTypeIds = Subject.ReturnValue.Types.Resolve(analysisUnit).Select(v => v.TypeId);
             var name = $"function {GetQuotedName(Subject.Function)} return value";
 
             AssertTypeIds(actualTypeIds, typeIds, name, is3X, because, reasonArgs);

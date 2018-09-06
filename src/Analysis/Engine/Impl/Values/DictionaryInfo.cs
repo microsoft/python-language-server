@@ -31,7 +31,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private VariableDef _keysVariable, _valuesVariable, _keyValueTupleVariable;
 
         internal readonly DependentKeyValue _keysAndValues;
-        private readonly ProjectEntry _declaringModule;
+        private readonly IPythonProjectEntry _declaringModule;
         private readonly int _declVersion;
         private AnalysisValue _getMethod, _itemsMethod, _keysMethod, _valuesMethod, _iterKeysMethod, _iterValuesMethod, _popMethod, _popItemMethod, _iterItemsMethod, _updateMethod;
 
@@ -40,7 +40,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         private AnalysisUnit _unit;
 
-        public DictionaryInfo(ProjectEntry declaringModule, Node node)
+        public DictionaryInfo(IPythonProjectEntry declaringModule, Node node)
             : base(declaringModule.ProjectState.ClassInfos[BuiltinTypeId.Dict]) {
             _keysAndValues = new DependentKeyValue();
             _declaringModule = declaringModule;
@@ -48,11 +48,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _node = node;
         }
 
-        private AnalysisUnit UpdateAnalysisUnit {
-            get {
-                return _unit = _unit ?? new UpdateItemsAnalysisUnit(this);
-            }
-        }
+        private AnalysisUnit UpdateAnalysisUnit => _unit = _unit ?? new UpdateItemsAnalysisUnit(this);
 
         public override IEnumerable<KeyValuePair<IAnalysisSet, IAnalysisSet>> GetItems() {
             foreach (var keyValue in _keysAndValues.KeyValueTypes) {
@@ -190,11 +186,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return res;
         }
 
-        public override string ShortDescription {
-            get {
-                return "dict";
-            }
-        }
+        public override string ShortDescription => "dict";
 
         public override string Description {
             get {
@@ -216,23 +208,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override PythonMemberType MemberType {
-            get {
-                return PythonMemberType.Field;
-            }
-        }
+        public override PythonMemberType MemberType => PythonMemberType.Field;
 
-        public override IPythonProjectEntry DeclaringModule {
-            get {
-                return _declaringModule;
-            }
-        }
+        public override IPythonProjectEntry DeclaringModule => _declaringModule;
 
-        public override int DeclaringVersion {
-            get {
-                return _declVersion;
-            }
-        }
+        public override int DeclaringVersion => _declVersion;
 
         internal override AnalysisValue UnionMergeTypes(AnalysisValue ns, int strength) {
             if (strength < MergeStrength.IgnoreIterableNode) {
@@ -546,15 +526,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
     }
 
     internal class StarArgsDictionaryInfo : DictionaryInfo {
-        public StarArgsDictionaryInfo(ProjectEntry declaringModule, Node node)
+        public StarArgsDictionaryInfo(IPythonProjectEntry declaringModule, Node node)
             : base(declaringModule, node) { }
 
 
-        internal int TypesCount {
-            get {
-                return _keysAndValues.AllValueTypes.Count;
-            }
-        }
+        internal int TypesCount => _keysAndValues.AllValueTypes.Count;
 
         internal void MakeUnionStronger() {
             foreach (var dep in _keysAndValues._dependencies.Values) {

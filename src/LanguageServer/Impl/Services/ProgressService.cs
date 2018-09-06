@@ -15,8 +15,8 @@
 // permissions and limitations under the License.
 
 using System.Threading.Tasks;
-using Microsoft.DsTools.Core.Services.Shell;
 using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.PythonTools.LanguageServer;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Services {

@@ -16,8 +16,8 @@
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using FluentAssertions;
+using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
@@ -66,7 +66,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             andWhichConstraint.Which.Should().HaveClassNames(classNames, because, reasonArgs);
             return andWhichConstraint;
         }
-        
+
         public static AndWhichConstraint<TAssertion, VariableDefTestInfo> OfResolvedType<TAssertion>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, string className, string because = "", params object[] reasonArgs) {
             andWhichConstraint.Which.Should().HaveResolvedClassName(className, because, reasonArgs);
             return andWhichConstraint;
@@ -85,18 +85,26 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return andWhichConstraint;
         }
 
-        public static AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TValue>> WithValue<TAssertion, TValue>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, string because = "", params object[] reasonArgs) where TValue : AnalysisValue {
-            var testInfo = andWhichConstraint.Which.Should().HaveValue<TValue>(because, reasonArgs).Which;
-            return new AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TValue>>(andWhichConstraint.And, testInfo);
+        public static AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TValue>>
+            WithValue<TAssertion, TValue>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, string because = "", params object[] reasonArgs)
+            where TValue : IAnalysisValue {
+                var testInfo = andWhichConstraint.Which.Should().HaveValue<TValue>(because, reasonArgs).Which;
+                return new AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TValue>>(andWhichConstraint.And, testInfo);
         }
 
-        public static AndWhichConstraint<ModuleAnalysisAssertions, AnalysisValueTestInfo<TValue>> WithValue<TValue>(this AndWhichConstraint<ModuleAnalysisAssertions, VariableDefTestInfo> constraint, string because = "", params object[] reasonArgs) where TValue : AnalysisValue
+        public static AndWhichConstraint<ModuleAnalysisAssertions, AnalysisValueTestInfo<TValue>>
+            WithValue<TValue>(this AndWhichConstraint<ModuleAnalysisAssertions, VariableDefTestInfo> constraint, string because = "", params object[] reasonArgs)
+                where TValue : IAnalysisValue
             => constraint.WithValue<ModuleAnalysisAssertions, TValue>(because, reasonArgs);
 
-        public static AndWhichConstraint<InterpreterScopeAssertions, AnalysisValueTestInfo<TValue>> WithValue<TValue>(this AndWhichConstraint<InterpreterScopeAssertions, VariableDefTestInfo> constraint, string because = "", params object[] reasonArgs) where TValue : AnalysisValue
-            => constraint.WithValue<InterpreterScopeAssertions, TValue>(because, reasonArgs);
+        public static AndWhichConstraint<ScopeAssertions, AnalysisValueTestInfo<TValue>>
+            WithValue<TValue>(this AndWhichConstraint<ScopeAssertions, VariableDefTestInfo> constraint, string because = "", params object[] reasonArgs)
+                where TValue : IAnalysisValue
+            => constraint.WithValue<ScopeAssertions, TValue>(because, reasonArgs);
 
-        public static AndWhichConstraint<FunctionScopeAssertions, AnalysisValueTestInfo<TValue>> WithValue<TValue>(this AndWhichConstraint<FunctionScopeAssertions, VariableDefTestInfo> constraint, string because = "", params object[] reasonArgs) where TValue : AnalysisValue
+        public static AndWhichConstraint<FunctionScopeAssertions, AnalysisValueTestInfo<TValue>>
+            WithValue<TValue>(this AndWhichConstraint<FunctionScopeAssertions, VariableDefTestInfo> constraint, string because = "", params object[] reasonArgs)
+                where TValue : IAnalysisValue
             => constraint.WithValue<FunctionScopeAssertions, TValue>(because, reasonArgs);
     }
 }

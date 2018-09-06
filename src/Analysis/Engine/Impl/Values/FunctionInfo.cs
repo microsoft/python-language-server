@@ -25,7 +25,7 @@ using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
-    internal class FunctionInfo : AnalysisValue, IReferenceableContainer, IHasRichDescription, IHasQualifiedName {
+    internal class FunctionInfo : AnalysisValue, IFunctionInfo, IHasRichDescription, IHasQualifiedName {
         private Dictionary<AnalysisValue, IAnalysisSet> _methods;
         private Dictionary<string, VariableDef> _functionAttrs;
         private readonly FunctionAnalysisUnit _analysisUnit;
@@ -71,7 +71,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return limit > 0;
         }
 
-        public ProjectEntry ProjectEntry { get; }
+        public IPythonProjectEntry ProjectEntry { get; }
 
         public override IPythonProjectEntry DeclaringModule => _analysisUnit.ProjectEntry;
 
@@ -201,11 +201,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return ResolveParameter(unit, name);
         }
 
-        public override string Name {
-            get {
-                return FunctionDefinition.Name;
-            }
-        }
+        public override string Name => FunctionDefinition.Name;
 
         internal IEnumerable<KeyValuePair<string, string>> GetParameterString() {
             for (var i = 0; i < FunctionDefinition.ParametersInternal.Length; i++) {
@@ -383,23 +379,13 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return result;
         }
 
-        public override string Documentation {
-            get {
-                return _doc ?? "";
-            }
-        }
+        public override string Documentation => _doc ?? "";
 
-        public override PythonMemberType MemberType {
-            get {
-                return IsProperty ? PythonMemberType.Property : PythonMemberType.Function;
-            }
-        }
+        public override PythonMemberType MemberType => IsProperty ? PythonMemberType.Property : PythonMemberType.Function;
 
-        public override string ToString() {
-            return "FunctionInfo " + _analysisUnit.FullName + " (" + _declVersion + ")";
-        }
+        public override string ToString() => "FunctionInfo " + _analysisUnit.FullName + " (" + _declVersion + ")";
 
-        public override IEnumerable<LocationInfo> Locations {
+        public override IEnumerable<ILocationInfo> Locations {
             get {
                 var start = FunctionDefinition.GetStart(FunctionDefinition.GlobalParent);
                 var end = FunctionDefinition.GetEnd(FunctionDefinition.GlobalParent);
@@ -461,7 +447,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 if (_functionAttrs != null && _functionAttrs.TryGetValue("__wrapped__", out VariableDef wrapped)) {
                     if (this.Push()) {
                         try {
-                            foreach (var o in wrapped.TypesNoCopy.SelectMany(n => n.Overloads)) {
+                            foreach (var o in wrapped.Types.SelectMany(n => n.Overloads)) {
                                 yield return o;
                             }
                         } finally {
@@ -482,8 +468,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     var names = FunctionDefinition.ParametersInternal.Select(MakeParameterName).ToArray();
 
                     var vars = FunctionDefinition.ParametersInternal.Select(p => {
-                        VariableDef param;
-                        if (unit != AnalysisUnit && unit.Scope.TryGetVariable(p.Name, out param)) {
+                        if (unit != AnalysisUnit && unit.InterpreterScope.TryGetVariable(p.Name, out var param)) {
                             return param.Types.Resolve(unit);
                         } else if (_analysisUnit._scope is FunctionScope fs) {
                             return fs.GetParameter(p.Name)?.Types.Resolve(unit) ?? AnalysisSet.Empty;
@@ -494,7 +479,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     var defaults = FunctionDefinition.ParametersInternal.Select(p => GetDefaultValue(unit.State, p, DeclaringModule.Tree)).ToArray();
 
                     var rtypes = (unit.Scope as FunctionScope)?.ReturnValue
-                        .TypesNoCopy
+                        .Types
                         .Resolve(unit, new ResolutionContext {
                             Caller = this,
                             LazyCallArgs = new Lazy<ArgumentSet>(() => new ArgumentSet(vars, null, null, null)),
@@ -569,15 +554,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     limit = state.Limits.DictArgumentTypes;
                 }
 
-                if (_analysisUnit.Scope.TryGetVariable(curParam.Name, out var vd)) {
-                    vars = vars.Union(vd.TypesNoCopy);
+                if (_analysisUnit.InterpreterScope.TryGetVariable(curParam.Name, out var vd)) {
+                    vars = vars.Union(vd.Types);
                     if (vars.Count > limit) {
                         vars = vars.AsStrongerUnion();
                     }
                 }
                 foreach (var unit in (_callsWithClosure?.Values).MaybeEnumerate()) {
-                    if (unit.Scope.TryGetVariable(curParam.Name, out vd)) {
-                        vars = vars.Union(vd.TypesNoCopy);
+                    if (unit.InterpreterScope.TryGetVariable(curParam.Name, out vd)) {
+                        vars = vars.Union(vd.Types);
                         if (vars.Count > limit) {
                             vars = vars.AsStrongerUnion();
                         }
@@ -609,7 +594,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             varRef.AddTypes(unit, value, true, DeclaringModule);
 
             if (name == "__doc__") {
-                var newDoc = varRef.TypesNoCopy.OfType<ConstantInfo>()
+                var newDoc = varRef.Types.OfType<ConstantInfo>()
                     .Select(ci => (ci.Value as string) ?? (ci.Value as AsciiString)?.String)
                     .Where(s => !string.IsNullOrEmpty(s) && (_doc == null || !_doc.Contains(s)))
                     .ToList();
@@ -622,9 +607,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) {
-            return ProjectState.ClassInfos[BuiltinTypeId.Function].GetMember(node, unit, name);
-        }
+        public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) => ProjectState.ClassInfos[BuiltinTypeId.Function].GetMember(node, unit, name);
 
         public override IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) {
             VariableDef tmp;
@@ -664,7 +647,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     if (!res.TryGetValue(variable.Key, out existing)) {
                         res[variable.Key] = variable.Value.Types;
                     } else {
-                        res[variable.Key] = existing.Union(variable.Value.TypesNoCopy);
+                        res[variable.Key] = existing.Union(variable.Value.Types);
                     }
                 }
             }
@@ -695,7 +678,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         internal void UpdateDefaultParameters(AnalysisUnit unit, IEnumerable<IParameterInfo> parameters) {
             var finishedScopes = new HashSet<InterpreterScope>();
             var scopeSet = new HashSet<InterpreterScope>();
-            scopeSet.Add(AnalysisUnit.Scope);
+            scopeSet.Add(AnalysisUnit.InterpreterScope);
 
             int index = 0;
             foreach (var p in parameters) {
@@ -723,8 +706,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     : AnalysisSet.Empty;
 
                 foreach (var unit in units) {
-                    if (unit != null && unit.Scope != null && unit.Scope.TryGetVariable(FunctionDefinition.ParametersInternal[i].Name, out var param)) {
-                        result[i] = result[i].Union(param.TypesNoCopy);
+                    if (unit != null && unit.InterpreterScope != null && unit.InterpreterScope.TryGetVariable(FunctionDefinition.ParametersInternal[i].Name, out var param)) {
+                        result[i] = result[i].Union(param.Types);
                     }
                 }
             }
@@ -739,13 +722,13 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             var fau = AnalysisUnit as FunctionAnalysisUnit;
             if (fau != null) {
-                result = result.Union(fau.ReturnValue.TypesNoCopy.Resolve(fau));
+                result = result.Union(fau.ReturnValue.Types.Resolve(fau));
             }
 
             return result;
         }
 
-        public PythonAnalyzer ProjectState { get { return ProjectEntry.ProjectState; } }
+        public PythonAnalyzer ProjectState => ProjectEntry.ProjectState;
 
         internal override void AddReference(Node node, AnalysisUnit unit) {
             if (!unit.ForEval) {
@@ -756,7 +739,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        internal override IEnumerable<LocationInfo> References {
+        internal override IEnumerable<ILocationInfo> References {
             get {
                 if (_references != null) {
                     return _references.AllReferences;
@@ -765,13 +748,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IPythonType PythonType {
-            get { return ProjectState.Types[BuiltinTypeId.Function]; }
-        }
+        public override IPythonType PythonType => ProjectState.Types[BuiltinTypeId.Function];
 
-        internal override bool IsOfType(IAnalysisSet klass) {
-            return klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]);
-        }
+        public override bool IsOfType(IAnalysisSet klass) => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]);
 
         public override bool Equals(object obj) {
             if (obj is FunctionInfo fi) {

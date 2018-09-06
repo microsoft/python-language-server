@@ -20,7 +20,7 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
-using Microsoft.PythonTools.Analysis.LanguageServer;
+using Microsoft.Python.LanguageServer;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]

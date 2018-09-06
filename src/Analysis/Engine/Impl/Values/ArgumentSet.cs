@@ -100,14 +100,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
                         SequenceInfo seq;
                         StarArgsSequenceInfo sseq;
                         if ((sseq = ns as StarArgsSequenceInfo) != null) {
-                            seqArgs = seqArgs.Union(sseq.IndexTypes.SelectMany(def => def.TypesNoCopy));
+                            seqArgs = seqArgs.Union(sseq.IndexTypes.SelectMany(def => def.Types));
                         } else if ((seq = ns as SequenceInfo) != null) {
                             for (int j = 0; j < seq.IndexTypes.Length; ++j) {
                                 int k = lastPositionFilled + j + 1;
                                 if (k < node.Parameters.Count && node.Parameters[k].Kind == ParameterKind.Normal) {
-                                    newArgs[k] = newArgs[k].Union(seq.IndexTypes[j].TypesNoCopy);
+                                    newArgs[k] = newArgs[k].Union(seq.IndexTypes[j].Types);
                                 } else if (listArgsIndex >= 0) {
-                                    seqArgs = seqArgs.Union(seq.IndexTypes[j].TypesNoCopy);
+                                    seqArgs = seqArgs.Union(seq.IndexTypes[j].Types);
                                 } else {
                                     // TODO: Warn about extra parameters
                                 }

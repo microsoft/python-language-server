@@ -24,20 +24,19 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.Python.Tests.Utilities;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
-using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
-using Microsoft.PythonTools.Analysis.LanguageServer;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
-using Ast = Microsoft.PythonTools.Parsing.Ast;
 using static Microsoft.PythonTools.Analysis.Infrastructure.StringExtensions;
+using Ast = Microsoft.PythonTools.Parsing.Ast;
 
 namespace AnalysisTests {
     [TestClass]
@@ -295,7 +294,7 @@ class BankAccount(object):
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
                 analysis.Should().HaveClass("BankAccount")
-                    .Which.Should().HaveVariable("overdrawn").WithValue<FunctionInfo>()
+                    .Which.Should().HaveVariable("overdrawn").WithValue<IFunctionInfo>()
                     .Which.Should().HaveOverloadAt(0)
                     .Which.Should().HaveSingleReturnType("bool");
             }
@@ -373,7 +372,7 @@ class BankAccount(object):
                     .Which;
 
                 analysis.Should().HaveVariable("c")
-                    .WithValue<BuiltinInstanceInfo>()
+                    .WithValue<IBuiltinInstanceInfo>()
                     .Which.Should().HaveMemberType(PythonMemberType.Instance)
                     .And.HavePythonType(type)
                     .Which.Should().HaveMembers("untyped_method", "inferred_method")
@@ -403,7 +402,7 @@ class BankAccount(object):
                     .Which;
 
                 analysis.Should().HaveVariable("c")
-                    .WithValue<BuiltinInstanceInfo>()
+                    .WithValue<IBuiltinInstanceInfo>()
                     .Which.Should().HaveMemberType(PythonMemberType.Instance)
                     .And.HavePythonType(type)
                     .Which.Should().HaveMembers("untyped_method", "inferred_method", "typed_method")
@@ -429,7 +428,7 @@ class BankAccount(object):
                     .Which;
 
                 analysis.Should().HaveVariable("c")
-                    .WithValue<BuiltinInstanceInfo>()
+                    .WithValue<IBuiltinInstanceInfo>()
                     .Which.Should().HaveMemberType(PythonMemberType.Instance)
                     .And.HavePythonType(type)
                     .Which.Should().HaveMembers("untyped_method", "inferred_method", "typed_method_2")
@@ -459,7 +458,7 @@ class BankAccount(object):
                     .Which;
 
                 analysis.Should().HaveVariable("c")
-                    .WithValue<BuiltinInstanceInfo>()
+                    .WithValue<IBuiltinInstanceInfo>()
                     .Which.Should().HaveMemberType(PythonMemberType.Instance)
                     .And.HavePythonType(type)
                     .Which.Should().HaveMethod("typed_method_2")
@@ -1012,7 +1011,7 @@ e1, e2, e3 = sys.exc_info()";
 scanner = _json.make_scanner()";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
-                analysis.Should().HaveVariable("scanner").WithValue<BuiltinInstanceInfo>()
+                analysis.Should().HaveVariable("scanner").WithValue<IBuiltinInstanceInfo>()
                     .Which.Should().HaveSingleOverload()
                     .Which.Should().HaveName("__call__")
                     .And.HaveParameters("string", "index")

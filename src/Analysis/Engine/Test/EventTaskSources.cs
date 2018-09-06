@@ -26,8 +26,8 @@ namespace AnalysisTests {
         }
 
         public static class Server {
-            public static readonly EventTaskSource<Microsoft.PythonTools.Analysis.LanguageServer.Server, Microsoft.PythonTools.Analysis.LanguageServer.ParseCompleteEventArgs> OnParseComplete =
-                new EventTaskSource<Microsoft.PythonTools.Analysis.LanguageServer.Server, Microsoft.PythonTools.Analysis.LanguageServer.ParseCompleteEventArgs>(
+            public static readonly EventTaskSource<Microsoft.Python.LanguageServer.Implementation.Server, Microsoft.Python.LanguageServer.ParseCompleteEventArgs> OnParseComplete =
+                new EventTaskSource<Microsoft.Python.LanguageServer.Implementation.Server, Microsoft.Python.LanguageServer.ParseCompleteEventArgs>(
                     (o, e) => o.OnParseComplete += e,
                     (o, e) => o.OnParseComplete -= e);
         }

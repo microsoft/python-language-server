@@ -27,10 +27,10 @@ using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     internal static class AssertionsUtilities {
-        public static bool Is3X(InterpreterScope scope) 
+        public static bool Is3X(IScope scope) 
             => ((ModuleScope)scope.GlobalScope).Module.ProjectEntry.ProjectState.LanguageVersion.Is3x();
 
-        public static void AssertTypeIds(IEnumerable<AnalysisValue> actualTypeIds, IEnumerable<BuiltinTypeId> typeIds, string name, bool languageVersionIs3X, string because, object[] reasonArgs)
+        public static void AssertTypeIds(IEnumerable<IAnalysisValue> actualTypeIds, IEnumerable<BuiltinTypeId> typeIds, string name, bool languageVersionIs3X, string because, object[] reasonArgs)
             => AssertTypeIds(FlattenAnalysisValues(actualTypeIds).Select(av => av.PythonType?.TypeId ?? av.TypeId), typeIds, name, languageVersionIs3X, because, reasonArgs);
 
         public static void AssertTypeIds(IEnumerable<BuiltinTypeId> actualTypeIds, IEnumerable<BuiltinTypeId> typeIds, string name, bool languageVersionIs3X, string because, object[] reasonArgs) {
@@ -162,11 +162,11 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             switch (value) {
                 case IHasQualifiedName _:
                 case IPythonModule _:
-                case BuiltinInstanceInfo _:
+                case IBuiltinInstanceInfo _:
                     name = GetName(value);
                     return string.IsNullOrEmpty(name) ? string.Empty : $"'{name}'";
-                case AnalysisValue analysisValue:
-                    name = analysisValue.Name;
+                case IAnalysisValue av:
+                    name = av.Name;
                     return string.IsNullOrEmpty(name) ? "value" : $"value '{name}'";
                 default:
                     name = GetName(value);
@@ -180,11 +180,11 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                     return qualifiedName.FullyQualifiedName;
                 case IPythonModule pythonModule:
                     return pythonModule.Name;
-                case BuiltinInstanceInfo builtinInstanceInfo:
+                case IBuiltinInstanceInfo builtinInstanceInfo:
                     return builtinInstanceInfo.Name ?? $"instance of {builtinInstanceInfo.ClassInfo.FullyQualifiedName}";
-                case InterpreterScope interpreterScope:
-                    return interpreterScope.Name;
-                case AnalysisValue analysisValue:
+                case IScope scope:
+                    return scope.Name;
+                case IAnalysisValue analysisValue:
                     return $"value {analysisValue.Name}";
                 case string str:
                     return str;
@@ -193,7 +193,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             }
         }
        
-        public static IEnumerable<AnalysisValue> FlattenAnalysisValues(IEnumerable<AnalysisValue> analysisValues) {
+        public static IEnumerable<IAnalysisValue> FlattenAnalysisValues(IEnumerable<IAnalysisValue> analysisValues) {
             foreach (var analysisValue in analysisValues) {
                 if (analysisValue is MultipleMemberInfo mmi) {
                     foreach (var value in FlattenAnalysisValues(mmi.Members)) {

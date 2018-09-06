@@ -19,9 +19,9 @@ using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
-    internal sealed class InstanceInfoAssertions : AnalysisValueAssertions<InstanceInfo, InstanceInfoAssertions> {
-        public InstanceInfoAssertions(AnalysisValueTestInfo<InstanceInfo> subject) : base(subject) {}
+    internal sealed class InstanceInfoAssertions : AnalysisValueAssertions<IInstanceInfo, InstanceInfoAssertions> {
+        public InstanceInfoAssertions(AnalysisValueTestInfo<IInstanceInfo> subject) : base(subject) {}
 
-        protected override string Identifier => nameof(InstanceInfo);
+        protected override string Identifier => nameof(IInstanceInfo);
     }
 }

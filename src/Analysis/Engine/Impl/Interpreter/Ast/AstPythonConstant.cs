@@ -23,12 +23,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonConstant : IPythonConstant, IMemberContainer, ILocatedMember {
         private readonly Dictionary<string, IMember> _cachedMembers = new Dictionary<string, IMember>();
 
-        public AstPythonConstant(IPythonType type, params LocationInfo[] locations) {
+        public AstPythonConstant(IPythonType type, params ILocationInfo[] locations) {
             Type = type ?? throw new ArgumentNullException(nameof(type));
             Locations = locations.ToArray();
         }
 
-        public IEnumerable<LocationInfo> Locations { get; }
+        public IEnumerable<ILocationInfo> Locations { get; }
 
         public PythonMemberType MemberType => PythonMemberType.Constant;
         public IPythonType Type { get; }

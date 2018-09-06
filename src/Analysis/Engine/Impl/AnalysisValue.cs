@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
@@ -28,7 +29,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// An analysis value represents a set of variables and code.  Examples of 
     /// analysis values include top-level code, classes, and functions.
     /// </summary>
-    public class AnalysisValue : IAnalysisSet, ICanExpire {
+    public class AnalysisValue : IAnalysisValueOperations {
         [ThreadStatic]
         private static HashSet<AnalysisValue> _processing;
 
@@ -44,9 +45,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// 
         /// Currently implemented as returning the AnalysisValue object directly which implements ISet{AnalysisValue}.
         /// </summary>
-        public IAnalysisSet SelfSet {
-            get { return this; }
-        }
+        public IAnalysisSet SelfSet => this;
 
         /// <summary>
         /// Gets the name of the value if it has one, or null if it's a non-named item.
@@ -54,33 +53,19 @@ namespace Microsoft.PythonTools.Analysis {
         /// The name property here is typically the same value you'd get by accessing __name__
         /// on the real Python object.
         /// </summary>
-        public virtual string Name {
-            get {
-                return null;
-            }
-        }
+        public virtual string Name => null;
 
         /// <summary>
         /// Gets the documentation of the value.
         /// </summary>
-        public virtual string Documentation {
-            get {
-                return null;
-            }
-        }
+        public virtual string Documentation => null;
 
         /// <summary>
         /// Gets a list of locations where this value is defined.
         /// </summary>
-        public virtual IEnumerable<LocationInfo> Locations {
-            get { return LocationInfo.Empty; }
-        }
+        public virtual IEnumerable<ILocationInfo> Locations => LocationInfo.Empty;
 
-        public virtual IEnumerable<OverloadResult> Overloads {
-            get {
-                return Enumerable.Empty<OverloadResult>();
-            }
-        }
+        public virtual IEnumerable<OverloadResult> Overloads => Enumerable.Empty<OverloadResult>();
 
         public virtual string Description {
             get {
@@ -105,15 +90,10 @@ namespace Microsoft.PythonTools.Analysis {
         /// <summary>
         /// Returns the member type of the analysis value, or PythonMemberType.Unknown if it's unknown.
         /// </summary>
-        public virtual PythonMemberType MemberType {
-            get {
-                return PythonMemberType.Unknown;
-            }
-        }
+        public virtual PythonMemberType MemberType => PythonMemberType.Unknown;
 
-        public virtual IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None) {
-            return new Dictionary<string, IAnalysisSet>();
-        }
+        public virtual IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None)
+            => new Dictionary<string, IAnalysisSet>();
 
         /// <summary>
         /// Gets the constant value that this object represents, if it's a constant.
@@ -122,9 +102,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// if the type is None).
         /// </summary>
         /// <returns></returns>
-        public virtual object GetConstantValue() {
-            return Type.Missing;
-        }
+        public virtual object GetConstantValue() => Type.Missing;
 
         /// <summary>
         /// Returns the constant value as a string.  This returns a string if the constant
@@ -144,31 +122,14 @@ namespace Microsoft.PythonTools.Analysis {
             return null;
         }
 
-        public virtual IPythonType PythonType {
-            get { return null; }
-        }
+        public virtual IPythonType PythonType => null;
+        public virtual IPythonProjectEntry DeclaringModule => null;
+        public virtual int DeclaringVersion => -1;
 
-        public virtual IPythonProjectEntry DeclaringModule {
-            get {
-                return null;
-            }
-        }
+        public virtual IMro Mro => Values.Mro.Empty;
 
-        public virtual int DeclaringVersion {
-            get {
-                return -1;
-            }
-        }
-
-        public virtual IEnumerable<IAnalysisSet> Mro {
-            get {
-                yield break;
-            }
-        }
-
-        public virtual AnalysisUnit AnalysisUnit {
-            get { return null; }
-        }
+        public virtual AnalysisUnit AnalysisUnit => null;
+        IAnalysisUnit IAnalysisValue.AnalysisUnit => AnalysisUnit;
 
         #region Dynamic Operations
 
@@ -179,9 +140,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="unit">The analysis unit performing the analysis</param>
         /// <param name="args">The arguments being passed to the function</param>
         /// <param name="keywordArgNames">Keyword argument names, * and ** are included in here for splatting calls</param>
-        public virtual IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
-            return AnalysisSet.Empty;
-        }
+        public virtual IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) => AnalysisSet.Empty;
 
         /// <summary>
         /// Attempts to get a member from this object with the specified name.
@@ -193,17 +152,13 @@ namespace Microsoft.PythonTools.Analysis {
         /// Overrides of this method must unconditionally call the base
         /// implementation, even if the return value is ignored.
         /// </remarks>
-        public virtual IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) {
-            return GetTypeMember(node, unit, name);
-        }
+        public virtual IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) => GetTypeMember(node, unit, name);
 
         /// <summary>
         /// Gets an attribute that's only declared in the classes dictionary, not in an instance
         /// dictionary
         /// </summary>
-        public virtual IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) {
-            return AnalysisSet.Empty;
-        }
+        public virtual IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) => AnalysisSet.Empty;
 
         public virtual void SetMember(Node node, AnalysisUnit unit, string name, IAnalysisSet value) {
         }
@@ -214,11 +169,9 @@ namespace Microsoft.PythonTools.Analysis {
         public virtual void AugmentAssign(AugmentedAssignStatement node, AnalysisUnit unit, IAnalysisSet value) {
         }
 
-        public virtual IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
-            return CallReverseBinaryOp(node, unit, operation, rhs);
-        }
+        public virtual IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) => CallReverseBinaryOp(node, unit, operation, rhs);
 
-        internal IAnalysisSet CallReverseBinaryOp(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
+        public IAnalysisSet CallReverseBinaryOp(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
             switch (operation) {
                 case PythonOperator.Is:
                 case PythonOperator.IsNot:
@@ -241,53 +194,39 @@ namespace Microsoft.PythonTools.Analysis {
         /// This is dispatched to when the LHS doesn't understand the RHS.  Unlike normal Python it's currently
         /// the LHS responsibility to dispatch to this.
         /// </summary>
-        public virtual IAnalysisSet ReverseBinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
-            return AnalysisSet.Empty;
-        }
+        public virtual IAnalysisSet ReverseBinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) => AnalysisSet.Empty;
 
-        public virtual IAnalysisSet UnaryOperation(Node node, AnalysisUnit unit, PythonOperator operation) {
-            return this.SelfSet;
-        }
+        public virtual IAnalysisSet UnaryOperation(Node node, AnalysisUnit unit, PythonOperator operation) => this.SelfSet;
 
         /// <summary>
         /// Returns the length of the object if it's known, or null if it's not a fixed size object.
         /// </summary>
         /// <returns></returns>
-        public virtual int? GetLength() {
-            return null;
-        }
+        public virtual int? GetLength() => null;
 
-        public virtual IAnalysisSet GetEnumeratorTypes(Node node, AnalysisUnit unit) {
+        public virtual IAnalysisSet GetEnumeratorTypes(Node node, AnalysisUnit unit) =>
             // TODO: need more than constant 0...
             //index = (VariableRef(ConstantInfo(0, self.ProjectState, False)), )
             //self.AssignTo(self._state.IndexInto(listRefs, index), node, node.Left)
-            return GetIndex(node, unit, unit.State.ClassInfos[BuiltinTypeId.Int].SelfSet);
-        }
+            GetIndex(node, unit, unit.State.ClassInfos[BuiltinTypeId.Int].SelfSet);
 
-        public virtual IAnalysisSet GetAsyncEnumeratorTypes(Node node, AnalysisUnit unit) {
-            return AnalysisSet.Empty;
-        }
+        public virtual IAnalysisSet GetAsyncEnumeratorTypes(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
 
-        public virtual IAnalysisSet GetIterator(Node node, AnalysisUnit unit) {
-            return GetTypeMember(node, unit, "__iter__").Call(node, unit, ExpressionEvaluator.EmptySets, ExpressionEvaluator.EmptyNames);
-        }
+        public virtual IAnalysisSet GetIterator(Node node, AnalysisUnit unit) => GetTypeMember(node, unit, "__iter__").Call(node, unit, ExpressionEvaluator.EmptySets, ExpressionEvaluator.EmptyNames);
 
-        public virtual IAnalysisSet GetAsyncIterator(Node node, AnalysisUnit unit) {
-            return GetTypeMember(node, unit, "__aiter__")
+        public virtual IAnalysisSet GetAsyncIterator(Node node, AnalysisUnit unit)
+            => GetTypeMember(node, unit, "__aiter__")
                 .Call(node, unit, ExpressionEvaluator.EmptySets, ExpressionEvaluator.EmptyNames)
                 .Await(node, unit);
-        }
 
-        public virtual IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) {
-            return GetTypeMember(node, unit, "__getitem__").Call(node, unit, new[] { index }, ExpressionEvaluator.EmptyNames);
-        }
+        public virtual IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index)
+            => GetTypeMember(node, unit, "__getitem__").Call(node, unit, new[] { index }, ExpressionEvaluator.EmptyNames);
 
         /// <summary>
         /// Returns a list of key/value pairs stored in the this object which are retrivable using
         /// indexing.  For lists the key values will be integers (potentially constant, potentially not), 
         /// for dicts the key values will be arbitrary analysis values.
         /// </summary>
-        /// <returns></returns>
         public virtual IEnumerable<KeyValuePair<IAnalysisSet, IAnalysisSet>> GetItems() {
             yield break;
         }
@@ -295,51 +234,31 @@ namespace Microsoft.PythonTools.Analysis {
         public virtual void SetIndex(Node node, AnalysisUnit unit, IAnalysisSet index, IAnalysisSet value) {
         }
 
-        public virtual IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) {
-            return SelfSet;
-        }
+        public virtual IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) => SelfSet;
 
-        public virtual IAnalysisSet GetDescriptor(PythonAnalyzer projectState, AnalysisValue instance, AnalysisValue context) {
-            return SelfSet;
-        }
+        public virtual IAnalysisSet GetDescriptor(PythonAnalyzer projectState, AnalysisValue instance, AnalysisValue context) => SelfSet;
 
-        public virtual IAnalysisSet GetInstanceType() {
-            return SelfSet;
-        }
+        public virtual IAnalysisSet GetInstanceType() => SelfSet;
 
-        public virtual IAnalysisSet Await(Node node, AnalysisUnit unit) {
-            return AnalysisSet.Empty;
-        }
+        public virtual IAnalysisSet Await(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
 
-        public virtual IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) {
-            return AnalysisSet.Empty;
-        }
+        public virtual IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
 
-        internal virtual bool IsOfType(IAnalysisSet klass) {
-            return false;
-        }
+        public virtual bool IsOfType(IAnalysisSet klass) => false;
 
-        internal virtual BuiltinTypeId TypeId {
-            get {
-                return BuiltinTypeId.Unknown;
-            }
-        }
+        public virtual BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
 
         /// <summary>
         /// If required, returns the resolved version of this value. If there is nothing
         /// to resolve, returns <c>this</c>.
         /// </summary>
-        public IAnalysisSet Resolve(AnalysisUnit unit) {
-            return Resolve(unit, ResolutionContext.Complete);
-        }
+        public IAnalysisSet Resolve(AnalysisUnit unit) => Resolve(unit, ResolutionContext.Complete);
 
         /// <summary>
         /// If required, returns the resolved version of this value given a specific context.
         /// </summary>
         /// <remarks>
-        internal virtual IAnalysisSet Resolve(AnalysisUnit unit, ResolutionContext context) {
-            return this;
-        }
+        internal virtual IAnalysisSet Resolve(AnalysisUnit unit, ResolutionContext context) => this;
 
         #endregion
 
@@ -367,9 +286,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// match the value used in <see cref="UnionEquals"/>.
         /// </para>
         /// </remarks>
-        internal virtual AnalysisValue UnionMergeTypes(AnalysisValue av, int strength) {
-            return this;
-        }
+        internal virtual AnalysisValue UnionMergeTypes(AnalysisValue av, int strength) => this;
 
         /// <summary>
         /// Determines whether two analysis values are effectively equivalent.
@@ -381,9 +298,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// while distinct user-defined types may merge into <c>object</c> only
         /// at higher strengths. There is no defined maximum value.
         /// </remarks>
-        internal virtual bool UnionEquals(AnalysisValue av, int strength) {
-            return Equals(av);
-        }
+        internal virtual bool UnionEquals(AnalysisValue av, int strength) => Equals(av);
 
         /// <summary>
         /// Returns a hash code for this analysis value for the given strength.
@@ -393,9 +308,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// passed to <see cref="UnionEquals"/> and
         /// <see cref="UnionMergeTypes"/> to ensure valid results.
         /// </remarks>
-        internal virtual int UnionHashCode(int strength) {
-            return GetHashCode();
-        }
+        internal virtual int UnionHashCode(int strength) => GetHashCode();
 
         #endregion
 
@@ -430,15 +343,13 @@ namespace Microsoft.PythonTools.Analysis {
         internal virtual void AddReference(Node node, AnalysisUnit analysisUnit) {
         }
 
-        internal virtual IEnumerable<LocationInfo> References {
+        internal virtual IEnumerable<ILocationInfo> References {
             get {
                 yield break;
             }
         }
 
-        public override string ToString() {
-            return ShortDescription;
-        }
+        public override string ToString() => ShortDescription;
 
         IAnalysisSet IAnalysisSet.Add(AnalysisValue item, bool canMutate) {
             if (((IAnalysisSet)this).Comparer.Equals(this, item)) {
@@ -471,13 +382,9 @@ namespace Microsoft.PythonTools.Analysis {
             return AnalysisSet.Create(items, ((IAnalysisSet)this).Comparer).Add(this, out wasChanged, false);
         }
 
-        IAnalysisSet IAnalysisSet.Clone() {
-            return this;
-        }
+        IAnalysisSet IAnalysisSet.Clone() => this;
 
-        bool IAnalysisSet.Contains(AnalysisValue item) {
-            return ((IAnalysisSet)this).Comparer.Equals(this, item);
-        }
+        bool IAnalysisSet.Contains(AnalysisValue item) => ((IAnalysisSet)this).Comparer.Equals(this, item);
 
         bool IAnalysisSet.SetEquals(IAnalysisSet other) {
             if (other.Count != 1) {
@@ -491,20 +398,14 @@ namespace Microsoft.PythonTools.Analysis {
             return ((IAnalysisSet)this).Comparer.Equals(this, other.First());
         }
 
-        int IAnalysisSet.Count {
-            get { return 1; }
-        }
+        int IAnalysisSet.Count => 1;
 
-        IEqualityComparer<AnalysisValue> IAnalysisSet.Comparer {
-            get { return ObjectComparer.Instance; }
-        }
+        IEqualityComparer<AnalysisValue> IAnalysisSet.Comparer => ObjectComparer.Instance;
 
         IEnumerator<AnalysisValue> IEnumerable<AnalysisValue>.GetEnumerator() {
             yield return this;
         }
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
-            return ((IEnumerable<AnalysisValue>)this).GetEnumerator();
-        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => ((IEnumerable<AnalysisValue>)this).GetEnumerator();
     }
 }

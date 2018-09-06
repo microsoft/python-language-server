@@ -15,7 +15,6 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -23,16 +22,15 @@ using FluentAssertions.Primitives;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
 using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     internal sealed class VariableDefTestInfo {
-        private readonly VariableDef _variableDef;
-        private readonly InterpreterScope _scope;
+        private readonly IVariableDefinition _variableDef;
+        private readonly IScope _scope;
         public string Name { get; }
 
-        public VariableDefTestInfo(VariableDef variableDef, string name, InterpreterScope scope) {
+        public VariableDefTestInfo(IVariableDefinition variableDef, string name, IScope scope) {
             _variableDef = variableDef;
             Name = name;
             _scope = scope;
@@ -40,22 +38,22 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
         public VariableDefAssertions Should() => new VariableDefAssertions(_variableDef, Name, _scope);
 
-        public static implicit operator VariableDef(VariableDefTestInfo ti) => ti._variableDef;
+        //public static implicit operator VariableDef(VariableDefTestInfo ti) => ti._variableDef;
     }
 
-    internal sealed class VariableDefAssertions : ReferenceTypeAssertions<VariableDef, VariableDefAssertions> {
+    internal sealed class VariableDefAssertions : ReferenceTypeAssertions<IVariableDefinition, VariableDefAssertions> {
         private readonly string _moduleName;
         private readonly string _name;
-        private readonly InterpreterScope _scope;
+        private readonly IScope _scope;
 
-        public VariableDefAssertions(VariableDef variableDef, string name, InterpreterScope scope) {
+        public VariableDefAssertions(IVariableDefinition variableDef, string name, IScope scope) {
             Subject = variableDef;
             _name = name;
             _scope = scope;
             _moduleName = scope.Name;
         }
 
-        protected override string Identifier => nameof(VariableDef);
+        protected override string Identifier => nameof(IVariableDefinition);
 
         public AndConstraint<VariableDefAssertions> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs)
             => HaveTypes(new[]{ typeId }, because, reasonArgs);
@@ -84,7 +82,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => HaveTypes(typeIds, string.Empty);
 
         public AndConstraint<VariableDefAssertions> HaveResolvedTypes(IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
-            var resolved = Subject.TypesNoCopy.Resolve(new AnalysisUnit(null, null, _scope, true));
+            var resolved = Subject.Types.Resolve(new AnalysisUnit(null, null, _scope, true));
 
             var languageVersionIs3X = Is3X(_scope);
             AssertTypeIds(resolved, typeIds, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
@@ -99,7 +97,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => HaveResolvedClassNames(classNames, string.Empty);
 
         public AndConstraint<VariableDefAssertions> HaveResolvedClassNames(IEnumerable<string> classNames, string because = "", params object[] reasonArgs) {
-            var resolved = Subject.TypesNoCopy.Resolve(new AnalysisUnit(null, null, _scope, true));
+            var resolved = Subject.Types.Resolve(new AnalysisUnit(null, null, _scope, true));
             var expected = classNames.ToArray();
             var actual = FlattenAnalysisValues(resolved).Select(av => av.ShortDescription).ToArray();
 
@@ -136,7 +134,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         public AndConstraint<VariableDefAssertions> HaveMemberType(PythonMemberType memberType, string because = "", params object[] reasonArgs) {
-            Execute.Assertion.ForCondition(Subject.Types is AnalysisValue av && av.MemberType == memberType)
+            Execute.Assertion.ForCondition(Subject.Types is IAnalysisValue av && av.MemberType == memberType)
                 .BecauseOf(because, reasonArgs)
                 .FailWith(Subject.Types != null
                     ? $"Expected {_moduleName}.{_name} to be {memberType}, but it is {((AnalysisValue) Subject.Types).MemberType} {{reason}}."
@@ -159,11 +157,11 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         public AndWhichConstraint<VariableDefAssertions, AnalysisValueTestInfo<TValue>> HaveValue<TValue>(string because = "", params object[] reasonArgs)
-            where TValue : AnalysisValue {
+            where TValue : IAnalysisValue {
             var values = FlattenAnalysisValues(Subject.Types).ToArray();
             var value = AssertSingle(because, reasonArgs, values);
 
-            var typedValue = value as TValue;
+            var typedValue = (TValue)value;
             Execute.Assertion.ForCondition(typedValue != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {_moduleName}.{_name} to have value of type {typeof(TValue)}{{reason}}, but its value has type {value.GetType()}.");
@@ -172,7 +170,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return new AndWhichConstraint<VariableDefAssertions, AnalysisValueTestInfo<TValue>>(this, testInfo);
         }
         
-        private AnalysisValue AssertSingle(string because, object[] reasonArgs, AnalysisValue[] values) {
+        private IAnalysisValue AssertSingle(string because, object[] reasonArgs, IAnalysisValue[] values) {
             Execute.Assertion.ForCondition(values.Length == 1)
                 .BecauseOf(because, reasonArgs)
                 .FailWith(values.Length == 0 
@@ -184,7 +182,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
         private string GetScopeDescription() {
             switch (_scope) {
-                case FunctionScope functionScope:
+                case IFunctionScope functionScope:
                     return $"of variable '{_name}' in function {GetQuotedName(functionScope.Function)}";
                 default:
                     return $"of variable '{_moduleName}.{_name}'";

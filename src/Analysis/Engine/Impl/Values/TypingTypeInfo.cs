@@ -47,7 +47,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             if ((_args == null || !_args.Any()) && node is CallExpression ce) {
-                return unit.Scope.GetOrMakeNodeValue(node, NodeValueKind.TypeAnnotation, n => {
+                return unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.TypeAnnotation, n => {
                     // Use annotation converter and reparse the arguments
                     var newArgs = new List<IAnalysisSet>();
                     var eval = new ExpressionEvaluatorAnnotationConverter(
@@ -67,7 +67,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) {
             if (node is IndexExpression ie) {
-                return unit.Scope.GetOrMakeNodeValue(node, NodeValueKind.TypeAnnotation, n => {
+                return unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.TypeAnnotation, n => {
                     // Use annotation converter and reparse the index
                     var exprs = new List<Expression>();
                     if (ie.Index is SequenceExpression te) {
@@ -220,12 +220,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private IKnownClasses ClassInfo => State.ClassInfos;
         private AnalysisValue NoneType => ClassInfo[BuiltinTypeId.NoneType];
         private AnalysisValue None => State._noneInst;
-        private ProjectEntry Entry => _unit.ProjectEntry;
+        private IPythonProjectEntry Entry => _unit.ProjectEntry;
 
-
-        private static IReadOnlyList<IAnalysisSet> GetTypeList(IAnalysisSet item) {
-            return item.OfType<TypingTypeInfo>().FirstOrDefault()?.ToTypeList() ?? new[] { item };
-        }
+        private static IReadOnlyList<IAnalysisSet> GetTypeList(IAnalysisSet item) => item.OfType<TypingTypeInfo>().FirstOrDefault()?.ToTypeList() ?? new[] { item };
 
         private IAnalysisSet MakeTuple(params IAnalysisSet[] types) {
             var p = new ProtocolInfo(Entry, State);
@@ -558,9 +555,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return v;
         }
 
-        private IAnalysisSet ToInstance(IAnalysisSet set) {
-            return Finalize(set).GetInstanceType();
-        }
+        private IAnalysisSet ToInstance(IAnalysisSet set) => Finalize(set).GetInstanceType();
 
     }
 }

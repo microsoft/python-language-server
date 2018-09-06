@@ -55,7 +55,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public string Name => _lookupType?.Name ?? "tuple";
         public string Documentation => _lookupType?.Documentation ?? string.Empty;
         public BuiltinTypeId TypeId => _lookupType?.TypeId ?? BuiltinTypeId.Tuple;
-        public IList<IPythonType> Mro => _lookupType?.Mro ?? Array.Empty<IPythonType>();
+        public IReadOnlyList<IPythonType> Mro => _lookupType?.Mro ?? Array.Empty<IPythonType>();
         public bool IsBuiltin => _lookupType?.IsBuiltin ?? true;
         public PythonMemberType MemberType => _lookupType?.MemberType ?? PythonMemberType.Class;
         public IPythonFunction GetConstructors() => _lookupType?.GetConstructors();

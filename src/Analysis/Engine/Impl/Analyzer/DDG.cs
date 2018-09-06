@@ -28,7 +28,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         internal AnalysisUnit _unit;
         internal ExpressionEvaluator _eval;
         private SuiteStatement _curSuite;
-        public readonly HashSet<ProjectEntry> AnalyzedEntries = new HashSet<ProjectEntry>();
+        public readonly HashSet<IPythonProjectEntry> AnalyzedEntries = new HashSet<IPythonProjectEntry>();
 
         public void Analyze(Deque<AnalysisUnit> queue, CancellationToken cancel, Action<int> reportQueueSize = null, int reportQueueInterval = 1) {
             if (cancel.IsCancellationRequested) {
@@ -102,13 +102,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             }
         }
 
-        public ModuleInfo GlobalScope {
-            get { return _unit.DeclaringModule; }
-        }
+        public ModuleInfo GlobalScope => _unit.DeclaringModule;
 
-        public PythonAnalyzer ProjectState {
-            get { return _unit.State; }
-        }
+        public PythonAnalyzer ProjectState => _unit.State;
 
         public override bool Walk(PythonAst node) {
             ModuleReference existingRef;
@@ -130,13 +126,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         /// Gets the function which we are processing code for currently or
         /// null if we are not inside of a function body.
         /// </summary>
-        public FunctionScope CurrentFunction {
-            get { return CurrentContainer<FunctionScope>(); }
-        }
+        public FunctionScope CurrentFunction => CurrentContainer<FunctionScope>();
 
-        public ClassScope CurrentClass {
-            get { return CurrentContainer<ClassScope>(); }
-        }
+        public ClassScope CurrentClass => CurrentContainer<ClassScope>();
 
         private T CurrentContainer<T>() where T : InterpreterScope {
             return Scope.EnumerateTowardsGlobal.OfType<T>().FirstOrDefault();
@@ -289,7 +281,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
             if (attribute.Count == 1) {
                 if (nameReference != null) {
-                    module.Module.GetModuleMember(nameReference, _unit, attribute[0], addRef);
+                    module.Module.GetModuleMember(nameReference, _unit, attribute[0], addRef, null, null);
                 }
             } else {
                 foreach (var n in attribute.Skip(1)) {
@@ -481,7 +473,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         public override bool Walk(FunctionDefinition node) {
             InterpreterScope funcScope;
-            if (_unit.Scope.TryGetNodeScope(node, out funcScope)) {
+            if (_unit.InterpreterScope.TryGetNodeScope(node, out funcScope)) {
                 var function = ((FunctionScope)funcScope).Function;
                 var analysisUnit = (FunctionAnalysisUnit)((FunctionScope)funcScope).Function.AnalysisUnit;
 

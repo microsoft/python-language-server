@@ -22,7 +22,7 @@ using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
-    class BuiltinInstanceInfo : BuiltinNamespace<IPythonType>, IReferenceableContainer {
+    internal class BuiltinInstanceInfo : BuiltinNamespace<IPythonType>, IBuiltinInstanceInfo {
         private readonly BuiltinClassInfo _klass;
 
         public BuiltinInstanceInfo(BuiltinClassInfo klass)
@@ -30,6 +30,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _klass = klass;
         }
 
+        IBuiltinClassInfo IBuiltinInstanceInfo.ClassInfo => ClassInfo;
         public BuiltinClassInfo ClassInfo => _klass;
 
         public override IPythonType PythonType => _type;
@@ -203,7 +204,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return base.GetAsyncEnumeratorTypes(node, unit);
         }
 
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             if (klass.Contains(this.ClassInfo)) {
                 return true;
             }
@@ -218,7 +219,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return false;
         }
 
-        internal override BuiltinTypeId TypeId {
+        public override BuiltinTypeId TypeId {
             get {
                 return _klass?.PythonType.TypeId ?? BuiltinTypeId.Unknown;
             }

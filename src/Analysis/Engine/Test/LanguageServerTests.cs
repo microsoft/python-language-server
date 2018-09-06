@@ -19,20 +19,20 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.LanguageServer;
+using Microsoft.Python.LanguageServer.Extensions;
+using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Analysis.LanguageServer;
-using Microsoft.PythonTools.Analysis.LanguageServer.Extensibility;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.PythonTools.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -103,7 +103,7 @@ namespace AnalysisTests {
                         liveLinting = true,
                     }
                 }
-            });
+            }, CancellationToken.None);
 
             if (diagnosticEvents != null) {
                 s.OnPublishDiagnostics += (sender, e) => { lock (diagnosticEvents) diagnosticEvents[e.uri] = e; };
@@ -152,7 +152,7 @@ namespace AnalysisTests {
                     text = content,
                     languageId = language ?? "python"
                 }
-            }).ConfigureAwait(false);
+            }, CancellationToken.None).ConfigureAwait(false);
             await s.WaitForCompleteAnalysisAsync().ConfigureAwait(false);
             return uri;
         }
@@ -630,28 +630,31 @@ mc
 
 
         class TestCompletionHookProvider : ILanguageServerExtensionProvider {
-            public Task<ILanguageServerExtension> CreateAsync(IServer server, IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken) {
-                return Task.FromResult<ILanguageServerExtension>(new TestCompletionHook(server));
+            public Task<ILanguageServerExtension> CreateAsync(IPythonLanguageServer server, IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken) {
+                return Task.FromResult<ILanguageServerExtension>(new TestCompletionHook());
             }
+        }
 
-            class TestCompletionHook : ILanguageServerExtension {
-                public TestCompletionHook(IServer server) {
-                    if (server is Server s) {
-                        s.PostProcessCompletion += Server_PostProcessCompletion;
-                    } else {
-                        server.LogMessage(MessageType.Error, "Only Python language server is supported");
-                    }
+        class TestCompletionHook : ILanguageServerExtension, ICompletionExtension {
+            public void Dispose() { }
+
+            #region ILanguageServerExtension
+            public string Name => null;
+            public Task Initialize(IServiceContainer services, CancellationToken token) => Task.CompletedTask;
+            public Task<IReadOnlyDictionary<string, object>> ExecuteCommand(string command, IReadOnlyDictionary<string, object> properties, CancellationToken token)
+                => Task.FromResult<IReadOnlyDictionary<string, object>>(null);
+            #endregion
+
+            #region ICompletionExtension
+            public Task HandleCompletionAsync(IModuleAnalysis analysis, PythonAst tree, SourceLocation location, CompletionList completions, CancellationToken token) {
+                Assert.IsNotNull(tree);
+                Assert.IsNotNull(analysis);
+                for (int i = 0; i < completions.items.Length; ++i) {
+                    completions.items[i].insertText = "*" + completions.items[i].insertText;
                 }
-                public string Name => null;
-                public IReadOnlyDictionary<string, object> ExecuteCommand(string command, IReadOnlyDictionary<string, object> properties) => null;
-                private void Server_PostProcessCompletion(object sender, CompletionEventArgs e) {
-                    Assert.IsNotNull(e.Tree);
-                    Assert.IsNotNull(e.Analysis);
-                    for (int i = 0; i < e.CompletionList.items.Length; ++i) {
-                        e.CompletionList.items[i].insertText = "*" + e.CompletionList.items[i].insertText;
-                    }
-                }
+                return Task.CompletedTask;
             }
+            #endregion
         }
 
         [TestMethod, Priority(0)]
@@ -661,10 +664,10 @@ mc
 
             await AssertCompletion(s, u, new[] { "real", "imag" }, new string[0], new Position { line = 1, character = 2 });
 
-            await s.LoadExtension(new PythonAnalysisExtensionParams {
+            await s.LoadExtensionAsync(new PythonAnalysisExtensionParams {
                 assembly = typeof(TestCompletionHookProvider).Assembly.FullName,
                 typeName = typeof(TestCompletionHookProvider).FullName
-            });
+            }, null, CancellationToken.None);
 
             await AssertCompletion(s, u, new[] { "*real", "*imag" }, new[] { "real" }, new Position { line = 1, character = 2 });
         }
@@ -993,7 +996,7 @@ datetime.datetime.now().day
         }
 
         class GetAllExtensionProvider : ILanguageServerExtensionProvider {
-            public Task<ILanguageServerExtension> CreateAsync(IServer server, IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken) {
+            public Task<ILanguageServerExtension> CreateAsync(IPythonLanguageServer server, IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken) {
                 return Task.FromResult<ILanguageServerExtension>(new GetAllExtension((Server)server, properties));
             }
 
@@ -1010,7 +1013,9 @@ datetime.datetime.now().day
 
                 public string Name => "getall";
 
-                public IReadOnlyDictionary<string, object> ExecuteCommand(string command, IReadOnlyDictionary<string, object> properties) {
+                public void Dispose() => _server.Dispose();
+
+                public Task<IReadOnlyDictionary<string, object>> ExecuteCommand(string command, IReadOnlyDictionary<string, object> properties, CancellationToken token) {
                     if (properties == null) {
                         return null;
                     }
@@ -1026,10 +1031,12 @@ datetime.datetime.now().day
                                 res.Add(m.Name);
                             }
                         }
-                        return new Dictionary<string, object> { ["names"] = res };
+                        return Task.FromResult<IReadOnlyDictionary<string, object>>(new Dictionary<string, object> { ["names"] = res });
                     }
-                    return null;
+                    return Task.FromResult<IReadOnlyDictionary<string, object>>(null);
                 }
+
+                public Task Initialize(IServiceContainer services, CancellationToken token) => Task.CompletedTask;
             }
         }
 
@@ -1038,11 +1045,11 @@ datetime.datetime.now().day
             var s = await CreateServer();
             var u = await AddModule(s, "x = 1\ny = 2\nz = 'abc'");
 
-            await s.LoadExtension(new PythonAnalysisExtensionParams {
+            await s.LoadExtensionAsync(new PythonAnalysisExtensionParams {
                 assembly = typeof(GetAllExtensionProvider).Assembly.FullName,
                 typeName = typeof(GetAllExtensionProvider).FullName,
                 properties = new Dictionary<string, object> { ["typeid"] = BuiltinTypeId.Int.ToString() }
-            });
+            }, null, CancellationToken.None);
 
             var cmd = new ExtensionCommandParams {
                 extensionName = "getall",
@@ -1050,25 +1057,25 @@ datetime.datetime.now().day
                 properties = new Dictionary<string, object> { ["uri"] = u.AbsoluteUri, ["line"] = 1, ["column"] = 1 }
             };
 
-            var res = (await s.ExtensionCommand(cmd)).properties?["names"];
+            var res = (await s.ExtensionCommand(cmd, CancellationToken.None)).properties?["names"];
             res.Should().BeOfType<List<string>>().Which.Should().OnlyContain("x", "y");
 
             cmd.command = BuiltinTypeId_Str.ToString();
-            res = (await s.ExtensionCommand(cmd)).properties?["names"];
+            res = (await s.ExtensionCommand(cmd, CancellationToken.None)).properties?["names"];
             res.Should().BeNull();
 
-            await s.LoadExtension(new PythonAnalysisExtensionParams {
+            await s.LoadExtensionAsync(new PythonAnalysisExtensionParams {
                 assembly = typeof(GetAllExtensionProvider).Assembly.FullName,
                 typeName = typeof(GetAllExtensionProvider).FullName,
                 properties = new Dictionary<string, object> { ["typeid"] = BuiltinTypeId_Str.ToString() }
-            });
+            }, null, CancellationToken.None);
 
             cmd.command = BuiltinTypeId_Str.ToString();
-            res = (await s.ExtensionCommand(cmd)).properties?["names"];
+            res = (await s.ExtensionCommand(cmd, CancellationToken.None)).properties?["names"];
             res.Should().BeOfType<List<string>>().Which.Should().Contain("z", "__name__", "__file__");
 
             cmd.command = "Int";
-            res = (await s.ExtensionCommand(cmd)).properties?["names"];
+            res = (await s.ExtensionCommand(cmd, CancellationToken.None)).properties?["names"];
             res.Should().BeNull();
         }
 
@@ -1084,12 +1091,12 @@ datetime.datetime.now().day
                 position = position ?? new Position(),
                 context = context,
                 _expr = expr
-            });
+            }, CancellationToken.None);
             DumpDetails(res);
 
             cmpKey = cmpKey ?? (c => c.insertText);
             var items = res.items?.Select(cmpKey).ToList() ?? new List<string>();
-            
+
             if (contains != null && contains.Any()) {
                 items.Should().Contain(contains);
             }
@@ -1109,7 +1116,7 @@ datetime.datetime.now().day
         }
 
         private static async Task AssertAnyCompletion(Server s, TextDocumentIdentifier document, Position position) {
-            var res = await s.Completion(new CompletionParams { textDocument = document, position = position });
+            var res = await s.Completion(new CompletionParams { textDocument = document, position = position }, CancellationToken.None);
             DumpDetails(res);
             if (res.items == null || !res.items.Any()) {
                 Assert.Fail("Completions were not returned");
@@ -1117,7 +1124,7 @@ datetime.datetime.now().day
         }
 
         private static async Task AssertNoCompletion(Server s, TextDocumentIdentifier document, Position position) {
-            var res = await s.Completion(new CompletionParams { textDocument = document, position = position });
+            var res = await s.Completion(new CompletionParams { textDocument = document, position = position }, CancellationToken.None);
             DumpDetails(res);
             if (res.items != null && res.items.Any()) {
                 var msg = string.Join(", ", res.items.Select(c => c.label).Ordered());
@@ -1130,11 +1137,11 @@ datetime.datetime.now().day
                 textDocument = document,
                 position = position,
                 _expr = expr
-            })).signatures;
+            }, CancellationToken.None)).signatures;
 
             var labels = sigs.Select(sig => sig.label).ToList();
-            
-            
+
+
             if (contains != null && contains.Any()) {
                 labels.Should().Contain(contains);
             }
@@ -1149,7 +1156,7 @@ datetime.datetime.now().day
                 textDocument = document,
                 position = position,
                 _expr = expr
-            });
+            }, CancellationToken.None);
 
             if (hoverText.EndsWith("*")) {
                 // Check prefix first, but then show usual message for mismatched value
@@ -1168,7 +1175,7 @@ datetime.datetime.now().day
         }
 
         public static async Task AssertReferences(Server s, TextDocumentIdentifier document, SourceLocation position, IEnumerable<string> contains, IEnumerable<string> excludes, string expr = null) {
-            var refs = (await s.FindReferences(new ReferencesParams {
+            var refs = await s.FindReferences(new ReferencesParams {
                 textDocument = document,
                 position = position,
                 _expr = expr,
@@ -1176,10 +1183,12 @@ datetime.datetime.now().day
                     includeDeclaration = true,
                     _includeValues = true
                 }
-            }));
+            }, CancellationToken.None);
 
             refs.Select(r => $"{r._kind ?? ReferenceKind.Reference};{r.range}").Should().Contain(contains).And.NotContain(excludes);
         }
+
+        public Task<ILanguageServerExtension> CreateAsync(IPythonLanguageServer server, IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken) => throw new NotImplementedException();
     }
 
     [TestClass]

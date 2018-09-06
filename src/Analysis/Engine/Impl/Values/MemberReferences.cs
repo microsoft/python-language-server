@@ -72,7 +72,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// <summary>
     /// A collection of references which are keyd off of project entry.
     /// </summary>
-    class ReferenceDict : Dictionary<IProjectEntry, ReferenceList> {
+    class ReferenceDict : Dictionary<IPythonProjectEntry, ReferenceList> {
         public ReferenceList GetReferences(ProjectEntry projectEntry) {
             ReferenceList builtinRef;
             lock (this) {
@@ -88,9 +88,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return builtinRef;
         }
 
-        public IEnumerable<LocationInfo> AllReferences => AllReferencesNoLock.AsLockedEnumerable(this).ToList();
+        public IEnumerable<ILocationInfo> AllReferences => AllReferencesNoLock.AsLockedEnumerable(this).ToList();
 
-        private IEnumerable<LocationInfo> AllReferencesNoLock {
+        private IEnumerable<ILocationInfo> AllReferencesNoLock {
             get {
                 foreach (var keyValue in this) {
                     foreach (var reference in keyValue.Value.References) {
@@ -107,7 +107,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     class ReferenceList : IReferenceable {
         public readonly int Version;
         public readonly string Project;
-        public SmallSetWithExpiry<EncodedLocation> References;
+        public SmallSetWithExpiry<IEncodedLocation> References;
 
         public ReferenceList(IProjectEntry project) {
             Version = project.AnalysisVersion;
@@ -122,12 +122,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         #region IReferenceable Members
 
-        public IEnumerable<EncodedLocation> Definitions {
+        public IEnumerable<IEncodedLocation> Definitions {
             get { yield break; }
         }
 
-        IEnumerable<EncodedLocation> IReferenceable.References => References.AsLockedEnumerable(this);
-        IEnumerable<EncodedLocation> ReferencesNoLock => References;
+        IEnumerable<IEncodedLocation> IReferenceable.References => References.AsLockedEnumerable(this);
+        IEnumerable<IEncodedLocation> ReferencesNoLock => References;
 
         #endregion
     }
@@ -136,15 +136,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// A list of references as stored for a single project entry.
     /// </summary>
     class DefinitionList : IReferenceable {
-        public readonly LocationInfo _location;
+        public readonly ILocationInfo _location;
 
-        public DefinitionList(LocationInfo location) {
+        public DefinitionList(ILocationInfo location) {
             _location = location;
         }
 
         #region IReferenceable Members
 
-        public IEnumerable<EncodedLocation> Definitions {
+        public IEnumerable<IEncodedLocation> Definitions {
             get {
                 if (_location != null) {
                     yield return new EncodedLocation(_location, null);
@@ -152,7 +152,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        IEnumerable<EncodedLocation> IReferenceable.References {
+        IEnumerable<IEncodedLocation> IReferenceable.References {
             get { yield break; }
         }
 

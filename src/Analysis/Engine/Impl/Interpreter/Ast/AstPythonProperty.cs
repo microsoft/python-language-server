@@ -11,7 +11,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public AstPythonProperty(
             PythonAst ast,
             FunctionDefinition getter,
-            LocationInfo location
+            ILocationInfo location
         ) {
             Documentation = getter.Documentation;
             IsReadOnly = true;
@@ -40,6 +40,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         
         public bool IsReadOnly { get; private set; }
 
-        public IEnumerable<LocationInfo> Locations { get; }
+        public IEnumerable<ILocationInfo> Locations { get; }
     }
 }

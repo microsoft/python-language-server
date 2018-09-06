@@ -226,7 +226,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        internal override BuiltinTypeId TypeId {
+        public override BuiltinTypeId TypeId {
             get {
                 return ClassInfo.PythonType.TypeId;
             }

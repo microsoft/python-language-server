@@ -26,7 +26,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// Represents a generator instance - either constructed using a generator expression or
     /// by calling a function definition which contains yield expressions.
     /// </summary>
-    internal class GeneratorInfo : BuiltinInstanceInfo, IHasRichDescription {
+    internal class GeneratorInfo : BuiltinInstanceInfo, IGeneratorInfo, IHasRichDescription {
         private AnalysisValue _nextMethod;
         private AnalysisValue _sendMethod;
         private readonly IPythonProjectEntry _declaringModule;
@@ -118,7 +118,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public void AddYield(Node node, AnalysisUnit unit, IAnalysisSet yieldValue, bool enqueue = true) {
-            if (FunctionScope.IsOriginalClosureScope(unit.Scope)) {
+            if (FunctionScope.IsOriginalClosureScope(unit.InterpreterScope)) {
                 // Do not add yield types to original scope of closure functions
                 return;
             }
@@ -128,7 +128,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public void AddReturn(Node node, AnalysisUnit unit, IAnalysisSet returnValue, bool enqueue = true) {
-            if (FunctionScope.IsOriginalClosureScope(unit.Scope)) {
+            if (FunctionScope.IsOriginalClosureScope(unit.InterpreterScope)) {
                 // Do not add return types to original scope of closure functions
                 return;
             }
@@ -138,7 +138,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public void AddSend(Node node, AnalysisUnit unit, IAnalysisSet sendValue, bool enqueue = true) {
-            if (FunctionScope.IsOriginalClosureScope(unit.Scope)) {
+            if (FunctionScope.IsOriginalClosureScope(unit.InterpreterScope)) {
                 // Do not add sent types to original scope of closure functions
                 return;
             }
@@ -210,11 +210,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (Push()) {
                 try {
                     bool anyChange = false, changed;
-                    yields = Yields.TypesNoCopy.Resolve(unit, context, out changed);
+                    yields = Yields.Types.Resolve(unit, context, out changed);
                     anyChange |= changed;
-                    returns = Returns.TypesNoCopy.Resolve(unit, context, out changed);
+                    returns = Returns.Types.Resolve(unit, context, out changed);
                     anyChange |= changed;
-                    sends = Sends.TypesNoCopy.Resolve(unit, context, out changed);
+                    sends = Sends.Types.Resolve(unit, context, out changed);
                     anyChange |= changed;
                     if (!anyChange) {
                         return this;
@@ -233,7 +233,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return pi;
             }
 
-            var gi = unit.Scope.GetOrMakeNodeValue(context.CallSite, NodeValueKind.Sequence, n => new GeneratorInfo(unit.State, unit.Entry)) as GeneratorInfo;
+            var gi = unit.InterpreterScope.GetOrMakeNodeValue(context.CallSite, NodeValueKind.Sequence, n => new GeneratorInfo(unit.State, unit.ProjectEntry)) as GeneratorInfo;
             if (gi != null) {
                 gi.Yields.AddTypes(unit, yields);
                 gi.Returns.AddTypes(unit, returns);

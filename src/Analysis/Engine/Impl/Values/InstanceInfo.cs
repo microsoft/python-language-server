@@ -17,7 +17,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
-using Microsoft.PythonTools.Analysis.LanguageServer;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
@@ -26,7 +25,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// <summary>
     /// Represents an instance of a class implemented in Python
     /// </summary>
-    internal class InstanceInfo : AnalysisValue, IReferenceableContainer {
+    internal class InstanceInfo : AnalysisValue, IInstanceInfo {
         private readonly ClassInfo _classInfo;
         private Dictionary<string, VariableDef> _instanceAttrs;
 
@@ -38,7 +37,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             var res = new Dictionary<string, IAnalysisSet>();
             if (_instanceAttrs != null) {
                 foreach (var kvp in _instanceAttrs) {
-                    var types = kvp.Value.TypesNoCopy;
+                    var types = kvp.Value.Types;
                     var key = kvp.Key;
                     if (!options.ForEval()) {
                         kvp.Value.ClearOldValues();
@@ -63,7 +62,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                                             kvp.Value.ClearOldValues();
                                         }
                                         if (kvp.Value.VariableStillExists) {
-                                            MergeTypes(res, kvp.Key, kvp.Value.TypesNoCopy);
+                                            MergeTypes(res, kvp.Key, kvp.Value.Types);
                                         }
                                     }
                                 }
@@ -90,17 +89,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public Dictionary<string, VariableDef> InstanceAttributes {
-            get {
-                return _instanceAttrs;
-            }
-        }
+        public IReadOnlyDictionary<string, VariableDef> InstanceAttributes => _instanceAttrs;
+        IReadOnlyDictionary<string, IVariableDefinition> IInstanceInfo.InstanceAttributes
+            => InstanceAttributes.ToDictionary(kvp => kvp.Key, kvp => kvp.Value as IVariableDefinition);
 
-        public PythonAnalyzer ProjectState {
-            get {
-                return _classInfo.AnalysisUnit.State;
-            }
-        }
+        public PythonAnalyzer ProjectState => _classInfo.AnalysisUnit.State;
 
         public override IEnumerable<OverloadResult> Overloads {
             get {
@@ -254,7 +247,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (_instanceAttrs == null) {
                 _instanceAttrs = new Dictionary<string, VariableDef>();
             }
-            
+
             VariableDef instMember;
             if (!_instanceAttrs.TryGetValue(name, out instMember) || instMember == null) {
                 _instanceAttrs[name] = instMember = new VariableDef();
@@ -269,7 +262,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (operation == PythonOperator.Not) {
                 return unit.State.ClassInfos[BuiltinTypeId.Bool].Instance;
             }
-            
+
             string methodName = UnaryOpToString(unit.State, operation);
             if (methodName != null) {
                 var method = GetTypeMember(node, unit, methodName);
@@ -404,6 +397,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public ClassInfo ClassInfo => _classInfo;
+        IClassInfo IInstanceInfo.ClassInfo => ClassInfo;
 
         public override IPythonProjectEntry DeclaringModule => ClassInfo.DeclaringModule;
         public override int DeclaringVersion => ClassInfo.DeclaringVersion;
@@ -411,7 +405,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override string Documentation => ClassInfo.Documentation;
         public override PythonMemberType MemberType => PythonMemberType.Instance;
 
-        internal override bool IsOfType(IAnalysisSet klass) {
+        public override bool IsOfType(IAnalysisSet klass) {
             return klass.Contains(ClassInfo) || klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Object]);
         }
 
@@ -429,7 +423,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 // II + II => BII(object)
                 // II + BII(!function) => BII(object)
                 var obj = ProjectState.ClassInfos[BuiltinTypeId.Object];
-                return ns is InstanceInfo || 
+                return ns is InstanceInfo ||
                     (ns is BuiltinInstanceInfo && ns.TypeId != BuiltinTypeId.Function && ns != ProjectState.ClassInfos[BuiltinTypeId.Type].Instance) ||
                     ns == obj.Instance;
 

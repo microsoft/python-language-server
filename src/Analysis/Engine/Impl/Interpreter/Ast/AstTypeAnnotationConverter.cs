@@ -206,7 +206,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public string Name => DeclaringModule.Name;
             public string Documentation => DeclaringModule.Documentation;
             public BuiltinTypeId TypeId => BuiltinTypeId.Module;
-            public IList<IPythonType> Mro => new[] { this };
+            public IReadOnlyList<IPythonType> Mro => new[] { this };
             public bool IsBuiltin => true;
             public PythonMemberType MemberType => PythonMemberType.Module;
             public IPythonFunction GetConstructors() => null;
@@ -222,14 +222,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             public IReadOnlyList<IPythonType> Types { get; }
 
-            public IList<IMember> Members => Types.OfType<IMember>().ToArray();
+            public IReadOnlyList<IMember> Members => Types.OfType<IMember>().ToArray();
 
             public PythonMemberType MemberType => PythonMemberType.Unknown;
             public string Name => "Any";
             public string Documentation => null;
             public BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
             public IPythonModule DeclaringModule => null;
-            public IList<IPythonType> Mro => null;
+            public IReadOnlyList<IPythonType> Mro => null;
             public bool IsBuiltin => false;
             public IPythonFunction GetConstructors() => null;
 
@@ -250,7 +250,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public string Name { get; }
             public string Documentation => null;
             public BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
-            public IList<IPythonType> Mro => null;
+            public IReadOnlyList<IPythonType> Mro => null;
             public bool IsBuiltin => true;
             public PythonMemberType MemberType => PythonMemberType.Unknown;
             public IPythonFunction GetConstructors() => null;

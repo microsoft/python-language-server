@@ -17,26 +17,20 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.PythonTools;
+using Microsoft.Python.LanguageServer;
+using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Analysis.LanguageServer;
 using Microsoft.PythonTools.Analysis.Values;
-using Microsoft.PythonTools.Intellisense;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
 using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using TestUtilities;
 
 namespace AnalysisTests {
@@ -618,7 +612,7 @@ a.original()
                     .And.HaveVariable("x").OfResolvedType(BuiltinTypeId.Int)
                     .And.HaveVariable("y").OfResolvedType(BuiltinTypeId.Int)
                     .And.HaveVariable("_").OfResolvedTypes(BuiltinTypeId.Tuple, BuiltinTypeId.NoneType)
-                    .And.HaveParameter("self").WithValue<InstanceInfo>()
+                    .And.HaveParameter("self").WithValue<IInstanceInfo>()
                     .Which.Should().HaveMemberOfTypes("top", BuiltinTypeId.Tuple, BuiltinTypeId.NoneType);
             }
         }
@@ -987,7 +981,7 @@ class D(C):
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
                 analysis.Should().HaveClass("D").WithFunction("__init__")
-                    .Which.Should().HaveParameter("self").WithValue<InstanceInfo>()
+                    .Which.Should().HaveParameter("self").WithValue<IInstanceInfo>()
                     .Which.Should().HaveMemberOfType("fob", BuiltinTypeId.Int)
                     .And.HaveMemberOfType("abc", BuiltinTypeId.Int);
             }
@@ -1844,9 +1838,9 @@ expect_object = vars()['']
                     .And.HaveVariable("expect_dict").OfType(BuiltinTypeId.Dict);
 
 
-                analysis.Should().HaveVariable("expect_TextIOWrapper").WithValue<BuiltinInstanceInfo>()
+                analysis.Should().HaveVariable("expect_TextIOWrapper").WithValue<IBuiltinInstanceInfo>()
                     .Which.Should().HaveClassName("TextIOWrapper");
-                analysis.Should().HaveVariable("expect_BufferedIOBase").WithValue<BuiltinInstanceInfo>()
+                analysis.Should().HaveVariable("expect_BufferedIOBase").WithValue<IBuiltinInstanceInfo>()
                     .Which.Should().HaveClassName("BufferedIOBase");
             }
         }
@@ -2663,9 +2657,9 @@ class SomeClass:
             using (var server = await CreateServerAsync()) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveClass("SomeClass").WithFunction("f")
-                    .Which.Should().HaveParameter("self").WithValue<InstanceInfo>()
-                    .Which.Should().HaveMember<InstanceInfo>("fob")
-                    .Which.Should().HaveMember<BoundMethodInfo>("nodesc_method");
+                    .Which.Should().HaveParameter("self").WithValue<IInstanceInfo>()
+                    .Which.Should().HaveMember<IInstanceInfo>("fob")
+                    .Which.Should().HaveMember<IBoundMethodInfo>("nodesc_method");
             }
         }
 
@@ -7514,7 +7508,7 @@ e = Employee('Guido')
 ";
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
-                analysis.Should().HaveVariable("e").WithValue<InstanceInfo>()
+                analysis.Should().HaveVariable("e").WithValue<IInstanceInfo>()
                     .Which.Should().HaveOnlyMembers("name", "id", "__doc__", "__class__");
             }
         }
@@ -7586,7 +7580,7 @@ e = Employee('Guido')
         /// <param name="prefix">Prefix for the module names. The first source text will become prefix + "1", etc.</param>
         /// <param name="code">The source code for each of the modules</param>
         /// <param name="test">The test to run against the analysis</param>
-        private async Task PermutedTestAsync(string prefix, string[] code, Action<ModuleAnalysis[]> test) {
+        private async Task PermutedTestAsync(string prefix, string[] code, Action<IModuleAnalysis[]> test) {
             foreach (var p in Permutations(code.Length)) {
                 using (var server = await CreateServerAsync()) {
                     var entries = new ProjectEntry[code.Length];
