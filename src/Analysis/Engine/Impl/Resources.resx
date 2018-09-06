@@ -123,7 +123,7 @@
   <data name="RenameVariable_CannotRenameModuleName" xml:space="preserve">
     <value>Cannot rename modules</value>
   </data>
-  <data name="RenameVariable_NoInformationAvailableForVariable" xml:space="preserve">`
+  <data name="RenameVariable_NoInformationAvailableForVariable" xml:space="preserve">
     <value>No information is available for the variable '{0}'.</value>
   </data>
   <data name="RenameVariable_SelectSymbol" xml:space="preserve">
