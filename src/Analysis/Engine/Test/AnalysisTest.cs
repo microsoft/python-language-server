@@ -1489,21 +1489,14 @@ def f(abc):
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task LambdaInComprehension() {
+        [DataRow(PythonLanguageVersion.V27)]
+        [DataRow(PythonLanguageVersion.V31)]
+        [DataRow(PythonLanguageVersion.V33)]
+        [DataTestMethod, Priority(0)]
+        public async Task LambdaInComprehension(PythonLanguageVersion version) {
             var text = "x = [(lambda a:[a**i for i in range(a+1)])(j) for j in range(5)]";
 
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python27X)) {
-                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
-                analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.List);
-            }
-
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python31X)) {
-                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
-                analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.List);
-            }
-
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python33X)) {
+            using (var server = await CreateServerAsync(PythonVersions.GetRequiredCPythonConfiguration(version))) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.List);
             }

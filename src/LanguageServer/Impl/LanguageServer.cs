@@ -562,12 +562,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 public bool IsAwaitable { get; }
 
                 public QueueItem(bool isAwaitable, CancellationToken cancellationToken) {
-                    _tcs = new TaskCompletionSource<IDisposable>();
+                    _tcs = new TaskCompletionSource<IDisposable>(TaskCreationOptions.RunContinuationsAsynchronously);
                     IsAwaitable = isAwaitable;
                     _tcs.RegisterForCancellation(cancellationToken).UnregisterOnCompletion(_tcs.Task);
                 }
 
-                public void SetResult(IDisposable disposable) => _tcs.TrySetResultOnThreadPool(disposable);
+                public void SetResult(IDisposable disposable) => _tcs.TrySetResult(disposable);
             }
 
             private class PrioritizerDisposable : IDisposable {

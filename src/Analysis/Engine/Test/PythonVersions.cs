@@ -141,6 +141,9 @@ namespace Microsoft.PythonTools.Analysis {
             Python27,
             Python27_x64).First();
 
+        public static InterpreterConfiguration GetRequiredCPythonConfiguration(PythonLanguageVersion version) 
+            => GetCPythonVersion(version, InterpreterArchitecture.x86) ?? GetCPythonVersion(version, InterpreterArchitecture.x64) ?? NotInstalled(version.ToString());
+
         private static IEnumerable<InterpreterConfiguration> GetVersions(params InterpreterConfiguration[] configurations) => configurations.Where(v => v != null);
 
         private static InterpreterConfiguration GetCPythonVersion(PythonLanguageVersion version, InterpreterArchitecture arch) {            

@@ -47,7 +47,7 @@ namespace TestUtilities {
             if (Directory.Exists(path)) {
                 foreach (var landmark in new[] {
                     "TestData",
-                    @"Python\Tests\TestData"
+                    @"src\UnitTests\TestData"
                 }) {
                     var candidate = PathUtils.GetAbsoluteDirectoryPath(path, landmark);
                     if (Directory.Exists(candidate)) {

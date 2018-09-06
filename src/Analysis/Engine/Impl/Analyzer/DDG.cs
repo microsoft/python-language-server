@@ -73,7 +73,6 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                     SetCurrentUnit(_unit);
                     AnalyzedEntries.Add(_unit.ProjectEntry);
                     _unit.Analyze(this, cancel);
-                    _unit.ProjectEntry.SetCompleteAnalysis();
                 }
 
                 if (reportQueueSize != null) {
