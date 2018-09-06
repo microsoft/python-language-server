@@ -1,0 +1,8 @@
+fob()
+fob(1)
+fob(oar = 1)
+fob(*oar)
+fob(**oar)
+fob(*oar, **baz)
+fob(oar = 1, baz = 2)
+fob(oar, baz)
