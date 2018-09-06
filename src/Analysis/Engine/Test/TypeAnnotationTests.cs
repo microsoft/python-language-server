@@ -382,6 +382,7 @@ x = f()
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/38")]
         public async Task TypingModuleDocumentationExample_2() {
             await TypingModuleDocumentationExampleAsync(@"from typing import List
 Vector = List[float]

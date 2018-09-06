@@ -307,8 +307,8 @@ def f(x):
             }
         }
 
-        [TestMethod, Priority(2)]
-        [TestCategory("ExpectFail")]
+        //[TestMethod, Priority(2)]
+        //[TestCategory("ExpectFail")]
         public async Task CartesianStarArgs() {
             // TODO: Figure out whether this is useful behaviour
             // It currently does not work because we no longer treat
@@ -717,6 +717,7 @@ class D(object):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/47")]
         public async Task MutatingReferences() {
             var text1 = @"
 import mod2
@@ -776,6 +777,7 @@ class D(object):
 
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/46")]
         public async Task MutatingCalls() {
             var text1 = @"
 def f(abc):
@@ -1297,6 +1299,7 @@ d = a.__next__()");
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/42")]
         public async Task Generator3X() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
@@ -1357,6 +1360,7 @@ d = a.next()");
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/44")]
         public async Task GeneratorDelegation() {
             //            var text = @"
             //def f():
@@ -1575,6 +1579,7 @@ class C:
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/43")]
         public async Task GeneratorComprehensions() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var text = @"
@@ -1995,6 +2000,7 @@ class H(object):
         /// http://pytools.codeplex.com/workitem/798
         /// </summary>
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/45")]
         public async Task ListSubclassSignatures() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var uri = TestData.GetTempPathUri("test_module.py");
@@ -2102,6 +2108,7 @@ class CInheritedInit(CNewStyleInit):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/41")]
         public async Task Ellipsis() {
             using (var server = await CreateServerAsync(PythonVersions.EarliestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
@@ -2914,6 +2921,7 @@ f(abc = 123)
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/40")]
         public async Task References_GrammarTest_Statements() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var uri = TestData.GetTempPathUri("test_module.py");
@@ -3100,6 +3108,7 @@ def f(abc):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/39")]
         public async Task References_Parameters_NestedFunction() {
             var uri = TestData.GetTempPathUri("test_module.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
@@ -7475,6 +7484,7 @@ y = mcc()
         }
 */
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/48")]
         public async Task OsPathMembers() {
             var code = @"import os.path as P
 ";
