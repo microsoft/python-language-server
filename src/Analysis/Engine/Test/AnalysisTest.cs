@@ -1477,7 +1477,7 @@ def f(abc):
 ";
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 await server.SendDidOpenTextDocument(uri, text);
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 4, 2);
@@ -1531,7 +1531,7 @@ b = """"
 exec b in a
 ";
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 await server.SendDidOpenTextDocument(uri, text);
                 await server.GetAnalysisAsync(uri);
                 var referencesA = await server.SendFindReferences(uri, 1, 1);
@@ -1562,7 +1562,7 @@ class C:
 ";
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 var references = await server.SendFindReferences(uri, 6, 14);
 
@@ -1997,7 +1997,7 @@ class H(object):
         [TestMethod, Priority(0)]
         public async Task ListSubclassSignatures() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 await server.SendDidOpenTextDocument(uri, @"
 class C(list):
     pass
@@ -2682,7 +2682,7 @@ class C(object):
 ";
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 await server.SendDidOpenTextDocument(uri, text);
                 await server.GetAnalysisAsync(uri);
                 var referencesAbc = await server.SendFindReferences(uri, 8, 15);
@@ -2701,7 +2701,7 @@ class C(object):
         [TestMethod, Priority(0)]
         public async Task References_InstanceVariables() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
 
                 var text = @"
 # add ref w/o type info
@@ -2758,7 +2758,7 @@ D(42)";
         [TestMethod, Priority(0)]
         public async Task References_FunctionDefinitions() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 var text = @"
 def f(): pass
 
@@ -2790,7 +2790,7 @@ x = f";
         [TestMethod, Priority(0)]
         public async Task References_ClassVariables() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 var text = @"
 
 class D(object):
@@ -2812,7 +2812,7 @@ class D(object):
         [TestMethod, Priority(0)]
         public async Task References_ClassDefinition() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 var text = @"
 class D(object): pass
 
@@ -2832,7 +2832,7 @@ a = D
         [TestMethod, Priority(0)]
         public async Task References_MethodDefinition() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 var text = @"
 class D(object): 
     def f(self): pass
@@ -2853,7 +2853,7 @@ a = D().f()
         [TestMethod, Priority(0)]
         public async Task References_Globals() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 var text = @"
 abc = 42
 print abc
@@ -2873,7 +2873,7 @@ del abc
         [TestMethod, Priority(0)]
         public async Task References_Parameters() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 var text = @"
 def f(abc):
     print abc
@@ -2895,7 +2895,7 @@ def f(abc):
         [TestMethod, Priority(0)]
         public async Task References_NamedArguments() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 var text = @"
 def f(abc):
     print abc
@@ -2916,7 +2916,7 @@ f(abc = 123)
         [TestMethod, Priority(0)]
         public async Task References_GrammarTest_Statements() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test_module.py");
+                var uri = TestData.GetDefaultModuleUri();
                 var text = @"
 def f(abc):
     try: pass
@@ -3016,7 +3016,7 @@ def f(abc):
 
         [TestMethod, Priority(0)]
         public async Task References_GrammarTest_Expressions() {
-            var uri = TestData.GetTempPathUri("test_module.py");
+            var uri = TestData.GetDefaultModuleUri();
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var text = @"
 def f(abc):
@@ -3101,7 +3101,7 @@ def f(abc):
 
         [TestMethod, Priority(0)]
         public async Task References_Parameters_NestedFunction() {
-            var uri = TestData.GetTempPathUri("test_module.py");
+            var uri = TestData.GetDefaultModuleUri();
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var text = @"
 def f(a):
@@ -3140,7 +3140,7 @@ def f(*a, **k):
 a = 1
 k = 2
 ";
-            var uri = TestData.GetTempPathUri("test_module.py");
+            var uri = TestData.GetDefaultModuleUri();
             using (var server = await CreateServerAsync()) {
                 await server.SendDidOpenTextDocument(uri, text);
                 await server.GetAnalysisAsync(uri);
@@ -3171,7 +3171,7 @@ def f(a):
 
 f(a=1)
 ";
-            var uri = TestData.GetTempPathUri("test_module.py");
+            var uri = TestData.GetDefaultModuleUri();
             using (var server = await CreateServerAsync()) {
                 await server.SendDidOpenTextDocument(uri, text);
                 await server.GetAnalysisAsync(uri);
@@ -3413,7 +3413,7 @@ g = f()";
 (g for g in y)
 (y for y in g)
 ";
-            var uri = TestData.GetTempPathUri("test_module.py");
+            var uri = TestData.GetDefaultModuleUri();
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 await server.SendDidOpenTextDocument(uri, text);
                 await server.GetAnalysisAsync(uri);
@@ -3445,7 +3445,7 @@ g = f()";
 (g for g in y)
 (y for y in g)
 ";
-            var uri = TestData.GetTempPathUri("test_module.py");
+            var uri = TestData.GetDefaultModuleUri();
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 await server.SendDidOpenTextDocument(uri, text);
                 await server.GetAnalysisAsync(uri);
