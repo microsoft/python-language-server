@@ -1295,7 +1295,7 @@ d = a.__next__()");
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/42")]
+        //[Ignore("https://github.com/Microsoft/python-language-server/issues/42")]
         public async Task Generator3X() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
@@ -1337,7 +1337,7 @@ d = a1.next()");
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("d").WithNoTypes();
 
-                analysis = await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"
+var code = @"
 def f():
     yield 1
     x = yield 2
@@ -1345,13 +1345,18 @@ def f():
 a = f()
 b = a.__next__()
 c = a.send('abc')
-d = a.next()");
+d = a.next()";
+                analysis = await server.ChangeDefaultDocumentAndGetAnalysisAsync(code);
                 analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Generator)
                     .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("d").WithNoTypes()
                     .And.HaveFunction("f")
-                    .Which.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+                    .Which.Should().HaveVariable("x"); // Can't use OfType here since variable type is original rather than evaluated dynamically
+
+                var expr = "x = ";
+                var values = analysis.GetValuesByIndex(expr, code.IndexOf(expr));
+                values.Should().ContainSingle().Subject.TypeId.Should().Be(BuiltinTypeId.Unicode);
             }
         }
 
