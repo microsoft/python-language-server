@@ -81,11 +81,14 @@ namespace Microsoft.PythonTools.Analysis {
             return u;
         }
 
-        public event EventHandler<EventArgs> OnNewParseTree;
-        public event EventHandler<EventArgs> OnNewAnalysis;
+        public event EventHandler<EventArgs> NewParseTree;
+        public event EventHandler<EventArgs> NewAnalysis;
+        public event EventHandler<EventArgs> Disposed;
 
         private readonly ManualResetEventSlim _pendingParse = new ManualResetEventSlim(true);
         private long _expectedParse;
+
+        public void Dispose() => Disposed?.Invoke(this, EventArgs.Empty);
 
         private class ActivePythonParse : IPythonParse {
             private readonly ProjectEntry _entry;
@@ -176,7 +179,7 @@ namespace Microsoft.PythonTools.Analysis {
                 Cookie = cookie;
             }
             if (notify) {
-                OnNewParseTree?.Invoke(this, EventArgs.Empty);
+                NewParseTree?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -212,13 +215,11 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             if (!enqueueOnly) {
-                RaiseOnNewAnalysis();
+                RaiseNewAnalysis();
             }
         }
 
-        internal void RaiseOnNewAnalysis() {
-            OnNewAnalysis?.Invoke(this, EventArgs.Empty);
-        }
+        internal void RaiseNewAnalysis() => NewAnalysis?.Invoke(this, EventArgs.Empty);
 
         public int AnalysisVersion { get; private set; }
 
@@ -226,7 +227,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         private void Parse(bool enqueueOnly, CancellationToken cancel) {
 #if DEBUG
-            Debug.Assert(Monitor.IsEntered(this));      
+            Debug.Assert(Monitor.IsEntered(this));
 #endif
             var parse = GetCurrentParse();
             var tree = parse?.Tree;
@@ -291,7 +292,7 @@ namespace Microsoft.PythonTools.Analysis {
                 string pathPrefix = PathUtils.EnsureEndSeparator(Path.GetDirectoryName(FilePath));
                 var children =
                     from pair in ProjectState.ModulesByFilename
-                    // Is the candidate child package in a subdirectory of our package?
+                        // Is the candidate child package in a subdirectory of our package?
                     let fileName = pair.Key
                     where fileName.StartsWithOrdinal(pathPrefix, ignoreCase: true)
                     let moduleName = pair.Value.Name

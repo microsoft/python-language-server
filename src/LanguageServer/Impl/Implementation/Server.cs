@@ -532,7 +532,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return Task.FromResult(actualItem);
             }
 
-            pyItem.OnNewAnalysis += (o, e) => OnPythonEntryNewAnalysis(pyItem);
+            pyItem.NewAnalysis += OnProjectEntryNewAnalysis;
+            pyItem.Disposed += (s, e) => ((IPythonProjectEntry)s).NewAnalysis -= OnProjectEntryNewAnalysis;
 
             if (item is IDocument doc) {
                 EnqueueItem(doc);
@@ -543,6 +544,34 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             return Task.FromResult(item);
+        }
+
+        private void OnProjectEntryNewAnalysis(object sender, EventArgs e) {
+            // Events are fired from a background thread and may come
+            // after items were actually already disposed.
+            if(_disposed) {
+                return;
+            }
+
+            var pythonProjectEntry = (IPythonProjectEntry)sender;
+            TraceMessage($"Received new analysis for {pythonProjectEntry.DocumentUri}");
+
+            var version = 0;
+            var parse = pythonProjectEntry.GetCurrentParse();
+            if (_analysisUpdates) {
+                if (parse?.Cookie is VersionCookie vc && vc.Versions.Count > 0) {
+                    foreach (var kv in vc.GetAllParts(pythonProjectEntry.DocumentUri)) {
+                        AnalysisComplete(kv.Key, kv.Value.Version);
+                        if (kv.Value.Version > version) {
+                            version = kv.Value.Version;
+                        }
+                    }
+                } else {
+                    AnalysisComplete(pythonProjectEntry.DocumentUri, 0);
+                }
+            }
+
+            _editorFiles.GetDocument(pythonProjectEntry.DocumentUri).UpdateAnalysisDiagnostics(pythonProjectEntry, version);
         }
 
         private void RemoveDocumentParseCounter(Task t, IDocument doc, VolatileCounter counter) {
@@ -643,28 +672,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             } finally {
                 disposeWhenEnqueued?.Dispose();
             }
-        }
-
-        private void OnPythonEntryNewAnalysis(IPythonProjectEntry pythonProjectEntry) {
-            ThrowIfDisposed();
-            TraceMessage($"Received new analysis for {pythonProjectEntry.DocumentUri}");
-
-            var version = 0;
-            var parse = pythonProjectEntry.GetCurrentParse();
-            if (_analysisUpdates) {
-                if (parse?.Cookie is VersionCookie vc && vc.Versions.Count > 0) {
-                    foreach (var kv in vc.GetAllParts(pythonProjectEntry.DocumentUri)) {
-                        AnalysisComplete(kv.Key, kv.Value.Version);
-                        if (kv.Value.Version > version) {
-                            version = kv.Value.Version;
-                        }
-                    }
-                } else {
-                    AnalysisComplete(pythonProjectEntry.DocumentUri, 0);
-                }
-            }
-
-            _editorFiles.GetDocument(pythonProjectEntry.DocumentUri).UpdateAnalysisDiagnostics(pythonProjectEntry, version);
         }
 
         private PythonAst GetParseTree(IPythonProjectEntry entry, Uri documentUri, CancellationToken token, out BufferVersion bufferVersion) {

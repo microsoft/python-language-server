@@ -156,6 +156,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
         }
 
+        public void Dispose() { }
+
         public string Name { get; }
         public string Documentation {
             get {

@@ -29,7 +29,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly ConcurrentDictionary<Uri, IProjectEntry> _projectFiles = new ConcurrentDictionary<Uri, IProjectEntry>();
         private bool _disposed;
 
-        public void Clear() => _projectFiles.Clear();
+        public void Clear() {
+            var entries = _projectFiles.ToArray();
+            _projectFiles.Clear();
+            foreach (var f in entries) {
+                f.Value.Dispose();
+            }
+        }
+
         public IProjectEntry GetOrAddEntry(Uri documentUri, IProjectEntry entry) {
             ThrowIfDisposed();
             return _projectFiles.GetOrAdd(documentUri, entry);
@@ -37,7 +44,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public IProjectEntry RemoveEntry(Uri documentUri) {
             ThrowIfDisposed();
-            return _projectFiles.TryRemove(documentUri, out var entry) ? entry : null;
+            _projectFiles.TryRemove(documentUri, out var entry);
+            entry?.Dispose();
+            return entry;
         }
         public IEnumerable<IProjectEntry> All {
             get {
@@ -82,6 +91,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public void Dispose() {
             _disposed = true;
+            Clear();
         }
 
         internal int GetPart(Uri documentUri) {

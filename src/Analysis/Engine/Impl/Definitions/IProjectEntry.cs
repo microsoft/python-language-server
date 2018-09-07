@@ -23,7 +23,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// Represents a file which is capable of being analyzed.  Can be cast to other project entry types
     /// for more functionality.  See also IPythonProjectEntry and IXamlProjectEntry.
     /// </summary>
-    public interface IProjectEntry : IAnalyzable, IVersioned {
+    public interface IProjectEntry : IAnalyzable, IVersioned, IDisposable {
         /// <summary>
         /// Returns true if the project entry has been parsed and analyzed.
         /// </summary>
