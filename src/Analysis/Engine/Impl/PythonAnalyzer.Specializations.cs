@@ -65,11 +65,10 @@ namespace Microsoft.PythonTools.Analysis {
         /// function is called as well.
         /// </summary>
         private void SpecializeFunction(string moduleName, string name, CallDelegate callable, bool mergeOriginalAnalysis, bool save) {
-            ModuleReference module;
 
             int lastDot;
             string realModName = null;
-            if (Modules.TryGetImportedModule(moduleName, out module)) {
+            if (Modules.TryGetImportedModule(moduleName, out var module)) {
                 IModule mod = module.Module as IModule;
                 if (mod != null) {
                     mod.SpecializeFunction(name, callable, mergeOriginalAnalysis);
@@ -98,8 +97,7 @@ namespace Microsoft.PythonTools.Analysis {
             lock (_specializationInfo) {
                 int lastDot;
                 string realModName = null;
-                List<SpecializationInfo> specInfo;
-                if (_specializationInfo.TryGetValue(moduleName, out specInfo) ||
+                if (_specializationInfo.TryGetValue(moduleName, out var specInfo) ||
                     ((lastDot = moduleName.LastIndexOf('.')) != -1 &&
                     !string.IsNullOrEmpty(realModName = moduleName.Remove(lastDot)) &&
                     _specializationInfo.TryGetValue(realModName, out specInfo))) {
@@ -112,8 +110,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         private void SaveDelayedSpecialization(string moduleName, string name, CallDelegate callable, string realModName, bool mergeOriginalAnalysis) {
             lock (_specializationInfo) {
-                List<SpecializationInfo> specList;
-                if (!_specializationInfo.TryGetValue(realModName ?? moduleName, out specList)) {
+                if (!_specializationInfo.TryGetValue(realModName ?? moduleName, out var specList)) {
                     _specializationInfo[realModName ?? moduleName] = specList = new List<SpecializationInfo>();
                 }
 
@@ -274,7 +271,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         IAnalysisSet RangeConstructor(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
-            return unit.Scope.GetOrMakeNodeValue(node, NodeValueKind.Range, (nn) => new RangeInfo(unit.State.Types[BuiltinTypeId.List], unit.State));
+            return unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.Range, (nn) => new RangeInfo(unit.State.Types[BuiltinTypeId.List], unit.State));
         }
 
         IAnalysisSet CopyFunction(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
@@ -305,7 +302,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         IAnalysisSet ReturnsListOfString(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
-            return unit.Scope.GetOrMakeNodeValue(node, NodeValueKind.ListOfString, n => {
+            return unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.ListOfString, n => {
                 var vars = new VariableDef();
                 vars.AddTypes(unit, unit.State.ClassInfos[BuiltinTypeId.Str].Instance);
                 return new ListInfo(
@@ -318,7 +315,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         IAnalysisSet ReturnsStringToObjectDict(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
-            return unit.Scope.GetOrMakeNodeValue(node, NodeValueKind.StrDict, n => {
+            return unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.StrDict, n => {
                 var dict = new DictionaryInfo(unit.ProjectEntry, node);
                 dict.AddTypes(
                     node,
@@ -381,7 +378,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return res;
             } else if (args.Length == 2) {
 
-                var iterator = unit.Scope.GetOrMakeNodeValue(node, NodeValueKind.Iterator, n => {
+                var iterator = unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.Iterator, n => {
                     return new SingleIteratorValue(new VariableDef(), unit.State.ClassInfos[BuiltinTypeId.CallableIterator], unit.ProjectEntry);
                 });
                 foreach (var iter in iterator.OfType<SingleIteratorValue>()) {
@@ -440,7 +437,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return AnalysisSet.Empty;
             }
 
-            return unit.Scope.GetOrMakeNodeValue(node, NodeValueKind.Super, _ => {
+            return unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.Super, _ => {
                 var res = AnalysisSet.Empty;
                 foreach (var classInfo in classes.OfType<ClassInfo>()) {
                     res = res.Add(new SuperInfo(classInfo, instances));
@@ -451,7 +448,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         IAnalysisSet PartialFunction(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             if (args.Length >= 1) {
-                return unit.Scope.GetOrMakeNodeValue(node, NodeValueKind.PartialFunction, n => {
+                return unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.PartialFunction, n => {
                     return new PartialFunctionInfo(unit.ProjectEntry, args[0], args.Skip(1).ToArray(), keywordArgNames);
                 });
             }
@@ -515,13 +512,11 @@ namespace Microsoft.PythonTools.Analysis {
                 return AnalysisSet.Empty;
             }
 
-            return unit.Scope.GetOrMakeNodeValue(node, NodeValueKind.Wraps, n => {
-                ModuleReference modRef;
-                if (!Modules.TryImport("functools", out modRef)) {
+            return unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.Wraps, n => {
+                if (!Modules.TryImport("functools", out var modRef)) {
                     return AnalysisSet.Empty;
                 }
-                IAnalysisSet updateWrapper;
-                if (!modRef.Module.GetAllMembers(_defaultContext).TryGetValue("update_wrapper", out updateWrapper)) {
+                if (!modRef.Module.GetAllMembers(_defaultContext).TryGetValue("update_wrapper", out var updateWrapper)) {
                     return AnalysisSet.Empty;
                 }
 
@@ -589,12 +584,11 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }
 
-            ModuleReference modRef;
-            if (!unit.State.Modules.TryImport("io", out modRef)) {
+            if (!unit.State.Modules.TryImport("io", out var modRef)) {
                 return unit.State.ClassInfos[BuiltinTypeId.Object].Instance;
             }
 
-            var memb = modRef.Module.GetModuleMember(node, unit, bytes ? "BufferedIOBase" : "TextIOWrapper", addRef: false);
+            var memb = modRef.Module.GetModuleMember(node, unit, bytes ? "BufferedIOBase" : "TextIOWrapper", false, null, null);
             return memb?.GetInstanceType() ?? unit.State.ClassInfos[BuiltinTypeId.Object].Instance;
         }
 

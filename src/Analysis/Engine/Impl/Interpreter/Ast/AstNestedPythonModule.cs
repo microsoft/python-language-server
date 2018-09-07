@@ -42,7 +42,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public string Name => MaybeModule?.Name ?? _name;
         public string Documentation => MaybeModule?.Documentation ?? string.Empty;
         public PythonMemberType MemberType => PythonMemberType.Module;
-        public IEnumerable<LocationInfo> Locations => ((MaybeModule as ILocatedMember)?.Locations).MaybeEnumerate();
+        public IEnumerable<ILocationInfo> Locations => ((MaybeModule as ILocatedMember)?.Locations).MaybeEnumerate();
 
         public bool IsLoaded => MaybeModule != null;
         private IPythonModule MaybeModule => Volatile.Read(ref _module);
@@ -69,17 +69,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IEnumerable<string> GetChildrenModules() => GetModule().GetChildrenModules();
 
-        public IMember GetMember(IModuleContext context, string name) {
-            return GetModule().GetMember(context, name);
-        }
+        public IMember GetMember(IModuleContext context, string name) => GetModule().GetMember(context, name);
 
-        public IEnumerable<string> GetMemberNames(IModuleContext context) {
+        public IEnumerable<string> GetMemberNames(IModuleContext context) =>
             // TODO: Make GetMemberNames() faster than Imported()
-            return GetModule().GetMemberNames(context);
-        }
+            GetModule().GetMemberNames(context);
 
-        public void Imported(IModuleContext context) {
-            GetModule().Imported(context);
-        }
+        public void Imported(IModuleContext context) => GetModule().Imported(context);
     }
 }

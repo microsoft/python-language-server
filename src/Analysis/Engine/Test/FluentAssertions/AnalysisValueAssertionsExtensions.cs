@@ -21,7 +21,8 @@ using Microsoft.PythonTools.Analysis.Values;
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class AnalysisValueAssertionsExtensions {
-        public static AndWhichConstraint<TAssertion, AnalysisValueTestInfo<ClassInfo>> WithMethodResolutionOrder<TAssertion>(this AndWhichConstraint<TAssertion, AnalysisValueTestInfo<ClassInfo>> constraint, params string[] classNames) {
+        public static AndWhichConstraint<TAssertion, AnalysisValueTestInfo<IClassInfo>> 
+            WithMethodResolutionOrder<TAssertion>(this AndWhichConstraint<TAssertion, AnalysisValueTestInfo<IClassInfo>> constraint, params string[] classNames) {
             constraint.Which.Should().HaveMethodResolutionOrder(classNames);
             return constraint;
         }

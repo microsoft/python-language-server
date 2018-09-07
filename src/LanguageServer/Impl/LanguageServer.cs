@@ -20,12 +20,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.DsTools.Core.Disposables;
-using Microsoft.DsTools.Core.Services;
-using Microsoft.DsTools.Core.Services.Shell;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Analysis.LanguageServer;
-using Microsoft.PythonTools.VsCode.Core.Shell;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
@@ -36,15 +32,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     /// https://github.com/Microsoft/language-server-protocol/blob/gh-pages/specification.md
     /// https://github.com/Microsoft/vs-streamjsonrpc/blob/master/doc/index.md
     /// </summary>
-    public sealed partial class LanguageServer : IDisposable {
+    public sealed partial class LanguageServer: IDisposable {
         private readonly DisposableBag _disposables = new DisposableBag(nameof(LanguageServer));
-        private readonly PythonTools.Analysis.LanguageServer.Server _server = new PythonTools.Analysis.LanguageServer.Server();
+        private readonly Server _server = new Server();
         private readonly CancellationTokenSource _sessionTokenSource = new CancellationTokenSource();
         private readonly RestTextConverter _textConverter = new RestTextConverter();
         private readonly Dictionary<Uri, Diagnostic[]> _pendingDiagnostic = new Dictionary<Uri, Diagnostic[]>();
         private readonly object _lock = new object();
         private readonly Prioritizer _prioritizer = new Prioritizer();
 
+        private IServiceContainer _services;
         private IUIService _ui;
         private ITelemetryService _telemetry;
         private IProgressService _progress;
@@ -56,6 +53,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IdleTimeTracker _idleTimeTracker;
 
         public CancellationToken Start(IServiceContainer services, JsonRpc rpc) {
+            _services = services;
             _ui = services.GetService<IUIService>();
             _telemetry = services.GetService<ITelemetryService>();
             _progress = services.GetService<IProgressService>();
@@ -203,9 +201,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         [JsonRpcMethod("workspace/didChangeWatchedFiles")]
-        public async Task DidChangeWatchedFiles(JToken token) {
+        public async Task DidChangeWatchedFiles(JToken token, CancellationToken cancellationToken) {
             using (await _prioritizer.DocumentChangePriorityAsync()) {
-                await _server.DidChangeWatchedFiles(ToObject<DidChangeWatchedFilesParams>(token));
+                await _server.DidChangeWatchedFiles(ToObject<DidChangeWatchedFilesParams>(token), cancellationToken);
             }
         }
 
@@ -213,15 +211,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<SymbolInformation[]> WorkspaceSymbols(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync();
             await WaitForCompleteAnalysisAsync(cancellationToken);
-            return await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token));
+            return await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token), cancellationToken);
         }
 
         #endregion
 
         #region Commands
         [JsonRpcMethod("workspace/executeCommand")]
-        public Task<object> ExecuteCommand(JToken token)
-           => _server.ExecuteCommand(ToObject<ExecuteCommandParams>(token));
+        public Task<object> ExecuteCommand(JToken token, CancellationToken cancellationToken)
+           => _server.ExecuteCommand(ToObject<ExecuteCommandParams>(token), cancellationToken);
         #endregion
 
         #region TextDocument
@@ -229,7 +227,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task DidOpenTextDocument(JToken token, CancellationToken cancellationToken) {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync(cancellationToken)) {
-                await _server.DidOpenTextDocument(ToObject<DidOpenTextDocumentParams>(token));
+                await _server.DidOpenTextDocument(ToObject<DidOpenTextDocumentParams>(token), cancellationToken);
             }
         }
 
@@ -290,25 +288,25 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             };
 
         [JsonRpcMethod("textDocument/willSave")]
-        public Task WillSaveTextDocument(JToken token)
-           => _server.WillSaveTextDocument(ToObject<WillSaveTextDocumentParams>(token));
+        public Task WillSaveTextDocument(JToken token, CancellationToken cancellationToken)
+           => _server.WillSaveTextDocument(ToObject<WillSaveTextDocumentParams>(token), cancellationToken);
 
-        public Task<TextEdit[]> WillSaveWaitUntilTextDocument(JToken token)
-           => _server.WillSaveWaitUntilTextDocument(ToObject<WillSaveTextDocumentParams>(token));
+        public Task<TextEdit[]> WillSaveWaitUntilTextDocument(JToken token, CancellationToken cancellationToken)
+           => _server.WillSaveWaitUntilTextDocument(ToObject<WillSaveTextDocumentParams>(token), cancellationToken);
 
         [JsonRpcMethod("textDocument/didSave")]
-        public async Task DidSaveTextDocument(JToken token) {
+        public async Task DidSaveTextDocument(JToken token, CancellationToken cancellationToken) {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync()) {
-                await _server.DidSaveTextDocument(ToObject<DidSaveTextDocumentParams>(token));
+                await _server.DidSaveTextDocument(ToObject<DidSaveTextDocumentParams>(token), cancellationToken);
             }
         }
 
         [JsonRpcMethod("textDocument/didClose")]
-        public async Task DidCloseTextDocument(JToken token) {
+        public async Task DidCloseTextDocument(JToken token, CancellationToken cancellationToken) {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync()) {
-                await _server.DidCloseTextDocument(ToObject<DidCloseTextDocumentParams>(token));
+                await _server.DidCloseTextDocument(ToObject<DidCloseTextDocumentParams>(token), cancellationToken);
             }
         }
         #endregion
@@ -321,8 +319,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         [JsonRpcMethod("completionItem/resolve")]
-        public Task<CompletionItem> CompletionItemResolve(JToken token)
-           => _server.CompletionItemResolve(ToObject<CompletionItem>(token));
+        public Task<CompletionItem> CompletionItemResolve(JToken token, CancellationToken cancellationToken)
+           => _server.CompletionItemResolve(ToObject<CompletionItem>(token), cancellationToken);
 
         [JsonRpcMethod("textDocument/hover")]
         public async Task<Hover> Hover(JToken token, CancellationToken cancellationToken) {
@@ -333,7 +331,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("textDocument/signatureHelp")]
         public async Task<SignatureHelp> SignatureHelp(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.SignatureHelp(ToObject<TextDocumentPositionParams>(token));
+            return await _server.SignatureHelp(ToObject<TextDocumentPositionParams>(token), cancellationToken);
         }
 
         [JsonRpcMethod("textDocument/definition")]
@@ -351,7 +349,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("textDocument/documentHighlight")]
         public async Task<DocumentHighlight[]> DocumentHighlight(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.DocumentHighlight(ToObject<TextDocumentPositionParams>(token));
+            return await _server.DocumentHighlight(ToObject<TextDocumentPositionParams>(token), cancellationToken);
         }
 
         [JsonRpcMethod("textDocument/documentSymbol")]
@@ -365,58 +363,58 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("textDocument/codeAction")]
         public async Task<Command[]> CodeAction(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.CodeAction(ToObject<CodeActionParams>(token));
+            return await _server.CodeAction(ToObject<CodeActionParams>(token), cancellationToken);
         }
 
         [JsonRpcMethod("textDocument/codeLens")]
         public async Task<CodeLens[]> CodeLens(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.CodeLens(ToObject<TextDocumentPositionParams>(token));
+            return await _server.CodeLens(ToObject<TextDocumentPositionParams>(token), cancellationToken);
         }
 
         [JsonRpcMethod("codeLens/resolve")]
-        public Task<CodeLens> CodeLensResolve(JToken token)
-           => _server.CodeLensResolve(ToObject<CodeLens>(token));
+        public Task<CodeLens> CodeLensResolve(JToken token, CancellationToken cancellationToken)
+           => _server.CodeLensResolve(ToObject<CodeLens>(token), cancellationToken);
 
         [JsonRpcMethod("textDocument/documentLink")]
         public async Task<DocumentLink[]> DocumentLink(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.DocumentLink(ToObject<DocumentLinkParams>(token));
+            return await _server.DocumentLink(ToObject<DocumentLinkParams>(token), cancellationToken);
         }
 
         [JsonRpcMethod("documentLink/resolve")]
-        public Task<DocumentLink> DocumentLinkResolve(JToken token)
-           => _server.DocumentLinkResolve(ToObject<DocumentLink>(token));
+        public Task<DocumentLink> DocumentLinkResolve(JToken token, CancellationToken cancellationToken)
+           => _server.DocumentLinkResolve(ToObject<DocumentLink>(token), cancellationToken);
 
         [JsonRpcMethod("textDocument/formatting")]
         public async Task<TextEdit[]> DocumentFormatting(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.DocumentFormatting(ToObject<DocumentFormattingParams>(token));
+            return await _server.DocumentFormatting(ToObject<DocumentFormattingParams>(token), cancellationToken);
         }
 
         [JsonRpcMethod("textDocument/rangeFormatting")]
         public async Task<TextEdit[]> DocumentRangeFormatting(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.DocumentRangeFormatting(ToObject<DocumentRangeFormattingParams>(token));
+            return await _server.DocumentRangeFormatting(ToObject<DocumentRangeFormattingParams>(token), cancellationToken);
         }
 
         [JsonRpcMethod("textDocument/onTypeFormatting")]
         public async Task<TextEdit[]> DocumentOnTypeFormatting(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.DocumentOnTypeFormatting(ToObject<DocumentOnTypeFormattingParams>(token));
+            return await _server.DocumentOnTypeFormatting(ToObject<DocumentOnTypeFormattingParams>(token), cancellationToken);
         }
 
         [JsonRpcMethod("textDocument/rename")]
         public async Task<WorkspaceEdit> Rename(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.Rename(ToObject<RenameParams>(token));
+            return await _server.Rename(token.ToObject<RenameParams>(), cancellationToken);
         }
         #endregion
 
         #region Extensions
         [JsonRpcMethod("python/loadExtension")]
         public Task LoadExtension(JToken token, CancellationToken cancellationToken)
-            => _server.LoadExtension(ToObject<PythonAnalysisExtensionParams>(token), cancellationToken);
+            => _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken);
 
         #endregion
 

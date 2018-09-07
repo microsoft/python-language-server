@@ -21,21 +21,22 @@ using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
 using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     internal class AnalysisValueAssertions<TAnalysisValue> : AnalysisValueAssertions<TAnalysisValue, AnalysisValueAssertions<TAnalysisValue>>
-        where TAnalysisValue : AnalysisValue {
+        where TAnalysisValue : IAnalysisValue {
 
         public AnalysisValueAssertions(AnalysisValueTestInfo<TAnalysisValue> subject) : base(subject) { }
     }
 
     internal class AnalysisValueAssertions<TAnalysisValue, TAssertions> : ReferenceTypeAssertions<TAnalysisValue, TAssertions>
-        where TAnalysisValue : AnalysisValue
+        where TAnalysisValue : IAnalysisValue
         where TAssertions : AnalysisValueAssertions<TAnalysisValue, TAssertions> {
 
-        protected InterpreterScope OwnerScope { get; }
+        protected IScope OwnerScope { get; }
         protected string ScopeDescription { get; }
 
         public AnalysisValueAssertions(AnalysisValueTestInfo<TAnalysisValue> subject) {
@@ -44,7 +45,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             Subject = subject;
         }
 
-        protected override string Identifier => nameof(AnalysisValue);
+        protected override string Identifier => nameof(IAnalysisValue);
         
         public AndConstraint<TAssertions> HaveName(string name, string because = "", params object[] reasonArgs) {
             Execute.Assertion.ForCondition(string.Equals(Subject.Name, name, StringComparison.Ordinal))
@@ -172,7 +173,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                     : "has no overloads";
 
         public AndWhichConstraint<TAssertions, AnalysisValueTestInfo<TMember>> HaveMember<TMember>(string name, string because = "", params object[] reasonArgs)
-            where TMember : AnalysisValue
+            where TMember : class, IAnalysisValue
         {
             NotBeNull(because, reasonArgs);
 
@@ -183,7 +184,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return new AndWhichConstraint<TAssertions, AnalysisValueTestInfo<TMember>>((TAssertions)this, new AnalysisValueTestInfo<TMember>(typedMember, null, OwnerScope));
         }
 
-        private bool GetMember<TMember>(string name, out TMember typedMember, out string errorMessage) where TMember : AnalysisValue {
+        private bool GetMember<TMember>(string name, out TMember typedMember, out string errorMessage) where TMember : class, IAnalysisValue {
             try { 
                 var member = Subject.GetMember(null, new AnalysisUnit(null, null, OwnerScope, true), name);
                 typedMember = member as TMember;

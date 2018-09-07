@@ -25,32 +25,26 @@ using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
-    internal class ClassInfo : AnalysisValue, IReferenceableContainer, IHasRichDescription, IHasQualifiedName {
+    internal class ClassInfo : AnalysisValue, IClassInfo, IHasRichDescription, IHasQualifiedName {
         private AnalysisUnit _analysisUnit;
         private readonly List<IAnalysisSet> _bases;
         internal Mro _mro;
-        private readonly InstanceInfo _instanceInfo;
         private ClassScope _scope;
         private readonly int _declVersion;
-        private VariableDef _metaclass;
         private ReferenceDict _references;
         private VariableDef _subclasses;
         private IAnalysisSet _baseSpecialization;
         private readonly PythonAnalyzer _projectState;
 
         internal ClassInfo(ClassDefinition klass, AnalysisUnit outerUnit) {
-            _instanceInfo = new InstanceInfo(this);
+            Instance = new InstanceInfo(this);
             _bases = new List<IAnalysisSet>();
             _declVersion = outerUnit.ProjectEntry.AnalysisVersion;
             _projectState = outerUnit.State;
             _mro = new Mro(this);
         }
 
-        public override AnalysisUnit AnalysisUnit {
-            get {
-                return _analysisUnit;
-            }
-        }
+        public override AnalysisUnit AnalysisUnit => _analysisUnit;
 
         internal void SetAnalysisUnit(AnalysisUnit unit) {
             Debug.Assert(_analysisUnit == null);
@@ -61,14 +55,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (unit != null) {
                 return AddCall(node, keywordArgNames, unit, args);
             }
-
-            
-            return _instanceInfo.SelfSet;
+            return Instance.SelfSet;
         }
 
         private IAnalysisSet AddCall(Node node, NameExpression[] keywordArgNames, AnalysisUnit unit, IAnalysisSet[] args) {
             var init = GetMemberNoReferences(node, unit, "__init__", false);
-            var initArgs = Utils.Concat(_instanceInfo.SelfSet, args);
+            var initArgs = Utils.Concat(Instance.SelfSet, args);
 
             foreach (var initFunc in init) {
                 initFunc.Call(node, unit, initArgs, keywordArgNames);
@@ -90,7 +82,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return newResult;
             }
 
-            
+
 
             if (newResult.Count == 0 || newResult.All(ns => ns.IsOfType(unit.State.ClassInfos[BuiltinTypeId.Object]))) {
                 if (_baseSpecialization != null && _baseSpecialization.Count != 0) {
@@ -98,7 +90,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                         node, unit, args, keywordArgNames
                     );
 
-                    var res = (SpecializedInstanceInfo)unit.Scope.GetOrMakeNodeValue(
+                    var res = (SpecializedInstanceInfo)unit.InterpreterScope.GetOrMakeNodeValue(
                         node,
                         NodeValueKind.SpecializedInstance,
                         (node_) => new SpecializedInstanceInfo(this, specializedInstances)
@@ -108,14 +100,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     return res;
                 }
 
-                return _instanceInfo.SelfSet;
+                return Instance.SelfSet;
             }
             return newResult;
         }
 
-        public ClassDefinition ClassDefinition {
-            get { return _analysisUnit.Ast as ClassDefinition; }
-        }
+        public ClassDefinition ClassDefinition => _analysisUnit.Ast as ClassDefinition;
 
         private static string FormatExpression(Expression baseClass) {
             NameExpression ne = baseClass as NameExpression;
@@ -137,7 +127,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "class ");
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Name, FullyQualifiedName);
-            
+
             if (ClassDefinition.BasesInternal.Length > 0) {
                 yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "(");
                 bool comma = false;
@@ -190,17 +180,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
 
-        public override string ShortDescription {
-            get {
-                return ClassDefinition.Name;
-            }
-        }
+        public override string ShortDescription => ClassDefinition.Name;
 
-        public override string Name {
-            get {
-                return ClassDefinition.Name;
-            }
-        }
+        public override string Name => ClassDefinition.Name;
 
         public VariableDef SubClasses {
             get {
@@ -210,19 +192,18 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return _subclasses;
             }
         }
+        IVariableDefinition IClassInfo.SubClasses => SubClasses;
 
-        public VariableDef MetaclassVariable {
-            get {
-                return _metaclass;
-            }
-        }
+        public VariableDef MetaclassVariable { get; private set; }
+        IVariableDefinition IClassInfo.MetaclassVariable => MetaclassVariable;
 
         public VariableDef GetOrCreateMetaclassVariable() {
-            if (_metaclass == null) {
-                _metaclass = new VariableDef();
+            if (MetaclassVariable == null) {
+                MetaclassVariable = new VariableDef();
             }
-            return _metaclass;
+            return MetaclassVariable;
         }
+        IVariableDefinition IClassInfo.GetOrCreateMetaclassVariable() => GetOrCreateMetaclassVariable();
 
         public override string Documentation {
             get {
@@ -233,7 +214,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IEnumerable<LocationInfo> Locations {
+        public override IEnumerable<ILocationInfo> Locations {
             get {
                 if (_declVersion == DeclaringModule.AnalysisVersion) {
                     var start = ClassDefinition.GetStart(ClassDefinition.GlobalParent);
@@ -244,33 +225,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        internal override BuiltinTypeId TypeId {
-            get {
-                return BuiltinTypeId.Type;
-            }
-        }
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Type;
 
-        public override IPythonType PythonType {
-            get {
-                return _projectState.Types[BuiltinTypeId.Type];
-            }
-        }
+        public override IPythonType PythonType => _projectState.Types[BuiltinTypeId.Type];
 
-        internal override bool IsOfType(IAnalysisSet klass) {
-            return klass.Contains(_projectState.ClassInfos[BuiltinTypeId.Type]);
-        }
+        public override bool IsOfType(IAnalysisSet klass) => klass.Contains(_projectState.ClassInfos[BuiltinTypeId.Type]);
 
-        public override IPythonProjectEntry DeclaringModule {
-            get {
-                return _analysisUnit.ProjectEntry;
-            }
-        }
+        public override IPythonProjectEntry DeclaringModule => _analysisUnit.ProjectEntry;
 
-        public override int DeclaringVersion {
-            get {
-                return _declVersion;
-            }
-        }
+        public override int DeclaringVersion => _declVersion;
 
         public override IEnumerable<OverloadResult> Overloads {
             get {
@@ -278,7 +241,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 VariableDef init;
                 if (Scope.TryGetVariable("__init__", out init)) {
                     // this type overrides __init__, display that for it's help
-                    foreach (var initFunc in init.TypesNoCopy) {
+                    foreach (var initFunc in init.Types) {
                         foreach (var overload in initFunc.Overloads) {
                             result.Add(GetInitOverloadResult(overload));
                         }
@@ -287,7 +250,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
                 VariableDef @new;
                 if (Scope.TryGetVariable("__new__", out @new)) {
-                    foreach (var newFunc in @new.TypesNoCopy) {
+                    foreach (var newFunc in @new.Types) {
                         foreach (var overload in newFunc.Overloads) {
                             result.Add(GetNewOverloadResult(overload));
                         }
@@ -355,17 +318,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             );
         }
 
-        public IEnumerable<IAnalysisSet> Bases {
-            get {
-                return _bases;
-            }
-        }
+        public IEnumerable<IAnalysisSet> Bases => _bases;
 
-        public override IEnumerable<IAnalysisSet> Mro {
-            get {
-                return _mro;
-            }
-        }
+        public override IMro Mro => _mro;
 
         public void SetBases(IEnumerable<IAnalysisSet> bases) {
             _bases.Clear();
@@ -400,15 +355,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
             RecomputeBaseSpecialization();
         }
 
-        public InstanceInfo Instance {
-            get {
-                return _instanceInfo;
-            }
-        }
+        public InstanceInfo Instance { get; }
+        IInstanceInfo IClassInfo.Instance => Instance;
 
-        public override IAnalysisSet GetInstanceType() {
-            return Instance;
-        }
+        public override IAnalysisSet GetInstanceType() => Instance;
 
         /// <summary>
         /// Gets all members of this class that are not inherited from its base classes.
@@ -445,8 +395,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 result = _mro.GetAllMembers(moduleContext, options);
             }
 
-            if (_metaclass != null) {
-                foreach (var type in _metaclass.Types) {
+            if (MetaclassVariable != null) {
+                foreach (var type in MetaclassVariable.Types) {
                     if (type.Push()) {
                         try {
                             foreach (var nameValue in type.GetAllMembers(moduleContext)) {
@@ -461,9 +411,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return result;
         }
 
-        private AnalysisValue GetObjectMember(IModuleContext moduleContext, string name) {
-            return _analysisUnit.State.GetAnalysisValueFromObjects(_analysisUnit.State.Types[BuiltinTypeId.Object].GetMember(moduleContext, name));
-        }
+        private AnalysisValue GetObjectMember(IModuleContext moduleContext, string name) => _analysisUnit.State.GetAnalysisValueFromObjects(_analysisUnit.State.Types[BuiltinTypeId.Object].GetMember(moduleContext, name));
 
         internal override void AddReference(Node node, AnalysisUnit unit) {
             if (!unit.ForEval) {
@@ -474,9 +422,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) {
-            return GetMemberNoReferences(node, unit, name).GetDescriptor(node, unit.State._noneInst, this, unit);
-        }
+        public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) => GetMemberNoReferences(node, unit, name).GetDescriptor(node, unit.State._noneInst, this, unit);
 
         /// <summary>
         /// Get the member of this class by name that is not inherited from one of its base classes.
@@ -496,8 +442,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return result;
             }
 
-            if (_metaclass != null) {
-                foreach (var type in _metaclass.Types) {
+            if (MetaclassVariable != null) {
+                foreach (var type in MetaclassVariable.Types) {
                     if (type.Push()) {
                         try {
                             foreach (var metaValue in type.GetMember(node, unit, name)) {
@@ -541,16 +487,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override PythonMemberType MemberType {
-            get {
-                return PythonMemberType.Class;
-            }
-        }
+        public override PythonMemberType MemberType => PythonMemberType.Class;
 
-        public override string ToString() {
-            return "user class " + _analysisUnit.FullName + " (" + _declVersion + ")";
-        }
+        public override string ToString() => "user class " + _analysisUnit.FullName + " (" + _declVersion + ")";
 
+        IClassScope IClassInfo.Scope => Scope;
         public ClassScope Scope {
             get { return _scope; }
             set {
@@ -686,7 +627,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (Push()) {
                 try {
                     result.AddRange(Bases.SelectMany(b => GetDefinitions(name, b)));
-                    result.AddRange(GetDefinitions(name, SubClasses.TypesNoCopy));
+                    result.AddRange(GetDefinitions(name, SubClasses.Types));
                 } finally {
                     Pop();
                 }
@@ -713,7 +654,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         #region IReferenceable Members
 
-        internal override IEnumerable<LocationInfo> References {
+        internal override IEnumerable<ILocationInfo> References {
             get {
                 if (_references != null) {
                     return _references.AllReferences;
@@ -731,29 +672,35 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// <remarks>
     /// The rules are described in detail at http://www.python.org/download/releases/2.3/mro/
     /// </remarks>
-    internal class Mro : DependentData, IEnumerable<IAnalysisSet> {
+    internal class Mro : DependentData, IMro {
+        public static readonly Mro Empty = new Mro(null);
+
         private readonly ClassInfo _classInfo;
-        private List<AnalysisValue> _mroList;
-        private bool _isValid = true;
+        private List<AnalysisValue> _mroList = new List<AnalysisValue>();
 
         public Mro(ClassInfo classInfo) {
             _classInfo = classInfo;
-            _mroList = new List<AnalysisValue> { classInfo };
+            if (classInfo != null) {
+                _mroList.Add(classInfo);
+            }
         }
 
-        public bool IsValid {
-            get { return _isValid; }
+        public Mro(IEnumerable<AnalysisValue> values) {
+            _mroList.Clear();
+            _mroList.AddRange(values);
+            IsValid = true;
         }
 
-        public IEnumerator<IAnalysisSet> GetEnumerator() {
-            return _mroList.GetEnumerator();
-        }
+        public bool IsValid { get; private set; }
 
-        IEnumerator IEnumerable.GetEnumerator() {
-            return GetEnumerator();
-        }
+        public IEnumerator<IAnalysisSet> GetEnumerator() => _mroList.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public void Recompute() {
+            if(_classInfo == null) {
+                return;
+            }
             var mroList = new List<AnalysisValue> { _classInfo };
             var isValid = true;
 
@@ -831,16 +778,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 mroList.Add(_classInfo);
             }
 
-            if (_isValid != isValid || !_mroList.SequenceEqual(mroList)) {
-                _isValid = isValid;
+            if (IsValid != isValid || !_mroList.SequenceEqual(mroList)) {
+                IsValid = isValid;
                 _mroList = mroList;
                 EnqueueDependents();
             }
         }
 
-        public IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options) {
-            return GetAllMembersOfMro(this, moduleContext, options);
-        }
+        public IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options) => GetAllMembersOfMro(this, moduleContext, options);
 
         /// <summary>
         /// Compute a list of all members, given the MRO list of types, and taking override rules into account.

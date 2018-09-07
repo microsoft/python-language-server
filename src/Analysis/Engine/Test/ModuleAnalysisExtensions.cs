@@ -22,15 +22,15 @@ using Microsoft.PythonTools.Interpreter;
 
 namespace AnalysisTests {
     public static class ModuleAnalysisExtensions {
-        public static IEnumerable<string> GetMemberNamesByIndex(this ModuleAnalysis analysis, string exprText, int index, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults) {
+        public static IEnumerable<string> GetMemberNamesByIndex(this IModuleAnalysis analysis, string exprText, int index, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults) {
             return analysis.GetMembersByIndex(exprText, index, options).Select(m => m.Name);
         }
 
-        public static IEnumerable<IPythonType> GetTypesByIndex(this ModuleAnalysis analysis, string exprText, int index) {
+        public static IEnumerable<IPythonType> GetTypesByIndex(this IModuleAnalysis analysis, string exprText, int index) {
             return analysis.GetValuesByIndex(exprText, index).Select(m => m.PythonType);
         }
 
-        public static IEnumerable<BuiltinTypeId> GetTypeIdsByIndex(this ModuleAnalysis analysis, string exprText, int index) {
+        public static IEnumerable<BuiltinTypeId> GetTypeIdsByIndex(this IModuleAnalysis analysis, string exprText, int index) {
             return analysis.GetValuesByIndex(exprText, index).Select(m => {
                 if (m.PythonType.TypeId != BuiltinTypeId.Unknown) {
                     return m.PythonType.TypeId;
@@ -62,19 +62,19 @@ namespace AnalysisTests {
             });
         }
 
-        public static IEnumerable<string> GetDescriptionsByIndex(this ModuleAnalysis entry, string variable, int index) {
+        public static IEnumerable<string> GetDescriptionsByIndex(this IModuleAnalysis entry, string variable, int index) {
             return entry.GetValuesByIndex(variable, index).Select(m => m.Description);
         }
 
-        public static IEnumerable<string> GetShortDescriptionsByIndex(this ModuleAnalysis entry, string variable, int index) {
+        public static IEnumerable<string> GetShortDescriptionsByIndex(this IModuleAnalysis entry, string variable, int index) {
             return entry.GetValuesByIndex(variable, index).Select(m => m.ShortDescription);
         }
 
-        public static IEnumerable<string> GetCompletionDocumentationByIndex(this ModuleAnalysis entry, string variable, string memberName, int index) {
+        public static IEnumerable<string> GetCompletionDocumentationByIndex(this IModuleAnalysis entry, string variable, string memberName, int index) {
             return entry.GetMemberByIndex(variable, memberName, index).Select(m => m.Documentation);
         }
 
-        public static IEnumerable<MemberResult> GetMemberByIndex(this ModuleAnalysis entry, string variable, string memberName, int index) {
+        public static IEnumerable<IMemberResult> GetMemberByIndex(this IModuleAnalysis entry, string variable, string memberName, int index) {
             return entry.GetMembersByIndex(variable, index).Where(m => m.Name == memberName);
         }
     }

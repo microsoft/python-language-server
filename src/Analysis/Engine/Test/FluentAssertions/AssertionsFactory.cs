@@ -16,8 +16,8 @@
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Python.LanguageServer;
 using Microsoft.PythonTools.Analysis.Analyzer;
-using Microsoft.PythonTools.Analysis.LanguageServer;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
@@ -28,10 +28,10 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public static BoundBuiltinMethodInfoAssertions Should(this AnalysisValueTestInfo<BoundBuiltinMethodInfo> testInfo)
             => new BoundBuiltinMethodInfoAssertions(testInfo);
 
-        public static BuiltinClassInfoAssertions Should(this AnalysisValueTestInfo<BuiltinClassInfo> testInfo)
+        public static BuiltinClassInfoAssertions Should(this AnalysisValueTestInfo<IBuiltinClassInfo> testInfo)
             => new BuiltinClassInfoAssertions(testInfo);
 
-        public static BuiltinInstanceInfoAssertions Should(this AnalysisValueTestInfo<BuiltinInstanceInfo> testInfo)
+        public static BuiltinInstanceInfoAssertions Should(this AnalysisValueTestInfo<IBuiltinInstanceInfo> testInfo)
             => new BuiltinInstanceInfoAssertions(testInfo);
 
         public static BuiltinFunctionInfoAssertions Should(this AnalysisValueTestInfo<BuiltinFunctionInfo> testInfo)
@@ -40,16 +40,16 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public static BuiltinModuleAssertions Should(this AnalysisValueTestInfo<BuiltinModule> testInfo)
             => new BuiltinModuleAssertions(testInfo);
 
-        public static ClassInfoAssertions Should(this AnalysisValueTestInfo<ClassInfo> testInfo)
+        public static ClassInfoAssertions Should(this AnalysisValueTestInfo<IClassInfo> testInfo)
             => new ClassInfoAssertions(testInfo);
 
         public static DictionaryInfoAssertions Should(this AnalysisValueTestInfo<DictionaryInfo> testInfo)
             => new DictionaryInfoAssertions(testInfo);
 
-        public static FunctionInfoAssertions Should(this AnalysisValueTestInfo<FunctionInfo> testInfo)
+        public static FunctionInfoAssertions Should(this AnalysisValueTestInfo<IFunctionInfo> testInfo)
             => new FunctionInfoAssertions(testInfo);
 
-        public static InstanceInfoAssertions Should(this AnalysisValueTestInfo<InstanceInfo> testInfo)
+        public static InstanceInfoAssertions Should(this AnalysisValueTestInfo<IInstanceInfo> testInfo)
             => new InstanceInfoAssertions(testInfo);
 
         public static ParameterInfoAssertions Should(this AnalysisValueTestInfo<ParameterInfo> testInfo)
@@ -67,19 +67,19 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public static AstPythonFunctionAssertions Should(this AstPythonFunction pythonFunction)
             => new AstPythonFunctionAssertions(pythonFunction);
 
-        public static FunctionScopeAssertions Should(this FunctionScope functionScope)
+        public static FunctionScopeAssertions Should(this IFunctionScope functionScope)
             => new FunctionScopeAssertions(functionScope);
 
         public static CompletionListAssertions Should(this CompletionList completionList)
             => new CompletionListAssertions(completionList);
 
-        public static InterpreterScopeAssertions Should(this InterpreterScope interpreterScope)
-            => new InterpreterScopeAssertions(interpreterScope);
+        public static ScopeAssertions Should(this IScope scope)
+            => new ScopeAssertions(scope);
 
         public static MemberContainerAssertions<IMemberContainer> Should(this IMemberContainer memberContainer)
             => new MemberContainerAssertions<IMemberContainer>(memberContainer);
 
-        public static ModuleAnalysisAssertions Should(this ModuleAnalysis moduleAnalysis)
+        public static ModuleAnalysisAssertions Should(this IModuleAnalysis moduleAnalysis)
             => new ModuleAnalysisAssertions(moduleAnalysis);
 
         public static ParameterResultAssertions Should(this ParameterResult overloadResult)

@@ -21,7 +21,7 @@ using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
-    internal class BoundMethodInfo : AnalysisValue, IHasRichDescription, IHasQualifiedName {
+    internal class BoundMethodInfo : AnalysisValue, IBoundMethodInfo, IHasRichDescription, IHasQualifiedName {
         public BoundMethodInfo(FunctionInfo function, AnalysisValue instance) {
             Function = function;
             Instance = instance;
@@ -38,10 +38,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public FunctionInfo Function { get; }
+        IFunctionInfo IBoundMethodInfo.Function => Function;
+
         public AnalysisValue Instance { get; }
+        IAnalysisValue IBoundMethodInfo.Instance => Instance;
+
         public override IPythonProjectEntry DeclaringModule => Function.DeclaringModule;
         public override int DeclaringVersion => Function.DeclaringVersion;
-        public override IEnumerable<LocationInfo> Locations => Function.Locations;
+        public override IEnumerable<ILocationInfo> Locations => Function.Locations;
 
         public IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (Push()) {

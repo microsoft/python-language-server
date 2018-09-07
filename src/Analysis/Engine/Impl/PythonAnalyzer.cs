@@ -34,7 +34,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// <summary>
     /// Performs analysis of multiple Python code files and enables interrogation of the resulting analysis.
     /// </summary>
-    public partial class PythonAnalyzer : IGroupableAnalysisProject, IDisposable {
+    public partial class PythonAnalyzer : IPythonAnalyzer,  IDisposable {
         private readonly IPythonInterpreter _interpreter;
         private readonly bool _disposeInterpreter;
         private readonly IPythonInterpreterFactory _interpreterFactory;
@@ -62,7 +62,7 @@ namespace Microsoft.PythonTools.Analysis {
         private static object _nullKey = new object();
         private readonly SemaphoreSlim _reloadLock = new SemaphoreSlim(1, 1);
         private Dictionary<IProjectEntry[], AggregateProjectEntry> _aggregates = new Dictionary<IProjectEntry[], AggregateProjectEntry>(AggregateComparer.Instance);
-        private readonly Dictionary<IProjectEntry, Dictionary<Node, LanguageServer.Diagnostic>> _diagnostics = new Dictionary<IProjectEntry, Dictionary<Node, LanguageServer.Diagnostic>>();
+        private readonly Dictionary<IProjectEntry, Dictionary<Node, Diagnostic>> _diagnostics = new Dictionary<IProjectEntry, Dictionary<Node, Diagnostic>>();
 
         public const string PythonAnalysisSource = "Python (analysis)";
 
@@ -194,11 +194,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         #region Public API
 
-        public PythonLanguageVersion LanguageVersion {
-            get {
-                return _langVersion;
-            }
-        }
+        public PythonLanguageVersion LanguageVersion => _langVersion;
 
         /// <summary>
         /// Adds a new module of code to the list of available modules and returns a ProjectEntry object.
@@ -377,7 +373,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// Gets a top-level list of all the available modules as a list of MemberResults.
         /// </summary>
         /// <returns></returns>
-        public MemberResult[] GetModules() {
+        public IMemberResult[] GetModules() {
             var d = new Dictionary<string, List<ModuleLoadState>>();
             foreach (var keyValue in Modules) {
                 var modName = keyValue.Key;
@@ -402,8 +398,8 @@ namespace Microsoft.PythonTools.Analysis {
             return ModuleDictToMemberResult(d);
         }
 
-        private static MemberResult[] ModuleDictToMemberResult(Dictionary<string, List<ModuleLoadState>> d) {
-            var result = new MemberResult[d.Count];
+        private static IMemberResult[] ModuleDictToMemberResult(Dictionary<string, List<ModuleLoadState>> d) {
+            var result = new IMemberResult[d.Count];
             int pos = 0;
             foreach (var kvp in d) {
                 var lazyEnumerator = new LazyModuleEnumerator(kvp.Value);
@@ -538,20 +534,12 @@ namespace Microsoft.PythonTools.Analysis {
         /// 
         /// This property is thread safe.
         /// </summary>
-        public IPythonInterpreter Interpreter {
-            get {
-                return _interpreter;
-            }
-        }
+        public IPythonInterpreter Interpreter => _interpreter;
 
         /// <summary>
         /// Returns the interpreter factory that the analyzer is using.
         /// </summary>
-        public IPythonInterpreterFactory InterpreterFactory {
-            get {
-                return _interpreterFactory;
-            }
-        }
+        public IPythonInterpreterFactory InterpreterFactory => _interpreterFactory;
 
         /// <summary>
         /// returns the MemberResults associated with modules in the specified
@@ -559,7 +547,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// ['System', 'Runtime']
         /// </summary>
         /// <returns></returns>
-        public MemberResult[] GetModuleMembers(IModuleContext moduleContext, string[] names, bool includeMembers = false) {
+        public IMemberResult[] GetModuleMembers(IModuleContext moduleContext, string[] names, bool includeMembers = false) {
             ModuleReference moduleRef;
             if (Modules.TryImport(names[0], out moduleRef)) {
                 var module = moduleRef.Module as IModule;
@@ -569,10 +557,10 @@ namespace Microsoft.PythonTools.Analysis {
 
             }
 
-            return new MemberResult[0];
+            return new IMemberResult[0];
         }
 
-        internal static MemberResult[] GetModuleMembers(IModuleContext moduleContext, string[] names, bool includeMembers, IModule module) {
+        internal static IMemberResult[] GetModuleMembers(IModuleContext moduleContext, string[] names, bool includeMembers, IModule module) {
             for (int i = 1; i < names.Length && module != null; i++) {
                 module = module.GetChildPackage(moduleContext, names[i]);
             }
@@ -612,24 +600,22 @@ namespace Microsoft.PythonTools.Analysis {
                     return MemberDictToMemberResult(result);
                 }
             }
-            return new MemberResult[0];
+            return new IMemberResult[0];
         }
 
-        private static MemberResult[] MemberDictToMemberResult(Dictionary<string, List<IAnalysisSet>> results) {
-            return results.Select(r => new MemberResult(r.Key, r.Value.SelectMany())).ToArray();
+        private static IMemberResult[] MemberDictToMemberResult(Dictionary<string, List<IAnalysisSet>> results) {
+            return results.Select(r => new MemberResult(r.Key, r.Value.SelectMany()) as IMemberResult).ToArray();
         }
 
 
         /// <summary>
         /// Gets the list of directories which should be analyzed.
-        /// 
         /// This property is thread safe.
         /// </summary>
         public IEnumerable<string> AnalysisDirectories => _searchPaths.AsLockedEnumerable().ToArray();
 
         /// <summary>
         /// Gets the list of directories which should be searched for type stubs.
-        /// 
         /// This property is thread safe.
         /// </summary>
         public IEnumerable<string> TypeStubDirectories => _typeStubPaths.AsLockedEnumerable().ToArray();
@@ -641,16 +627,16 @@ namespace Microsoft.PythonTools.Analysis {
 
         public bool EnableDiagnostics { get; set; }
 
-        public void AddDiagnostic(Node node, AnalysisUnit unit, string message, LanguageServer.DiagnosticSeverity severity, string code = null) {
+        public void AddDiagnostic(Node node, AnalysisUnit unit, string message, DiagnosticSeverity severity, string code = null) {
             if (!EnableDiagnostics) {
                 return;
             }
 
             lock (_diagnostics) {
                 if (!_diagnostics.TryGetValue(unit.ProjectEntry, out var diags)) {
-                    _diagnostics[unit.ProjectEntry] = diags = new Dictionary<Node, LanguageServer.Diagnostic>();
+                    _diagnostics[unit.ProjectEntry] = diags = new Dictionary<Node, Diagnostic>();
                 }
-                diags[node] = new LanguageServer.Diagnostic {
+                diags[node] = new Diagnostic {
                     message = message,
                     range = node.GetSpan(unit.ProjectEntry.Tree),
                     severity = severity,
@@ -660,17 +646,17 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        public IReadOnlyList<LanguageServer.Diagnostic> GetDiagnostics(IProjectEntry entry) {
+        public IReadOnlyList<Diagnostic> GetDiagnostics(IProjectEntry entry) {
             lock (_diagnostics) {
                 if (_diagnostics.TryGetValue(entry, out var diags)) {
                     return diags.OrderBy(kv => kv.Key.StartIndex).Select(kv => kv.Value).ToArray();
                 }
             }
-            return Array.Empty<LanguageServer.Diagnostic>();
+            return Array.Empty<Diagnostic>();
         }
 
-        public IReadOnlyDictionary<IProjectEntry, IReadOnlyList<LanguageServer.Diagnostic>> GetAllDiagnostics() {
-            var res = new Dictionary<IProjectEntry, IReadOnlyList<LanguageServer.Diagnostic>>();
+        public IReadOnlyDictionary<IProjectEntry, IReadOnlyList<Diagnostic>> GetAllDiagnostics() {
+            var res = new Dictionary<IProjectEntry, IReadOnlyList<Diagnostic>>();
             lock (_diagnostics) {
                 foreach (var kv in _diagnostics) {
                     res[kv.Key] = kv.Value.OrderBy(d => d.Key.StartIndex).Select(d => d.Value).ToArray();
@@ -740,9 +726,7 @@ namespace Microsoft.PythonTools.Analysis {
             return result;
         }
 
-        internal BuiltinModule BuiltinModule {
-            get { return _builtinModule; }
-        }
+        internal BuiltinModule BuiltinModule => _builtinModule;
 
         internal BuiltinInstanceInfo GetInstance(IPythonType type) {
             return GetBuiltinType(type).Instance;
@@ -852,13 +836,9 @@ namespace Microsoft.PythonTools.Analysis {
             return result;
         }
 
-        internal ModuleTable Modules {
-            get { return _modules; }
-        }
+        internal ModuleTable Modules => _modules;
 
-        internal ConcurrentDictionary<string, ModuleInfo> ModulesByFilename {
-            get { return _modulesByFilename; }
-        }
+        internal ConcurrentDictionary<string, ModuleInfo> ModulesByFilename => _modulesByFilename;
 
         public bool TryGetProjectEntryByPath(string path, out IProjectEntry projEntry) {
             ModuleInfo modInfo;
@@ -952,7 +932,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             var ddg = new DDG();
             ddg.Analyze(Queue, cancel, _reportQueueSize, _reportQueueInterval);
-            foreach (var entry in ddg.AnalyzedEntries) {
+            foreach (ProjectEntry entry in ddg.AnalyzedEntries) {
                 entry.SetCompleteAnalysis();
                 entry.RaiseOnNewAnalysis();
             }

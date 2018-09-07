@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Interpreter;
@@ -72,7 +71,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         private IAnalysisSet IterableIter(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             if (args.Length == 0) {
-                return unit.Scope.GetOrMakeNodeValue(
+                return unit.InterpreterScope.GetOrMakeNodeValue(
                     node,
                     NodeValueKind.Iterator,
                     n => MakeIteratorInfo(n, unit)
@@ -109,7 +108,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// Used for user defined sequence types where we'll track the individual values
     /// inside of the iterable.
     /// </summary>
-    internal class IterableValue : BaseIterableValue {
+    internal class IterableValue : BaseIterableValue, IAnalysisIterableValue {
         internal readonly Node _node;
 
         public IterableValue(VariableDef[] indexTypes, BuiltinClassInfo seqType, Node node)
@@ -119,6 +118,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public VariableDef[] IndexTypes { get; protected set; }
+        IEnumerable<IVariableDefinition> IAnalysisIterableValue.IndexTypes => IndexTypes;
 
         public override IAnalysisSet GetEnumeratorTypes(Node node, AnalysisUnit unit) {
             if (IndexTypes.Length == 0) {
@@ -169,7 +169,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 if (Push()) {
                     try {
                         foreach (var set in IndexTypes) {
-                            unionType = unionType.Union(set.TypesNoCopy);
+                            unionType = unionType.Union(set.Types);
                         }
                     } finally {
                         Pop();
@@ -209,7 +209,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (Push()) {
                 try {
                     for (int i = 0; i < resolvedTypes.Length; ++i) {
-                        resolvedTypes[i] = IndexTypes[i].TypesNoCopy.Resolve(unit, context, out bool changed);
+                        resolvedTypes[i] = IndexTypes[i].Types.Resolve(unit, context, out bool changed);
                         anyChange |= changed;
                     }
                 } finally {
@@ -260,16 +260,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     newTypes = VariableDef.Generator.Take(IndexTypes.Length).ToArray();
                     changed |= ResolveIndexTypes(unit, context, newTypes);
                     if (newTypes.Length == 1) {
-                        pi.AddProtocol(new GetItemProtocol(pi, unit.State.ClassInfos[BuiltinTypeId.Int], newTypes[0].TypesNoCopy));
+                        pi.AddProtocol(new GetItemProtocol(pi, unit.State.ClassInfos[BuiltinTypeId.Int], newTypes[0].Types));
                     } else if (newTypes.Length > 1) {
-                        pi.AddProtocol(new TupleProtocol(pi, newTypes.Select(t => t.TypesNoCopy)));
+                        pi.AddProtocol(new TupleProtocol(pi, newTypes.Select(t => t.Types)));
                     }
                 }
 
                 return changed ? (AnalysisValue)pi : this;
             }
 
-            if (unit.Scope.TryGetNodeValue(context.CallSite, NodeValueKind.Sequence, out var newSeq)) {
+            if (unit.InterpreterScope.TryGetNodeValue(context.CallSite, NodeValueKind.Sequence, out var newSeq)) {
                 newTypes = (newSeq as IterableValue)?.IndexTypes;
                 if (newTypes != null) {
                     ResolveIndexTypes(unit, context, newTypes);
@@ -278,7 +278,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             } else {
                 newTypes = VariableDef.Generator.Take(Math.Max(1, IndexTypes.Length)).ToArray();
                 if (ResolveIndexTypes(unit, context, newTypes)) {
-                    return unit.Scope.GetOrMakeNodeValue(context.CallSite, NodeValueKind.Sequence, n => CreateWithNewTypes(n, newTypes));
+                    return unit.InterpreterScope.GetOrMakeNodeValue(context.CallSite, NodeValueKind.Sequence, n => CreateWithNewTypes(n, newTypes));
                 }
             }
 
@@ -301,7 +301,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     } else {
                         yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", ");
                     }
-                    foreach (var kv in i.TypesNoCopy.GetRichDescriptions(unionPrefix: "[", unionSuffix: "]")) {
+                    foreach (var kv in i.Types.GetRichDescriptions(unionPrefix: "[", unionSuffix: "]")) {
                         yield return kv;
                     }
                 }

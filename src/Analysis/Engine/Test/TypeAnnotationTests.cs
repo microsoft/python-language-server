@@ -16,18 +16,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
-using Microsoft.PythonTools.Analysis.LanguageServer;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Interpreter.Ast;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -288,7 +286,7 @@ n1 : MyNamedTuple = ...
                     .And.HaveVariable("n1")
                         .WithDescription("MyNamedTuple(x: int)")
                         .WithValue<ProtocolInfo>()
-                    .Which.Should().HaveMember<BuiltinInstanceInfo>("x")
+                    .Which.Should().HaveMember<IBuiltinInstanceInfo>("x")
                     .Which.Should().HaveType(BuiltinTypeId.Int);
             }
         }
@@ -344,7 +342,7 @@ x = f()
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
                 analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str)
-                    .And.HaveVariable("f").WithValue<FunctionInfo>()
+                    .And.HaveVariable("f").WithValue<IFunctionInfo>()
                     .Which.Should().HaveSingleOverload()
                     .Which.Should().HaveParameterAt(0).WithName("a").WithType("int")
                     .And.HaveParameterAt(1).WithName("b").WithType("float")

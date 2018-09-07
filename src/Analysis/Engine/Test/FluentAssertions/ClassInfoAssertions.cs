@@ -25,24 +25,24 @@ using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
-    internal sealed class ClassInfoAssertions : AnalysisValueAssertions<ClassInfo, ClassInfoAssertions> {
-        public ClassInfoAssertions(AnalysisValueTestInfo<ClassInfo> subject) : base(subject) {}
+    internal sealed class ClassInfoAssertions : AnalysisValueAssertions<IClassInfo, ClassInfoAssertions> {
+        public ClassInfoAssertions(AnalysisValueTestInfo<IClassInfo> subject) : base(subject) {}
 
-        protected override string Identifier => nameof(ClassInfo);
+        protected override string Identifier => nameof(IClassInfo);
         
-        public AndWhichConstraint<ClassInfoAssertions, ClassScope> HaveScope(string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<ClassInfoAssertions, IClassScope> HaveScope(string because = "", params object[] reasonArgs) {
             Execute.Assertion.ForCondition(Subject.Scope != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName()} to have scope specified{{reason}}.");
 
-            return new AndWhichConstraint<ClassInfoAssertions, ClassScope>(this, Subject.Scope);
+            return new AndWhichConstraint<ClassInfoAssertions, IClassScope>(this, Subject.Scope);
         }
 
         public AndConstraint<ClassInfoAssertions> HaveMethodResolutionOrder(params string[] classNames)
             => HaveMethodResolutionOrder(classNames, string.Empty);
 
         public AndConstraint<ClassInfoAssertions> HaveMethodResolutionOrder(IEnumerable<string> classNames, string because = "", params object[] reasonArgs) {
-            Execute.Assertion.ForCondition(Subject._mro != null && Subject._mro.IsValid)
+            Execute.Assertion.ForCondition(Subject.Mro != null && Subject.Mro.IsValid)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName()} to have valid method resolution order.");
 
@@ -60,7 +60,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         public AndConstraint<ClassInfoAssertions> HaveInvalidMethodResolutionOrder(string because = "", params object[] reasonArgs) {
-            Execute.Assertion.ForCondition(Subject._mro == null || !Subject._mro.IsValid)
+            Execute.Assertion.ForCondition(Subject.Mro == null || !Subject.Mro.IsValid)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName()} to have invalid method resolution order.");
 

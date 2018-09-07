@@ -14,7 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-// #define WAIT_FOR_DEBUGGER
+#define WAIT_FOR_DEBUGGER
 
 using System;
 using Microsoft.Python.LanguageServer.Services;
@@ -82,7 +82,7 @@ namespace Microsoft.Python.LanguageServer.Server {
             }
 
             if (value is Uri) {
-                var uri = ((Uri)value);
+                var uri = (Uri)value;
                 var scheme = uri.Scheme;
                 var str = uri.ToString();
                 str = uri.Scheme + "://" + str.Substring(scheme.Length + 3).Replace(":", "%3A").Replace('\\', '/');

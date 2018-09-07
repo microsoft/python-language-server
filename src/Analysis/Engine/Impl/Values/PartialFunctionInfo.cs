@@ -30,7 +30,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private IAnalysisSet _argsTuple;
         private IAnalysisSet _keywordsDict;
 
-        public PartialFunctionInfo(ProjectEntry declProjEntry, IAnalysisSet function, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
+        public PartialFunctionInfo(IPythonProjectEntry declProjEntry, IAnalysisSet function, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             _declProjEntry = declProjEntry;
             _declVersion = _declProjEntry.AnalysisVersion;
             _function = function;

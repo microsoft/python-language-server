@@ -16,7 +16,7 @@
 
 namespace Microsoft.PythonTools.Analysis {
     class AnalysisVariable : IAnalysisVariable {
-        public AnalysisVariable(VariableType type, LocationInfo location, int? version = null) {
+        public AnalysisVariable(VariableType type, ILocationInfo location, int? version = null) {
             Location = location;
             Type = type;
             Version = version;
@@ -24,7 +24,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         #region IAnalysisVariable Members
 
-        public LocationInfo Location { get; }
+        public ILocationInfo Location { get; }
 
         public VariableType Type { get; }
 
@@ -33,7 +33,7 @@ namespace Microsoft.PythonTools.Analysis {
         #endregion
 
         public override bool Equals(object obj) {
-            AnalysisVariable other = obj as AnalysisVariable;
+            var other = obj as AnalysisVariable;
             if (other != null) {
                 return LocationInfo.FullComparer.Equals(Location, other.Location) &&
                        Type.Equals(other.Type) &&
@@ -42,8 +42,6 @@ namespace Microsoft.PythonTools.Analysis {
             return false;
         }
 
-        public override int GetHashCode() {
-            return Type.GetHashCode() ^ Location?.GetHashCode() ?? 0;
-        }
+        public override int GetHashCode() => Type.GetHashCode() ^ Location?.GetHashCode() ?? 0;
     }
 }

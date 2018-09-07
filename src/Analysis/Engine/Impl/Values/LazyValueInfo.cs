@@ -444,16 +444,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
             if (av is GeneratorInfo gi && gi.Push()) {
                 try {
-                    return gi.Yields.TypesNoCopy.IsResolvable() ||
-                        gi.Returns.TypesNoCopy.IsResolvable() ||
-                        gi.Sends.TypesNoCopy.IsResolvable();
+                    return gi.Yields.Types.IsResolvable() ||
+                        gi.Returns.Types.IsResolvable() ||
+                        gi.Sends.Types.IsResolvable();
                 } finally {
                     gi.Pop();
                 }
             }
             if (av is IterableValue iv && iv.Push()) {
                 try {
-                    return iv.IndexTypes.Any(v => v.TypesNoCopy.IsResolvable());
+                    return iv.IndexTypes.Any(v => v.Types.IsResolvable());
                 } finally {
                     iv.Pop();
                 }

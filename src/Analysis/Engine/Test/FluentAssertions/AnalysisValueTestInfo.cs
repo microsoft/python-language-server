@@ -15,16 +15,16 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
-    internal sealed class AnalysisValueTestInfo<TAnalysisValue> where TAnalysisValue : AnalysisValue {
+    internal sealed class AnalysisValueTestInfo<TAnalysisValue> where TAnalysisValue : IAnalysisValue {
         public TAnalysisValue Value { get; }
         public string ScopeDescription { get; }
-        public InterpreterScope OwnerScope { get; }
+        public IScope OwnerScope { get; }
 
-        public AnalysisValueTestInfo(TAnalysisValue value, string scopeDescription, InterpreterScope ownerScope) {
+        public AnalysisValueTestInfo(TAnalysisValue value, string scopeDescription, IScope ownerScope) {
             Value = value;
             ScopeDescription = scopeDescription;
             OwnerScope = ownerScope;

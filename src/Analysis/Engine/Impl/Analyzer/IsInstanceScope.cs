@@ -34,25 +34,15 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             get { return "<isinstance scope>"; }
         }
 
-        public override int GetStart(PythonAst ast) {
-            return _startIndex;
-        }
+        public override int GetStart(PythonAst ast) => _startIndex;
 
-        public override int GetStop(PythonAst ast) {
-            return _endIndex;
-        }
+        public override int GetStop(PythonAst ast) => _endIndex;
 
-        public override InterpreterScope AddNodeScope(Node node, InterpreterScope scope) {
-            return OuterScope.AddNodeScope(node, scope);
-        }
+        public override InterpreterScope AddNodeScope(Node node, InterpreterScope scope) => OuterScope.AddNodeScope(node, scope);
 
-        internal override void ClearNodeScopes() {
-            OuterScope.ClearNodeScopes();
-        }
+        internal override void ClearNodeScopes() => OuterScope.ClearNodeScopes();
 
-        internal override bool RemoveNodeScope(Node node) {
-            return OuterScope.RemoveNodeScope(node);
-        }
+        internal override bool RemoveNodeScope(Node node) => OuterScope.RemoveNodeScope(node);
 
         public override bool AssignVariable(string name, Node location, AnalysisUnit unit, IAnalysisSet values) {
             var vars = CreateVariable(location, unit, name, false);
@@ -69,13 +59,11 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return res;
         }
 
-        public override VariableDef GetVariable(Node node, AnalysisUnit unit, string name, bool addRef = true) {
-            return base.GetVariable(node, unit, name, addRef) ?? OuterScope.GetVariable(node, unit, name, addRef);
-        }
+        public override VariableDef GetVariable(Node node, AnalysisUnit unit, string name, bool addRef = true) 
+            => base.GetVariable(node, unit, name, addRef) ?? OuterScope.GetVariable(node, unit, name, addRef);
 
-        public override IEnumerable<VariableDef> GetMergedVariables(string name) {
-            return base.GetMergedVariables(name).Concat(OuterScope.GetMergedVariables(name));
-        }
+        public override IEnumerable<IVariableDefinition> GetMergedVariables(string name) 
+            => base.GetMergedVariables(name).Concat(OuterScope.GetMergedVariables(name));
 
         public override IAnalysisSet GetMergedVariableTypes(string name) {
             VariableDef res;
@@ -85,21 +73,14 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return AnalysisSet.Empty;
         }
 
-        public override IEnumerable<KeyValuePair<string, VariableDef>> GetAllMergedVariables() {
-            return base.GetAllMergedVariables().Concat(OuterScope.GetAllMergedVariables());
-        }
+        public override IEnumerable<KeyValuePair<string, VariableDef>> GetAllMergedVariables() 
+            => base.GetAllMergedVariables().Concat(OuterScope.GetAllMergedVariables());
 
-        public override VariableDef AddVariable(string name, VariableDef variable = null) {
-            return OuterScope.AddVariable(name, variable);
-        }
+        public override VariableDef AddVariable(string name, VariableDef variable = null) => OuterScope.AddVariable(name, variable);
 
-        internal override bool RemoveVariable(string name) {
-            return OuterScope.RemoveVariable(name);
-        }
+        internal override bool RemoveVariable(string name) => OuterScope.RemoveVariable(name);
 
-        internal override void ClearVariables() {
-            OuterScope.ClearVariables();
-        }
+        internal override void ClearVariables() => OuterScope.ClearVariables();
 
         internal VariableDef CreateTypedVariable(Node node, AnalysisUnit unit, string name, IAnalysisSet types, bool addRef = true) {
             VariableDef res;
@@ -126,17 +107,11 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return res;
         }
 
-        public override IAnalysisSet AddNodeValue(Node node, NodeValueKind kind, IAnalysisSet variable) {
-            return OuterScope.AddNodeValue(node, kind, variable);
-        }
+        public override IAnalysisSet AddNodeValue(Node node, NodeValueKind kind, IAnalysisSet variable) => OuterScope.AddNodeValue(node, kind, variable);
 
-        internal override bool RemoveNodeValue(Node node) {
-            return OuterScope.RemoveNodeValue(node);
-        }
+        internal override bool RemoveNodeValue(Node node) => OuterScope.RemoveNodeValue(node);
 
-        internal override void ClearNodeValues() {
-            OuterScope.ClearNodeValues();
-        }
+        internal override void ClearNodeValues() => OuterScope.ClearNodeValues();
 
         public int EndIndex {
             set {

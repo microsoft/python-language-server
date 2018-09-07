@@ -19,7 +19,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.PythonTools.Analysis.LanguageServer;
+using Microsoft.Python.LanguageServer;
+using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
 using TestUtilities;
@@ -53,12 +54,12 @@ namespace Microsoft.PythonTools.Analysis {
                         liveLinting = true,
                     }
                 }
-            });
+            }, CancellationToken.None);
             
             return server;
         }
 
-        public static Task<ModuleAnalysis> GetAnalysisAsync(this Server server, Uri uri, int waitingTimeout = -1, int failAfter = 30000)
+        public static Task<IModuleAnalysis> GetAnalysisAsync(this Server server, Uri uri, int waitingTimeout = -1, int failAfter = 30000)
             => ((ProjectEntry)server.ProjectFiles.GetEntry(uri)).GetAnalysisAsync(waitingTimeout, new CancellationTokenSource(failAfter).Token);
 
         public static void EnqueueItem(this Server server, Uri uri) 
@@ -87,7 +88,7 @@ namespace Microsoft.PythonTools.Analysis {
                     line = line,
                     character = character
                 }
-            });
+            }, CancellationToken.None);
         }
 
         public static Task<SignatureHelp> SendSignatureHelp(this Server server, Uri uri, int line, int character) {
@@ -97,7 +98,7 @@ namespace Microsoft.PythonTools.Analysis {
                     line = line,
                     character = character
                 }
-            });
+            }, CancellationToken.None);
         }
 
         public static Task<Reference[]> SendFindReferences(this Server server, Uri uri, int line, int character, bool includeDeclaration = true) {
@@ -111,7 +112,7 @@ namespace Microsoft.PythonTools.Analysis {
                     includeDeclaration = includeDeclaration,
                     _includeValues = true // For compatibility with PTVS
                 }
-            });
+            }, CancellationToken.None);
         }
 
         public static async Task<Uri> OpenDefaultDocumentAndGetUriAsync(this Server server, string content) {
@@ -127,10 +128,10 @@ namespace Microsoft.PythonTools.Analysis {
                     text = content,
                     languageId = languageId ?? "python"
                 }
-            });
+            }, CancellationToken.None);
         }
 
-        public static async Task<ModuleAnalysis> OpenDefaultDocumentAndGetAnalysisAsync(this Server server, string content, int failAfter = 30000, string languageId = null) {
+        public static async Task<IModuleAnalysis> OpenDefaultDocumentAndGetAnalysisAsync(this Server server, string content, int failAfter = 30000, string languageId = null) {
             var cancellationToken = new CancellationTokenSource(failAfter).Token;
             await server.SendDidOpenTextDocument(TestData.GetDefaultModuleUri(), content, languageId);
             cancellationToken.ThrowIfCancellationRequested();
@@ -151,7 +152,7 @@ namespace Microsoft.PythonTools.Analysis {
             });
         }
 
-        public static async Task<ModuleAnalysis> ChangeDefaultDocumentAndGetAnalysisAsync(this Server server, string text, int failAfter = 30000) {
+        public static async Task<IModuleAnalysis> ChangeDefaultDocumentAndGetAnalysisAsync(this Server server, string text, int failAfter = 30000) {
             var projectEntry = (ProjectEntry) server.ProjectFiles.All.Single();
             server.SendDidChangeTextDocument(projectEntry.DocumentUri, text);
             return await projectEntry.GetAnalysisAsync(cancellationToken: new CancellationTokenSource(failAfter).Token);

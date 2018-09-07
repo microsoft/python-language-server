@@ -16,19 +16,16 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     /// <summary>
     /// Represents a coroutine instance
     /// </summary>
-    internal class CoroutineInfo : BuiltinInstanceInfo, IHasRichDescription {
+    internal class CoroutineInfo : BuiltinInstanceInfo, ICoroutineInfo, IHasRichDescription {
         private readonly IPythonProjectEntry _declaringModule;
         private readonly int _declaringVersion;
-        public readonly VariableDef Returns;
 
         public CoroutineInfo(PythonAnalyzer projectState, IPythonProjectEntry entry)
             : base(projectState.ClassInfos[BuiltinTypeId.Generator]) {
@@ -41,12 +38,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
             Returns = new VariableDef();
         }
 
+        IVariableDefinition ICoroutineInfo.Returns => Returns;
+        public VariableDef Returns { get; }
+
         public override IPythonProjectEntry DeclaringModule { get { return _declaringModule; } }
         public override int DeclaringVersion { get { return _declaringVersion; } }
 
         public IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "coroutine");
-            foreach (var kv in FunctionInfo.GetReturnTypeString(Returns.TypesNoCopy.AsUnion)) {
+            foreach (var kv in FunctionInfo.GetReturnTypeString(Returns.Types.AsUnion)) {
                 yield return kv;
             }
         }

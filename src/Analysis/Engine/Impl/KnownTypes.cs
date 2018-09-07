@@ -163,7 +163,7 @@ namespace Microsoft.PythonTools.Analysis {
         public string Documentation => string.Empty;
         public bool IsBuiltin => true;
         public PythonMemberType MemberType => PythonMemberType.Class;
-        public IList<IPythonType> Mro => new[] { (IPythonType)this };
+        public IReadOnlyList<IPythonType> Mro => new[] { (IPythonType)this };
         public string Name { get; }
         public BuiltinTypeId TypeId {get;}
         public IPythonFunction GetConstructors() => null;

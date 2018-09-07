@@ -26,32 +26,32 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonType : IPythonType, IMemberContainer, ILocatedMember, IHasQualifiedName {
         private readonly string _name;
         protected readonly Dictionary<string, IMember> _members;
-        private IList<IPythonType> _mro;
+        private IReadOnlyList<IPythonType> _mro;
 
         private static readonly IPythonModule NoDeclModule = new AstPythonModule();
 
         [ThreadStatic]
         private static HashSet<AstPythonType> _processing;
 
-        public AstPythonType(string name): this(name, new Dictionary<string, IMember>(), Array.Empty<LocationInfo>()) { }
+        public AstPythonType(string name): this(name, new Dictionary<string, IMember>(), Array.Empty<ILocationInfo>()) { }
 
         public AstPythonType(
             PythonAst ast,
             IPythonModule declModule,
             ClassDefinition def,
             string doc,
-            LocationInfo loc
+            ILocationInfo loc
         ) {
             _members = new Dictionary<string, IMember>();
 
             _name = def?.Name ?? throw new ArgumentNullException(nameof(def));
             Documentation = doc;
             DeclaringModule = declModule ?? throw new ArgumentNullException(nameof(declModule));
-            Locations = loc != null ? new[] { loc } : Array.Empty<LocationInfo>();
+            Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
             StartIndex = def?.StartIndex ?? 0;
         }
 
-        private AstPythonType(string name, Dictionary<string, IMember> members, IEnumerable<LocationInfo> locations) {
+        private AstPythonType(string name, Dictionary<string, IMember> members, IEnumerable<ILocationInfo> locations) {
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _members = members;
             _mro = Array.Empty<IPythonType>();
@@ -90,7 +90,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
         }
 
-        public IList<IPythonType> Mro {
+        public IReadOnlyList<IPythonType> Mro {
             get {
                 lock (_members) {
                     if (_mro != null) {
@@ -107,7 +107,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
         }
 
-        internal static IList<IPythonType> CalculateMro(IPythonType cls, HashSet<IPythonType> recursionProtection = null) {
+        internal static IReadOnlyList<IPythonType> CalculateMro(IPythonType cls, HashSet<IPythonType> recursionProtection = null) {
             if (cls == null) {
                 return Array.Empty<IPythonType>();
             }
@@ -185,7 +185,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         /// </summary>
         public int StartIndex { get; }
 
-        public IEnumerable<LocationInfo> Locations { get; }
+        public IEnumerable<ILocationInfo> Locations { get; }
 
         public string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
         public KeyValuePair<string, string> FullyQualifiedNamePair => new KeyValuePair<string, string>(DeclaringModule.Name, Name);

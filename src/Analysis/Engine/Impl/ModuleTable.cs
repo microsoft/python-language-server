@@ -91,10 +91,9 @@ namespace Microsoft.PythonTools.Analysis {
         /// reference.
         /// </returns>
         public async Task<ModuleReference> TryImportAsync(string name, CancellationToken token) {
-            ModuleReference res;
-            bool firstImport = false;
+            var firstImport = false;
 
-            if (!_modules.TryGetValue(name, out res) || res == null) {
+            if (!_modules.TryGetValue(name, out var res) || res == null) {
                 var mod = await ImportModuleAsync(name, token).ConfigureAwait(false);
                 _modules[name] = res = new ModuleReference(GetBuiltinModule(mod), name);
                 firstImport = true;
@@ -423,17 +422,17 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             internal override bool ModuleContainsMember(IModuleContext context, string name) {
-                BuiltinModule builtin = Module as BuiltinModule;
+                var builtin = Module as BuiltinModule;
                 if (builtin != null) {
                     return BuiltinModuleContainsMember(context, name, builtin.InterpreterModule);
                 }
 
-                ModuleInfo modInfo = Module as ModuleInfo;
+                var modInfo = Module as ModuleInfo;
                 if (modInfo != null) {
                     VariableDef varDef;
                     if (modInfo.Scope.TryGetVariable(name, out varDef) &&
                         varDef.VariableStillExists) {
-                        var types = varDef.TypesNoCopy;
+                        var types = varDef.Types;
                         if (types.Count > 0) {
                             foreach (var type in types) {
                                 if (type is ModuleInfo || type is BuiltinModule) {
@@ -465,7 +464,7 @@ namespace Microsoft.PythonTools.Analysis {
                     return false;
                 }
 
-                IPythonMultipleMembers multiMem = mem as IPythonMultipleMembers;
+                var multiMem = mem as IPythonMultipleMembers;
                 if (multiMem != null) {
                     foreach (var innerMem in multiMem.Members) {
                         if (IsExcludedBuiltin(interpModule, innerMem)) {

@@ -21,23 +21,18 @@ using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis {
     class ModuleReference {
-        public IModule Module;
-
         private readonly Lazy<HashSet<ModuleInfo>> _references = new Lazy<HashSet<ModuleInfo>>();
-        private string _name;
+        private readonly string _name;
 
         public ModuleReference(IModule module = null, string name = null) {
             Module = module;
             _name = name;
         }
 
+        public IModule Module { get; set; }
         public string Name => (_name ?? AnalysisModule?.Name) ?? string.Empty;
 
-        public AnalysisValue AnalysisModule {
-            get {
-                return Module as AnalysisValue;
-            }
-        }
+        public AnalysisValue AnalysisModule => Module as AnalysisValue;
 
         public bool AddReference(ModuleInfo module) {
             return _references.Value.Add(module);
@@ -47,10 +42,6 @@ namespace Microsoft.PythonTools.Analysis {
 
         public bool HasReferences => _references.IsValueCreated && _references.Value.Any();
 
-        public IEnumerable<ModuleInfo> References {
-            get {
-                return _references.IsValueCreated ? _references.Value : Enumerable.Empty<ModuleInfo>();
-            }
-        }
+        public IEnumerable<ModuleInfo> References => _references.IsValueCreated ? _references.Value : Enumerable.Empty<ModuleInfo>();
     }
 }

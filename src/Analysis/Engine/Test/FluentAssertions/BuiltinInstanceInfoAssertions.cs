@@ -22,10 +22,10 @@ using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
-    internal sealed class BuiltinInstanceInfoAssertions : AnalysisValueAssertions<BuiltinInstanceInfo, BuiltinInstanceInfoAssertions> {
-        public BuiltinInstanceInfoAssertions(AnalysisValueTestInfo<BuiltinInstanceInfo> subject) : base(subject) {}
+    internal sealed class BuiltinInstanceInfoAssertions : AnalysisValueAssertions<IBuiltinInstanceInfo, BuiltinInstanceInfoAssertions> {
+        public BuiltinInstanceInfoAssertions(AnalysisValueTestInfo<IBuiltinInstanceInfo> subject) : base(subject) {}
 
-        protected override string Identifier => nameof(BuiltinInstanceInfo);
+        protected override string Identifier => nameof(IBuiltinInstanceInfo);
 
         public AndConstraint<BuiltinInstanceInfoAssertions> HaveClassName(string className, string because = "", params object[] reasonArgs) {
             Execute.Assertion.ForCondition(string.Equals(Subject.ClassInfo.Name, className, StringComparison.Ordinal))

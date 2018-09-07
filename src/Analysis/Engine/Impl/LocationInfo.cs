@@ -18,9 +18,9 @@ using System;
 using System.Collections.Generic;
 
 namespace Microsoft.PythonTools.Analysis {
-    public class LocationInfo : IEquatable<LocationInfo>, ILocationResolver {
+    internal class LocationInfo : ILocationInfo, IEquatable<LocationInfo> {
         internal static readonly LocationInfo[] Empty = new LocationInfo[0];
-        private static readonly IEqualityComparer<LocationInfo> _fullComparer = new FullLocationComparer();
+
         public LocationInfo(string path, Uri documentUri, int line, int column) :
              this(path, documentUri, line, column, null, null) {
         }
@@ -53,11 +53,21 @@ namespace Microsoft.PythonTools.Analysis {
 
         public override bool Equals(object obj) => Equals(obj as LocationInfo);
 
-        public override int GetHashCode() {
-            return StartLine.GetHashCode() ^ (FilePath?.GetHashCode() ?? 0);
-        }
+        public override int GetHashCode() => StartLine.GetHashCode() ^ (FilePath?.GetHashCode() ?? 0);
 
         public bool Equals(LocationInfo other) {
+            if (other == null) {
+                return false;
+            }
+
+            // currently we filter only to line & file - so we'll only show 1 ref per each line
+            // This works nicely for get and call which can both add refs and when they're broken
+            // apart you still see both refs, but when they're together you only see 1.
+            return StartLine == other.StartLine &&
+                FilePath == other.FilePath;
+        }
+
+        public bool Equals(ILocationInfo other) {
             if (other == null) {
                 return false;
             }
@@ -73,10 +83,11 @@ namespace Microsoft.PythonTools.Analysis {
         /// Provides an IEqualityComparer that compares line, column and project entries.  By
         /// default locations are equaitable based upon only line/project entry.
         /// </summary>
-        public static IEqualityComparer<LocationInfo> FullComparer => _fullComparer;
+        public static IEqualityComparer<ILocationInfo> FullComparer { get; } = new FullLocationComparer();
 
-        sealed class FullLocationComparer : IEqualityComparer<LocationInfo> {
-            public bool Equals(LocationInfo x, LocationInfo y) {
+        sealed class FullLocationComparer : IEqualityComparer<ILocationInfo>, IEqualityComparer<LocationInfo> {
+            public bool Equals(LocationInfo x, LocationInfo y) => Equals(x, y);
+            public bool Equals(ILocationInfo x, ILocationInfo y) {
                 return x.StartLine == y.StartLine &&
                     x.StartColumn == y.StartColumn &&
                     x.FilePath == y.FilePath &&
@@ -84,19 +95,15 @@ namespace Microsoft.PythonTools.Analysis {
                     x.EndColumn == x.EndColumn;
             }
 
-            public int GetHashCode(LocationInfo obj) {
-                return obj.StartLine.GetHashCode() ^ obj.StartColumn.GetHashCode() ^ (obj.FilePath?.GetHashCode() ?? 0);
-            }
+            public int GetHashCode(LocationInfo obj) => GetHashCode(obj);
+
+            public int GetHashCode(ILocationInfo obj)
+                => obj.StartLine.GetHashCode() ^ obj.StartColumn.GetHashCode() ^ (obj.FilePath?.GetHashCode() ?? 0);
         }
 
         #region ILocationResolver Members
-
-        LocationInfo ILocationResolver.ResolveLocation(object location) {
-            return this;
-        }
-
+        ILocationInfo ILocationResolver.ResolveLocation(object location) => this;
         ILocationResolver ILocationResolver.GetAlternateResolver() => null;
-
         #endregion
     }
 }

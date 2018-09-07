@@ -21,14 +21,10 @@ using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
-    sealed class FunctionScope : InterpreterScope {
+    sealed class FunctionScope : InterpreterScope, IFunctionScope {
         private readonly AnalysisDictionary<string, VariableDef> _parameters;
-
         private ListParameterVariableDef _seqParameters;
         private DictParameterVariableDef _dictParameters;
-        public readonly VariableDef ReturnValue;
-        public readonly CoroutineInfo Coroutine;
-        public readonly GeneratorInfo Generator;
 
         public FunctionScope(
             FunctionInfo function,
@@ -49,7 +45,19 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             }
         }
 
-        public static bool IsOriginalClosureScope(InterpreterScope scope) => (scope as FunctionScope)?.Function.IsClosure == true && scope.OriginalScope == null;
+        #region IFunctionScope
+        IFunctionInfo IFunctionScope.Function => Function;
+        IVariableDefinition IFunctionScope.ReturnValue => ReturnValue;
+        IVariableDefinition IFunctionScope.GetParameter(string name) => GetParameter(name);
+        #endregion
+
+        public static bool IsOriginalClosureScope(InterpreterScope scope) 
+            => (scope as FunctionScope)?.Function.IsClosure == true && scope.OriginalScope == null;
+
+        internal VariableDef ReturnValue { get; }
+        internal CoroutineInfo Coroutine { get; }
+        internal GeneratorInfo Generator { get; }
+        internal FunctionInfo Function => (FunctionInfo)AnalysisValue;
 
         internal void AddReturnTypes(Node node, AnalysisUnit unit, IAnalysisSet types, bool enqueue = true) {
             if (IsOriginalClosureScope(OuterScope)) {
@@ -135,7 +143,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             }
         }
 
-        private VariableDef AddParameter(AnalysisUnit unit, string name, Parameter node, VariableDef variableDef) {
+        private IVariableDefinition AddParameter(AnalysisUnit unit, string name, Parameter node, VariableDef variableDef) {
             if (variableDef != null) {
                 return AddVariable(name, variableDef);
             }
@@ -222,8 +230,6 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return added;
         }
 
-        public FunctionInfo Function => (FunctionInfo)AnalysisValue;
-
         internal override bool TryPropagateVariable(Node node, AnalysisUnit unit, string name, IAnalysisSet values, VariableDef ifNot = null, bool addRef = true) {
             var vd = GetParameter(name);
             if (vd != null) {
@@ -248,7 +254,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             }
         }
 
-        public override IEnumerable<VariableDef> GetMergedVariables(string name) {
+        public override IEnumerable<IVariableDefinition> GetMergedVariables(string name) {
             VariableDef res;
             FunctionScope fnScope;
 

@@ -76,8 +76,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override string Name => _interpreterModule.Name;
         public override IPythonType PythonType => ProjectState.Types[BuiltinTypeId.Module];
         public override PythonMemberType MemberType => _interpreterModule.MemberType;
+        public IPythonProjectEntry ProjectEntry => null;
+        public IScope Scope => null;
 
-        internal override BuiltinTypeId TypeId => BuiltinTypeId.Module;
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Module;
 
         #region IReferenceableContainer Members
 
@@ -162,7 +164,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
 
-        public IAnalysisSet GetModuleMember(Node node, AnalysisUnit unit, string name, bool addRef = true, InterpreterScope linkedScope = null, string linkedName = null) {
+        public IAnalysisSet GetModuleMember(Node node, AnalysisUnit unit, string name, bool addRef = true, IScope linkedScope = null, string linkedName = null) {
             var res = GetMember(node, unit, name);
             Imported(unit);
             return res;

@@ -17,7 +17,7 @@
 using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
-    sealed class ModuleScope : InterpreterScope {
+    sealed class ModuleScope : InterpreterScope, IModuleScope {
 
         public ModuleScope(ModuleInfo moduleInfo)
             : base(moduleInfo, null) {
@@ -27,15 +27,12 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             : base(scope.AnalysisValue, scope, true) {
         }
 
-        internal void SetModuleVariable(string name, IAnalysisSet value) {
-            CreateVariable(null, null, name, addRef: false).AddTypes(Module.ProjectEntry, value);
-        }
+        internal void SetModuleVariable(string name, IAnalysisSet value) 
+            => CreateVariable(null, null, name, addRef: false).AddTypes(Module.ProjectEntry, value);
 
-        public ModuleInfo Module { get { return AnalysisValue as ModuleInfo; } }
+        public ModuleInfo Module => AnalysisValue as ModuleInfo;
 
-        public override string Name {
-            get { return Module.Name; }
-        }
+        public override string Name => Module.Name;
 
         public override bool AssignVariable(string name, Parsing.Ast.Node location, AnalysisUnit unit, IAnalysisSet values) {
             if (base.AssignVariable(name, location, unit, values)) {
@@ -46,8 +43,6 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return false;
         }
 
-        public ModuleScope CloneForPublish() {
-            return new ModuleScope(this);
-        }
+        public ModuleScope CloneForPublish() => new ModuleScope(this);
     }
 }

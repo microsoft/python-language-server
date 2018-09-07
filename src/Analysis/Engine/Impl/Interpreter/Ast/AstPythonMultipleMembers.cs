@@ -23,7 +23,7 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonMultipleMembers : IPythonMultipleMembers, ILocatedMember {
         private readonly IMember[] _members;
-        private IList<IMember> _resolvedMembers;
+        private IReadOnlyList<IMember> _resolvedMembers;
 
         public AstPythonMultipleMembers() {
             _members = Array.Empty<IMember>();
@@ -134,7 +134,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return default(T);
         }
 
-        public IList<IMember> Members {
+        public IReadOnlyList<IMember> Members {
             get {
                 EnsureMembers();
                 return _resolvedMembers;
@@ -142,7 +142,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public virtual PythonMemberType MemberType => PythonMemberType.Multiple;
-        public IEnumerable<LocationInfo> Locations => Members.OfType<ILocatedMember>().SelectMany(m => m.Locations.MaybeEnumerate());
+        public IEnumerable<ILocationInfo> Locations => Members.OfType<ILocatedMember>().SelectMany(m => m.Locations.MaybeEnumerate());
 
         // Equality deliberately uses unresolved members
         public override bool Equals(object obj) => GetType() == obj?.GetType() && obj is AstPythonMultipleMembers mm && new HashSet<IMember>(_members).SetEquals(mm._members);
@@ -164,7 +164,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public bool IsBuiltin => Functions.Any(f => f.IsBuiltin);
             public bool IsStatic => Functions.Any(f => f.IsStatic);
             public bool IsClassMethod => Functions.Any(f => f.IsClassMethod);
-            public IList<IPythonFunctionOverload> Overloads => Functions.SelectMany(f => f.Overloads).ToArray();
+            public IReadOnlyList<IPythonFunctionOverload> Overloads => Functions.SelectMany(f => f.Overloads).ToArray();
             public IPythonType DeclaringType => CreateAs<IPythonType>(Functions.Select(f => f.DeclaringType));
             public IPythonModule DeclaringModule => CreateAs<IPythonModule>(Functions.Select(f => f.DeclaringModule));
             public override PythonMemberType MemberType => PythonMemberType.Function;
@@ -217,7 +217,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public string Documentation => ChooseDocumentation(Types.Select(t => t.Documentation));
             public BuiltinTypeId TypeId => Types.GroupBy(t => t.TypeId).OrderByDescending(g => g.Count()).FirstOrDefault()?.Key ?? BuiltinTypeId.Unknown;
             public IPythonModule DeclaringModule => CreateAs<IPythonModule>(Types.Select(t => t.DeclaringModule));
-            public IList<IPythonType> Mro => Types.Select(t => t.Mro).OrderByDescending(m => m.Count).FirstOrDefault() ?? new[] { this };
+            public IReadOnlyList<IPythonType> Mro => Types.Select(t => t.Mro).OrderByDescending(m => m.Count).FirstOrDefault() ?? new[] { this };
             public bool IsBuiltin => Types.All(t => t.IsBuiltin);
             public IPythonFunction GetConstructors() => CreateAs<IPythonFunction>(Types.Select(t => t.GetConstructors()));
             public IMember GetMember(IModuleContext context, string name) => Create(Types.Select(t => t.GetMember(context, name)));
