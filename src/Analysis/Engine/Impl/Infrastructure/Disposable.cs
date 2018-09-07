@@ -17,9 +17,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.DsTools.Core.Diagnostics;
 
-namespace Microsoft.DsTools.Core.Disposables {
+namespace Microsoft.PythonTools.Analysis.Infrastructure {
     /// <summary>
     /// Provides a set of static methods for creating Disposables. 
     /// </summary>

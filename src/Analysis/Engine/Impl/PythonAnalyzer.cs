@@ -259,7 +259,7 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }
 
-            entry.RemovedFromProject();
+            entry.Dispose();
             ClearDiagnostics(entry);
 
             if (onImporter == null) {
@@ -934,7 +934,7 @@ namespace Microsoft.PythonTools.Analysis {
             ddg.Analyze(Queue, cancel, _reportQueueSize, _reportQueueInterval);
             foreach (ProjectEntry entry in ddg.AnalyzedEntries) {
                 entry.SetCompleteAnalysis();
-                entry.RaiseOnNewAnalysis();
+                entry.RaiseNewAnalysis();
             }
         }
 

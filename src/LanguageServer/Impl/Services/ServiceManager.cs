@@ -20,9 +20,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Microsoft.DsTools.Core.Diagnostics;
-using Microsoft.DsTools.Core.Disposables;
 using Microsoft.Python.LanguageServer;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using static System.FormattableString;
 
 namespace Microsoft.PythonTools.LanguageServer.Services {

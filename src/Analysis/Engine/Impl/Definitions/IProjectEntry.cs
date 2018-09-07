@@ -23,7 +23,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// Represents a file which is capable of being analyzed.  Can be cast to other project entry types
     /// for more functionality.  See also IPythonProjectEntry and IXamlProjectEntry.
     /// </summary>
-    public interface IProjectEntry : IAnalyzable, IVersioned {
+    public interface IProjectEntry : IAnalyzable, IVersioned, IDisposable {
         /// <summary>
         /// Returns true if the project entry has been parsed and analyzed.
         /// </summary>
@@ -43,13 +43,6 @@ namespace Microsoft.PythonTools.Analysis {
         /// Provides storage of arbitrary properties associated with the project entry.
         /// </summary>
         Dictionary<object, object> Properties { get; }
-
-        /// <summary>
-        /// Called when the project entry is removed from the project.
-        /// 
-        /// Implementors of this method must ensure this method is thread safe.
-        /// </summary>
-        void RemovedFromProject();
 
         IModuleContext AnalysisContext { get; }
     }

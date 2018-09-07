@@ -81,8 +81,8 @@ namespace Microsoft.PythonTools.Analysis {
             return u;
         }
 
-        public event EventHandler<EventArgs> OnNewParseTree;
-        public event EventHandler<EventArgs> OnNewAnalysis;
+        public event EventHandler<EventArgs> NewParseTree;
+        public event EventHandler<EventArgs> NewAnalysis;
 
         private readonly ManualResetEventSlim _pendingParse = new ManualResetEventSlim(true);
         private long _expectedParse;
@@ -176,7 +176,7 @@ namespace Microsoft.PythonTools.Analysis {
                 Cookie = cookie;
             }
             if (notify) {
-                OnNewParseTree?.Invoke(this, EventArgs.Empty);
+                NewParseTree?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -212,13 +212,11 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             if (!enqueueOnly) {
-                RaiseOnNewAnalysis();
+                RaiseNewAnalysis();
             }
         }
 
-        internal void RaiseOnNewAnalysis() {
-            OnNewAnalysis?.Invoke(this, EventArgs.Empty);
-        }
+        internal void RaiseNewAnalysis() => NewAnalysis?.Invoke(this, EventArgs.Empty);
 
         public int AnalysisVersion { get; private set; }
 
@@ -226,7 +224,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         private void Parse(bool enqueueOnly, CancellationToken cancel) {
 #if DEBUG
-            Debug.Assert(Monitor.IsEntered(this));      
+            Debug.Assert(Monitor.IsEntered(this));
 #endif
             var parse = GetCurrentParse();
             var tree = parse?.Tree;
@@ -341,7 +339,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public Dictionary<object, object> Properties { get; } = new Dictionary<object, object>();
 
-        public void RemovedFromProject() {
+        public void Dispose() {
             lock (this) {
                 AnalysisVersion = -1;
 
@@ -364,6 +362,9 @@ namespace Microsoft.PythonTools.Analysis {
                 foreach (var moduleReference in MyScope.ModuleReferences.ToList()) {
                     MyScope.RemoveModuleReference(moduleReference);
                 }
+
+                NewParseTree -= NewParseTree;
+                NewAnalysis -= NewAnalysis;
             }
         }
 

@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using Microsoft.DsTools.Core.Disposables;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.Python.LanguageServer {
     internal sealed class PathsWatcher : IDisposable {

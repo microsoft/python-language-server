@@ -955,7 +955,7 @@ datetime.datetime.now().day
                 DiagnosticSeverity.Unspecified
             }) {
                 // For now, these options have to be configured directly
-                s._parseQueue.InconsistentIndentation = tc;
+                s.ParseQueue.InconsistentIndentation = tc;
 
                 Trace.TraceInformation("Testing {0}", tc);
 
@@ -1013,7 +1013,7 @@ datetime.datetime.now().day
 
                 public string Name => "getall";
 
-                public void Dispose() => _server.Dispose();
+                public void Dispose() { }
 
                 public Task<IReadOnlyDictionary<string, object>> ExecuteCommand(string command, IReadOnlyDictionary<string, object> properties, CancellationToken token) {
                     if (properties == null) {

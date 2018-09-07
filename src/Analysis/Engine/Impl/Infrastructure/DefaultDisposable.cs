@@ -16,7 +16,7 @@
 
 using System;
 
-namespace Microsoft.DsTools.Core.Disposables {
+namespace Microsoft.PythonTools.Analysis.Infrastructure {
     /// <summary>
     /// Represents a disposable that does nothing on disposal.
     /// Implementation is copied from System.Reactive.Core.dll
