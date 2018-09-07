@@ -639,7 +639,7 @@ mc
             public void Dispose() { }
 
             #region ILanguageServerExtension
-            public string Name => null;
+            public string Name => "Test completion extension";
             public Task Initialize(IServiceContainer services, CancellationToken token) => Task.CompletedTask;
             public Task<IReadOnlyDictionary<string, object>> ExecuteCommand(string command, IReadOnlyDictionary<string, object> properties, CancellationToken token)
                 => Task.FromResult<IReadOnlyDictionary<string, object>>(null);
