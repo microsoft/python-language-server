@@ -99,9 +99,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _extensions = new ConcurrentDictionary<string, ILanguageServerExtension>();
 
             _disposableBag
-                .Add(() => ProjectFiles.Dispose())
+                .Add(ProjectFiles)
                 .Add(() => Analyzer?.Dispose())
-                .Add(() => AnalysisQueue.Dispose())
+                .Add(AnalysisQueue)
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
                         (ext as IDisposable)?.Dispose();

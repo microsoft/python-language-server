@@ -83,7 +83,6 @@ namespace Microsoft.PythonTools.Analysis {
 
         public event EventHandler<EventArgs> NewParseTree;
         public event EventHandler<EventArgs> NewAnalysis;
-        public event EventHandler<EventArgs> Disposed;
 
         private readonly ManualResetEventSlim _pendingParse = new ManualResetEventSlim(true);
         private long _expectedParse;
@@ -364,8 +363,8 @@ namespace Microsoft.PythonTools.Analysis {
                     MyScope.RemoveModuleReference(moduleReference);
                 }
 
-                NewParseTree.DisconnectListeners();
-                NewAnalysis.DisconnectListeners();
+                NewParseTree -= NewParseTree;
+                NewAnalysis -= NewAnalysis;
             }
         }
 
