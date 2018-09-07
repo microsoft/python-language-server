@@ -75,7 +75,6 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             return true;
         }
 
-        public bool IsDisposed
-            => Interlocked.CompareExchange(ref _disposables, _disposables, _disposables) == null;
+        public bool IsDisposed => _disposables == null;
     }
 }
