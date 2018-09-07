@@ -15,8 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
-using Microsoft.DsTools.Core.Diagnostics;
-using Microsoft.PythonTools.LanguageServer;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.LanguageServer.Services;
 
 namespace Microsoft.Python.LanguageServer.Services {
