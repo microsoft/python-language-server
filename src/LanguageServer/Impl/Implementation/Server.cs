@@ -71,9 +71,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly ConcurrentDictionary<string, ILanguageServerExtension> _extensions;
         private readonly DisposableBag _disposableBag = DisposableBag.Create<Server>();
 
-        internal ClientCapabilities _clientCaps;
-
         private readonly EditorFiles _editorFiles;
+        private ClientCapabilities _clientCaps;
         private bool _traceLogging;
         private bool _analysisUpdates;
         private ReloadModulesQueueItem _reloadModulesQueueItem;
