@@ -955,7 +955,7 @@ datetime.datetime.now().day
                 DiagnosticSeverity.Unspecified
             }) {
                 // For now, these options have to be configured directly
-                s._parseQueue.InconsistentIndentation = tc;
+                s.ParseQueue.InconsistentIndentation = tc;
 
                 Trace.TraceInformation("Testing {0}", tc);
 

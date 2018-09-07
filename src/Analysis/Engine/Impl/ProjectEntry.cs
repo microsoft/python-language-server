@@ -88,8 +88,6 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly ManualResetEventSlim _pendingParse = new ManualResetEventSlim(true);
         private long _expectedParse;
 
-        public void Dispose() => Disposed?.Invoke(this, EventArgs.Empty);
-
         private class ActivePythonParse : IPythonParse {
             private readonly ProjectEntry _entry;
             private readonly long _expected;
@@ -292,7 +290,7 @@ namespace Microsoft.PythonTools.Analysis {
                 string pathPrefix = PathUtils.EnsureEndSeparator(Path.GetDirectoryName(FilePath));
                 var children =
                     from pair in ProjectState.ModulesByFilename
-                        // Is the candidate child package in a subdirectory of our package?
+                    // Is the candidate child package in a subdirectory of our package?
                     let fileName = pair.Key
                     where fileName.StartsWithOrdinal(pathPrefix, ignoreCase: true)
                     let moduleName = pair.Value.Name
@@ -342,7 +340,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public Dictionary<object, object> Properties { get; } = new Dictionary<object, object>();
 
-        public void RemovedFromProject() {
+        public void Dispose() {
             lock (this) {
                 AnalysisVersion = -1;
 
@@ -365,6 +363,9 @@ namespace Microsoft.PythonTools.Analysis {
                 foreach (var moduleReference in MyScope.ModuleReferences.ToList()) {
                     MyScope.RemoveModuleReference(moduleReference);
                 }
+
+                NewParseTree.DisconnectListeners();
+                NewAnalysis.DisconnectListeners();
             }
         }
 

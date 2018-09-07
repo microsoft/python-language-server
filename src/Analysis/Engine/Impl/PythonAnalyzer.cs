@@ -259,7 +259,7 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }
 
-            entry.RemovedFromProject();
+            entry.Dispose();
             ClearDiagnostics(entry);
 
             if (onImporter == null) {

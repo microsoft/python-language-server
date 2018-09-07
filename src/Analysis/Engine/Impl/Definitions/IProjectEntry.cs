@@ -44,13 +44,6 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         Dictionary<object, object> Properties { get; }
 
-        /// <summary>
-        /// Called when the project entry is removed from the project.
-        /// 
-        /// Implementors of this method must ensure this method is thread safe.
-        /// </summary>
-        void RemovedFromProject();
-
         IModuleContext AnalysisContext { get; }
     }
 }

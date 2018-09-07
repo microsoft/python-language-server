@@ -18,7 +18,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 
-namespace Microsoft.DsTools.Core.Disposables {
+namespace Microsoft.PythonTools.Analysis.Infrastructure {
     public sealed class DisposableBag {
         private readonly string _objectName;
         private readonly string _message;
@@ -74,5 +74,8 @@ namespace Microsoft.DsTools.Core.Disposables {
 
             return true;
         }
+
+        public bool IsDisposed
+            => Interlocked.CompareExchange(ref _disposables, _disposables, _disposables) == null;
     }
 }

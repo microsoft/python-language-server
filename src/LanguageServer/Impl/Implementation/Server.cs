@@ -66,11 +66,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        internal readonly AnalysisQueue _queue;
-        internal readonly ParseQueue _parseQueue;
         private readonly Dictionary<IDocument, VolatileCounter> _pendingParse;
         private readonly VolatileCounter _pendingAnalysisEnqueue;
         private readonly ConcurrentDictionary<string, ILanguageServerExtension> _extensions;
+        private readonly DisposableBag _disposableBag = DisposableBag.Create<Server>();
 
         internal ClientCapabilities _clientCaps;
 
@@ -80,7 +79,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private ReloadModulesQueueItem _reloadModulesQueueItem;
         // If null, all files must be added manually
         private string _rootDir;
-        private bool _disposed;
 
         public static InformationDisplayOptions DisplayOptions { get; private set; } = new InformationDisplayOptions {
             preferredFormat = MarkupKind.PlainText,
@@ -92,13 +90,24 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         };
 
         public Server() {
-            _queue = new AnalysisQueue();
-            _queue.UnhandledException += Analysis_UnhandledException;
+            AnalysisQueue = new AnalysisQueue();
+            AnalysisQueue.UnhandledException += Analysis_UnhandledException;
+
             _pendingAnalysisEnqueue = new VolatileCounter();
-            _parseQueue = new ParseQueue();
+            ParseQueue = new ParseQueue();
             _pendingParse = new Dictionary<IDocument, VolatileCounter>();
             _editorFiles = new EditorFiles(this);
             _extensions = new ConcurrentDictionary<string, ILanguageServerExtension>();
+
+            _disposableBag
+                .Add(() => ProjectFiles.Dispose())
+                .Add(() => Analyzer?.Dispose())
+                .Add(() => AnalysisQueue.Dispose())
+                .Add(() => {
+                    foreach (var ext in _extensions.Values) {
+                        (ext as IDisposable)?.Dispose();
+                    }
+                });
         }
 
         private void Analysis_UnhandledException(object sender, UnhandledExceptionEventArgs e) {
@@ -106,19 +115,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             LogMessage(MessageType.Error, e.ExceptionObject.ToString());
         }
 
+        internal AnalysisQueue AnalysisQueue { get; }
+        internal ParseQueue ParseQueue { get; }
+
         internal PythonAnalyzer Analyzer { get; private set; }
         internal ServerSettings Settings { get; private set; } = new ServerSettings();
         internal ProjectFiles ProjectFiles { get; } = new ProjectFiles();
 
-        public void Dispose() {
-            foreach (var ext in _extensions.Values) {
-                (ext as IDisposable)?.Dispose();
-            }
-            ProjectFiles.Dispose();
-            Analyzer?.Dispose();
-            _queue.Dispose();
-            _disposed = true;
-        }
+        public void Dispose() => _disposableBag.TryDispose();
 
         public void TraceMessage(IFormattable message) {
             if (_traceLogging) {
@@ -152,19 +156,18 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         };
 
         public override async Task<InitializeResult> Initialize(InitializeParams @params, CancellationToken cancellationToken) {
-            ThrowIfDisposed();
+            _disposableBag.ThrowIfDisposed();
             await DoInitializeAsync(@params, cancellationToken);
             return GetInitializeResult();
         }
 
         public override Task Shutdown() {
-            ThrowIfDisposed();
-            ProjectFiles.Clear();
+            _disposableBag.ThrowIfDisposed();
             return Task.CompletedTask;
         }
 
         public override async Task DidOpenTextDocument(DidOpenTextDocumentParams @params, CancellationToken token) {
-            ThrowIfDisposed();
+            _disposableBag.ThrowIfDisposed();
             TraceMessage($"Opening document {@params.textDocument.uri}");
 
             _editorFiles.Open(@params.textDocument.uri);
@@ -188,14 +191,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public override void DidChangeTextDocument(DidChangeTextDocumentParams @params) {
-            ThrowIfDisposed();
+            _disposableBag.ThrowIfDisposed();
             var openedFile = _editorFiles.GetDocument(@params.textDocument.uri);
             openedFile.DidChangeTextDocument(@params, true);
         }
 
         public override async Task DidChangeWatchedFiles(DidChangeWatchedFilesParams @params, CancellationToken token) {
             foreach (var c in @params.changes.MaybeEnumerate()) {
-                ThrowIfDisposed();
+                _disposableBag.ThrowIfDisposed();
                 IProjectEntry entry;
                 switch (c.type) {
                     case FileChangeType.Created:
@@ -222,7 +225,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public override Task DidCloseTextDocument(DidCloseTextDocumentParams @params, CancellationToken token) {
-            ThrowIfDisposed();
+            _disposableBag.ThrowIfDisposed();
             _editorFiles.Close(@params.textDocument.uri);
 
             var doc = ProjectFiles.GetEntry(@params.textDocument.uri) as IDocument;
@@ -237,7 +240,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public override async Task DidChangeConfiguration(DidChangeConfigurationParams @params, CancellationToken cancellationToken) {
-            ThrowIfDisposed();
+            _disposableBag.ThrowIfDisposed();
 
             if (Analyzer == null) {
                 LogMessage(MessageType.Error, "Change configuration notification sent to uninitialized server");
@@ -264,17 +267,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             // Make sure reload modules is executed on the analyzer thread.
             var task = _reloadModulesQueueItem.Task;
-            _queue.Enqueue(_reloadModulesQueueItem, AnalysisPriority.Normal);
+            AnalysisQueue.Enqueue(_reloadModulesQueueItem, AnalysisPriority.Normal);
             await task;
 
             // re-analyze all of the modules when we get a new set of modules loaded...
             foreach (var entry in Analyzer.ModulesByFilename) {
-                _queue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
+                AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
             }
         }
 
         public override Task<object> ExecuteCommand(ExecuteCommandParams @params, CancellationToken token) {
-            ThrowIfDisposed();
+            _disposableBag.ThrowIfDisposed();
             Command(new CommandEventArgs {
                 command = @params.command,
                 arguments = @params.arguments
@@ -296,7 +299,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public Task<bool> UnloadFileAsync(Uri documentUri) {
             var entry = RemoveEntry(documentUri);
             if (entry != null) {
-                Analyzer.RemoveModule(entry, e => _queue.Enqueue(e, AnalysisPriority.Normal));
+                Analyzer.RemoveModule(entry, e => AnalysisQueue.Enqueue(e, AnalysisPriority.Normal));
                 return Task.FromResult(true);
             }
 
@@ -306,16 +309,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task WaitForCompleteAnalysisAsync() {
             // Wait for all current parsing to complete
             TraceMessage($"Waiting for parsing to complete");
-            await _parseQueue.WaitForAllAsync();
+            await ParseQueue.WaitForAllAsync();
             TraceMessage($"Parsing complete. Waiting for analysis entries to enqueue");
             await _pendingAnalysisEnqueue.WaitForZeroAsync();
             TraceMessage($"Enqueue complete. Waiting for analysis to complete");
-            await _queue.WaitForCompleteAsync();
+            await AnalysisQueue.WaitForCompleteAsync();
             TraceMessage($"Analysis complete.");
         }
 
         public int EstimateRemainingWork() {
-            return _parseQueue.Count + _queue.Count;
+            return ParseQueue.Count + AnalysisQueue.Count;
         }
 
         public event EventHandler<ParseCompleteEventArgs> OnParseComplete;
@@ -375,10 +378,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private async Task DoInitializeAsync(InitializeParams @params, CancellationToken token) {
-            ThrowIfDisposed();
-            Analyzer = await _queue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
+            _disposableBag.ThrowIfDisposed();
+            Analyzer = await AnalysisQueue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
 
-            ThrowIfDisposed();
+            _disposableBag.ThrowIfDisposed();
             _clientCaps = @params.capabilities;
             _traceLogging = @params.initializationOptions.traceLogging;
             _analysisUpdates = @params.initializationOptions.analysisUpdates;
@@ -412,7 +415,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private void Interpreter_ModuleNamesChanged(object sender, EventArgs e) {
             Analyzer.Modules.ReInit();
             foreach (var entry in Analyzer.ModulesByFilename) {
-                _queue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
+                AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
             }
         }
 
@@ -533,14 +536,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             pyItem.NewAnalysis += OnProjectEntryNewAnalysis;
-            pyItem.Disposed += (s, e) => ((IPythonProjectEntry)s).NewAnalysis -= OnProjectEntryNewAnalysis;
 
             if (item is IDocument doc) {
                 EnqueueItem(doc);
             }
 
             foreach (var entryRef in reanalyzeEntries) {
-                _queue.Enqueue(entryRef, AnalysisPriority.Low);
+                AnalysisQueue.Enqueue(entryRef, AnalysisPriority.Low);
             }
 
             return Task.FromResult(item);
@@ -549,7 +551,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private void OnProjectEntryNewAnalysis(object sender, EventArgs e) {
             // Events are fired from a background thread and may come
             // after items were actually already disposed.
-            if(_disposed) {
+            if(_disposableBag.IsDisposed) {
                 return;
             }
 
@@ -603,7 +605,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         internal void EnqueueItem(IDocument doc, AnalysisPriority priority = AnalysisPriority.Normal, bool enqueueForAnalysis = true) {
-            ThrowIfDisposed();
+            _disposableBag.ThrowIfDisposed();
             var pending = _pendingAnalysisEnqueue.Incremented();
             try {
                 Task<IAnalysisCookie> cookieTask;
@@ -615,7 +617,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         return;
                     }
                     TraceMessage($"Parsing document {doc.DocumentUri}");
-                    cookieTask = _parseQueue.Enqueue(doc, Analyzer.LanguageVersion);
+                    cookieTask = ParseQueue.Enqueue(doc, Analyzer.LanguageVersion);
                 }
 
                 if (doc is ProjectEntry entry) {
@@ -643,7 +645,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void OnDocumentChangeProcessingComplete(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
-            ThrowIfDisposed();
+            _disposableBag.ThrowIfDisposed();
             try {
                 if (vc != null) {
                     foreach (var kv in vc.GetAllParts(doc.DocumentUri)) {
@@ -655,7 +657,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 if (doc is IAnalyzable analyzable && enqueueForAnalysis) {
                     AnalysisQueued(doc.DocumentUri);
-                    _queue.Enqueue(analyzable, priority);
+                    AnalysisQueue.Enqueue(analyzable, priority);
                 }
 
                 disposeWhenEnqueued?.Dispose();
@@ -712,12 +714,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             return false;
-        }
-
-        private void ThrowIfDisposed() {
-            if (_disposed) {
-                throw new ObjectDisposedException(nameof(Server));
-            }
         }
         #endregion
     }

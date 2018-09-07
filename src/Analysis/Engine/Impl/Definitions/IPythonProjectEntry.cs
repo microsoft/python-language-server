@@ -32,7 +32,6 @@ namespace Microsoft.PythonTools.Analysis {
 
         event EventHandler<EventArgs> NewParseTree;
         event EventHandler<EventArgs> NewAnalysis;
-        event EventHandler<EventArgs> Disposed;
 
         /// <summary>
         /// Informs the project entry that a new tree will soon be available and will be provided by
