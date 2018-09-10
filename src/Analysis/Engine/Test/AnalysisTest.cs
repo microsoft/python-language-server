@@ -1580,7 +1580,6 @@ class C:
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/43")]
         public async Task GeneratorComprehensions() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var text = @"
