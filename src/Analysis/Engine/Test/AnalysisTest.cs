@@ -2104,14 +2104,13 @@ class CInheritedInit(CNewStyleInit):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/41")]
         public async Task Ellipsis() {
             using (var server = await CreateServerAsync(PythonVersions.EarliestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
 x = ...
             ");
 
-                analysis.Should().HaveVariable("x").OfType("ellipsis");
+                analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Ellipsis);
             }
         }
 
