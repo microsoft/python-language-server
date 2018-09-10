@@ -90,7 +90,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             Execute.Assertion.ForCondition(Subject.TryGetVariable(name, out var variableDef))
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected module '{Subject.Name}' to have variable '{name}'{{reason}}.");
+                .FailWith($"Expected scope '{Subject.Name}' to have variable '{name}'{{reason}}.");
 
             return new AndWhichConstraint<TScopeAssertions, VariableDefTestInfo>((TScopeAssertions)this, new VariableDefTestInfo(variableDef, name, Subject));
         }
@@ -126,7 +126,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             Execute.Assertion.ForCondition(!Subject.TryGetVariable(name, out _))
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected module '{Subject.Name}' to have no variable '{name}'{{reason}}.");
+                .FailWith($"Expected scope '{Subject.Name}' to have no variable '{name}'{{reason}}.");
 
             return new AndConstraint<TScopeAssertions>((TScopeAssertions)this);
         }

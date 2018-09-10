@@ -66,6 +66,7 @@ namespace TestUtilities {
         public static Uri GetNextModuleUri() => new Uri(GetNextModulePath());
 
         public static string GetTestSpecificPath(string relativePath) => TestRunScopeAsyncLocal.Value.GetTestSpecificPath(relativePath);
+        public static string GetTestRelativePath(Uri uri) => TestRunScopeAsyncLocal.Value.GetTestRelativePath(uri);
         public static string GetDefaultModulePath() => TestRunScopeAsyncLocal.Value.GetDefaultModulePath();
         public static string GetNextModulePath() => TestRunScopeAsyncLocal.Value.GetNextModulePath();
         public static string GetAstAnalysisCachePath(Version version, bool testSpecific = false) 
@@ -130,7 +131,7 @@ namespace TestUtilities {
             var path = Path.Combine(TestOutputRootLazy.Value, testDirectoryName);
 
             Directory.CreateDirectory(path);
-            TestRunScopeAsyncLocal.Value = new TestRunScope(path);
+            TestRunScopeAsyncLocal.Value = new TestRunScope(PathUtils.EnsureEndSeparator(path));
         }
 
         internal static void ClearTestRunScope() {
@@ -149,6 +150,11 @@ namespace TestUtilities {
         public string GetDefaultModulePath() => GetTestSpecificPath($"module.py");
         public string GetNextModulePath() => GetTestSpecificPath($"module{++_moduleCounter}.py");
         public string GetTestSpecificPath(string relativePath) => Path.Combine(_root, relativePath);
+        public string GetTestRelativePath(Uri uri) {
+            var relativeUri = new Uri(_root).MakeRelativeUri(uri);
+            var relativePath = Uri.UnescapeDataString(relativeUri.ToString());
+            return relativePath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+        }
     }
 }
 

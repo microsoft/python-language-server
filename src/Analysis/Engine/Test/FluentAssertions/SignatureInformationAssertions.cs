@@ -51,7 +51,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var actual = Subject.parameters?.Select(i => i.label).ToArray() ?? new string[0];
             var expected = labels.ToArray();
 
-            var errorMessage = AssertionsUtilities.GetAssertCollectionOnlyContainsMessage(actual, expected, $"signature '{Subject.label}'", "parameter label ", "parameter labels ");
+            var errorMessage = AssertionsUtilities.GetAssertCollectionOnlyContainsMessage(actual, expected, $"signature '{Subject.label}'", "parameter label", "parameter labels");
 
             Execute.Assertion.ForCondition(errorMessage == null)
                 .BecauseOf(because, reasonArgs)

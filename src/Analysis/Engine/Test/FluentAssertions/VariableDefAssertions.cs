@@ -37,8 +37,6 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         public VariableDefAssertions Should() => new VariableDefAssertions(_variableDef, Name, _scope);
-
-        //public static implicit operator VariableDef(VariableDefTestInfo ti) => ti._variableDef;
     }
 
     internal sealed class VariableDefAssertions : ReferenceTypeAssertions<IVariableDefinition, VariableDefAssertions> {
@@ -79,13 +77,29 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => HaveResolvedTypes(new[]{ typeId }, because, reasonArgs);
 
         public AndConstraint<VariableDefAssertions> HaveResolvedTypes(params BuiltinTypeId[] typeIds)
-            => HaveTypes(typeIds, string.Empty);
+            => HaveResolvedTypes(typeIds, string.Empty);
 
         public AndConstraint<VariableDefAssertions> HaveResolvedTypes(IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
             var resolved = Subject.Types.Resolve(new AnalysisUnit(null, null, _scope, true));
 
             var languageVersionIs3X = Is3X(_scope);
             AssertTypeIds(resolved, typeIds, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
+
+            return new AndConstraint<VariableDefAssertions>(this);
+        }
+
+        public AndConstraint<VariableDefAssertions> HaveMergedType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs)
+            => HaveMergedTypes(new[]{ typeId }, because, reasonArgs);
+
+        public AndConstraint<VariableDefAssertions> HaveMergedTypes(params BuiltinTypeId[] typeIds)
+            => HaveMergedTypes(typeIds, string.Empty);
+
+        public AndConstraint<VariableDefAssertions> HaveMergedTypes(IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+
+            var actual = _scope.GetMergedVariableTypes(_name);
+            var languageVersionIs3X = Is3X(_scope);
+            AssertTypeIds(actual, typeIds, $"variable {_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs, "merged type", "merged types");
 
             return new AndConstraint<VariableDefAssertions>(this);
         }
@@ -101,7 +115,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var expected = classNames.ToArray();
             var actual = FlattenAnalysisValues(resolved).Select(av => av.ShortDescription).ToArray();
 
-            var message = GetAssertCollectionOnlyContainsMessage(actual, expected, $"variable '{_moduleName}.{_name}'", "resolved types ", "resolved type ");
+            var message = GetAssertCollectionOnlyContainsMessage(actual, expected, $"variable '{_moduleName}.{_name}'", "resolved type", "resolved types");
             Execute.Assertion.ForCondition(message == null)
                     .BecauseOf(because, reasonArgs)
                     .FailWith(message);
@@ -123,8 +137,8 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var actualDescription = FlattenAnalysisValues(Subject.Types).Select(av => av.ShortDescription).ToArray();
             var expectedDescription = classNames.ToArray();
 
-            var message = GetAssertCollectionOnlyContainsMessage(actualMemberTypes, expectedMemberTypes, $"variable '{_moduleName}.{_name}'", "member types ", "member type ")
-                ?? GetAssertCollectionOnlyContainsMessage(actualDescription, expectedDescription, $"variable '{_moduleName}.{_name}'", "types ", "type ");
+            var message = GetAssertCollectionOnlyContainsMessage(actualMemberTypes, expectedMemberTypes, $"variable '{_moduleName}.{_name}'", "member type", "member types")
+                ?? GetAssertCollectionOnlyContainsMessage(actualDescription, expectedDescription, $"variable '{_moduleName}.{_name}'", "type", "types");
 
             Execute.Assertion.ForCondition(message == null)
                     .BecauseOf(because, reasonArgs)

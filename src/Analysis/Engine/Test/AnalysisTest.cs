@@ -705,10 +705,11 @@ class D(object):
                 await server.GetAnalysisAsync(uri2);
                 var references = await server.SendFindReferences(uri2, 1, 7);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri1, 3, 4, 3, 5, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri2, 1, 0, 2, 8, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri2, 1, 6, 1, 7, ReferenceKind.Definition);
+                references.Should().OnlyHaveReferences(
+                    (uri1, (3, 4, 3, 5), ReferenceKind.Reference),
+                    (uri2, (1, 0, 2, 8), ReferenceKind.Value),
+                    (uri2, (1, 6, 1, 7), ReferenceKind.Definition)
+                );
             }
         }
 
@@ -732,8 +733,8 @@ class D(object):
         self.value.SomeMethod()
 ";
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri1 = TestData.GetTempPathUri("mod1.py");
-                var uri2 = TestData.GetTempPathUri("mod2.py");
+                var uri1 = TestData.GetNextModuleUri();
+                var uri2 = TestData.GetNextModuleUri();
                 await server.SendDidOpenTextDocument(uri1, text1);
                 await server.SendDidOpenTextDocument(uri2, text2);
 
@@ -741,10 +742,11 @@ class D(object):
                 await server.GetAnalysisAsync(uri2);
                 var references = await server.SendFindReferences(uri1, 4, 9);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri1, 4, 4, 5, 12, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri1, 4, 8, 4, 18, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri2, 4, 19, 4, 29, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri1, (4, 4, 5, 12), ReferenceKind.Value),
+                    (uri1, (4, 8, 4, 18), ReferenceKind.Definition),
+                    (uri2, (4, 19, 4, 29), ReferenceKind.Reference)
+                );
 
                 text1 = text1.Substring(0, text1.IndexOf("    def")) + Environment.NewLine + text1.Substring(text1.IndexOf("    def"));
                 server.SendDidChangeTextDocument(uri1, text1);
@@ -752,10 +754,11 @@ class D(object):
 
                 references = await server.SendFindReferences(uri1, 5, 9);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri1, 5, 4, 6, 12, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri1, 5, 8, 5, 18, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri2, 4, 19, 4, 29, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri1, (5, 4, 6, 12), ReferenceKind.Value),
+                    (uri1, (5, 8, 5, 18), ReferenceKind.Definition),
+                    (uri2, (4, 19, 4, 29), ReferenceKind.Reference)
+                );
 
                 text2 = Environment.NewLine + text2;
 
@@ -764,10 +767,11 @@ class D(object):
 
                 references = await server.SendFindReferences(uri1, 5, 9);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri1, 5, 4, 6, 12, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri1, 5, 8, 5, 18, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri2, 5, 19, 5, 29, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri1, (5, 4, 6, 12), ReferenceKind.Value),
+                    (uri1, (5, 8, 5, 18), ReferenceKind.Definition),
+                    (uri2, (5, 19, 5, 29), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -1295,7 +1299,6 @@ d = a.__next__()");
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/42")]
         public async Task Generator3X() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
@@ -1351,12 +1354,11 @@ d = a.next()");
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("d").WithNoTypes()
                     .And.HaveFunction("f")
-                    .Which.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+                    .Which.Should().HaveVariable("x").WithMergedType(BuiltinTypeId.Unicode);
             }
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/44")]
         public async Task GeneratorDelegation() {
             //            var text = @"
             //def f():
@@ -1416,7 +1418,7 @@ c = a.send('abc')
                     .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
                     .And.HaveFunction("g")
-                    .Which.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+                    .Which.Should().HaveVariable("x").WithMergedType(BuiltinTypeId.Str);
 
                 analysis = await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"
 def g():
@@ -1482,10 +1484,11 @@ def f(abc):
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 4, 2);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 1, 0, 2, 13, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri, 1, 4, 1, 5 , ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 4, 1, 4, 2, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 0, 2, 13), ReferenceKind.Value),
+                    (uri, (1, 4, 1, 5), ReferenceKind.Definition),
+                    (uri, (4, 1, 4, 2), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -1537,13 +1540,15 @@ exec b in a
                 var referencesA = await server.SendFindReferences(uri, 1, 1);
                 var referencesB = await server.SendFindReferences(uri, 2, 1);
 
-                referencesA.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 1, 0, 1, 1, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 10, 3, 11, ReferenceKind.Reference);
+                referencesA.Should().OnlyHaveReferences(
+                    (uri, (1, 0, 1, 1), ReferenceKind.Definition),
+                    (uri, (3, 10, 3, 11), ReferenceKind.Reference)
+                );
 
-                referencesB.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 2, 0, 2, 1, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 5, 3, 6, ReferenceKind.Reference);
+                referencesB.Should().OnlyHaveReferences(
+                    (uri, (2, 0, 2, 1), ReferenceKind.Definition),
+                    (uri, (3, 5, 3, 6), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -1566,16 +1571,16 @@ class C:
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 var references = await server.SendFindReferences(uri, 6, 14);
 
-                references.Should().HaveCount(4)
-                    .And.HaveReferenceAt(uri, 2, 4, 3, 12, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri, 2, 8, 2, 11, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 6, 13, 6, 16, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 9, 13, 9, 18, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri, (2, 4, 3, 12), ReferenceKind.Value),
+                    (uri, (2, 8, 2, 11), ReferenceKind.Definition),
+                    (uri, (6, 13, 6, 16), ReferenceKind.Reference),
+                    (uri, (9, 13, 9, 18), ReferenceKind.Reference)
+                );
             }
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/43")]
         public async Task GeneratorComprehensions() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var text = @"
@@ -1600,7 +1605,7 @@ f(y)
 ";
                 analysis = await server.ChangeDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveFunction("f")
-                    .Which.Should().HaveVariable("z").OfType(BuiltinTypeId.Int);
+                    .Which.Should().HaveVariable("z").OfResolvedType(BuiltinTypeId.Int);
 
                 text = @"
 x = [True, False, None]
@@ -1624,16 +1629,17 @@ def f(abc):
 (f(x) for x in [2,3,4])
 ";
                 analysis = await server.ChangeDefaultDocumentAndGetAnalysisAsync(text);
-                var projectEntry = (IPythonProjectEntry)server.ProjectFiles.All.Single();
-                var references = await server.SendFindReferences(projectEntry.DocumentUri, 1, 5);
+                var uri = TestData.GetDefaultModuleUri();
+                var references = await server.SendFindReferences(uri, 1, 5);
 
                 analysis.Should().HaveFunction("f")
                     .Which.Should().HaveParameter("abc").OfType(BuiltinTypeId.Int);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(projectEntry, 1, 0, 2, 13, ReferenceKind.Value)
-                    .And.HaveReferenceAt(projectEntry, 1, 4, 1, 5, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(projectEntry, 4, 1, 4, 2, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 0, 2, 13), ReferenceKind.Value),
+                    (uri, (1, 4, 1, 5), ReferenceKind.Definition),
+                    (uri, (4, 1, 4, 2), ReferenceKind.Reference)
+                );
 
             }
         }
@@ -2690,13 +2696,15 @@ class C(object):
                 var referencesAbc = await server.SendFindReferences(uri, 8, 15);
                 var referencesFob = await server.SendFindReferences(uri, 8, 21);
 
-                referencesAbc.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 8, 13, 8, 16, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 9, 17, 9, 20, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 10, 19, 10, 22, ReferenceKind.Reference);
-                referencesFob.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 7, 23, 7, 26, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 8, 19, 8, 22, ReferenceKind.Reference);
+                referencesAbc.Should().OnlyHaveReferences(
+                    (uri, (8, 13, 8, 16), ReferenceKind.Definition),
+                    (uri, (9, 17, 9, 20), ReferenceKind.Reference),
+                    (uri, (10, 19, 10, 22), ReferenceKind.Reference)
+                );
+                referencesFob.Should().OnlyHaveReferences(
+                    (uri, (7, 23, 7, 26), ReferenceKind.Definition),
+                    (uri, (8, 19, 8, 22), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -2720,13 +2728,15 @@ class C(object):
                 var referencesAbc = await server.SendFindReferences(uri, 4, 15);
                 var referencesFob = await server.SendFindReferences(uri, 4, 21);
 
-                referencesAbc.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 4, 13, 4, 16, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 5, 17, 5, 20, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 6, 19, 6, 22, ReferenceKind.Reference);
-                referencesFob.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 3, 23, 3, 26, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 4, 19, 4, 22, ReferenceKind.Reference);
+                referencesAbc.Should().OnlyHaveReferences(
+                    (uri, (4, 13, 4, 16), ReferenceKind.Definition),
+                    (uri, (5, 17, 5, 20), ReferenceKind.Reference),
+                    (uri, (6, 19, 6, 22), ReferenceKind.Reference)
+                );
+                referencesFob.Should().OnlyHaveReferences(
+                    (uri, (3, 23, 3, 26), ReferenceKind.Definition),
+                    (uri, (4, 19, 4, 22), ReferenceKind.Reference)
+                );
 
                 text = @"
 # add ref w/ type info
@@ -2743,17 +2753,20 @@ D(42)";
                 referencesFob = await server.SendFindReferences(uri, 4, 21);
                 var referencesD = await server.SendFindReferences(uri, 8, 1);
 
-                referencesAbc.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 4, 13, 4, 16, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 5, 17, 5, 20, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 6, 19, 6, 22, ReferenceKind.Reference);
-                referencesFob.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 3, 23, 3, 26, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 4, 19, 4, 22, ReferenceKind.Reference);
-                referencesD.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 2, 6, 2, 7, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 2, 0, 6, 22, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri, 8, 0, 8, 1, ReferenceKind.Reference);
+                referencesAbc.Should().OnlyHaveReferences(
+                    (uri, (4, 13, 4, 16), ReferenceKind.Definition),
+                    (uri, (5, 17, 5, 20), ReferenceKind.Reference),
+                    (uri, (6, 19, 6, 22), ReferenceKind.Reference)
+                );
+                referencesFob.Should().OnlyHaveReferences(
+                    (uri, (3, 23, 3, 26), ReferenceKind.Definition),
+                    (uri, (4, 19, 4, 22), ReferenceKind.Reference)
+                );
+                referencesD.Should().OnlyHaveReferences(
+                    (uri, (2, 6, 2, 7), ReferenceKind.Definition),
+                    (uri, (2, 0, 6, 22), ReferenceKind.Value),
+                    (uri, (8, 0, 8, 1), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -2769,10 +2782,11 @@ x = f()";
                 await server.GetAnalysisAsync(uri);
                 var referencesF = await server.SendFindReferences(uri, 3, 5);
 
-                referencesF.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 1, 0, 1, 13, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri, 1, 4, 1, 5, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 4, 3, 5, ReferenceKind.Reference);
+                referencesF.Should().OnlyHaveReferences(
+                    (uri, (1, 0, 1, 13), ReferenceKind.Value),
+                    (uri, (1, 4, 1, 5), ReferenceKind.Definition),
+                    (uri, (3, 4, 3, 5), ReferenceKind.Reference)
+                );
 
                 text = @"
 def f(): pass
@@ -2782,10 +2796,11 @@ x = f";
                 await server.GetAnalysisAsync(uri);
                 referencesF = await server.SendFindReferences(uri, 3, 5);
 
-                referencesF.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 1, 0, 1, 13, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri, 1, 4, 1, 5, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 4, 3, 5, ReferenceKind.Reference);
+                referencesF.Should().OnlyHaveReferences(
+                    (uri, (1, 0, 1, 13), ReferenceKind.Value),
+                    (uri, (1, 4, 1, 5), ReferenceKind.Definition),
+                    (uri, (3, 4, 3, 5), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -2804,10 +2819,11 @@ class D(object):
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 3, 5);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 3, 4, 3, 7, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 4, 10, 4, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 5, 8, 5, 11, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri, (3, 4, 3, 7), ReferenceKind.Definition),
+                    (uri, (4, 10, 4, 13), ReferenceKind.Reference),
+                    (uri, (5, 8, 5, 11), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -2824,10 +2840,11 @@ a = D
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 3, 5);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 1, 0, 1, 21, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri, 1, 6, 1, 7, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 4, 3, 5, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 0, 1, 21), ReferenceKind.Value),
+                    (uri, (1, 6, 1, 7), ReferenceKind.Definition),
+                    (uri, (3, 4, 3, 5), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -2845,10 +2862,11 @@ a = D().f()
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 4, 9);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 2, 4, 2, 21, ReferenceKind.Value)
-                    .And.HaveReferenceAt(uri, 2, 8, 2, 9, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 4, 8, 4, 9, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri, (2, 4, 2, 21), ReferenceKind.Value),
+                    (uri, (2, 8, 2, 9), ReferenceKind.Definition),
+                    (uri, (4, 8, 4, 9), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -2865,10 +2883,11 @@ del abc
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 2, 7);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 1, 0, 1, 3, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 2, 6, 2, 9, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 3, 4, 3, 7, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 0, 1, 3), ReferenceKind.Definition),
+                    (uri, (2, 6, 2, 9), ReferenceKind.Reference),
+                    (uri, (3, 4, 3, 7), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -2886,11 +2905,12 @@ def f(abc):
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 2, 11);
 
-                references.Should().HaveCount(4)
-                    .And.HaveReferenceAt(uri, 1, 6, 1, 9, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 4, 3, 7, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 2, 10, 2, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 4, 8, 4, 11, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 6, 1, 9), ReferenceKind.Definition),
+                    (uri, (3, 4, 3, 7), ReferenceKind.Definition),
+                    (uri, (2, 10, 2, 13), ReferenceKind.Reference),
+                    (uri, (4, 8, 4, 11), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -2908,10 +2928,11 @@ f(abc = 123)
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 2, 11);
 
-                references.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 1, 6, 1, 9, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 2, 10, 2, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 4, 2, 4, 5, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 6, 1, 9), ReferenceKind.Definition),
+                    (uri, (2, 10, 2, 13), ReferenceKind.Reference),
+                    (uri, (4, 2, 4, 5), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -2973,47 +2994,48 @@ def f(abc):
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 3, 12);
 
-                references.Should().HaveCount(29)
-                    .And.HaveReferenceAt(uri, 1, 6, 1, 9, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 11, 3, 14, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 6, 22, 6, 25, ReferenceKind.Definition)
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 6, 1, 9), ReferenceKind.Definition),
+                    (uri, (3, 11, 3, 14), ReferenceKind.Reference),
+                    (uri, (6, 22, 6, 25), ReferenceKind.Definition),
 
-                    .And.HaveReferenceAt(uri, 8, 4, 8, 7, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 9, 4, 9, 7, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 10, 4, 10, 7, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 11, 4, 11, 7, ReferenceKind.Reference)
+                    (uri, (8, 4, 8, 7), ReferenceKind.Definition),
+                    (uri, (9, 4, 9, 7), ReferenceKind.Reference),
+                    (uri, (10, 4, 10, 7), ReferenceKind.Reference),
+                    (uri, (11, 4, 11, 7), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 13, 12, 13, 15, ReferenceKind.Reference)
+                    (uri, (13, 12, 13, 15), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 15, 13, 15, 16, ReferenceKind.Reference)
+                    (uri, (15, 13, 15, 16), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 17, 11, 17, 14, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 18, 20, 18, 23, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 19, 27, 19, 30, ReferenceKind.Reference)
+                    (uri, (17, 11, 17, 14), ReferenceKind.Reference),
+                    (uri, (18, 20, 18, 23), ReferenceKind.Reference),
+                    (uri, (19, 27, 19, 30), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 21, 7, 21, 10, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 22, 9, 22, 12, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 23, 10, 23, 13, ReferenceKind.Reference)
+                    (uri, (21, 7, 21, 10), ReferenceKind.Reference),
+                    (uri, (22, 9, 22, 12), ReferenceKind.Reference),
+                    (uri, (23, 10, 23, 13), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 25, 9, 25, 12, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 26, 15, 26, 18, ReferenceKind.Reference)
+                    (uri, (25, 9, 25, 12), ReferenceKind.Reference),
+                    (uri, (26, 15, 26, 18), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 28, 10, 28, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 29, 11, 29, 14, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 29, 16, 29, 19, ReferenceKind.Reference)
+                    (uri, (28, 10, 28, 13), ReferenceKind.Reference),
+                    (uri, (29, 11, 29, 14), ReferenceKind.Reference),
+                    (uri, (29, 16, 29, 19), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 31, 10, 31, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 32, 15, 32, 18, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 32, 20, 32, 23, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 32, 10, 32, 13, ReferenceKind.Reference)
+                    (uri, (31, 10, 31, 13), ReferenceKind.Reference),
+                    (uri, (32, 15, 32, 18), ReferenceKind.Reference),
+                    (uri, (32, 20, 32, 23), ReferenceKind.Reference),
+                    (uri, (32, 10, 32, 13), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 34, 10, 34, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 35, 8, 35, 11, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 37, 8, 37, 11, ReferenceKind.Reference)
+                    (uri, (34, 10, 34, 13), ReferenceKind.Reference),
+                    (uri, (35, 8, 35, 11), ReferenceKind.Reference),
+                    (uri, (37, 8, 37, 11), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 42, 14, 42, 17, ReferenceKind.Reference)
+                    (uri, (42, 14, 42, 17), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 47, 8, 47, 11, ReferenceKind.Reference);
+                    (uri, (47, 8, 47, 11), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -3057,48 +3079,49 @@ def f(abc):
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 3, 12);
 
-                references.Should().HaveCount(32)
-                    .And.HaveReferenceAt(uri, 1, 6, 1, 9, ReferenceKind.Definition)
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 6, 1, 9), ReferenceKind.Definition),
 
-                    .And.HaveReferenceAt(uri, 2, 8, 2, 11, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 3, 12, 3, 15, ReferenceKind.Reference)
+                    (uri, (2, 8, 2, 11), ReferenceKind.Reference),
+                    (uri, (3, 12, 3, 15), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 4, 10, 4, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 5, 8, 5, 11, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 6, 8, 6, 11, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 8, 6, 8, 9, ReferenceKind.Reference)
+                    (uri, (4, 10, 4, 13), ReferenceKind.Reference),
+                    (uri, (5, 8, 5, 11), ReferenceKind.Reference),
+                    (uri, (6, 8, 6, 11), ReferenceKind.Reference),
+                    (uri, (8, 6, 8, 9), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 10, 11, 10, 14, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 10, 4, 10, 7, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 10, 20, 10, 23, ReferenceKind.Reference)
+                    (uri, (10, 11, 10, 14), ReferenceKind.Reference),
+                    (uri, (10, 4, 10, 7), ReferenceKind.Reference),
+                    (uri, (10, 20, 10, 23), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 12, 5, 12, 8, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 12, 9, 12, 12, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 13, 5, 13, 8, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 13, 10, 13, 13 ,ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 14, 5, 14, 8, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 14, 10, 14, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 15, 5, 15, 8, ReferenceKind.Reference)
+                    (uri, (12, 5, 12, 8), ReferenceKind.Reference),
+                    (uri, (12, 9, 12, 12), ReferenceKind.Reference),
+                    (uri, (13, 5, 13, 8), ReferenceKind.Reference),
+                    (uri, (13, 10, 13, 13), ReferenceKind.Reference),
+                    (uri, (14, 5, 14, 8), ReferenceKind.Reference),
+                    (uri, (14, 10, 14, 13), ReferenceKind.Reference),
+                    (uri, (15, 5, 15, 8), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 17, 10, 17, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 18, 16, 18, 19, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 21, 4, 21, 7, ReferenceKind.Reference)
+                    (uri, (17, 10, 17, 13), ReferenceKind.Reference),
+                    (uri, (18, 16, 18, 19), ReferenceKind.Reference),
+                    (uri, (21, 4, 21, 7), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 21, 11, 21, 14, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 22, 4, 22, 7, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 22, 12, 22, 15, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 24, 5, 24, 8, ReferenceKind.Reference)
+                    (uri, (21, 11, 21, 14), ReferenceKind.Reference),
+                    (uri, (22, 4, 22, 7), ReferenceKind.Reference),
+                    (uri, (22, 12, 22, 15), ReferenceKind.Reference),
+                    (uri, (24, 5, 24, 8), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 25, 6, 25, 9, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 25, 10, 25, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 25, 14, 25, 17, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 27, 4, 27, 7, ReferenceKind.Reference)
+                    (uri, (25, 6, 25, 9), ReferenceKind.Reference),
+                    (uri, (25, 10, 25, 13), ReferenceKind.Reference),
+                    (uri, (25, 14, 25, 17), ReferenceKind.Reference),
+                    (uri, (27, 4, 27, 7), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 27, 11, 27, 14, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 28, 8, 28, 11, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 19, 16, 19, 19, ReferenceKind.Reference)
+                    (uri, (27, 11, 27, 14), ReferenceKind.Reference),
+                    (uri, (28, 8, 28, 11), ReferenceKind.Reference),
+                    (uri, (19, 16, 19, 19), ReferenceKind.Reference),
 
-                    .And.HaveReferenceAt(uri, 30, 13, 30, 16, ReferenceKind.Reference);
+                    (uri, (30, 13, 30, 16), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -3118,18 +3141,20 @@ def f(a):
                 await server.GetAnalysisAsync(uri);
 
                 var references = await server.SendFindReferences(uri, 3, 15);
-                references.Should().HaveCount(4)
-                    .And.HaveReferenceAt(uri, 1, 6, 1, 7, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 14, 3, 15, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 4, 26, 4, 27, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 5, 8, 5, 9, ReferenceKind.Definition);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 6, 1, 7), ReferenceKind.Definition),
+                    (uri, (3, 14, 3, 15), ReferenceKind.Reference),
+                    (uri, (4, 26, 4, 27), ReferenceKind.Reference),
+                    (uri, (5, 8, 5, 9), ReferenceKind.Definition)
+                );
 
                 references = await server.SendFindReferences(uri, 5, 9);
-                references.Should().HaveCount(4)
-                    .And.HaveReferenceAt(uri, 1, 6, 1, 7, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 14, 3, 15, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 4, 26, 4, 27, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 5, 8, 5, 9, ReferenceKind.Definition);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 6, 1, 7), ReferenceKind.Definition),
+                    (uri, (3, 14, 3, 15), ReferenceKind.Reference),
+                    (uri, (4, 26, 4, 27), ReferenceKind.Reference),
+                    (uri, (5, 8, 5, 9), ReferenceKind.Definition)
+                );
             }
         }
         
@@ -3151,19 +3176,19 @@ k = 2
 
                 var referencesA = await server.SendFindReferences(uri, 2, 8);
                 var referencesK = await server.SendFindReferences(uri, 3, 8);
-                referencesA.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 1, 7, 1, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 2, 8, 2, 9, ReferenceKind.Reference);
-                referencesK.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 1, 12, 1, 13, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 8, 3, 9, ReferenceKind.Reference);
+                referencesA.Should().OnlyHaveReferences(
+                    (uri, (1, 7, 1, 8), ReferenceKind.Definition),
+                    (uri, (2, 8, 2, 9), ReferenceKind.Reference)
+                );
+                referencesK.Should().OnlyHaveReferences(
+                    (uri, (1, 12, 1, 13), ReferenceKind.Definition),
+                    (uri, (3, 8, 3, 9), ReferenceKind.Reference)
+                );
 
                 referencesA = await server.SendFindReferences(uri, 6, 1);
                 referencesK = await server.SendFindReferences(uri, 7, 1);
-                referencesA.Should().HaveCount(1)
-                    .And.HaveReferenceAt(uri, 6, 0, 6, 1, ReferenceKind.Definition);
-                referencesK.Should().HaveCount(1)
-                    .And.HaveReferenceAt(uri, 7, 0, 7, 1, ReferenceKind.Definition);
+                referencesA.Should().OnlyHaveReference(uri, (6, 0, 6, 1), ReferenceKind.Definition);
+                referencesK.Should().OnlyHaveReference(uri, (7, 0, 7, 1), ReferenceKind.Definition);
             }
         }
 
@@ -3181,9 +3206,10 @@ f(a=1)
                 await server.GetAnalysisAsync(uri);
                 var references = await server.SendFindReferences(uri, 4, 3);
 
-                references.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 1, 6, 1, 7, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 4, 2, 4, 3, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 6, 1, 7), ReferenceKind.Definition),
+                    (uri, (4, 2, 4, 3), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -3205,11 +3231,12 @@ abc()
                 await server.GetAnalysisAsync(oarUri);
                 var references = await server.SendFindReferences(oarUri, 0, 7);
 
-                references.Should().HaveCount(4)
-                    .And.HaveReferenceAt(oarUri, 0, 0, 0, 23, ReferenceKind.Value)
-                    .And.HaveReferenceAt(oarUri, 0, 6, 0, 9, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(fobUri, 1, 16, 1, 19, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(fobUri, 3, 0, 3, 3, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (oarUri, (0, 0, 0, 23), ReferenceKind.Value),
+                    (oarUri, (0, 6, 0, 9), ReferenceKind.Definition),
+                    (fobUri, (1, 16, 1, 19), ReferenceKind.Reference),
+                    (fobUri, (3, 0, 3, 3), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -3239,9 +3266,10 @@ class bcd(abc):
                 await server.GetAnalysisAsync(oarUri);
                 var references = await server.SendFindReferences(oarUri, 2, 14);
 
-                references.Should().HaveCount(2)
-                    .And.HaveReferenceAt(oarUri, 2, 13, 2, 14, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(fobUri, 5, 13, 5, 14, ReferenceKind.Reference);
+                references.Should().OnlyHaveReferences(
+                    (oarUri, (2, 13, 2, 14), ReferenceKind.Definition),
+                    (fobUri, (5, 13, 5, 14), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -3276,27 +3304,30 @@ from baz import abc2 as abc";
                 var referencesAbc2 = await server.SendFindReferences(bazUri, 4, 7);
                 var referencesAbc = await server.SendFindReferences(fobUri, 3, 1);
 
-                referencesAbc1.Should().HaveCount(4)
-                    .And.HaveReferenceAt(oarUri, 0, 0, 0, 24, ReferenceKind.Value)
-                    .And.HaveReferenceAt(oarUri, 0, 6, 0, 10, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarBazUri, 0, 16, 0, 20, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarBazUri, 0, 24, 0, 27, ReferenceKind.Reference);
+                referencesAbc1.Should().OnlyHaveReferences(
+                    (oarUri, (0, 0, 0, 24), ReferenceKind.Value),
+                    (oarUri, (0, 6, 0, 10), ReferenceKind.Definition),
+                    (oarBazUri, (0, 16, 0, 20), ReferenceKind.Reference),
+                    (oarBazUri, (0, 24, 0, 27), ReferenceKind.Reference)
+                );
 
-                referencesAbc2.Should().HaveCount(4)
-                    .And.HaveReferenceAt(bazUri, 4, 0, 4, 24, ReferenceKind.Value)
-                    .And.HaveReferenceAt(bazUri, 4, 6, 4, 10, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarBazUri, 1, 16, 1, 20, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarBazUri, 1, 24, 1, 27, ReferenceKind.Reference);
+                referencesAbc2.Should().OnlyHaveReferences(
+                    (bazUri, (4, 0, 4, 24), ReferenceKind.Value),
+                    (bazUri, (4, 6, 4, 10), ReferenceKind.Definition),
+                    (oarBazUri, (1, 16, 1, 20), ReferenceKind.Reference),
+                    (oarBazUri, (1, 24, 1, 27), ReferenceKind.Reference)
+                );
 
-                referencesAbc.Should().HaveCount(8)
-                    .And.HaveReferenceAt(oarUri, 0, 0, 0, 24, ReferenceKind.Value)
-                    .And.HaveReferenceAt(bazUri, 4, 0, 4, 24, ReferenceKind.Value)
-                    .And.HaveReferenceAt(oarBazUri, 0, 16, 0, 20, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarBazUri, 0, 24, 0, 27, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarBazUri, 1, 16, 1, 20, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarBazUri, 1, 24, 1, 27, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(fobUri, 1, 19, 1, 22, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(fobUri, 3, 0, 3, 3, ReferenceKind.Reference);
+                referencesAbc.Should().OnlyHaveReferences(
+                    (oarUri, (0, 0, 0, 24), ReferenceKind.Value),
+                    (bazUri, (4, 0, 4, 24), ReferenceKind.Value),
+                    (oarBazUri, (0, 16, 0, 20), ReferenceKind.Reference),
+                    (oarBazUri, (0, 24, 0, 27), ReferenceKind.Reference),
+                    (oarBazUri, (1, 16, 1, 20), ReferenceKind.Reference),
+                    (oarBazUri, (1, 24, 1, 27), ReferenceKind.Reference),
+                    (fobUri, (1, 19, 1, 22), ReferenceKind.Reference),
+                    (fobUri, (3, 0, 3, 3), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -3325,19 +3356,22 @@ f = fn()";
                 var referencesClass = await server.SendFindReferences(oarUri, 5, 5);
                 var referencesfn = await server.SendFindReferences(oarUri, 6, 5);
 
-                referencesConstant.Should().HaveCount(2)
-                    .And.HaveReferenceAt(fobUri, 1, 0, 1, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarUri, 4, 4, 4, 12, ReferenceKind.Reference);
+                referencesConstant.Should().OnlyHaveReferences(
+                    (fobUri, (1, 0, 1, 8), ReferenceKind.Definition),
+                    (oarUri, (4, 4, 4, 12), ReferenceKind.Reference)
+                );
 
-                referencesClass.Should().HaveCount(3)
-                    .And.HaveReferenceAt(fobUri, 2, 0, 2, 17, ReferenceKind.Value)
-                    .And.HaveReferenceAt(fobUri, 2, 6, 2, 11, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarUri, 5, 4, 5, 9, ReferenceKind.Reference);
+                referencesClass.Should().OnlyHaveReferences(
+                    (fobUri, (2, 0, 2, 17), ReferenceKind.Value),
+                    (fobUri, (2, 6, 2, 11), ReferenceKind.Definition),
+                    (oarUri, (5, 4, 5, 9), ReferenceKind.Reference)
+                );
 
-                referencesfn.Should().HaveCount(3)
-                    .And.HaveReferenceAt(fobUri, 3, 0, 3, 14, ReferenceKind.Value)
-                    .And.HaveReferenceAt(fobUri, 3, 4, 3, 6, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarUri, 6, 4, 6, 6, ReferenceKind.Reference);
+                referencesfn.Should().OnlyHaveReferences(
+                    (fobUri, (3, 0, 3, 14), ReferenceKind.Value),
+                    (fobUri, (3, 4, 3, 6), ReferenceKind.Definition),
+                    (oarUri, (6, 4, 6, 6), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -3370,45 +3404,51 @@ g = f()";
                 var referencesC1 = await server.SendFindReferences(oarUri, 5, 5);
                 var referencesF = await server.SendFindReferences(oarUri, 6, 5);
 
-                referencesConstant.Should().HaveCount(4)
-                    .And.HaveReferenceAt(fobUri, 1, 0, 1, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarUri, 0, 16, 0, 24, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 0, 28, 0, 30, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 4, 4, 4, 6, ReferenceKind.Reference);
+                referencesConstant.Should().OnlyHaveReferences(
+                    (fobUri, (1, 0, 1, 8), ReferenceKind.Definition),
+                    (oarUri, (0, 16, 0, 24), ReferenceKind.Reference),
+                    (oarUri, (0, 28, 0, 30), ReferenceKind.Reference),
+                    (oarUri, (4, 4, 4, 6), ReferenceKind.Reference)
+                );
 
-                referencesClass.Should().HaveCount(5)
-                    .And.HaveReferenceAt(fobUri, 2, 0, 2, 17, ReferenceKind.Value)
-                    .And.HaveReferenceAt(fobUri, 2, 6, 2, 11, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarUri, 0, 32, 0, 37, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 0, 41, 0, 43, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 5, 4, 5, 6, ReferenceKind.Reference);
+                referencesClass.Should().OnlyHaveReferences(
+                    (fobUri, (2, 0, 2, 17), ReferenceKind.Value),
+                    (fobUri, (2, 6, 2, 11), ReferenceKind.Definition),
+                    (oarUri, (0, 32, 0, 37), ReferenceKind.Reference),
+                    (oarUri, (0, 41, 0, 43), ReferenceKind.Reference),
+                    (oarUri, (5, 4, 5, 6), ReferenceKind.Reference)
+                );
 
-                referencesFn.Should().HaveCount(5)
-                    .And.HaveReferenceAt(fobUri, 3, 0, 3, 14, ReferenceKind.Value)
-                    .And.HaveReferenceAt(fobUri, 3, 4, 3, 6, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarUri, 0, 45, 0, 47, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 0, 51, 0, 52, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 6, 4, 6, 5, ReferenceKind.Reference);
+                referencesFn.Should().OnlyHaveReferences(
+                    (fobUri, (3, 0, 3, 14), ReferenceKind.Value),
+                    (fobUri, (3, 4, 3, 6), ReferenceKind.Definition),
+                    (oarUri, (0, 45, 0, 47), ReferenceKind.Reference),
+                    (oarUri, (0, 51, 0, 52), ReferenceKind.Reference),
+                    (oarUri, (6, 4, 6, 5), ReferenceKind.Reference)
+                );
 
-                referencesC0.Should().HaveCount(4)
-                    .And.HaveReferenceAt(fobUri, 1, 0, 1, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarUri, 0, 16, 0, 24, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 0, 28, 0, 30, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 4, 4, 4, 6, ReferenceKind.Reference);
+                referencesC0.Should().OnlyHaveReferences(
+                    (fobUri, (1, 0, 1, 8), ReferenceKind.Definition),
+                    (oarUri, (0, 16, 0, 24), ReferenceKind.Reference),
+                    (oarUri, (0, 28, 0, 30), ReferenceKind.Reference),
+                    (oarUri, (4, 4, 4, 6), ReferenceKind.Reference)
+                );
 
-                referencesC1.Should().HaveCount(5)
-                    .And.HaveReferenceAt(fobUri, 2, 0, 2, 17, ReferenceKind.Value)
-                    .And.HaveReferenceAt(fobUri, 2, 6, 2, 11, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarUri, 0, 32, 0, 37, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 0, 41, 0, 43, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 5, 4, 5, 6, ReferenceKind.Reference);
+                referencesC1.Should().OnlyHaveReferences(
+                    (fobUri, (2, 0, 2, 17), ReferenceKind.Value),
+                    (fobUri, (2, 6, 2, 11), ReferenceKind.Definition),
+                    (oarUri, (0, 32, 0, 37), ReferenceKind.Reference),
+                    (oarUri, (0, 41, 0, 43), ReferenceKind.Reference),
+                    (oarUri, (5, 4, 5, 6), ReferenceKind.Reference)
+                );
 
-                referencesF.Should().HaveCount(5)
-                    .And.HaveReferenceAt(fobUri, 3, 0, 3, 14, ReferenceKind.Value)
-                    .And.HaveReferenceAt(fobUri, 3, 4, 3, 6, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(oarUri, 0, 45, 0, 47, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 0, 51, 0, 52, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(oarUri, 6, 4, 6, 5, ReferenceKind.Reference);
+                referencesF.Should().OnlyHaveReferences(
+                    (fobUri, (3, 0, 3, 14), ReferenceKind.Value),
+                    (fobUri, (3, 4, 3, 6), ReferenceKind.Definition),
+                    (oarUri, (0, 45, 0, 47), ReferenceKind.Reference),
+                    (oarUri, (0, 51, 0, 52), ReferenceKind.Reference),
+                    (oarUri, (6, 4, 6, 5), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -3429,18 +3469,22 @@ g = f()";
                 var referencesG = await server.SendFindReferences(uri, 3, 8);
                 var referencesY = await server.SendFindReferences(uri, 4, 8);
 
-                referencesF.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 1, 7, 1, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 1, 1, 1, 2, ReferenceKind.Reference);
-                referencesX.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 2, 7, 2, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 2, 1, 2, 2, ReferenceKind.Reference);
-                referencesG.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 3, 7, 3, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 1, 3, 2, ReferenceKind.Reference);
-                referencesY.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 4, 7, 4, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 4, 1, 4, 2, ReferenceKind.Reference);
+                referencesF.Should().OnlyHaveReferences(
+                    (uri, (1, 7, 1, 8), ReferenceKind.Definition),
+                    (uri, (1, 1, 1, 2), ReferenceKind.Reference)
+                );
+                referencesX.Should().OnlyHaveReferences(
+                    (uri, (2, 7, 2, 8), ReferenceKind.Definition),
+                    (uri, (2, 1, 2, 2), ReferenceKind.Reference)
+                );
+                referencesG.Should().OnlyHaveReferences(
+                    (uri, (3, 7, 3, 8), ReferenceKind.Definition),
+                    (uri, (3, 1, 3, 2), ReferenceKind.Reference)
+                );
+                referencesY.Should().OnlyHaveReferences(
+                    (uri, (4, 7, 4, 8), ReferenceKind.Definition),
+                    (uri, (4, 1, 4, 2), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -3462,20 +3506,24 @@ g = f()";
                 var referencesG = await server.SendFindReferences(uri, 3, 8);
                 var referencesY = await server.SendFindReferences(uri, 4, 8);
 
-                referencesF.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 1, 7, 1, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 1, 1, 1, 2, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 2, 12, 2, 13, ReferenceKind.Reference);
-                referencesX.Should().HaveCount(3)
-                    .And.HaveReferenceAt(uri, 2, 7, 2, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 1, 12, 1, 13, ReferenceKind.Reference)
-                    .And.HaveReferenceAt(uri, 2, 1, 2, 2, ReferenceKind.Reference);
-                referencesG.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 3, 7, 3, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 3, 1, 3, 2, ReferenceKind.Reference);
-                referencesY.Should().HaveCount(2)
-                    .And.HaveReferenceAt(uri, 4, 7, 4, 8, ReferenceKind.Definition)
-                    .And.HaveReferenceAt(uri, 4, 1, 4, 2, ReferenceKind.Reference);
+                referencesF.Should().OnlyHaveReferences(
+                    (uri, (1, 7, 1, 8), ReferenceKind.Definition),
+                    (uri, (1, 1, 1, 2), ReferenceKind.Reference),
+                    (uri, (2, 12, 2, 13), ReferenceKind.Reference)
+                );
+                referencesX.Should().OnlyHaveReferences(
+                    (uri, (2, 7, 2, 8), ReferenceKind.Definition),
+                    (uri, (1, 12, 1, 13), ReferenceKind.Reference),
+                    (uri, (2, 1, 2, 2), ReferenceKind.Reference)
+                );
+                referencesG.Should().OnlyHaveReferences(
+                    (uri, (3, 7, 3, 8), ReferenceKind.Definition),
+                    (uri, (3, 1, 3, 2), ReferenceKind.Reference)
+                );
+                referencesY.Should().OnlyHaveReferences(
+                    (uri, (4, 7, 4, 8), ReferenceKind.Definition),
+                    (uri, (4, 1, 4, 2), ReferenceKind.Reference)
+                );
             }
         }
 
@@ -7483,13 +7531,12 @@ y = mcc()
         }
 */
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/48")]
         public async Task OsPathMembers() {
             var code = @"import os.path as P
 ";
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
-                analysis.Should().HaveClassInfo("P")
+                analysis.Should().HaveVariable("P").WithValue<BuiltinModule>()
                     .Which.Should().HaveMembers("abspath", "dirname");
             }
         }

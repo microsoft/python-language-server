@@ -158,6 +158,19 @@ namespace Microsoft.Python.Tests.Utilities {
         }
         
         /// <summary>
+        /// Adds a directory separator character to the end of path if required.
+        /// </summary>
+        public static string EnsureEndSeparator(string path) {
+            if (string.IsNullOrEmpty(path)) {
+                return string.Empty;
+            } else if (!HasEndSeparator(path)) {
+                return path + Path.DirectorySeparatorChar;
+            } else {
+                return path;
+            }
+        }
+
+        /// <summary>
         /// Returns true if the path has a directory separator character at the end.
         /// </summary>
         public static bool HasEndSeparator(string path) {
