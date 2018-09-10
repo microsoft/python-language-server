@@ -144,7 +144,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
     }
 
     internal class ReferenceableDependencyInfo : TypedDependencyInfo {
-        public SmallSetWithExpiry<IEncodedLocation> _references, _assignments;
+        public SmallSetWithExpiry<EncodedLocation> _references, _assignments;
 
         public ReferenceableDependencyInfo(int version)
             : base(version) { }
@@ -153,9 +153,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             : base(version, emptySet) {
         }
 
-        public bool AddReference(IEncodedLocation location) => _references.Add(location);
-        public IEnumerable<IEncodedLocation> References => _references;
-        public bool AddAssignment(IEncodedLocation location) => _assignments.Add(location);
-        public IEnumerable<IEncodedLocation> Assignments => _assignments;
+        public bool AddReference(EncodedLocation location) => _references.Add(location);
+        public IEnumerable<EncodedLocation> References => _references;
+        public bool AddAssignment(EncodedLocation location) => _assignments.Add(location);
+        public IEnumerable<EncodedLocation> Assignments => _assignments;
     }
 }

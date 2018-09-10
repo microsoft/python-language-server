@@ -35,7 +35,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// storing the line/column info directly while still allowing multiple schemes
     /// to be used.
     /// </summary>
-    struct EncodedLocation : IEncodedLocation, IEquatable<EncodedLocation> {
+    public struct EncodedLocation : IEquatable<EncodedLocation>, ICanExpire {
         public EncodedLocation(ILocationResolver resolver, object location) {
             if (resolver == null && !(location is LocationInfo)) {
                 throw new ArgumentNullException(nameof(resolver));
@@ -60,10 +60,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public override bool Equals(object obj) {
-            if (obj is EncodedLocation) {
-                return Equals((EncodedLocation)obj);
-            }
-            return false;
+            return obj is EncodedLocation location && Equals(location);
         }
 
         #region IEquatable<EncodedLocation> Members
@@ -74,13 +71,6 @@ namespace Microsoft.PythonTools.Analysis {
 
         #endregion
 
-        #region IEquatable<IEncodedLocation> Members
-
-        public bool Equals(IEncodedLocation other) {
-            return Location == other.Location;
-        }
-
-        #endregion
         public ILocationInfo GetLocationInfo() {
             if (Resolver == null) {
                 return Location as ILocationInfo;

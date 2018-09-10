@@ -22,10 +22,10 @@ namespace Microsoft.PythonTools.Analysis {
     }
 
     public interface IReferenceable {
-        IEnumerable<IEncodedLocation> Definitions {
+        IEnumerable<EncodedLocation> Definitions {
             get;
         }
-        IEnumerable<IEncodedLocation> References {
+        IEnumerable<EncodedLocation> References {
             get;
         }
     }

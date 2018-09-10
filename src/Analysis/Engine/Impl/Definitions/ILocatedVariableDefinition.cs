@@ -18,6 +18,6 @@ namespace Microsoft.PythonTools.Analysis {
     public interface ILocatedVariableDefinition: IVariableDefinition {
         int DeclaringVersion { get; set; }
         IPythonProjectEntry Entry { get; }
-        IEncodedLocation Location { get; set; }
+        EncodedLocation Location { get; set; }
     }
 }

@@ -107,7 +107,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     class ReferenceList : IReferenceable {
         public readonly int Version;
         public readonly string Project;
-        public SmallSetWithExpiry<IEncodedLocation> References;
+        public SmallSetWithExpiry<EncodedLocation> References;
 
         public ReferenceList(IProjectEntry project) {
             Version = project.AnalysisVersion;
@@ -122,12 +122,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         #region IReferenceable Members
 
-        public IEnumerable<IEncodedLocation> Definitions {
+        public IEnumerable<EncodedLocation> Definitions {
             get { yield break; }
         }
 
-        IEnumerable<IEncodedLocation> IReferenceable.References => References.AsLockedEnumerable(this);
-        IEnumerable<IEncodedLocation> ReferencesNoLock => References;
+        IEnumerable<EncodedLocation> IReferenceable.References => References.AsLockedEnumerable(this);
+        IEnumerable<EncodedLocation> ReferencesNoLock => References;
 
         #endregion
     }
@@ -144,7 +144,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         #region IReferenceable Members
 
-        public IEnumerable<IEncodedLocation> Definitions {
+        public IEnumerable<EncodedLocation> Definitions {
             get {
                 if (_location != null) {
                     yield return new EncodedLocation(_location, null);
@@ -152,7 +152,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        IEnumerable<IEncodedLocation> IReferenceable.References {
+        IEnumerable<EncodedLocation> IReferenceable.References {
             get { yield break; }
         }
 

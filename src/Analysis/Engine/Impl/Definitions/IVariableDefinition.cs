@@ -20,8 +20,8 @@ namespace Microsoft.PythonTools.Analysis {
     public interface IVariableDefinition: IReferenceable {
         bool VariableStillExists { get; }
         bool AddReference(Node node, AnalysisUnit unit);
-        bool AddReference(IEncodedLocation location, IVersioned module);
-        bool AddAssignment(IEncodedLocation location, IVersioned entry);
+        bool AddReference(EncodedLocation location, IVersioned module);
+        bool AddAssignment(EncodedLocation location, IVersioned entry);
         bool AddAssignment(Node node, AnalysisUnit unit);
         bool IsAssigned { get; }
         bool HasTypes { get; }
