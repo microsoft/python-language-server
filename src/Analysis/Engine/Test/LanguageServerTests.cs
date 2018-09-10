@@ -158,7 +158,6 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/55")]
         public async Task Initialize() {
             var s = await CreateServer(TestData.GetPath(@"TestData\HelloWorld"));
 
