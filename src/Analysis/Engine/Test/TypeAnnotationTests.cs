@@ -126,7 +126,7 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public async Task TypingModuleContainerAnalysis() {
-            using (var server = await new Server().InitializeAsync(PythonVersions.Required_Python34X)) {
+            using (var server = await new Server().InitializeAsync(PythonVersions.Required_Python36X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"from typing import *
 
 i : SupportsInt = ...

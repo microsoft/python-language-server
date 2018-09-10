@@ -77,7 +77,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var current = Subject.Parameters.Select(pr => pr.Name).ToArray();
             var expected = parameters.ToArray();
 
-            var message = GetAssertCollectionOnlyContainsMessage(current, expected, _name, "parameter ", "parameters ");
+            var message = GetAssertCollectionOnlyContainsMessage(current, expected, _name, "parameter", "parameters");
             Execute.Assertion.ForCondition(message == null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith(message);

@@ -54,6 +54,21 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return andWhichConstraint;
         }
 
+        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> WithMergedType<TAssertion>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
+            andWhichConstraint.Which.Should().HaveMergedType(typeId, because, reasonArgs);
+            return andWhichConstraint;
+        }
+
+        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> WithMergedTypes<TAssertion>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, params BuiltinTypeId[] typeIds) {
+            andWhichConstraint.Which.Should().HaveMergedTypes(typeIds);
+            return andWhichConstraint;
+        }
+
+        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> WithMergedTypes<TAssertion>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
+            andWhichConstraint.Which.Should().HaveMergedTypes(typeIds, because, reasonArgs);
+            return andWhichConstraint;
+        }
+
         public static AndWhichConstraint<TAssertion, VariableDefTestInfo> OfType<TAssertion>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, string className, string because = "", params object[] reasonArgs) {
             andWhichConstraint.Which.Should().HaveClassName(className, because, reasonArgs);
             return andWhichConstraint;

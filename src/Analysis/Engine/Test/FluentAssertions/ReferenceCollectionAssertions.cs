@@ -22,11 +22,13 @@ using FluentAssertions;
 using FluentAssertions.Collections;
 using FluentAssertions.Execution;
 using Microsoft.Python.LanguageServer;
+using TestUtilities;
+using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal sealed class ReferenceCollectionAssertions : SelfReferencingCollectionAssertions<Reference, ReferenceCollectionAssertions> {
-        public ReferenceCollectionAssertions(IEnumerable<Reference> references) : base(references) { }
+        public ReferenceCollectionAssertions(IEnumerable<Reference> references) : base(references) {}
 
         protected override string Identifier => nameof(Reference) + "Collection";
 
@@ -52,6 +54,45 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         [CustomAssertion]
+        public AndConstraint<ReferenceCollectionAssertions> OnlyHaveReference(Uri documentUri, (int startLine, int startCharacter, int endLine, int endCharacter) range, ReferenceKind? referenceKind, string because = "", params object[] reasonArgs)
+            => OnlyHaveReferences(new []{(documentUri, range, referenceKind)}, because, reasonArgs);
+
+        [CustomAssertion]
+        public AndConstraint<ReferenceCollectionAssertions> OnlyHaveReferences(params (Uri documentUri, (int startLine, int startCharacter, int endLine, int endCharacter) range, ReferenceKind? referenceKind)[] references)
+            => OnlyHaveReferences(references, string.Empty);
+
+        [CustomAssertion]
+        public AndConstraint<ReferenceCollectionAssertions> OnlyHaveReferences(IEnumerable<(Uri documentUri, (int startLine, int startCharacter, int endLine, int endCharacter) range, ReferenceKind? referenceKind)> references, string because = "", params object[] reasonArgs) {
+            var expected = references.ToArray();
+            foreach (var (documentUri, (startLine, startCharacter, endLine, endCharacter), referenceKind) in expected) {
+                HaveReferenceAt(documentUri, startLine, startCharacter, endLine, endCharacter, referenceKind, because, reasonArgs);
+            }
+
+            var excess = Subject.Select(r => (r.uri, (r.range.start.line, r.range.start.character, r.range.end.line, r.range.end.character), r._kind))
+                .Except(expected)
+                .ToArray();
+
+            if (excess.Length > 0) {
+                var excessString = string.Join(", ", excess.Select(Format));
+                var errorMessage = expected.Length > 1
+                    ? $"Expected {GetName()} to have only {expected.Length} references{{reason}}, but it also has references: {excessString}."
+                    : expected.Length > 0
+                        ? $"Expected {GetName()} to have only one reference{{reason}}, but it also has references: {excessString}."
+                        : $"Expected {GetName()} to have no references{{reason}}, but it has references: {excessString}.";
+
+                Execute.Assertion.BecauseOf(because, reasonArgs).FailWith(errorMessage);
+            }
+
+            return new AndConstraint<ReferenceCollectionAssertions>(this);
+        }
+
+        private static string Format((Uri uri, (int, int, int, int) range, ReferenceKind? kind) reference) 
+            => $"({TestData.GetTestRelativePath(reference.uri)}, {Format(reference.range)}, {reference.kind})";
+
+        private static string Format((int startLine, int startCharacter, int endLine, int endCharacter) range) 
+            => $"({range.startLine}, {range.startCharacter}) - ({range.endLine}, {range.endCharacter})";
+
+        [CustomAssertion]
         public AndConstraint<ReferenceCollectionAssertions> HaveReferenceAt(Uri documentUri, int startLine, int startCharacter, int endLine, int endCharacter, ReferenceKind? referenceKind = null, string because = "", params object[] reasonArgs) {
             var range = new Range {
                 start = new Position {
@@ -64,7 +105,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                 }
             };
             
-            var error = FindReference(documentUri, documentUri.AbsolutePath, range, referenceKind);
+            var error = FindReference(documentUri, TestData.GetTestRelativePath(documentUri), range, referenceKind);
             Execute.Assertion.ForCondition(error == string.Empty)
                 .BecauseOf(because, reasonArgs)
                 .FailWith(error);
@@ -79,28 +120,26 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                 return $"Expected {GetName()} to have reference in the module '{moduleName}'{{reason}}, but no references has been found.";
             }
 
-            foreach (var candidate in candidates) {
-                if (RangeEquals(candidate.range, range)) {
-                    return !referenceKind.HasValue || candidate._kind == referenceKind
-                        ? string.Empty
-                        : $"Expected {GetName()} to have reference of type '{referenceKind}'{{reason}}, but reference in module '{moduleName}' at {ToString(range)} has type '{candidate._kind}'";
-                }
+            foreach (var candidate in candidates.Where(c => RangeEquals(c.range, range))) {
+                return referenceKind.HasValue && candidate._kind != referenceKind
+                    ? $"Expected {GetName()} to have reference of type '{referenceKind}'{{reason}}, but reference in module '{moduleName}' at {RangeToString(range)} has type '{candidate._kind}'"
+                    : string.Empty;
             }
 
-            var errorMessage = $"Expected {GetName()} to have reference at {ToString(range)}{{reason}}, but module '{moduleName}' has no references at that range.";
+            var errorMessage = $"Expected {GetName()} to have reference at {RangeToString(range)}{{reason}}, but module '{moduleName}' has no references at that range.";
             if (!referenceKind.HasValue) {
                 return errorMessage;
             }
 
             var matchingTypes = candidates.Where(av => av._kind == referenceKind).ToArray();
             var matchingTypesString = matchingTypes.Length > 0
-                ? $"References that match type '{referenceKind}' have spans {string.Join(" ,", matchingTypes.Select(av => ToString(av.range)))}"
+                ? $"References that match type '{referenceKind}' have spans {string.Join(" ,", matchingTypes.Select(av => RangeToString(av.range)))}"
                 : $"There are no references with type '{referenceKind}' either";
 
             return $"{errorMessage} {matchingTypesString}";
         }
 
-        private static string ToString(Range range)
+        private static string RangeToString(Range range)
             => $"({range.start.line}, {range.start.character}) - ({range.end.line}, {range.end.character})";
 
         private static bool RangeEquals(Range r1, Range r2)

@@ -40,5 +40,6 @@ namespace Microsoft.PythonTools.Analysis {
         bool VisibleToChildren { get; }
         IEnumerable<IVariableDefinition> GetMergedVariables(string name);
         IEnumerable<IVariableDefinition> GetLinkedVariables(string name);
+        IAnalysisSet GetMergedVariableTypes(string name);
     }
 }

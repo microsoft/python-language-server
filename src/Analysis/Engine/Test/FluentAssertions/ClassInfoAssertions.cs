@@ -51,7 +51,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                 .Select(av => av.ShortDescription)
                 .ToArray();
 
-            var errorMessage = GetAssertSequenceEqualMessage(actual, expected, GetName(), "MRO ");
+            var errorMessage = GetAssertSequenceEqualMessage(actual, expected, GetName(), "MRO");
             Execute.Assertion.ForCondition(errorMessage == null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith(errorMessage);
