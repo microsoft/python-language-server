@@ -288,10 +288,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, TypeName);
             var indexTypes = IndexTypes;
-            if (indexTypes == null || indexTypes.Length == 0) {
-                yield break;
-            }
-            if (indexTypes.Length == 1 && !indexTypes[0].HasTypes) {
+            if (indexTypes == null || indexTypes.Length == 0 || indexTypes.All(x => !x.HasTypes)) {
                 yield break;
             }
 
