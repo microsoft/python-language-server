@@ -25,7 +25,7 @@ using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
-    internal class DictionaryInfo : BuiltinInstanceInfo {
+    internal class DictionaryInfo : BuiltinInstanceInfo, IAnalysisIterableValue {
         private SequenceInfo _keyValueTuple;
         private readonly Node _node;
         private VariableDef _keysVariable, _valuesVariable, _keyValueTupleVariable;
@@ -347,6 +347,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return _valuesVariable;
             }
         }
+
+        public IEnumerable<IVariableDefinition> IndexTypes => new[] { KeyValueTupleVariable };
 
         internal IAnalysisSet GetItemsView(AnalysisUnit unit) {
             return DictionaryIterItems(null, unit, null, null);
