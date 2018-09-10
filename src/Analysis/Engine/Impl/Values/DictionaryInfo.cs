@@ -348,7 +348,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public IEnumerable<IVariableDefinition> IndexTypes => new[] { _keyValueTupleVariable };
+        public IEnumerable<IVariableDefinition> IndexTypes => new[] { KeyValueTupleVariable };
 
         internal IAnalysisSet GetItemsView(AnalysisUnit unit) {
             return DictionaryIterItems(null, unit, null, null);
