@@ -291,6 +291,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (indexTypes == null || indexTypes.Length == 0) {
                 yield break;
             }
+            if (indexTypes.Length == 1 && !indexTypes[0].HasTypes) {
+                yield break;
+            }
 
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[");
             if (indexTypes.Length < 6) {

@@ -672,7 +672,6 @@ mc
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/56")]
         public async Task SignatureHelp() {
             var s = await CreateServer();
             var mod = await AddModule(s, @"f()
