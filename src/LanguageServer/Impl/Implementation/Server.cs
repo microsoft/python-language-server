@@ -298,7 +298,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public Task<bool> UnloadFileAsync(Uri documentUri) {
             var entry = RemoveEntry(documentUri);
             if (entry != null) {
-                Analyzer.RemoveModule(entry, e => AnalysisQueue.Enqueue(e, AnalysisPriority.Normal));
+                Analyzer.RemoveModule(entry, e => EnqueueItem(e as IDocument, AnalysisPriority.Normal, parse: false));
                 return Task.FromResult(true);
             }
 
@@ -541,7 +541,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             foreach (var entryRef in reanalyzeEntries) {
-                AnalysisQueue.Enqueue(entryRef, AnalysisPriority.Low);
+                EnqueueItem(entryRef as IDocument, AnalysisPriority.Low, parse: false);
             }
 
             return Task.FromResult(item);
@@ -550,7 +550,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private void OnProjectEntryNewAnalysis(object sender, EventArgs e) {
             // Events are fired from a background thread and may come
             // after items were actually already disposed.
-            if(_disposableBag.IsDisposed) {
+            if (_disposableBag.IsDisposed) {
                 return;
             }
 
@@ -603,24 +603,27 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        internal void EnqueueItem(IDocument doc, AnalysisPriority priority = AnalysisPriority.Normal, bool enqueueForAnalysis = true) {
+        internal void EnqueueItem(IDocument doc, AnalysisPriority priority = AnalysisPriority.Normal, bool parse = true, bool enqueueForAnalysis = true) {
             _disposableBag.ThrowIfDisposed();
             var pending = _pendingAnalysisEnqueue.Incremented();
             try {
-                Task<IAnalysisCookie> cookieTask;
-                using (GetDocumentParseCounter(doc, out var count)) {
-                    if (count > 3) {
-                        // Rough check to prevent unbounded queueing. If we have
-                        // multiple parses in queue, we will get the latest doc
-                        // version in one of the ones to come.
-                        return;
-                    }
-                    TraceMessage($"Parsing document {doc.DocumentUri}");
-                    cookieTask = ParseQueue.Enqueue(doc, Analyzer.LanguageVersion);
-                }
-
                 if (doc is ProjectEntry entry) {
                     entry.ResetCompleteAnalysis();
+                }
+
+                // If we don't need to parse, use null cooking
+                var cookieTask = Task.FromResult<IAnalysisCookie>(null);
+                if (parse) {
+                    using (GetDocumentParseCounter(doc, out var count)) {
+                        if (count > 3) {
+                            // Rough check to prevent unbounded queueing. If we have
+                            // multiple parses in queue, we will get the latest doc
+                            // version in one of the ones to come.
+                            return;
+                        }
+                        TraceMessage($"Parsing document {doc.DocumentUri}");
+                        cookieTask = ParseQueue.Enqueue(doc, Analyzer.LanguageVersion);
+                    }
                 }
 
                 // The call must be fire and forget, but should not be yielding.
