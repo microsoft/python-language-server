@@ -2002,7 +2002,6 @@ class H(object):
         /// http://pytools.codeplex.com/workitem/798
         /// </summary>
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/45")]
         public async Task ListSubclassSignatures() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var uri = TestData.GetDefaultModuleUri();
