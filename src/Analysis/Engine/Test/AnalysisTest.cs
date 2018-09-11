@@ -1998,9 +1998,6 @@ class H(object):
             }
         }
 
-        /// <summary>
-        /// http://pytools.codeplex.com/workitem/798
-        /// </summary>
         [TestMethod, Priority(0)]
         public async Task ListSubclassSignatures() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
