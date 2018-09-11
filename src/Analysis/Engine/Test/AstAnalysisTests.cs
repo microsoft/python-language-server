@@ -411,7 +411,7 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/61")]
+
         public async Task AstTypeStubPaths_MergeStubsPath() {
             using (var server = await CreateServerAsync()) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync("import Package.Module\n\nc = Package.Module.Class()");
@@ -422,17 +422,15 @@ class BankAccount(object):
 
                 var analysis = await server.GetAnalysisAsync(uri);
 
-                var type = analysis.Should().HavePythonModuleVariable("Package")
+                var types = analysis.Should().HavePythonModuleVariable("Package")
                     .Which.Should().HaveNestedModule("Module")
-                    .Which.Should().HaveClass("Class")
-                    .Which;
+                    .Which.Should().HaveMultipleTypesMember("Class") // member information comes from multiple sources
+                    .Which.Members.OfType<IPythonType>();
 
-                analysis.Should().HaveVariable("c")
-                    .WithValue<IBuiltinInstanceInfo>()
-                    .Which.Should().HaveMemberType(PythonMemberType.Instance)
-                    .And.HavePythonType(type)
-                    .Which.Should().HaveMembers("untyped_method", "inferred_method", "typed_method_2")
-                    .And.NotHaveMembers("typed_method");
+                var c = analysis.Should().HaveVariable("c").Which;
+                c.Should().HaveValue<IBuiltinInstanceInfo>().
+                    Which.Should().HaveMembers("untyped_method", "inferred_method", "typed_method_2")
+                   .And.NotHaveMembers(new[] { "typed_method" });
             }
         }
 

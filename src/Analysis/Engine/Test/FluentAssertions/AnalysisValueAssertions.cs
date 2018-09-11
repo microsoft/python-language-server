@@ -95,6 +95,19 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return new AndConstraint<TAssertions>((TAssertions)this);
         }
 
+        public AndConstraint<TAssertions> NotHaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
+            var actualNames = Subject.GetAllMembers(((ModuleScope)OwnerScope.GlobalScope).Module.InterpreterContext).Keys.ToArray();
+            var expectedNames = memberNames.ToArray();
+
+            var errorMessage = GetAssertCollectionNotContainMessage(actualNames, expectedNames, GetName(), "member", "members");
+
+            Execute.Assertion.ForCondition(errorMessage == null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith(errorMessage);
+
+            return new AndConstraint<TAssertions>((TAssertions)this);
+        }
+
         public AndConstraint<TAssertions> HaveMemberOfType(string memberName, BuiltinTypeId typeId)
             => HaveMemberOfTypes(memberName, typeId);
 
@@ -129,7 +142,19 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             return new AndWhichConstraint<TAssertions, IPythonType>((TAssertions)this, pythonType);
         }
-        
+
+        public AndWhichConstraint<TAssertions, IEnumerable<IPythonType>> HavePythonTypes(IEnumerable<IPythonType> pythonTypes, string because = "", params object[] reasonArgs) {
+            var members = Subject.GetAllMembers(null).OfType<IPythonType>();
+
+            Execute.Assertion.ForCondition(Subject.MemberType == PythonMemberType.Multiple)
+                .BecauseOf(because, reasonArgs)
+                .FailWith(Subject.PythonType != null
+                    ? $"Expected {GetName()} to be {'a'}{{reason}}, but it is {GetQuotedName(Subject.PythonType)}."
+                    : $"Expected {GetName()} to be {'b'}{{reason}}, but it is null.");
+
+            return new AndWhichConstraint<TAssertions, IEnumerable<IPythonType>>((TAssertions)this, members);
+        }
+
         public AndConstraint<TAssertions> HaveOverloads(string because = "", params object[] reasonArgs) {
             Execute.Assertion.ForCondition(Subject.Overloads.Any())
                 .BecauseOf(because, reasonArgs)
