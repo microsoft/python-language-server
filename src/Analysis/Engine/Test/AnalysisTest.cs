@@ -2017,7 +2017,7 @@ a.count(");
 
                 analysis.Should().HaveVariable("a").OfType("C");
                 signatures.Should().HaveSingleSignature()
-                    .Which.Should().HaveNoParameters();
+                    .Which.Should().OnlyHaveParameterLabels("x");
             }
         }
 
