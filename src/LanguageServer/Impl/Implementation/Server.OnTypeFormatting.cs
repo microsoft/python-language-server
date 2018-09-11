@@ -14,21 +14,21 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 
-namespace Microsoft.PythonTools.Analysis.LanguageServer {
+namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
-        public override Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params) => DocumentOnTypeFormatting(@params, CancellationToken.None);
-
-        internal async Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params, CancellationToken cancellationToken) {
+        public override async Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params, CancellationToken cancellationToken) {
             // The current line is the line after the one we need to format, so
             // it is also the one-indexed line number for the target line.
             var targetLine = @params.position.line;
