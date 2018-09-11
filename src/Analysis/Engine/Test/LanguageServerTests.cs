@@ -598,7 +598,6 @@ mc
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/54")]
         public async Task CompletionAfterLoad() {
             var s = await CreateServer();
             var mod1 = await AddModule(s, "import mod2\n\nmod2.", "mod1");
