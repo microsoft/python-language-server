@@ -70,6 +70,8 @@ namespace Microsoft.PythonTools.Analysis {
         /// </param>
         IEnumerable<IPythonProjectEntry> GetEntriesThatImportModule(string moduleName, bool includeUnresolved);
 
+        AnalysisValue GetAnalysisValueFromObjects(object attr);
+
         /// <summary>
         /// Returns true if a module has been imported.
         /// </summary>

@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -210,14 +211,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             ), ".pyi");
         }
 
-        private static bool IsWindows() {
-#if DESKTOP
-            return true;
-#else
-            return System.Runtime.InteropServices.RuntimeInformation
-                .IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
-#endif
-        }
+        private static bool IsWindows() 
+            => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         #region Cache File Management
 
