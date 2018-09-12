@@ -992,6 +992,17 @@ datetime.datetime.now().day
             );
         }
 
+        [TestMethod, Priority(0)]
+        public async Task OnTypeFormatting() {
+            var s = await CreateServer();
+
+            var mod = await AddModule(s, "def foo  ( ) :\n    x = a + b\n    x+= 1");
+
+            await AssertLineFormat(s, mod, 1, "\n", "def foo():", new SourceLocation(1, 1), new SourceLocation(1, 15));
+            await AssertLineFormat(s, mod, 2, "\n", "x = a + b", new SourceLocation(2, 5), new SourceLocation(2, 14));
+            await AssertLineFormat(s, mod, 3, "\n", "x += 1", new SourceLocation(3, 5), new SourceLocation(3, 10));
+        }
+
         class GetAllExtensionProvider : ILanguageServerExtensionProvider {
             public Task<ILanguageServerExtension> CreateAsync(IPythonLanguageServer server, IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken) {
                 return Task.FromResult<ILanguageServerExtension>(new GetAllExtension((Server)server, properties));
@@ -1183,6 +1194,22 @@ datetime.datetime.now().day
             }, CancellationToken.None);
 
             refs.Select(r => $"{r._kind ?? ReferenceKind.Reference};{r.range}").Should().Contain(contains).And.NotContain(excludes);
+        }
+
+        public static async Task AssertLineFormat(Server s, TextDocumentIdentifier document, int line, string ch, string newText, SourceLocation start, SourceLocation end) {
+            var edits = await s.DocumentOnTypeFormatting(new DocumentOnTypeFormattingParams {
+                textDocument = document,
+                ch = ch,
+                position = new SourceLocation(line+1, 1)
+            }, CancellationToken.None);
+
+            edits.Should().OnlyContain(new TextEdit {
+                newText = newText,
+                range = new Range {
+                    start = start,
+                    end = end
+                }
+            });
         }
 
         public Task<ILanguageServerExtension> CreateAsync(IPythonLanguageServer server, IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken) => throw new NotImplementedException();
