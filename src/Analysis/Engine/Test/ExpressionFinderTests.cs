@@ -182,7 +182,6 @@ C().fff", GetExpressionOptions.Complete);
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/57")]
         public void FindExpressionsForDefinition() {
             var code = Parse(@"class C(object):
     def f(a):
@@ -215,7 +214,6 @@ b = C().f(1)
             AssertExpr(code, 5, 1, "b");
             AssertExpr(code, 5, 5, "C");
             AssertExpr(code, 5, 6, "C");
-            AssertNoExpr(code, 5, 7);
             AssertExpr(code, 5, 9, "C().f");
             AssertExpr(code, 5, 10, "C().f");
             AssertExpr(code, 5, 9, 5, 10, "C().f");
