@@ -67,7 +67,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => HaveOnlyMembers(memberNames, string.Empty);
 
         public AndConstraint<TAssertions> HaveOnlyMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
-            var actualNames = Subject.GetAllMembers(((ModuleScope)OwnerScope.GlobalScope).Module.InterpreterContext).Keys.ToArray();
+            var actualNames = Subject.GetAllMembers(ModuleContext).Keys.ToArray();
             var expectedNames = memberNames.ToArray();
 
             var errorMessage = GetAssertCollectionOnlyContainsMessage(actualNames, expectedNames, GetName(), "member", "members");
@@ -83,7 +83,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => HaveMembers(memberNames, string.Empty);
 
         public AndConstraint<TAssertions> HaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
-            var actualNames = Subject.GetAllMembers(((ModuleScope)OwnerScope.GlobalScope).Module.InterpreterContext).Keys.ToArray();
+            var actualNames = Subject.GetAllMembers(ModuleContext).Keys.ToArray();
             var expectedNames = memberNames.ToArray();
 
             var errorMessage = GetAssertCollectionContainsMessage(actualNames, expectedNames, GetName(), "member", "members");
@@ -99,7 +99,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => NotHaveMembers(memberNames, string.Empty);
 
         public AndConstraint<TAssertions> NotHaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
-            var actualNames = Subject.GetAllMembers(((ModuleScope)OwnerScope.GlobalScope).Module.InterpreterContext).Keys.ToArray();
+            var actualNames = Subject.GetAllMembers(ModuleContext).Keys.ToArray();
             var expectedNames = memberNames.ToArray();
 
             var errorMessage = GetAssertCollectionNotContainMessage(actualNames, expectedNames, GetName(), "member", "members");
@@ -247,5 +247,6 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         protected virtual string GetName() => $"{GetQuotedName(Subject)} {ScopeDescription}";
 
         private string GetOverloadName(string overload) => $"'{overload}' overload {ScopeDescription}";
+        private IModuleContext ModuleContext => ((ModuleScope)OwnerScope.GlobalScope).Module.InterpreterContext;
     }
 }
