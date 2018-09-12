@@ -34,7 +34,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// <summary>
     /// Performs analysis of multiple Python code files and enables interrogation of the resulting analysis.
     /// </summary>
-    public partial class PythonAnalyzer : IPythonAnalyzer,  IDisposable {
+    public partial class PythonAnalyzer : IPythonAnalyzer, IDisposable {
         private readonly IPythonInterpreter _interpreter;
         private readonly bool _disposeInterpreter;
         private readonly IPythonInterpreterFactory _interpreterFactory;
@@ -622,7 +622,16 @@ namespace Microsoft.PythonTools.Analysis {
 
         public AnalysisLimits Limits {
             get { return _limits; }
-            set { _limits = value; }
+            set {
+                var limits = _limits;
+                _limits = value;
+
+                if ((limits == null && _limits != null)
+                    || limits.UseTypeStubPackages ^ _limits.UseTypeStubPackages
+                    || limits.UseTypeStubPackagesExclusively ^ _limits.UseTypeStubPackagesExclusively) {
+                    SearchPathsChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
         }
 
         public bool EnableDiagnostics { get; set; }

@@ -14,9 +14,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Win32;
-
 namespace Microsoft.PythonTools.Analysis {
     public sealed class AnalysisLimits {
         /// <summary>
