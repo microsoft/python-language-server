@@ -423,13 +423,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return default(T);
             }
             try {
-#if DESKTOP
-                var assembly = Assembly.Load(File.Exists(assemblyName) ? AssemblyName.GetAssemblyName(assemblyName) : new AssemblyName(assemblyName));
-#else
                 var assembly = File.Exists(assemblyName)
                     ? Assembly.LoadFrom(assemblyName)
                     : Assembly.Load(new AssemblyName(assemblyName));
-#endif
+
                 var type = assembly.GetType(typeName, true);
 
                 return (T)Activator.CreateInstance(

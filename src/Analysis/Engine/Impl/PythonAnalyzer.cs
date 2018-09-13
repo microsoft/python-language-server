@@ -46,9 +46,6 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly Dictionary<object, AnalysisValue> _itemCache;
         internal readonly string _builtinName;
         internal BuiltinModule _builtinModule;
-#if DESKTOP
-        private readonly ConcurrentDictionary<string, XamlProjectEntry> _xamlByFilename = new ConcurrentDictionary<string, XamlProjectEntry>();
-#endif
         internal ConstantInfo _noneInst;
         private Action<int> _reportQueueSize;
         private int _reportQueueInterval;
@@ -58,7 +55,7 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly List<string> _searchPaths = new List<string>();
         private readonly List<string> _typeStubPaths = new List<string>();
         private readonly Dictionary<string, List<SpecializationInfo>> _specializationInfo = new Dictionary<string, List<SpecializationInfo>>();  // delayed specialization information, for modules not yet loaded...
-        private AnalysisLimits _limits;
+        private AnalysisLimits _limits = AnalysisLimits.GetDefaultLimits();
         private static object _nullKey = new object();
         private readonly SemaphoreSlim _reloadLock = new SemaphoreSlim(1, 1);
         private Dictionary<IProjectEntry[], AggregateProjectEntry> _aggregates = new Dictionary<IProjectEntry[], AggregateProjectEntry>(AggregateComparer.Instance);
@@ -273,21 +270,6 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }
         }
-
-#if DESKTOP
-        /// <summary>
-        /// Adds a XAML file to be analyzed.  
-        /// 
-        /// This method is thread safe.
-        /// </summary>
-        internal IXamlProjectEntry AddXamlFile(string filePath, IAnalysisCookie cookie = null) {
-            var entry = new XamlProjectEntry(filePath);
-
-            _xamlByFilename[filePath] = entry;
-
-            return entry;
-        }
-#endif
 
         /// <summary>
         /// Returns a sequence of project entries that import the specified
@@ -623,11 +605,11 @@ namespace Microsoft.PythonTools.Analysis {
         public AnalysisLimits Limits {
             get { return _limits; }
             set {
+                value = value ?? AnalysisLimits.GetDefaultLimits();
                 var limits = _limits;
                 _limits = value;
 
-                if ((limits == null && _limits != null)
-                    || limits.UseTypeStubPackages ^ _limits.UseTypeStubPackages
+                if (limits.UseTypeStubPackages ^ _limits.UseTypeStubPackages
                     || limits.UseTypeStubPackagesExclusively ^ _limits.UseTypeStubPackagesExclusively) {
                     SearchPathsChanged?.Invoke(this, EventArgs.Empty);
                 }
@@ -774,12 +756,12 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal AnalysisValue GetAnalysisValueFromObjectsThrowOnNull(object attr) {
             if (attr == null) {
-                throw new ArgumentNullException("attr");
+                throw new ArgumentNullException(nameof(attr));
             }
             return GetAnalysisValueFromObjects(attr);
         }
 
-        internal AnalysisValue GetAnalysisValueFromObjects(object attr) {
+        public AnalysisValue GetAnalysisValueFromObjects(object attr) {
             if (attr == null) {
                 return _noneInst;
             }

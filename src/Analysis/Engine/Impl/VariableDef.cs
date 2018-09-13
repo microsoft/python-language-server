@@ -544,11 +544,11 @@ namespace Microsoft.PythonTools.Analysis {
             return false;
         }
 
-        public bool AddReference(IEncodedLocation location, IVersioned module) {
+        public bool AddReference(EncodedLocation location, IVersioned module) {
             return GetDependentItems(module).AddReference(location);
         }
 
-        public bool AddAssignment(IEncodedLocation location, IVersioned entry) {
+        public bool AddAssignment(EncodedLocation location, IVersioned entry) {
             return GetDependentItems(entry).AddAssignment(location);
         }
 
@@ -559,7 +559,7 @@ namespace Microsoft.PythonTools.Analysis {
             return false;
         }
 
-        public virtual IEnumerable<IEncodedLocation> References {
+        public virtual IEnumerable<EncodedLocation> References {
             get {
                 if (_dependencies.Count != 0) {
                     foreach (var keyValue in _dependencies) {
@@ -573,7 +573,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        public virtual IEnumerable<IEncodedLocation> Definitions {
+        public virtual IEnumerable<EncodedLocation> Definitions {
             get {
                 if (_dependencies.Count != 0) {
                     foreach (var keyValue in _dependencies) {
@@ -650,10 +650,10 @@ namespace Microsoft.PythonTools.Analysis {
 
         public int DeclaringVersion { get; set; }
         public IPythonProjectEntry Entry { get; }
-        public IEncodedLocation Location { get; set; }
+        public EncodedLocation Location { get; set; }
         public override bool IsAssigned => true;
 
-        public override IEnumerable<IEncodedLocation> Definitions =>
+        public override IEnumerable<EncodedLocation> Definitions =>
             Enumerable.Repeat(Location, 1).Concat(base.Definitions);
     }
 

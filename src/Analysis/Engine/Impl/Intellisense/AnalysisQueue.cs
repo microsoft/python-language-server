@@ -135,7 +135,11 @@ namespace Microsoft.PythonTools.Intellisense {
             if (item is IGroupableAnalysisProjectEntry groupable) {
                 var added = _enqueuedGroups.Add(groupable.AnalysisGroup);
                 if (added) {
-                    Enqueue(new GroupAnalysis(groupable.AnalysisGroup, this), priority);
+                    try {
+                        Enqueue(new GroupAnalysis(groupable.AnalysisGroup, this), priority);
+                    } catch (ObjectDisposedException) when (_ppc.IsDisposed) {
+                        return;
+                    }
                 }
 
                 groupable.Analyze(cancellationToken, true);
