@@ -420,7 +420,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     return Empty;
                 }
 
-                foreach (var p in fd.ParametersInternal.MaybeEnumerate().Reverse()) {
+                foreach (var p in fd.Parameters.Reverse()) {
                     if (Index >= p.StartIndex) {
                         if (p.Annotation != null) {
                             if (Index < p.Annotation.StartIndex) {
@@ -464,10 +464,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     return Empty;
                 }
 
-                if (cd.BasesInternal != null && cd.BasesInternal.Length > 0 && Index >= cd.BasesInternal[0].StartIndex) {
-                    foreach (var p in cd.BasesInternal.Reverse()) {
+                if (cd.Bases.Length > 0 && Index >= cd.Bases[0].StartIndex) {
+                    foreach (var p in cd.Bases.Reverse()) {
                         if (Index >= p.StartIndex) {
-                            if (p.Name == null && Tree.LanguageVersion.Is3x() && !cd.BasesInternal.Any(b => b.Name == "metaclass")) {
+                            if (p.Name == null && Tree.LanguageVersion.Is3x() && !cd.Bases.Any(b => b.Name == "metaclass")) {
                                 additional = additional ?? new List<CompletionItem>();
                                 additional.Add(MetadataArgCompletion);
                             }

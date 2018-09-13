@@ -244,16 +244,14 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                 node.AddVariableReference(_globalScope, _bindRefs, Reference(node.Name));
             }
 
-            if (node.BasesInternal != null) {
-                // Base references are in the outer context
-                foreach (var b in node.BasesInternal) b.Expression.Walk(this);
+            // Base references are in the outer context
+            foreach (var b in node.Bases) {
+                b.Expression.Walk(this);
             }
 
             // process the decorators in the outer context
-            if (node.Decorators != null) {
-                foreach (var dec in node.Decorators?.Decorators.MaybeEnumerate().ExcludeDefault()) {
-                    dec.Walk(this);
-                }
+            foreach (var dec in (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
+                dec.Walk(this);
             }
 
             PushScope(node);
@@ -405,12 +403,12 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
             // process the default arg values and annotations in the outer
             // context
-            foreach (var p in node.ParametersInternal) {
+            foreach (var p in node.Parameters) {
                 p.DefaultValue?.Walk(this);
                 p.Annotation?.Walk(this);
             }
             // process the decorators in the outer context
-            foreach (var dec in node.Decorators?.Decorators.MaybeEnumerate().ExcludeDefault()) {
+            foreach (var dec in (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
                 dec.Walk(this);
             }
 
@@ -418,7 +416,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             node.ReturnAnnotation?.Walk(this);
             PushScope(node);
 
-            foreach (var p in node.ParametersInternal) {
+            foreach (var p in node.Parameters) {
                 p.Walk(_parameter);
             }
 

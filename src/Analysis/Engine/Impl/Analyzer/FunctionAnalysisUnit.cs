@@ -179,8 +179,8 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         internal void AnalyzeDefaultParameters(DDG ddg) {
             IVariableDefinition param;
             var scope = (FunctionScope)Scope;
-            for (var i = 0; i < Ast.ParametersInternal.Length; ++i) {
-                var p = Ast.ParametersInternal[i];
+            for (var i = 0; i < Ast.Parameters.Length; ++i) {
+                var p = Ast.Parameters[i];
                 if (p.Annotation != null) {
                     var val = ddg._eval.EvaluateAnnotation(p.Annotation);
                     if (val?.Any() == true && Scope.TryGetVariable(p.Name, out param)) {
@@ -230,7 +230,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return "{0}{1}({2})->{3}".FormatInvariant(
                 base.ToString(),
                 " def:",
-                string.Join(", ", Ast.ParametersInternal.Select(p => InterpreterScope.TryGetVariable(p.Name, out var v) ? v.Types.ToString() : "{}")),
+                string.Join(", ", Ast.Parameters.Select(p => InterpreterScope.TryGetVariable(p.Name, out var v) ? v.Types.ToString() : "{}")),
                 ((FunctionScope)Scope).ReturnValue.Types.ToString()
             );
         }

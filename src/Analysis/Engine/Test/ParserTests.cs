@@ -3444,9 +3444,9 @@ pass
                     Assert.AreEqual(name, funcDef.Name);
                 }
 
-                Assert.AreEqual(args?.Length ?? 0, funcDef.ParametersInternal.Length);
+                Assert.AreEqual(args?.Length ?? 0, funcDef.Parameters.Length);
                 for (int i = 0; i < (args?.Length ?? 0); i++) {
-                    args[i](funcDef.ParametersInternal[i]);
+                    args[i](funcDef.Parameters[i]);
                 }
 
                 body(funcDef.Body);
@@ -3492,12 +3492,12 @@ pass
                 }
 
                 if (bases != null) {
-                    Assert.AreEqual(bases.Length, classDef.BasesInternal.Length);
+                    Assert.AreEqual(bases.Length, classDef.Bases.Length);
                     for (int i = 0; i < bases.Length; i++) {
-                        bases[i](classDef.BasesInternal[i]);
+                        bases[i](classDef.Bases[i]);
                     }
                 } else {
-                    Assert.AreEqual(0, classDef.BasesInternal.Length);
+                    Assert.AreEqual(0, classDef.Bases.Length);
                 }
 
                 body(classDef.Body);

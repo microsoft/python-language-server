@@ -369,15 +369,15 @@ namespace Microsoft.PythonTools.Analysis {
             var classInfo = ((ClassScope)Scope).Class;
             var bases = new List<IAnalysisSet>();
 
-            if (Ast.BasesInternal.Length == 0) {
+            if (Ast.Bases.Length == 0) {
                 if (ddg.ProjectState.LanguageVersion.Is3x()) {
                     // 3.x all classes inherit from object by default
                     bases.Add(ddg.ProjectState.ClassInfos[BuiltinTypeId.Object]);
                 }
             } else {
                 // Process base classes
-                for (var i = 0; i < Ast.BasesInternal.Length; i++) {
-                    var baseClassArg = Ast.BasesInternal[i];
+                for (var i = 0; i < Ast.Bases.Length; i++) {
+                    var baseClassArg = Ast.Bases[i];
 
                     if (baseClassArg.Name == null) {
                         bases.Add(EvaluateBaseClass(ddg, classInfo, i, baseClassArg.Expression));

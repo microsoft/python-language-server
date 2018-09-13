@@ -69,7 +69,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             _scope.PushScope();
             if (self != null) {
-                var p0 = _target.ParametersInternal?.FirstOrDefault();
+                var p0 = _target.Parameters.FirstOrDefault();
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
                     _scope.SetInScope(p0.Name, self);
                 }
