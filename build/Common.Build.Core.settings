@@ -65,7 +65,7 @@
     <BuildOutputRoot Condition="'$(BuildOutputRoot)' == ''">$(BuildRoot)output\</BuildOutputRoot>
     <BuildOutputRoot Condition="!HasTrailingSlash($(BuildOutputRoot))">$(BuildOutputRoot)\</BuildOutputRoot>
 
-    <OutputPath Condition="'$(OutputPath)' == ''">$(BuildOutputRoot)bin\</OutputPath>
+    <OutputPath Condition="'$(OutputPath)' == ''">$(BuildOutputRoot)bin\$(Configuration)\</OutputPath>
     <OutputPath Condition="!HasTrailingSlash($(OutputPath))">$(OutputPath)\</OutputPath>
 
     <BinariesOutputPath Condition="'$(BinariesOutputPath)' == ''">$(BuildOutputRoot)bin\binaries\</BinariesOutputPath>

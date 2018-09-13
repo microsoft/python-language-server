@@ -63,6 +63,14 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return new AndConstraint<TAssertions>((TAssertions)this);
         }
 
+        public AndConstraint<TAssertions> HaveDescription(string description, string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(string.Equals(Subject.Description, description, StringComparison.Ordinal))
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName()} to be {description}{{reason}}, but it is {Subject.Description}.");
+
+            return new AndConstraint<TAssertions>((TAssertions)this);
+        }
+
         public AndConstraint<TAssertions> HaveOnlyMembers(params string[] memberNames)
             => HaveOnlyMembers(memberNames, string.Empty);
 
@@ -137,7 +145,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         public AndWhichConstraint<TAssertions, IPythonType> HavePythonType(IPythonType pythonType, string because = "", params object[] reasonArgs) {
-            Execute.Assertion.ForCondition(Subject.PythonType == pythonType)
+            Execute.Assertion.ForCondition(Equals(Subject.PythonType, pythonType))
                 .BecauseOf(because, reasonArgs)
                 .FailWith(Subject.PythonType != null
                     ? $"Expected {GetName()} to be {GetQuotedName(pythonType)}{{reason}}, but it is {GetQuotedName(Subject.PythonType)}."
