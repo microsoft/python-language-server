@@ -132,44 +132,42 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             if (Ast.Decorators != null) {
                 Expression expr = Ast.NameExpression;
 
-                foreach (var d in Ast.Decorators.DecoratorsInternal) {
-                    if (d != null) {
-                        var decorator = ddg._eval.Evaluate(d);
+                foreach (var d in Ast.Decorators.Decorators.ExcludeDefault()) {
+                    var decorator = ddg._eval.Evaluate(d);
 
-                        if (decorator.Contains(State.ClassInfos[BuiltinTypeId.Property])) {
-                            Function.IsProperty = true;
-                        } else if (decorator.Contains(State.ClassInfos[BuiltinTypeId.StaticMethod])) {
-                            // TODO: Warn if IsClassMethod is set
-                            Function.IsStatic = true;
-                        } else if (decorator.Contains(State.ClassInfos[BuiltinTypeId.ClassMethod])) {
-                            // TODO: Warn if IsStatic is set
-                            Function.IsClassMethod = true;
-                        } else if (ProcessAbstractDecorators(decorator)) {
-                            // No-op
-                        } else {
-                            Expression nextExpr;
-                            if (!_decoratorCalls.TryGetValue(d, out nextExpr)) {
-                                nextExpr = _decoratorCalls[d] = new CallExpression(d, new[] { new Arg(expr) });
-                                nextExpr.SetLoc(d.IndexSpan);
+                    if (decorator.Contains(State.ClassInfos[BuiltinTypeId.Property])) {
+                        Function.IsProperty = true;
+                    } else if (decorator.Contains(State.ClassInfos[BuiltinTypeId.StaticMethod])) {
+                        // TODO: Warn if IsClassMethod is set
+                        Function.IsStatic = true;
+                    } else if (decorator.Contains(State.ClassInfos[BuiltinTypeId.ClassMethod])) {
+                        // TODO: Warn if IsStatic is set
+                        Function.IsClassMethod = true;
+                    } else if (ProcessAbstractDecorators(decorator)) {
+                        // No-op
+                    } else {
+                        Expression nextExpr;
+                        if (!_decoratorCalls.TryGetValue(d, out nextExpr)) {
+                            nextExpr = _decoratorCalls[d] = new CallExpression(d, new[] { new Arg(expr) });
+                            nextExpr.SetLoc(d.IndexSpan);
+                        }
+                        expr = nextExpr;
+                        var decorated = AnalysisSet.Empty;
+                        var anyResults = false;
+                        foreach (var ns in decorator) {
+                            var fd = ns as FunctionInfo;
+                            if (fd != null && InterpreterScope.EnumerateTowardsGlobal.Any(s => s.AnalysisValue == fd)) {
+                                continue;
                             }
-                            expr = nextExpr;
-                            var decorated = AnalysisSet.Empty;
-                            var anyResults = false;
-                            foreach (var ns in decorator) {
-                                var fd = ns as FunctionInfo;
-                                if (fd != null && InterpreterScope.EnumerateTowardsGlobal.Any(s => s.AnalysisValue == fd)) {
-                                    continue;
-                                }
-                                decorated = decorated.Union(ns.Call(expr, this, new[] { types }, ExpressionEvaluator.EmptyNames));
-                                anyResults = true;
-                            }
+                            decorated = decorated.Union(ns.Call(expr, this, new[] { types }, ExpressionEvaluator.EmptyNames));
+                            anyResults = true;
+                        }
 
-                            // If processing decorators, update the current
-                            // function type. Otherwise, we are acting as if
-                            // each decorator returns the function unmodified.
-                            if (ddg.ProjectState.Limits.ProcessCustomDecorators && anyResults) {
-                                types = decorated;
-                            }
+                        // If processing decorators, update the current
+                        // function type. Otherwise, we are acting as if
+                        // each decorator returns the function unmodified.
+                        if (ddg.ProjectState.Limits.ProcessCustomDecorators && anyResults) {
+                            types = decorated;
                         }
                     }
                 }

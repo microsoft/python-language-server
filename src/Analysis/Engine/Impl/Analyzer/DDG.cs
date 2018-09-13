@@ -195,7 +195,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         public override bool Walk(ClassDefinition node) {
             // Evaluate decorators for references
             // TODO: Should apply decorators when assigning the class
-            foreach (var d in (node.Decorators?.DecoratorsInternal).MaybeEnumerate()) {
+            foreach (var d in (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
                 _eval.Evaluate(d);
             }
 

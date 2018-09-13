@@ -3467,16 +3467,15 @@ pass
                 var funcDef = (FunctionDefinition)stmt;
 
                 Assert.IsTrue(funcDef.IsCoroutine);
-
                 checkFuncDef(stmt);
             };
         }
 
         private static void CheckDecorators(Action<Expression>[] decorators, DecoratorStatement foundDecorators) {
             if (decorators != null) {
-                Assert.AreEqual(decorators.Length, foundDecorators.DecoratorsInternal.Length);
+                Assert.AreEqual(decorators.Length, foundDecorators.Decorators.Length);
                 for (int i = 0; i < decorators.Length; i++) {
-                    decorators[i](foundDecorators.DecoratorsInternal[i]);
+                    decorators[i](foundDecorators.Decorators[i]);
                 }
             } else {
                 Assert.AreEqual(null, foundDecorators);

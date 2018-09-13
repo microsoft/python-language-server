@@ -89,7 +89,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                 if (name != null) {
                     _binder.DefineName(name.Name);
                     name.AddVariableReference(_binder._globalScope, _binder._bindRefs, _binder.Reference(name.Name));
-                } else if (innerNode is TupleExpression) {                    
+                } else if (innerNode is TupleExpression) {
                     WalkTuple((TupleExpression)innerNode);
                 }
             }
@@ -251,15 +251,12 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
             // process the decorators in the outer context
             if (node.Decorators != null) {
-                foreach (Expression dec in node.Decorators.DecoratorsInternal) {
-                    if (dec != null) {
-                        dec.Walk(this);
-                    }
+                foreach (var dec in node.Decorators?.Decorators.MaybeEnumerate().ExcludeDefault()) {
+                    dec.Walk(this);
                 }
             }
-            
-            PushScope(node);
 
+            PushScope(node);
             node.ModuleNameVariable = _globalScope.EnsureGlobalVariable("__name__");
 
             // define the __doc__ and the __module__
@@ -321,11 +318,11 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             if (node.List != null) {
                 node.List.Walk(this);
             }
-            
+
             if (node.Body != null) {
                 node.Body.Walk(this);
             }
-            
+
             if (node.Else != null) {
                 node.Else.Walk(this);
             }
@@ -339,7 +336,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             if (node.Test != null) {
                 node.Test.Walk(this);
             }
-            
+
             if (node.Body != null) {
                 node.Body.Walk(this);
             }
@@ -347,7 +344,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             if (node.ElseStatement != null) {
                 node.ElseStatement.Walk(this);
             }
-            
+
             return false;
         }
 
@@ -373,7 +370,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
         // FromImportStatement
         public override bool Walk(FromImportStatement node) {
-            if (node.Names.Count != 1 || node.Names[0].Name !="*") {
+            if (node.Names.Count != 1 || node.Names[0].Name != "*") {
                 PythonVariable[] variables = new PythonVariable[node.Names.Count];
                 PythonReference[] references = null;
                 if (_bindRefs) {
@@ -399,28 +396,26 @@ namespace Microsoft.PythonTools.Parsing.Ast {
         // FunctionDefinition
         public override bool Walk(FunctionDefinition node) {
             node._nameVariable = _globalScope.EnsureGlobalVariable("__name__");
-            
+
             // Name is defined in the enclosing context
             if (!node.IsLambda) {
                 node.Variable = DefineName(node.Name);
                 node.AddVariableReference(_globalScope, _bindRefs, Reference(node.Name));
             }
-            
+
             // process the default arg values and annotations in the outer
             // context
-            foreach (Parameter p in node.ParametersInternal) {
+            foreach (var p in node.ParametersInternal) {
                 p.DefaultValue?.Walk(this);
                 p.Annotation?.Walk(this);
             }
             // process the decorators in the outer context
-            if (node.Decorators != null) {
-                foreach (var dec in node.Decorators.DecoratorsInternal) {
-                    dec?.Walk(this);
-                }
+            foreach (var dec in node.Decorators?.Decorators.MaybeEnumerate().ExcludeDefault()) {
+                dec.Walk(this);
             }
+
             // process the return annotation in the outer context
             node.ReturnAnnotation?.Walk(this);
-
             PushScope(node);
 
             foreach (var p in node.ParametersInternal) {
@@ -459,7 +454,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                                 node
                             );
                             break;
-                        
+
                         case VariableKind.Parameter:
                             ReportSyntaxError(
                                 "Name '{0}' is a function parameter and declared global".FormatUI(n),
@@ -484,7 +479,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                     // no previously definied variables, add it to the current scope
                     _currentScope.AddVariable(variable);
                 }
-                
+
                 nameNode.AddVariableReference(_globalScope, _bindRefs, Reference(n));
             }
             return true;
@@ -554,7 +549,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
         public override bool Walk(AssertStatement node) {
             return base.Walk(node);
-        }        
+        }
 
         // PythonAst
         public override bool Walk(PythonAst node) {
@@ -579,7 +574,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             }
             for (int i = 0; i < node.Names.Count; i++) {
                 string name;
-                if(node.AsNames[i] != null) {
+                if (node.AsNames[i] != null) {
                     name = node.AsNames[i].Name;
                 } else if (node.Names[i].Names.Count > 0) {
                     name = node.Names[i].Names[0].Name;

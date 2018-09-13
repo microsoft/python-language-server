@@ -319,7 +319,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return false;
             }
 
-            var dec = (node.Decorators?.DecoratorsInternal).MaybeEnumerate();
+            var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault();
             foreach (var d in dec) {
                 var obj = Scope.GetValueFromExpression(d);
                 if (obj == _interpreter.GetBuiltinType(BuiltinTypeId.Property)) {
@@ -345,7 +345,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             var existing = Scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonFunction;
-
             if (existing == null) {
                 existing = new AstPythonFunction(_ast, _module, CurrentClass, node, GetLoc(node));
                 Scope.SetInScope(node.Name, existing);

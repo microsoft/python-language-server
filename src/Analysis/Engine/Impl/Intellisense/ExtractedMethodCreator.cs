@@ -17,7 +17,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -61,25 +63,18 @@ namespace Microsoft.PythonTools.Intellisense {
             if (_targetScope is ClassDefinition) {
                 var fromScope = _scopes[_scopes.Count - 1] as FunctionDefinition;
                 Debug.Assert(fromScope != null);  // we don't allow extracting from classes, so we have to be coming from a function
-                if (fromScope != null) {
-                    if (fromScope.Decorators != null) {
-                        foreach (var decorator in fromScope.Decorators.DecoratorsInternal) {
-                            NameExpression name = decorator as NameExpression;
-                            if (name != null) {
-                                if (name.Name == "staticmethod") {
-                                    isStaticMethod = true;
-                                } else if (name.Name == "classmethod") {
-                                    isClassMethod = true;
-                                }
-                            }
-                        }
+                foreach (var name in fromScope?.Decorators?.Decorators.MaybeEnumerate().ExcludeDefault().OfType<NameExpression>()) {
+                    if (name.Name == "staticmethod") {
+                        isStaticMethod = true;
+                    } else if (name.Name == "classmethod") {
+                        isClassMethod = true;
                     }
+                }
 
-                    if (!isStaticMethod) {
-                        if (fromScope.ParametersInternal.Length > 0) {
-                            selfParam = fromScope.ParametersInternal[0].NameExpression;
-                            parameters.Add(new Parameter(selfParam, ParameterKind.Normal));
-                        }
+                if (!isStaticMethod) {
+                    if (fromScope.ParametersInternal.Length > 0) {
+                        selfParam = fromScope.ParametersInternal[0].NameExpression;
+                        parameters.Add(new Parameter(selfParam, ParameterKind.Normal));
                     }
                 }
             }
@@ -140,7 +135,7 @@ namespace Microsoft.PythonTools.Intellisense {
                 retStmt.SetLeadingWhiteSpace(_ast, leading);
 
                 body = new SuiteStatement(
-                    new Statement[] { 
+                    new Statement[] {
                         body,
                         retStmt
                     }
@@ -159,7 +154,7 @@ namespace Microsoft.PythonTools.Intellisense {
 
             var res = new FunctionDefinition(new NameExpression(_name), parameters.ToArray(), body, decorators);
             res.IsCoroutine = isCoroutine;
-            
+
             StringBuilder newCall = new StringBuilder();
             newCall.Append(_target.IndentationLevel);
             var method = res.ToCodeString(_ast);
