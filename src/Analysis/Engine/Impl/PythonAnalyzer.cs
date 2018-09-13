@@ -58,7 +58,7 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly List<string> _searchPaths = new List<string>();
         private readonly List<string> _typeStubPaths = new List<string>();
         private readonly Dictionary<string, List<SpecializationInfo>> _specializationInfo = new Dictionary<string, List<SpecializationInfo>>();  // delayed specialization information, for modules not yet loaded...
-        private AnalysisLimits _limits;
+        private AnalysisLimits _limits = AnalysisLimits.GetDefaultLimits();
         private static object _nullKey = new object();
         private readonly SemaphoreSlim _reloadLock = new SemaphoreSlim(1, 1);
         private Dictionary<IProjectEntry[], AggregateProjectEntry> _aggregates = new Dictionary<IProjectEntry[], AggregateProjectEntry>(AggregateComparer.Instance);
@@ -623,11 +623,11 @@ namespace Microsoft.PythonTools.Analysis {
         public AnalysisLimits Limits {
             get { return _limits; }
             set {
+                value = value ?? AnalysisLimits.GetDefaultLimits();
                 var limits = _limits;
                 _limits = value;
 
-                if ((limits == null && _limits != null)
-                    || limits.UseTypeStubPackages ^ _limits.UseTypeStubPackages
+                if (limits.UseTypeStubPackages ^ _limits.UseTypeStubPackages
                     || limits.UseTypeStubPackagesExclusively ^ _limits.UseTypeStubPackagesExclusively) {
                     SearchPathsChanged?.Invoke(this, EventArgs.Empty);
                 }
