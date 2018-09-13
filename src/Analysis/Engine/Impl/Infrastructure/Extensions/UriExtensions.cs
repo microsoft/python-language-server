@@ -16,6 +16,7 @@
 
 using System;
 using System.Net;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
     internal static class UriExtensions {
@@ -34,13 +35,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             return uri.LocalPath;
         }
 
-        private static bool IsWindows() {
-#if DESKTOP
-            return true;
-#else
-            return System.Runtime.InteropServices.RuntimeInformation
-                .IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
-#endif
-        }
+        private static bool IsWindows() 
+            => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
     }
 }

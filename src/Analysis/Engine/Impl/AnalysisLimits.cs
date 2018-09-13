@@ -48,10 +48,6 @@ namespace Microsoft.PythonTools.Analysis {
             return limits;
         }
 
-#if DESKTOP
-
-#endif
-
         /// <summary>
         /// The key to use with ProjectEntry.Properties to override the call
         /// depth for functions in that module.
