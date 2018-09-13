@@ -208,7 +208,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override PythonMemberType MemberType => PythonMemberType.Field;
+        public override PythonMemberType MemberType => PythonMemberType.Instance;
 
         public override IPythonProjectEntry DeclaringModule => _declaringModule;
 

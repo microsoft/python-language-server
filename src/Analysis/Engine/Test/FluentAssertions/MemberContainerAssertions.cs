@@ -42,6 +42,9 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
         protected override string Identifier => nameof(IMemberContainer);
 
+        public AndWhichConstraint<TAssertions, AstPythonMultipleMembers> HaveMultipleTypesMember(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<AstPythonMultipleMembers>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
+
         public AndWhichConstraint<TAssertions, AstPythonType> HaveClass(string name, string because = "", params object[] reasonArgs)
             => HaveMember<AstPythonType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
 

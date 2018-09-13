@@ -46,7 +46,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         protected override string Identifier => nameof(IAnalysisValue);
-        
+
         public AndConstraint<TAssertions> HaveName(string name, string because = "", params object[] reasonArgs) {
             Execute.Assertion.ForCondition(string.Equals(Subject.Name, name, StringComparison.Ordinal))
                 .BecauseOf(because, reasonArgs)
@@ -67,7 +67,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => HaveOnlyMembers(memberNames, string.Empty);
 
         public AndConstraint<TAssertions> HaveOnlyMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
-            var actualNames = Subject.GetAllMembers(((ModuleScope)OwnerScope.GlobalScope).Module.InterpreterContext).Keys.ToArray();
+            var actualNames = Subject.GetAllMembers(ModuleContext).Keys.ToArray();
             var expectedNames = memberNames.ToArray();
 
             var errorMessage = GetAssertCollectionOnlyContainsMessage(actualNames, expectedNames, GetName(), "member", "members");
@@ -83,10 +83,26 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => HaveMembers(memberNames, string.Empty);
 
         public AndConstraint<TAssertions> HaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
-            var actualNames = Subject.GetAllMembers(((ModuleScope)OwnerScope.GlobalScope).Module.InterpreterContext).Keys.ToArray();
+            var actualNames = Subject.GetAllMembers(ModuleContext).Keys.ToArray();
             var expectedNames = memberNames.ToArray();
 
             var errorMessage = GetAssertCollectionContainsMessage(actualNames, expectedNames, GetName(), "member", "members");
+
+            Execute.Assertion.ForCondition(errorMessage == null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith(errorMessage);
+
+            return new AndConstraint<TAssertions>((TAssertions)this);
+        }
+
+        public AndConstraint<TAssertions> NotHaveMembers(params string[] memberNames)
+            => NotHaveMembers(memberNames, string.Empty);
+
+        public AndConstraint<TAssertions> NotHaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
+            var actualNames = Subject.GetAllMembers(ModuleContext).Keys.ToArray();
+            var expectedNames = memberNames.ToArray();
+
+            var errorMessage = GetAssertCollectionNotContainMessage(actualNames, expectedNames, GetName(), "member", "members");
 
             Execute.Assertion.ForCondition(errorMessage == null)
                 .BecauseOf(because, reasonArgs)
@@ -107,7 +123,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             Execute.Assertion.ForCondition(GetMember(memberName, out var member, out var errorMessage))
                 .BecauseOf(because, reasonArgs)
                 .FailWith(errorMessage);
-            
+
             AssertTypeIds(member, typeIds, memberName, Is3X(OwnerScope), because, reasonArgs);
             return new AndConstraint<TAssertions>((TAssertions)this);
         }
@@ -129,7 +145,19 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             return new AndWhichConstraint<TAssertions, IPythonType>((TAssertions)this, pythonType);
         }
-        
+
+        public AndWhichConstraint<TAssertions, IEnumerable<IPythonType>> HavePythonTypes(IEnumerable<IPythonType> pythonTypes, string because = "", params object[] reasonArgs) {
+            var members = Subject.GetAllMembers(null).OfType<IPythonType>();
+
+            Execute.Assertion.ForCondition(Subject.MemberType == PythonMemberType.Multiple)
+                .BecauseOf(because, reasonArgs)
+                .FailWith(Subject.PythonType != null
+                    ? $"Expected {GetName()} to be {'a'}{{reason}}, but it is {GetQuotedName(Subject.PythonType)}."
+                    : $"Expected {GetName()} to be {'b'}{{reason}}, but it is null.");
+
+            return new AndWhichConstraint<TAssertions, IEnumerable<IPythonType>>((TAssertions)this, members);
+        }
+
         public AndConstraint<TAssertions> HaveOverloads(string because = "", params object[] reasonArgs) {
             Execute.Assertion.ForCondition(Subject.Overloads.Any())
                 .BecauseOf(because, reasonArgs)
@@ -166,15 +194,14 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         private static string GetOverloadsString(int overloadsCount)
-            => overloadsCount > 1 
-                ? $"has {overloadsCount} overloads" 
-                : overloadsCount > 0 
-                    ? "has only one overload" 
+            => overloadsCount > 1
+                ? $"has {overloadsCount} overloads"
+                : overloadsCount > 0
+                    ? "has only one overload"
                     : "has no overloads";
 
         public AndWhichConstraint<TAssertions, AnalysisValueTestInfo<TMember>> HaveMember<TMember>(string name, string because = "", params object[] reasonArgs)
-            where TMember : class, IAnalysisValue
-        {
+            where TMember : class, IAnalysisValue {
             NotBeNull(because, reasonArgs);
 
             Execute.Assertion.ForCondition(GetMember(name, out TMember typedMember, out var errorMessage))
@@ -185,12 +212,12 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         private bool GetMember<TMember>(string name, out TMember typedMember, out string errorMessage) where TMember : class, IAnalysisValue {
-            try { 
+            try {
                 var member = Subject.GetMember(null, new AnalysisUnit(null, null, OwnerScope, true), name);
                 typedMember = member as TMember;
 
-                errorMessage = member != null 
-                    ? typedMember != null 
+                errorMessage = member != null
+                    ? typedMember != null
                         ? null
                         : $"Expected {GetName()} to have a member '{name}' of type {typeof(TMember)}{{reason}}, but its type is {member.GetType()}."
                     : $"Expected {GetName()} to have a member {name} of type {typeof(TMember)}{{reason}}.";
@@ -203,10 +230,10 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         private bool GetMember(string name, out IAnalysisSet member, out string errorMessage) {
-            try { 
+            try {
                 member = Subject.GetMember(null, new AnalysisUnit(null, null, OwnerScope, true), name);
 
-                errorMessage = member != null 
+                errorMessage = member != null
                     ? null
                     : $"Expected {GetName()} to have a member {name}{{reason}}.";
                 return member != null;
@@ -220,5 +247,6 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         protected virtual string GetName() => $"{GetQuotedName(Subject)} {ScopeDescription}";
 
         private string GetOverloadName(string overload) => $"'{overload}' overload {ScopeDescription}";
+        private IModuleContext ModuleContext => ((ModuleScope)OwnerScope.GlobalScope).Module.InterpreterContext;
     }
 }

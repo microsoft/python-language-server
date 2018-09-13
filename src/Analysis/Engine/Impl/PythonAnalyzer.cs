@@ -34,7 +34,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// <summary>
     /// Performs analysis of multiple Python code files and enables interrogation of the resulting analysis.
     /// </summary>
-    public partial class PythonAnalyzer : IPythonAnalyzer,  IDisposable {
+    public partial class PythonAnalyzer : IPythonAnalyzer, IDisposable {
         private readonly IPythonInterpreter _interpreter;
         private readonly bool _disposeInterpreter;
         private readonly IPythonInterpreterFactory _interpreterFactory;
@@ -55,7 +55,7 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly List<string> _searchPaths = new List<string>();
         private readonly List<string> _typeStubPaths = new List<string>();
         private readonly Dictionary<string, List<SpecializationInfo>> _specializationInfo = new Dictionary<string, List<SpecializationInfo>>();  // delayed specialization information, for modules not yet loaded...
-        private AnalysisLimits _limits;
+        private AnalysisLimits _limits = AnalysisLimits.GetDefaultLimits();
         private static object _nullKey = new object();
         private readonly SemaphoreSlim _reloadLock = new SemaphoreSlim(1, 1);
         private Dictionary<IProjectEntry[], AggregateProjectEntry> _aggregates = new Dictionary<IProjectEntry[], AggregateProjectEntry>(AggregateComparer.Instance);
@@ -604,7 +604,16 @@ namespace Microsoft.PythonTools.Analysis {
 
         public AnalysisLimits Limits {
             get { return _limits; }
-            set { _limits = value; }
+            set {
+                value = value ?? AnalysisLimits.GetDefaultLimits();
+                var limits = _limits;
+                _limits = value;
+
+                if (limits.UseTypeStubPackages ^ _limits.UseTypeStubPackages
+                    || limits.UseTypeStubPackagesExclusively ^ _limits.UseTypeStubPackagesExclusively) {
+                    SearchPathsChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
         }
 
         public bool EnableDiagnostics { get; set; }

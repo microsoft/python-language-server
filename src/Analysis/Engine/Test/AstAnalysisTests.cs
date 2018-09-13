@@ -69,7 +69,7 @@ namespace AnalysisTests {
 
             TestEnvironmentImpl.TestCleanup();
         }
-        
+
         private static AstPythonInterpreterFactory CreateInterpreterFactory(InterpreterConfiguration configuration) {
             configuration.AssertInstalled();
             var opts = new InterpreterFactoryCreationOptions {
@@ -82,7 +82,7 @@ namespace AnalysisTests {
             return new AstPythonInterpreterFactory(configuration, opts);
         }
 
-        private static Task<Server> CreateServerAsync(InterpreterConfiguration configuration = null, string searchPath = null) 
+        private static Task<Server> CreateServerAsync(InterpreterConfiguration configuration = null, string searchPath = null)
             => new Server().InitializeAsync(
                 configuration ?? PythonVersions.LatestAvailable,
                 searchPath ?? TestData.GetPath(@"TestData\AstAnalysis"));
@@ -355,16 +355,12 @@ class BankAccount(object):
         [TestMethod, Priority(0)]
         public async Task AstTypeStubPaths_NoStubs() {
             using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("import Package.Module\n\nc = Package.Module.Class()");
-                await server.GetAnalysisAsync(uri);
-
-                server.Analyzer.Limits = new AnalysisLimits {
-                    UseTypeStubPackages = false
-                };
-                server.Analyzer.SetTypeStubPaths(Enumerable.Empty<string>());
-                server.EnqueueItem(uri);
-
-                var analysis = await server.GetAnalysisAsync(uri);
+                var analysis = await GetStubBasedAnalysis(
+                    server, 
+                    "import Package.Module\n\nc = Package.Module.Class()",
+                    new AnalysisLimits { UseTypeStubPackages = false },
+                    searchPaths: Enumerable.Empty<string>(),
+                    stubPaths: Enumerable.Empty<string>());
 
                 var type = analysis.Should().HavePythonModuleVariable("Package")
                     .Which.Should().HaveNestedModule("Module")
@@ -381,89 +377,89 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/60")]
         public async Task AstTypeStubPaths_MergeStubs() {
             using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("import Package.Module\n\nc = Package.Module.Class()");
-                await server.GetAnalysisAsync(uri);
+                var analysis = await GetStubBasedAnalysis(server,
+                    "import Package.Module\n\nc = Package.Module.Class()",
+                    new AnalysisLimits {
+                        UseTypeStubPackages = true,
+                        UseTypeStubPackagesExclusively = false
+                    },
+                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
+                    stubPaths: Enumerable.Empty<string>());
 
-                server.Analyzer.Limits = new AnalysisLimits {
-                    UseTypeStubPackages = true,
-                    UseTypeStubPackagesExclusively = false
-                };
-
-                server.EnqueueItem(uri);
-
-                var analysis = await server.GetAnalysisAsync(uri);
-
-                var type = analysis.Should().HavePythonModuleVariable("Package")
+                analysis.Should().HavePythonModuleVariable("Package")
                     .Which.Should().HaveNestedModule("Module")
-                    .Which.Should().HaveClass("Class")
-                    .Which;
+                    .Which.Should().HaveMultipleTypesMember("Class");
 
                 analysis.Should().HaveVariable("c")
                     .WithValue<IBuiltinInstanceInfo>()
-                    .Which.Should().HaveMemberType(PythonMemberType.Instance)
-                    .And.HavePythonType(type)
                     .Which.Should().HaveMembers("untyped_method", "inferred_method", "typed_method")
                     .And.NotHaveMembers("typed_method_2");
             }
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/61")]
+
         public async Task AstTypeStubPaths_MergeStubsPath() {
             using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("import Package.Module\n\nc = Package.Module.Class()");
-                await server.GetAnalysisAsync(uri);
+                var analysis = await GetStubBasedAnalysis(
+                    server, 
+                    "import Package.Module\n\nc = Package.Module.Class()",
+                    null,
+                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
+                    stubPaths: new[] { TestData.GetPath("TestData\\AstAnalysis\\Stubs") });
 
-                server.Analyzer.SetTypeStubPaths(new[] { TestData.GetPath("TestData\\AstAnalysis\\Stubs") });
-                server.EnqueueItem(uri);
-
-                var analysis = await server.GetAnalysisAsync(uri);
-
-                var type = analysis.Should().HavePythonModuleVariable("Package")
+                analysis.Should().HavePythonModuleVariable("Package")
                     .Which.Should().HaveNestedModule("Module")
-                    .Which.Should().HaveClass("Class")
-                    .Which;
+                    .Which.Should().HaveMultipleTypesMember("Class"); // member information comes from multiple sources
 
                 analysis.Should().HaveVariable("c")
                     .WithValue<IBuiltinInstanceInfo>()
-                    .Which.Should().HaveMemberType(PythonMemberType.Instance)
-                    .And.HavePythonType(type)
                     .Which.Should().HaveMembers("untyped_method", "inferred_method", "typed_method_2")
                     .And.NotHaveMembers("typed_method");
             }
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/59")]
         public async Task AstTypeStubPaths_ExclusiveStubs() {
             using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("import Package.Module\n\nc = Package.Module.Class()");
-                await server.GetAnalysisAsync(uri);
+                var analysis = await GetStubBasedAnalysis(
+                    server, 
+                    "import Package.Module\n\nc = Package.Module.Class()",
+                    new AnalysisLimits {
+                        UseTypeStubPackages = true,
+                        UseTypeStubPackagesExclusively = true
+                    },
+                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
+                    stubPaths: new[] { TestData.GetPath("TestData\\AstAnalysis\\Stubs") });
 
-                server.Analyzer.Limits = new AnalysisLimits {
-                    UseTypeStubPackages = true,
-                    UseTypeStubPackagesExclusively = true
-                };
-                server.Analyzer.SetTypeStubPaths(new[] { TestData.GetPath("TestData\\AstAnalysis\\Stubs") });
-                server.EnqueueItem(uri);
-
-                var analysis = await server.GetAnalysisAsync(uri);
-
-                var type = analysis.Should().HavePythonModuleVariable("Package")
-                    .Which.Should().HaveNestedModule("Module")
-                    .Which.Should().HaveClass("Class")
-                    .Which;
+                analysis.Should().HavePythonModuleVariable("Package");
 
                 analysis.Should().HaveVariable("c")
                     .WithValue<IBuiltinInstanceInfo>()
-                    .Which.Should().HaveMemberType(PythonMemberType.Instance)
-                    .And.HavePythonType(type)
-                    .Which.Should().HaveMethod("typed_method_2")
+                    .Which.Should().HaveMembers("typed_method_2")
                     .And.NotHaveMembers("untyped_method", "inferred_method", "typed_method");
             }
+        }
+
+        private async Task<IModuleAnalysis> GetStubBasedAnalysis(
+            Server server,
+            string code,
+            AnalysisLimits limits,
+            IEnumerable<string> searchPaths,
+            IEnumerable<string> stubPaths) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            await server.GetAnalysisAsync(uri);
+
+            if (limits != null) {
+                server.Analyzer.Limits = limits;
+            }
+            server.Analyzer.SetSearchPaths(searchPaths);
+            server.Analyzer.SetTypeStubPaths(stubPaths);
+
+            server.EnqueueItem(uri);
+            return await server.GetAnalysisAsync(uri);
         }
 
         [TestMethod, Priority(0)]
@@ -483,9 +479,9 @@ class BankAccount(object):
             B.SetBases(null, new[] { D, E });
             A.SetBases(null, new[] { B, C });
 
-            AstPythonType.CalculateMro(A).Should().Equal(new []{ "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
-            AstPythonType.CalculateMro(B).Should().Equal(new []{ "B", "D", "E", "O" }, (p, n) => p.Name == n);
-            AstPythonType.CalculateMro(C).Should().Equal(new []{ "C", "D", "F", "O" }, (p, n) => p.Name == n);
+            AstPythonType.CalculateMro(A).Should().Equal(new[] { "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
+            AstPythonType.CalculateMro(B).Should().Equal(new[] { "B", "D", "E", "O" }, (p, n) => p.Name == n);
+            AstPythonType.CalculateMro(C).Should().Equal(new[] { "C", "D", "F", "O" }, (p, n) => p.Name == n);
         }
 
         private static IPythonModule Parse(string path, PythonLanguageVersion version) {
@@ -710,7 +706,7 @@ class BankAccount(object):
 
                         var ast = ((AstScrapedPythonModule)mod).Ast;
 
-                        
+
                         var imports = ((Ast.SuiteStatement)ast.Body).Statements
                             .OfType<Ast.ImportStatement>()
                             .SelectMany(s => s.Names)
@@ -960,18 +956,18 @@ l = iterfind()";
             string[] firstMembers;
 
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.Limits = new AnalysisLimits {UseTypeStubPackages = false};
+                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = false };
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"import urllib");
 
-                firstMembers = server.Analyzer.GetModuleMembers(analysis.InterpreterContext, new[] {"urllib"})
+                firstMembers = server.Analyzer.GetModuleMembers(analysis.InterpreterContext, new[] { "urllib" })
                     .Select(m => m.Name)
                     .ToArray();
 
-                firstMembers.Should().NotBeEmpty().And.Contain(new [] {"parse", "request"});
+                firstMembers.Should().NotBeEmpty().And.Contain(new[] { "parse", "request" });
             }
 
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new [] { TypeShedPath });
+                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"import urllib");
 
                 var secondMembers = server.Analyzer.GetModuleMembers(analysis.InterpreterContext, new[] { "urllib" })
@@ -985,7 +981,7 @@ l = iterfind()";
         [TestMethod, Priority(0)]
         public async Task TypeShedSysExcInfo() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] {TypeShedPath});
+                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
                 var code = @"import sys
 
 e1, e2, e3 = sys.exc_info()";
@@ -1005,7 +1001,7 @@ e1, e2, e3 = sys.exc_info()";
         [TestMethod, Priority(0)]
         public async Task TypeShedJsonMakeScanner() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] {TypeShedPath});
+                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
                 var code = @"import _json
 
 scanner = _json.make_scanner()";
@@ -1024,7 +1020,7 @@ scanner = _json.make_scanner()";
         [TestMethod, Priority(0)]
         public async Task TypeShedSysInfo() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] {TypeShedPath});
+                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
                 server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = true };
 
                 var code = @"import sys
