@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.Python.UnitTests.Core.MSTest;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Infrastructure;
@@ -3270,7 +3271,6 @@ class bcd(abc):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/62")]
         public async Task ReferencesCrossMultiModule() {
             var fobText = @"
 from oarbaz import abc
@@ -3681,7 +3681,7 @@ mod1.l.append(a)
                 state.AssertIsInstance("l[0]", "C");
             }
         }
-
+*/
         [TestMethod, Priority(0)]
         public async Task SpecialListMethodsCrossUnitAnalysis() {
             var code = @"x = []
@@ -3696,9 +3696,12 @@ for fob in x:
 oar = x.pop()
 ";
 
-            var entry = ProcessText(code);
-            entry.AssertIsInstance("fob", code.IndexOf("print(fob)"), BuiltinTypeId.Int);
-            entry.AssertIsInstance("oar", BuiltinTypeId.Int);
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                analysis.Should().HaveVariable("oar").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("fob").OfType(BuiltinTypeId.Int);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -3708,14 +3711,18 @@ x = {2, 3, 4}
 for abc in x:
     print(abc)
 ";
-            var entry = ProcessText(code);
-            entry.AssertDescription("x", "set[int]");
-            entry.AssertIsInstance("abc", code.IndexOf("print(abc)"), BuiltinTypeId.Int);
+
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                analysis.Should().HaveVariable("x").WithDescription("set[int]")
+                    .And.HaveVariable("abc").OfType(BuiltinTypeId.Int);
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task SetOperators() {
-            var entry = ProcessText(@"
+            var code = @"
 x = {1, 2, 3}
 y = {3.14, 2.718}
 
@@ -3738,82 +3745,119 @@ y_or_x_0 = next(iter(y_or_x))
 y_and_x_0 = next(iter(y_and_x))
 y_sub_x_0 = next(iter(y_sub_x))
 y_xor_x_0 = next(iter(y_xor_x))
-");
-            entry.AssertIsInstance("x", BuiltinTypeId.Set);
-            entry.AssertIsInstance("y", BuiltinTypeId.Set);
-            foreach (var op in new[] { "or", "and", "sub", "xor" }) {
-                entry.AssertIsInstance("x_" + op + "_y", BuiltinTypeId.Set);
-                entry.AssertIsInstance("y_" + op + "_x", BuiltinTypeId.Set);
+";
 
-                if (op == "or") {
-                    entry.AssertIsInstance("x_" + op + "_y_0", BuiltinTypeId.Int, BuiltinTypeId.Float);
-                    entry.AssertIsInstance("y_" + op + "_x_0", BuiltinTypeId.Int, BuiltinTypeId.Float);
-                } else {
-                    entry.AssertIsInstance("x_" + op + "_y_0", BuiltinTypeId.Int);
-                    entry.AssertIsInstance("y_" + op + "_x_0", BuiltinTypeId.Float);
-                }
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("y").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("x_or_y").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("y_or_x").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("x_and_y").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("y_and_x").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("x_sub_y").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("y_sub_x").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("x_xor_y").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("y_xor_x").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("x_or_y_0").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Float)
+                    .And.HaveVariable("y_or_x_0").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Float)
+                    .And.HaveVariable("x_and_y_0").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("y_and_x_0").OfType(BuiltinTypeId.Float)
+                    .And.HaveVariable("x_sub_y_0").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("y_sub_x_0").OfType(BuiltinTypeId.Float)
+                    .And.HaveVariable("x_xor_y_0").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("y_xor_x_0").OfType(BuiltinTypeId.Float);
             }
-
         }
 
         [TestMethod, Priority(0)]
         public async Task GetVariablesDictionaryGet() {
-            var entry = ProcessText(@"x = {42:'abc'}");
-            entry.AssertDescription("x.get", "bound built-in method get");
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"x = {42:'abc'}");
+                analysis.Should().HaveVariable("x").WithValue<DictionaryInfo>()
+                    .Which.Should().HaveMember<SpecializedCallable>("get")
+                    .Which.Should().HaveDescription("bound built-in method get");
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task DictMethods() {
-            var entry = ProcessTextV2("x = {42:'abc'}");
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"x = {42:'abc'}
+a = x.items()[0][0]
+b = x.items()[0][1]
+c = x.keys()[0]
+d = x.values()[0]
+e = x.pop(1)
+f = x.popitem()[0]
+g = x.popitem()[1]
+h = x.iterkeys().next()
+i = x.itervalues().next()
+j = x.iteritems().next()[0]
+k = x.iteritems().next()[1]
+");
 
-            entry.AssertIsInstance("x.items()[0][0]", BuiltinTypeId.Int);
-            entry.AssertIsInstance("x.items()[0][1]", BuiltinTypeId.Str);
-            entry.AssertIsInstance("x.keys()[0]", BuiltinTypeId.Int);
-            entry.AssertIsInstance("x.values()[0]", BuiltinTypeId.Str);
-            entry.AssertIsInstance("x.pop(1)", BuiltinTypeId.Str);
-            entry.AssertIsInstance("x.popitem()[0]", BuiltinTypeId.Int);
-            entry.AssertIsInstance("x.popitem()[1]", BuiltinTypeId.Str);
-            entry.AssertIsInstance("x.iterkeys().next()", BuiltinTypeId.Int);
-            entry.AssertIsInstance("x.itervalues().next()", BuiltinTypeId.Str);
-            entry.AssertIsInstance("x.iteritems().next()[0]", BuiltinTypeId.Int);
-            entry.AssertIsInstance("x.iteritems().next()[1]", BuiltinTypeId.Str);
+                analysis.Should().HaveVariable("x").WithValue<DictionaryInfo>()
+                    .And.HaveVariable("a").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("b").OfType(BuiltinTypeId.Str)
+                    .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("d").OfType(BuiltinTypeId.Str)
+                    .And.HaveVariable("e").OfType(BuiltinTypeId.Str)
+                    .And.HaveVariable("f").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("g").OfType(BuiltinTypeId.Str)
+                    .And.HaveVariable("h").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("i").OfType(BuiltinTypeId.Str)
+                    .And.HaveVariable("j").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("k").OfType(BuiltinTypeId.Str);
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task DictUpdate() {
-            var entry = ProcessTextV2(@"
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
 a = {42:100}
 b = {}
 b.update(a)
+c = b.items()[0][0]
+d = b.items()[0][1]
 ");
 
-            entry.AssertIsInstance("b.items()[0][0]", BuiltinTypeId.Int);
-            entry.AssertIsInstance("b.items()[0][1]", BuiltinTypeId.Int);
+                analysis.Should().HaveVariable("b").WithValue<DictionaryInfo>()
+                    .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("d").OfType(BuiltinTypeId.Int);
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task DictEnum() {
-            var entry = ProcessText(@"
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
 for x in {42:'abc'}:
     print(x)
 ");
 
-            entry.AssertIsInstance("x", BuiltinTypeId.Int);
+                analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task FutureDivision() {
-            var entry = ProcessText(@"
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
 from __future__ import division
 x = 1/2
             ");
 
-            entry.AssertIsInstance("x", BuiltinTypeId.Float);
+                analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Float);
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task BoundMethodDescription() {
-            var entry = ProcessText(@"
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
 class C:
     def f(self):
         'doc string'
@@ -3821,10 +3865,9 @@ class C:
 a = C()
 b = a.f
             ");
+                analysis.Should().HaveVariable("b").WithDescription("method f of test-module.C objects");
 
-            entry.AssertDescription("b", "method f of test-module.C objects");
-
-            entry = ProcessText(@"
+                await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"
 class C(object):
     def f(self):
         'doc string'
@@ -3832,29 +3875,28 @@ class C(object):
 a = C()
 b = a.f
             ");
-
-            entry.AssertDescription("b", "method f of test-module.C objects");
+                analysis.Should().HaveVariable("b").WithDescription("method f of test-module.C objects");
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task LambdaExpression() {
-            var entry = ProcessText(@"
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
 x = lambda a: a
 y = x(42)
 ");
+                analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);
 
-            entry.AssertIsInstance("y", BuiltinTypeId.Int);
-
-            entry = ProcessText(@"
+                await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"
 def f(a):
     return a
 
 x = lambda b: f(b)
 y = x(42)
 ");
-
-            entry.AssertIsInstance("y", BuiltinTypeId.Int);
-
+                analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -3868,19 +3910,22 @@ x = []
 y = ()
 f(lambda x=x:x, lambda x=y:x)";
 
-            var entry = ProcessText(code);
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
-            // default value, should be a list
-            entry.AssertIsInstance("x", code.IndexOfEnd("lambda x=x"), BuiltinTypeId.List);
+                var function = analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.List)
+                    .And.HaveVariable("y").OfType(BuiltinTypeId.Tuple)
+                    .And.HaveFunction("f")
+                    .Which;
 
-            // parameter used in the lambda, should be list and str
-            entry.AssertIsInstance("x", code.IndexOfEnd("lambda x=x:x"), BuiltinTypeId.List, BuiltinTypeId.Str);
+                function.Should().HaveParameter("l1").WithValue<IFunctionInfo>()
+                    .Which.Should().HaveFunctionScope()
+                    .Which.Should().HaveParameter("x").OfTypes(BuiltinTypeId.List, BuiltinTypeId.Str);
 
-            // default value in the 2nd lambda, should be tuple
-            entry.AssertIsInstance("y", code.IndexOfEnd("lambda x=y"), BuiltinTypeId.Tuple);
-
-            // value in the 2nd lambda, should be tuple and int
-            entry.AssertIsInstance("x", code.IndexOfEnd("lambda x=y:x"), BuiltinTypeId.Tuple, BuiltinTypeId.Int);
+                function.Should().HaveParameter("l2").WithValue<IFunctionInfo>()
+                    .Which.Should().HaveFunctionScope()
+                    .Which.Should().HaveParameter("x").OfTypes(BuiltinTypeId.Tuple, BuiltinTypeId.Int);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -3893,43 +3938,55 @@ def f(x = x):
 f('abc')
 ";
 
-            var entry = ProcessText(code);
+            using (var server = await CreateServerAsync()) {
+                var uri = TestData.GetDefaultModuleUri();
+                await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                var referencesx1 = await server.SendFindReferences(uri, 2, 6);
+                var referencesx2 = await server.SendFindReferences(uri, 2, 10);
+                var referencesx3 = await server.SendFindReferences(uri, 3, 4);
 
-            entry.AssertReferences("x", code.IndexOf("def") + 6,
-                new VariableLocation(3, 7, VariableType.Definition),
-                new VariableLocation(4, 5, VariableType.Reference));
+                referencesx1.Should().OnlyHaveReferences(
+                    (uri, (2, 6, 2, 7), ReferenceKind.Definition),
+                    (uri, (3, 4, 3, 5), ReferenceKind.Reference)
+                );
 
-            entry.AssertReferences("x", code.IndexOf("def") + 10,
-                new VariableLocation(1, 1, VariableType.Definition),
-                new VariableLocation(3, 11, VariableType.Reference));
+                referencesx2.Should().OnlyHaveReferences(
+                    (uri, (0, 0, 0, 1), ReferenceKind.Definition),
+                    (uri, (2, 10, 2, 11), ReferenceKind.Reference)
+                );
 
-            entry.AssertReferences("x", code.IndexOf("    x") + 4,
-                new VariableLocation(3, 7, VariableType.Definition),
-                new VariableLocation(4, 5, VariableType.Reference));
+                referencesx3.Should().OnlyHaveReferences(
+                    (uri, (2, 6, 2, 7), ReferenceKind.Definition),
+                    (uri, (3, 4, 3, 5), ReferenceKind.Reference)
+                );
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task RecursiveClass() {
-            var entry = ProcessText(@"
+            var code = @"
 cls = object
 
 class cls(cls):
     abc = 42
-");
 
-            entry.GetMemberNames("cls", 1);
-            entry.AssertIsInstance("cls().abc", BuiltinTypeId.Int);
-            entry.AssertIsInstance("cls.abc", BuiltinTypeId.Int);
+a = cls().abc
+b = cls.abc
+";
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                var completion = await server.SendCompletion(TestData.GetDefaultModuleUri(), 8, 0);
 
-            AssertUtil.Contains(string.Join(Environment.NewLine, entry.GetCompletionDocumentation("", "cls")),
-                "cls",
-                "object"
-            );
+                analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("b").OfType(BuiltinTypeId.Int);
+
+                completion.Should().HaveLabels("cls", "object");
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task BadMethod() {
-            var entry = ProcessText(@"
+            var code = @"
 class cls(object): 
     def f(): 
         'help'
@@ -3937,48 +3994,51 @@ class cls(object):
 
 abc = cls()
 fob = abc.f()
-");
+";
 
-            entry.AssertIsInstance("fob", BuiltinTypeId.Int);
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                var signatures = await server.SendSignatureHelp(TestData.GetDefaultModuleUri(), 7, 11);
 
-            var sig = entry.GetSignatures("cls().f", 1).Single();
-            Assert.AreEqual("help", sig.Documentation);
+                analysis.Should().HaveVariable("fob").OfType(BuiltinTypeId.Int);
+                signatures.Should().HaveSingleSignature()
+                    .Which.Should().HaveMarkdownDocumentation("help");
+            }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task KeywordArguments() {
-            var funcDef = @"def f(a, b, c): 
-    pass";
-            var classWithInit = @"class f(object):
+        
+
+        [MatrixRow(@"
+def f(a, b, c): 
+    pass", 3, "f", DisplayName = "def f")]
+        [MatrixRow(@"
+class f(object):
     def __init__(self, a, b, c):
-        pass";
-            var classWithNew = @"class f(object):
+        pass", 4, "f", DisplayName = "class f, def __init__")]
+        [MatrixRow(@"
+class f(object):
     def __new__(cls, a, b, c):
-        pass";
-            var method = @"class x(object):
+        pass", 4, "f", DisplayName = "class f, def __new__")]
+        [MatrixRow(@"
+class x(object):
     def g(self, a, b, c):
         pass
 
-f = x().g";
-            var decls = new[] { funcDef, classWithInit, classWithNew, method };
+f = x().g", 6, "g", DisplayName = "class x, def g")]
+        [MatrixColumn("f(c = 'abc', b = 42, a = 3j)")]
+        [MatrixColumn("f(3j, c = 'abc', b = 42)")]
+        [MatrixColumn("f(3j, 42, c = 'abc')")]
+        [MatrixColumn("f(c = 'abc', b = 42, a = 3j, d = 42)")] // extra argument
+        [MatrixColumn("f(3j, 42, 'abc', d = 42)")]
+        [MatrixTestMethod(NameFormat = "{0}: {1}, {2}"), Priority(0)]
+        public async Task KeywordArguments(string functionDeclaration, int signatureLine, string expectedName, string functionCall) {
+            var code = functionDeclaration + Environment.NewLine + functionCall;
 
-            foreach (var decl in decls) {
-                string[] testCalls = new[] {
-                    "f(c = 'abc', b = 42, a = 3j)", "f(3j, c = 'abc', b = 42)", "f(3j, 42, c = 'abc')",
-                    "f(c = 'abc', b = 42, a = 3j, d = 42)",  // extra argument
-                    "f(3j, 42, 'abc', d = 42)",
-                };
+            using (var server = await CreateServerAsync()) {
+                await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                var signatures = await server.SendSignatureHelp(TestData.GetDefaultModuleUri(), signatureLine, 1);
 
-                foreach (var testCall in testCalls) {
-                    var text = decl + Environment.NewLine + testCall;
-                    Console.WriteLine(text);
-                    var entry = ProcessText(text);
-                    int i = text.IndexOf("pass");
-
-                    entry.AssertIsInstance("a", i, BuiltinTypeId.Complex);
-                    entry.AssertIsInstance("b", i, BuiltinTypeId.Int);
-                    entry.AssertIsInstance("c", i, BuiltinTypeId.Str);
-                }
+                signatures.Should().OnlyHaveSignature($"{expectedName}(a: complex, b: int, c: str)");
             }
         }
 
@@ -3990,104 +4050,80 @@ f = x().g";
 x = 100
 z = f(a=42, x)";
 
-            var entry = ProcessText(code, allowParseErrors: true);
-            entry.AssertIsInstance("z", BuiltinTypeId.Int);
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task PositionalSplat() {
-            var funcDef = @"def f(a, b, c, *d): 
-    pass";
-            var classWithInit = @"class f(object):
-    def __init__(self, a, b, c, *d):
-        pass";
-            var classWithNew = @"class f(object):
-    def __new__(cls, a, b, c, *d):
-        pass";
-            var method = @"class x(object):
-    def g(self, a, b, c, *d):
-        pass
-
-f = x().g";
-            var decls = new[] { funcDef, classWithInit, classWithNew, method };
-
-            foreach (var decl in decls) {
-                string[] testCalls = new[] {
-                    "f(*(3j, 42, 'abc'))",
-                    "f(*[3j, 42, 'abc'])",
-                    "f(*(3j, 42, 'abc', 4L))",  // extra argument
-                    "f(*[3j, 42, 'abc', 4L])",  // extra argument
-                    "f(3j, *(42, 'abc'))",
-                    "f(3j, 42, *('abc',))",
-                    "f(3j, *(42, 'abc', 4L))",
-                    "f(3j, 42, *('abc', 4L))",
-                    "f(3j, 42, 'abc', *[4L])",
-                    "f(3j, 42, 'abc', 4L)"
-                };
-
-                foreach (var testCall in testCalls) {
-                    var text = decl + Environment.NewLine + testCall;
-                    Console.WriteLine(testCall);
-                    var entry = ProcessText(text);
-                    int i = text.IndexOf("pass");
-
-                    entry.AssertIsInstance("a", i, BuiltinTypeId.Complex);
-                    entry.AssertIsInstance("b", i, BuiltinTypeId.Int);
-                    entry.AssertIsInstance("c", i, BuiltinTypeId.Str);
-                    entry.AssertIsInstance("d", i, BuiltinTypeId.Tuple);
-                    if (testCall.Contains("4L")) {
-                        entry.AssertIsInstance("d[0]", i, BuiltinTypeId.Long);
-                    }
-                }
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis.Should().HaveVariable("z").OfType(BuiltinTypeId.Int);
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task KeywordSplat() {
-            var funcDef = @"def f(a, b, c, **d): 
-    pass";
-            var classWithInit = @"class f(object):
+        [MatrixRow(@"def f(a, b, c, *d): 
+    pass", 3, "f", DisplayName = "def f")]
+        [MatrixRow(@"class f(object):
+    def __init__(self, a, b, c, *d):
+        pass", 4, "f", DisplayName = "class f, def __init__")]
+        [MatrixRow(@"class f(object):
+    def __new__(cls, a, b, c, *d):
+        pass", 4, "f", DisplayName = "class f, def __new__")]
+        [MatrixRow(@"class x(object):
+    def g(self, a, b, c, *d):
+        pass
+
+f = x().g", 6, "g", DisplayName = "class x, def g")]
+        [MatrixColumn("f(*(3j, 42, 'abc'))", "tuple")]
+        [MatrixColumn("f(*[3j, 42, 'abc'])", "tuple")]
+        [MatrixColumn("f(*(3j, 42, 'abc', 4L))", "tuple[long]")]
+        [MatrixColumn("f(*[3j, 42, 'abc', 4L])", "tuple[long]")]
+        [MatrixColumn("f(3j, *(42, 'abc'))", "tuple")]
+        [MatrixColumn("f(3j, 42, *('abc',))", "tuple")]
+        [MatrixColumn("f(3j, *(42, 'abc', 4L))", "tuple[long]")]
+        [MatrixColumn("f(3j, 42, *('abc', 4L))", "tuple[long]")]
+        [MatrixColumn("f(3j, 42, 'abc', *[4L])", "tuple[long]")]
+        [MatrixColumn("f(3j, 42, 'abc', 4L)", "tuple[long]")]
+        [MatrixTestMethod(NameFormat = "{0}: {1}, {2}"), Priority(0)]
+        public async Task PositionalSplat(string functionDeclaration, int signatureLine, string expectedName, string functionCall, string expectedDType) {
+            var code = functionDeclaration + Environment.NewLine + functionCall;
+
+            using (var server = await CreateServerAsync()) {
+                await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                var signatures = await server.SendSignatureHelp(TestData.GetDefaultModuleUri(), signatureLine, 1);
+
+                signatures.Should().OnlyHaveSignature($"{expectedName}(a: complex, b: int, c: str, *d: {expectedDType})");
+            }
+        }
+
+        [MatrixRow(@"def f(a, b, c, **d): 
+    pass", 3, "f", DisplayName = "def f")]
+        [MatrixRow(@"class f(object):
     def __init__(self, a, b, c, **d):
-        pass";
-            var classWithNew = @"class f(object):
+        pass", 4, "f", DisplayName = "class f, def __init__")]
+        [MatrixRow(@"class f(object):
     def __new__(cls, a, b, c, **d):
-        pass";
-            var method = @"class x(object):
+        pass", 4, "f", DisplayName = "class f, def __new__")]
+        [MatrixRow(@"class x(object):
     def g(self, a, b, c, **d):
         pass
 
-f = x().g";
-            var decls = new[] { funcDef, classWithInit, classWithNew, method };
+f = x().g", 6, "g", DisplayName = "class x, def g")]
+        [MatrixColumn("f(**{'a': 3j, 'b': 42, 'c': 'abc'})")]
+        [MatrixColumn("f(**{'c': 'abc', 'b': 42, 'a': 3j})")]
+        [MatrixColumn("f(**{'a': 3j, 'b': 42, 'c': 'abc', 'x': 4L})")]
+        [MatrixColumn("f(3j, **{'b': 42, 'c': 'abc'})")]
+        [MatrixColumn("f(3j, 42, **{'c': 'abc'})")]
+        [MatrixTestMethod(NameFormat = "{0}: {1}, {2}"), Priority(0)]
+        public async Task KeywordSplat(string functionDeclaration, int signatureLine, string expectedName, string functionCall) {
+            var code = functionDeclaration + Environment.NewLine + functionCall;
 
-            foreach (var decl in decls) {
-                string[] testCalls = new[] {
-                    //"f(**{'a': 3j, 'b': 42, 'c': 'abc'})",
-                    //"f(**{'c': 'abc', 'b': 42, 'a': 3j})",
-                    "f(**{'a': 3j, 'b': 42, 'c': 'abc', 'x': 4L})",  // extra argument
-                    //"f(3j, **{'b': 42, 'c': 'abc'})",
-                    //"f(3j, 42, **{'c': 'abc'})"
-                };
+            using (var server = await CreateServerAsync()) {
+                await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                var signatures = await server.SendSignatureHelp(TestData.GetDefaultModuleUri(), signatureLine, 1);
 
-                foreach (var testCall in testCalls) {
-                    var text = decl + Environment.NewLine + testCall;
-                    Console.WriteLine(testCall);
-                    var entry = ProcessText(text);
-                    int i = text.IndexOf("pass");
-
-                    entry.AssertIsInstance("a", i, BuiltinTypeId.Complex);
-                    entry.AssertIsInstance("b", i, BuiltinTypeId.Int);
-                    entry.AssertIsInstance("c", i, BuiltinTypeId.Str);
-                    entry.AssertIsInstance("d", i, BuiltinTypeId.Dict);
-                    if (testCall.Contains("4L")) {
-                        entry.AssertIsInstance("d['x']", i, BuiltinTypeId.Long);
-                    }
-                }
+                signatures.Should().OnlyHaveSignature($"{expectedName}(a: complex, b: int, c: str, **d: dict)");
             }
         }
 
         [TestMethod, Priority(0)]
         public async Task ForwardRef() {
-            var text = @"
+            var code = @"
 
 class D(object):
     def oar(self, x):
@@ -4103,28 +4139,27 @@ class C(object):
         return D()
     def baz(self): pass
 ";
-            var entry = ProcessTextV2(text);
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                var completionInD = await server.SendCompletion(TestData.GetDefaultModuleUri(), 3, 4);
+                var completionInOar = await server.SendCompletion(TestData.GetDefaultModuleUri(), 5, 8);
+                var completionForAbc = await server.SendCompletion(TestData.GetDefaultModuleUri(), 5, 12);
 
-            var fifty = entry.GetNamesNoBuiltins(text.IndexOf("abc.fob"), includeDunder: false);
-            AssertUtil.ContainsExactly(fifty, "C", "D", "a", "abc", "self", "x");
+                completionInD.Should().HaveLabels("C", "D", "oar")
+                    .And.NotContainLabels("a", "abc", "self", "x", "fob", "baz");
 
-            var three = entry.GetNamesNoBuiltins(text.IndexOf("def oar") + 1, includeDunder: false);
-            AssertUtil.ContainsExactly(three, "C", "D", "oar");
+                completionInOar.Should().HaveLabels("C", "D", "a", "oar", "abc", "self", "x")
+                    .And.NotContainLabels("fob", "baz");
 
-            entry.AssertHasAttr("abc", text.IndexOf("abc.fob"), "baz", "fob");
+                completionForAbc.Should().HaveLabels("baz", "fob");
 
-            entry.AssertIsInstance("x", text.IndexOf("abc.fob"), BuiltinTypeId.List, BuiltinTypeId.Str, BuiltinTypeId.Tuple);
-
-            AssertUtil.ContainsExactly(
-                entry.GetMemberNames("x", text.IndexOf("abc.fob"), GetMemberOptions.IntersectMultipleResults),
-                entry.StrMembers.Intersect(entry.ListMembers)
-            );
+                analysis.Should().HaveClass("D")
+                    .Which.Should().HaveFunction("oar")
+                    .Which.Should().HaveParameter("x").OfTypes(BuiltinTypeId.List, BuiltinTypeId.Str, BuiltinTypeId.Tuple);
+            };
         }
 
-        public static int GetIndex(string text, string substring) {
-            return text.IndexOf(substring);
-        }
-
+/*
         [TestMethod, Priority(0)]
         public async Task Builtins() {
             var text = @"

@@ -9,11 +9,12 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -28,6 +29,17 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         protected override string Identifier => nameof(SignatureHelp);
+
+        public AndWhichConstraint<SignatureHelpAssertions, SignatureInformation> OnlyHaveSignature(string signature, string because = "", params object[] reasonArgs) {
+            var constraint = HaveSingleSignature();
+            var actual = constraint.Which.label;
+
+            Execute.Assertion.ForCondition(string.Equals(actual, signature, StringComparison.Ordinal))
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected SignatureHelp to have single signature '{signature}'{{reason}}, but it has '{actual}'.");
+
+            return constraint;
+        }
 
         public AndWhichConstraint<SignatureHelpAssertions, SignatureInformation> HaveSingleSignature(string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
