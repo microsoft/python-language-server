@@ -60,9 +60,7 @@ namespace Microsoft.PythonTools.Intellisense {
             bool isStaticMethod = false, isClassMethod = false;
             var parameters = new List<Parameter>();
             NameExpression selfParam = null;
-            if (_targetScope is ClassDefinition) {
-                var fromScope = _scopes[_scopes.Count - 1] as FunctionDefinition;
-                Debug.Assert(fromScope != null);  // we don't allow extracting from classes, so we have to be coming from a function
+            if (_targetScope is ClassDefinition && _scopes[_scopes.Count - 1] is FunctionDefinition fromScope) {
                 foreach (var name in (fromScope?.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().OfType<NameExpression>()) {
                     if (name.Name == "staticmethod") {
                         isStaticMethod = true;
@@ -230,15 +228,12 @@ namespace Microsoft.PythonTools.Intellisense {
                 newCall.Append("await ");
             }
 
-            if (_targetScope is ClassDefinition) {
-                var fromScope = _scopes[_scopes.Count - 1] as FunctionDefinition;
-                Debug.Assert(fromScope != null);  // we don't allow extracting from classes, so we have to be coming from a function
-
+            if (_targetScope is ClassDefinition && _scopes[_scopes.Count - 1] is FunctionDefinition fromScope2) {
                 if (isStaticMethod) {
                     newCall.Append(_targetScope.Name);
                     newCall.Append('.');
-                } else if (fromScope != null && fromScope.Parameters.Length > 0) {
-                    newCall.Append(fromScope.Parameters[0].Name);
+                } else if (fromScope2 != null && fromScope2.Parameters.Length > 0) {
+                    newCall.Append(fromScope2.Parameters[0].Name);
                     newCall.Append('.');
                 }
             }
