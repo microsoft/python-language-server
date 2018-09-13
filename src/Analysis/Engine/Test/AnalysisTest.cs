@@ -3271,7 +3271,6 @@ class bcd(abc):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/62")]
         public async Task ReferencesCrossMultiModule() {
             var fobText = @"
 from oarbaz import abc
