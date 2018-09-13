@@ -27,7 +27,6 @@ namespace AnalysisTests {
     [TestClass]
     public class ExpressionFinderTests {
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/58")]
         public void FindExpressionsForTooltip() {
             var code = Parse(@"class C(object):
     def f(a):
@@ -62,7 +61,7 @@ b = C().f(1)
             AssertExpr(code, 5, 10, "C().f");
             AssertExpr(code, 5, 11, "1");
 
-            AssertExpr(code, 5, 10, 5, 12, "C().f(1)");
+            AssertExpr(code, 5, 10, 5, 12, "C().f");
         }
 
         [TestMethod, Priority(0)]

@@ -43,10 +43,10 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             res.Append("lambda");
             var commaWhiteSpace = this.GetListWhiteSpace(ast);
 
-            if (_function.ParametersInternal.Length > 0) {
+            if (_function.Parameters.Length > 0) {
                 var paramStr = new StringBuilder();
                 _function.ParamsToString(paramStr, ast, commaWhiteSpace, format);
-                if (paramStr.Length > 0 && !char.IsWhiteSpace(paramStr[0]) && !(_function.ParametersInternal[0] is ErrorParameter)) {
+                if (paramStr.Length > 0 && !char.IsWhiteSpace(paramStr[0]) && !(_function.Parameters[0] is ErrorParameter)) {
                     res.Append(' ');
                 }
                 res.Append(paramStr.ToString());

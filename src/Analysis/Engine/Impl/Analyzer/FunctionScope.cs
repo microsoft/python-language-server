@@ -94,7 +94,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         }
 
         internal void EnsureParameters(FunctionAnalysisUnit unit, bool usePlaceholders) {
-            var astParams = Function.FunctionDefinition.ParametersInternal;
+            var astParams = Function.FunctionDefinition.Parameters;
             for (int i = 0; i < astParams.Length; ++i) {
                 var p = astParams[i];
                 var name = p?.Name;
@@ -129,7 +129,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         }
 
         internal void EnsureParameterZero(FunctionAnalysisUnit unit) {
-            var p = Function.FunctionDefinition.ParametersInternal.FirstOrDefault();
+            var p = Function.FunctionDefinition.Parameters.FirstOrDefault();
             if (!string.IsNullOrEmpty(p?.Name) &&
                 p.Kind == ParameterKind.Normal &&
                 !unit.Function.IsStatic &&
@@ -173,7 +173,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         ) {
             EnsureParameters(unit, usePlaceholders);
 
-            var astParams = Function.FunctionDefinition.ParametersInternal;
+            var astParams = Function.FunctionDefinition.Parameters;
             var added = false;
             var entry = unit.DependencyProject;
             var state = unit.State;

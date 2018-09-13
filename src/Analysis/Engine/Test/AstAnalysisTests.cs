@@ -359,18 +359,13 @@ class BankAccount(object):
                     server, 
                     "import Package.Module\n\nc = Package.Module.Class()",
                     new AnalysisLimits { UseTypeStubPackages = false },
-                    searchPaths: Enumerable.Empty<string>(),
+                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
                     stubPaths: Enumerable.Empty<string>());
 
-                var type = analysis.Should().HavePythonModuleVariable("Package")
-                    .Which.Should().HaveNestedModule("Module")
-                    .Which.Should().HaveClass("Class")
-                    .Which;
+                analysis.Should().HavePythonModuleVariable("Package");
 
                 analysis.Should().HaveVariable("c")
                     .WithValue<IBuiltinInstanceInfo>()
-                    .Which.Should().HaveMemberType(PythonMemberType.Instance)
-                    .And.HavePythonType(type)
                     .Which.Should().HaveMembers("untyped_method", "inferred_method")
                     .And.NotHaveMembers("typed_method", "typed_method_2");
             }
@@ -388,9 +383,7 @@ class BankAccount(object):
                     searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
                     stubPaths: Enumerable.Empty<string>());
 
-                analysis.Should().HavePythonModuleVariable("Package")
-                    .Which.Should().HaveNestedModule("Module")
-                    .Which.Should().HaveMultipleTypesMember("Class");
+                analysis.Should().HavePythonModuleVariable("Package");
 
                 analysis.Should().HaveVariable("c")
                     .WithValue<IBuiltinInstanceInfo>()
@@ -410,9 +403,7 @@ class BankAccount(object):
                     searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
                     stubPaths: new[] { TestData.GetPath("TestData\\AstAnalysis\\Stubs") });
 
-                analysis.Should().HavePythonModuleVariable("Package")
-                    .Which.Should().HaveNestedModule("Module")
-                    .Which.Should().HaveMultipleTypesMember("Class"); // member information comes from multiple sources
+                analysis.Should().HavePythonModuleVariable("Package"); // member information comes from multiple sources
 
                 analysis.Should().HaveVariable("c")
                     .WithValue<IBuiltinInstanceInfo>()
@@ -449,8 +440,6 @@ class BankAccount(object):
             AnalysisLimits limits,
             IEnumerable<string> searchPaths,
             IEnumerable<string> stubPaths) {
-            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
-            await server.GetAnalysisAsync(uri);
 
             if (limits != null) {
                 server.Analyzer.Limits = limits;
@@ -458,7 +447,7 @@ class BankAccount(object):
             server.Analyzer.SetSearchPaths(searchPaths);
             server.Analyzer.SetTypeStubPaths(stubPaths);
 
-            server.EnqueueItem(uri);
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
             return await server.GetAnalysisAsync(uri);
         }
 

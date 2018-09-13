@@ -19,23 +19,17 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace Microsoft.PythonTools.Parsing.Ast {
-
     public class DecoratorStatement : Statement {
-        private readonly Expression[] _decorators;
-
         public DecoratorStatement(Expression[] decorators) {
-            _decorators = decorators;
+            Decorators = decorators ?? Array.Empty<Expression>();
         }
 
-        public IList<Expression> Decorators => _decorators;
-        internal Expression[] DecoratorsInternal => _decorators;
+        public Expression[] Decorators { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (var decorator in _decorators) {
-                    if (decorator != null) {
-                        decorator.Walk(walker);
-                    }
+                foreach (var decorator in Decorators) {
+                    decorator?.Walk(walker);
                 }
             }
             walker.PostWalk(this);
@@ -43,19 +37,17 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             var decorateWhiteSpace = this.GetNamesWhiteSpace(ast);
-            if (DecoratorsInternal != null) {
-                for (int i = 0, curWhiteSpace = 0; i < DecoratorsInternal.Length; i++) {
+            for (int i = 0, curWhiteSpace = 0; i < Decorators.Length; i++) {
+                if (decorateWhiteSpace != null) {
+                    format.ReflowComment(res, decorateWhiteSpace[curWhiteSpace++]);
+                }
+                res.Append('@');
+                if (Decorators[i] != null) {
+                    Decorators[i].AppendCodeString(res, ast, format);
                     if (decorateWhiteSpace != null) {
                         format.ReflowComment(res, decorateWhiteSpace[curWhiteSpace++]);
-                    }
-                    res.Append('@');
-                    if (DecoratorsInternal[i] != null) {
-                        DecoratorsInternal[i].AppendCodeString(res, ast, format);
-                        if (decorateWhiteSpace != null) {
-                            format.ReflowComment(res, decorateWhiteSpace[curWhiteSpace++]);
-                        } else {
-                            res.Append(Environment.NewLine);
-                        }
+                    } else {
+                        res.Append(Environment.NewLine);
                     }
                 }
             }
@@ -74,7 +66,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             if (decorateWhiteSpace != null && decorateWhiteSpace.Length > 0) {
                 decorateWhiteSpace[0] = whiteSpace;
             }
-            
+
         }
     }
 }
