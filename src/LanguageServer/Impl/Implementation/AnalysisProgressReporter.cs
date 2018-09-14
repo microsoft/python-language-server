@@ -15,18 +15,18 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     sealed class AnalysisProgressReporter : IDisposable {
         private readonly DisposableBag _disposables = new DisposableBag(nameof(AnalysisProgressReporter));
-        private readonly Dictionary<Uri, int> _activeAnalysis = new Dictionary<Uri, int>();
         private readonly IProgressService _progressService;
         private readonly ILogger _logger;
         private readonly Server _server;
         private readonly object _lock = new object();
         private IProgress _progress;
+        private Task _queueMonitoringTask;
 
         public AnalysisProgressReporter(Server server, IProgressService progressService, ILogger logger) {
             _progressService = progressService;
@@ -41,44 +41,45 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(() => _progress?.Dispose());
         }
 
-        public void Dispose() {
-            _disposables.TryDispose();
-        }
+        public void Dispose() => _disposables.TryDispose();
 
         private void OnAnalysisQueued(object sender, AnalysisQueuedEventArgs e) {
             lock (_lock) {
-                if (_activeAnalysis.ContainsKey(e.uri)) {
-                    _activeAnalysis[e.uri]++;
-                } else {
-                    _activeAnalysis[e.uri] = 1;
-                }
                 UpdateProgressMessage();
+                _queueMonitoringTask = _queueMonitoringTask ?? QueueMonitoringTask();
             }
         }
         private void OnAnalysisComplete(object sender, AnalysisCompleteEventArgs e) {
             lock (_lock) {
-                if (_activeAnalysis.TryGetValue(e.uri, out var count)) {
-                    if (count > 1) {
-                        _activeAnalysis[e.uri]--;
-                    } else {
-                        _activeAnalysis.Remove(e.uri);
-                    }
-                } else {
-                    _logger.TraceMessage($"Analysis completed for {e.uri} that is not in the dictionary.");
-                }
                 UpdateProgressMessage();
             }
         }
 
         private void UpdateProgressMessage() {
-            if(_activeAnalysis.Count > 0) {
+            var count = _server.EstimateRemainingWork();
+            if (count > 0) {
                 _progress = _progress ?? _progressService.BeginProgress();
-                _progress.Report(_activeAnalysis.Count == 1
+                _progress.Report(count == 1
                     ? Resources.AnalysisProgress_SingleItemRemaining
-                    : Resources.AnalysisProgress_MultipleItemsRemaining.FormatInvariant(_activeAnalysis.Count)).DoNotWait();
+                    : Resources.AnalysisProgress_MultipleItemsRemaining.FormatInvariant(count)).DoNotWait();
             } else {
+                EndProgress();
+            }
+        }
+
+        private async Task QueueMonitoringTask() {
+            try {
+                await _server.WaitForCompleteAnalysisAsync();
+            } finally {
+                EndProgress();
+            }
+        }
+
+        private void EndProgress() {
+            lock (_lock) {
                 _progress?.Dispose();
                 _progress = null;
+                _queueMonitoringTask = null;
             }
         }
     }
