@@ -684,7 +684,6 @@ import nt,
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/49")]
         public async Task ImportStarCorrectRefs() {
             var text1 = @"
 from mod2 import *
