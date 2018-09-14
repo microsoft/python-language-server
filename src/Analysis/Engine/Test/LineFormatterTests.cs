@@ -14,6 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -25,6 +26,7 @@ using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestUtilities;
 
 namespace AnalysisTests {
     [TestClass]
@@ -91,7 +93,7 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public async Task CommentWithLeadingWhitespace() {
-            await AssertSingleLineFormat("   # comment", "   # comment");
+            await AssertSingleLineFormat("   # comment", "# comment", editStart: 4);
         }
 
         [TestMethod, Priority(0)]
@@ -103,7 +105,7 @@ namespace AnalysisTests {
         public async Task BraceAfterKeyword() {
             await AssertSingleLineFormat("for x in(1,2,3)", "for x in (1, 2, 3)");
             await AssertSingleLineFormat("assert(1,2,3)", "assert (1, 2, 3)");
-            await AssertSingleLineFormat("if (True|False)and(False/True)not (! x )", "if (True | False) and (False / True) not (!x)");
+            await AssertSingleLineFormat("if (True|False)and(False/True)and not ( x )", "if (True | False) and (False / True) and not (x)");
             await AssertSingleLineFormat("while (True|False)", "while (True | False)");
             await AssertSingleLineFormat("yield(a%b)", "yield (a % b)");
         }
@@ -200,34 +202,72 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task ArrowOperator() {
-            await AssertSingleLineFormat("def f(a, \n    ** k: 11) -> 12: pass", "    **k: 11) -> 12: pass", line: 2);
+        public async Task Arrow() {
+            await AssertSingleLineFormat("def f(a, \n    ** k: 11) -> 12: pass", "**k: 11) -> 12: pass", line: 2, editStart: 5);
         }
 
         [TestMethod, Priority(0)]
         public async Task MultilineFunctionCall() {
             await AssertSingleLineFormat("def foo(x = 1)", "def foo(x=1)", line: 1);
             await AssertSingleLineFormat("def foo(a\n, x = 1)", ", x=1)", line: 2);
-            await AssertSingleLineFormat("foo(a  ,b,\n  x = 1)", "  x=1)", line: 2);
-            await AssertSingleLineFormat("if True:\n  if False:\n    foo(a  , bar(\n      x = 1)", "      x=1)", line: 4);
+            await AssertSingleLineFormat("foo(a  ,b,\n  x = 1)", "x=1)", line: 2, editStart: 3);
+            await AssertSingleLineFormat("if True:\n  if False:\n    foo(a  , bar(\n      x = 1)", "x=1)", line: 4, editStart: 7);
             await AssertSingleLineFormat("z=foo (0 , x= 1, (3+7) , y , z )", "z = foo(0, x=1, (3 + 7), y, z)", line: 1);
-            await AssertSingleLineFormat("foo (0,\n x= 1,", " x=1,", line: 2);
+            await AssertSingleLineFormat("foo (0,\n x= 1,", "x=1,", line: 2, editStart: 2);
 
             await AssertSingleLineFormat(@"async def fetch():
   async with aiohttp.ClientSession() as session:
     async with session.ws_connect(
-        ""http://127.0.0.1:8000/\"", headers = cookie) as ws: # add unwanted spaces", @"        ""http://127.0.0.1:8000/"", headers=cookie) as ws:  # add unwanted spaces", line: 4);
+        ""http://127.0.0.1:8000/"", headers = cookie) as ws: # add unwanted spaces", @"""http://127.0.0.1:8000/"", headers=cookie) as ws:  # add unwanted spaces", line: 4, editStart: 9);
 
             await AssertSingleLineFormat("def pos0key1(*, key): return key\npos0key1(key= 100)", "pos0key1(key=100)", line: 2);
-            await AssertSingleLineFormat("def test_string_literals(self):\n  x= 1; y =2; self.assertTrue(len(x) == 0 and x == y)", "  x = 1; y = 2; self.assertTrue(len(x) == 0 and x == y)", line: 2);
+            await AssertSingleLineFormat("def test_string_literals(self):\n  x= 1; y =2; self.assertTrue(len(x) == 0 and x == y)", "x = 1; y = 2; self.assertTrue(len(x) == 0 and x == y)", line: 2, editStart: 3);
         }
 
         [TestMethod, Priority(0)]
         public async Task GrammarFile() {
-            true.Should().BeFalse();
+            var src = TestData.GetPath("TestData", "Formatting", "pythonGrammar.py");
+
+            string fileContents;
+            using (var reader = new StreamReader(src, true)) {
+                fileContents = await reader.ReadToEndAsync();
+            }
+
+            var lines = fileContents.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+
+
+            using (var reader = new StringReader(fileContents)) {
+                var lineFormatter = new LineFormatter(reader, PythonLanguageVersion.V37);
+
+                for (var i = 0; i < lines.Length; i++) {
+                    var lineNum = i + 1;
+
+                    if (lineNum == 106) {
+                        "".ToString();
+                    }
+
+                    var edits = lineFormatter.FormatLine(lineNum);
+
+                    var lineText = lines[i];
+                    var lineTextOrig = lines[i];
+
+                    foreach (var edit in edits) {
+                        edit.range.start.line.Should().Be(i);
+                        edit.range.end.line.Should().Be(i);
+
+                        var startIndex = edit.range.start.character;
+                        var removeCount = edit.range.end.character - edit.range.start.character;
+
+                        lineText = lineText.Remove(startIndex, removeCount).Insert(startIndex, edit.newText);
+                    }
+
+                    lineText.Should().Be(lineTextOrig);
+                }
+
+            }
         }
 
-        public static async Task AssertSingleLineFormat(string text, string expected, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37) {
+        public static async Task AssertSingleLineFormat(string text, string expected, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37, int editStart = 1) {
             using (var reader = new StringReader(text)) {
                 var lineFormatter = new LineFormatter(reader, languageVersion);
 
@@ -236,8 +276,8 @@ namespace AnalysisTests {
                 edits.Should().OnlyContain(new TextEdit {
                     newText = expected,
                     range = new Range {
-                        start = new SourceLocation(1, 1),
-                        end = new SourceLocation(1, text.Length + 1)
+                        start = new SourceLocation(line, editStart),
+                        end = new SourceLocation(line, text.Split('\n')[line - 1].Length + 1)
                     }
                 });
             }
