@@ -46,7 +46,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private JsonRpc _rpc;
         private bool _filesLoaded;
-        private Task _progressReportingTask;
         private PathsWatcher _pathsWatcher;
         private IdleTimeTracker _idleTimeTracker;
         private AnalysisProgressReporter _analysisProgressReporter;
