@@ -17,9 +17,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.LanguageServer.Extensions;
 
-namespace Microsoft.Python.LanguageServer {
+namespace Microsoft.Python.LanguageServer.Extensions {
     /// <summary>
     /// Implemented on a class that can create a language server extension.
     /// This class must have a default constructor.

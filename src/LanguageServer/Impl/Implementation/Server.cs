@@ -124,10 +124,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void Dispose() => _disposableBag.TryDispose();
 
         #region ILogger
-        public void TraceMessage(IFormattable message) => TraceMessage(message.ToString());
-        public void TraceMessage(string message) {
+        public void TraceMessage(IFormattable message) {
             if (_traceLogging) {
-                LogMessage(MessageType.Log, message);
+                LogMessage(MessageType.Log, message.ToString());
             }
         }
         #endregion
