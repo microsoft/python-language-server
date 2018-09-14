@@ -43,21 +43,22 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IServiceContainer _services;
         private IUIService _ui;
         private ITelemetryService _telemetry;
-        private IProgressService _progress;
 
         private JsonRpc _rpc;
         private bool _filesLoaded;
         private Task _progressReportingTask;
         private PathsWatcher _pathsWatcher;
         private IdleTimeTracker _idleTimeTracker;
+        private AnalysisProgressReporter _analysisProgressReporter;
 
         public CancellationToken Start(IServiceContainer services, JsonRpc rpc) {
             _services = services;
             _ui = services.GetService<IUIService>();
             _telemetry = services.GetService<ITelemetryService>();
-            _progress = services.GetService<IProgressService>();
-
             _rpc = rpc;
+
+            var progress = services.GetService<IProgressService>();
+            _analysisProgressReporter = new AnalysisProgressReporter(_server, progress, _server);
 
             _server.OnLogMessage += OnLogMessage;
             _server.OnShowMessage += OnShowMessage;
@@ -66,8 +67,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _server.OnApplyWorkspaceEdit += OnApplyWorkspaceEdit;
             _server.OnRegisterCapability += OnRegisterCapability;
             _server.OnUnregisterCapability += OnUnregisterCapability;
-            _server.OnAnalysisQueued += OnAnalysisQueued;
-            _server.OnAnalysisComplete += OnAnalysisComplete;
 
             _disposables
                 .Add(() => _server.OnLogMessage -= OnLogMessage)
@@ -77,40 +76,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(() => _server.OnApplyWorkspaceEdit -= OnApplyWorkspaceEdit)
                 .Add(() => _server.OnRegisterCapability -= OnRegisterCapability)
                 .Add(() => _server.OnUnregisterCapability -= OnUnregisterCapability)
-                .Add(() => _server.OnAnalysisQueued -= OnAnalysisQueued)
-                .Add(() => _server.OnAnalysisComplete -= OnAnalysisComplete)
-                .Add(_prioritizer);
+                .Add(_prioritizer)
+                .Add(_analysisProgressReporter)
+                .Add(() => _pathsWatcher?.Dispose());
 
             return _sessionTokenSource.Token;
         }
 
-        private void OnAnalysisQueued(object sender, AnalysisQueuedEventArgs e) => HandleAnalysisQueueEvent();
-        private void OnAnalysisComplete(object sender, AnalysisCompleteEventArgs e) => HandleAnalysisQueueEvent();
-
-        private void HandleAnalysisQueueEvent()
-            => _progressReportingTask = _progressReportingTask ?? ProgressWorker();
-
-        private async Task ProgressWorker() {
-            await Task.Delay(1000);
-
-            var remaining = _server.EstimateRemainingWork();
-            if (remaining > 0) {
-                using (var p = _progress.BeginProgress()) {
-                    while (remaining > 0) {
-                        var items = remaining > 1 ? "items" : "item";
-                        // TODO: in localization this needs to be two different messages 
-                        // since not all languages allow sentence construction.
-                        await p.Report($"Analyzing workspace, {remaining} {items} remaining...");
-                        await Task.Delay(100);
-                        remaining = _server.EstimateRemainingWork();
-                    }
-                }
-            }
-            _progressReportingTask = null;
-        }
-
         public void Dispose() {
-            _pathsWatcher?.Dispose();
             _disposables.TryDispose();
             _server.Dispose();
         }

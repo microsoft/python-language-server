@@ -19,5 +19,6 @@ using System;
 namespace Microsoft.Python.LanguageServer {
     public interface ILogger {
         void TraceMessage(IFormattable message);
+        void TraceMessage(string message);
     }
 }
