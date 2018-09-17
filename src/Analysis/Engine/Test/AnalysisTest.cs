@@ -2573,7 +2573,7 @@ oar2 = fob2 * 100";
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("y").WithDescription("tuple")
-                    .And.HaveVariable("y1").WithDescription("tuple[int]")
+                    .And.HaveVariable("y1").WithDescription("tuple[int, int, int]")
                     .And.HaveVariable("oar").WithDescription("list[int]")
                     .And.HaveVariable("oar2").WithDescription("list");
             }
@@ -2597,7 +2597,7 @@ oar2 = 100 * fob2";
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("y").WithDescription("tuple")
-                    .And.HaveVariable("y1").WithDescription("tuple[int]")
+                    .And.HaveVariable("y1").WithDescription("tuple[int, int, int]")
                     .And.HaveVariable("oar").WithDescription("list[int]")
                     .And.HaveVariable("oar2").WithDescription("list");
             }
@@ -3629,7 +3629,7 @@ fob = abc";
                 analysis = await server.ChangeDefaultDocumentAndGetAnalysisAsync(code);
                 analysis.Should().HaveVariable("fob")
                     .OfType(BuiltinTypeId.Tuple)
-                    .WithDescription("tuple[int]");
+                    .WithDescription("tuple[int, int]");
 
                 // dict methods which return a list of key/value tuple
                 code = @"x = {}
@@ -3645,8 +3645,8 @@ for itm in itms:
     print(itm)";
 
                 analysis = await server.ChangeDefaultDocumentAndGetAnalysisAsync(code);
-                analysis.Should().HaveVariable("iter").OfType(BuiltinTypeId.Tuple).WithDescription("tuple[int]")
-                    .And.HaveVariable("itm").OfType(BuiltinTypeId.Tuple).WithDescription("tuple[int]");
+                analysis.Should().HaveVariable("iter").OfType(BuiltinTypeId.Tuple).WithDescription("tuple[int, int]")
+                    .And.HaveVariable("itm").OfType(BuiltinTypeId.Tuple).WithDescription("tuple[int, int]");
             }
         }
 /*
@@ -3866,7 +3866,7 @@ class C:
 a = C()
 b = a.f
             ");
-                analysis.Should().HaveVariable("b").WithDescription("method f of test-module.C objects");
+                analysis.Should().HaveVariable("b").WithDescription("method f of module.C objects");
 
                 await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"
 class C(object):
@@ -3876,7 +3876,7 @@ class C(object):
 a = C()
 b = a.f
             ");
-                analysis.Should().HaveVariable("b").WithDescription("method f of test-module.C objects");
+                analysis.Should().HaveVariable("b").WithDescription("method f of module.C objects");
             }
         }
 
@@ -5332,11 +5332,9 @@ t.x, t. =
             var analysisCompleteTask = Task.CompletedTask;
             try {
                 server = await CreateServerAsync(configuration);
-                await Task.WhenAny(Task.Delay(15000), Task.Run(async () => {
-                    for (var i = 0; i < files.Length; i++) {
-                        await server.SendDidOpenTextDocument(new Uri(files[i]), contentTasks[i].Result);
-                    }
-                }));
+                for (var i = 0; i < files.Length && server.AnalysisQueue.Count < 50; i++) {
+                    await server.SendDidOpenTextDocument(new Uri(files[i]), contentTasks[i].Result);
+                }
                 
                 server.AnalysisQueue.Count.Should().NotBe(0);
             } finally {
