@@ -66,9 +66,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private readonly Dictionary<IDocument, VolatileCounter> _pendingParse;
-        private readonly VolatileCounter _pendingAnalysisEnqueue;
-        private readonly ConcurrentDictionary<string, ILanguageServerExtension> _extensions;
+        private readonly Dictionary<IDocument, VolatileCounter> _pendingParse = new Dictionary<IDocument, VolatileCounter>();
+        private readonly VolatileCounter _pendingAnalysisEnqueue = new VolatileCounter();
+        private readonly ConcurrentDictionary<string, ILanguageServerExtension> _extensions = new ConcurrentDictionary<string, ILanguageServerExtension>();
         private readonly DisposableBag _disposableBag = DisposableBag.Create<Server>();
 
         private readonly EditorFiles _editorFiles;
@@ -92,11 +92,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             AnalysisQueue = new AnalysisQueue();
             AnalysisQueue.UnhandledException += Analysis_UnhandledException;
 
-            _pendingAnalysisEnqueue = new VolatileCounter();
             ParseQueue = new ParseQueue();
-            _pendingParse = new Dictionary<IDocument, VolatileCounter>();
             _editorFiles = new EditorFiles(this);
-            _extensions = new ConcurrentDictionary<string, ILanguageServerExtension>();
 
             _disposableBag
                 .Add(ProjectFiles)
@@ -104,6 +101,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(AnalysisQueue)
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
+                        (ext as IDisposable)?.Dispose();
+                    }
+                    foreach (var ext in _oldExtensions.Values) {
                         (ext as IDisposable)?.Dispose();
                     }
                 });

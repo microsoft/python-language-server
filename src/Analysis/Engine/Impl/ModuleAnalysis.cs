@@ -34,7 +34,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// 
     /// Can be queried for various information about the resulting analysis.
     /// </summary>
-    internal sealed class ModuleAnalysis: IModuleAnalysis {
+    public sealed class ModuleAnalysis: IModuleAnalysis {
         private readonly AnalysisUnit _unit;
         private static Regex _otherPrivateRegex = new Regex("^_[a-zA-Z_]\\w*__[a-zA-Z_]\\w*$");
 
