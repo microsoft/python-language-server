@@ -58,7 +58,17 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             _comparer = comparer ?? EqualityComparer<T>.Default;
         }
 
-        public void Dispose() => _disposeToken.TryMarkDisposed();
+        public void Dispose() {
+            if (_disposeToken.TryMarkDisposed()) {
+                lock (_syncObj) {
+                    Debug.Assert(_pendingTasks.Count == 0 || _firstAvailablePriority == _maxPriority);
+                    _pendingTasks.Clear();
+                    foreach (var queue in _queues) {
+                        queue.Clear();
+                    }
+                }
+            };
+        }
 
         public void Produce(T value, int priority = 0) {
             if (priority < 0 || priority >= _maxPriority) throw new ArgumentOutOfRangeException(nameof(priority));
@@ -79,9 +89,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
                 }
             }
 
-            if (pendingTcs != null) {
-                ThreadPool.QueueUserWorkItem(ConsumeCallback, new ConsumeState(pendingTcs, value));
-            }
+            pendingTcs?.TrySetResult(value);
         }
 
         private void RemoveExistingValue(T value, ref int priority) {
@@ -127,7 +135,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
                     return Task.FromResult(result);
                 }
 
-                pendingTcs = new TaskCompletionSource<T>();
+                pendingTcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
                 pending = new Pending(pendingTcs, _syncObj);
                 _pendingTasks.Enqueue(pending);
             }
@@ -147,21 +155,6 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         private static void CancelCallback(object state) {
             var cancelState = (CancelState) state;
             cancelState.Pending.Release()?.TrySetCanceled(cancelState.CancellationToken);
-        }
-
-        private static void ConsumeCallback(object state) {
-            var consumeState = (ConsumeState) state;
-            consumeState.Tcs.TrySetResult(consumeState.Value);
-        }
-
-        private class ConsumeState {
-            public TaskCompletionSource<T> Tcs { get; }
-            public T Value { get; }
-
-            public ConsumeState(TaskCompletionSource<T> tcs, T value) {
-                Tcs = tcs;
-                Value = value;
-            }
         }
 
         private class CancelState {

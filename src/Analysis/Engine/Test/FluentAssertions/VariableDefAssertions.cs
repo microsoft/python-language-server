@@ -133,11 +133,11 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var values = FlattenAnalysisValues(Subject.Types).ToArray();
 
             var actualMemberTypes = values.Select(av => av.MemberType).ToArray();
-            var expectedMemberTypes = Enumerable.Repeat(PythonMemberType.Instance, actualMemberTypes.Length).ToArray();
+            var expectedMemberTypes = new []{ PythonMemberType.Instance };
             var actualDescription = FlattenAnalysisValues(Subject.Types).Select(av => av.ShortDescription).ToArray();
             var expectedDescription = classNames.ToArray();
 
-            var message = GetAssertCollectionOnlyContainsMessage(actualMemberTypes, expectedMemberTypes, $"variable '{_moduleName}.{_name}'", "member type", "member types")
+            var message = GetAssertCollectionContainsMessage(actualMemberTypes, expectedMemberTypes, $"variable '{_moduleName}.{_name}'", "member type", "member types")
                 ?? GetAssertCollectionOnlyContainsMessage(actualDescription, expectedDescription, $"variable '{_moduleName}.{_name}'", "type", "types");
 
             Execute.Assertion.ForCondition(message == null)
@@ -163,24 +163,39 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             var actualDescription = value.Description;
             var actualShortDescription = value.ShortDescription;
-            Execute.Assertion.ForCondition(description == actualDescription || description != actualShortDescription)
+            Execute.Assertion.ForCondition(description == actualDescription || description == actualShortDescription)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected description of {_moduleName}.{_name} to have description {description}{{reason}}, but found {actualDescription} or {actualShortDescription}.");
+                .FailWith($"Expected description of '{_moduleName}.{_name}' to have description '{description}'{{reason}}, but found '{actualDescription}' or '{actualShortDescription}'.");
 
             return new AndConstraint<VariableDefAssertions>(this);
         }
 
+        [CustomAssertion]
+        public AndConstraint<VariableDefAssertions> HaveShortDescriptions(params string[] descriptions) => HaveShortDescriptions(descriptions, string.Empty);
+
+        [CustomAssertion]
+        public AndConstraint<VariableDefAssertions> HaveShortDescriptions(IEnumerable<string> descriptions, string because = "", params object[] reasonArgs) {
+            var actual = FlattenAnalysisValues(Subject.Types).Select(t => t.ShortDescription).ToArray();
+            var expected = descriptions.ToArray();
+            var errorMessage = GetAssertCollectionOnlyContainsMessage(actual, expected, $"{_moduleName}.{_name}", "description", "descriptions");
+
+            Execute.Assertion.ForCondition(errorMessage == null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith(errorMessage);
+
+            return new AndConstraint<VariableDefAssertions>(this);
+        }
+        
         public AndWhichConstraint<VariableDefAssertions, AnalysisValueTestInfo<TValue>> HaveValue<TValue>(string because = "", params object[] reasonArgs)
             where TValue : IAnalysisValue {
             var values = FlattenAnalysisValues(Subject.Types).ToArray();
             var value = AssertSingle(because, reasonArgs, values);
 
-            var typedValue = (TValue)value;
-            Execute.Assertion.ForCondition(typedValue != null)
+            Execute.Assertion.ForCondition(value is TValue)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {_moduleName}.{_name} to have value of type {typeof(TValue)}{{reason}}, but its value has type {value.GetType()}.");
 
-            var testInfo = new AnalysisValueTestInfo<TValue>(typedValue, GetScopeDescription(), _scope);
+            var testInfo = new AnalysisValueTestInfo<TValue>((TValue)value, GetScopeDescription(), _scope);
             return new AndWhichConstraint<VariableDefAssertions, AnalysisValueTestInfo<TValue>>(this, testInfo);
         }
         
