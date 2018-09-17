@@ -25,6 +25,13 @@ namespace AnalysisTests {
                     (o, e) => o.ModuleNamesChanged -= e);
         }
 
+        public static class AnalysisQueue {
+            public static readonly EventTaskSource<Microsoft.PythonTools.Intellisense.AnalysisQueue> AnalysisComplete =
+                new EventTaskSource<Microsoft.PythonTools.Intellisense.AnalysisQueue>(
+                    (o, e) => o.AnalysisComplete += e,
+                    (o, e) => o.AnalysisComplete -= e);
+        }
+
         public static class Server {
             public static readonly EventTaskSource<Microsoft.Python.LanguageServer.Implementation.Server, Microsoft.Python.LanguageServer.ParseCompleteEventArgs> OnParseComplete =
                 new EventTaskSource<Microsoft.Python.LanguageServer.Implementation.Server, Microsoft.Python.LanguageServer.ParseCompleteEventArgs>(

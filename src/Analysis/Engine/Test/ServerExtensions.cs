@@ -9,12 +9,13 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -27,7 +28,7 @@ using TestUtilities;
 
 namespace Microsoft.PythonTools.Analysis {
     internal static class ServerExtensions {
-        public static async Task<Server> InitializeAsync(this Server server, InterpreterConfiguration configuration, params string[] searchPaths) {
+        public static async Task<Server> InitializeAsync(this Server server, InterpreterConfiguration configuration, Uri rootUri = null, IEnumerable<string> searchPaths = null) {
             configuration.AssertInstalled();
 
             server.OnLogMessage += Server_OnLogMessage;
@@ -39,6 +40,7 @@ namespace Microsoft.PythonTools.Analysis {
             configuration.WriteToDictionary(properties);
 
             await server.Initialize(new InitializeParams {
+                rootUri = rootUri,
                 initializationOptions = new PythonInitializationOptions {
                     interpreter = new PythonInitializationOptions.Interpreter {
                         assembly = typeof(AstPythonInterpreterFactory).Assembly.Location,
@@ -46,7 +48,7 @@ namespace Microsoft.PythonTools.Analysis {
                         properties = properties
                     },
                     analysisUpdates = true,
-                    searchPaths = searchPaths,
+                    searchPaths = searchPaths?.ToArray() ?? Array.Empty<string>(),
                     traceLogging = true,
                 },
                 capabilities = new ClientCapabilities {
@@ -121,6 +123,18 @@ namespace Microsoft.PythonTools.Analysis {
             return uri;
         }
 
+        public static async Task<Uri> OpenNextDocumentAndGetUriAsync(this Server server, string content) {
+            var uri = TestData.GetNextModuleUri();
+            await server.SendDidOpenTextDocument(uri, content);
+            return uri;
+        }
+
+        public static async Task<Uri> OpenDocumentAndGetUriAsync(this Server server, string relativePath, string content) {
+            var uri = TestData.GetTestSpecificUri(relativePath);
+            await server.SendDidOpenTextDocument(uri, content);
+            return uri;
+        }
+
         public static async Task SendDidOpenTextDocument(this Server server, Uri uri, string content, string languageId = null) {
             await server.DidOpenTextDocument(new DidOpenTextDocumentParams {
                 textDocument = new TextDocumentItem {
@@ -157,6 +171,9 @@ namespace Microsoft.PythonTools.Analysis {
             server.SendDidChangeTextDocument(projectEntry.DocumentUri, text);
             return await projectEntry.GetAnalysisAsync(cancellationToken: new CancellationTokenSource(failAfter).Token);
         }
+
+        public static string[] GetBuiltinTypeMemberNames(this Server server, BuiltinTypeId typeId) 
+            => server.Analyzer.Types[typeId].GetMemberNames((IModuleContext)server.Analyzer.Interpreter).ToArray();
 
         private static void Server_OnLogMessage(object sender, LogMessageEventArgs e) {
             switch (e.type) {
