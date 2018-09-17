@@ -52,6 +52,9 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public static InstanceInfoAssertions Should(this AnalysisValueTestInfo<IInstanceInfo> testInfo)
             => new InstanceInfoAssertions(testInfo);
 
+        public static ModuleInfoAssertions Should(this AnalysisValueTestInfo<IModuleInfo> testInfo)
+            => new ModuleInfoAssertions(testInfo);
+
         public static ParameterInfoAssertions Should(this AnalysisValueTestInfo<ParameterInfo> testInfo)
             => new ParameterInfoAssertions(testInfo);
 
@@ -72,6 +75,9 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
         public static CompletionListAssertions Should(this CompletionList completionList)
             => new CompletionListAssertions(completionList);
+
+        public static CompletionItemAssertions Should(this CompletionItem completionItem)
+            => new CompletionItemAssertions(completionItem);
 
         public static ScopeAssertions Should(this IScope scope)
             => new ScopeAssertions(scope);

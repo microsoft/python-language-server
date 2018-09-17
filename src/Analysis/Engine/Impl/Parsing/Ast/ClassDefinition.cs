@@ -53,8 +53,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             get { return _name; }
         }
 
-        public IList<Arg> Bases => _bases;
-        internal Arg[] BasesInternal => _bases;
+        public Arg[] Bases => _bases ?? Array.Empty<Arg>();
 
         public override Statement Body => _body;
 
@@ -200,7 +199,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                 res.Append('(');
             }
 
-            if (BasesInternal.Length != 0) {
+            if (Bases.Length != 0) {
                 ListExpression.AppendItems(
                     res,
                     ast,
@@ -208,14 +207,14 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                     "",
                     "",
                     this,
-                    BasesInternal.Length,
+                    Bases.Length,
                     (i, sb) => {
                         if(format.SpaceWithinClassDeclarationParens != null && i == 0) {
                             // need to remove any leading whitespace which was preserved for
                             // the 1st param, and then force the correct whitespace.
-                            BasesInternal[i].AppendCodeString(sb, ast, format, format.SpaceWithinClassDeclarationParens.Value ? " " : "");
+                            Bases[i].AppendCodeString(sb, ast, format, format.SpaceWithinClassDeclarationParens.Value ? " " : "");
                         } else {
-                            BasesInternal[i].AppendCodeString(sb, ast, format);
+                            Bases[i].AppendCodeString(sb, ast, format);
                         }
                     }
                 );
@@ -226,7 +225,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             }
             
             if (!this.IsAltForm(ast) && !this.IsMissingCloseGrouping(ast)) {
-                if (BasesInternal.Length != 0 || 
+                if (Bases.Length != 0 || 
                     format.SpaceWithinEmptyBaseClassList == null ||
                     !String.IsNullOrWhiteSpace(this.GetFourthWhiteSpace(ast))) {
                     format.Append(

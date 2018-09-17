@@ -51,7 +51,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             var classmethodObj = _scope.Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
             var staticmethodObj = _scope.Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
-            foreach (var d in (_target.Decorators?.DecoratorsInternal).MaybeEnumerate()) {
+            foreach (var d in (_target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
                 var m = _scope.GetValueFromExpression(d);
                 if (m == classmethodObj) {
                     classmethod = true;
@@ -69,7 +69,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             _scope.PushScope();
             if (self != null) {
-                var p0 = _target.ParametersInternal?.FirstOrDefault();
+                var p0 = _target.Parameters.FirstOrDefault();
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
                     _scope.SetInScope(p0.Name, self);
                 }

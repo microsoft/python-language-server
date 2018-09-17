@@ -66,6 +66,7 @@ namespace Microsoft.PythonTools.Intellisense {
                     Dispose();
                 }
             }
+            RaiseEventOnThreadPool(AnalysisComplete);
         }
 
         private async Task<QueueItem> ConsumeAsync() {

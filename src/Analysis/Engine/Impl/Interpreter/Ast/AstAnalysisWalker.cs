@@ -319,7 +319,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return false;
             }
 
-            var dec = (node.Decorators?.DecoratorsInternal).MaybeEnumerate();
+            var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault();
             foreach (var d in dec) {
                 var obj = Scope.GetValueFromExpression(d);
                 if (obj == _interpreter.GetBuiltinType(BuiltinTypeId.Property)) {
@@ -345,7 +345,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             var existing = Scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonFunction;
-
             if (existing == null) {
                 existing = new AstPythonFunction(_ast, _module, CurrentClass, node, GetLoc(node));
                 Scope.SetInScope(node.Name, existing);
@@ -380,7 +379,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private IPythonFunctionOverload CreateFunctionOverload(NameLookupContext funcScope, FunctionDefinition node) {
             var parameters = new List<AstPythonParameterInfo>();
-            foreach (var p in node.ParametersInternal) {
+            foreach (var p in node.Parameters) {
                 var annType = Scope.GetTypesFromAnnotation(p.Annotation);
                 parameters.Add(new AstPythonParameterInfo(_ast, p, annType));
             }
@@ -437,17 +436,15 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 Scope.SetInScope(node.Name, t);
             }
 
-            if (t.Bases == null) {
-                var bases = node.BasesInternal.Where(a => string.IsNullOrEmpty(a.Name))
-                    // We cheat slightly and treat base classes as annotations.
-                    .SelectMany(a => Scope.GetTypesFromAnnotation(a.Expression))
-                    .ToArray();
+            var bases = node.Bases.Where(a => string.IsNullOrEmpty(a.Name))
+                // We cheat slightly and treat base classes as annotations.
+                .SelectMany(a => Scope.GetTypesFromAnnotation(a.Expression))
+                .ToArray();
 
-                try {
-                    t.SetBases(_interpreter, bases);
-                } catch (InvalidOperationException) {
-                    // Bases were set while we were working
-                }
+            try {
+                t.SetBases(_interpreter, bases);
+            } catch (InvalidOperationException) {
+                // Bases were set while we were working
             }
 
             Scope.PushScope();

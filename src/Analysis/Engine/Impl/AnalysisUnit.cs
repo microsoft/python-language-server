@@ -369,15 +369,15 @@ namespace Microsoft.PythonTools.Analysis {
             var classInfo = ((ClassScope)Scope).Class;
             var bases = new List<IAnalysisSet>();
 
-            if (Ast.BasesInternal.Length == 0) {
+            if (Ast.Bases.Length == 0) {
                 if (ddg.ProjectState.LanguageVersion.Is3x()) {
                     // 3.x all classes inherit from object by default
                     bases.Add(ddg.ProjectState.ClassInfos[BuiltinTypeId.Object]);
                 }
             } else {
                 // Process base classes
-                for (var i = 0; i < Ast.BasesInternal.Length; i++) {
-                    var baseClassArg = Ast.BasesInternal[i];
+                for (var i = 0; i < Ast.Bases.Length; i++) {
+                    var baseClassArg = Ast.Bases[i];
 
                     if (baseClassArg.Name == null) {
                         bases.Add(EvaluateBaseClass(ddg, classInfo, i, baseClassArg.Expression));
@@ -415,33 +415,31 @@ namespace Microsoft.PythonTools.Analysis {
             if (Ast.Decorators != null) {
                 Expression expr = Ast.NameExpression;
 
-                foreach (var d in Ast.Decorators.DecoratorsInternal) {
-                    if (d != null) {
-                        var decorator = ddg._eval.Evaluate(d);
+                foreach (var d in Ast.Decorators.Decorators.ExcludeDefault()) {
+                    var decorator = ddg._eval.Evaluate(d);
 
-                        Expression nextExpr;
-                        if (!_decoratorCalls.TryGetValue(d, out nextExpr)) {
-                            nextExpr = _decoratorCalls[d] = new CallExpression(d, new[] { new Arg(expr) });
-                            nextExpr.SetLoc(d.IndexSpan);
+                    Expression nextExpr;
+                    if (!_decoratorCalls.TryGetValue(d, out nextExpr)) {
+                        nextExpr = _decoratorCalls[d] = new CallExpression(d, new[] { new Arg(expr) });
+                        nextExpr.SetLoc(d.IndexSpan);
+                    }
+                    expr = nextExpr;
+                    var decorated = AnalysisSet.Empty;
+                    var anyResults = false;
+                    foreach (var ns in decorator) {
+                        var fd = ns as FunctionInfo;
+                        if (fd != null && InterpreterScope.EnumerateTowardsGlobal.Any(s => s.AnalysisValue == fd)) {
+                            continue;
                         }
-                        expr = nextExpr;
-                        var decorated = AnalysisSet.Empty;
-                        var anyResults = false;
-                        foreach (var ns in decorator) {
-                            var fd = ns as FunctionInfo;
-                            if (fd != null && InterpreterScope.EnumerateTowardsGlobal.Any(s => s.AnalysisValue == fd)) {
-                                continue;
-                            }
-                            decorated = decorated.Union(ns.Call(expr, this, new[] { types }, ExpressionEvaluator.EmptyNames));
-                            anyResults = true;
-                        }
+                        decorated = decorated.Union(ns.Call(expr, this, new[] { types }, ExpressionEvaluator.EmptyNames));
+                        anyResults = true;
+                    }
 
-                        // If processing decorators, update the current
-                        // function type. Otherwise, we are acting as if
-                        // each decorator returns the function unmodified.
-                        if (ddg.ProjectState.Limits.ProcessCustomDecorators && anyResults) {
-                            types = decorated;
-                        }
+                    // If processing decorators, update the current
+                    // function type. Otherwise, we are acting as if
+                    // each decorator returns the function unmodified.
+                    if (ddg.ProjectState.Limits.ProcessCustomDecorators && anyResults) {
+                        types = decorated;
                     }
                 }
             }

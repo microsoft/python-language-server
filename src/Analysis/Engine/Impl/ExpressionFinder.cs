@@ -202,7 +202,7 @@ namespace Microsoft.PythonTools.Analysis {
                 }
 
                 node.Decorators?.Walk(this);
-                foreach (var p in node.ParametersInternal.MaybeEnumerate()) {
+                foreach (var p in node.Parameters) {
                     p?.Walk(this);
                 }
                 node.ReturnAnnotation?.Walk(this);
@@ -254,7 +254,7 @@ namespace Microsoft.PythonTools.Analysis {
                     node.NameExpression?.Walk(this);
                 }
                 node.Decorators?.Walk(this);
-                foreach (var b in node.BasesInternal.MaybeEnumerate()) {
+                foreach (var b in node.Bases) {
                     b.Walk(this);
                 }
 

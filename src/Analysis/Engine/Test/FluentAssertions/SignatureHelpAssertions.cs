@@ -15,11 +15,14 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
 using Microsoft.Python.LanguageServer;
+using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
@@ -39,6 +42,21 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                 .FailWith($"Expected SignatureHelp to have single signature '{signature}'{{reason}}, but it has '{actual}'.");
 
             return constraint;
+        }
+
+        public AndConstraint<SignatureHelpAssertions> OnlyHaveSignatures(string[] signatures)
+            => OnlyHaveSignatures(signatures, string.Empty);
+
+        public AndConstraint<SignatureHelpAssertions> OnlyHaveSignatures(IEnumerable<string> signatures, string because = "", params object[] reasonArgs) {
+            var expected = signatures.ToArray();
+            var actual = Subject.signatures.Select(s => s.label).ToArray();
+            var errorMessage = GetAssertCollectionOnlyContainsMessage(actual, expected, "SignatureHelp", "signature", "signatures");
+
+            Execute.Assertion.ForCondition(errorMessage == null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith(errorMessage);
+
+            return new AndConstraint<SignatureHelpAssertions>(this);
         }
 
         public AndWhichConstraint<SignatureHelpAssertions, SignatureInformation> HaveSingleSignature(string because = "", params object[] reasonArgs) {

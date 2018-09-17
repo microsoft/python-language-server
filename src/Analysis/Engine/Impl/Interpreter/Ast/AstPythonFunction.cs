@@ -41,7 +41,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 _doc = declType?.Documentation;
             }
 
-            foreach (var dec in (def.Decorators?.DecoratorsInternal).MaybeEnumerate().OfType<NameExpression>()) {
+            foreach (var dec in (def.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().OfType<NameExpression>()) {
                 if (dec.Name == "classmethod") {
                     IsClassMethod = true;
                 } else if (dec.Name == "staticmethod") {

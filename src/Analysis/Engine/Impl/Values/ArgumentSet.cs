@@ -58,9 +58,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             int listArgsIndex = -1;
             int dictArgsIndex = -1;
 
-            int argCount = node.Parameters.Count;
+            int argCount = node.Parameters.Length;
             var newArgs = new IAnalysisSet[argCount];
-            for (int i = 0; i < node.Parameters.Count; ++i) {
+            for (int i = 0; i < node.Parameters.Length; ++i) {
                 if (node.Parameters[i].Kind == ParameterKind.List) {
                     listArgsIndex = i;
                 } else if (node.Parameters[i].Kind == ParameterKind.Dictionary) {
@@ -78,7 +78,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 } else if (listArgsIndex >= 0) {
                     foreach (var ns in args[i]) {
                         var sseq = ns as StarArgsSequenceInfo;
-                        if (sseq != null && i < node.Parameters.Count && sseq._node == node.Parameters[i]) {
+                        if (sseq != null && i < node.Parameters.Length && sseq._node == node.Parameters[i]) {
                             seqArgs = seqArgs.Add(unit.State.ClassInfos[BuiltinTypeId.Tuple].Instance);
                         } else {
                             seqArgs = seqArgs.Add(ns);
@@ -104,7 +104,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                         } else if ((seq = ns as SequenceInfo) != null) {
                             for (int j = 0; j < seq.IndexTypes.Length; ++j) {
                                 int k = lastPositionFilled + j + 1;
-                                if (k < node.Parameters.Count && node.Parameters[k].Kind == ParameterKind.Normal) {
+                                if (k < node.Parameters.Length && node.Parameters[k].Kind == ParameterKind.Normal) {
                                     newArgs[k] = newArgs[k].Union(seq.IndexTypes[j].Types);
                                 } else if (listArgsIndex >= 0) {
                                     seqArgs = seqArgs.Union(seq.IndexTypes[j].Types);

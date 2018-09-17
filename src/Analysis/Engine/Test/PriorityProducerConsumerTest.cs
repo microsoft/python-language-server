@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -121,6 +122,8 @@ namespace AnalysisTests {
             Assert.AreEqual(TaskStatus.WaitingForActivation, consumerTask.Status);
 
             ppc.Dispose();
+            ppc.Count.Should().Be(0);
+
             await consumerTask.ContinueWith(t => { });
 
             Assert.AreEqual(TaskStatus.Canceled, consumerTask.Status);

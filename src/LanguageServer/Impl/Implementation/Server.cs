@@ -646,8 +646,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void OnDocumentChangeProcessingComplete(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
-            _disposableBag.ThrowIfDisposed();
             try {
+                _disposableBag.ThrowIfDisposed();
                 if (vc != null) {
                     foreach (var kv in vc.GetAllParts(doc.DocumentUri)) {
                         ParseComplete(kv.Key, kv.Value.Version);
@@ -667,6 +667,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     _editorFiles.GetDocument(doc.DocumentUri).UpdateParseDiagnostics(vc, doc.DocumentUri);
                 }
             } catch (BadSourceException) {
+            } catch (ObjectDisposedException) when (_disposableBag.IsDisposed) {
             } catch (OperationCanceledException ex) {
                 LogMessage(MessageType.Warning, $"Parsing {doc.DocumentUri} cancelled");
                 TraceMessage($"{ex}");

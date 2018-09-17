@@ -9,25 +9,22 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
-    public interface IModule {
-        string Name { get; }
-        string Description { get; }
-        string Documentation { get; }
+    public interface IModule : IAnalysisValue {
         IPythonProjectEntry ProjectEntry { get; }
         IScope Scope { get; }
         IModule GetChildPackage(IModuleContext context, string name);
         IEnumerable<KeyValuePair<string, AnalysisValue>> GetChildrenPackages(IModuleContext context);
-        IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext context, GetMemberOptions options = GetMemberOptions.None);
         IEnumerable<string> GetModuleMemberNames(IModuleContext context);
         void Imported(AnalysisUnit unit);
         void SpecializeFunction(string name, CallDelegate callable, bool mergeOriginalAnalysis);

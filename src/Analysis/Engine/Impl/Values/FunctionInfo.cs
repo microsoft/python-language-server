@@ -175,11 +175,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public IAnalysisSet ResolveParameter(AnalysisUnit unit, string name, ArgumentSet arguments) {
             var parameters = FunctionDefinition.Parameters;
-            if (parameters == null || parameters.Count == 0) {
+            if (parameters == null || parameters.Length == 0) {
                 return ResolveParameter(unit, name);
             }
 
-            for (int i = 0; i < parameters.Count; ++i) {
+            for (int i = 0; i < parameters.Length; ++i) {
                 if (parameters[i].Name == name) {
                     IAnalysisSet res = AnalysisSet.Empty;
                     if (i < arguments.Count) {
@@ -204,11 +204,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override string Name => FunctionDefinition.Name;
 
         internal IEnumerable<KeyValuePair<string, string>> GetParameterString() {
-            for (var i = 0; i < FunctionDefinition.ParametersInternal.Length; i++) {
+            for (var i = 0; i < FunctionDefinition.Parameters.Length; i++) {
                 if (i != 0) {
                     yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", ");
                 }
-                var p = FunctionDefinition.ParametersInternal[i];
+                var p = FunctionDefinition.Parameters[i];
 
                 var name = MakeParameterName(p);
                 var annotation = GetAnnotation(ProjectState, p, DeclaringModule.Tree);
@@ -465,9 +465,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 }
 
                 foreach (var unit in units) {
-                    var names = FunctionDefinition.ParametersInternal.Select(MakeParameterName).ToArray();
+                    var names = FunctionDefinition.Parameters.Select(MakeParameterName).ToArray();
 
-                    var vars = FunctionDefinition.ParametersInternal.Select(p => {
+                    var vars = FunctionDefinition.Parameters.Select(p => {
                         if (unit != AnalysisUnit && unit.InterpreterScope.TryGetVariable(p.Name, out var param)) {
                             return param.Types.Resolve(unit);
                         } else if (_analysisUnit._scope is FunctionScope fs) {
@@ -476,7 +476,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                         return AnalysisSet.Empty;
                     }).ToArray();
 
-                    var defaults = FunctionDefinition.ParametersInternal.Select(p => GetDefaultValue(unit.State, p, DeclaringModule.Tree)).ToArray();
+                    var defaults = FunctionDefinition.Parameters.Select(p => GetDefaultValue(unit.State, p, DeclaringModule.Tree)).ToArray();
 
                     var rtypes = (unit.Scope as FunctionScope)?.ReturnValue
                         .Types
@@ -656,11 +656,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         // Returns False if no more parameters can be updated for this unit.
         private bool UpdateSingleDefaultParameter(AnalysisUnit unit, InterpreterScope scope, int index, IParameterInfo info) {
-            if (index >= FunctionDefinition.ParametersInternal.Length) {
+            if (index >= FunctionDefinition.Parameters.Length) {
                 return false;
             }
             VariableDef param;
-            var name = FunctionDefinition.ParametersInternal[index].Name;
+            var name = FunctionDefinition.Parameters[index].Name;
             if (scope.TryGetVariable(name, out param)) {
                 var av = ProjectState.GetAnalysisSetFromObjects(info.ParameterTypes);
 
@@ -696,7 +696,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         internal IAnalysisSet[] GetParameterTypes(int unionStrength = 0) {
-            var result = new IAnalysisSet[FunctionDefinition.ParametersInternal.Length];
+            var result = new IAnalysisSet[FunctionDefinition.Parameters.Length];
             var units = new HashSet<AnalysisUnit>();
             units.Add(AnalysisUnit);
 
@@ -706,7 +706,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     : AnalysisSet.Empty;
 
                 foreach (var unit in units) {
-                    if (unit != null && unit.InterpreterScope != null && unit.InterpreterScope.TryGetVariable(FunctionDefinition.ParametersInternal[i].Name, out var param)) {
+                    if (unit != null && unit.InterpreterScope != null && unit.InterpreterScope.TryGetVariable(FunctionDefinition.Parameters[i].Name, out var param)) {
                         result[i] = result[i].Union(param.Types);
                     }
                 }

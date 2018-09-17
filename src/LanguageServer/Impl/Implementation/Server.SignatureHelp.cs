@@ -29,15 +29,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
         public override async Task<SignatureHelp> SignatureHelp(TextDocumentPositionParams @params, CancellationToken token) {
             var uri = @params.textDocument.uri;
-            ProjectFiles.GetEntry(@params.textDocument, @params._version, out var entry, out var tree);
 
             TraceMessage($"Signatures in {uri} at {@params.position}");
 
-            var analysis = entry != null ? await entry.GetAnalysisAsync(waitingTimeout: 50) : null;
+            var analysis = GetEntry(@params.textDocument) is ProjectEntry entry 
+                ? await entry.GetAnalysisAsync(waitingTimeout: 50, cancellationToken: token) 
+                : null;
+
             if (analysis == null) {
                 TraceMessage($"No analysis found for {uri}");
                 return new SignatureHelp();
             }
+
+            ProjectFiles.GetEntry(@params.textDocument, @params._version, out _, out var tree);
 
             IEnumerable<IOverloadResult> overloads;
             int activeSignature = -1, activeParameter = -1;

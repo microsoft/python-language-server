@@ -9,11 +9,12 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -50,9 +51,25 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return new AndConstraint<CompletionListAssertions>(this);
         }
 
+        [CustomAssertion]
+        public AndWhichConstraint<CompletionListAssertions, CompletionItem> HaveItem(string label, string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+
+            var actual = Subject?.items.Where(i => string.Equals(i.label, label, StringComparison.Ordinal)).ToArray() ?? Array.Empty<CompletionItem>();
+            var errorMessage = GetAssertCollectionContainsMessage(actual.Select(i => i.label).ToArray(), new [] { label }, "completion list items", "label", "labels");
+
+            Execute.Assertion.ForCondition(errorMessage == null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith(errorMessage);
+
+            return new AndWhichConstraint<CompletionListAssertions, CompletionItem>(this, actual[0]);
+        }
+
+        [CustomAssertion]
         public AndConstraint<CompletionListAssertions> HaveLabels(params string[] labels)
             => HaveLabels(labels, string.Empty);
 
+        [CustomAssertion]
         public AndConstraint<CompletionListAssertions> HaveLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
@@ -68,9 +85,11 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return new AndConstraint<CompletionListAssertions>(this);
         }
 
+        [CustomAssertion]
         public AndConstraint<CompletionListAssertions> NotContainLabels(params string[] labels)
             => NotContainLabels(labels, string.Empty);
 
+        [CustomAssertion]
         public AndConstraint<CompletionListAssertions> NotContainLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 

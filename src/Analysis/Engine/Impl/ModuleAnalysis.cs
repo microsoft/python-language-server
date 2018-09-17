@@ -551,13 +551,6 @@ namespace Microsoft.PythonTools.Analysis {
         /// Gets information about methods defined on base classes but not
         /// directly on the current class.
         /// </summary>
-        /// <param name="index">The 0-based absolute index into the file.</param>
-        internal IEnumerable<IOverloadResult> GetOverrideableByIndex(int index) => GetOverrideable(_unit.Tree.IndexToLocation(index));
-
-        /// <summary>
-        /// Gets information about methods defined on base classes but not
-        /// directly on the current class.
-        /// </summary>
         /// <param name="location">The location in the file.</param>
         /// <remarks>New in 2.2</remarks>
         public IEnumerable<IOverloadResult> GetOverrideable(SourceLocation location) {
@@ -995,8 +988,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return false;
             }
 
-            return function.ParametersInternal != null &&
-                function.ParametersInternal.Any(p => {
+            return function.Parameters.Any(p => {
                     var paramName = p.GetVerbatimImage(tree) ?? p.Name;
                     return index >= p.StartIndex && index <= p.StartIndex + paramName.Length;
                 });
