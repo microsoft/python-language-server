@@ -36,8 +36,6 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server : ServerBase, ILogger, IPythonLanguageServer, IDisposable {
-        private const string completionItemCommand = "completion/itemSelected";
-
         /// <summary>
         /// Implements ability to execute module reload on the analyzer thread
         /// </summary>
@@ -148,11 +146,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 workspaceSymbolProvider = true,
                 documentSymbolProvider = true,
                 renameProvider = true,
-                executeCommandProvider = new ExecuteCommandOptions {
-                    commands = new[] {
-                            completionItemCommand
-                        }
-                }
             }
         };
 
