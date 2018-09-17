@@ -123,11 +123,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public void Dispose() => _disposableBag.TryDispose();
 
+        #region ILogger
         public void TraceMessage(IFormattable message) {
             if (_traceLogging) {
                 LogMessage(MessageType.Log, message.ToString());
             }
         }
+        #endregion
 
         #region Client message handling
         internal InitializeResult GetInitializeResult() => new InitializeResult {

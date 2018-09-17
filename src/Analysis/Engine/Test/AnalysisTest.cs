@@ -685,7 +685,6 @@ import nt,
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/49")]
         public async Task ImportStarCorrectRefs() {
             var text1 = @"
 from mod2 import *
@@ -3212,7 +3211,6 @@ f(a=1)
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/51")]
         public async Task ReferencesCrossModule() {
             var fobText = @"
 from oar import abc
@@ -3239,7 +3237,6 @@ abc()
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/53")]
         public async Task SuperclassMemberReferencesCrossModule() {
             // https://github.com/Microsoft/PTVS/issues/2271
 

@@ -61,6 +61,24 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Analyzing workspace, {0} items remaining....
+        /// </summary>
+        internal static string AnalysisProgress_MultipleItemsRemaining {
+            get {
+                return ResourceManager.GetString("AnalysisProgress_MultipleItemsRemaining", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Analyzing workspace, 1 item remaining....
+        /// </summary>
+        internal static string AnalysisProgress_SingleItemRemaining {
+            get {
+                return ResourceManager.GetString("AnalysisProgress_SingleItemRemaining", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cannot rename.
         /// </summary>
         internal static string RenameVariable_CannotRename {

@@ -77,8 +77,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         break;
                     }
                     await action(ext.Value, cancellationToken);
-                } catch (Exception ex) when (!ex.IsCriticalException()) {
-                    // We do not replace res in this case.
+                } catch (Exception ex) when (!ex.IsCriticalException() && !(ex is OperationCanceledException)) {
                     LogMessage(MessageType.Error, $"Error invoking extension '{ext.Key}': {ex}");
                 }
             }

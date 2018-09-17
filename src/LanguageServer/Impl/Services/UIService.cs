@@ -63,7 +63,8 @@ namespace Microsoft.Python.LanguageServer.Services {
         public Task SetStatusBarMessage(string message) 
             => _rpc.NotifyWithParameterObjectAsync("window/setStatusBarMessage", message);
 
-        public void TraceMessage(IFormattable message) => LogMessage(message.ToString(), MessageType.Info);
+        public void TraceMessage(string message) => LogMessage(message.ToString(), MessageType.Info);
+        public void TraceMessage(IFormattable message) => TraceMessage(message.ToString());
 
         public void SetLogLevel(MessageType logLevel) => _logLevel = logLevel;
     }

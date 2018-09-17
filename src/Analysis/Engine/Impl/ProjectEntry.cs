@@ -159,6 +159,7 @@ namespace Microsoft.PythonTools.Analysis {
             lock (this) {
                 _analysisTcs.TrySetResult(Analysis);
             }
+            RaiseNewAnalysis();
         }
 
         internal void ResetCompleteAnalysis() {
@@ -216,7 +217,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        internal void RaiseNewAnalysis() => NewAnalysis?.Invoke(this, EventArgs.Empty);
+        private void RaiseNewAnalysis() => NewAnalysis?.Invoke(this, EventArgs.Empty);
 
         public int AnalysisVersion { get; private set; }
 

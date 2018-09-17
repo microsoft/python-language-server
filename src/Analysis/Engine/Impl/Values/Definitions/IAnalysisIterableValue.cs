@@ -17,7 +17,7 @@
 using System.Collections.Generic;
 
 namespace Microsoft.PythonTools.Analysis.Values {
-    interface IAnalysisIterableValue: IAnalysisValue {
+    public interface IAnalysisIterableValue: IAnalysisValue {
         IEnumerable<IVariableDefinition> IndexTypes { get; }
     }
 }
