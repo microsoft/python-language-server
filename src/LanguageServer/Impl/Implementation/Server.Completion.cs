@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,12 +24,13 @@ using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
+using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
         public override async Task<CompletionList> Completion(CompletionParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
- 
+
             ProjectFiles.GetEntry(@params.textDocument, @params._version, out var entry, out var tree);
             TraceMessage($"Completions in {uri} at {@params.position}");
 
@@ -91,8 +93,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             LogMessage(MessageType.Info, $"Found {res.items.Length} completions for {uri} at {@params.position} after filtering");
 
-            await InvokeExtensionsAsync((ext, token) 
+            if (HandleOldStyleCompletionExtension(analysis as ModuleAnalysis, tree, @params.position, res)) {
+                return res;
+            }
+
+            await InvokeExtensionsAsync((ext, token)
                 => (ext as ICompletionExtension)?.HandleCompletionAsync(analysis, tree, @params.position, res, cancellationToken), cancellationToken);
+
             return res;
         }
 
@@ -110,6 +117,71 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
             return opts;
+        }
+
+        private bool HandleOldStyleCompletionExtension(ModuleAnalysis analysis, PythonAst tree, SourceLocation location, CompletionList completions) {
+            if (_oldServer == null) {
+                return false;
+            }
+            // Backward compatibility case
+            var cl = new PythonTools.Analysis.LanguageServer.CompletionList {
+                items = completions.items.Select(x => new PythonTools.Analysis.LanguageServer.CompletionItem {
+                    // Partial copy
+                    label = x.label,
+                    kind = (PythonTools.Analysis.LanguageServer.CompletionItemKind)x.kind,
+                    detail = x.detail,
+                    sortText = x.sortText,
+                    filterText = x.filterText,
+                    preselect = x.preselect,
+                    insertText = x.insertText,
+                }).ToArray()
+            };
+
+            var oldItems = new HashSet<string>();
+            foreach (var x in completions.items) {
+                oldItems.Add(x.label);
+            }
+
+            _oldServer.ProcessCompletionList(analysis as ModuleAnalysis, tree, location, cl);
+
+            var newItems = cl.items.Where(x => !oldItems.Contains(x.label)).ToArray();
+            if(newItems.Length == 0) {
+                return false;
+            }
+
+            var converted = newItems.Select(x => new CompletionItem {
+                label = x.label,
+                kind = (CompletionItemKind)x.kind,
+                detail = x.detail,
+                sortText = x.sortText,
+                filterText = x.filterText,
+                preselect = x.preselect,
+                insertText = x.insertText,
+                textEdit = x.textEdit.HasValue
+                    ? new TextEdit {
+                        range = new Range {
+                            start = new Position {
+                                line = x.textEdit.Value.range.start.line,
+                                character = x.textEdit.Value.range.start.character,
+                            },
+                            end = new Position {
+                                line = x.textEdit.Value.range.end.line,
+                                character = x.textEdit.Value.range.end.character,
+                            }
+                        },
+                        newText = x.textEdit.Value.newText
+                    } : (TextEdit?)null,
+                command = x.command.HasValue
+                    ? new Command {
+                        title = x.command.Value.title,
+                        command = x.command.Value.command,
+                        arguments = x.command.Value.arguments
+                    } : (Command?)null,
+                data = x.data
+            });
+
+            completions.items = completions.items.Concat(converted).ToArray();
+            return true;
         }
     }
 }
