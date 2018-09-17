@@ -119,7 +119,7 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public async Task DoubleAsterisk() {
-            await AssertSingleLineFormat("a**2, **k", "a ** 2, **k");
+            await AssertSingleLineFormat("foo(a**2, **k)", "foo(a ** 2, **k)");
         }
 
         [TestMethod, Priority(0)]
@@ -173,6 +173,13 @@ namespace AnalysisTests {
             await AssertSingleLineFormat("x =-1", "x = -1");
             await AssertSingleLineFormat("x =   +1", "x = +1");
             await AssertSingleLineFormat("x =  ~1", "x = ~1");
+
+            await AssertSingleLineFormat("x = (-y)", "x = (-y)");
+            await AssertSingleLineFormat("x = (+ y)", "x = (+y)");
+            await AssertSingleLineFormat("x = (~ y)", "x = (~y)");
+            await AssertSingleLineFormat("x =(-1)", "x = (-1)");
+            await AssertSingleLineFormat("x =   (+ 1)", "x = (+1)");
+            await AssertSingleLineFormat("x = ( ~1)", "x = (~1)");
         }
 
         [TestMethod, Priority(0)]
@@ -197,8 +204,8 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public async Task StarInMultilineArguments() {
-            await AssertSingleLineFormat("x = [\n  * param1,\n  * param2\n]", "  *param1,", line: 2);
-            await AssertSingleLineFormat("x = [\n  * param1,\n  * param2\n]", "  *param2,", line: 3);
+            await AssertSingleLineFormat("x = foo(\n  * param1,\n  * param2\n)", "*param1,", line: 2, editStart: 3);
+            await AssertSingleLineFormat("x = foo(\n  * param1,\n  * param2\n)", "*param2", line: 3, editStart: 3);
         }
 
         [TestMethod, Priority(0)]
@@ -242,7 +249,7 @@ namespace AnalysisTests {
                 for (var i = 0; i < lines.Length; i++) {
                     var lineNum = i + 1;
 
-                    if (lineNum == 106) {
+                    if (lineNum == 212) {
                         "".ToString();
                     }
 
@@ -255,13 +262,10 @@ namespace AnalysisTests {
                         edit.range.start.line.Should().Be(i);
                         edit.range.end.line.Should().Be(i);
 
-                        var startIndex = edit.range.start.character;
-                        var removeCount = edit.range.end.character - edit.range.start.character;
-
-                        lineText = lineText.Remove(startIndex, removeCount).Insert(startIndex, edit.newText);
+                        lineText = ApplyLineEdit(lineText, edit);
                     }
 
-                    lineText.Should().Be(lineTextOrig);
+                    lineText.Should().Be(lineTextOrig, $"because line {lineNum} should be unchanged");
                 }
 
             }
@@ -281,6 +285,16 @@ namespace AnalysisTests {
                     }
                 });
             }
+        }
+
+        public static string ApplyLineEdit(string s, TextEdit edit) {
+            var startIndex = edit.range.start.character;
+            var removeCount = edit.range.end.character - edit.range.start.character - 1;
+
+            var removed = s.Remove(startIndex, removeCount);
+            var inserted = removed.Insert(startIndex, edit.newText);
+
+            return inserted;
         }
     }
 }

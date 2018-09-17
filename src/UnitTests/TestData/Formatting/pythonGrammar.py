@@ -1329,7 +1329,7 @@ class GrammarTests(unittest.TestCase):
                          [(1, 'Banana'), (1, 'Coconut'), (2, 'Banana'), (2, 'Coconut'),
                           (3, 'Banana'), (3, 'Coconut'), (4, 'Banana'), (4, 'Coconut'),
                           (5, 'Banana'), (5, 'Coconut')])
-        self.assertEqual([(lambda a:[a ** i for i in range(a + 1)])(j) for j in range(5)],
+        self.assertEqual([(lambda a: [a ** i for i in range(a + 1)])(j) for j in range(5)],
                          [[1], [1, 1], [1, 2, 4], [1, 3, 9, 27], [1, 4, 16, 64, 256]])
 
         def test_in_func(l):
@@ -1456,8 +1456,8 @@ class GrammarTests(unittest.TestCase):
 
         # the next line is not allowed anymore
         #self.assertEqual([ x() for x in lambda: True, lambda: False if x() ], [True])
-        self.assertEqual([x() for x in (lambda:True, lambda:False) if x()], [True])
-        self.assertEqual([x(False) for x in (lambda x:False if x else True, lambda x:True if x else False) if x(False)], [True])
+        self.assertEqual([x() for x in (lambda: True, lambda: False) if x()], [True])
+        self.assertEqual([x(False) for x in (lambda x: False if x else True, lambda x: True if x else False) if x(False)], [True])
         self.assertEqual((5 if 1 else _checkeval("check 1", 0)), 5)
         self.assertEqual((_checkeval("check 2", 0) if 0 else 5), 5)
         self.assertEqual((5 and 6 if 0 else 1), 1)

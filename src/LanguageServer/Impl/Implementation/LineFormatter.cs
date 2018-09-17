@@ -33,14 +33,22 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public LineFormatter(TextReader reader, PythonLanguageVersion languageVersion) {
             _reader = reader;
-            var tokenizer = new Tokenizer(languageVersion, options: TokenizerOptions.Verbatim | TokenizerOptions.VerbatimCommentsAndLineJoins);
+            var tokenizer = new Tokenizer(languageVersion, options: TokenizerOptions.Verbatim | TokenizerOptions.VerbatimCommentsAndLineJoins | TokenizerOptions.GroupingRecovery);
             tokenizer.Initialize(_reader);
             _tokenizer = new TokenizerWrapper(tokenizer);
             _lineTokens = new Dictionary<int, List<TokenExt>>();
         }
 
         private void AddToken(TokenExt token) {
-            if (!_lineTokens.TryGetValue(token.Line, out List<TokenExt> tokens)) {
+            var line = token.Line;
+
+            // Explicit line joins ("\") appear at the end of a line, but
+            // are included 
+            if (token.Kind == TokenKind.ExplicitLineJoin) {
+                line--;
+            }
+
+            if (!_lineTokens.TryGetValue(line, out List<TokenExt> tokens)) {
                 tokens = new List<TokenExt>();
                 _lineTokens.Add(token.Line, tokens);
             }
@@ -50,7 +58,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         /// <summary>
         /// Tokenizes up to and including the specified line. Tokens are
-        /// stored in _lineTokens.
+        /// stored in _lineTokens. If the provided line number is past the
+        /// end of the input text, then the tokenizer will stop.
         /// </summary>
         /// <param name="line">One-indexed line number</param>
         private void TokenizeLine(int line) {
@@ -58,9 +67,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return;
             }
 
-            while (_tokenizer.Peek()?.Line <= line) {
+            var peeked = _tokenizer.Peek();
+            while (peeked != null && (peeked.Line <= line || (peeked.Kind == TokenKind.ExplicitLineJoin && peeked.Line < line))) {
                 var token = _tokenizer.Next();
                 AddToken(token);
+                peeked = _tokenizer.Peek();
             }
         }
 
@@ -74,7 +85,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return NoEdits;
             }
 
-            TokenizeLine(line);
+            // Tokenize past this line in order to look ahead for things like
+            // multi-line strings and line continuations. This operation is
+            // always safe.
+            TokenizeLine(line + 1);
 
             if (!_lineTokens.TryGetValue(line, out List<TokenExt> tokens)) {
                 return NoEdits;
@@ -91,7 +105,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             for (var i = 0; i < tokens.Count; i++) {
                 var token = tokens[i];
 
-                if (i == 0 && token.Kind == TokenKind.Constant && (token.ToString().Contains("\"\"\"") || token.ToString().Contains("'''"))) {
+                if (i == 0 && token.IsMultilineString) {
                     // If the line begins with a multiline-string (rather than some whitespace),
                     // then begin the edit right after. The token will be skipped but not
                     // removed so it can still be used for formatting rules which look at
@@ -110,7 +124,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            tokens = tokens.Where(t => !t.IsIgnoredKind).ToList();
+            // Keep ExplictLineJoin because it has text associated with it.
+            tokens = tokens.Where(t => !t.IsIgnoredKind || t.Kind == TokenKind.ExplicitLineJoin).ToList();
 
             if (tokens.Count == 0) {
                 return NoEdits;
@@ -120,7 +135,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // The beginning column couldn't be deduced from the tokens,
                 // so resort to looking at the first token's preceeding whitespace.
                 var firstWhitespace = tokens.First().PreceedingWhitespace ?? "";
-                firstWhitespace = firstWhitespace.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).Last();
+                firstWhitespace = SplitByNewline(firstWhitespace).Last();
                 beginCol = 1 + firstWhitespace.Length;
             }
 
@@ -133,182 +148,220 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 var prev = tokens.ElementAtOrDefault(i - 1);
                 var next = tokens.ElementAtOrDefault(i + 1);
 
-                if (token.IsOperator) {
-                    HandleOperator(builder, token, prev, next);
-                    continue;
-                }
-
-                if (token.Kind == TokenKind.Comma) {
-                    builder.Append(token);
-                    if (next != null && !next.IsCloseBracket && next.Kind != TokenKind.Colon) {
-                        builder.SoftAppendSpace();
-                    }
-                    continue;
-                }
-
-                if (token.Kind == TokenKind.Name) {
-                    if (prev != null && !prev.IsOpenBracket && prev.Kind != TokenKind.Colon && !prev.IsOperator) {
-                        builder.SoftAppendSpace();
-                    }
-
-                    builder.Append(token);
-                    continue;
-                }
-
-                if (token.Kind == TokenKind.Colon) {
-                    builder.Append(token);
-
-                    if (token.Inside?.Kind != TokenKind.LeftBracket && next?.Kind != TokenKind.Colon) {
-                        builder.SoftAppendSpace();
-                    }
-
-                    continue;
-                }
-
-                if (token.Kind == TokenKind.Comment) {
-                    if (prev != null) {
+                switch (token.Kind) {
+                    case TokenKind.Comment:
                         builder.SoftAppendSpace(2);
-                    }
+                        builder.Append(token);
+                        break;
 
-                    builder.Append(token);
-                    continue;
+                    case TokenKind.Assign:
+                        if (token.IsInsideFunctionArgs && prev?.PrevNonIgnored?.Kind != TokenKind.Colon) {
+                            builder.Append(token);
+                            break;
+                        }
+
+                        goto case TokenKind.AddEqual;
+
+                    // "Normal" assignment and function parameters with type hints
+                    case TokenKind.AddEqual:
+                    case TokenKind.SubtractEqual:
+                    case TokenKind.PowerEqual:
+                    case TokenKind.MultiplyEqual:
+                    case TokenKind.MatMultiplyEqual:
+                    case TokenKind.FloorDivideEqual:
+                    case TokenKind.DivideEqual:
+                    case TokenKind.ModEqual:
+                    case TokenKind.LeftShiftEqual:
+                    case TokenKind.RightShiftEqual:
+                    case TokenKind.BitwiseAndEqual:
+                    case TokenKind.BitwiseOrEqual:
+                    case TokenKind.ExclusiveOrEqual:
+                        builder.SoftAppendSpace();
+                        builder.Append(token);
+                        builder.SoftAppendSpace();
+                        break;
+
+                    case TokenKind.Comma:
+                        builder.Append(token);
+                        if (next != null && !next.IsCloseBracket && next.Kind != TokenKind.Colon) {
+                            builder.SoftAppendSpace();
+                        }
+                        break;
+
+                    case TokenKind.Colon:
+                        builder.Append(token);
+
+                        if (token.InsideBracket?.Kind != TokenKind.LeftBracket && next?.Kind != TokenKind.Colon) {
+                            builder.SoftAppendSpace();
+                        }
+
+                        break;
+
+                    case TokenKind.At:
+                        if (prev != null) {
+                            goto case TokenKind.MatMultiply;
+                        }
+
+                        builder.Append(token);
+                        break;
+
+                    // Unary
+                    case TokenKind.Add:
+                    case TokenKind.Subtract:
+                    case TokenKind.Twiddle:
+                        if (prev != null && (prev.IsOperator || prev.IsOpenBracket || prev.Kind == TokenKind.Comma || prev.Kind == TokenKind.Colon)) {
+                            builder.Append(token);
+                            break;
+                        }
+                        goto case TokenKind.MatMultiply;
+
+                    case TokenKind.Power:
+                    case TokenKind.Multiply:
+                        if (token.IsInsideFunctionArgs) {
+                            var actualPrev = token.PrevNonIgnored;
+                            if (actualPrev != null) {
+                                if (actualPrev.Kind == TokenKind.Comma || actualPrev.Kind == TokenKind.KeywordLambda || actualPrev.Kind == TokenKind.LeftParenthesis) {
+                                    builder.Append(token);
+                                    break;
+                                }
+                            }
+                        }
+                        goto case TokenKind.MatMultiply;
+
+                    // Operators
+                    case TokenKind.MatMultiply:
+                    case TokenKind.FloorDivide:
+                    case TokenKind.Divide:
+                    case TokenKind.Mod:
+                    case TokenKind.LeftShift:
+                    case TokenKind.RightShift:
+                    case TokenKind.BitwiseAnd:
+                    case TokenKind.BitwiseOr:
+                    case TokenKind.ExclusiveOr:
+                    case TokenKind.LessThan:
+                    case TokenKind.GreaterThan:
+                    case TokenKind.LessThanOrEqual:
+                    case TokenKind.GreaterThanOrEqual:
+                    case TokenKind.Equals:
+                    case TokenKind.NotEquals:
+                    case TokenKind.LessThanGreaterThan:
+                    case TokenKind.Arrow:
+                        builder.SoftAppendSpace();
+                        builder.Append(token);
+                        builder.SoftAppendSpace();
+                        break;
+
+                    case TokenKind.Dot:
+                        if (prev?.Kind == TokenKind.KeywordFrom) {
+                            builder.SoftAppendSpace();
+                        }
+
+                        builder.Append(token);
+
+                        if (next?.Kind == TokenKind.KeywordImport) {
+                            builder.SoftAppendSpace();
+                        }
+
+                        break;
+
+                    case TokenKind.LeftBrace:
+                    case TokenKind.LeftBracket:
+                    case TokenKind.LeftParenthesis:
+                    case TokenKind.RightBrace:
+                    case TokenKind.RightBracket:
+                    case TokenKind.RightParenthesis:
+                        builder.Append(token);
+                        break;
+
+                    case TokenKind.Semicolon:
+                        builder.Append(token);
+                        builder.SoftAppendSpace();
+                        break;
+
+                    case TokenKind.Name:
+                    case TokenKind.Constant:
+                    case TokenKind.KeywordFalse:
+                    case TokenKind.KeywordTrue:
+                    case TokenKind.Ellipsis: // Ellipsis is a value
+                        builder.Append(token);
+                        break;
+
+                    case TokenKind.ExplicitLineJoin:
+                        builder.SoftAppendSpace();
+                        builder.Append("\\"); // Hardcoded string so that any following whitespace doesn't make it in.
+                        break;
+
+                    default:
+                        if (token.Kind == TokenKind.KeywordLambda) {
+                            if (token.IsInsideFunctionArgs && prev?.Kind == TokenKind.Assign) {
+                                builder.Append(token);
+                                builder.SoftAppendSpace();
+                                break;
+                            }
+                        }
+
+                        if (token.IsKeyword) {
+                            if (prev != null && !prev.IsOpenBracket) {
+                                builder.SoftAppendSpace();
+                            }
+
+                            builder.Append(token);
+
+                            if (next != null && next.Kind != TokenKind.Colon && next.Kind != TokenKind.Semicolon) {
+                                builder.SoftAppendSpace();
+                            }
+
+                            break;
+                        }
+
+                        if (prev != null && (prev.IsOpenBracket || prev.Kind == TokenKind.Colon)) {
+                            builder.Append(token);
+                            break;
+                        }
+
+                        throw new Exception($"Unhandled token on line {line} of kind {token.Kind}: {token}");
                 }
+            }
 
-                if (token.Kind == TokenKind.Semicolon) {
-                    builder.Append(token);
-                    continue;
+            var newText = builder.ToString();
+            var endCol = _tokenizer.EndOfLineCol(line);
+
+            var afterLast = tokens.Last().Next;
+            if (afterLast != null && afterLast.IsMultilineString) {
+                // If the the next token is a multiline string, then make
+                // sure to include that string's prefix on this line.
+                var afterLastFirst = SplitByNewline(afterLast.ToString()).First();
+                endCol -= afterLastFirst.Length;
+
+                if (tokens.Last().IsOperator) {
+                    newText += " ";
                 }
-
-                HandleOther(builder, token, prev, next);
             }
 
             var edit = new TextEdit {
                 range = new Range {
                     start = new SourceLocation(line, beginCol),
-                    end = new SourceLocation(line, tokens.Last().EndCol)
+                    end = new SourceLocation(line, endCol)
                 },
-                newText = builder.ToString()
+                newText = newText
             };
 
             return new[] { edit };
         }
 
-        private void HandleOperator(TextBuilder builder, TokenExt token, TokenExt prev, TokenExt next) {
-            if (token.Kind == TokenKind.Assign) {
-                if (token.IsInsideFunctionArgs) {
-                    // Function argument
-                    builder.Append(token);
-                    return;
-                }
-
-                builder.SoftAppendSpace();
-                builder.Append(token);
-                builder.SoftAppendSpace();
-                return;
-            }
-
-            if (token.Kind == TokenKind.Dot) {
-                if (prev?.Kind == TokenKind.KeywordFrom) {
-                    builder.SoftAppendSpace();
-                }
-
-                builder.Append(token);
-
-                if (next?.Kind == TokenKind.KeywordImport) {
-                    builder.SoftAppendSpace();
-                }
-
-                return;
-            }
-
-            if (token.Kind == TokenKind.At) {
-                if (prev != null) {
-                    builder.SoftAppendSpace();
-                    builder.Append(token);
-                    builder.SoftAppendSpace();
-                } else {
-                    builder.Append(token);
-                }
-
-                return;
-            }
-
-            if (token.Kind == TokenKind.Multiply) {
-                if (prev?.Kind == TokenKind.KeywordLambda) {
-                    builder.SoftAppendSpace();
-                    builder.Append(token);
-                    return;
-                }
-            }
-
-            if (token.Kind == TokenKind.Power) {
-                if (token.IsInsideFunctionArgs) { // was prev?.Kind == TokenKind.KeywordLambda
-                    builder.SoftAppendSpace();
-                    builder.Append(token);
-                    return;
-                }
-
-                if (prev == null || (prev.Kind != TokenKind.Name && !prev.IsNumber)) {
-                    builder.Append(token);
-                    return;
-                }
-            }
-
-            if (prev != null && (prev.IsOpenBracket || prev.Kind == TokenKind.Comma)) {
-                builder.Append(token);
-                return;
-            }
-
-            builder.SoftAppendSpace();
-            builder.Append(token);
-
-            if (prev != null && prev.IsOperator) {
-                if (token.Kind == TokenKind.Subtract || token.Kind == TokenKind.Add || token.Kind == TokenKind.Twiddle) {
-                    return;
-                }
-            }
-
-            builder.SoftAppendSpace();
-        }
-
-        private void HandleOther(TextBuilder builder, TokenExt token, TokenExt prev, TokenExt next) {
-            if (token.IsBracket) {
-                builder.Append(token);
-                return;
-            }
-
-            if (prev?.Kind == TokenKind.Assign && token.IsInsideFunctionArgs) {
-                builder.Append(token);
-                return;
-            }
-
-            if (prev != null && (prev.IsOpenBracket || prev.Kind == TokenKind.Colon)) {
-                builder.Append(token);
-                return;
-            }
-
-            // TODO: Special case for ~ before numbers.
-
-            builder.SoftAppendSpace();
-            builder.Append(token);
-
-            if (token.IsKeywordWithSpaceBeforeOpen && next != null && next.IsOpenBracket) {
-                builder.SoftAppendSpace();
-            }
-        }
-
         private class TokenExt {
             public Token Token { get; set; }
-            public int Line { get; set; }
-            public int EndCol { get; set; }
-            public TokenExt Inside { get; set; }
+            public SourceSpan Span { get; set; }
+            public int Line => Span.End.Line;
+            public int EndCol => Span.End.Column;
+            public TokenExt InsideBracket { get; set; }
+            public TokenExt Prev { get; set; }
+            public TokenExt Next { get; set; }
             public string PreceedingWhitespace { get; set; }
             public TokenKind Kind { get { return Token.Kind; } }
             public int LambdaArgDepth { get; set; }
 
-            public override string ToString() {
-                return Token.VerbatimImage;
-            }
+            public override string ToString() => Token.VerbatimImage;
 
             public bool IsIgnoredKind
             {
@@ -356,40 +409,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             public bool IsBracket => IsOpenBracket || IsCloseBracket;
 
-            public bool IsKeywordWithSpaceBeforeOpen
-            {
-                get
-                {
-                    switch (Kind) {
-                        case TokenKind.KeywordAnd:
-                        case TokenKind.KeywordAs:
-                        case TokenKind.KeywordAssert:
-                        case TokenKind.KeywordAwait:
-                        case TokenKind.KeywordDel:
-                        case TokenKind.KeywordExcept:
-                        case TokenKind.KeywordElseIf:
-                        case TokenKind.KeywordFor:
-                        case TokenKind.KeywordFrom:
-                        case TokenKind.KeywordGlobal:
-                        case TokenKind.KeywordIf:
-                        case TokenKind.KeywordImport:
-                        case TokenKind.KeywordIn:
-                        case TokenKind.KeywordIs:
-                        case TokenKind.KeywordLambda:
-                        case TokenKind.KeywordNonlocal:
-                        case TokenKind.KeywordNot:
-                        case TokenKind.KeywordOr:
-                        case TokenKind.KeywordRaise:
-                        case TokenKind.KeywordReturn:
-                        case TokenKind.KeywordWhile:
-                        case TokenKind.KeywordWith:
-                        case TokenKind.KeywordYield:
-                            return true;
-                    }
-                    return false;
-                }
-            }
-
             public bool MatchesCloseBracket(TokenExt other) {
                 switch (Kind) {
                     case TokenKind.LeftBrace:
@@ -405,21 +424,66 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             public bool IsOperator => Token is OperatorToken || Kind == TokenKind.Dot || Kind == TokenKind.Assign || Kind == TokenKind.Twiddle;
 
-            public bool IsInsideFunctionArgs => Inside?.Kind == TokenKind.LeftParenthesis || LambdaArgDepth > 0;
+            public bool IsInsideFunctionArgs => (InsideBracket?.Kind == TokenKind.LeftParenthesis && InsideBracket.PrevNonIgnored?.Kind == TokenKind.Name) || LambdaArgDepth > 0;
 
             public bool IsNumber => Kind == TokenKind.Constant && Token != Tokens.NoneToken && !(Token.Value is string || Token.Value is AsciiString);
+
+            public bool IsKeyword => (Kind >= TokenKind.FirstKeyword && Kind <= TokenKind.LastKeyword) || Kind == TokenKind.KeywordAsync || Kind == TokenKind.KeywordAwait;
+
+            public bool IsMultilineString
+            {
+                get
+                {
+                    if (Kind != TokenKind.Constant || Token == Tokens.NoneToken) {
+                        return false;
+                    }
+
+                    if (!(Token.Value is string || Token.Value is AsciiString)) {
+                        return false;
+                    }
+
+                    return Span.Start.Line != Span.End.Line;
+                }
+            }
+
+            public TokenExt PrevNonIgnored
+            {
+                get
+                {
+                    if (Prev != null) {
+                        if (Prev.IsIgnoredKind) {
+                            return Prev.PrevNonIgnored;
+                        }
+                        return Prev;
+                    }
+                    return null;
+                }
+            }
         }
 
+        /// <summary>
+        /// TokenizerWrapper wraps a tokenizer, producing a stream of TokenExt
+        /// instead of regular Tokens. The wrapper keeps track of brackets and
+        /// lambdas, and allows peeking forward at the next token without
+        /// advancing the tokenizer.
+        /// </summary>
         private class TokenizerWrapper {
             private readonly Tokenizer _tokenizer;
             private Stack<TokenExt> _brackets = new Stack<TokenExt>();
             private TokenExt _peeked = null;
             private int _lambdaArgDepth = 0;
+            private TokenExt _prev = null;
 
             public TokenizerWrapper(Tokenizer tokenizer) {
                 _tokenizer = tokenizer;
             }
 
+            /// <summary>
+            /// Returns the next token, and advances the tokenizer. Note that
+            /// the returned token's Next will not be set until the tokenizer
+            /// actually reads that next token.
+            /// </summary>
+            /// <returns>The next token</returns>
             public TokenExt Next() {
                 if (_peeked != null) {
                     var tmp = _peeked;
@@ -437,11 +501,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     return null;
                 }
 
+                var tokenSpan = _tokenizer.TokenSpan;
+                var sourceSpan = new SourceSpan(_tokenizer.IndexToLocation(tokenSpan.Start), _tokenizer.IndexToLocation(tokenSpan.End));
+
                 var tokenExt = new TokenExt {
                     Token = token,
-                    Line = _tokenizer.CurrentPosition.Line,
-                    EndCol = _tokenizer.CurrentPosition.Column,
-                    PreceedingWhitespace = _tokenizer.PreceedingWhiteSpace
+                    PreceedingWhitespace = _tokenizer.PreceedingWhiteSpace,
+                    Span = sourceSpan,
+                    Prev = _prev
                 };
 
                 if (tokenExt.IsCloseBracket) {
@@ -452,7 +519,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
 
                 if (_brackets.TryPeek(out TokenExt inside)) {
-                    tokenExt.Inside = inside;
+                    tokenExt.InsideBracket = inside;
                 }
 
                 if (tokenExt.IsOpenBracket) {
@@ -469,9 +536,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     _lambdaArgDepth++;
                 }
 
+                if (_prev != null) {
+                    _prev.Next = tokenExt;
+                }
+
+                _prev = tokenExt;
                 return tokenExt;
             }
 
+            /// <summary>
+            /// Returns the next token without advancing the tokenizer. Note that
+            /// the returned token's Next will not be set until the tokenizer
+            /// actually reads that next token.
+            /// </summary>
+            /// <returns>The next token</returns>
             public TokenExt Peek() {
                 if (_peeked != null) {
                     return _peeked;
@@ -480,6 +558,33 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _peeked = Next();
                 return _peeked;
             }
+
+            /// <summary>
+            /// Gets the one-indexed column number of the end of a line. The
+            /// tokenizer must be past the line's newline (or at EOF) in order
+            /// for this function to work.
+            /// </summary>
+            /// <param name="line">A one-indexed line number</param>
+            /// <returns>One-indexed column number for the end of the line</returns>
+            public int EndOfLineCol(int line) {
+                if (line > _tokenizer.CurrentPosition.Line || (line == _tokenizer.CurrentPosition.Line && !_tokenizer.IsEndOfFile)) {
+                    throw new ArgumentException("tokenizer must be at EOF or past line's newline", nameof(line));
+                }
+
+                var idx = line - 1;
+                var lines = _tokenizer.GetLineLocations();
+
+                if (idx < lines.Length) {
+                    var nlLoc = lines[idx];
+
+                    var sourceLocation = _tokenizer.IndexToLocation(nlLoc.EndIndex - 1);
+                    return sourceLocation.Column;
+                }
+
+                return _tokenizer.CurrentPosition.Column;
+            }
         }
+
+        private static string[] SplitByNewline(string s) => s.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
     }
 }
