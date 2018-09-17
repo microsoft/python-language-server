@@ -249,10 +249,6 @@ namespace AnalysisTests {
                 for (var i = 0; i < lines.Length; i++) {
                     var lineNum = i + 1;
 
-                    if (lineNum == 212) {
-                        "".ToString();
-                    }
-
                     var edits = lineFormatter.FormatLine(lineNum);
 
                     var lineText = lines[i];

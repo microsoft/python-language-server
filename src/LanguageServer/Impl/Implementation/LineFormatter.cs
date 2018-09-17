@@ -191,7 +191,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     case TokenKind.Colon:
                         builder.Append(token);
 
-                        if (token.InsideBracket?.Kind != TokenKind.LeftBracket && next?.Kind != TokenKind.Colon) {
+                        if (token.Inside?.Kind != TokenKind.LeftBracket && next?.Kind != TokenKind.Colon) {
                             builder.SoftAppendSpace();
                         }
 
@@ -295,7 +295,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         if (token.Kind == TokenKind.KeywordLambda) {
                             if (token.IsInsideFunctionArgs && prev?.Kind == TokenKind.Assign) {
                                 builder.Append(token);
-                                builder.SoftAppendSpace();
+
+                                if (next?.Kind != TokenKind.Colon) {
+                                    builder.SoftAppendSpace();
+                                }
+
                                 break;
                             }
                         }
@@ -354,12 +358,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             public SourceSpan Span { get; set; }
             public int Line => Span.End.Line;
             public int EndCol => Span.End.Column;
-            public TokenExt InsideBracket { get; set; }
+            public TokenExt Inside { get; set; }
             public TokenExt Prev { get; set; }
             public TokenExt Next { get; set; }
             public string PreceedingWhitespace { get; set; }
             public TokenKind Kind { get { return Token.Kind; } }
-            public int LambdaArgDepth { get; set; }
 
             public override string ToString() => Token.VerbatimImage;
 
@@ -424,7 +427,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             public bool IsOperator => Token is OperatorToken || Kind == TokenKind.Dot || Kind == TokenKind.Assign || Kind == TokenKind.Twiddle;
 
-            public bool IsInsideFunctionArgs => (InsideBracket?.Kind == TokenKind.LeftParenthesis && InsideBracket.PrevNonIgnored?.Kind == TokenKind.Name) || LambdaArgDepth > 0;
+            public bool IsInsideFunctionArgs => (Inside?.Kind == TokenKind.LeftParenthesis && Inside.PrevNonIgnored?.Kind == TokenKind.Name) || (Inside?.Kind == TokenKind.KeywordLambda);
 
             public bool IsNumber => Kind == TokenKind.Constant && Token != Tokens.NoneToken && !(Token.Value is string || Token.Value is AsciiString);
 
@@ -469,9 +472,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// </summary>
         private class TokenizerWrapper {
             private readonly Tokenizer _tokenizer;
-            private Stack<TokenExt> _brackets = new Stack<TokenExt>();
+            private Stack<TokenExt> _insides = new Stack<TokenExt>();
             private TokenExt _peeked = null;
-            private int _lambdaArgDepth = 0;
             private TokenExt _prev = null;
 
             public TokenizerWrapper(Tokenizer tokenizer) {
@@ -512,28 +514,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 };
 
                 if (tokenExt.IsCloseBracket) {
-                    if (_brackets.Count == 0 || !_brackets.Peek().MatchesCloseBracket(tokenExt)) {
-                        throw new Exception("close bracket has no matching open");
+                    if (_insides.Count == 0 || !_insides.Peek().MatchesCloseBracket(tokenExt)) {
+                        throw new Exception($"Close bracket ({token.Kind}) has no matching open");
                     }
-                    _brackets.Pop();
+                    _insides.Pop();
+                } else if (tokenExt.Kind == TokenKind.Colon && _insides.Count != 0 && _insides.Peek().Kind == TokenKind.KeywordLambda) {
+                    _insides.Pop();
                 }
 
-                if (_brackets.TryPeek(out TokenExt inside)) {
-                    tokenExt.InsideBracket = inside;
+                if (_insides.TryPeek(out TokenExt inside)) {
+                    tokenExt.Inside = inside;
                 }
 
-                if (tokenExt.IsOpenBracket) {
-                    _brackets.Push(tokenExt);
-                }
-
-                if (token.Kind == TokenKind.Colon && _lambdaArgDepth > 0) {
-                    _lambdaArgDepth--;
-                }
-
-                tokenExt.LambdaArgDepth = _lambdaArgDepth;
-
-                if (token.Kind == TokenKind.KeywordLambda) {
-                    _lambdaArgDepth++;
+                if (tokenExt.IsOpenBracket || tokenExt.Kind == TokenKind.KeywordLambda) {
+                    _insides.Push(tokenExt);
                 }
 
                 if (_prev != null) {
