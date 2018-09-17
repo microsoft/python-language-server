@@ -25,5 +25,17 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var functionScope = constraint.Which.Should().HaveFunction(functionName, because, reasonArgs).Which;
             return new AndWhichConstraint<TAssertion, IFunctionScope>(constraint.And, functionScope);
         }
+
+        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> WithVariable<TAssertion, TScope>(this AndWhichConstraint<TAssertion, TScope> constraint, string functionName, string because = "", params object[] reasonArgs) 
+            where TScope : IScope {
+            var functionScope = constraint.Which.Should().HaveVariable(functionName, because, reasonArgs).Which;
+            return new AndWhichConstraint<TAssertion, VariableDefTestInfo>(constraint.And, functionScope);
+        }
+
+        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> WithParameter<TAssertion, TScope>(this AndWhichConstraint<TAssertion, TScope> constraint, string parameterName, string because = "", params object[] reasonArgs) 
+            where TScope : IFunctionScope {
+            var variableDefinition = constraint.Which.Should().HaveParameter(parameterName, because, reasonArgs).Which;
+            return new AndWhichConstraint<TAssertion, VariableDefTestInfo>(constraint.And, variableDefinition);
+        }
     }
 }

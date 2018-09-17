@@ -64,6 +64,8 @@ namespace TestUtilities {
 
         public static Uri GetDefaultModuleUri() => new Uri(GetDefaultModulePath());
         public static Uri GetNextModuleUri() => new Uri(GetNextModulePath());
+        public static Uri GetTestSpecificUri(string relativePath) => new Uri(GetTestSpecificPath(relativePath));
+        public static Uri GetTestSpecificRootUri() => TestRunScopeAsyncLocal.Value.RootUri;
 
         public static string GetTestSpecificPath(string relativePath) => TestRunScopeAsyncLocal.Value.GetTestSpecificPath(relativePath);
         public static string GetTestRelativePath(Uri uri) => TestRunScopeAsyncLocal.Value.GetTestRelativePath(uri);
@@ -142,16 +144,18 @@ namespace TestUtilities {
     internal class TestRunScope {
         private readonly string _root;
         private int _moduleCounter;
+        public Uri RootUri { get; }
 
         public TestRunScope(string root) {
             _root = root;
+            RootUri = new Uri(_root);
         }
 
         public string GetDefaultModulePath() => GetTestSpecificPath($"module.py");
         public string GetNextModulePath() => GetTestSpecificPath($"module{++_moduleCounter}.py");
         public string GetTestSpecificPath(string relativePath) => Path.Combine(_root, relativePath);
         public string GetTestRelativePath(Uri uri) {
-            var relativeUri = new Uri(_root).MakeRelativeUri(uri);
+            var relativeUri = RootUri.MakeRelativeUri(uri);
             var relativePath = Uri.UnescapeDataString(relativeUri.ToString());
             return relativePath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
         }
