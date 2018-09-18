@@ -293,12 +293,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
 
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[");
-            bool first = true;
             var i = 0;
             for (; i < Math.Min(indexTypes.Length, 6); i++) {
-                if (first) {
-                    first = false;
-                } else {
+                if (i > 0) {
                     yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", ");
                 }
                 foreach (var kv in indexTypes[i].Types.GetRichDescriptions(unionPrefix: "[", unionSuffix: "]")) {
