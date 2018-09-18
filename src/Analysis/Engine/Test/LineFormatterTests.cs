@@ -252,6 +252,11 @@ namespace AnalysisTests {
             await AssertSingleLineFormat("ham[ : upper]", "ham[:upper]");
             await AssertSingleLineFormat("foo[-5:]", "foo[-5:]");
             await AssertSingleLineFormat("foo[:-5]", "foo[:-5]");
+            await AssertSingleLineFormat("foo[+5:]", "foo[+5:]");
+            await AssertSingleLineFormat("foo[:+5]", "foo[:+5]");
+            await AssertSingleLineFormat("foo[~5:]", "foo[~5:]");
+            await AssertSingleLineFormat("foo[:~5]", "foo[:~5]");
+            await AssertSingleLineFormat("foo[-a:]", "foo[-a:]");
         }
 
         // https://github.com/Microsoft/vscode-python/issues/1784
