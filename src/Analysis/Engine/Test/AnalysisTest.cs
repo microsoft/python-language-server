@@ -2573,7 +2573,7 @@ oar2 = fob2 * 100";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("y").WithDescription("tuple")
                     .And.HaveVariable("y1").WithDescription("tuple[int, int, int]")
-                    .And.HaveVariable("oar").WithDescription("list[int]")
+                    .And.HaveVariable("oar").WithDescription("list[int, int, int]")
                     .And.HaveVariable("oar2").WithDescription("list");
             }
         }
@@ -2597,8 +2597,26 @@ oar2 = 100 * fob2";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("y").WithDescription("tuple")
                     .And.HaveVariable("y1").WithDescription("tuple[int, int, int]")
-                    .And.HaveVariable("oar").WithDescription("list[int]")
+                    .And.HaveVariable("oar").WithDescription("list[int, int, int]")
                     .And.HaveVariable("oar2").WithDescription("list");
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InterableTypesDescription_Long() {
+            var text = @"
+x1 = (1,'2',3,4.,5,6,7,8)
+y1 = 100 * x1
+
+fob = [1,2,'3',4,5.,6,7,8]
+oar = 100 * fob
+";
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
+                analysis.Should()
+                    .HaveVariable("y1").WithDescription("tuple[int, str, int, float, int, int, ...]")
+                    .And.HaveVariable("oar").WithDescription("list[int, int, str, int, float, int, ...]");
             }
         }
 
@@ -5426,7 +5444,9 @@ abc = 42
                 await server.SendDidOpenTextDocument(uriSrc2, src2);
                 await server.SendDidOpenTextDocument(uriSrc3, src3);
 
+                await server.GetAnalysisAsync(uriSrc1);
                 var analysis = await server.GetAnalysisAsync(uriSrc2);
+
                 analysis.Should().HaveVariable("y").WithDescription("Python module fob.y")
                     .And.HaveVariable("abc").OfType(BuiltinTypeId.Int);
             }
