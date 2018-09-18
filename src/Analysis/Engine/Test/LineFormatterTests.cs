@@ -340,13 +340,14 @@ limit { limit_num}; """"""";
         }
 
         public static string ApplyLineEdit(string s, TextEdit edit) {
+            if (edit.range.start.line != edit.range.end.line) {
+                throw new ArgumentException("Edit should only operate on a single line", nameof(edit));
+            }
+
             var startIndex = edit.range.start.character;
             var removeCount = edit.range.end.character - edit.range.start.character - 1;
 
-            var removed = s.Remove(startIndex, removeCount);
-            var inserted = removed.Insert(startIndex, edit.newText);
-
-            return inserted;
+            return s.Remove(startIndex, removeCount).Insert(startIndex, edit.newText);
         }
     }
 }
