@@ -2631,39 +2631,8 @@ namespace Microsoft.PythonTools.Parsing {
             }
 
             // make the buffer full:
-            try {
-                int count = _reader.Read(_buffer, _end, _buffer.Length - _end);
-                _end += count;
-            } catch (BadSourceException bse) {
-                StreamReader streamReader = _reader as StreamReader;
-                if (streamReader != null && streamReader.CurrentEncoding != PythonAsciiEncoding.SourceEncoding) {
-                    _errors.Add(
-                        "(unicode error) '{0}' codec can't decode byte 0x{1:x} in position {2}".FormatUI(
-                            Parser.NormalizeEncodingName(streamReader.CurrentEncoding.WebName),
-                            bse.BadByte,
-                            bse.Index + CurrentIndex
-                        ),
-                        null,
-                        CurrentIndex + bse.Index,
-                        CurrentIndex + bse.Index + 1,
-                        ErrorCodes.SyntaxError,
-                        Severity.FatalError
-                    );
-                } else {
-                    _errors.Add(
-                        "Non-ASCII character '\\x{0:x}' at position {1}, but no encoding declared; see http://www.python.org/peps/pep-0263.html for details".FormatUI(
-                            bse.BadByte,
-                            bse.Index + CurrentIndex
-                        ),
-                        null,
-                        CurrentIndex + bse.Index,
-                        CurrentIndex + bse.Index + 1,
-                        ErrorCodes.SyntaxError,
-                        Severity.FatalError
-                    );
-                }
-                throw;
-            }
+            int count = _reader.Read(_buffer, _end, _buffer.Length - _end);
+            _end += count;
 
             ClearInvalidChars();
         }

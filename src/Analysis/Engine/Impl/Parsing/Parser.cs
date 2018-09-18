@@ -133,11 +133,9 @@ namespace Microsoft.PythonTools.Parsing {
         /// </summary>
         public static Parser CreateParser(Stream stream, PythonLanguageVersion version, ParserOptions parserOptions = null) {
             var options = parserOptions ?? ParserOptions.Default;
-
-            var defaultEncoding = version.Is2x() ? PythonAsciiEncoding.Instance : Encoding.UTF8;
+            var defaultEncoding = version.Is2x() ? Encoding.ASCII : Encoding.UTF8;
 
             var reader = GetStreamReaderWithEncoding(stream, defaultEncoding, options.ErrorSink);
-
             return CreateParser(reader, version, options);
         }
 
@@ -5325,9 +5323,7 @@ namespace Microsoft.PythonTools.Parsing {
                 : base((EncodingInfo)null) {
             }
 
-            public override Encoding GetEncoding() {
-                return PythonAsciiEncoding.Instance;
-            }
+            public override Encoding GetEncoding() => Encoding.ASCII;
         }
 
         class EncodingWrapper : Encoding {
@@ -5478,23 +5474,7 @@ namespace Microsoft.PythonTools.Parsing {
             return noNewlineRes;
         }
 
-        /// <summary>
-        /// Returns an Encoding object which raises a BadSourceException when invalid characters are encountered.
-        /// </summary>
-        public static Encoding DefaultEncoding {
-            get {
-                return PythonAsciiEncoding.SourceEncoding;
-            }
-        }
-
-        /// <summary>
-        /// Returns an Encoding object which will not provide any fallback for invalid characters.
-        /// </summary>
-        public static Encoding DefaultEncodingNoFallback {
-            get {
-                return PythonAsciiEncoding.SourceEncodingNoFallback;
-            }
-        }
+        public static Encoding DefaultEncoding => Encoding.ASCII;
 
         #endregion
 
