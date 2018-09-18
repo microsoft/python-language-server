@@ -52,5 +52,5 @@
     <Error Condition="@(_Missing) != ''" Text="Following files are missing: @(_Missing,'%0A')" />
   </Target>
 
-  <Import Project="..\..\NetStandard.targets" />
+  <Import Project="..\..\build\NetStandard.targets" />
 </Project>
