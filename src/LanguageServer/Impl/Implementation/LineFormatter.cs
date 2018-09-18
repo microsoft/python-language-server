@@ -72,7 +72,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// next line to the first non-ignored token so that the formatter
         /// can look ahead.
         /// </summary>
-        /// <param name="line">One-indexed line number</param>
+        /// <param name="line">One-indexed line number.</param>
         private void TokenizeLine(int line) {
             if (line < 1) {
                 return;
@@ -648,7 +648,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             /// tokenizer must be past the line's newline (or at EOF) in order
             /// for this function to work.
             /// </summary>
-            /// <param name="line">A one-indexed line number</param>
+            /// <param name="line">A one-indexed line number.</param>
             /// <returns>One-indexed column number for the end of the line</returns>
             public int EndOfLineCol(int line) {
                 if (line > _tokenizer.CurrentPosition.Line || (line == _tokenizer.CurrentPosition.Line && !_tokenizer.IsEndOfFile)) {

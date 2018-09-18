@@ -351,10 +351,17 @@ limit { limit_num}; """"""";
 
                     lineText.Should().Be(lineTextOrig, $"because line {lineNum} should be unchanged");
                 }
-
             }
         }
 
+        /// <summary>
+        /// Checks that a single line of input text is formatted as expected.
+        /// </summary>
+        /// <param name="text">Input code to format</param>
+        /// <param name="expected">The expected result from the formatter. If null, then text is used.</param>
+        /// <param name="line">The line number to request to be formatted.</param>
+        /// <param name="languageVersion">Python language version to format.</param>
+        /// <param name="editStart">Where the edit should begin (i.e. when whitespace or a multi-line string begins a line).</param>
         public static void AssertSingleLineFormat(string text, string expected = null, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37, int editStart = 1) {
             if (text == null) {
                 throw new ArgumentNullException(nameof(text));
