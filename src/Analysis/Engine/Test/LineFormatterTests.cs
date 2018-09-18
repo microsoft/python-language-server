@@ -63,22 +63,17 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public async Task ColonSlicesWithOperators() {
-            await AssertSingleLineFormat("ham [lower+ offset :upper+offset]", "ham[lower + offset:upper + offset]");
+            await AssertSingleLineFormat("ham [lower+ offset :upper+offset]", "ham[lower + offset : upper + offset]");
         }
 
         [TestMethod, Priority(0)]
         public async Task ColonSlicesWithFunctions() {
-            await AssertSingleLineFormat("ham[ : upper_fn ( x) : step_fn(x )], ham[ :: step_fn(x)]", "ham[:upper_fn(x):step_fn(x)], ham[::step_fn(x)]");
+            await AssertSingleLineFormat("ham[ : upper_fn ( x) : step_fn(x )], ham[ :: step_fn(x)]", "ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]");
         }
 
         [TestMethod, Priority(0)]
         public async Task ColonInForLoop() {
             await AssertSingleLineFormat("for index in  range( len(fruits) ): ", "for index in range(len(fruits)):");
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task NestedBraces() {
-            await AssertSingleLineFormat("[ 1 :[2: (x,),y]]{1}", "[1:[2:(x,), y]]{1}");
         }
 
         [TestMethod, Priority(0)]
@@ -114,7 +109,7 @@ namespace AnalysisTests {
         public async Task DotOperator() {
             await AssertSingleLineFormat("x.y", "x.y");
             await AssertSingleLineFormat("x. y", "x.y");
-            await AssertSingleLineFormat("5 .y", "5.y");
+            await AssertSingleLineFormat("5 .y", "5 .y");
         }
 
         [TestMethod, Priority(0)]
@@ -229,6 +224,57 @@ namespace AnalysisTests {
 
             await AssertSingleLineFormat("def pos0key1(*, key): return key\npos0key1(key= 100)", "pos0key1(key=100)", line: 2);
             await AssertSingleLineFormat("def test_string_literals(self):\n  x= 1; y =2; self.assertTrue(len(x) == 0 and x == y)", "x = 1; y = 2; self.assertTrue(len(x) == 0 and x == y)", line: 2, editStart: 3);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RemoveTrailingSpace() {
+            await AssertSingleLineFormat("a+b ", "a + b");
+        }
+
+        // https://github.com/Microsoft/vscode-python/issues/1783
+        [TestMethod, Priority(0)]
+        public async Task IterableUnpacking() {
+            await AssertSingleLineFormat("*a, b, c = 1, 2, 3", "*a, b, c = 1, 2, 3");
+            await AssertSingleLineFormat("a, *b, c = 1, 2, 3", "a, *b, c = 1, 2, 3");
+            await AssertSingleLineFormat("a, b, *c = 1, 2, 3", "a, b, *c = 1, 2, 3");
+            await AssertSingleLineFormat("a, *b, = 1, 2, 3", "a, *b, = 1, 2, 3");
+        }
+
+        // https://github.com/Microsoft/vscode-python/issues/1792
+        // https://www.python.org/dev/peps/pep-0008/#pet-peeves
+        [TestMethod, Priority(0)]
+        public async Task SlicingPetPeeves() {
+            await AssertSingleLineFormat("ham[lower+offset : upper+offset]", "ham[lower + offset : upper + offset]");
+            await AssertSingleLineFormat("ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]", "ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]");
+            await AssertSingleLineFormat("ham[lower + offset : upper + offset]", "ham[lower + offset : upper + offset]");
+            await AssertSingleLineFormat("ham[1: 9], ham[1 : 9], ham[1 :9 :3]", "ham[1:9], ham[1:9], ham[1:9:3]");
+            await AssertSingleLineFormat("ham[lower : : upper]", "ham[lower::upper]");
+            await AssertSingleLineFormat("ham[ : upper]", "ham[:upper]");
+            await AssertSingleLineFormat("foo[-5:]", "foo[-5:]");
+            await AssertSingleLineFormat("foo[:-5]", "foo[:-5]");
+        }
+
+        // https://github.com/Microsoft/vscode-python/issues/1784
+        [TestMethod, Priority(0)]
+        public async Task LiteralFunctionCall() {
+            await AssertSingleLineFormat("5 .bit_length()", "5 .bit_length()");
+        }
+
+        // https://github.com/Microsoft/vscode-python/issues/2323
+        [TestMethod, Priority(0)]
+        public async Task MultilineFString() {
+            var text = @"f""""""
+select* from { table}
+where { condition}
+order by { order_columns}
+limit { limit_num}; """"""";
+
+            using (var reader = new StringReader(text)) {
+                var lineFormatter = new LineFormatter(reader, PythonLanguageVersion.V37);
+
+                var edits = lineFormatter.FormatLine(5);
+                edits.Should().BeEmpty();
+            }
         }
 
         [TestMethod, Priority(0)]

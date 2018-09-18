@@ -116,7 +116,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     break;
                 }
 
-                if (!token.IsIgnoredKind) {
+                if (!token.IsIgnored) {
                     if (i != 0) {
                         beginCol = tokens[i - 1].EndCol;
                     }
@@ -125,7 +125,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             // Keep ExplictLineJoin because it has text associated with it.
-            tokens = tokens.Where(t => !t.IsIgnoredKind || t.Kind == TokenKind.ExplicitLineJoin).ToList();
+            tokens = tokens.Where(t => !t.IsIgnored || t.Kind == TokenKind.ExplicitLineJoin).ToList();
 
             if (tokens.Count == 0) {
                 return NoEdits;
@@ -189,12 +189,25 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         break;
 
                     case TokenKind.Colon:
-                        builder.Append(token);
+                        // Slicing
+                        if (token.Inside?.Kind == TokenKind.LeftBracket) {
+                            if (!token.IsSimpleSliceToLeft) {
+                                builder.SoftAppendSpace();
+                            }
 
-                        if (token.Inside?.Kind != TokenKind.LeftBracket && next?.Kind != TokenKind.Colon) {
-                            builder.SoftAppendSpace();
+                            builder.Append(token);
+
+                            if (!token.IsSimpleSliceToRight) {
+                                builder.SoftAppendSpace();
+                            }
+
+                            break;
                         }
 
+                        builder.Append(token);
+                        if (next?.Kind != TokenKind.Colon) {
+                            builder.SoftAppendSpace();
+                        }
                         break;
 
                     case TokenKind.At:
@@ -226,6 +239,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                                 }
                             }
                         }
+
+                        if (token.Kind == TokenKind.Multiply) {
+                            // Check unpacking case
+                            var actualPrev = token.PrevNonIgnored;
+                            if (actualPrev == null || (actualPrev.Kind != TokenKind.Name && actualPrev.Kind != TokenKind.Constant && !actualPrev.IsCloseBracket)) {
+                                builder.Append(token);
+                                break;
+                            }
+                        }
+
                         goto case TokenKind.MatMultiply;
 
                     // Operators
@@ -252,7 +275,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         break;
 
                     case TokenKind.Dot:
-                        if (prev?.Kind == TokenKind.KeywordFrom) {
+                        if (prev != null && (prev.Kind == TokenKind.KeywordFrom || prev.IsNumber)) {
                             builder.SoftAppendSpace();
                         }
 
@@ -342,6 +365,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
+            if (newText == "") {
+                return NoEdits;
+            }
+
             var edit = new TextEdit {
                 range = new Range {
                     start = new SourceLocation(line, beginCol),
@@ -366,7 +393,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             public override string ToString() => Token.VerbatimImage;
 
-            public bool IsIgnoredKind
+            public bool IsIgnored
             {
                 get
                 {
@@ -427,6 +454,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             public bool IsOperator => Token is OperatorToken || Kind == TokenKind.Dot || Kind == TokenKind.Assign || Kind == TokenKind.Twiddle;
 
+            public bool IsUnaryOp => Kind == TokenKind.Add || Kind == TokenKind.Subtract || Kind == TokenKind.Twiddle;
+
             public bool IsInsideFunctionArgs => (Inside?.Kind == TokenKind.LeftParenthesis && Inside.PrevNonIgnored?.Kind == TokenKind.Name) || (Inside?.Kind == TokenKind.KeywordLambda);
 
             public bool IsNumber => Kind == TokenKind.Constant && Token != Tokens.NoneToken && !(Token.Value is string || Token.Value is AsciiString);
@@ -449,15 +478,100 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
+            public bool IsSimpleSliceToLeft
+            {
+                get
+                {
+                    if (Kind != TokenKind.Colon) {
+                        return false;
+                    }
+
+                    var a = PrevNonIgnored;
+                    var b = a?.PrevNonIgnored;
+                    var c = b?.PrevNonIgnored;
+
+                    if (a == null) {
+                        return false;
+                    }
+
+                    if (a.Kind == TokenKind.LeftBracket || a.Kind == TokenKind.Colon) {
+                        return true;
+                    }
+
+                    if ((!a.IsNumber && a.Kind != TokenKind.Name) || b == null) {
+                        return false;
+                    }
+
+                    if (b.Kind == TokenKind.LeftBracket || b.Kind == TokenKind.Colon) {
+                        return true;
+                    }
+
+                    if (!b.IsUnaryOp || c == null) {
+                        return false;
+                    }
+
+                    return c.Kind == TokenKind.LeftBracket || c.Kind == TokenKind.Colon;
+                }
+            }
+
+            public bool IsSimpleSliceToRight
+            {
+                get
+                {
+                    if (Kind != TokenKind.Colon) {
+                        return false;
+                    }
+
+                    var a = NextNonIgnored;
+                    var b = a?.NextNonIgnored;
+                    var c = b?.NextNonIgnored;
+
+                    if (a == null) {
+                        return false;
+                    }
+
+                    if (a.Kind == TokenKind.RightBracket || a.Kind == TokenKind.Colon) {
+                        return true;
+                    }
+
+                    if (b == null) {
+                        return false;
+                    }
+
+                    if (a.IsUnaryOp) {
+                        if (c == null) {
+                            return false;
+                        }
+                        return (b.IsNumber || b.Kind == TokenKind.Name) && (c.Kind == TokenKind.RightBracket || c.Kind == TokenKind.Colon);
+                    }
+
+                    return (a.IsNumber || a.Kind == TokenKind.Name) && (b.Kind == TokenKind.RightBracket || b.Kind == TokenKind.Colon);
+                }
+            }
+
             public TokenExt PrevNonIgnored
             {
                 get
                 {
                     if (Prev != null) {
-                        if (Prev.IsIgnoredKind) {
+                        if (Prev.IsIgnored) {
                             return Prev.PrevNonIgnored;
                         }
                         return Prev;
+                    }
+                    return null;
+                }
+            }
+
+            public TokenExt NextNonIgnored
+            {
+                get
+                {
+                    if (Next != null) {
+                        if (Next.IsIgnored) {
+                            return Next.NextNonIgnored;
+                        }
+                        return Next;
                     }
                     return null;
                 }
