@@ -293,20 +293,20 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
 
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[");
-            if (indexTypes.Length < 6) {
-                bool first = true;
-                foreach (var i in indexTypes) {
-                    if (first) {
-                        first = false;
-                    } else {
-                        yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", ");
-                    }
-                    foreach (var kv in i.Types.GetRichDescriptions(unionPrefix: "[", unionSuffix: "]")) {
-                        yield return kv;
-                    }
+            bool first = true;
+            var i = 0;
+            for (; i < Math.Min(indexTypes.Length, 6); i++) {
+                if (first) {
+                    first = false;
+                } else {
+                    yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", ");
                 }
-            } else {
-                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "...");
+                foreach (var kv in indexTypes[i].Types.GetRichDescriptions(unionPrefix: "[", unionSuffix: "]")) {
+                    yield return kv;
+                }
+            }
+            if(i < indexTypes.Length){
+                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, ", ...");
             }
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "]");
         }

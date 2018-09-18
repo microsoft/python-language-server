@@ -2603,6 +2603,24 @@ oar2 = 100 * fob2";
         }
 
         [TestMethod, Priority(0)]
+        public async Task InterableTypesDescription_Long() {
+            var text = @"
+x1 = (1,'2',3,4.,5,6,7,8)
+y1 = 100 * x1
+
+fob = [1,2,'3',4,5.,6,7,8]
+oar = 100 * fob
+";
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
+                analysis.Should()
+                    .HaveVariable("y1").WithDescription("tuple[int, str, int, float, int, int, ...]")
+                    .And.HaveVariable("oar").WithDescription("list[int, int, str, int, float, int, ...]");
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task SequenceContains() {
             var text = @"
 a_tuple = ()
