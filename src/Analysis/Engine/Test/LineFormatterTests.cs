@@ -37,7 +37,7 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task BracesSpacing() {
+        public async Task TupleComma() {
             await AssertSingleLineFormat("foo =(0 ,)", "foo = (0,)");
         }
 
@@ -92,7 +92,7 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task OperatorsWithoutFollowingSpace() {
+        public async Task AsterisksArgsKwargs() {
             await AssertSingleLineFormat("foo( *a, ** b)", "foo(*a, **b)");
         }
 
@@ -183,7 +183,7 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task TrailingComma() {
+        public async Task TrailingCommaAssignment() {
             await AssertSingleLineFormat("a, =[1]", "a, = [1]");
         }
 
@@ -280,6 +280,11 @@ limit { limit_num}; """"""";
                 var edits = lineFormatter.FormatLine(5);
                 edits.Should().BeEmpty();
             }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Ellipsis() {
+            await AssertSingleLineFormat("x=...", "x = ...");
         }
 
         [TestMethod, Priority(0)]
