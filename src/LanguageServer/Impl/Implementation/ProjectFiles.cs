@@ -51,7 +51,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return _projectFiles.Keys.Select(k => k.AbsoluteUri);
         }
 
-        public IProjectEntry GetEntry(TextDocumentIdentifier document) => GetEntry(document.uri);
         public IProjectEntry GetEntry(Uri documentUri, bool throwIfMissing = true) {
             ThrowIfDisposed();
 
@@ -65,7 +64,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void GetEntry(TextDocumentIdentifier document, int? expectedVersion, out ProjectEntry entry, out PythonAst tree) {
             ThrowIfDisposed();
 
-            entry = GetEntry(document) as ProjectEntry;
+            entry = GetEntry(document.uri) as ProjectEntry;
             if (entry == null) {
                 throw new LanguageServerException(LanguageServerException.UnsupportedDocumentType, "unsupported document");
             }

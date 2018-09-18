@@ -45,7 +45,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public override async Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken token) {
             var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
-            var entry = ProjectFiles.GetEntry(@params.textDocument);
+            var entry = ProjectFiles.GetEntry(@params.textDocument.uri);
 
             var members = await GetModuleVariablesAsync(entry as ProjectEntry, opts, string.Empty, 50, token);
             return members
@@ -57,7 +57,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public override async Task<DocumentSymbol[]> HierarchicalDocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
             var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
-            var entry = ProjectFiles.GetEntry(@params.textDocument);
+            var entry = ProjectFiles.GetEntry(@params.textDocument.uri);
 
             var members = await GetModuleVariablesAsync(entry as ProjectEntry, opts, string.Empty, 50, cancellationToken);
             return ToDocumentSymbols(members);

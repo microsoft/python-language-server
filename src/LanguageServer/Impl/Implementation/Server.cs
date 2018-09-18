@@ -361,6 +361,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return entry.GetAnalysisAsync(Timeout.Infinite, token);
         }
 
+        public IProjectEntry GetProjectEntry(Uri documentUri) => ProjectFiles.GetEntry(documentUri);
         #endregion
 
         #region Private Helpers

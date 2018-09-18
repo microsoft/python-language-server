@@ -320,6 +320,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public IGroupableAnalysisProject AnalysisGroup => ProjectState;
 
+        #region IPythonProjectEntry
         public IModuleAnalysis Analysis { get; private set; }
 
         public string FilePath { get; }
@@ -339,6 +340,9 @@ namespace Microsoft.PythonTools.Analysis {
         public Uri DocumentUri { get; }
 
         public Dictionary<object, object> Properties { get; } = new Dictionary<object, object>();
+
+        public IDocument Document => this as IDocument;
+        #endregion
 
         public void Dispose() {
             lock (this) {
