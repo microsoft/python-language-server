@@ -22,12 +22,17 @@ using Microsoft.PythonTools.Analysis;
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
         public override async Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params, CancellationToken cancellationToken) {
-            // The current line is the line after the one we need to format, so
-            // it is also the one-indexed line number for the target line.
-            var targetLine = @params.position.line;
-            if (@params.ch == ";") {
-                // Unless the trigger was a semicolon, in which case the current line is the target.
-                targetLine++;
+            int targetLine; // One-indexed line number
+
+            switch (@params.ch) {
+                case "\n":
+                    targetLine = @params.position.line;
+                    break;
+                case ";":
+                    targetLine = @params.position.line + 1;
+                    break;
+                default:
+                    throw new ArgumentException("unexpected trigger character", nameof(@params.ch));
             }
 
             var uri = @params.textDocument.uri;
