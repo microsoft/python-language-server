@@ -442,15 +442,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             {
                 get
                 {
+                    if (Span.Start.Line == Span.End.Line) {
+                        return false;
+                    }
+
                     if (Kind != TokenKind.Constant || Token == Tokens.NoneToken) {
                         return false;
                     }
 
-                    if (!(Token.Value is string || Token.Value is AsciiString)) {
-                        return false;
-                    }
-
-                    return Span.Start.Line != Span.End.Line;
+                    return Token.Value is string || Token.Value is AsciiString;
                 }
             }
 
