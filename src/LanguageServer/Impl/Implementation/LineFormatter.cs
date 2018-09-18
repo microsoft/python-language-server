@@ -43,7 +43,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var line = token.Line;
 
             // Explicit line joins ("\") appear at the end of a line, but
-            // are included 
+            // their span ends on another line, so move backward so they can
+            // be inserted in the right place.
             if (token.Kind == TokenKind.ExplicitLineJoin) {
                 line--;
             }
