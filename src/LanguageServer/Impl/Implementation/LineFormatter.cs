@@ -231,8 +231,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                     case TokenKind.Power:
                     case TokenKind.Multiply:
-                        // ** unpacking inside dictionary literal (PEP 448)
-
                         if (token.Inside != null) {
                             var actualPrev = token.PrevNonIgnored;
                             if (actualPrev != null) {
