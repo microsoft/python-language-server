@@ -381,6 +381,10 @@ limit { limit_num}; """"""";
         }
 
         public static async Task AssertNoEdits(string text, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37) {
+            if (text == null) {
+                throw new ArgumentNullException(nameof(text));
+            }
+
             using (var reader = new StringReader(text)) {
                 var lineFormatter = new LineFormatter(reader, languageVersion);
                 lineFormatter.FormatLine(line).Should().BeEmpty();
@@ -388,6 +392,10 @@ limit { limit_num}; """"""";
         }
 
         public static string ApplyLineEdit(string s, TextEdit edit) {
+            if (s == null) {
+                throw new ArgumentNullException(nameof(s));
+            }
+
             if (edit.range.start.line != edit.range.end.line) {
                 throw new ArgumentException("Edit should only operate on a single line", nameof(edit));
             }
