@@ -68,6 +68,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly VolatileCounter _pendingAnalysisEnqueue = new VolatileCounter();
         private readonly ConcurrentDictionary<string, ILanguageServerExtension> _extensions = new ConcurrentDictionary<string, ILanguageServerExtension>();
         private readonly DisposableBag _disposableBag = DisposableBag.Create<Server>();
+        private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
 
         private readonly EditorFiles _editorFiles;
         private ClientCapabilities _clientCaps;
@@ -96,6 +97,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposableBag
                 .Add(ProjectFiles)
                 .Add(() => Analyzer?.Dispose())
+                .Add(() => _shutdownCts.Cancel())
                 .Add(AnalysisQueue)
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
@@ -298,17 +300,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             return Task.FromResult(false);
-        }
-
-        public async Task WaitForCompleteAnalysisAsync() {
-            // Wait for all current parsing to complete
-            TraceMessage($"Waiting for parsing to complete");
-            await ParseQueue.WaitForAllAsync();
-            TraceMessage($"Parsing complete. Waiting for analysis entries to enqueue");
-            await _pendingAnalysisEnqueue.WaitForZeroAsync();
-            TraceMessage($"Enqueue complete. Waiting for analysis to complete");
-            await AnalysisQueue.WaitForCompleteAsync();
-            TraceMessage($"Analysis complete.");
         }
 
         public int EstimateRemainingWork() {
@@ -712,5 +703,39 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return false;
         }
         #endregion
+
+        internal Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken) {
+            var tcs = new TaskCompletionSource<object>();
+            var t = WaitForCompleteAnalysisWorker(cancellationToken);
+            Task.Run(async () => {
+                try {
+                    while (!t.IsCompleted) {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        await Task.Delay(100);
+                    }
+                    tcs.TrySetResult(null);
+                } catch (OperationCanceledException) {
+                    tcs.TrySetCanceled();
+                } catch (Exception ex) when (!ex.IsCriticalException()) {
+                    tcs.TrySetException(ex);
+                }
+            });
+            return tcs.Task;
+        }
+
+        private async Task WaitForCompleteAnalysisWorker(CancellationToken cancellationToken) {
+            // Wait for all current parsing to complete
+            TraceMessage($"Waiting for parsing to complete.");
+            await ParseQueue.WaitForAllAsync();
+            TraceMessage($"Parsing complete. Waiting for analysis entries to enqueue.");
+            await _pendingAnalysisEnqueue.WaitForZeroAsync();
+            TraceMessage($"Enqueue complete. Waiting for analysis to complete.");
+            await AnalysisQueue.WaitForCompleteAsync();
+            foreach (var pf in ProjectFiles) {
+                TraceMessage($" Waiting for analysis of {pf.DocumentUri} to complete.");
+                await GetAnalysisAsync(pf.DocumentUri, cancellationToken);
+            }
+            TraceMessage($"Analysis complete.");
+        }
     }
 }

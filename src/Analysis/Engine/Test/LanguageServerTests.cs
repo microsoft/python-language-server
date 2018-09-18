@@ -111,7 +111,7 @@ namespace AnalysisTests {
 
             if (rootUri != null) {
                 await LoadFromDirectoryAsync(s, rootUri.LocalPath).ConfigureAwait(false);
-                await s.WaitForCompleteAnalysisAsync().ConfigureAwait(false);
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None).ConfigureAwait(false);
             }
 
             return s;
@@ -153,7 +153,7 @@ namespace AnalysisTests {
                     languageId = language ?? "python"
                 }
             }, CancellationToken.None).ConfigureAwait(false);
-            await s.WaitForCompleteAnalysisAsync().ConfigureAwait(false);
+            await s.WaitForCompleteAnalysisAsync(CancellationToken.None).ConfigureAwait(false);
             return uri;
         }
 
@@ -617,7 +617,7 @@ mc
             );
 
             await s.UnloadFileAsync(mod2);
-            await s.WaitForCompleteAnalysisAsync();
+            await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
             await AssertCompletion(s, mod1,
                 position: new Position { line = 2, character = 5 },
@@ -897,18 +897,18 @@ datetime.datetime.now().day
             await AssertCompletion(s, mod, new[] { "x" }, null);
 
             Assert.AreEqual(Tuple.Create("y = 2", 1), await ApplyChange(s, modP2, DocumentChange.Insert("y = 2", SourceLocation.MinValue)));
-            await s.WaitForCompleteAnalysisAsync();
+            await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
             await AssertCompletion(s, modP2, new[] { "x", "y" }, null);
 
             Assert.AreEqual(Tuple.Create("z = 3", 1), await ApplyChange(s, modP3, DocumentChange.Insert("z = 3", SourceLocation.MinValue)));
-            await s.WaitForCompleteAnalysisAsync();
+            await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
             await AssertCompletion(s, modP3, new[] { "x", "y", "z" }, null);
             await AssertCompletion(s, mod, new[] { "x", "y", "z" }, null);
 
             await ApplyChange(s, mod, DocumentChange.Delete(SourceLocation.MinValue, SourceLocation.MinValue.AddColumns(5)));
-            await s.WaitForCompleteAnalysisAsync();
+            await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
             await AssertCompletion(s, modP2, new[] { "y", "z" }, new[] { "x" });
             await AssertCompletion(s, modP3, new[] { "y", "z" }, new[] { "x" });
         }
@@ -965,7 +965,7 @@ datetime.datetime.now().day
                         },
                     textDocument = new VersionedTextDocumentIdentifier { uri = mod, version = 2 }
                 });
-                await s.WaitForCompleteAnalysisAsync();
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
                 var messages = GetDiagnostics(diags, mod).ToArray();
                 if (tc == DiagnosticSeverity.Unspecified) {

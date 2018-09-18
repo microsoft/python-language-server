@@ -28,6 +28,8 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
         public override async Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
+            await WaitForCompleteAnalysisAsync(cancellationToken);
+
             var uri = @params.textDocument.uri;
             ProjectFiles.GetEntry(@params.textDocument, @params._version, out var entry, out var tree);
 

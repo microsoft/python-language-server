@@ -145,7 +145,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private async Task IfTestWaitForAnalysisCompleteAsync() {
             if (_initParams.initializationOptions.testEnvironment) {
-                await _server.WaitForCompleteAnalysisAsync();
+                await _server.WaitForCompleteAnalysisAsync(_shutdownCts.Token);
             }
         }
     }

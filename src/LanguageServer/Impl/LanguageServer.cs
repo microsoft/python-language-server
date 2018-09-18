@@ -39,6 +39,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly Dictionary<Uri, Diagnostic[]> _pendingDiagnostic = new Dictionary<Uri, Diagnostic[]>();
         private readonly object _lock = new object();
         private readonly Prioritizer _prioritizer = new Prioritizer();
+        private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
 
         private IServiceContainer _services;
         private IUIService _ui;
@@ -57,7 +58,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _rpc = rpc;
 
             var progress = services.GetService<IProgressService>();
-            _analysisProgressReporter = new AnalysisProgressReporter(_server, progress, _server);
+            _analysisProgressReporter = new AnalysisProgressReporter(_server, progress, _server, _shutdownCts.Token);
 
             _server.OnLogMessage += OnLogMessage;
             _server.OnShowMessage += OnShowMessage;
@@ -83,6 +84,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public void Dispose() {
+            _shutdownCts.Cancel();
             _disposables.TryDispose();
             _server.Dispose();
         }
@@ -181,7 +183,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("workspace/symbol")]
         public async Task<SymbolInformation[]> WorkspaceSymbols(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync();
-            await WaitForCompleteAnalysisAsync(cancellationToken);
             return await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token), cancellationToken);
         }
 
@@ -327,7 +328,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<DocumentSymbol[]> DocumentSymbol(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             // This call is also used by VSC document outline and it needs correct information
-            await WaitForCompleteAnalysisAsync(cancellationToken);
             return await _server.HierarchicalDocumentSymbol(ToObject<DocumentSymbolParams>(token), cancellationToken);
         }
 
@@ -457,25 +457,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     _action();
                 }
             }
-        }
-
-        private Task WaitForCompleteAnalysisAsync(CancellationToken token) {
-            var tcs = new TaskCompletionSource<object>();
-            var t = _server.WaitForCompleteAnalysisAsync();
-            Task.Run(async () => {
-                try {
-                    while (!t.IsCompleted) {
-                        token.ThrowIfCancellationRequested();
-                        await Task.Delay(100);
-                    }
-                    tcs.TrySetResult(null);
-                } catch (OperationCanceledException) {
-                    tcs.TrySetCanceled();
-                } catch (Exception ex) when (!ex.IsCriticalException()) {
-                    tcs.TrySetException(ex);
-                }
-            });
-            return tcs.Task;
         }
 
         private class Prioritizer : IDisposable {

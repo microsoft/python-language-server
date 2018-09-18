@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
@@ -25,12 +26,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly ILogger _logger;
         private readonly Server _server;
         private readonly object _lock = new object();
+        private readonly CancellationToken _cancellationToken;
+
         private IProgress _progress;
         private Task _queueMonitoringTask;
 
-        public AnalysisProgressReporter(Server server, IProgressService progressService, ILogger logger) {
+        public AnalysisProgressReporter(Server server, IProgressService progressService, ILogger logger, CancellationToken cancellationToken) {
             _progressService = progressService;
             _logger = logger;
+            _cancellationToken = cancellationToken;
 
             _server = server;
             _server.OnAnalysisQueued += OnAnalysisQueued;
@@ -69,7 +73,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private async Task QueueMonitoringTask() {
             try {
-                await _server.WaitForCompleteAnalysisAsync();
+                await _server.WaitForCompleteAnalysisAsync(_cancellationToken);
             } finally {
                 EndProgress();
             }

@@ -20,7 +20,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
@@ -29,13 +28,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
         private static int _symbolHierarchyDepthLimit = 1;
 
-        public override async Task<SymbolInformation[]> WorkspaceSymbols(WorkspaceSymbolParams @params, CancellationToken token) {
+        public override async Task<SymbolInformation[]> WorkspaceSymbols(WorkspaceSymbolParams @params, CancellationToken cancellationToken) {
+            await WaitForCompleteAnalysisAsync(cancellationToken);
+
             var members = Enumerable.Empty<IMemberResult>();
             var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
 
             foreach (var entry in ProjectFiles.All) {
                 members = members.Concat(
-                    await GetModuleVariablesAsync(entry as ProjectEntry, opts, @params.query, 50, token)
+                    await GetModuleVariablesAsync(entry as ProjectEntry, opts, @params.query, 50, cancellationToken)
                 );
             }
 
@@ -43,11 +44,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return members.Select(ToSymbolInformation).ToArray();
         }
 
-        public override async Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken token) {
+        public override async Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
+            await WaitForCompleteAnalysisAsync(cancellationToken);
             var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
             var entry = ProjectFiles.GetEntry(@params.textDocument.uri);
 
-            var members = await GetModuleVariablesAsync(entry as ProjectEntry, opts, string.Empty, 50, token);
+            var members = await GetModuleVariablesAsync(entry as ProjectEntry, opts, string.Empty, 50, cancellationToken);
             return members
                 .GroupBy(mr => mr.Name)
                 .Select(g => g.First())
@@ -56,6 +58,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public override async Task<DocumentSymbol[]> HierarchicalDocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
+            await WaitForCompleteAnalysisAsync(cancellationToken);
             var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
             var entry = ProjectFiles.GetEntry(@params.textDocument.uri);
 
