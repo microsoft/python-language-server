@@ -4403,7 +4403,7 @@ class oar(list):
                 var completions = await server.SendCompletion(uri, 2, 8);
 
                 completions.Should().HaveItem("append")
-                    .Which.Should().HaveInsertText("append(self, value):\r\n\treturn super(oar, self).append(value)");
+                    .Which.Should().HaveInsertText("append(self, value):\r\n    return super(oar, self).append(value)");
             }
         }
 
@@ -4419,7 +4419,7 @@ class oar(list):
                 var completions = await server.SendCompletion(uri, 2, 8);
 
                 completions.Should().HaveItem("append")
-                    .Which.Should().HaveInsertText("append(self, value):\r\n\treturn super().append(value)");
+                    .Which.Should().HaveInsertText("append(self, value):\r\n    return super().append(value)");
             }
         }
 
