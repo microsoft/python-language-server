@@ -341,7 +341,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public Dictionary<object, object> Properties { get; } = new Dictionary<object, object>();
 
-        public IDocument Document => this as IDocument;
+        public IDocument Document => this;
         #endregion
 
         public void Dispose() {
