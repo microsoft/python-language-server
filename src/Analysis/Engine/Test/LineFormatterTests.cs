@@ -275,6 +275,11 @@ namespace AnalysisTests {
             await AssertSingleLineFormat("foo[-a:]");
         }
 
+        [TestMethod, Priority(0)]
+        public async Task SlicingMultilineNonSimple() {
+            await AssertSingleLineFormat("arr[:foo\n\n\n\n.bar]", "arr[: foo");
+        }
+
         // https://github.com/Microsoft/vscode-python/issues/1784
         [TestMethod, Priority(0)]
         public async Task LiteralFunctionCall() {

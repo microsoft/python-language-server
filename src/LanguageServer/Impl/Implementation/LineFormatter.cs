@@ -61,6 +61,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// Tokenizes up to and including the specified line. Tokens are
         /// stored in _lineTokens. If the provided line number is past the
         /// end of the input text, then the tokenizer will stop.
+        /// Additionally, this function will attempt to read ahead onto the
+        /// next line to the first non-ignored token so that the formatter
+        /// can look ahead.
         /// </summary>
         /// <param name="line">One-indexed line number</param>
         private void TokenizeLine(int line) {
@@ -68,11 +71,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return;
             }
 
+            var extraToken = true;
+
             var peeked = _tokenizer.Peek();
-            while (peeked != null && (peeked.Line <= line || (peeked.Kind == TokenKind.ExplicitLineJoin && peeked.Line < line))) {
+            while (peeked != null && (peeked.Line <= line || extraToken)) {
                 var token = _tokenizer.Next();
                 AddToken(token);
                 peeked = _tokenizer.Peek();
+
+                if (token.Line > line && !token.IsIgnored) {
+                    extraToken = false;
+                }
             }
         }
 
@@ -86,10 +95,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return NoEdits;
             }
 
-            // Tokenize past this line in order to look ahead for things like
-            // multi-line strings and line continuations. This operation is
-            // always safe.
-            TokenizeLine(line + 1);
+            TokenizeLine(line);
 
             if (!_lineTokens.TryGetValue(line, out List<TokenExt> tokens)) {
                 return NoEdits;
