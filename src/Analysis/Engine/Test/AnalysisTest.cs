@@ -2573,7 +2573,7 @@ oar2 = fob2 * 100";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("y").WithDescription("tuple")
                     .And.HaveVariable("y1").WithDescription("tuple[int, int, int]")
-                    .And.HaveVariable("oar").WithDescription("list[int]")
+                    .And.HaveVariable("oar").WithDescription("list[int, int, int]")
                     .And.HaveVariable("oar2").WithDescription("list");
             }
         }
@@ -2597,7 +2597,7 @@ oar2 = 100 * fob2";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("y").WithDescription("tuple")
                     .And.HaveVariable("y1").WithDescription("tuple[int, int, int]")
-                    .And.HaveVariable("oar").WithDescription("list[int]")
+                    .And.HaveVariable("oar").WithDescription("list[int, int, int]")
                     .And.HaveVariable("oar2").WithDescription("list");
             }
         }
@@ -5426,7 +5426,9 @@ abc = 42
                 await server.SendDidOpenTextDocument(uriSrc2, src2);
                 await server.SendDidOpenTextDocument(uriSrc3, src3);
 
+                await server.GetAnalysisAsync(uriSrc1);
                 var analysis = await server.GetAnalysisAsync(uriSrc2);
+
                 analysis.Should().HaveVariable("y").WithDescription("Python module fob.y")
                     .And.HaveVariable("abc").OfType(BuiltinTypeId.Int);
             }
