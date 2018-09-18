@@ -32,6 +32,19 @@ namespace AnalysisTests {
     [TestClass]
     public class LineFormatterTests {
         [TestMethod, Priority(0)]
+        public async Task LineOutOfBounds() {
+            await AssertNoEdits("a+b", line: 0);
+            await AssertNoEdits("a+b", line: -1);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FormatEmpty() {
+            await AssertNoEdits("");
+            await AssertNoEdits("  ");
+            await AssertNoEdits("\t");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task OperatorSpacing() {
             await AssertSingleLineFormat("( x  +1 )*y/ 3", "(x + 1) * y / 3");
         }
@@ -339,6 +352,13 @@ limit { limit_num}; """"""";
                         end = new SourceLocation(line, text.Split('\n')[line - 1].Length + 1)
                     }
                 });
+            }
+        }
+
+        public static async Task AssertNoEdits(string text, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37) {
+            using (var reader = new StringReader(text)) {
+                var lineFormatter = new LineFormatter(reader, languageVersion);
+                lineFormatter.FormatLine(line).Should().BeEmpty();
             }
         }
 
