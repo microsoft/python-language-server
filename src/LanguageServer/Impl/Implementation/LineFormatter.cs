@@ -184,7 +184,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                     case TokenKind.Comma:
                         builder.Append(token);
-                        if (next != null && !next.IsCloseBracket && next.Kind != TokenKind.Colon) {
+                        if (next != null && !next.IsClose && next.Kind != TokenKind.Colon) {
                             builder.SoftAppendSpace();
                         }
                         break;
@@ -223,7 +223,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     case TokenKind.Add:
                     case TokenKind.Subtract:
                     case TokenKind.Twiddle:
-                        if (prev != null && (prev.IsOperator || prev.IsOpenBracket || prev.Kind == TokenKind.Comma || prev.Kind == TokenKind.Colon)) {
+                        if (prev != null && (prev.IsOperator || prev.IsOpen || prev.Kind == TokenKind.Comma || prev.Kind == TokenKind.Colon)) {
                             builder.Append(token);
                             break;
                         }
@@ -231,10 +231,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                     case TokenKind.Power:
                     case TokenKind.Multiply:
-                        if (token.IsInsideFunctionArgs) {
+                        // ** unpacking inside dictionary literal (PEP 448)
+
+                        if (token.Inside != null) {
                             var actualPrev = token.PrevNonIgnored;
                             if (actualPrev != null) {
-                                if (actualPrev.Kind == TokenKind.Comma || actualPrev.Kind == TokenKind.KeywordLambda || actualPrev.Kind == TokenKind.LeftParenthesis) {
+                                if (actualPrev.Kind == TokenKind.Comma || actualPrev.IsOpen || token.Inside.Kind == TokenKind.KeywordLambda) {
                                     builder.Append(token);
                                     break;
                                 }
@@ -244,7 +246,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         if (token.Kind == TokenKind.Multiply) {
                             // Check unpacking case
                             var actualPrev = token.PrevNonIgnored;
-                            if (actualPrev == null || (actualPrev.Kind != TokenKind.Name && actualPrev.Kind != TokenKind.Constant && !actualPrev.IsCloseBracket)) {
+                            if (actualPrev == null || (actualPrev.Kind != TokenKind.Name && actualPrev.Kind != TokenKind.Constant && !actualPrev.IsClose)) {
                                 builder.Append(token);
                                 break;
                             }
@@ -329,7 +331,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         }
 
                         if (token.IsKeyword) {
-                            if (prev != null && !prev.IsOpenBracket) {
+                            if (prev != null && !prev.IsOpen) {
                                 builder.SoftAppendSpace();
                             }
 
@@ -342,7 +344,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                             break;
                         }
 
-                        if (prev != null && (prev.IsOpenBracket || prev.Kind == TokenKind.Colon)) {
+                        if (prev != null && (prev.IsOpen || prev.Kind == TokenKind.Colon)) {
                             builder.Append(token);
                             break;
                         }
@@ -410,7 +412,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            public bool IsOpenBracket
+            public bool IsOpen
             {
                 get
                 {
@@ -424,7 +426,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            public bool IsCloseBracket
+            public bool IsClose
             {
                 get
                 {
@@ -438,9 +440,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            public bool IsBracket => IsOpenBracket || IsCloseBracket;
-
-            public bool MatchesCloseBracket(TokenExt other) {
+            public bool MatchesClose(TokenExt other) {
                 switch (Kind) {
                     case TokenKind.LeftBrace:
                         return other.Kind == TokenKind.RightBrace;
@@ -628,8 +628,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     Prev = _prev
                 };
 
-                if (tokenExt.IsCloseBracket) {
-                    if (_insides.Count == 0 || !_insides.Peek().MatchesCloseBracket(tokenExt)) {
+                if (tokenExt.IsClose) {
+                    if (_insides.Count == 0 || !_insides.Peek().MatchesClose(tokenExt)) {
                         throw new Exception($"Close bracket ({token.Kind}) has no matching open");
                     }
                     _insides.Pop();
@@ -641,7 +641,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     tokenExt.Inside = inside;
                 }
 
-                if (tokenExt.IsOpenBracket || tokenExt.Kind == TokenKind.KeywordLambda) {
+                if (tokenExt.IsOpen || tokenExt.Kind == TokenKind.KeywordLambda) {
                     _insides.Push(tokenExt);
                 }
 

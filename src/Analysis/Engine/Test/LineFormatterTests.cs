@@ -96,7 +96,7 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public async Task SingleComment() {
-            await AssertSingleLineFormat("# comment", "# comment");
+            await AssertSingleLineFormat("# comment");
         }
 
         [TestMethod, Priority(0)]
@@ -250,10 +250,10 @@ namespace AnalysisTests {
         // https://github.com/Microsoft/vscode-python/issues/1783
         [TestMethod, Priority(0)]
         public async Task IterableUnpacking() {
-            await AssertSingleLineFormat("*a, b, c = 1, 2, 3", "*a, b, c = 1, 2, 3");
-            await AssertSingleLineFormat("a, *b, c = 1, 2, 3", "a, *b, c = 1, 2, 3");
-            await AssertSingleLineFormat("a, b, *c = 1, 2, 3", "a, b, *c = 1, 2, 3");
-            await AssertSingleLineFormat("a, *b, = 1, 2, 3", "a, *b, = 1, 2, 3");
+            await AssertSingleLineFormat("*a, b, c = 1, 2, 3");
+            await AssertSingleLineFormat("a, *b, c = 1, 2, 3");
+            await AssertSingleLineFormat("a, b, *c = 1, 2, 3");
+            await AssertSingleLineFormat("a, *b, = 1, 2, 3");
         }
 
         // https://github.com/Microsoft/vscode-python/issues/1792
@@ -266,13 +266,13 @@ namespace AnalysisTests {
             await AssertSingleLineFormat("ham[1: 9], ham[1 : 9], ham[1 :9 :3]", "ham[1:9], ham[1:9], ham[1:9:3]");
             await AssertSingleLineFormat("ham[lower : : upper]", "ham[lower::upper]");
             await AssertSingleLineFormat("ham[ : upper]", "ham[:upper]");
-            await AssertSingleLineFormat("foo[-5:]", "foo[-5:]");
-            await AssertSingleLineFormat("foo[:-5]", "foo[:-5]");
-            await AssertSingleLineFormat("foo[+5:]", "foo[+5:]");
-            await AssertSingleLineFormat("foo[:+5]", "foo[:+5]");
-            await AssertSingleLineFormat("foo[~5:]", "foo[~5:]");
-            await AssertSingleLineFormat("foo[:~5]", "foo[:~5]");
-            await AssertSingleLineFormat("foo[-a:]", "foo[-a:]");
+            await AssertSingleLineFormat("foo[-5:]");
+            await AssertSingleLineFormat("foo[:-5]");
+            await AssertSingleLineFormat("foo[+5:]");
+            await AssertSingleLineFormat("foo[:+5]");
+            await AssertSingleLineFormat("foo[~5:]");
+            await AssertSingleLineFormat("foo[:~5]");
+            await AssertSingleLineFormat("foo[-a:]");
         }
 
         // https://github.com/Microsoft/vscode-python/issues/1784
@@ -301,6 +301,18 @@ limit { limit_num}; """"""";
         [TestMethod, Priority(0)]
         public async Task Ellipsis() {
             await AssertSingleLineFormat("x=...", "x = ...");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task PEP448() {
+            await AssertSingleLineFormat("print(*[1], *[2], 3)");
+            await AssertSingleLineFormat("dict(**{'x': 1}, y=2, **{'z': 3})");
+            await AssertSingleLineFormat("*range(4), 4");
+            await AssertSingleLineFormat("[*range(4), 4]");
+            await AssertSingleLineFormat("{*range(4), 4}");
+            await AssertSingleLineFormat("{'x': 1, **{'y': 2}}");
+            await AssertSingleLineFormat("{'x': 1, **{'x': 2}}");
+            await AssertSingleLineFormat("{**{'x': 2}, 'x': 1}");
         }
 
         [TestMethod, Priority(0)]
@@ -339,7 +351,15 @@ limit { limit_num}; """"""";
             }
         }
 
-        public static async Task AssertSingleLineFormat(string text, string expected, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37, int editStart = 1) {
+        public static async Task AssertSingleLineFormat(string text, string expected = null, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37, int editStart = 1) {
+            if (text == null) {
+                throw new ArgumentNullException(nameof(text));
+            }
+
+            if (expected == null) {
+                expected = text;
+            }
+
             using (var reader = new StringReader(text)) {
                 var lineFormatter = new LineFormatter(reader, languageVersion);
 
