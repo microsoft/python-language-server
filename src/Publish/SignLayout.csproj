@@ -3,7 +3,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <NoWarn>2008;$(NoWarn)</NoWarn>
   </PropertyGroup>
-  <Import Project="..\..\NetStandard.settings" />
+  <Import Project="..\..\build\NetStandard.settings" />
 
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
