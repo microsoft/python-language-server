@@ -45,5 +45,12 @@ namespace Microsoft.PythonTools.Analysis {
         Dictionary<object, object> Properties { get; }
 
         IModuleContext AnalysisContext { get; }
+
+        /// <summary>
+        /// Document object corresponding to the entry.
+        /// Can be null for entries that are not user documents
+        /// such as modules.
+        /// </summary>
+        IDocument Document { get; }
     }
 }

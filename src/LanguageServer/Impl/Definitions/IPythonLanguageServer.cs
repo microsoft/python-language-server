@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis;
@@ -27,5 +28,7 @@ namespace Microsoft.Python.LanguageServer {
         PythonAst GetCurrentAst(Uri documentUri);
         Task<PythonAst> GetAstAsync(Uri documentUri, CancellationToken token);
         Task<IModuleAnalysis> GetAnalysisAsync(Uri documentUri, CancellationToken token);
+        IProjectEntry GetProjectEntry(Uri documentUri);
+        IEnumerable<string> GetLoadedFiles();
     }
 }

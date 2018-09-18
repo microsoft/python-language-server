@@ -185,8 +185,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public IModuleContext AnalysisContext => null;
         public bool IsAnalyzed => true;
         public void Analyze(CancellationToken cancel) { }
-
         public IEnumerable<string> ParseErrors { get; }
+        public IDocument Document => null;
 
         private static IEnumerable<string> GetChildModules(string filePath, string prefix, IPythonInterpreter interpreter) {
             if (interpreter == null || string.IsNullOrEmpty(filePath)) {

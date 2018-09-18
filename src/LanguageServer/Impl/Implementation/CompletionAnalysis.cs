@@ -899,9 +899,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var sb = new StringBuilder();
 
             sb.AppendLine(result.Name + "(" + string.Join(", ", result.Parameters.Select((p, i) => GetSafeParameterName(p, i))) + "):");
-
             sb.Append(indentation);
-            sb.Append('\t');
 
             if (result.Parameters.Length > 0) {
                 var parameterString = string.Join(", ", result.Parameters.Skip(1).Select((p, i) => GetSafeArgumentName(p, i + 1)));
