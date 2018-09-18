@@ -16,7 +16,6 @@
 
 using System;
 using System.IO;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
@@ -32,263 +31,263 @@ namespace AnalysisTests {
     [TestClass]
     public class LineFormatterTests {
         [TestMethod, Priority(0)]
-        public async Task LineOutOfBounds() {
-            await AssertNoEdits("a+b", line: 0);
-            await AssertNoEdits("a+b", line: -1);
+        public void LineOutOfBounds() {
+            AssertNoEdits("a+b", line: 0);
+            AssertNoEdits("a+b", line: -1);
         }
 
         [TestMethod, Priority(0)]
-        public async Task FormatEmpty() {
-            await AssertNoEdits("");
-            await AssertNoEdits("  ");
-            await AssertNoEdits("\t");
+        public void FormatEmpty() {
+            AssertNoEdits("");
+            AssertNoEdits("  ");
+            AssertNoEdits("\t");
         }
 
         [TestMethod, Priority(0)]
-        public async Task OperatorSpacing() {
-            await AssertSingleLineFormat("( x  +1 )*y/ 3", "(x + 1) * y / 3");
+        public void OperatorSpacing() {
+            AssertSingleLineFormat("( x  +1 )*y/ 3", "(x + 1) * y / 3");
         }
 
         [TestMethod, Priority(0)]
-        public async Task TupleComma() {
-            await AssertSingleLineFormat("foo =(0 ,)", "foo = (0,)");
+        public void TupleComma() {
+            AssertSingleLineFormat("foo =(0 ,)", "foo = (0,)");
         }
 
         [TestMethod, Priority(0)]
-        public async Task ColonRegular() {
-            await AssertSingleLineFormat("if x == 4 : print x,y; x,y= y, x", "if x == 4: print x, y; x, y = y, x", languageVersion: PythonLanguageVersion.V27);
+        public void ColonRegular() {
+            AssertSingleLineFormat("if x == 4 : print x,y; x,y= y, x", "if x == 4: print x, y; x, y = y, x", languageVersion: PythonLanguageVersion.V27);
         }
 
         [TestMethod, Priority(0)]
-        public async Task ColonSlices() {
-            await AssertSingleLineFormat("x[1: 30]", "x[1:30]");
+        public void ColonSlices() {
+            AssertSingleLineFormat("x[1: 30]", "x[1:30]");
         }
 
         [TestMethod, Priority(0)]
-        public async Task ColonSlicesInArguments() {
-            await AssertSingleLineFormat("spam ( ham[ 1 :3], {eggs : 2})", "spam(ham[1:3], {eggs: 2})");
+        public void ColonSlicesInArguments() {
+            AssertSingleLineFormat("spam ( ham[ 1 :3], {eggs : 2})", "spam(ham[1:3], {eggs: 2})");
         }
 
         [TestMethod, Priority(0)]
-        public async Task ColonSlicesWithDoubleColon() {
-            await AssertSingleLineFormat("ham [1:9 ], ham[ 1: 9:   3], ham[: 9 :3], ham[1: :3], ham [ 1: 9:]", "ham[1:9], ham[1:9:3], ham[:9:3], ham[1::3], ham[1:9:]");
+        public void ColonSlicesWithDoubleColon() {
+            AssertSingleLineFormat("ham [1:9 ], ham[ 1: 9:   3], ham[: 9 :3], ham[1: :3], ham [ 1: 9:]", "ham[1:9], ham[1:9:3], ham[:9:3], ham[1::3], ham[1:9:]");
         }
 
         [TestMethod, Priority(0)]
-        public async Task ColonSlicesWithOperators() {
-            await AssertSingleLineFormat("ham [lower+ offset :upper+offset]", "ham[lower + offset : upper + offset]");
+        public void ColonSlicesWithOperators() {
+            AssertSingleLineFormat("ham [lower+ offset :upper+offset]", "ham[lower + offset : upper + offset]");
         }
 
         [TestMethod, Priority(0)]
-        public async Task ColonSlicesWithFunctions() {
-            await AssertSingleLineFormat("ham[ : upper_fn ( x) : step_fn(x )], ham[ :: step_fn(x)]", "ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]");
+        public void ColonSlicesWithFunctions() {
+            AssertSingleLineFormat("ham[ : upper_fn ( x) : step_fn(x )], ham[ :: step_fn(x)]", "ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]");
         }
 
         [TestMethod, Priority(0)]
-        public async Task ColonInForLoop() {
-            await AssertSingleLineFormat("for index in  range( len(fruits) ): ", "for index in range(len(fruits)):");
+        public void ColonInForLoop() {
+            AssertSingleLineFormat("for index in  range( len(fruits) ): ", "for index in range(len(fruits)):");
         }
 
         [TestMethod, Priority(0)]
-        public async Task TrailingComment() {
-            await AssertSingleLineFormat("x=1    # comment", "x = 1  # comment");
+        public void TrailingComment() {
+            AssertSingleLineFormat("x=1    # comment", "x = 1  # comment");
         }
 
         [TestMethod, Priority(0)]
-        public async Task SingleComment() {
-            await AssertSingleLineFormat("# comment");
+        public void SingleComment() {
+            AssertSingleLineFormat("# comment");
         }
 
         [TestMethod, Priority(0)]
-        public async Task CommentWithLeadingWhitespace() {
-            await AssertSingleLineFormat("   # comment", "# comment", editStart: 4);
+        public void CommentWithLeadingWhitespace() {
+            AssertSingleLineFormat("   # comment", "# comment", editStart: 4);
         }
 
         [TestMethod, Priority(0)]
-        public async Task AsterisksArgsKwargs() {
-            await AssertSingleLineFormat("foo( *a, ** b)", "foo(*a, **b)");
+        public void AsterisksArgsKwargs() {
+            AssertSingleLineFormat("foo( *a, ** b)", "foo(*a, **b)");
         }
 
         [TestMethod, Priority(0)]
-        public async Task BraceAfterKeyword() {
-            await AssertSingleLineFormat("for x in(1,2,3)", "for x in (1, 2, 3)");
-            await AssertSingleLineFormat("assert(1,2,3)", "assert (1, 2, 3)");
-            await AssertSingleLineFormat("if (True|False)and(False/True)and not ( x )", "if (True | False) and (False / True) and not (x)");
-            await AssertSingleLineFormat("while (True|False)", "while (True | False)");
-            await AssertSingleLineFormat("yield(a%b)", "yield (a % b)");
+        public void BraceAfterKeyword() {
+            AssertSingleLineFormat("for x in(1,2,3)", "for x in (1, 2, 3)");
+            AssertSingleLineFormat("assert(1,2,3)", "assert (1, 2, 3)");
+            AssertSingleLineFormat("if (True|False)and(False/True)and not ( x )", "if (True | False) and (False / True) and not (x)");
+            AssertSingleLineFormat("while (True|False)", "while (True | False)");
+            AssertSingleLineFormat("yield(a%b)", "yield (a % b)");
         }
 
         [TestMethod, Priority(0)]
-        public async Task DotOperator() {
-            await AssertSingleLineFormat("x.y", "x.y");
-            await AssertSingleLineFormat("x. y", "x.y");
-            await AssertSingleLineFormat("5 .y", "5 .y");
+        public void DotOperator() {
+            AssertSingleLineFormat("x.y", "x.y");
+            AssertSingleLineFormat("x. y", "x.y");
+            AssertSingleLineFormat("5 .y", "5 .y");
         }
 
         [TestMethod, Priority(0)]
-        public async Task DoubleAsterisk() {
-            await AssertSingleLineFormat("foo(a**2, **k)", "foo(a ** 2, **k)");
+        public void DoubleAsterisk() {
+            AssertSingleLineFormat("foo(a**2, **k)", "foo(a ** 2, **k)");
         }
 
         [TestMethod, Priority(0)]
-        public async Task Lambda() {
-            await AssertSingleLineFormat("lambda * args, :0", "lambda *args,: 0");
+        public void Lambda() {
+            AssertSingleLineFormat("lambda * args, :0", "lambda *args,: 0");
         }
 
         [TestMethod, Priority(0)]
-        public async Task CommaExpression() {
-            await AssertSingleLineFormat("x=1,2,3", "x = 1, 2, 3");
+        public void CommaExpression() {
+            AssertSingleLineFormat("x=1,2,3", "x = 1, 2, 3");
         }
 
         [TestMethod, Priority(0)]
-        public async Task IsExpression() {
-            await AssertSingleLineFormat("a( (False is  2)  is 3)", "a((False is 2) is 3)");
+        public void IsExpression() {
+            AssertSingleLineFormat("a( (False is  2)  is 3)", "a((False is 2) is 3)");
         }
 
         [TestMethod, Priority(0)]
-        public async Task FunctionReturningTuple() {
-            await AssertSingleLineFormat("x,y=f(a)", "x, y = f(a)");
+        public void FunctionReturningTuple() {
+            AssertSingleLineFormat("x,y=f(a)", "x, y = f(a)");
         }
 
         [TestMethod, Priority(0)]
-        public async Task FromDotImport() {
-            await AssertSingleLineFormat("from. import A", "from . import A");
+        public void FromDotImport() {
+            AssertSingleLineFormat("from. import A", "from . import A");
         }
 
         [TestMethod, Priority(0)]
-        public async Task FromDotDotImport() {
-            await AssertSingleLineFormat("from ..import A", "from .. import A");
+        public void FromDotDotImport() {
+            AssertSingleLineFormat("from ..import A", "from .. import A");
         }
 
         [TestMethod, Priority(0)]
-        public async Task FromDotDotXImport() {
-            await AssertSingleLineFormat("from..x import A", "from ..x import A");
+        public void FromDotDotXImport() {
+            AssertSingleLineFormat("from..x import A", "from ..x import A");
         }
 
         [TestMethod, Priority(0)]
-        public async Task RawStrings() {
-            await AssertSingleLineFormat("z=r\"\"", "z = r\"\"");
-            await AssertSingleLineFormat("z=rf\"\"", "z = rf\"\"");
-            await AssertSingleLineFormat("z=R\"\"", "z = R\"\"");
-            await AssertSingleLineFormat("z=RF\"\"", "z = RF\"\"");
+        public void RawStrings() {
+            AssertSingleLineFormat("z=r\"\"", "z = r\"\"");
+            AssertSingleLineFormat("z=rf\"\"", "z = rf\"\"");
+            AssertSingleLineFormat("z=R\"\"", "z = R\"\"");
+            AssertSingleLineFormat("z=RF\"\"", "z = RF\"\"");
         }
 
         [TestMethod, Priority(0)]
-        public async Task UnaryOperators() {
-            await AssertSingleLineFormat("x = - y", "x = -y");
-            await AssertSingleLineFormat("x = + y", "x = +y");
-            await AssertSingleLineFormat("x = ~ y", "x = ~y");
-            await AssertSingleLineFormat("x =-1", "x = -1");
-            await AssertSingleLineFormat("x =   +1", "x = +1");
-            await AssertSingleLineFormat("x =  ~1", "x = ~1");
+        public void UnaryOperators() {
+            AssertSingleLineFormat("x = - y", "x = -y");
+            AssertSingleLineFormat("x = + y", "x = +y");
+            AssertSingleLineFormat("x = ~ y", "x = ~y");
+            AssertSingleLineFormat("x =-1", "x = -1");
+            AssertSingleLineFormat("x =   +1", "x = +1");
+            AssertSingleLineFormat("x =  ~1", "x = ~1");
 
-            await AssertSingleLineFormat("x = (-y)", "x = (-y)");
-            await AssertSingleLineFormat("x = (+ y)", "x = (+y)");
-            await AssertSingleLineFormat("x = (~ y)", "x = (~y)");
-            await AssertSingleLineFormat("x =(-1)", "x = (-1)");
-            await AssertSingleLineFormat("x =   (+ 1)", "x = (+1)");
-            await AssertSingleLineFormat("x = ( ~1)", "x = (~1)");
+            AssertSingleLineFormat("x = (-y)", "x = (-y)");
+            AssertSingleLineFormat("x = (+ y)", "x = (+y)");
+            AssertSingleLineFormat("x = (~ y)", "x = (~y)");
+            AssertSingleLineFormat("x =(-1)", "x = (-1)");
+            AssertSingleLineFormat("x =   (+ 1)", "x = (+1)");
+            AssertSingleLineFormat("x = ( ~1)", "x = (~1)");
 
-            await AssertSingleLineFormat("foo(-3.14, +1, ~0xDEADBEEF)", "foo(-3.14, +1, ~0xDEADBEEF)");
-            await AssertSingleLineFormat("foo(a=-3.14, b=+1, c=~0xDEADBEEF)", "foo(a=-3.14, b=+1, c=~0xDEADBEEF)");
+            AssertSingleLineFormat("foo(-3.14, +1, ~0xDEADBEEF)", "foo(-3.14, +1, ~0xDEADBEEF)");
+            AssertSingleLineFormat("foo(a=-3.14, b=+1, c=~0xDEADBEEF)", "foo(a=-3.14, b=+1, c=~0xDEADBEEF)");
         }
 
         [TestMethod, Priority(0)]
-        public async Task EqualsWithTypeHints() {
-            await AssertSingleLineFormat("def foo(x:int=3,x=100.)", "def foo(x: int = 3, x=100.)");
+        public void EqualsWithTypeHints() {
+            AssertSingleLineFormat("def foo(x:int=3,x=100.)", "def foo(x: int = 3, x=100.)");
         }
 
         [TestMethod, Priority(0)]
-        public async Task TrailingCommaAssignment() {
-            await AssertSingleLineFormat("a, =[1]", "a, = [1]");
+        public void TrailingCommaAssignment() {
+            AssertSingleLineFormat("a, =[1]", "a, = [1]");
         }
 
         [TestMethod, Priority(0)]
-        public async Task IfTrue() {
-            await AssertSingleLineFormat("if(True) :", "if (True):");
+        public void IfTrue() {
+            AssertSingleLineFormat("if(True) :", "if (True):");
         }
 
         [TestMethod, Priority(0)]
-        public async Task LambdaArguments() {
-            await AssertSingleLineFormat("l4= lambda x =lambda y =lambda z= 1: z: y(): x()", "l4 = lambda x=lambda y=lambda z=1: z: y(): x()");
+        public void LambdaArguments() {
+            AssertSingleLineFormat("l4= lambda x =lambda y =lambda z= 1: z: y(): x()", "l4 = lambda x=lambda y=lambda z=1: z: y(): x()");
         }
 
         [TestMethod, Priority(0)]
-        public async Task StarInMultilineArguments() {
-            await AssertSingleLineFormat("x = foo(\n  * param1,\n  * param2\n)", "*param1,", line: 2, editStart: 3);
-            await AssertSingleLineFormat("x = foo(\n  * param1,\n  * param2\n)", "*param2", line: 3, editStart: 3);
+        public void StarInMultilineArguments() {
+            AssertSingleLineFormat("x = foo(\n  * param1,\n  * param2\n)", "*param1,", line: 2, editStart: 3);
+            AssertSingleLineFormat("x = foo(\n  * param1,\n  * param2\n)", "*param2", line: 3, editStart: 3);
         }
 
         [TestMethod, Priority(0)]
-        public async Task Arrow() {
-            await AssertSingleLineFormat("def f(a, \n    ** k: 11) -> 12: pass", "**k: 11) -> 12: pass", line: 2, editStart: 5);
+        public void Arrow() {
+            AssertSingleLineFormat("def f(a, \n    ** k: 11) -> 12: pass", "**k: 11) -> 12: pass", line: 2, editStart: 5);
         }
 
         [TestMethod, Priority(0)]
-        public async Task MultilineFunctionCall() {
-            await AssertSingleLineFormat("def foo(x = 1)", "def foo(x=1)", line: 1);
-            await AssertSingleLineFormat("def foo(a\n, x = 1)", ", x=1)", line: 2);
-            await AssertSingleLineFormat("foo(a  ,b,\n  x = 1)", "x=1)", line: 2, editStart: 3);
-            await AssertSingleLineFormat("if True:\n  if False:\n    foo(a  , bar(\n      x = 1)", "x=1)", line: 4, editStart: 7);
-            await AssertSingleLineFormat("z=foo (0 , x= 1, (3+7) , y , z )", "z = foo(0, x=1, (3 + 7), y, z)", line: 1);
-            await AssertSingleLineFormat("foo (0,\n x= 1,", "x=1,", line: 2, editStart: 2);
+        public void MultilineFunctionCall() {
+            AssertSingleLineFormat("def foo(x = 1)", "def foo(x=1)", line: 1);
+            AssertSingleLineFormat("def foo(a\n, x = 1)", ", x=1)", line: 2);
+            AssertSingleLineFormat("foo(a  ,b,\n  x = 1)", "x=1)", line: 2, editStart: 3);
+            AssertSingleLineFormat("if True:\n  if False:\n    foo(a  , bar(\n      x = 1)", "x=1)", line: 4, editStart: 7);
+            AssertSingleLineFormat("z=foo (0 , x= 1, (3+7) , y , z )", "z = foo(0, x=1, (3 + 7), y, z)", line: 1);
+            AssertSingleLineFormat("foo (0,\n x= 1,", "x=1,", line: 2, editStart: 2);
 
-            await AssertSingleLineFormat(@"async def fetch():
+            AssertSingleLineFormat(@"async def fetch():
   async with aiohttp.ClientSession() as session:
     async with session.ws_connect(
         ""http://127.0.0.1:8000/"", headers = cookie) as ws: # add unwanted spaces", @"""http://127.0.0.1:8000/"", headers=cookie) as ws:  # add unwanted spaces", line: 4, editStart: 9);
 
-            await AssertSingleLineFormat("def pos0key1(*, key): return key\npos0key1(key= 100)", "pos0key1(key=100)", line: 2);
-            await AssertSingleLineFormat("def test_string_literals(self):\n  x= 1; y =2; self.assertTrue(len(x) == 0 and x == y)", "x = 1; y = 2; self.assertTrue(len(x) == 0 and x == y)", line: 2, editStart: 3);
+            AssertSingleLineFormat("def pos0key1(*, key): return key\npos0key1(key= 100)", "pos0key1(key=100)", line: 2);
+            AssertSingleLineFormat("def test_string_literals(self):\n  x= 1; y =2; self.assertTrue(len(x) == 0 and x == y)", "x = 1; y = 2; self.assertTrue(len(x) == 0 and x == y)", line: 2, editStart: 3);
         }
 
         [TestMethod, Priority(0)]
-        public async Task RemoveTrailingSpace() {
-            await AssertSingleLineFormat("a+b ", "a + b");
+        public void RemoveTrailingSpace() {
+            AssertSingleLineFormat("a+b ", "a + b");
         }
 
         // https://github.com/Microsoft/vscode-python/issues/1783
         [TestMethod, Priority(0)]
-        public async Task IterableUnpacking() {
-            await AssertSingleLineFormat("*a, b, c = 1, 2, 3");
-            await AssertSingleLineFormat("a, *b, c = 1, 2, 3");
-            await AssertSingleLineFormat("a, b, *c = 1, 2, 3");
-            await AssertSingleLineFormat("a, *b, = 1, 2, 3");
+        public void IterableUnpacking() {
+            AssertSingleLineFormat("*a, b, c = 1, 2, 3");
+            AssertSingleLineFormat("a, *b, c = 1, 2, 3");
+            AssertSingleLineFormat("a, b, *c = 1, 2, 3");
+            AssertSingleLineFormat("a, *b, = 1, 2, 3");
         }
 
         // https://github.com/Microsoft/vscode-python/issues/1792
         // https://www.python.org/dev/peps/pep-0008/#pet-peeves
         [TestMethod, Priority(0)]
-        public async Task SlicingPetPeeves() {
-            await AssertSingleLineFormat("ham[lower+offset : upper+offset]", "ham[lower + offset : upper + offset]");
-            await AssertSingleLineFormat("ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]", "ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]");
-            await AssertSingleLineFormat("ham[lower + offset : upper + offset]", "ham[lower + offset : upper + offset]");
-            await AssertSingleLineFormat("ham[1: 9], ham[1 : 9], ham[1 :9 :3]", "ham[1:9], ham[1:9], ham[1:9:3]");
-            await AssertSingleLineFormat("ham[lower : : upper]", "ham[lower::upper]");
-            await AssertSingleLineFormat("ham[ : upper]", "ham[:upper]");
-            await AssertSingleLineFormat("foo[-5:]");
-            await AssertSingleLineFormat("foo[:-5]");
-            await AssertSingleLineFormat("foo[+5:]");
-            await AssertSingleLineFormat("foo[:+5]");
-            await AssertSingleLineFormat("foo[~5:]");
-            await AssertSingleLineFormat("foo[:~5]");
-            await AssertSingleLineFormat("foo[-a:]");
+        public void SlicingPetPeeves() {
+            AssertSingleLineFormat("ham[lower+offset : upper+offset]", "ham[lower + offset : upper + offset]");
+            AssertSingleLineFormat("ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]", "ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]");
+            AssertSingleLineFormat("ham[lower + offset : upper + offset]", "ham[lower + offset : upper + offset]");
+            AssertSingleLineFormat("ham[1: 9], ham[1 : 9], ham[1 :9 :3]", "ham[1:9], ham[1:9], ham[1:9:3]");
+            AssertSingleLineFormat("ham[lower : : upper]", "ham[lower::upper]");
+            AssertSingleLineFormat("ham[ : upper]", "ham[:upper]");
+            AssertSingleLineFormat("foo[-5:]");
+            AssertSingleLineFormat("foo[:-5]");
+            AssertSingleLineFormat("foo[+5:]");
+            AssertSingleLineFormat("foo[:+5]");
+            AssertSingleLineFormat("foo[~5:]");
+            AssertSingleLineFormat("foo[:~5]");
+            AssertSingleLineFormat("foo[-a:]");
         }
 
         [TestMethod, Priority(0)]
-        public async Task SlicingMultilineNonSimple() {
-            await AssertSingleLineFormat("arr[:foo\n\n\n\n.bar]", "arr[: foo");
+        public void SlicingMultilineNonSimple() {
+            AssertSingleLineFormat("arr[:foo\n\n\n\n.bar]", "arr[: foo");
         }
 
         // https://github.com/Microsoft/vscode-python/issues/1784
         [TestMethod, Priority(0)]
-        public async Task LiteralFunctionCall() {
-            await AssertSingleLineFormat("5 .bit_length()", "5 .bit_length()");
+        public void LiteralFunctionCall() {
+            AssertSingleLineFormat("5 .bit_length()", "5 .bit_length()");
         }
 
         // https://github.com/Microsoft/vscode-python/issues/2323
         [TestMethod, Priority(0)]
-        public async Task MultilineFString() {
+        public void MultilineFString() {
             var text = @"f""""""
 select* from { table}
 where { condition}
@@ -304,29 +303,29 @@ limit { limit_num}; """"""";
         }
 
         [TestMethod, Priority(0)]
-        public async Task Ellipsis() {
-            await AssertSingleLineFormat("x=...", "x = ...");
+        public void Ellipsis() {
+            AssertSingleLineFormat("x=...", "x = ...");
         }
 
         [TestMethod, Priority(0)]
-        public async Task PEP448() {
-            await AssertSingleLineFormat("print(*[1], *[2], 3)");
-            await AssertSingleLineFormat("dict(**{'x': 1}, y=2, **{'z': 3})");
-            await AssertSingleLineFormat("*range(4), 4");
-            await AssertSingleLineFormat("[*range(4), 4]");
-            await AssertSingleLineFormat("{*range(4), 4}");
-            await AssertSingleLineFormat("{'x': 1, **{'y': 2}}");
-            await AssertSingleLineFormat("{'x': 1, **{'x': 2}}");
-            await AssertSingleLineFormat("{**{'x': 2}, 'x': 1}");
+        public void PEP448() {
+            AssertSingleLineFormat("print(*[1], *[2], 3)");
+            AssertSingleLineFormat("dict(**{'x': 1}, y=2, **{'z': 3})");
+            AssertSingleLineFormat("*range(4), 4");
+            AssertSingleLineFormat("[*range(4), 4]");
+            AssertSingleLineFormat("{*range(4), 4}");
+            AssertSingleLineFormat("{'x': 1, **{'y': 2}}");
+            AssertSingleLineFormat("{'x': 1, **{'x': 2}}");
+            AssertSingleLineFormat("{**{'x': 2}, 'x': 1}");
         }
 
         [TestMethod, Priority(0)]
-        public async Task GrammarFile() {
+        public void GrammarFile() {
             var src = TestData.GetPath("TestData", "Formatting", "pythonGrammar.py");
 
             string fileContents;
             using (var reader = new StreamReader(src, true)) {
-                fileContents = await reader.ReadToEndAsync();
+                fileContents = reader.ReadToEnd();
             }
 
             var lines = fileContents.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
@@ -356,7 +355,7 @@ limit { limit_num}; """"""";
             }
         }
 
-        public static async Task AssertSingleLineFormat(string text, string expected = null, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37, int editStart = 1) {
+        public static void AssertSingleLineFormat(string text, string expected = null, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37, int editStart = 1) {
             if (text == null) {
                 throw new ArgumentNullException(nameof(text));
             }
@@ -380,7 +379,7 @@ limit { limit_num}; """"""";
             }
         }
 
-        public static async Task AssertNoEdits(string text, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37) {
+        public static void AssertNoEdits(string text, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37) {
             if (text == null) {
                 throw new ArgumentNullException(nameof(text));
             }
