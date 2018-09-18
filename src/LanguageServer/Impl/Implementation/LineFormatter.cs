@@ -24,17 +24,24 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
+    /// <summary>
+    /// LineFormatter formats lines of code to generally conform with PEP8.
+    /// </summary>
     public class LineFormatter {
         private static readonly TextEdit[] NoEdits = Array.Empty<TextEdit>();
 
-        private readonly TextReader _reader;
         private readonly TokenizerWrapper _tokenizer;
         private readonly Dictionary<int, List<TokenExt>> _lineTokens;
 
+        /// <summary>
+        /// Creates a LineFormatter from a reader. It will only read as much
+        /// of the input as is needed to format the requested line.
+        /// </summary>
+        /// <param name="reader">The code to be formatted. LineFormatter does not dispose of the reader.</param>
+        /// <param name="languageVersion">Language version to use in the tokenization format.</param>
         public LineFormatter(TextReader reader, PythonLanguageVersion languageVersion) {
-            _reader = reader;
             var tokenizer = new Tokenizer(languageVersion, options: TokenizerOptions.Verbatim | TokenizerOptions.VerbatimCommentsAndLineJoins | TokenizerOptions.GroupingRecovery);
-            tokenizer.Initialize(_reader);
+            tokenizer.Initialize(reader);
             _tokenizer = new TokenizerWrapper(tokenizer);
             _lineTokens = new Dictionary<int, List<TokenExt>>();
         }
