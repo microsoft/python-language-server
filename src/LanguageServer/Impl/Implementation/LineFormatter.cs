@@ -223,7 +223,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     case TokenKind.Add:
                     case TokenKind.Subtract:
                     case TokenKind.Twiddle:
-                        if (prev != null && (prev.IsOperator || prev.IsOpen || prev.Kind == TokenKind.Comma || prev.Kind == TokenKind.Colon)) {
+                        if (prev != null && (prev.IsOperator || prev.IsOpen || prev.Is(TokenKind.Comma, TokenKind.Colon))) {
                             builder.Append(token);
                             break;
                         }
@@ -390,53 +390,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             public TokenExt Prev { get; set; }
             public TokenExt Next { get; set; }
             public string PreceedingWhitespace { get; set; }
-            public TokenKind Kind { get { return Token.Kind; } }
+            public TokenKind Kind => Token.Kind;
 
             public override string ToString() => Token.VerbatimImage;
 
-            public bool IsIgnored
-            {
-                get
-                {
-                    switch (Kind) {
-                        case TokenKind.NewLine:
-                        case TokenKind.NLToken:
-                        case TokenKind.Indent:
-                        case TokenKind.Dedent:
-                        case TokenKind.ExplicitLineJoin:
-                            return true;
-                    }
-                    return false;
-                }
-            }
+            public bool Is(params TokenKind[] kinds) => kinds.Contains(Kind);
 
-            public bool IsOpen
-            {
-                get
-                {
-                    switch (Kind) {
-                        case TokenKind.LeftBrace:
-                        case TokenKind.LeftBracket:
-                        case TokenKind.LeftParenthesis:
-                            return true;
-                    }
-                    return false;
-                }
-            }
+            public bool IsIgnored => Is(TokenKind.NewLine, TokenKind.NLToken, TokenKind.Indent, TokenKind.Dedent, TokenKind.ExplicitLineJoin);
 
-            public bool IsClose
-            {
-                get
-                {
-                    switch (Kind) {
-                        case TokenKind.RightBrace:
-                        case TokenKind.RightBracket:
-                        case TokenKind.RightParenthesis:
-                            return true;
-                    }
-                    return false;
-                }
-            }
+            public bool IsOpen => Is(TokenKind.LeftBrace, TokenKind.LeftBracket, TokenKind.LeftParenthesis);
+
+            public bool IsClose => Is(TokenKind.RightBrace, TokenKind.RightBracket, TokenKind.RightParenthesis);
 
             public bool MatchesClose(TokenExt other) {
                 switch (Kind) {
@@ -451,9 +415,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return false;
             }
 
-            public bool IsOperator => Token is OperatorToken || Kind == TokenKind.Dot || Kind == TokenKind.Assign || Kind == TokenKind.Twiddle;
+            public bool IsOperator => Token is OperatorToken || Is(TokenKind.Dot, TokenKind.Assign, TokenKind.Twiddle);
 
-            public bool IsUnaryOp => Kind == TokenKind.Add || Kind == TokenKind.Subtract || Kind == TokenKind.Twiddle;
+            public bool IsUnaryOp => Is(TokenKind.Add, TokenKind.Subtract, TokenKind.Twiddle);
 
             public bool IsInsideFunctionArgs => (Inside?.Kind == TokenKind.LeftParenthesis && Inside.PrevNonIgnored?.Kind == TokenKind.Name) || (Inside?.Kind == TokenKind.KeywordLambda);
 
@@ -493,7 +457,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         return false;
                     }
 
-                    if (a.Kind == TokenKind.LeftBracket || a.Kind == TokenKind.Colon) {
+                    if (a.Is(TokenKind.LeftBracket, TokenKind.Colon)) {
                         return true;
                     }
 
@@ -501,7 +465,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         return false;
                     }
 
-                    if (b.Kind == TokenKind.LeftBracket || b.Kind == TokenKind.Colon) {
+                    if (b.Is(TokenKind.LeftBracket, TokenKind.Colon)) {
                         return true;
                     }
 
@@ -509,7 +473,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         return false;
                     }
 
-                    return c.Kind == TokenKind.LeftBracket || c.Kind == TokenKind.Colon;
+                    return c.Is(TokenKind.LeftBracket, TokenKind.Colon);
                 }
             }
 
@@ -529,7 +493,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         return false;
                     }
 
-                    if (a.Kind == TokenKind.RightBracket || a.Kind == TokenKind.Colon) {
+                    if (a.Is(TokenKind.RightBracket, TokenKind.Colon)) {
                         return true;
                     }
 
@@ -541,10 +505,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         if (c == null) {
                             return false;
                         }
-                        return (b.IsNumber || b.Kind == TokenKind.Name) && (c.Kind == TokenKind.RightBracket || c.Kind == TokenKind.Colon);
+                        return (b.IsNumber || b.Kind == TokenKind.Name) && c.Is(TokenKind.RightBracket, TokenKind.Colon);
                     }
 
-                    return (a.IsNumber || a.Kind == TokenKind.Name) && (b.Kind == TokenKind.RightBracket || b.Kind == TokenKind.Colon);
+                    return (a.IsNumber || a.Kind == TokenKind.Name) && b.Is(TokenKind.RightBracket, TokenKind.Colon);
                 }
             }
 
