@@ -175,6 +175,9 @@ namespace AnalysisTests {
             await AssertSingleLineFormat("x =(-1)", "x = (-1)");
             await AssertSingleLineFormat("x =   (+ 1)", "x = (+1)");
             await AssertSingleLineFormat("x = ( ~1)", "x = (~1)");
+
+            await AssertSingleLineFormat("foo(-3.14, +1, ~0xDEADBEEF)", "foo(-3.14, +1, ~0xDEADBEEF)");
+            await AssertSingleLineFormat("foo(a=-3.14, b=+1, c=~0xDEADBEEF)", "foo(a=-3.14, b=+1, c=~0xDEADBEEF)");
         }
 
         [TestMethod, Priority(0)]
