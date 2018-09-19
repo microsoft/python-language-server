@@ -31,7 +31,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     /// https://github.com/Microsoft/language-server-protocol/blob/gh-pages/specification.md
     /// https://github.com/Microsoft/vs-streamjsonrpc/blob/master/doc/index.md
     /// </summary>
-    public sealed partial class LanguageServer: IDisposable {
+    public sealed partial class LanguageServer : IDisposable {
         private readonly DisposableBag _disposables = new DisposableBag(nameof(LanguageServer));
         private readonly Server _server = new Server();
         private readonly CancellationTokenSource _sessionTokenSource = new CancellationTokenSource();
@@ -50,6 +50,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private PathsWatcher _pathsWatcher;
         private IdleTimeTracker _idleTimeTracker;
         private AnalysisProgressReporter _analysisProgressReporter;
+
+        private bool _watchSearchPaths;
+        private string[] _searchPaths = Array.Empty<string>();
 
         public CancellationToken Start(IServiceContainer services, JsonRpc rpc) {
             _services = services;
@@ -151,11 +154,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _pathsWatcher?.Dispose();
                 var watchSearchPaths = GetSetting(analysis, "watchSearchPaths", true);
                 if (watchSearchPaths) {
-                    _pathsWatcher = new PathsWatcher(
-                        _initParams.initializationOptions.searchPaths,
-                        () => _server.ReloadModulesAsync(CancellationToken.None).DoNotWait(),
-                        _server
-                     );
+                    if (!_searchPaths.SetEquals(_initParams.initializationOptions.searchPaths)) {
+                        _pathsWatcher = new PathsWatcher(
+                            _initParams.initializationOptions.searchPaths,
+                            () => _server.ReloadModulesAsync(CancellationToken.None).DoNotWait(),
+                            _server
+                         );
+                    }
                 }
 
                 var errors = GetSetting(analysis, "errors", Array.Empty<string>());
@@ -430,6 +435,29 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 };
                 _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
             }
+        }
+
+        private void HandlePathWatchChange(JToken section) {
+            var watchSearchPaths = GetSetting(section, "watchSearchPaths", true);
+            if (!watchSearchPaths) {
+                // No longer watching
+                _pathsWatcher?.Dispose();
+                _searchPaths = Array.Empty<string>();
+                _watchSearchPaths = false;
+            }
+
+            if (!_watchSearchPaths || (_watchSearchPaths && _searchPaths.SetEquals(_initParams.initializationOptions.searchPaths))) {
+                // Were not watching, now watching OR were watching but paths have changed. Recreate watcher.
+                _pathsWatcher?.Dispose();
+                _pathsWatcher = new PathsWatcher(
+                    _initParams.initializationOptions.searchPaths,
+                    () => _server.ReloadModulesAsync(CancellationToken.None).DoNotWait(),
+                    _server
+                 );
+            }
+
+            _watchSearchPaths = watchSearchPaths;
+            _searchPaths = _initParams.initializationOptions.searchPaths;
         }
 
         private sealed class IdleTimeTracker : IDisposable {
