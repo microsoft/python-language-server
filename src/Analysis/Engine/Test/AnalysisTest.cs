@@ -5406,7 +5406,7 @@ abc = 42
                 await server.SendDidOpenTextDocument(uriSrc2, src2);
                 await server.SendDidOpenTextDocument(uriSrc3, src3);
 
-                await server.GetAnalysisAsync(uriSrc1);
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis = await server.GetAnalysisAsync(uriSrc2);
 
                 analysis.Should().HaveVariable("y").WithDescription("Python module fob.y")
