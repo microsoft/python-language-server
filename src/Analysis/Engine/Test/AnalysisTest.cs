@@ -5376,7 +5376,8 @@ class C(object):
                 references.Should().OnlyHaveReferences(
                     (uriFob, (0, 16, 0, 17), ReferenceKind.Reference),
                     (uriBaz, (1, 0, 2, 8), ReferenceKind.Value),
-                    (uriOar, (1, 6, 1, 7), ReferenceKind.Definition)
+                    (uriBaz, (1, 6, 1, 7), ReferenceKind.Definition),
+                    (uriBaz, (0, 0, 0, 0), ReferenceKind.Definition)
                 );
 
                 analysis = await server.GetAnalysisAsync(uriFob);
