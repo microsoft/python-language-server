@@ -219,7 +219,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         }
 
                         builder.Append(token);
-                        if (next?.Kind != TokenKind.Colon) {
+                        if (next != null && !next.Is(TokenKind.Colon, TokenKind.Comma)) {
                             builder.SoftAppendSpace();
                         }
                         break;
@@ -470,7 +470,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         return false;
                     }
 
-                    if (b.Is(TokenKind.LeftBracket, TokenKind.Colon)) {
+                    if (b.Is(TokenKind.LeftBracket, TokenKind.Colon, TokenKind.Comma)) {
                         return true;
                     }
 
@@ -478,7 +478,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         return false;
                     }
 
-                    return c.Is(TokenKind.LeftBracket, TokenKind.Colon);
+                    return c.Is(TokenKind.LeftBracket, TokenKind.Colon, TokenKind.Comma);
                 }
             }
 
@@ -498,7 +498,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         return false;
                     }
 
-                    if (a.Is(TokenKind.RightBracket, TokenKind.Colon)) {
+                    if (a.Is(TokenKind.RightBracket, TokenKind.Colon, TokenKind.Comma)) {
                         return true;
                     }
 
@@ -510,10 +510,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         if (c == null) {
                             return false;
                         }
-                        return (b.IsNumber || b.Kind == TokenKind.Name) && c.Is(TokenKind.RightBracket, TokenKind.Colon);
+                        return (b.IsNumber || b.Kind == TokenKind.Name) && c.Is(TokenKind.RightBracket, TokenKind.Colon, TokenKind.Comma);
                     }
 
-                    return (a.IsNumber || a.Kind == TokenKind.Name) && b.Is(TokenKind.RightBracket, TokenKind.Colon);
+                    return (a.IsNumber || a.Kind == TokenKind.Name) && b.Is(TokenKind.RightBracket, TokenKind.Colon, TokenKind.Comma);
                 }
             }
 

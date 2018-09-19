@@ -330,6 +330,28 @@ limit { limit_num}; """"""";
         }
 
         [TestMethod, Priority(0)]
+        public void LineContinuation() {
+            AssertSingleLineFormat("a+b+ \\\n", "a + b + \\");
+        }
+
+        [TestMethod, Priority(0)]
+        public void MultilineChainedCall() {
+            var code = "foo.a() \\\n   .b() \\\n   .c()";
+            AssertSingleLineFormat(code, "foo.a() \\");
+            AssertSingleLineFormat(code, ".b() \\", line: 2, editStart: 4);
+            AssertSingleLineFormat(code, ".c()", line: 3, editStart: 4);
+        }
+
+        [TestMethod, Priority(0)]
+        public void BracketCommas() {
+            AssertSingleLineFormat("a[:, :, :, 1]");
+            AssertSingleLineFormat("a[x:y, x + 1 :y, :, 1]");
+            AssertSingleLineFormat("a[:, 1:3]");
+            AssertSingleLineFormat("a[:, :3, :]");
+            AssertSingleLineFormat("a[:, 3:, :]");
+        }
+
+        [TestMethod, Priority(0)]
         public void GrammarFile() {
             var src = TestData.GetPath("TestData", "Formatting", "pythonGrammar.py");
 
