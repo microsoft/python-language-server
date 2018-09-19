@@ -294,11 +294,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         }
 
                         builder.Append(token);
-
-                        if (next?.Kind == TokenKind.KeywordImport) {
-                            builder.SoftAppendSpace();
-                        }
-
                         break;
 
                     case TokenKind.LeftBrace:
@@ -374,8 +369,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 var afterLastFirst = SplitByNewline(afterLast.ToString()).First();
                 endCol -= afterLastFirst.Length;
 
-                if (tokens.Last().IsOperator) {
-                    newText += " ";
+                var lastToken = tokens.Last();
+                var lastTokenPrev = lastToken.Prev;
+                if (lastToken.IsOperator) {
+                    // Same as TokenKind.Assign case above (for checking inside a function call/def).
+                    if (!(lastToken.IsInsideFunctionArgs && lastTokenPrev?.PrevNonIgnored?.Kind != TokenKind.Colon)) {
+                        newText += " ";
+                    }
                 }
             }
 
