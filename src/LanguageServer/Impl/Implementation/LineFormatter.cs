@@ -371,7 +371,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var newText = builder.ToString();
 
-            if (newText == "") {
+            if (newText.Length == 0) {
                 return NoEdits;
             }
 
@@ -554,7 +554,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// </summary>
         private class TokenizerWrapper {
             private readonly Tokenizer _tokenizer;
-            private Stack<TokenExt> _insides = new Stack<TokenExt>();
+            private readonly Stack<TokenExt> _insides = new Stack<TokenExt>();
             private TokenExt _peeked = null;
             private TokenExt _prev = null;
 

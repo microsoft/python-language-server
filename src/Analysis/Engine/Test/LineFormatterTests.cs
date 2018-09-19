@@ -288,7 +288,7 @@ namespace AnalysisTests {
         // https://github.com/Microsoft/vscode-python/issues/2323
         [TestMethod, Priority(0)]
         public void MultilineFString() {
-            var text = @"f""""""
+            const string text = @"f""""""
 select* from { table}
 where { condition}
 order by { order_columns}
@@ -336,7 +336,7 @@ limit { limit_num}; """"""";
 
         [TestMethod, Priority(0)]
         public void MultilineChainedCall() {
-            var code = "foo.a() \\\n   .b() \\\n   .c()";
+            const string code = "foo.a() \\\n   .b() \\\n   .c()";
             AssertSingleLineFormat(code, "foo.a() \\");
             AssertSingleLineFormat(code, ".b() \\", line: 2, editStart: 4);
             AssertSingleLineFormat(code, ".c()", line: 3, editStart: 4);
@@ -361,7 +361,6 @@ limit { limit_num}; """"""";
             }
 
             var lines = fileContents.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-
 
             using (var reader = new StringReader(fileContents)) {
                 var lineFormatter = new LineFormatter(reader, PythonLanguageVersion.V37);
