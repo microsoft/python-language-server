@@ -359,7 +359,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            var newText = builder.ToString();
             var endCol = _tokenizer.EndOfLineCol(line);
 
             var afterLast = tokens.Last().Next;
@@ -367,17 +366,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // If the the next token is a multiline string, then make
                 // sure to include that string's prefix on this line.
                 var afterLastFirst = SplitByNewline(afterLast.ToString()).First();
-                endCol -= afterLastFirst.Length;
-
-                var lastToken = tokens.Last();
-                var lastTokenPrev = lastToken.Prev;
-                if (lastToken.IsOperator) {
-                    // Same as TokenKind.Assign case above (for checking inside a function call/def).
-                    if (!(lastToken.IsInsideFunctionArgs && lastTokenPrev?.PrevNonIgnored?.Kind != TokenKind.Colon)) {
-                        newText += " ";
-                    }
-                }
+                builder.Append(afterLastFirst);
             }
+
+            var newText = builder.ToString();
 
             if (newText == "") {
                 return NoEdits;

@@ -321,12 +321,12 @@ limit { limit_num}; """"""";
 
         [TestMethod, Priority(0)]
         public void MultilineStringAssignment() {
-            AssertSingleLineFormat("x='''\ntest'''", "x = ", editEnd: 3);
+            AssertSingleLineFormat("x='''abc\ntest'''abc", "x = '''abc");
         }
 
         [TestMethod, Priority(0)]
         public void MultilineDefaultArg() {
-            AssertSingleLineFormat("def foo(x='''\ntest''')", "def foo(x=", editEnd: 11);
+            AssertSingleLineFormat("def foo(x='''abc\ntest''')", "def foo(x='''abc");
         }
 
         [TestMethod, Priority(0)]
@@ -372,7 +372,7 @@ limit { limit_num}; """"""";
         /// <param name="line">The line number to request to be formatted.</param>
         /// <param name="languageVersion">Python language version to format.</param>
         /// <param name="editStart">Where the edit should begin (i.e. when whitespace or a multi-line string begins a line).</param>
-        public static void AssertSingleLineFormat(string text, string expected = null, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37, int editStart = 1, int? editEnd = null) {
+        public static void AssertSingleLineFormat(string text, string expected = null, int line = 1, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37, int editStart = 1) {
             if (text == null) {
                 throw new ArgumentNullException(nameof(text));
             }
@@ -390,7 +390,7 @@ limit { limit_num}; """"""";
                     newText = expected,
                     range = new Range {
                         start = new SourceLocation(line, editStart),
-                        end = new SourceLocation(line, editEnd ?? text.Split('\n')[line - 1].Length + 1)
+                        end = new SourceLocation(line, text.Split('\n')[line - 1].Length + 1)
                     }
                 });
             }
