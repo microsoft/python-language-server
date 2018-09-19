@@ -45,7 +45,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public Task WaitForAllAsync() => _parsingInProgress.WaitForZeroAsync();
 
-        public Task<IAnalysisCookie> Enqueue(IDocument doc, PythonLanguageVersion languageVersion) {
+        public Task<IAnalysisCookie> EnqueueAsync(IDocument doc, PythonLanguageVersion languageVersion) {
             if (doc == null) {
                 throw new ArgumentNullException(nameof(doc));
             }

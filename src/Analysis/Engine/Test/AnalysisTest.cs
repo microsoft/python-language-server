@@ -156,10 +156,10 @@ f(x=42, y = 'abc')
         [TestMethod, Priority(0)]
         public async Task TestPackageImportStar() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var fob = server.AddModuleWithContent("fob", "fob\\__init__.py", "from oar import *");
-                var oar = server.AddModuleWithContent("fob.oar", "fob\\oar\\__init__.py", "from .baz import *");
-                var baz = server.AddModuleWithContent("fob.oar.baz", "fob\\oar\\baz.py", "import fob.oar.quox as quox\r\nfunc = quox.func");
-                var quox = server.AddModuleWithContent("fob.oar.quox", "fob\\oar\\quox.py", "def func(): return 42");
+                var fob = await server.AddModuleWithContentAsync("fob", "fob\\__init__.py", "from oar import *");
+                var oar = await server.AddModuleWithContentAsync("fob.oar", "fob\\oar\\__init__.py", "from .baz import *");
+                var baz = await server.AddModuleWithContentAsync("fob.oar.baz", "fob\\oar\\baz.py", "import fob.oar.quox as quox\r\nfunc = quox.func");
+                var quox = await server.AddModuleWithContentAsync("fob.oar.quox", "fob\\oar\\quox.py", "def func(): return 42");
 
                 var fobAnalysis = await fob.GetAnalysisAsync();
                 var oarAnalysis = await oar.GetAnalysisAsync();
@@ -559,7 +559,7 @@ x['y'] = y
 i = x['y']['x']['value']
 s = y['x']['y']['value']
 ";
-                server.SendDidChangeTextDocument(uri, code);
+                await server.SendDidChangeTextDocumentAsync(uri, code);
                 analysis = await server.GetAnalysisAsync(uri);
 
                 analysis.Should().HaveVariable("i").OfTypes(BuiltinTypeId.Int)
@@ -745,7 +745,7 @@ class D(object):
                 );
 
                 text1 = text1.Substring(0, text1.IndexOf("    def")) + Environment.NewLine + text1.Substring(text1.IndexOf("    def"));
-                server.SendDidChangeTextDocument(uri1, text1);
+                await server.SendDidChangeTextDocumentAsync(uri1, text1);
 
                 references = await server.SendFindReferences(uri1, 5, 9);
                 references.Should().OnlyHaveReferences(
@@ -755,7 +755,7 @@ class D(object):
                 );
 
                 text2 = Environment.NewLine + text2;
-                server.SendDidChangeTextDocument(uri2, text2);
+                await server.SendDidChangeTextDocumentAsync(uri2, text2);
 
                 references = await server.SendFindReferences(uri1, 5, 9);
                 references.Should().OnlyHaveReferences(
@@ -799,7 +799,7 @@ import mod1
 z = mod1.f('abc')
 ";
 
-                server.SendDidChangeTextDocument(uri2, text2);
+                await server.SendDidChangeTextDocumentAsync(uri2, text2);
                 analysis2 = await server.GetAnalysisAsync(uri2);
 
                 analysis1.Should().HaveFunction("f")
@@ -902,7 +902,7 @@ class D(C):
         self.f(_C__A=42)		# sig help should be _C__A
 ";
 
-                server.SendDidChangeTextDocument(uri, code);
+                await server.SendDidChangeTextDocumentAsync(uri, code);
                 await server.GetAnalysisAsync(uri);
 
                 var signatures = await server.SendSignatureHelp(uri, 3, 15);
@@ -928,7 +928,7 @@ class D(C):
 
 ";
 
-                server.SendDidChangeTextDocument(uri, code);
+                await server.SendDidChangeTextDocumentAsync(uri, code);
                 await server.GetAnalysisAsync(uri);
 
                 completions = await server.SendCompletion(uri, 3, 13);
@@ -948,7 +948,7 @@ class C(object):
 xyz = C._C__FOB  # Advanced members completion should work here
 ";
 
-                server.SendDidChangeTextDocument(uri, code);
+                await server.SendDidChangeTextDocumentAsync(uri, code);
                 await server.GetAnalysisAsync(uri);
 
                 completions = await server.SendCompletion(uri, 5, 16);
@@ -1018,7 +1018,7 @@ class C(A, B): pass
 c = C()
 ";
 
-                server.SendDidChangeTextDocument(uri, code);
+                await server.SendDidChangeTextDocumentAsync(uri, code);
                 analysis = await server.GetAnalysisAsync(uri);
 
                 analysis.Should().HaveClassInfo("C")
@@ -1032,7 +1032,7 @@ class G(F,E): pass
 G.remember2buy
 ";
 
-                server.SendDidChangeTextDocument(uri, code);
+                await server.SendDidChangeTextDocumentAsync(uri, code);
                 analysis = await server.GetAnalysisAsync(uri);
 
                 analysis.Should().HaveClassInfo("G")
@@ -1047,7 +1047,7 @@ class G(E,F): pass
 G.remember2buy
 ";
 
-                server.SendDidChangeTextDocument(uri, code);
+                await server.SendDidChangeTextDocumentAsync(uri, code);
                 analysis = await server.GetAnalysisAsync(uri);
 
                 analysis.Should().HaveClassInfo("G")
@@ -1067,7 +1067,7 @@ class Z(K1,K2,K3): pass
 z = Z()
 ";
 
-                server.SendDidChangeTextDocument(uri, code);
+                await server.SendDidChangeTextDocumentAsync(uri, code);
                 analysis = await server.GetAnalysisAsync(uri);
 
                 analysis.Should().HaveClassInfo("Z")
@@ -1081,7 +1081,7 @@ class C(str): pass
 z = None
 ";
 
-                server.SendDidChangeTextDocument(uri, code);
+                await server.SendDidChangeTextDocumentAsync(uri, code);
                 analysis = await server.GetAnalysisAsync(uri);
 
                 analysis.Should().HaveClassInfo("A").WithMethodResolutionOrder("A", "type int", "type object")
@@ -1141,7 +1141,7 @@ iC = iter(C)
                     .And.HaveVariable("iB").OfType(BuiltinTypeId.StrIterator)
                     .And.HaveVariable("iC").OfType(BuiltinTypeId.ListIterator);
 
-                server.SendDidChangeTextDocument(uri, @"
+                await server.SendDidChangeTextDocumentAsync(uri, @"
 A = [1, 2, 3]
 B = 'abc'
 C = [1.0, 'a', 3]
@@ -1157,7 +1157,7 @@ iC = C.__iter__()
                     .And.HaveVariable("iB").OfType(BuiltinTypeId.StrIterator)
                     .And.HaveVariable("iC").OfType(BuiltinTypeId.ListIterator);
 
-                server.SendDidChangeTextDocument(uri, @"
+                await server.SendDidChangeTextDocumentAsync(uri, @"
 A = [1, 2, 3]
 B = 'abc'
 C = [1.0, 'a', 3]
@@ -1174,7 +1174,7 @@ c = _next(iC)
                     .And.HaveVariable("b").OfType(BuiltinTypeId.Str)
                     .And.HaveVariable("c").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Str, BuiltinTypeId.Float);
 
-                server.SendDidChangeTextDocument(uri, @"
+                await server.SendDidChangeTextDocumentAsync(uri, @"
 iA = iter(lambda: 1, 2)
 iB = iter(lambda: 'abc', None)
 iC = iter(lambda: 1, 'abc')
@@ -1213,7 +1213,7 @@ c = _next(iC)
                     .And.HaveVariable("b").OfType(BuiltinTypeId.Unicode)
                     .And.HaveVariable("c").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Unicode, BuiltinTypeId.Float);
 
-                server.SendDidChangeTextDocument(uri, @"
+                await server.SendDidChangeTextDocumentAsync(uri, @"
 iA = iter(lambda: 1, 2)
 iB = iter(lambda: 'abc', None)
 iC = iter(lambda: 1, 'abc')
@@ -2751,7 +2751,7 @@ class D(object):
         print self.abc
 
 D(42)";
-                server.SendDidChangeTextDocument(uri, text);
+                await server.SendDidChangeTextDocumentAsync(uri, text);
 
                 referencesAbc = await server.SendFindReferences(uri, 4, 15);
                 referencesFob = await server.SendFindReferences(uri, 4, 21);
@@ -2795,7 +2795,7 @@ x = f()";
 def f(): pass
 
 x = f";
-                server.SendDidChangeTextDocument(uri, text);
+                await server.SendDidChangeTextDocumentAsync(uri, text);
                 referencesF = await server.SendFindReferences(uri, 3, 5);
 
                 referencesF.Should().OnlyHaveReferences(
@@ -3695,7 +3695,8 @@ for abc in x:
             using (var server = await CreateServerAsync()) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
-                analysis.Should().HaveVariable("x").WithDescription("set[int]")
+                analysis.Should()
+                    .HaveVariable("x").WithDescription("set[int]")
                     .And.HaveVariable("abc").OfType(BuiltinTypeId.Int);
             }
         }
@@ -5347,26 +5348,29 @@ class C(object):
                 var uriFob = await server.OpenDocumentAndGetUriAsync("fob.py", fobSrc);
                 var uriOar = await server.OpenDocumentAndGetUriAsync("oar.py", oarSrc);
                 var uriBaz = await server.OpenDocumentAndGetUriAsync("baz.py", bazSrc);
-                server.SendDidChangeTextDocument(uriFob, "from oar import C");
+                await server.SendDidChangeTextDocumentAsync(uriFob, "from oar import C");
 
                 var references = await server.SendFindReferences(uriFob, 0, 17);
                 references.Should().OnlyHaveReferences(
                     (uriFob, (0, 16, 0, 17), ReferenceKind.Reference),
                     (uriOar, (1, 0, 2, 8), ReferenceKind.Value),
-                    (uriOar, (1, 6, 1, 7), ReferenceKind.Definition)
+                    (uriOar, (1, 6, 1, 7), ReferenceKind.Definition),
+                    (uriOar, (0, 0, 0, 0), ReferenceKind.Definition)
                 );
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis = await server.GetAnalysisAsync(uriFob);
                 analysis.Should().HaveVariable("C").WithDescription("C");
 
                 // delete the class..
-                server.SendDidChangeTextDocument(uriOar, "");
+                await server.SendDidChangeTextDocumentAsync(uriOar, "");
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 analysis = await server.GetAnalysisAsync(uriFob);
-                analysis.Should().NotHaveVariable("C");
+                analysis.Should().HaveVariable("C").WithNoTypes();
 
                 // Change location of the class
-                server.SendDidChangeTextDocument(uriFob, "from baz import C");
+                await server.SendDidChangeTextDocumentAsync(uriFob, "from baz import C");
 
                 references = await server.SendFindReferences(uriFob, 0, 17);
                 references.Should().OnlyHaveReferences(
@@ -5409,7 +5413,8 @@ abc = 42
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis = await server.GetAnalysisAsync(uriSrc2);
 
-                analysis.Should().HaveVariable("y").WithDescription("Python module fob.y")
+                analysis.Should()
+                    .HaveVariable("y").WithDescription("Python module fob.y")
                     .And.HaveVariable("abc").OfType(BuiltinTypeId.Int);
             }
         }
@@ -7662,7 +7667,7 @@ e = Employee('Guido')
                         var content = code[p[i]];
                         var filename = name.Replace('.', '\\') + ".py";
 
-                        entries[p[i]] = server.AddModuleWithContent(name, filename, content);
+                        entries[p[i]] = await server.AddModuleWithContentAsync(name, filename, content);
                     }
 
                     var analysis = entries

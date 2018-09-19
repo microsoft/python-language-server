@@ -19,6 +19,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Infrastructure;
@@ -80,7 +81,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _syncContext.Post(_ => HideDiagnostics(documentUri), null);
         }
 
-        public void DidChangeTextDocument(DidChangeTextDocumentParams @params, bool enqueueForParsing) {
+        public async Task DidChangeTextDocument(DidChangeTextDocumentParams @params, bool enqueueForParsing, CancellationToken cancellationToken) {
             var changes = @params.contentChanges;
             if (changes == null || changes.Length == 0) {
                 return;
@@ -121,6 +122,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     })
                 ));
 
+                cancellationToken.ThrowIfCancellationRequested();
                 DidChangeTextDocumentParams? next = null;
                 lock (_pendingChanges) {
                     var notExpired = _pendingChanges
@@ -135,12 +137,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     }
                 }
                 if (next.HasValue) {
-                    DidChangeTextDocument(next.Value, false);
+                    await DidChangeTextDocument(next.Value, false, cancellationToken);
                 }
             } finally {
                 if (enqueueForParsing) {
                     _server.TraceMessage($"Applied changes to {uri}");
-                    _server.EnqueueItem(doc, enqueueForAnalysis: @params._enqueueForAnalysis ?? true);
+                    await _server.EnqueueItemAsync(doc, enqueueForAnalysis: @params._enqueueForAnalysis ?? true);
                 }
             }
         }

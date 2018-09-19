@@ -50,7 +50,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public abstract Task DidOpenTextDocument(DidOpenTextDocumentParams @params, CancellationToken cancellationToken);
 
-        public abstract void DidChangeTextDocument(DidChangeTextDocumentParams @params);
+        public abstract Task DidChangeTextDocument(DidChangeTextDocumentParams @params, CancellationToken cancellationToken);
 
         public virtual Task WillSaveTextDocument(WillSaveTextDocumentParams @params, CancellationToken cancellationToken)
             => Task.CompletedTask;

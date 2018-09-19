@@ -205,7 +205,7 @@ namespace AnalysisTests {
 
             var parseComplete = EventTaskSources.Server.OnParseComplete.Create(s);
 
-            s.DidChangeTextDocument(new DidChangeTextDocumentParams {
+            await s.DidChangeTextDocument(new DidChangeTextDocumentParams {
                 textDocument = new VersionedTextDocumentIdentifier {
                     uri = document,
                     version = finalVersion,
@@ -214,7 +214,7 @@ namespace AnalysisTests {
                     range = c.WholeBuffer ? null : (Range?)c.ReplacedSpan,
                     text = c.InsertedText
                 }).ToArray()
-            });
+            }, CancellationToken.None);
 
             await parseComplete;
 
@@ -576,7 +576,7 @@ mc
             );
 
             // Send the document update.
-            s.DidChangeTextDocument(new DidChangeTextDocumentParams {
+            await s.DidChangeTextDocument(new DidChangeTextDocumentParams {
                 textDocument = new VersionedTextDocumentIdentifier { uri = mod, version = 1 },
                 contentChanges = new[] { new TextDocumentContentChangedEvent {
                     text = ".",
@@ -587,7 +587,7 @@ mc
                 } },
                 // Suppress reanalysis to avoid a race
                 _enqueueForAnalysis = false
-            });
+            }, CancellationToken.None);
 
             // Now with the "." event sent, we should see this as a dot completion
             await AssertCompletion(s, mod,
@@ -957,14 +957,14 @@ datetime.datetime.now().day
                 Trace.TraceInformation("Testing {0}", tc);
 
                 var mod = await AddModule(s, "");
-                s.DidChangeTextDocument(new DidChangeTextDocumentParams {
+                await s.DidChangeTextDocument(new DidChangeTextDocumentParams {
                     contentChanges = new[] {
                             new TextDocumentContentChangedEvent {
                                 text = "def f():\r\n        pass\r\n\tpass"
                             }
                         },
                     textDocument = new VersionedTextDocumentIdentifier { uri = mod, version = 2 }
-                });
+                }, CancellationToken.None);
                 await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
                 var messages = GetDiagnostics(diags, mod).ToArray();

@@ -210,13 +210,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         [JsonRpcMethod("textDocument/didChange")]
-        public async Task DidChangeTextDocument(JToken token) {
+        public async Task DidChangeTextDocument(JToken token, CancellationToken cancellationToken) {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync()) {
                 var @params = ToObject<DidChangeTextDocumentParams>(token);
                 var version = @params.textDocument.version;
                 if (version == null || @params.contentChanges.IsNullOrEmpty()) {
-                    _server.DidChangeTextDocument(@params);
+                    await _server.DidChangeTextDocument(@params, cancellationToken);
                     return;
                 }
 
@@ -225,7 +225,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 var changes = SplitDidChangeTextDocumentParams(@params, version.Value);
 
                 foreach (var change in changes) {
-                    _server.DidChangeTextDocument(change);
+                    await _server.DidChangeTextDocument(change, cancellationToken);
                 }
             }
         }
