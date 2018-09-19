@@ -440,14 +440,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private void HandlePathWatchChange(JToken section) {
             var watchSearchPaths = GetSetting(section, "watchSearchPaths", true);
             if (!watchSearchPaths) {
-                // No longer watching
+                // No longer watching.
                 _pathsWatcher?.Dispose();
                 _searchPaths = Array.Empty<string>();
                 _watchSearchPaths = false;
+                return;
             }
 
+            // Now watching.
             if (!_watchSearchPaths || (_watchSearchPaths && _searchPaths.SetEquals(_initParams.initializationOptions.searchPaths))) {
-                // Were not watching, now watching OR were watching but paths have changed. Recreate watcher.
+                // Were not watching OR were watching but paths have changed. Recreate the watcher.
                 _pathsWatcher?.Dispose();
                 _pathsWatcher = new PathsWatcher(
                     _initParams.initializationOptions.searchPaths,
