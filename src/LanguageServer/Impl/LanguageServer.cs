@@ -462,33 +462,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _searchPaths = _initParams.initializationOptions.searchPaths;
         }
 
-        private sealed class IdleTimeTracker : IDisposable {
-            private readonly int _delay;
-            private readonly Action _action;
-            private Timer _timer;
-            private DateTime _lastActivityTime;
-
-            public IdleTimeTracker(int msDelay, Action action) {
-                _delay = msDelay;
-                _action = action;
-                _timer = new Timer(OnTimer, this, 50, 50);
-                NotifyUserActivity();
-            }
-
-            public void NotifyUserActivity() => _lastActivityTime = DateTime.Now;
-
-            public void Dispose() {
-                _timer?.Dispose();
-                _timer = null;
-            }
-
-            private void OnTimer(object state) {
-                if ((DateTime.Now - _lastActivityTime).TotalMilliseconds >= _delay && _timer != null) {
-                    _action();
-                }
-            }
-        }
-
         private class Prioritizer : IDisposable {
             private const int InitializePriority = 0;
             private const int ConfigurationPriority = 1;
