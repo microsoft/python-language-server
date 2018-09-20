@@ -157,13 +157,12 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal void SetCompleteAnalysis() {
             lock (this) {
-                if (AnalysisVersion >= _expectedParse) {
-                    _analysisTcs.TrySetResult(Analysis);
+                if (AnalysisVersion < _expectedParse) {
+                    return;
                 }
+                _analysisTcs.TrySetResult(Analysis);
             }
-            if (AnalysisVersion >= _expectedParse) {
-                RaiseNewAnalysis();
-            }
+            RaiseNewAnalysis();
         }
 
         internal void ResetCompleteAnalysis() {
@@ -294,7 +293,7 @@ namespace Microsoft.PythonTools.Analysis {
                 string pathPrefix = PathUtils.EnsureEndSeparator(Path.GetDirectoryName(FilePath));
                 var children =
                     from pair in ProjectState.ModulesByFilename
-                    // Is the candidate child package in a subdirectory of our package?
+                        // Is the candidate child package in a subdirectory of our package?
                     let fileName = pair.Key
                     where fileName.StartsWithOrdinal(pathPrefix, ignoreCase: true)
                     let moduleName = pair.Value.Name

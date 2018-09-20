@@ -584,25 +584,25 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        internal async Task EnqueueItemAsync(IDocument doc, AnalysisPriority priority = AnalysisPriority.Normal, bool parse = true, bool enqueueForAnalysis = true) {
+        internal Task EnqueueItemAsync(IDocument doc, AnalysisPriority priority = AnalysisPriority.Normal, bool parse = true, bool enqueueForAnalysis = true) {
             _disposableBag.ThrowIfDisposed();
             var pending = _pendingAnalysisEnqueue.Incremented();
             try {
                 var entry = doc as ProjectEntry;
                 entry?.ResetCompleteAnalysis();
 
-                // If we don't need to parse, use null cooking
-                IAnalysisCookie cookie = null;
+                // If we don't need to parse, use null cookie
+                var cookieTask = Task.FromResult<IAnalysisCookie>(null);
                 if (parse) {
                     using (GetDocumentParseCounter(doc, out var count)) {
                         if (count > 3) {
                             // Rough check to prevent unbounded queueing. If we have
                             // multiple parses in queue, we will get the latest doc
                             // version in one of the ones to come.
-                            return;
+                            return Task.CompletedTask;
                         }
                         TraceMessage($"Parsing document {doc.DocumentUri}");
-                        cookie = await ParseQueue.EnqueueAsync(doc, Analyzer.LanguageVersion);
+                        cookieTask = ParseQueue.EnqueueAsync(doc, Analyzer.LanguageVersion);
                     }
                 }
 
@@ -610,11 +610,18 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // It is called from DidChangeTextDocument which must fully finish
                 // since otherwise Complete() may come before the change is enqueued
                 // for processing and the completion list will be driven off the stale data.
-                var p = pending;
-                await OnDocumentChangeProcessingCompleteAsync(doc, cookie as VersionCookie, enqueueForAnalysis, priority, p);
-                pending = null;
-            } finally {
+                return cookieTask.ContinueWith(async t => {
+                    if (t.IsFaulted) {
+                        // Happens when file got deleted before processing 
+                        pending.Dispose();
+                        LogMessage(MessageType.Error, t.Exception.Message);
+                        return;
+                    }
+                    await OnDocumentChangeProcessingCompleteAsync(doc, t.Result as VersionCookie, enqueueForAnalysis, priority, pending);
+                });
+            } catch {
                 pending?.Dispose();
+                throw;
             }
         }
 
