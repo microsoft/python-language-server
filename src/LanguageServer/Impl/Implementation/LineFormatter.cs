@@ -108,36 +108,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return NoEdits;
             }
 
-            if (tokens.Count == 0) {
-                return NoEdits;
-            }
-
-            var builder = new TextBuilder();
-            var beginCol = -1;
-            var skipFirst = false;
-
-            for (var i = 0; i < tokens.Count; i++) {
-                var token = tokens[i];
-
-                if (i == 0 && token.IsMultilineString) {
-                    // If the line begins with a multiline-string (rather than some whitespace),
-                    // then begin the edit right after. The token will be skipped but not
-                    // removed so it can still be used for formatting rules which look at
-                    // the previous token.
-                    beginCol = token.EndCol;
-                    skipFirst = true;
-                    builder.SoftAppendSpace(allowLeading: true);
-                    break;
-                }
-
-                if (!token.IsIgnored) {
-                    if (i != 0) {
-                        beginCol = tokens[i - 1].EndCol;
-                    }
-                    break;
-                }
-            }
-
             // Keep ExplictLineJoin because it has text associated with it.
             tokens = tokens.Where(t => !t.IsIgnored || t.Kind == TokenKind.ExplicitLineJoin).ToList();
 
@@ -145,19 +115,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return NoEdits;
             }
 
-            if (beginCol == -1) {
-                // The beginning column couldn't be deduced from the tokens,
-                // so resort to looking at the first token's preceeding whitespace.
-                var firstWhitespace = tokens.First().PreceedingWhitespace ?? "";
-                firstWhitespace = SplitByNewline(firstWhitespace).Last();
-                beginCol = 1 + firstWhitespace.Length;
-            }
+            var builder = new TextBuilder();
+            var first = tokens[0];
+            var beginCol = first.IsMultilineString ? first.Span.End.Column : first.Span.Start.Column;
 
-            for (var i = 0; i < tokens.Count; i++) {
-                if (i == 0 && skipFirst) {
-                    continue;
-                }
-
+            for (var i = first.IsMultilineString ? 1 : 0; i < tokens.Count; i++) {
                 var token = tokens[i];
                 var prev = tokens.ElementAtOrDefault(i - 1);
                 var next = tokens.ElementAtOrDefault(i + 1);
@@ -390,7 +352,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             public Token Token { get; set; }
             public SourceSpan Span { get; set; }
             public int Line => Span.End.Line;
-            public int EndCol => Span.End.Column;
             public TokenExt Inside { get; set; }
             public TokenExt Prev { get; set; }
             public TokenExt Next { get; set; }
