@@ -80,6 +80,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(() => _server.OnApplyWorkspaceEdit -= OnApplyWorkspaceEdit)
                 .Add(() => _server.OnRegisterCapability -= OnRegisterCapability)
                 .Add(() => _server.OnUnregisterCapability -= OnUnregisterCapability)
+                .Add(() => _shutdownCts.Cancel())
                 .Add(_prioritizer)
                 .Add(_analysisProgressReporter)
                 .Add(() => _pathsWatcher?.Dispose());
@@ -88,7 +89,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public void Dispose() {
-            _shutdownCts.Cancel();
             _disposables.TryDispose();
             _server.Dispose();
         }
