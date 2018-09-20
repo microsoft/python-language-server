@@ -611,22 +611,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // since otherwise Complete() may come before the change is enqueued
                 // for processing and the completion list will be driven off the stale data.
                 var p = pending;
-                OnDocumentChangeProcessingComplete(doc, cookie as VersionCookie, enqueueForAnalysis, priority, p);
+                await OnDocumentChangeProcessingCompleteAsync(doc, cookie as VersionCookie, enqueueForAnalysis, priority, p);
                 pending = null;
-
-                if (entry != null) {
-                    var reanalyzeEntries = Analyzer.GetEntriesThatImportModule(entry.ModuleName, false);
-                    foreach (IDocument d in reanalyzeEntries) {
-                        await EnqueueItemAsync(d);
-                    }
-                }
-
             } finally {
                 pending?.Dispose();
             }
         }
 
-        private void OnDocumentChangeProcessingComplete(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
+        private async Task OnDocumentChangeProcessingCompleteAsync(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
             try {
                 _disposableBag.ThrowIfDisposed();
                 if (vc != null) {
@@ -646,6 +638,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 disposeWhenEnqueued = null;
                 if (vc != null) {
                     _editorFiles.GetDocument(doc.DocumentUri).UpdateParseDiagnostics(vc, doc.DocumentUri);
+                }
+
+                if (doc is ProjectEntry entry) {
+                    var reanalyzeEntries = Analyzer.GetEntriesThatImportModule(entry.ModuleName, false);
+                    foreach (IDocument d in reanalyzeEntries) {
+                        await EnqueueItemAsync(d);
+                    }
                 }
             } catch (BadSourceException) {
             } catch (ObjectDisposedException) when (_disposableBag.IsDisposed) {
