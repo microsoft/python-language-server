@@ -229,14 +229,14 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             if (expr is NameExpression name) {
-                var defScope = scope.EnumerateTowardsGlobal.FirstOrDefault(s =>
-                    s.ContainsVariable(name.Name) && (s == scope || s.VisibleToChildren || IsFirstLineOfFunction(scope, s, location)));
-
-                if (defScope == null) {
-                    variables = _unit.State.BuiltinModule.GetDefinitions(name.Name)
-                        .SelectMany(ToVariables);
+                if (!scope.EnumerateTowardsGlobal.Any()) {
+                    variables = _unit.State.BuiltinModule.GetDefinitions(name.Name).SelectMany(ToVariables);
                 } else {
-                    variables = GetVariablesInScope(name, defScope).Distinct();
+                    foreach (var defScope in scope.EnumerateTowardsGlobal
+                        .Where(s => s.ContainsVariable(name.Name) && (s == scope || s.VisibleToChildren || IsFirstLineOfFunction(scope, s, location)))) {
+                        var scopeVariables = GetVariablesInScope(name, defScope).Distinct();
+                        variables = variables.Union(scopeVariables);
+                    }
                 }
             } else if (expr is MemberExpression member && !string.IsNullOrEmpty(member.Name)) {
                 var objects = eval.Evaluate(member.Target);

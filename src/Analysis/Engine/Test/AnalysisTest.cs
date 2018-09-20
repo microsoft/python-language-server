@@ -3120,7 +3120,6 @@ def f(abc):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/39")]
         public async Task References_Parameters_NestedFunction() {
             var uri = TestData.GetDefaultModuleUri();
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
