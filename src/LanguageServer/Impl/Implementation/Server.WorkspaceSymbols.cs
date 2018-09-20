@@ -72,7 +72,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private static IEnumerable<IMemberResult> GetModuleVariables(ProjectEntry entry, GetMemberOptions opts, string prefix, IModuleAnalysis analysis) {
-            var all = analysis.GetAllAvailableMembers(SourceLocation.None, opts);
+            var all = analysis.GetAllMembers(SourceLocation.None, opts);
             return all
                 .Where(m => {
                     if (m.Values.Any(v => v.DeclaringModule == entry || v.Locations.Any(l => l.DocumentUri == entry.DocumentUri))) {

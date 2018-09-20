@@ -147,7 +147,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="location">
         /// The location in the file where the available members should be looked up.
         /// </param>
-        IEnumerable<IMemberResult> GetAllAvailableMembers(SourceLocation location, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults);
+        IEnumerable<IMemberResult> GetAllMembers(SourceLocation location, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults);
 
         /// <summary>
         /// Gets the AST for the given text as if it appeared at the specified location.

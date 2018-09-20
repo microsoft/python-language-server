@@ -351,7 +351,7 @@ namespace Microsoft.PythonTools.Analysis {
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults
         ) {
             if (string.IsNullOrEmpty(exprText)) {
-                return GetAllAvailableMembers(location, options);
+                return GetAllMembers(location, options);
             }
 
             var expr = GetExpressionForText(exprText, location, out var scope, out var ast);
@@ -631,7 +631,11 @@ namespace Microsoft.PythonTools.Analysis {
         internal IEnumerable<IMemberResult> GetAllAvailableMembersByIndex(
             int index,
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults
-        ) => GetAllAvailableMembers(_unit.Tree.IndexToLocation(index), options);
+        ) => GetAllMembers(_unit.Tree.IndexToLocation(index), options);
+
+        [Obsolete]
+        public IEnumerable<MemberResult> GetAllAvailableMembers(SourceLocation location, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults)
+            => GetAllMembers(location, options).OfType<MemberResult>();
 
         /// <summary>
         /// Gets the available names at the given location.  This includes
@@ -642,7 +646,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// looked up.
         /// </param>
         /// <remarks>New in 2.2</remarks>
-        public IEnumerable<IMemberResult> GetAllAvailableMembers(SourceLocation location, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults) {
+        public IEnumerable<IMemberResult> GetAllMembers(SourceLocation location, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults) {
             var result = new Dictionary<string, IEnumerable<AnalysisValue>>();
 
             // collect builtins
