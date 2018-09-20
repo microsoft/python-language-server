@@ -34,7 +34,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var members = Enumerable.Empty<IMemberResult>();
             var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
 
-            foreach (var entry in ProjectFiles.All) {
+            foreach (var entry in ProjectFiles) {
                 members = members.Concat(
                     await GetModuleVariablesAsync(entry as ProjectEntry, opts, @params.query, 50, cancellationToken)
                 );

@@ -149,7 +149,7 @@ namespace Microsoft.PythonTools.Analysis {
             var cancellationToken = new CancellationTokenSource(failAfter).Token;
             await server.SendDidOpenTextDocument(TestData.GetDefaultModuleUri(), content, languageId);
             cancellationToken.ThrowIfCancellationRequested();
-            var projectEntry = (ProjectEntry) server.ProjectFiles.All.Single();
+            var projectEntry = (ProjectEntry) server.ProjectFiles.Single();
             return await projectEntry.GetAnalysisAsync(cancellationToken: cancellationToken);
         }
 
@@ -167,7 +167,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public static async Task<IModuleAnalysis> ChangeDefaultDocumentAndGetAnalysisAsync(this Server server, string text, int failAfter = 30000) {
-            var projectEntry = (ProjectEntry) server.ProjectFiles.All.Single();
+            var projectEntry = (ProjectEntry) server.ProjectFiles.Single();
             await server.SendDidChangeTextDocumentAsync(projectEntry.DocumentUri, text);
             return await projectEntry.GetAnalysisAsync(cancellationToken: new CancellationTokenSource(failAfter).Token);
         }

@@ -40,13 +40,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return _projectFiles.TryRemove(documentUri, out var entry) ? entry : null;
         }
 
-        public IEnumerable<IProjectEntry> All {
-            get {
-                ThrowIfDisposed();
-                return _projectFiles.Values;
-            }
-        }
-
         public IEnumerable<string> GetLoadedFiles() {
             ThrowIfDisposed();
             return _projectFiles.Keys.Select(k => k.AbsoluteUri);
@@ -103,8 +96,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         #region IEnumerable<IProjectEntry>
-        public IEnumerator<IProjectEntry> GetEnumerator() => All.GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => All.GetEnumerator();
+        public IEnumerator<IProjectEntry> GetEnumerator() => GetAll().GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetAll().GetEnumerator();
+
+        private ICollection<IProjectEntry>  GetAll() {
+            ThrowIfDisposed();
+            return _projectFiles.Values;
+        }
         #endregion
     }
 }

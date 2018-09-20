@@ -42,7 +42,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void Close(Uri uri) => GetDocument(uri).Close(uri);
 
         public void UpdateDiagnostics() {
-            foreach (var entry in _server.ProjectFiles.All) {
+            foreach (var entry in _server.ProjectFiles) {
                 GetDocument(entry.DocumentUri).UpdateAnalysisDiagnostics(entry, -1);
             }
         }
