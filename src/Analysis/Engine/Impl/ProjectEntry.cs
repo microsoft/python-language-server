@@ -157,11 +157,11 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal void SetCompleteAnalysis() {
             lock (this) {
-                if (AnalysisVersion == _expectedParse) {
+                if (AnalysisVersion >= _expectedParse) {
                     _analysisTcs.TrySetResult(Analysis);
                 }
             }
-            if (AnalysisVersion == _expectedParse) {
+            if (AnalysisVersion >= _expectedParse) {
                 RaiseNewAnalysis();
             }
         }
