@@ -699,40 +699,22 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
         #endregion
 
-        internal Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken) {
-            var tcs = new TaskCompletionSource<object>();
-            var t = WaitForCompleteAnalysisWorker(cancellationToken);
-            Task.Run(async () => {
-                try {
-                    while (!t.IsCompleted) {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        await Task.Delay(100);
-                    }
-                    tcs.TrySetResult(null);
-                } catch (OperationCanceledException) {
-                    tcs.TrySetCanceled();
-                } catch (Exception ex) when (!ex.IsCriticalException()) {
-                    tcs.TrySetException(ex);
-                }
-            });
-            return tcs.Task;
-        }
+        internal Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken)
+            => Task.WhenAny(WaitForCompleteAnalysisWorker(cancellationToken), Task.Delay(Timeout.Infinite, cancellationToken)).Unwrap();
 
         private async Task WaitForCompleteAnalysisWorker(CancellationToken cancellationToken) {
-            do {
-                // Wait for all current parsing to complete
-                TraceMessage($"Waiting for parsing to complete.");
-                await ParseQueue.WaitForAllAsync();
-                TraceMessage($"Parsing complete. Waiting for analysis entries to enqueue.");
-                await _pendingAnalysisEnqueue.WaitForZeroAsync();
-                TraceMessage($"Enqueue complete. Waiting for analysis to complete.");
-                await AnalysisQueue.WaitForCompleteAsync();
-                foreach (var pf in ProjectFiles) {
-                    TraceMessage($" Waiting for analysis of {pf.DocumentUri} to complete.");
-                    await GetAnalysisAsync(pf.DocumentUri, cancellationToken);
-                }
-                TraceMessage($"Analysis complete.");
-            } while (ParseQueue.Count > 0 || _pendingAnalysisEnqueue.Count > 0 || AnalysisQueue.Count > 0);
+            // Wait for all current parsing to complete
+            TraceMessage($"Waiting for parsing to complete.");
+            await ParseQueue.WaitForAllAsync();
+            TraceMessage($"Parsing complete. Waiting for analysis entries to enqueue.");
+            await _pendingAnalysisEnqueue.WaitForZeroAsync();
+            TraceMessage($"Enqueue complete. Waiting for analysis to complete.");
+            await AnalysisQueue.WaitForCompleteAsync();
+            foreach (var pf in ProjectFiles) {
+                TraceMessage($" Waiting for analysis of {pf.DocumentUri} to complete.");
+                await GetAnalysisAsync(pf.DocumentUri, cancellationToken);
+            }
+            TraceMessage($"Analysis complete.");
         }
     }
 }
