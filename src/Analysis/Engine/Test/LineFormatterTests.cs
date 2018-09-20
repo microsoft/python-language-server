@@ -288,18 +288,11 @@ namespace AnalysisTests {
         // https://github.com/Microsoft/vscode-python/issues/2323
         [TestMethod, Priority(0)]
         public void MultilineFString() {
-            const string text = @"f""""""
+            AssertNoEdits(@"f""""""
 select* from { table}
 where { condition}
 order by { order_columns}
-limit { limit_num}; """"""";
-
-            using (var reader = new StringReader(text)) {
-                var lineFormatter = new LineFormatter(reader, PythonLanguageVersion.V37);
-
-                var edits = lineFormatter.FormatLine(5);
-                edits.Should().BeEmpty();
-            }
+limit { limit_num}; """"""", line: 5);
         }
 
         [TestMethod, Priority(0)]
@@ -349,6 +342,13 @@ limit { limit_num}; """"""";
             AssertSingleLineFormat("a[:, 1:3]");
             AssertSingleLineFormat("a[:, :3, :]");
             AssertSingleLineFormat("a[:, 3:, :]");
+        }
+
+        [TestMethod, Priority(0)]
+        public void MultilineStringTrailingComment() {
+            AssertSingleLineFormat(@"'''
+foo
+''' # comment", "  # comment", line: 3, editStart: 4);
         }
 
         [TestMethod, Priority(0)]

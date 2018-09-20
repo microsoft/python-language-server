@@ -117,9 +117,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var builder = new TextBuilder();
             var first = tokens[0];
-            var beginCol = first.IsMultilineString ? first.Span.End.Column : first.Span.Start.Column;
+            var beginCol = first.Span.Start.Column;
+            var startIdx = 0;
 
-            for (var i = first.IsMultilineString ? 1 : 0; i < tokens.Count; i++) {
+            if (first.IsMultilineString) {
+                // If the first token is a multiline string, start the edit afterward,
+                // skip looking at the first token, and ensure that there's a space
+                // after it if needed (i.e. in the case of a following comment).
+                beginCol = first.Span.End.Column;
+                startIdx = 1;
+                builder.SoftAppendSpace(allowLeading: true);
+            }
+
+            for (var i = startIdx; i < tokens.Count; i++) {
                 var token = tokens[i];
                 var prev = tokens.ElementAtOrDefault(i - 1);
                 var next = tokens.ElementAtOrDefault(i + 1);
