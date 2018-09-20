@@ -352,6 +352,20 @@ foo
         }
 
         [TestMethod, Priority(0)]
+        public void Backtick() {
+            AssertSingleLineFormat("`a`", languageVersion: PythonLanguageVersion.V27);
+            AssertSingleLineFormat("foo(`a`)", languageVersion: PythonLanguageVersion.V27);
+            AssertSingleLineFormat("`a` if a else 'oops'", languageVersion: PythonLanguageVersion.V27);
+        }
+
+        [TestMethod, Priority(0)]
+        public void ExecStatement() {
+            AssertSingleLineFormat("exec code", languageVersion: PythonLanguageVersion.V27);
+            AssertSingleLineFormat("exec (code)", languageVersion: PythonLanguageVersion.V27);
+            AssertSingleLineFormat("exec(code)");
+        }
+
+        [TestMethod, Priority(0)]
         public void GrammarFile() {
             var src = TestData.GetPath("TestData", "Formatting", "pythonGrammar.py");
 

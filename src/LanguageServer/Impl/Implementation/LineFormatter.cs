@@ -295,6 +295,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         builder.Append("\\"); // Hardcoded string so that any following whitespace doesn't make it in.
                         break;
 
+                    case TokenKind.BackQuote:
+                        builder.Append(token);
+                        break;
+
                     default:
                         if (token.Kind == TokenKind.KeywordLambda) {
                             if (token.IsInsideFunctionArgs && prev?.Kind == TokenKind.Assign) {
@@ -322,12 +326,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                             break;
                         }
 
-                        if (prev != null && (prev.IsOpen || prev.Kind == TokenKind.Colon)) {
-                            builder.Append(token);
-                            break;
-                        }
-
-                        throw new Exception($"Unhandled token on line {line} of kind {token.Kind}: {token}");
+                        // No tokens should make it to this case, but try to keep things separated.
+                        builder.SoftAppendSpace();
+                        builder.Append(token);
+                        builder.SoftAppendSpace();
+                        break;
                 }
             }
 
