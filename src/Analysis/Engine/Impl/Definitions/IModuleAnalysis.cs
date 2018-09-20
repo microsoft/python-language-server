@@ -20,6 +20,7 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
     public interface IModuleAnalysis {
+        int Version { get; }
         IModuleContext InterpreterContext { get; }
         PythonAnalyzer ProjectState { get; }
         IScope Scope { get; }

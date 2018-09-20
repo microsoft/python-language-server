@@ -135,7 +135,6 @@ mc.fn([])
             // One analysis before we start
             foreach (var e in entries) {
                 e.Analyze(cancel, true);
-                e.ResetCompleteAnalysis();
             }
             state.AnalyzeQueuedEntries(cancel);
 
