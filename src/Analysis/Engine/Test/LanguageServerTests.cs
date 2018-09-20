@@ -1023,7 +1023,7 @@ datetime.datetime.now().day
 
                     if (command == _typeId.ToString()) {
                         var res = new List<string>();
-                        foreach (var m in entry.Analysis.GetAllAvailableMembers(location)) {
+                        foreach (var m in entry.Analysis.GetAllMembers(location)) {
                             if (m.Values.Any(v => v.MemberType == PythonMemberType.Constant && v.TypeId == _typeId)) {
                                 res.Add(m.Name);
                             }
