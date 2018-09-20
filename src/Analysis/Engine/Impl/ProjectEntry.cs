@@ -41,11 +41,15 @@ namespace Microsoft.PythonTools.Analysis {
     [SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable",
         Justification = "Unclear ownership makes it unlikely this object will be disposed correctly")]
     internal sealed class ProjectEntry : IPythonProjectEntry, IAggregateableProjectEntry, IDocument {
-        private AnalysisUnit _unit;
-        private TaskCompletionSource<IModuleAnalysis> _analysisTcs = new TaskCompletionSource<IModuleAnalysis>();
         private readonly SortedDictionary<int, DocumentBuffer> _buffers;
         private readonly ConcurrentQueue<WeakReference<ReferenceDict>> _backReferences = new ConcurrentQueue<WeakReference<ReferenceDict>>();
-        internal readonly HashSet<AggregateProjectEntry> _aggregates = new HashSet<AggregateProjectEntry>();
+        private readonly HashSet<AggregateProjectEntry> _aggregates = new HashSet<AggregateProjectEntry>();
+
+        private TaskCompletionSource<IModuleAnalysis> _analysisTcs = new TaskCompletionSource<IModuleAnalysis>();
+        private AnalysisUnit _unit;
+        private readonly ManualResetEventSlim _pendingParse = new ManualResetEventSlim(true);
+        private long _expectedParseVersion;
+        private long _expectedAnalysisVersion;
 
         internal ProjectEntry(
             PythonAnalyzer state,
@@ -84,17 +88,14 @@ namespace Microsoft.PythonTools.Analysis {
         public event EventHandler<EventArgs> NewParseTree;
         public event EventHandler<EventArgs> NewAnalysis;
 
-        private readonly ManualResetEventSlim _pendingParse = new ManualResetEventSlim(true);
-        private long _expectedParse;
-
         private class ActivePythonParse : IPythonParse {
             private readonly ProjectEntry _entry;
-            private readonly long _expected;
+            private readonly long _expectedVersion;
             private bool _completed;
 
-            public ActivePythonParse(ProjectEntry entry, long expected) {
+            public ActivePythonParse(ProjectEntry entry, long expectedVersion) {
                 _entry = entry;
-                _expected = expected;
+                _expectedVersion = expectedVersion;
             }
 
             public PythonAst Tree { get; set; }
@@ -105,7 +106,7 @@ namespace Microsoft.PythonTools.Analysis {
                     return;
                 }
                 lock (_entry) {
-                    if (_entry._expectedParse == _expected) {
+                    if (_entry._expectedParseVersion == _expectedVersion) {
                         _entry._pendingParse.Set();
                     }
                 }
@@ -114,7 +115,7 @@ namespace Microsoft.PythonTools.Analysis {
             public void Complete() {
                 _completed = true;
                 lock (_entry) {
-                    if (_entry._expectedParse == _expected) {
+                    if (_entry._expectedParseVersion == _expectedVersion) {
                         _entry.SetCurrentParse(Tree, Cookie);
                         _entry._pendingParse.Set();
                     }
@@ -125,8 +126,8 @@ namespace Microsoft.PythonTools.Analysis {
         public IPythonParse BeginParse() {
             _pendingParse.Reset();
             lock (this) {
-                _expectedParse += 1;
-                return new ActivePythonParse(this, _expectedParse);
+                _expectedParseVersion += 1;
+                return new ActivePythonParse(this, _expectedParseVersion);
             }
         }
 
@@ -157,14 +158,18 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal void SetCompleteAnalysis() {
             lock (this) {
+                if (_expectedAnalysisVersion != Analysis.Version) {
+                    return;
+                }
                 _analysisTcs.TrySetResult(Analysis);
             }
             RaiseNewAnalysis();
         }
 
         internal void ResetCompleteAnalysis() {
-            TaskCompletionSource<IModuleAnalysis> analysisTcs;
+            TaskCompletionSource<IModuleAnalysis> analysisTcs = null;
             lock (this) {
+                _expectedAnalysisVersion = AnalysisVersion + 1;
                 analysisTcs = _analysisTcs;
                 _analysisTcs = new TaskCompletionSource<IModuleAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
@@ -188,14 +193,9 @@ namespace Microsoft.PythonTools.Analysis {
             return GetCurrentParse();
         }
 
+        internal bool IsVisible(ProjectEntry assigningScope) => true;
 
-        internal bool IsVisible(ProjectEntry assigningScope) {
-            return true;
-        }
-
-        public void Analyze(CancellationToken cancel) {
-            Analyze(cancel, false);
-        }
+        public void Analyze(CancellationToken cancel) => Analyze(cancel, false);
 
         public void Analyze(CancellationToken cancel, bool enqueueOnly) {
             if (cancel.IsCancellationRequested) {
@@ -290,7 +290,7 @@ namespace Microsoft.PythonTools.Analysis {
                 string pathPrefix = PathUtils.EnsureEndSeparator(Path.GetDirectoryName(FilePath));
                 var children =
                     from pair in ProjectState.ModulesByFilename
-                    // Is the candidate child package in a subdirectory of our package?
+                        // Is the candidate child package in a subdirectory of our package?
                     let fileName = pair.Key
                     where fileName.StartsWithOrdinal(pathPrefix, ignoreCase: true)
                     let moduleName = pair.Value.Name
@@ -314,7 +314,8 @@ namespace Microsoft.PythonTools.Analysis {
             // publish the analysis now that it's complete/running
             Analysis = new ModuleAnalysis(
                 _unit,
-                ((ModuleScope)_unit.Scope).CloneForPublish()
+                ((ModuleScope)_unit.Scope).CloneForPublish(),
+                AnalysisVersion
             );
         }
 

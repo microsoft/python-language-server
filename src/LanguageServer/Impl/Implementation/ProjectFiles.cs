@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -25,7 +26,7 @@ using Microsoft.PythonTools.Intellisense;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
-    internal sealed class ProjectFiles : IDisposable {
+    internal sealed class ProjectFiles : IDisposable, IEnumerable<IProjectEntry> {
         private readonly ConcurrentDictionary<Uri, IProjectEntry> _projectFiles = new ConcurrentDictionary<Uri, IProjectEntry>();
         private bool _disposed;
 
@@ -37,13 +38,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public IProjectEntry RemoveEntry(Uri documentUri) {
             ThrowIfDisposed();
             return _projectFiles.TryRemove(documentUri, out var entry) ? entry : null;
-        }
-
-        public IEnumerable<IProjectEntry> All {
-            get {
-                ThrowIfDisposed();
-                return _projectFiles.Values;
-            }
         }
 
         public IEnumerable<string> GetLoadedFiles() {
@@ -100,5 +94,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 throw new ObjectDisposedException(nameof(ProjectFiles));
             }
         }
+
+        #region IEnumerable<IProjectEntry>
+        public IEnumerator<IProjectEntry> GetEnumerator() => GetAll().GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetAll().GetEnumerator();
+
+        private ICollection<IProjectEntry>  GetAll() {
+            ThrowIfDisposed();
+            return _projectFiles.Values;
+        }
+        #endregion
     }
 }

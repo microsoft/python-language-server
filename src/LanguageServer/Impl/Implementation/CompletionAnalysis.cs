@@ -771,7 +771,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             _log.TraceMessage($"Completing all names");
-            var members = Analysis.GetAllAvailableMembers(Position, opts);
+            var members = Analysis.GetAllMembers(Position, opts);
 
             if (allowArguments) {
                 var finder = new ExpressionFinder(Tree, new GetExpressionOptions { Calls = true });

@@ -68,6 +68,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly VolatileCounter _pendingAnalysisEnqueue = new VolatileCounter();
         private readonly ConcurrentDictionary<string, ILanguageServerExtension> _extensions = new ConcurrentDictionary<string, ILanguageServerExtension>();
         private readonly DisposableBag _disposableBag = DisposableBag.Create<Server>();
+        private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
 
         private readonly EditorFiles _editorFiles;
         private ClientCapabilities _clientCaps;
@@ -96,6 +97,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposableBag
                 .Add(ProjectFiles)
                 .Add(() => Analyzer?.Dispose())
+                .Add(() => _shutdownCts.Cancel())
                 .Add(AnalysisQueue)
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
@@ -171,7 +173,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 if (@params.textDocument.text != null) {
                     doc.ResetDocument(@params.textDocument.version, @params.textDocument.text);
                 }
-                EnqueueItem(doc);
+                await EnqueueItemAsync(doc);
             } else if (entry == null) {
                 IAnalysisCookie cookie = null;
                 if (@params.textDocument.text != null) {
@@ -184,10 +186,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        public override void DidChangeTextDocument(DidChangeTextDocumentParams @params) {
+        public override Task DidChangeTextDocument(DidChangeTextDocumentParams @params, CancellationToken cancellationToken) {
             _disposableBag.ThrowIfDisposed();
             var openedFile = _editorFiles.GetDocument(@params.textDocument.uri);
-            openedFile.DidChangeTextDocument(@params, true);
+            return openedFile.DidChangeTextDocument(@params, true, cancellationToken);
         }
 
         public override async Task DidChangeWatchedFiles(DidChangeWatchedFilesParams @params, CancellationToken token) {
@@ -210,7 +212,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         if ((entry = ProjectFiles.GetEntry(c.uri, false)) is IDocument doc) {
                             // If document version is >=0, it is loaded in memory.
                             if (doc.GetDocumentVersion(0) < 0) {
-                                EnqueueItem(doc, AnalysisPriority.Low);
+                                await EnqueueItemAsync(doc, AnalysisPriority.Low);
                             }
                         }
                         break;
@@ -218,19 +220,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        public override Task DidCloseTextDocument(DidCloseTextDocumentParams @params, CancellationToken token) {
+        public override async Task DidCloseTextDocument(DidCloseTextDocumentParams @params, CancellationToken token) {
             _disposableBag.ThrowIfDisposed();
             _editorFiles.Close(@params.textDocument.uri);
 
-            var doc = ProjectFiles.GetEntry(@params.textDocument.uri) as IDocument;
-            if (doc != null) {
+            if (ProjectFiles.GetEntry(@params.textDocument.uri) is IDocument doc) {
                 // No need to keep in-memory buffers now
                 doc.ResetDocument(-1, null);
                 // Pick up any changes on disk that we didn't know about
-                EnqueueItem(doc, AnalysisPriority.Low);
+                await EnqueueItemAsync(doc, AnalysisPriority.Low);
             }
-
-            return Task.CompletedTask;
         }
 
         public override async Task DidChangeConfiguration(DidChangeConfigurationParams @params, CancellationToken cancellationToken) {
@@ -293,22 +292,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public Task<bool> UnloadFileAsync(Uri documentUri) {
             var entry = RemoveEntry(documentUri);
             if (entry != null) {
-                Analyzer.RemoveModule(entry, e => EnqueueItem(e as IDocument, AnalysisPriority.Normal, parse: false));
+                Analyzer.RemoveModule(entry, e => EnqueueItemAsync(e as IDocument, AnalysisPriority.Normal, parse: false).DoNotWait());
                 return Task.FromResult(true);
             }
 
             return Task.FromResult(false);
-        }
-
-        public async Task WaitForCompleteAnalysisAsync() {
-            // Wait for all current parsing to complete
-            TraceMessage($"Waiting for parsing to complete");
-            await ParseQueue.WaitForAllAsync();
-            TraceMessage($"Parsing complete. Waiting for analysis entries to enqueue");
-            await _pendingAnalysisEnqueue.WaitForZeroAsync();
-            TraceMessage($"Enqueue complete. Waiting for analysis to complete");
-            await AnalysisQueue.WaitForCompleteAsync();
-            TraceMessage($"Analysis complete.");
         }
 
         public int EstimateRemainingWork() {
@@ -493,10 +481,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return string.Join(Path.DirectorySeparatorChar.ToString(), bits);
         }
 
-        private Task<IProjectEntry> AddFileAsync(Uri documentUri, Uri fromSearchPath, IAnalysisCookie cookie = null) {
+        private async Task<IProjectEntry> AddFileAsync(Uri documentUri, Uri fromSearchPath, IAnalysisCookie cookie = null) {
             var item = ProjectFiles.GetEntry(documentUri, throwIfMissing: false);
             if (item != null) {
-                return Task.FromResult(item);
+                return item;
             }
 
             string[] aliases = null;
@@ -524,20 +512,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var actualItem = ProjectFiles.GetOrAddEntry(documentUri, item);
             if (actualItem != item) {
-                return Task.FromResult(actualItem);
+                return actualItem;
             }
 
             pyItem.NewAnalysis += OnProjectEntryNewAnalysis;
 
             if (item is IDocument doc) {
-                EnqueueItem(doc);
+                await EnqueueItemAsync(doc);
             }
 
             foreach (var entryRef in reanalyzeEntries) {
-                EnqueueItem(entryRef as IDocument, AnalysisPriority.Low, parse: false);
+                await EnqueueItemAsync(entryRef as IDocument, AnalysisPriority.Low, parse: false);
             }
 
-            return Task.FromResult(item);
+            return item;
         }
 
         private void OnProjectEntryNewAnalysis(object sender, EventArgs e) {
@@ -596,15 +584,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        internal void EnqueueItem(IDocument doc, AnalysisPriority priority = AnalysisPriority.Normal, bool parse = true, bool enqueueForAnalysis = true) {
+        internal Task EnqueueItemAsync(IDocument doc, AnalysisPriority priority = AnalysisPriority.Normal, bool parse = true, bool enqueueForAnalysis = true) {
             _disposableBag.ThrowIfDisposed();
             var pending = _pendingAnalysisEnqueue.Incremented();
             try {
-                if (doc is ProjectEntry entry) {
-                    entry.ResetCompleteAnalysis();
-                }
+                var entry = doc as ProjectEntry;
+                entry?.ResetCompleteAnalysis();
 
-                // If we don't need to parse, use null cooking
+                // If we don't need to parse, use null cookie
                 var cookieTask = Task.FromResult<IAnalysisCookie>(null);
                 if (parse) {
                     using (GetDocumentParseCounter(doc, out var count)) {
@@ -612,10 +599,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                             // Rough check to prevent unbounded queueing. If we have
                             // multiple parses in queue, we will get the latest doc
                             // version in one of the ones to come.
-                            return;
+                            return Task.CompletedTask;
                         }
                         TraceMessage($"Parsing document {doc.DocumentUri}");
-                        cookieTask = ParseQueue.Enqueue(doc, Analyzer.LanguageVersion);
+                        cookieTask = ParseQueue.EnqueueAsync(doc, Analyzer.LanguageVersion);
                     }
                 }
 
@@ -623,23 +610,22 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // It is called from DidChangeTextDocument which must fully finish
                 // since otherwise Complete() may come before the change is enqueued
                 // for processing and the completion list will be driven off the stale data.
-                var p = pending;
-                cookieTask.ContinueWith(t => {
+                return cookieTask.ContinueWith(async t => {
                     if (t.IsFaulted) {
-                        // Happens when file got deleted before processing
-                        p.Dispose();
+                        // Happens when file got deleted before processing 
+                        pending.Dispose();
                         LogMessage(MessageType.Error, t.Exception.Message);
                         return;
                     }
-                    OnDocumentChangeProcessingComplete(doc, t.Result as VersionCookie, enqueueForAnalysis, priority, p);
-                }).DoNotWait();
-                pending = null;
-            } finally {
+                    await OnDocumentChangeProcessingCompleteAsync(doc, t.Result as VersionCookie, enqueueForAnalysis, priority, pending);
+                });
+            } catch {
                 pending?.Dispose();
+                throw;
             }
         }
 
-        private void OnDocumentChangeProcessingComplete(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
+        private async Task OnDocumentChangeProcessingCompleteAsync(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
             try {
                 _disposableBag.ThrowIfDisposed();
                 if (vc != null) {
@@ -659,6 +645,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 disposeWhenEnqueued = null;
                 if (vc != null) {
                     _editorFiles.GetDocument(doc.DocumentUri).UpdateParseDiagnostics(vc, doc.DocumentUri);
+                }
+
+                if (doc is ProjectEntry entry) {
+                    var reanalyzeEntries = Analyzer.GetEntriesThatImportModule(entry.ModuleName, false);
+                    foreach (IDocument d in reanalyzeEntries) {
+                        await EnqueueItemAsync(d);
+                    }
                 }
             } catch (BadSourceException) {
             } catch (ObjectDisposedException) when (_disposableBag.IsDisposed) {
@@ -712,5 +705,23 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return false;
         }
         #endregion
+
+        internal Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken)
+            => Task.WhenAny(WaitForCompleteAnalysisWorker(cancellationToken), Task.Delay(Timeout.Infinite, cancellationToken)).Unwrap();
+
+        private async Task WaitForCompleteAnalysisWorker(CancellationToken cancellationToken) {
+            // Wait for all current parsing to complete
+            TraceMessage($"Waiting for parsing to complete.");
+            await ParseQueue.WaitForAllAsync();
+            TraceMessage($"Parsing complete. Waiting for analysis entries to enqueue.");
+            await _pendingAnalysisEnqueue.WaitForZeroAsync();
+            TraceMessage($"Enqueue complete. Waiting for analysis to complete.");
+            await AnalysisQueue.WaitForCompleteAsync();
+            foreach (var pf in ProjectFiles) {
+                TraceMessage($" Waiting for analysis of {pf.DocumentUri} to complete.");
+                await GetAnalysisAsync(pf.DocumentUri, cancellationToken);
+            }
+            TraceMessage($"Analysis complete.");
+        }
     }
 }

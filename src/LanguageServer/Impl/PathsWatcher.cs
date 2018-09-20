@@ -65,6 +65,7 @@ namespace Microsoft.Python.LanguageServer {
                         .Add(() => fsw.Changed -= OnChanged)
                         .Add(() => fsw.Created -= OnChanged)
                         .Add(() => fsw.Deleted -= OnChanged)
+                        .Add(() => fsw.EnableRaisingEvents = false)
                         .Add(fsw);
                 } catch(ArgumentException ex) {
                     _log.TraceMessage($"Unable to create file watcher for {p}, exception {ex.Message}");

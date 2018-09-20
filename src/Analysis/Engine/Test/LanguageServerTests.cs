@@ -111,7 +111,7 @@ namespace AnalysisTests {
 
             if (rootUri != null) {
                 await LoadFromDirectoryAsync(s, rootUri.LocalPath).ConfigureAwait(false);
-                await s.WaitForCompleteAnalysisAsync().ConfigureAwait(false);
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None).ConfigureAwait(false);
             }
 
             return s;
@@ -153,7 +153,7 @@ namespace AnalysisTests {
                     languageId = language ?? "python"
                 }
             }, CancellationToken.None).ConfigureAwait(false);
-            await s.WaitForCompleteAnalysisAsync().ConfigureAwait(false);
+            await s.WaitForCompleteAnalysisAsync(CancellationToken.None).ConfigureAwait(false);
             return uri;
         }
 
@@ -205,7 +205,7 @@ namespace AnalysisTests {
 
             var parseComplete = EventTaskSources.Server.OnParseComplete.Create(s);
 
-            s.DidChangeTextDocument(new DidChangeTextDocumentParams {
+            await s.DidChangeTextDocument(new DidChangeTextDocumentParams {
                 textDocument = new VersionedTextDocumentIdentifier {
                     uri = document,
                     version = finalVersion,
@@ -214,7 +214,7 @@ namespace AnalysisTests {
                     range = c.WholeBuffer ? null : (Range?)c.ReplacedSpan,
                     text = c.InsertedText
                 }).ToArray()
-            });
+            }, CancellationToken.None);
 
             await parseComplete;
 
@@ -576,7 +576,7 @@ mc
             );
 
             // Send the document update.
-            s.DidChangeTextDocument(new DidChangeTextDocumentParams {
+            await s.DidChangeTextDocument(new DidChangeTextDocumentParams {
                 textDocument = new VersionedTextDocumentIdentifier { uri = mod, version = 1 },
                 contentChanges = new[] { new TextDocumentContentChangedEvent {
                     text = ".",
@@ -587,7 +587,7 @@ mc
                 } },
                 // Suppress reanalysis to avoid a race
                 _enqueueForAnalysis = false
-            });
+            }, CancellationToken.None);
 
             // Now with the "." event sent, we should see this as a dot completion
             await AssertCompletion(s, mod,
@@ -617,7 +617,7 @@ mc
             );
 
             await s.UnloadFileAsync(mod2);
-            await s.WaitForCompleteAnalysisAsync();
+            await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
             await AssertCompletion(s, mod1,
                 position: new Position { line = 2, character = 5 },
@@ -897,18 +897,18 @@ datetime.datetime.now().day
             await AssertCompletion(s, mod, new[] { "x" }, null);
 
             Assert.AreEqual(Tuple.Create("y = 2", 1), await ApplyChange(s, modP2, DocumentChange.Insert("y = 2", SourceLocation.MinValue)));
-            await s.WaitForCompleteAnalysisAsync();
+            await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
             await AssertCompletion(s, modP2, new[] { "x", "y" }, null);
 
             Assert.AreEqual(Tuple.Create("z = 3", 1), await ApplyChange(s, modP3, DocumentChange.Insert("z = 3", SourceLocation.MinValue)));
-            await s.WaitForCompleteAnalysisAsync();
+            await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
             await AssertCompletion(s, modP3, new[] { "x", "y", "z" }, null);
             await AssertCompletion(s, mod, new[] { "x", "y", "z" }, null);
 
             await ApplyChange(s, mod, DocumentChange.Delete(SourceLocation.MinValue, SourceLocation.MinValue.AddColumns(5)));
-            await s.WaitForCompleteAnalysisAsync();
+            await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
             await AssertCompletion(s, modP2, new[] { "y", "z" }, new[] { "x" });
             await AssertCompletion(s, modP3, new[] { "y", "z" }, new[] { "x" });
         }
@@ -957,15 +957,15 @@ datetime.datetime.now().day
                 Trace.TraceInformation("Testing {0}", tc);
 
                 var mod = await AddModule(s, "");
-                s.DidChangeTextDocument(new DidChangeTextDocumentParams {
+                await s.DidChangeTextDocument(new DidChangeTextDocumentParams {
                     contentChanges = new[] {
                             new TextDocumentContentChangedEvent {
                                 text = "def f():\r\n        pass\r\n\tpass"
                             }
                         },
                     textDocument = new VersionedTextDocumentIdentifier { uri = mod, version = 2 }
-                });
-                await s.WaitForCompleteAnalysisAsync();
+                }, CancellationToken.None);
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
                 var messages = GetDiagnostics(diags, mod).ToArray();
                 if (tc == DiagnosticSeverity.Unspecified) {
@@ -1023,7 +1023,7 @@ datetime.datetime.now().day
 
                     if (command == _typeId.ToString()) {
                         var res = new List<string>();
-                        foreach (var m in entry.Analysis.GetAllAvailableMembers(location)) {
+                        foreach (var m in entry.Analysis.GetAllMembers(location)) {
                             if (m.Values.Any(v => v.MemberType == PythonMemberType.Constant && v.TypeId == _typeId)) {
                                 res.Add(m.Name);
                             }

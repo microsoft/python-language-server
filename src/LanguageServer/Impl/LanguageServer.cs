@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.LanguageServer.Services;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Newtonsoft.Json;
@@ -31,7 +32,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     /// https://github.com/Microsoft/language-server-protocol/blob/gh-pages/specification.md
     /// https://github.com/Microsoft/vs-streamjsonrpc/blob/master/doc/index.md
     /// </summary>
-    public sealed partial class LanguageServer: IDisposable {
+    public sealed partial class LanguageServer : IDisposable {
         private readonly DisposableBag _disposables = new DisposableBag(nameof(LanguageServer));
         private readonly Server _server = new Server();
         private readonly CancellationTokenSource _sessionTokenSource = new CancellationTokenSource();
@@ -39,6 +40,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly Dictionary<Uri, Diagnostic[]> _pendingDiagnostic = new Dictionary<Uri, Diagnostic[]>();
         private readonly object _lock = new object();
         private readonly Prioritizer _prioritizer = new Prioritizer();
+        private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
 
         private IServiceContainer _services;
         private IUIService _ui;
@@ -50,6 +52,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IdleTimeTracker _idleTimeTracker;
         private AnalysisProgressReporter _analysisProgressReporter;
 
+        private bool _watchSearchPaths;
+        private string[] _searchPaths = Array.Empty<string>();
+
         public CancellationToken Start(IServiceContainer services, JsonRpc rpc) {
             _services = services;
             _ui = services.GetService<IUIService>();
@@ -57,7 +62,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _rpc = rpc;
 
             var progress = services.GetService<IProgressService>();
-            _analysisProgressReporter = new AnalysisProgressReporter(_server, progress, _server);
+            _analysisProgressReporter = new AnalysisProgressReporter(_server, progress, _server, _shutdownCts.Token);
 
             _server.OnLogMessage += OnLogMessage;
             _server.OnShowMessage += OnShowMessage;
@@ -75,6 +80,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(() => _server.OnApplyWorkspaceEdit -= OnApplyWorkspaceEdit)
                 .Add(() => _server.OnRegisterCapability -= OnRegisterCapability)
                 .Add(() => _server.OnUnregisterCapability -= OnUnregisterCapability)
+                .Add(() => _shutdownCts.Cancel())
                 .Add(_prioritizer)
                 .Add(_analysisProgressReporter)
                 .Add(() => _pathsWatcher?.Dispose());
@@ -149,11 +155,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _pathsWatcher?.Dispose();
                 var watchSearchPaths = GetSetting(analysis, "watchSearchPaths", true);
                 if (watchSearchPaths) {
-                    _pathsWatcher = new PathsWatcher(
-                        _initParams.initializationOptions.searchPaths,
-                        () => _server.ReloadModulesAsync(CancellationToken.None).DoNotWait(),
-                        _server
-                     );
+                    if (!_searchPaths.SetEquals(_initParams.initializationOptions.searchPaths)) {
+                        _pathsWatcher = new PathsWatcher(
+                            _initParams.initializationOptions.searchPaths,
+                            () => _server.ReloadModulesAsync(CancellationToken.None).DoNotWait(),
+                            _server
+                         );
+                    }
                 }
 
                 var errors = GetSetting(analysis, "errors", Array.Empty<string>());
@@ -181,7 +189,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("workspace/symbol")]
         public async Task<SymbolInformation[]> WorkspaceSymbols(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync();
-            await WaitForCompleteAnalysisAsync(cancellationToken);
             return await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token), cancellationToken);
         }
 
@@ -203,13 +210,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         [JsonRpcMethod("textDocument/didChange")]
-        public async Task DidChangeTextDocument(JToken token) {
+        public async Task DidChangeTextDocument(JToken token, CancellationToken cancellationToken) {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync()) {
                 var @params = ToObject<DidChangeTextDocumentParams>(token);
                 var version = @params.textDocument.version;
                 if (version == null || @params.contentChanges.IsNullOrEmpty()) {
-                    _server.DidChangeTextDocument(@params);
+                    await _server.DidChangeTextDocument(@params, cancellationToken);
                     return;
                 }
 
@@ -218,7 +225,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 var changes = SplitDidChangeTextDocumentParams(@params, version.Value);
 
                 foreach (var change in changes) {
-                    _server.DidChangeTextDocument(change);
+                    await _server.DidChangeTextDocument(change, cancellationToken);
                 }
             }
         }
@@ -327,7 +334,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<DocumentSymbol[]> DocumentSymbol(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             // This call is also used by VSC document outline and it needs correct information
-            await WaitForCompleteAnalysisAsync(cancellationToken);
             return await _server.HierarchicalDocumentSymbol(ToObject<DocumentSymbolParams>(token), cancellationToken);
         }
 
@@ -432,50 +438,29 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private sealed class IdleTimeTracker : IDisposable {
-            private readonly int _delay;
-            private readonly Action _action;
-            private Timer _timer;
-            private DateTime _lastActivityTime;
-
-            public IdleTimeTracker(int msDelay, Action action) {
-                _delay = msDelay;
-                _action = action;
-                _timer = new Timer(OnTimer, this, 50, 50);
-                NotifyUserActivity();
+        private void HandlePathWatchChange(JToken section) {
+            var watchSearchPaths = GetSetting(section, "watchSearchPaths", true);
+            if (!watchSearchPaths) {
+                // No longer watching.
+                _pathsWatcher?.Dispose();
+                _searchPaths = Array.Empty<string>();
+                _watchSearchPaths = false;
+                return;
             }
 
-            public void NotifyUserActivity() => _lastActivityTime = DateTime.Now;
-
-            public void Dispose() {
-                _timer?.Dispose();
-                _timer = null;
+            // Now watching.
+            if (!_watchSearchPaths || (_watchSearchPaths && _searchPaths.SetEquals(_initParams.initializationOptions.searchPaths))) {
+                // Were not watching OR were watching but paths have changed. Recreate the watcher.
+                _pathsWatcher?.Dispose();
+                _pathsWatcher = new PathsWatcher(
+                    _initParams.initializationOptions.searchPaths,
+                    () => _server.ReloadModulesAsync(CancellationToken.None).DoNotWait(),
+                    _server
+                 );
             }
 
-            private void OnTimer(object state) {
-                if ((DateTime.Now - _lastActivityTime).TotalMilliseconds >= _delay && _timer != null) {
-                    _action();
-                }
-            }
-        }
-
-        private Task WaitForCompleteAnalysisAsync(CancellationToken token) {
-            var tcs = new TaskCompletionSource<object>();
-            var t = _server.WaitForCompleteAnalysisAsync();
-            Task.Run(async () => {
-                try {
-                    while (!t.IsCompleted) {
-                        token.ThrowIfCancellationRequested();
-                        await Task.Delay(100);
-                    }
-                    tcs.TrySetResult(null);
-                } catch (OperationCanceledException) {
-                    tcs.TrySetCanceled();
-                } catch (Exception ex) when (!ex.IsCriticalException()) {
-                    tcs.TrySetException(ex);
-                }
-            });
-            return tcs.Task;
+            _watchSearchPaths = watchSearchPaths;
+            _searchPaths = _initParams.initializationOptions.searchPaths;
         }
 
         private class Prioritizer : IDisposable {

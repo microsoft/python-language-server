@@ -34,20 +34,21 @@ namespace Microsoft.PythonTools.Analysis {
     /// 
     /// Can be queried for various information about the resulting analysis.
     /// </summary>
-    public sealed class ModuleAnalysis: IModuleAnalysis {
+    public sealed class ModuleAnalysis : IModuleAnalysis {
         private readonly AnalysisUnit _unit;
         private static Regex _otherPrivateRegex = new Regex("^_[a-zA-Z_]\\w*__[a-zA-Z_]\\w*$");
 
         private static readonly IEnumerable<IOverloadResult> GetSignaturesError =
             new[] { new OverloadResult(new ParameterResult[0], "Unknown", "IntellisenseError_Sigs", null) };
 
-        internal ModuleAnalysis(AnalysisUnit unit, InterpreterScope scope) {
+        internal ModuleAnalysis(AnalysisUnit unit, InterpreterScope scope, int version) {
             _unit = unit;
             Scope = scope;
+            Version = version;
         }
 
         #region Public API
-
+        public int Version { get; }
         /// <summary>
         /// Evaluates the given expression in at the provided line number and returns the values
         /// that the expression can evaluate to.
@@ -350,7 +351,7 @@ namespace Microsoft.PythonTools.Analysis {
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults
         ) {
             if (string.IsNullOrEmpty(exprText)) {
-                return GetAllAvailableMembers(location, options);
+                return GetAllMembers(location, options);
             }
 
             var expr = GetExpressionForText(exprText, location, out var scope, out var ast);
@@ -526,7 +527,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// specified location.
         /// </summary>
         /// <param name="index">The 0-based absolute index into the file.</param>
-        internal IEnumerable<IMemberResult> GetDefinitionTreeByIndex(int index) 
+        internal IEnumerable<IMemberResult> GetDefinitionTreeByIndex(int index)
             => GetDefinitionTree(_unit.Tree.IndexToLocation(index));
 
         /// <summary>
@@ -630,7 +631,11 @@ namespace Microsoft.PythonTools.Analysis {
         internal IEnumerable<IMemberResult> GetAllAvailableMembersByIndex(
             int index,
             GetMemberOptions options = GetMemberOptions.IntersectMultipleResults
-        ) => GetAllAvailableMembers(_unit.Tree.IndexToLocation(index), options);
+        ) => GetAllMembers(_unit.Tree.IndexToLocation(index), options);
+
+        [Obsolete]
+        public IEnumerable<MemberResult> GetAllAvailableMembers(SourceLocation location, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults)
+            => GetAllMembers(location, options).OfType<MemberResult>();
 
         /// <summary>
         /// Gets the available names at the given location.  This includes
@@ -641,7 +646,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// looked up.
         /// </param>
         /// <remarks>New in 2.2</remarks>
-        public IEnumerable<IMemberResult> GetAllAvailableMembers(SourceLocation location, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults) {
+        public IEnumerable<IMemberResult> GetAllMembers(SourceLocation location, GetMemberOptions options = GetMemberOptions.IntersectMultipleResults) {
             var result = new Dictionary<string, IEnumerable<AnalysisValue>>();
 
             // collect builtins
@@ -989,9 +994,9 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             return function.Parameters.Any(p => {
-                    var paramName = p.GetVerbatimImage(tree) ?? p.Name;
-                    return index >= p.StartIndex && index <= p.StartIndex + paramName.Length;
-                });
+                var paramName = p.GetVerbatimImage(tree) ?? p.Name;
+                return index >= p.StartIndex && index <= p.StartIndex + paramName.Length;
+            });
         }
 
         private static int GetParentScopeIndent(InterpreterScope scope, PythonAst tree) {
