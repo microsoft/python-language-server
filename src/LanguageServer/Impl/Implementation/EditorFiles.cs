@@ -112,6 +112,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 var toVersion = @params.textDocument.version ?? (fromVersion + changes.Length);
 
+                cancellationToken.ThrowIfCancellationRequested();
                 doc.UpdateDocument(part, new DocumentChangeSet(
                     fromVersion,
                     toVersion,
@@ -122,7 +123,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     })
                 ));
 
-                cancellationToken.ThrowIfCancellationRequested();
                 DidChangeTextDocumentParams? next = null;
                 lock (_pendingChanges) {
                     var notExpired = _pendingChanges
