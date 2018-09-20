@@ -58,7 +58,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             if (!_lineTokens.TryGetValue(line, out List<TokenExt> tokens)) {
                 tokens = new List<TokenExt>();
-                _lineTokens.Add(token.Line, tokens);
+                _lineTokens.Add(line, tokens);
             }
 
             tokens.Add(token);
@@ -73,9 +73,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// can look ahead.
         /// </summary>
         /// <param name="line">One-indexed line number.</param>
-        private void TokenizeLine(int line) {
+        /// <returns>A non-null list of tokens on that line.</returns>
+        private List<TokenExt> TokenizeLine(int line) {
             if (line < 1) {
-                return;
+                throw new ArgumentOutOfRangeException(nameof(line));
             }
 
             var extraToken = true;
@@ -90,6 +91,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     extraToken = false;
                 }
             }
+
+            if (!_lineTokens.TryGetValue(line, out List<TokenExt> tokens)) {
+                return new List<TokenExt>();
+            }
+
+            return tokens;
         }
 
         /// <summary>
@@ -102,11 +109,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return NoEdits;
             }
 
-            TokenizeLine(line);
-
-            if (!_lineTokens.TryGetValue(line, out List<TokenExt> tokens)) {
-                return NoEdits;
-            }
+            var tokens = TokenizeLine(line);
 
             // Keep ExplictLineJoin because it has text associated with it.
             tokens = tokens.Where(t => !t.IsIgnored || t.Kind == TokenKind.ExplicitLineJoin).ToList();
