@@ -4,7 +4,7 @@
         <RootNamespace>Microsoft.Python.LanguageServer</RootNamespace>
         <AssemblyName>Microsoft.Python.LanguageServer</AssemblyName>
     </PropertyGroup>
-    <Import Project="..\..\..\Build\NetStandard.settings" />
+    <Import Project="..\..\..\build\NetStandard.settings" />
     <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -50,5 +50,5 @@
       </EmbeddedResource>
     </ItemGroup>
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-    <Import Project="..\..\..\Build\NetStandard.targets" />
+    <Import Project="..\..\..\build\NetStandard.targets" />
 </Project>
