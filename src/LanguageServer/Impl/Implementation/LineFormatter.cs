@@ -75,9 +75,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// <param name="line">One-indexed line number.</param>
         /// <returns>A non-null list of tokens on that line.</returns>
         private List<TokenExt> TokenizeLine(int line) {
-            if (line < 1) {
-                throw new ArgumentOutOfRangeException(nameof(line));
-            }
+            Check.Argument(nameof(line), () => line > 0);
 
             var extraToken = true;
 
@@ -105,9 +103,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// <param name="line">One-indexed line number.</param>
         /// <returns>A list of TextEdits needed to format the line.</returns>
         public TextEdit[] FormatLine(int line) {
-            if (line < 1) {
-                return NoEdits;
-            }
+            Check.Argument(nameof(line), () => line > 0);
 
             var tokens = TokenizeLine(line);
 
