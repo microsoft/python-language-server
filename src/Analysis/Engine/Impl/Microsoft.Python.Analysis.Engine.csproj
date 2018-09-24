@@ -5,13 +5,13 @@
     <AssemblyName>Microsoft.Python.Analysis.Engine</AssemblyName>
   </PropertyGroup>
   <PropertyGroup>
-    <!-- 
+    <!--
       1701, 1702 - "You may need to supply assembly policy"
       1998 - "This async method lacks 'await'"
     -->
     <NoWarn>1701;1702;1998;$(NoWarn)</NoWarn>
   </PropertyGroup>
-  <Import Project="..\..\..\..\Build\NetStandard.settings" />
+  <Import Project="..\..\..\..\build\NetStandard.settings" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
     <PackageReference Include="MicroBuild.Core" Version="0.3.0">
@@ -47,5 +47,5 @@
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-  <Import Project="..\..\..\..\Build\NetStandard.targets" />
+  <Import Project="..\..\..\..\build\NetStandard.targets" />
 </Project>
