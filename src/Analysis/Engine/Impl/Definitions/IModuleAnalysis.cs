@@ -14,16 +14,38 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
     public interface IModuleAnalysis {
+        /// <summary>
+        /// Module document/file URI. Can be null if there is no associated document.
+        /// </summary>
+        Uri DocumentUri { get; }
+
+        /// <summary>
+        /// Analysis version
+        /// </summary>
         int Version { get; }
+
         IModuleContext InterpreterContext { get; }
+
+        /// <summary>
+        /// Python analyzer
+        /// </summary>
         PythonAnalyzer ProjectState { get; }
+
+        /// <summary>
+        /// Scope of the analysis
+        /// </summary>
         IScope Scope { get; }
+
+        /// <summary>
+        /// Module name.
+        /// </summary>
         string ModuleName { get; }
 
         /// <summary>

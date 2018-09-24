@@ -41,13 +41,15 @@ namespace Microsoft.PythonTools.Analysis {
         private static readonly IEnumerable<IOverloadResult> GetSignaturesError =
             new[] { new OverloadResult(new ParameterResult[0], "Unknown", "IntellisenseError_Sigs", null) };
 
-        internal ModuleAnalysis(AnalysisUnit unit, InterpreterScope scope, int version) {
+        internal ModuleAnalysis(AnalysisUnit unit, InterpreterScope scope, Uri documentUri, int version) {
             _unit = unit;
             Scope = scope;
+            DocumentUri = documentUri;
             Version = version;
         }
 
         #region Public API
+        public Uri DocumentUri { get; }
         public int Version { get; }
         /// <summary>
         /// Evaluates the given expression in at the provided line number and returns the values
