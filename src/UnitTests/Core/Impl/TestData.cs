@@ -17,7 +17,9 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Tests.Utilities;
 
 namespace TestUtilities {
@@ -73,6 +75,23 @@ namespace TestUtilities {
         public static string GetNextModulePath() => TestRunScopeAsyncLocal.Value.GetNextModulePath();
         public static string GetAstAnalysisCachePath(Version version, bool testSpecific = false) 
             => testSpecific ? TestRunScopeAsyncLocal.Value.GetTestSpecificPath($"AstAnalysisCache{version}") : GetTempPath($"AstAnalysisCache{version}");
+
+        public static Uri CreateTestSpecificFile(string relativePath) {
+            var path = GetTestSpecificPath(relativePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            using (File.Create(path)) { }
+            return new Uri(path);
+        }
+
+        public static async Task<Uri> CreateTestSpecificFileAsync(string relativePath, string content) {
+            var path = GetTestSpecificPath(relativePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            using (var stream = File.Create(path)) {
+                var contentBytes = Encoding.Default.GetBytes(content);
+                await stream.WriteAsync(contentBytes, 0, contentBytes.Length);
+            }
+            return new Uri(path);
+        }
 
         /// <summary>
         /// Returns the full path to the deployed file.
