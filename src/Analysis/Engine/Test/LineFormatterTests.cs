@@ -470,20 +470,5 @@ limit { limit_num}; """"""", line: 5);
                 lineFormatter.FormatLine(line).Should().BeEmpty();
             }
         }
-
-        public static string ApplyLineEdit(string s, TextEdit edit) {
-            if (s == null) {
-                throw new ArgumentNullException(nameof(s));
-            }
-
-            if (edit.range.start.line != edit.range.end.line) {
-                throw new ArgumentException("Edit should only operate on a single line", nameof(edit));
-            }
-
-            var startIndex = edit.range.start.character;
-            var removeCount = edit.range.end.character - edit.range.start.character - 1;
-
-            return s.Remove(startIndex, removeCount).Insert(startIndex, edit.newText);
-        }
     }
 }

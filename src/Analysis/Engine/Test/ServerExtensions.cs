@@ -166,6 +166,14 @@ namespace Microsoft.PythonTools.Analysis {
             }, CancellationToken.None);
         }
 
+        public static Task<TextEdit[]> SendDocumentOnTypeFormatting(this Server server, TextDocumentIdentifier textDocument, Position position, string ch) {
+            return server.DocumentOnTypeFormatting(new DocumentOnTypeFormattingParams {
+                textDocument = textDocument,
+                position = position,
+                ch = ch,
+            }, CancellationToken.None);
+        }
+
         public static async Task<IModuleAnalysis> ChangeDefaultDocumentAndGetAnalysisAsync(this Server server, string text, int failAfter = 30000) {
             var projectEntry = (ProjectEntry) server.ProjectFiles.Single();
             await server.SendDidChangeTextDocumentAsync(projectEntry.DocumentUri, text);

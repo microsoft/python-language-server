@@ -995,13 +995,36 @@ datetime.datetime.now().day
         [TestMethod, Priority(0)]
         public async Task OnTypeFormatting() {
             using (var s = await CreateServer()) {
-                var mod = await AddModule(s, "def foo  ( ) :\n    x = a + b\n    x+= 1");
+                var uri = await AddModule(s, "def foo  ( ) :\n    x = a + b\n    x+= 1");
 
                 // Extended tests for line formatting are in LineFormatterTests.
                 // These just verify that the language server formats and returns something correct.
-                await AssertLineFormat(s, mod, 1, "\n", "def foo():", new SourceLocation(1, 1), new SourceLocation(1, 15));
-                await AssertLineFormat(s, mod, 2, "\n", "x = a + b", new SourceLocation(2, 5), new SourceLocation(2, 14));
-                await AssertLineFormat(s, mod, 3, "\n", "x += 1", new SourceLocation(3, 5), new SourceLocation(3, 10));
+                var edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(2, 1), "\n");
+                edits.Should().OnlyContain(new TextEdit {
+                    newText = "def foo():",
+                    range = new Range {
+                        start = new SourceLocation(1, 1),
+                        end = new SourceLocation(1, 15)
+                    }
+                });
+
+                edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(3, 1), "\n");
+                edits.Should().OnlyContain(new TextEdit {
+                    newText = "x = a + b",
+                    range = new Range {
+                        start = new SourceLocation(2, 5),
+                        end = new SourceLocation(2, 14)
+                    }
+                });
+
+                edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(4, 1), "\n");
+                edits.Should().OnlyContain(new TextEdit {
+                    newText = "x += 1",
+                    range = new Range {
+                        start = new SourceLocation(3, 5),
+                        end = new SourceLocation(3, 10)
+                    }
+                });
             }
         }
 
@@ -1196,22 +1219,6 @@ datetime.datetime.now().day
             }, CancellationToken.None);
 
             refs.Select(r => $"{r._kind ?? ReferenceKind.Reference};{r.range}").Should().Contain(contains).And.NotContain(excludes);
-        }
-
-        public static async Task AssertLineFormat(Server s, TextDocumentIdentifier document, int line, string ch, string newText, SourceLocation start, SourceLocation end) {
-            var edits = await s.DocumentOnTypeFormatting(new DocumentOnTypeFormattingParams {
-                textDocument = document,
-                ch = ch,
-                position = new SourceLocation(line+1, 1)
-            }, CancellationToken.None);
-
-            edits.Should().OnlyContain(new TextEdit {
-                newText = newText,
-                range = new Range {
-                    start = start,
-                    end = end
-                }
-            });
         }
 
         public Task<ILanguageServerExtension> CreateAsync(IPythonLanguageServer server, IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken) => throw new NotImplementedException();
