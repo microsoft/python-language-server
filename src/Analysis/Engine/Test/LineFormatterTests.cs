@@ -30,6 +30,18 @@ using TestUtilities;
 namespace AnalysisTests {
     [TestClass]
     public class LineFormatterTests {
+        public TestContext TestContext { get; set; }
+
+        [TestInitialize]
+        public void TestInitialize() {
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        }
+
+        [TestCleanup]
+        public void TestCleanup() {
+            TestEnvironmentImpl.TestCleanup();
+        }
+
         [TestMethod, Priority(0)]
         public void LineOutOfBounds() {
             AssertNoEdits("a+b", line: 0);
