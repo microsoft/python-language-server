@@ -649,7 +649,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 if (doc is ProjectEntry entry) {
                     var reanalyzeEntries = Analyzer.GetEntriesThatImportModule(entry.ModuleName, false);
-                    foreach (IDocument d in reanalyzeEntries) {
+                    foreach (var d in reanalyzeEntries.OfType<IDocument>()) {
                         await EnqueueItemAsync(d, parse: false);
                     }
                 }
