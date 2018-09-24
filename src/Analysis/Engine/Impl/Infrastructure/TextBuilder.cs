@@ -49,9 +49,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
                 count--;
             }
 
-            for (var i = 0; i < count; i++) {
-                _segments.Add(" ");
-            }
+            _segments.Add(new string(' ', count));
         }
 
         private bool IsLastWhitespace() => _segments.Count != 0 && string.IsNullOrWhiteSpace(_segments.Last());

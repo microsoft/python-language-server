@@ -385,6 +385,11 @@ limit { limit_num}; """"""", line: 5);
             AssertSingleLineFormat(code, languageVersion: version);
         }
 
+        [TestMethod, Priority(0)]
+        public void CommentAfterOperator() {
+            AssertSingleLineFormat("a+# comment\nb", "a +  # comment");
+        }
+
 
         [TestMethod, Priority(0)]
         public void GrammarFile() {
