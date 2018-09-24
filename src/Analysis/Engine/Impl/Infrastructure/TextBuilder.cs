@@ -30,8 +30,6 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             return string.Concat(seq);
         }
 
-        public void Append(string s) => _segments.Add(s);
-
         public void Append(object o) => _segments.Add(o.ToString());
 
         /// <summary>
