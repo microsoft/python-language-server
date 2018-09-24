@@ -348,7 +348,7 @@ limit { limit_num}; """"""", line: 5);
         [DataRow("foo.a() \\\n   .b() \\\n   .c()", "foo.a() \\", 1, 1)]
         [DataRow("foo.a() \\\n   .b() \\\n   .c()", ".b() \\", 2, 4)]
         [DataRow("foo.a() \\\n   .b() \\\n   .c()", ".c()", 3, 4)]
-        [TestMethod, Priority(0)]
+        [DataTestMethod, Priority(0)]
         public void MultilineChainedCall(string code, string expected, int line, int editStart) {
             AssertSingleLineFormat(code, expected, line: line, editStart: editStart);
         }
@@ -372,7 +372,7 @@ limit { limit_num}; """"""", line: 5);
         [DataRow("`a`")]
         [DataRow("foo(`a`)")]
         [DataRow("`a` if a else 'oops'")]
-        [TestMethod, Priority(0)]
+        [DataTestMethod, Priority(0)]
         public void Backtick(string code) {
             AssertSingleLineFormat(code, languageVersion: PythonLanguageVersion.V27);
         }
@@ -380,10 +380,11 @@ limit { limit_num}; """"""", line: 5);
         [DataRow("exec code", PythonLanguageVersion.V27)]
         [DataRow("exec (code)", PythonLanguageVersion.V27)]
         [DataRow("exec(code)", PythonLanguageVersion.V37)]
-        [TestMethod, Priority(0)]
+        [DataTestMethod, Priority(0)]
         public void ExecStatement(string code, PythonLanguageVersion version) {
             AssertSingleLineFormat(code, languageVersion: version);
         }
+
 
         [TestMethod, Priority(0)]
         public void GrammarFile() {
