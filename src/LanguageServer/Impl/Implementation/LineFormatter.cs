@@ -407,10 +407,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             public bool IsKeyword => (Kind >= TokenKind.FirstKeyword && Kind <= TokenKind.LastKeyword) || Kind == TokenKind.KeywordAsync || Kind == TokenKind.KeywordAwait;
 
-            public bool IsMultilineString
-            {
-                get
-                {
+            public bool IsMultilineString {
+                get {
                     if (Span.Start.Line == Span.End.Line) {
                         return false;
                     }
@@ -423,10 +421,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            public bool IsSimpleSliceToLeft
-            {
-                get
-                {
+            public bool IsSimpleSliceToLeft {
+                get {
                     if (Kind != TokenKind.Colon) {
                         return false;
                     }
@@ -459,10 +455,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            public bool IsSimpleSliceToRight
-            {
-                get
-                {
+            public bool IsSimpleSliceToRight {
+                get {
                     if (Kind != TokenKind.Colon) {
                         return false;
                     }
@@ -494,10 +488,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            public TokenExt PrevNonIgnored
-            {
-                get
-                {
+            public TokenExt PrevNonIgnored {
+                get {
                     if (Prev != null) {
                         if (Prev.IsIgnored) {
                             return Prev.PrevNonIgnored;
@@ -508,10 +500,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            public TokenExt NextNonIgnored
-            {
-                get
-                {
+            public TokenExt NextNonIgnored {
+                get {
                     if (Next != null) {
                         if (Next.IsIgnored) {
                             return Next.NextNonIgnored;
