@@ -998,6 +998,8 @@ datetime.datetime.now().day
 
             var mod = await AddModule(s, "def foo  ( ) :\n    x = a + b\n    x+= 1");
 
+            // Extended tests for line formatting are in LineFormatterTests.
+            // These just verify that the language server formats and returns something correct.
             await AssertLineFormat(s, mod, 1, "\n", "def foo():", new SourceLocation(1, 1), new SourceLocation(1, 15));
             await AssertLineFormat(s, mod, 2, "\n", "x = a + b", new SourceLocation(2, 5), new SourceLocation(2, 14));
             await AssertLineFormat(s, mod, 3, "\n", "x += 1", new SourceLocation(3, 5), new SourceLocation(3, 10));
