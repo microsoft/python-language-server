@@ -73,8 +73,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// can look ahead.
         /// </summary>
         /// <param name="line">One-indexed line number.</param>
+        /// <param name="includeToken">A function which returns true if the token should be added to the final list. If null, all tokens will be added.</param>
         /// <returns>A non-null list of tokens on that line.</returns>
-        private List<TokenExt> TokenizeLine(int line) {
+        private List<TokenExt> TokenizeLine(int line, Func<TokenExt, bool> includeToken = null) {
             Check.Argument(nameof(line), () => line > 0);
 
             var extraToken = true;
@@ -82,7 +83,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var peeked = _tokenizer.Peek();
             while (peeked != null && (peeked.Line <= line || extraToken)) {
                 var token = _tokenizer.Next();
-                AddToken(token);
+
+                if (includeToken == null || includeToken(token)) {
+                    AddToken(token);
+                }
+
                 peeked = _tokenizer.Peek();
 
                 if (token.Line > line && !token.IsIgnored) {
@@ -107,10 +112,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return NoEdits;
             }
 
-            var tokens = TokenizeLine(line);
-
             // Keep ExplictLineJoin because it has text associated with it.
-            tokens = tokens.Where(t => !t.IsIgnored || t.Kind == TokenKind.ExplicitLineJoin).ToList();
+            var tokens = TokenizeLine(line, t => !t.IsIgnored || t.Kind == TokenKind.ExplicitLineJoin);
 
             if (tokens.Count == 0) {
                 return NoEdits;
