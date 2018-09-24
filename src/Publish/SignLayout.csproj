@@ -3,7 +3,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <NoWarn>2008;$(NoWarn)</NoWarn>
   </PropertyGroup>
-  <Import Project="..\..\NetStandard.settings" />
+  <Import Project="..\..\build\NetStandard.settings" />
 
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
@@ -52,5 +52,5 @@
     <Error Condition="@(_Missing) != ''" Text="Following files are missing: @(_Missing,'%0A')" />
   </Target>
 
-  <Import Project="..\..\NetStandard.targets" />
+  <Import Project="..\..\build\NetStandard.targets" />
 </Project>
