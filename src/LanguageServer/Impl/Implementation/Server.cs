@@ -650,7 +650,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 if (doc is ProjectEntry entry) {
                     var reanalyzeEntries = Analyzer.GetEntriesThatImportModule(entry.ModuleName, false);
                     foreach (IDocument d in reanalyzeEntries) {
-                        await EnqueueItemAsync(d);
+                        await EnqueueItemAsync(d, parse: false);
                     }
                 }
             } catch (BadSourceException) {
