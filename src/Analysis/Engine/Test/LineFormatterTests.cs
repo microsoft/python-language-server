@@ -48,11 +48,12 @@ namespace AnalysisTests {
             AssertNoEdits("a+b", line: -1);
         }
 
-        [TestMethod, Priority(0)]
-        public void FormatEmpty() {
-            AssertNoEdits("");
-            AssertNoEdits("  ");
-            AssertNoEdits("\t");
+        [DataRow("")]
+        [DataRow("  ")]
+        [DataRow("\t")]
+        [DataTestMethod, Priority(0)]
+        public void FormatEmpty(string code) {
+            AssertNoEdits(code);
         }
 
         [TestMethod, Priority(0)]
@@ -120,20 +121,22 @@ namespace AnalysisTests {
             AssertSingleLineFormat("foo( *a, ** b)", "foo(*a, **b)");
         }
 
-        [TestMethod, Priority(0)]
-        public void BraceAfterKeyword() {
-            AssertSingleLineFormat("for x in(1,2,3)", "for x in (1, 2, 3)");
-            AssertSingleLineFormat("assert(1,2,3)", "assert (1, 2, 3)");
-            AssertSingleLineFormat("if (True|False)and(False/True)and not ( x )", "if (True | False) and (False / True) and not (x)");
-            AssertSingleLineFormat("while (True|False)", "while (True | False)");
-            AssertSingleLineFormat("yield(a%b)", "yield (a % b)");
+        [DataRow("for x in(1,2,3)", "for x in (1, 2, 3)")]
+        [DataRow("assert(1,2,3)", "assert (1, 2, 3)")]
+        [DataRow("if (True|False)and(False/True)and not ( x )", "if (True | False) and (False / True) and not (x)")]
+        [DataRow("while (True|False)", "while (True | False)")]
+        [DataRow("yield(a%b)", "yield (a % b)")]
+        [DataTestMethod, Priority(0)]
+        public void BraceAfterKeyword(string code, string expected) {
+            AssertSingleLineFormat(code, expected);
         }
 
-        [TestMethod, Priority(0)]
-        public void DotOperator() {
-            AssertSingleLineFormat("x.y", "x.y");
-            AssertSingleLineFormat("x. y", "x.y");
-            AssertSingleLineFormat("5 .y", "5 .y");
+        [DataRow("x.y", "x.y")]
+        [DataRow("x. y", "x.y")]
+        [DataRow("5 .y", "5 .y")]
+        [DataTestMethod, Priority(0)]
+        public void DotOperator(string code, string expected) {
+            AssertSingleLineFormat(code, expected);
         }
 
         [TestMethod, Priority(0)]
@@ -176,32 +179,32 @@ namespace AnalysisTests {
             AssertSingleLineFormat("from..x import A", "from ..x import A");
         }
 
-        [TestMethod, Priority(0)]
-        public void RawStrings() {
-            AssertSingleLineFormat("z=r\"\"", "z = r\"\"");
-            AssertSingleLineFormat("z=rf\"\"", "z = rf\"\"");
-            AssertSingleLineFormat("z=R\"\"", "z = R\"\"");
-            AssertSingleLineFormat("z=RF\"\"", "z = RF\"\"");
+        [DataRow("z=r\"\"", "z = r\"\"")]
+        [DataRow("z=rf\"\"", "z = rf\"\"")]
+        [DataRow("z=R\"\"", "z = R\"\"")]
+        [DataRow("z=RF\"\"", "z = RF\"\"")]
+        [DataTestMethod, Priority(0)]
+        public void RawStrings(string code, string expected) {
+            AssertSingleLineFormat(code, expected);
         }
 
-        [TestMethod, Priority(0)]
-        public void UnaryOperators() {
-            AssertSingleLineFormat("x = - y", "x = -y");
-            AssertSingleLineFormat("x = + y", "x = +y");
-            AssertSingleLineFormat("x = ~ y", "x = ~y");
-            AssertSingleLineFormat("x =-1", "x = -1");
-            AssertSingleLineFormat("x =   +1", "x = +1");
-            AssertSingleLineFormat("x =  ~1", "x = ~1");
-
-            AssertSingleLineFormat("x = (-y)", "x = (-y)");
-            AssertSingleLineFormat("x = (+ y)", "x = (+y)");
-            AssertSingleLineFormat("x = (~ y)", "x = (~y)");
-            AssertSingleLineFormat("x =(-1)", "x = (-1)");
-            AssertSingleLineFormat("x =   (+ 1)", "x = (+1)");
-            AssertSingleLineFormat("x = ( ~1)", "x = (~1)");
-
-            AssertSingleLineFormat("foo(-3.14, +1, ~0xDEADBEEF)", "foo(-3.14, +1, ~0xDEADBEEF)");
-            AssertSingleLineFormat("foo(a=-3.14, b=+1, c=~0xDEADBEEF)", "foo(a=-3.14, b=+1, c=~0xDEADBEEF)");
+        [DataRow("x = - y", "x = -y")]
+        [DataRow("x = + y", "x = +y")]
+        [DataRow("x = ~ y", "x = ~y")]
+        [DataRow("x =-1", "x = -1")]
+        [DataRow("x =   +1", "x = +1")]
+        [DataRow("x =  ~1", "x = ~1")]
+        [DataRow("x = (-y)", "x = (-y)")]
+        [DataRow("x = (+ y)", "x = (+y)")]
+        [DataRow("x = (~ y)", "x = (~y)")]
+        [DataRow("x =(-1)", "x = (-1)")]
+        [DataRow("x =   (+ 1)", "x = (+1)")]
+        [DataRow("x = ( ~1)", "x = (~1)")]
+        [DataRow("foo(-3.14, +1, ~0xDEADBEEF)", "foo(-3.14, +1, ~0xDEADBEEF)")]
+        [DataRow("foo(a=-3.14, b=+1, c=~0xDEADBEEF)", "foo(a=-3.14, b=+1, c=~0xDEADBEEF)")]
+        [DataTestMethod, Priority(0)]
+        public void UnaryOperators(string code, string expected) {
+            AssertSingleLineFormat(code, expected);
         }
 
         [TestMethod, Priority(0)]
@@ -224,10 +227,11 @@ namespace AnalysisTests {
             AssertSingleLineFormat("l4= lambda x =lambda y =lambda z= 1: z: y(): x()", "l4 = lambda x=lambda y=lambda z=1: z: y(): x()");
         }
 
-        [TestMethod, Priority(0)]
-        public void StarInMultilineArguments() {
-            AssertSingleLineFormat("x = foo(\n  * param1,\n  * param2\n)", "*param1,", line: 2, editStart: 3);
-            AssertSingleLineFormat("x = foo(\n  * param1,\n  * param2\n)", "*param2", line: 3, editStart: 3);
+        [DataRow("x = foo(\n  * param1,\n  * param2\n)", "*param1,", 2, 3)]
+        [DataRow("x = foo(\n  * param1,\n  * param2\n)", "*param2", 3, 3)]
+        [DataTestMethod, Priority(0)]
+        public void StarInMultilineArguments(string code, string expected, int line, int editStart) {
+            AssertSingleLineFormat(code, expected, line: line, editStart: editStart);
         }
 
         [TestMethod, Priority(0)]
@@ -235,22 +239,21 @@ namespace AnalysisTests {
             AssertSingleLineFormat("def f(a, \n    ** k: 11) -> 12: pass", "**k: 11) -> 12: pass", line: 2, editStart: 5);
         }
 
-        [TestMethod, Priority(0)]
-        public void MultilineFunctionCall() {
-            AssertSingleLineFormat("def foo(x = 1)", "def foo(x=1)", line: 1);
-            AssertSingleLineFormat("def foo(a\n, x = 1)", ", x=1)", line: 2);
-            AssertSingleLineFormat("foo(a  ,b,\n  x = 1)", "x=1)", line: 2, editStart: 3);
-            AssertSingleLineFormat("if True:\n  if False:\n    foo(a  , bar(\n      x = 1)", "x=1)", line: 4, editStart: 7);
-            AssertSingleLineFormat("z=foo (0 , x= 1, (3+7) , y , z )", "z = foo(0, x=1, (3 + 7), y, z)", line: 1);
-            AssertSingleLineFormat("foo (0,\n x= 1,", "x=1,", line: 2, editStart: 2);
-
-            AssertSingleLineFormat(@"async def fetch():
+        [DataRow("def foo(x = 1)", "def foo(x=1)", 1, 1)]
+        [DataRow("def foo(a\n, x = 1)", ", x=1)", 2, 1)]
+        [DataRow("foo(a  ,b,\n  x = 1)", "x=1)", 2, 3)]
+        [DataRow("if True:\n  if False:\n    foo(a  , bar(\n      x = 1)", "x=1)", 4, 7)]
+        [DataRow("z=foo (0 , x= 1, (3+7) , y , z )", "z = foo(0, x=1, (3 + 7), y, z)", 1, 1)]
+        [DataRow("foo (0,\n x= 1,", "x=1,", 2, 2)]
+        [DataRow(@"async def fetch():
   async with aiohttp.ClientSession() as session:
     async with session.ws_connect(
-        ""http://127.0.0.1:8000/"", headers = cookie) as ws: # add unwanted spaces", @"""http://127.0.0.1:8000/"", headers=cookie) as ws:  # add unwanted spaces", line: 4, editStart: 9);
-
-            AssertSingleLineFormat("def pos0key1(*, key): return key\npos0key1(key= 100)", "pos0key1(key=100)", line: 2);
-            AssertSingleLineFormat("def test_string_literals(self):\n  x= 1; y =2; self.assertTrue(len(x) == 0 and x == y)", "x = 1; y = 2; self.assertTrue(len(x) == 0 and x == y)", line: 2, editStart: 3);
+        ""http://127.0.0.1:8000/"", headers = cookie) as ws: # add unwanted spaces", @"""http://127.0.0.1:8000/"", headers=cookie) as ws:  # add unwanted spaces", 4, 9)]
+        [DataRow("def pos0key1(*, key): return key\npos0key1(key= 100)", "pos0key1(key=100)", 2, 1)]
+        [DataRow("def test_string_literals(self):\n  x= 1; y =2; self.assertTrue(len(x) == 0 and x == y)", "x = 1; y = 2; self.assertTrue(len(x) == 0 and x == y)", 2, 3)]
+        [DataTestMethod, Priority(0)]
+        public void MultilineFunctionCall(string code, string expected, int line, int editStart) {
+            AssertSingleLineFormat(code, expected, line: line, editStart: editStart);
         }
 
         [TestMethod, Priority(0)]
@@ -259,31 +262,33 @@ namespace AnalysisTests {
         }
 
         // https://github.com/Microsoft/vscode-python/issues/1783
-        [TestMethod, Priority(0)]
-        public void IterableUnpacking() {
-            AssertSingleLineFormat("*a, b, c = 1, 2, 3");
-            AssertSingleLineFormat("a, *b, c = 1, 2, 3");
-            AssertSingleLineFormat("a, b, *c = 1, 2, 3");
-            AssertSingleLineFormat("a, *b, = 1, 2, 3");
+        [DataRow("*a, b, c = 1, 2, 3")]
+        [DataRow("a, *b, c = 1, 2, 3")]
+        [DataRow("a, b, *c = 1, 2, 3")]
+        [DataRow("a, *b, = 1, 2, 3")]
+        [DataTestMethod, Priority(0)]
+        public void IterableUnpacking(string code) {
+            AssertSingleLineFormat(code);
         }
 
         // https://github.com/Microsoft/vscode-python/issues/1792
         // https://www.python.org/dev/peps/pep-0008/#pet-peeves
-        [TestMethod, Priority(0)]
-        public void SlicingPetPeeves() {
-            AssertSingleLineFormat("ham[lower+offset : upper+offset]", "ham[lower + offset : upper + offset]");
-            AssertSingleLineFormat("ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]", "ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]");
-            AssertSingleLineFormat("ham[lower + offset : upper + offset]", "ham[lower + offset : upper + offset]");
-            AssertSingleLineFormat("ham[1: 9], ham[1 : 9], ham[1 :9 :3]", "ham[1:9], ham[1:9], ham[1:9:3]");
-            AssertSingleLineFormat("ham[lower : : upper]", "ham[lower::upper]");
-            AssertSingleLineFormat("ham[ : upper]", "ham[:upper]");
-            AssertSingleLineFormat("foo[-5:]");
-            AssertSingleLineFormat("foo[:-5]");
-            AssertSingleLineFormat("foo[+5:]");
-            AssertSingleLineFormat("foo[:+5]");
-            AssertSingleLineFormat("foo[~5:]");
-            AssertSingleLineFormat("foo[:~5]");
-            AssertSingleLineFormat("foo[-a:]");
+        [DataRow("ham[lower+offset : upper+offset]", "ham[lower + offset : upper + offset]")]
+        [DataRow("ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]", "ham[: upper_fn(x) : step_fn(x)], ham[:: step_fn(x)]")]
+        [DataRow("ham[lower + offset : upper + offset]", "ham[lower + offset : upper + offset]")]
+        [DataRow("ham[1: 9], ham[1 : 9], ham[1 :9 :3]", "ham[1:9], ham[1:9], ham[1:9:3]")]
+        [DataRow("ham[lower : : upper]", "ham[lower::upper]")]
+        [DataRow("ham[ : upper]", "ham[:upper]")]
+        [DataRow("foo[-5:]", null)]
+        [DataRow("foo[:-5]", null)]
+        [DataRow("foo[+5:]", null)]
+        [DataRow("foo[:+5]", null)]
+        [DataRow("foo[~5:]", null)]
+        [DataRow("foo[:~5]", null)]
+        [DataRow("foo[-a:]", null)]
+        [DataTestMethod, Priority(0)]
+        public void SlicingPetPeeves(string code, string expected) {
+            AssertSingleLineFormat(code, expected);
         }
 
         [TestMethod, Priority(0)]
@@ -312,16 +317,17 @@ limit { limit_num}; """"""", line: 5);
             AssertSingleLineFormat("x=...", "x = ...");
         }
 
-        [TestMethod, Priority(0)]
-        public void PEP448() {
-            AssertSingleLineFormat("print(*[1], *[2], 3)");
-            AssertSingleLineFormat("dict(**{'x': 1}, y=2, **{'z': 3})");
-            AssertSingleLineFormat("*range(4), 4");
-            AssertSingleLineFormat("[*range(4), 4]");
-            AssertSingleLineFormat("{*range(4), 4}");
-            AssertSingleLineFormat("{'x': 1, **{'y': 2}}");
-            AssertSingleLineFormat("{'x': 1, **{'x': 2}}");
-            AssertSingleLineFormat("{**{'x': 2}, 'x': 1}");
+        [DataRow("print(*[1], *[2], 3)")]
+        [DataRow("dict(**{'x': 1}, y=2, **{'z': 3})")]
+        [DataRow("*range(4), 4")]
+        [DataRow("[*range(4), 4]")]
+        [DataRow("{*range(4), 4}")]
+        [DataRow("{'x': 1, **{'y': 2}}")]
+        [DataRow("{'x': 1, **{'x': 2}}")]
+        [DataRow("{**{'x': 2}, 'x': 1}")]
+        [DataTestMethod, Priority(0)]
+        public void PEP448(string code) {
+            AssertSingleLineFormat(code);
         }
 
         [TestMethod, Priority(0)]
@@ -339,42 +345,44 @@ limit { limit_num}; """"""", line: 5);
             AssertSingleLineFormat("a+b+ \\\n", "a + b + \\");
         }
 
+        [DataRow("foo.a() \\\n   .b() \\\n   .c()", "foo.a() \\", 1, 1)]
+        [DataRow("foo.a() \\\n   .b() \\\n   .c()", ".b() \\", 2, 4)]
+        [DataRow("foo.a() \\\n   .b() \\\n   .c()", ".c()", 3, 4)]
         [TestMethod, Priority(0)]
-        public void MultilineChainedCall() {
-            const string code = "foo.a() \\\n   .b() \\\n   .c()";
-            AssertSingleLineFormat(code, "foo.a() \\");
-            AssertSingleLineFormat(code, ".b() \\", line: 2, editStart: 4);
-            AssertSingleLineFormat(code, ".c()", line: 3, editStart: 4);
+        public void MultilineChainedCall(string code, string expected, int line, int editStart) {
+            AssertSingleLineFormat(code, expected, line: line, editStart: editStart);
         }
 
-        [TestMethod, Priority(0)]
-        public void BracketCommas() {
-            AssertSingleLineFormat("a[:, :, :, 1]");
-            AssertSingleLineFormat("a[x:y, x + 1 :y, :, 1]");
-            AssertSingleLineFormat("a[:, 1:3]");
-            AssertSingleLineFormat("a[:, :3, :]");
-            AssertSingleLineFormat("a[:, 3:, :]");
+
+        [DataRow("a[:, :, :, 1]")]
+        [DataRow("a[x:y, x + 1 :y, :, 1]")]
+        [DataRow("a[:, 1:3]")]
+        [DataRow("a[:, :3, :]")]
+        [DataRow("a[:, 3:, :]")]
+        [DataTestMethod, Priority(0)]
+        public void BracketCommas(string code) {
+            AssertSingleLineFormat(code);
         }
 
         [TestMethod, Priority(0)]
         public void MultilineStringTrailingComment() {
-            AssertSingleLineFormat(@"'''
-foo
-''' # comment", "  # comment", line: 3, editStart: 4);
+            AssertSingleLineFormat("'''\nfoo\n''' # comment", "  # comment", line: 3, editStart: 4);
         }
 
+        [DataRow("`a`")]
+        [DataRow("foo(`a`)")]
+        [DataRow("`a` if a else 'oops'")]
         [TestMethod, Priority(0)]
-        public void Backtick() {
-            AssertSingleLineFormat("`a`", languageVersion: PythonLanguageVersion.V27);
-            AssertSingleLineFormat("foo(`a`)", languageVersion: PythonLanguageVersion.V27);
-            AssertSingleLineFormat("`a` if a else 'oops'", languageVersion: PythonLanguageVersion.V27);
+        public void Backtick(string code) {
+            AssertSingleLineFormat(code, languageVersion: PythonLanguageVersion.V27);
         }
 
+        [DataRow("exec code", PythonLanguageVersion.V27)]
+        [DataRow("exec (code)", PythonLanguageVersion.V27)]
+        [DataRow("exec(code)", PythonLanguageVersion.V37)]
         [TestMethod, Priority(0)]
-        public void ExecStatement() {
-            AssertSingleLineFormat("exec code", languageVersion: PythonLanguageVersion.V27);
-            AssertSingleLineFormat("exec (code)", languageVersion: PythonLanguageVersion.V27);
-            AssertSingleLineFormat("exec(code)");
+        public void ExecStatement(string code, PythonLanguageVersion version) {
+            AssertSingleLineFormat(code, languageVersion: version);
         }
 
         [TestMethod, Priority(0)]
