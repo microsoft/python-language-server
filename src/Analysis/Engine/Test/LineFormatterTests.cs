@@ -409,18 +409,21 @@ limit { limit_num}; """"""", line: 5);
                     var lineNum = i + 1;
 
                     var edits = lineFormatter.FormatLine(lineNum);
+                    edits.Should().NotBeNull().And.HaveCountLessOrEqualTo(1);
 
-                    var lineText = lines[i];
-                    var lineTextOrig = lines[i];
-
-                    foreach (var edit in edits) {
-                        edit.range.start.line.Should().Be(i);
-                        edit.range.end.line.Should().Be(i);
-
-                        lineText = ApplyLineEdit(lineText, edit);
+                    if (edits.Length == 0) {
+                        continue;
                     }
 
-                    lineText.Should().Be(lineTextOrig, $"because line {lineNum} should be unchanged");
+                    var edit = edits[0];
+                    var start = edit.range.start;
+                    var end = edit.range.end;
+
+                    start.line.Should().Be(i);
+                    end.line.Should().Be(i);
+
+                    var lineText = lines[i];
+                    edit.newText.Should().Be(lineText.Substring(start.character, end.character - start.character - 1), $"because line {lineNum} should be unchanged");
                 }
             }
         }
