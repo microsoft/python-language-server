@@ -98,7 +98,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             await InvokeExtensionsAsync((ext, token)
-                => (ext as ICompletionExtension)?.HandleCompletionAsync(analysis, tree, @params.position, res, cancellationToken), cancellationToken);
+                => (ext as ICompletionExtension)?.HandleCompletionAsync(uri, analysis, tree, @params.position, res, cancellationToken), cancellationToken);
 
             return res;
         }

@@ -14,6 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools;
@@ -22,6 +23,6 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Extensions {
     public interface ICompletionExtension {
-        Task HandleCompletionAsync(IModuleAnalysis analysis, PythonAst tree, SourceLocation location, CompletionList completions, CancellationToken token);
+        Task HandleCompletionAsync(Uri documentUri, IModuleAnalysis analysis, PythonAst tree, SourceLocation location, CompletionList completions, CancellationToken token);
     }
 }
