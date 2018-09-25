@@ -380,7 +380,6 @@ x = f()
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/38")]
         public async Task TypingModuleDocumentationExample_2() {
             await TypingModuleDocumentationExampleAsync(@"from typing import List
 Vector = List[float]
@@ -392,7 +391,7 @@ def scale(scalar: float, vector: Vector) -> Vector:
 new_vector = scale(2.0, [1.0, -4.2, 5.4])
 ",
                 new[] {
-                    "scale:scale(scalar:float=,vector:list[float]=)->[list,list[float]]"
+                    "scale:scale(scalar:float=,vector:list[float, float, float], list[float]=)->[list[float]]"
                 }
             );
         }
