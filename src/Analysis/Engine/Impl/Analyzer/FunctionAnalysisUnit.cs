@@ -101,7 +101,8 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
             // Only handle these if they are specialized
             foreach (var d in decorator.OfType<SpecializedCallable>()) {
-                if (d.DeclaringModule?.ModuleName != "abc") {
+                if (d.DeclaringModule != null
+                    && d.DeclaringModule.ModuleName != "abc") {
                     continue;
                 }
 

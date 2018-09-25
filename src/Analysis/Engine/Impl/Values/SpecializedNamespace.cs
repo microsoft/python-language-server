@@ -217,6 +217,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
+        public override string Name {
+            get {
+                if (_original == null)
+                    return base.Name;
+
+                return _original.Name;
+            }
+        }
+
         public override IEnumerable<OverloadResult> Overloads {
             get {
                 if (_original == null) {
