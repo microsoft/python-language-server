@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
@@ -119,7 +120,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return NoEdits;
             }
 
-            var builder = new TextBuilder();
+            var builder = new StringBuilder();
             var first = tokens[0];
             var beginCol = first.Span.Start.Column;
             var startIdx = 0;
@@ -130,7 +131,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // after it if needed (i.e. in the case of a following comment).
                 beginCol = first.Span.End.Column;
                 startIdx = 1;
-                builder.SoftAppendSpace(allowLeading: true);
+                builder.EnsureEndsWithSpace(allowLeading: true);
             }
 
             for (var i = startIdx; i < tokens.Count; i++) {
@@ -140,7 +141,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 switch (token.Kind) {
                     case TokenKind.Comment:
-                        builder.SoftAppendSpace(2);
+                        builder.EnsureEndsWithSpace(2);
                         builder.Append(token);
                         break;
 
@@ -166,15 +167,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     case TokenKind.BitwiseAndEqual:
                     case TokenKind.BitwiseOrEqual:
                     case TokenKind.ExclusiveOrEqual:
-                        builder.SoftAppendSpace();
+                        builder.EnsureEndsWithSpace();
                         builder.Append(token);
-                        builder.SoftAppendSpace();
+                        builder.EnsureEndsWithSpace();
                         break;
 
                     case TokenKind.Comma:
                         builder.Append(token);
                         if (next != null && !next.IsClose && next.Kind != TokenKind.Colon) {
-                            builder.SoftAppendSpace();
+                            builder.EnsureEndsWithSpace();
                         }
                         break;
 
@@ -182,13 +183,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         // Slicing
                         if (token.Inside?.Kind == TokenKind.LeftBracket) {
                             if (!token.IsSimpleSliceToLeft) {
-                                builder.SoftAppendSpace();
+                                builder.EnsureEndsWithSpace();
                             }
 
                             builder.Append(token);
 
                             if (!token.IsSimpleSliceToRight) {
-                                builder.SoftAppendSpace();
+                                builder.EnsureEndsWithSpace();
                             }
 
                             break;
@@ -196,7 +197,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                         builder.Append(token);
                         if (next != null && !next.Is(TokenKind.Colon, TokenKind.Comma)) {
-                            builder.SoftAppendSpace();
+                            builder.EnsureEndsWithSpace();
                         }
                         break;
 
@@ -259,14 +260,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     case TokenKind.NotEquals:
                     case TokenKind.LessThanGreaterThan:
                     case TokenKind.Arrow:
-                        builder.SoftAppendSpace();
+                        builder.EnsureEndsWithSpace();
                         builder.Append(token);
-                        builder.SoftAppendSpace();
+                        builder.EnsureEndsWithSpace();
                         break;
 
                     case TokenKind.Dot:
                         if (prev != null && (prev.Kind == TokenKind.KeywordFrom || prev.IsNumber)) {
-                            builder.SoftAppendSpace();
+                            builder.EnsureEndsWithSpace();
                         }
 
                         builder.Append(token);
@@ -283,7 +284,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                     case TokenKind.Semicolon:
                         builder.Append(token);
-                        builder.SoftAppendSpace();
+                        builder.EnsureEndsWithSpace();
                         break;
 
                     case TokenKind.Name:
@@ -295,7 +296,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         break;
 
                     case TokenKind.ExplicitLineJoin:
-                        builder.SoftAppendSpace();
+                        builder.EnsureEndsWithSpace();
                         builder.Append("\\"); // Hardcoded string so that any following whitespace doesn't make it in.
                         break;
 
@@ -309,7 +310,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                                 builder.Append(token);
 
                                 if (next?.Kind != TokenKind.Colon) {
-                                    builder.SoftAppendSpace();
+                                    builder.EnsureEndsWithSpace();
                                 }
 
                                 break;
@@ -318,22 +319,22 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                         if (token.IsKeyword) {
                             if (prev != null && !prev.IsOpen) {
-                                builder.SoftAppendSpace();
+                                builder.EnsureEndsWithSpace();
                             }
 
                             builder.Append(token);
 
                             if (next != null && next.Kind != TokenKind.Colon && next.Kind != TokenKind.Semicolon) {
-                                builder.SoftAppendSpace();
+                                builder.EnsureEndsWithSpace();
                             }
 
                             break;
                         }
 
                         // No tokens should make it to this case, but try to keep things separated.
-                        builder.SoftAppendSpace();
+                        builder.EnsureEndsWithSpace();
                         builder.Append(token);
-                        builder.SoftAppendSpace();
+                        builder.EnsureEndsWithSpace();
                         break;
                 }
             }
@@ -348,6 +349,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 builder.Append(afterLastFirst);
             }
 
+            builder.TrimEnd();
             var newText = builder.ToString();
 
             if (newText.Length == 0) {
