@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
-namespace Microsoft.PythonTools.Analysis {
+namespace AnalysisTests {
     [TestClass]
     public class InheritanceTests {
         public TestContext TestContext { get; set; }
@@ -31,6 +32,31 @@ class B(A):
         return 42
 a = A()
 b = a.virt()";
+
+            using (var server = await new Server().InitializeAsync(PythonVersions.Required_Python36X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int);
+            }
+        }
+
+        [TestMethod]
+        public async Task AbstractPropertyReturnTypeIgnored() {
+            var code = @"
+import abc
+
+class A:
+    @abc.abstractproperty
+    def virt():
+        pass
+
+class B(A):
+    @property
+    def virt():
+        return 42
+
+a = A()
+b = a.virt";
 
             using (var server = await new Server().InitializeAsync(PythonVersions.Required_Python36X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
