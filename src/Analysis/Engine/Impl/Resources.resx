@@ -300,4 +300,7 @@
     <value># Sets the width for wrapping comments
 # and documentation strings.</value>
   </data>
+  <data name="CalculatingDocumentation" xml:space="preserve">
+    <value>Documentation is still being calculated, please try again soon.</value>
+  </data>
 </root>

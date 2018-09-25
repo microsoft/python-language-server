@@ -485,13 +485,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
                             LazyCallArgs = new Lazy<ArgumentSet>(() => new ArgumentSet(vars, null, null, null)),
                             ResolveFully = true
                         }, out _)
-                        .GetShortDescriptions()
                         .ToArray();
 
                     bool needNewSet = true;
                     foreach (var set in parameterSets) {
                         if (set.ParameterCount == names.Length) {
-                            if (set.TryAddOverload(null, null, names, vars, defaults, rtypes)) {
+                            if (set.TryAddOverload(null, null, names, vars, defaults, AnalysisSet.Create(rtypes))) {
                                 needNewSet = false;
                                 break;
                             }
@@ -501,7 +500,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     if (needNewSet) {
                         var set = new AccumulatedOverloadResult(FunctionDefinition.Name, Documentation, names.Length);
                         parameterSets.Add(set);
-                        set.TryAddOverload(null, null, names, vars, defaults, rtypes);
+                        set.TryAddOverload(null, null, names, vars, defaults, AnalysisSet.Create(rtypes));
                     }
                 }
 

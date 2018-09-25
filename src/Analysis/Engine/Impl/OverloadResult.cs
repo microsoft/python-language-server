@@ -20,32 +20,32 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 
 namespace Microsoft.PythonTools.Analysis {
     public class OverloadResult : IOverloadResult {
         private readonly ParameterResult[] _parameters;
-        private readonly string[] _returnType;
+        private readonly IAnalysisSet _returnTypes;
 
-        public OverloadResult(ParameterResult[] parameters, string name, string documentation, IEnumerable<string> returnType) {
+        public OverloadResult(ParameterResult[] parameters, string name, string documentation, IAnalysisSet returnTypes) {
             _parameters = parameters;
             Name = name;
             Documentation = documentation;
-            _returnType = returnType.MaybeEnumerate().ToArray();
+            _returnTypes = returnTypes;
         }
 
         public string Name { get; }
-        public virtual IReadOnlyList<string> ReturnType { get { return _returnType; } }
+        public virtual IReadOnlyList<string> ReturnType => _returnTypes.Select(t => t.Name).ToArray();
+        public virtual IAnalysisSet ReturnTypes => _returnTypes;
         public virtual string Documentation { get; }
-        public virtual ParameterResult[] Parameters { get { return _parameters; } }
+        public virtual ParameterResult[] Parameters => _parameters;
 
-        internal virtual OverloadResult WithNewParameters(ParameterResult[] newParameters) {
-            return new OverloadResult(newParameters, Name, Documentation, ReturnType);
-        }
+        internal virtual OverloadResult WithNewParameters(ParameterResult[] newParameters)
+            => new OverloadResult(newParameters, Name, Documentation, ReturnTypes);
 
-        internal virtual OverloadResult WithoutLeadingParameters(int skipCount = 1) {
-            return new OverloadResult(_parameters.Skip(skipCount).ToArray(), Name, Documentation, _returnType);
-        }
+        internal virtual OverloadResult WithoutLeadingParameters(int skipCount = 1)
+            => new OverloadResult(_parameters.Skip(skipCount).ToArray(), Name, Documentation, _returnTypes);
 
         private static string Longest(string x, string y) {
             if (x == null) {
@@ -84,11 +84,8 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        private static string Merge(string x, string y) {
-            return string.Join(", ",
-                CommaSplit(x).Concat(CommaSplit(y)).OrderBy(n => n).Distinct()
-            );
-        }
+        private static string Merge(string x, string y)
+            => string.Join(", ", CommaSplit(x).Concat(CommaSplit(y)).OrderBy(n => n).Distinct());
 
         public static OverloadResult Merge(IEnumerable<OverloadResult> overloads) {
             overloads = overloads.ToArray();
@@ -117,18 +114,29 @@ namespace Microsoft.PythonTools.Analysis {
 
                 return res;
             });
-            var returnType = overloads.SelectMany(o => o.ReturnType).Distinct();
 
-            return new OverloadResult(parameters, name, doc, returnType);
+            var returnTypes = overloads.SelectMany(o => o.ReturnTypes).Distinct();
+            return new OverloadResult(parameters, name, doc, AnalysisSet.Create(returnTypes));
         }
 
         public override string ToString() {
-            return "{0}({1})->[{2}]{3}".FormatInvariant(
-                Name,
-                string.Join(",", Parameters.Select(p => "{0}{1}:{2}={3}".FormatInvariant(p.Name, p.IsOptional ? "?" : "", p.Type ?? "", p.DefaultValue ?? ""))),
-                string.Join(",", ReturnType.OrderBy(k => k)),
-                string.IsNullOrEmpty(Documentation) ? "" : ("'''{0}'''".FormatInvariant(Documentation))
+            var parameters = string.Join(", ",
+                Parameters.Select(p => "{0}{1}:{2}{3}{4}"
+                    .FormatInvariant(p.Name,
+                                     p.IsOptional ? "?" : string.Empty,
+                                     p.Type ?? string.Empty,
+                                     p.DefaultValue != null ? "=" : string.Empty,
+                                     p.DefaultValue ?? string.Empty))
+            ).TrimEnd();
+
+            var returnType = "{0}{1}{2}".FormatInvariant(
+                ReturnType.Count > 1 ? "[" : string.Empty,
+                ReturnType.Count > 0 ? string.Join(",", ReturnType.OrderBy(k => k)) : "None",
+                ReturnType.Count > 1 ? "]" : string.Empty
             );
+
+            var doc = string.IsNullOrEmpty(Documentation) ? "" : "'''{0}'''".FormatInvariant(Documentation);
+            return "{0}({1}) -> {2}{3}".FormatInvariant(Name, parameters, returnType, doc);
         }
     }
 
@@ -138,7 +146,7 @@ namespace Microsoft.PythonTools.Analysis {
         private string[] _pnames;
         private IAnalysisSet[] _ptypes;
         private string[] _pdefaults;
-        private readonly HashSet<string> _rtypes;
+        private IAnalysisSet _rtypes;
 
         public AccumulatedOverloadResult(string name, string documentation, int parameters) {
             _name = name;
@@ -147,14 +155,13 @@ namespace Microsoft.PythonTools.Analysis {
             _ptypes = new IAnalysisSet[parameters];
             _pdefaults = new string[parameters];
             ParameterCount = parameters;
-            _rtypes = new HashSet<string>();
+            _rtypes = AnalysisSet.Empty;
         }
 
         public int ParameterCount { get; }
 
-        private bool AreNullOrEqual(string x, string y) {
-            return string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) || string.Equals(x, y, StringComparison.Ordinal);
-        }
+        private bool AreNullOrEqual(string x, string y) =>
+            string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) || string.Equals(x, y, StringComparison.Ordinal);
 
         private bool AreNullOrEqual(IAnalysisSet x, IAnalysisSet y) {
             return x == null || x.IsObjectOrUnknown() ||
@@ -174,15 +181,15 @@ namespace Microsoft.PythonTools.Analysis {
 
         private IAnalysisSet ChooseBest(IAnalysisSet x, IAnalysisSet y) {
             if (x == null || x.IsObjectOrUnknown()) {
-                return (y == null || y.IsObjectOrUnknown()) ? AnalysisSet.Empty : y;
+                return (y == null) ? AnalysisSet.Empty : y;
             }
             if (y == null || y.IsObjectOrUnknown()) {
-                return AnalysisSet.Empty;
+                return null;
             }
-            return x.Union(y);
+            return MergeTypes(x, y);
         }
 
-        public bool TryAddOverload(string name, string documentation, string[] names, IAnalysisSet[] types, string[] defaults, IEnumerable<string> returnTypes) {
+        public bool TryAddOverload(string name, string documentation, string[] names, IAnalysisSet[] types, string[] defaults, IAnalysisSet returnTypes) {
             if (names.Length != _pnames.Length || types.Length != _ptypes.Length) {
                 return false;
             }
@@ -210,7 +217,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             if (returnTypes != null) {
-                _rtypes.UnionWith(returnTypes);
+                _rtypes = ChooseBest(_rtypes, returnTypes);
             }
 
             return true;
@@ -234,6 +241,27 @@ namespace Microsoft.PythonTools.Analysis {
             }
             return new OverloadResult(parameters, _name, _doc, _rtypes);
         }
+
+        private IAnalysisSet MergeTypes(IAnalysisSet x, IAnalysisSet y) {
+            // Merge types so we get simple parameter description such as 
+            // list[int] rather than duplicates such as  list[int],list[int, int, int].
+            var cmp = UnionComparer.Instances[1];
+            var xA = x.ToArray();
+            var yA = y.ToArray();
+            var mergedValues = new List<AnalysisValue>();
+            for (var i = 0; i < xA.Length; i++) {
+                // Order types for merging in the order of description length
+                // so more complex type would possibly fold into the simpler type
+                // such as list[int, int, int] will fold into the list[int].
+                
+                // TODO: this is not bulletproof. 
+                // For example, it will merge user type derived from int into the int.
+                var xd = string.Join(",", xA[i].GetShortDescriptions());
+                var yd = string.Join(",", yA[i].GetShortDescriptions());
+                mergedValues.Add(xd.Length < yd.Length ? cmp.MergeTypes(xA[i], yA[i], out _) : cmp.MergeTypes(yA[i], xA[i], out _));
+            }
+            return AnalysisSet.CreateUnion(mergedValues, cmp);
+        }
     }
 
     class BuiltinFunctionOverloadResult : OverloadResult {
@@ -245,7 +273,6 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly Func<string> _fallbackDoc;
         private string _doc;
         private IReadOnlyList<string> _returnTypes;
-        private static readonly string _calculating = "Documentation is still being calculated, please try again soon.";
 
         // Used by ToString to ensure docs have completed
         private Task _docTask;
@@ -306,7 +333,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         private void Calculate() {
             // initially fill in w/ a string saying we don't yet have the documentation
-            _doc = _calculating;
+            _doc = Resources.CalculatingDocumentation;
             _docTask = Task.Factory.StartNew(DocCalculator);
         }
 
