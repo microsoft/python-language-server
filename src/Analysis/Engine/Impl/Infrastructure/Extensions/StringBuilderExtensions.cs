@@ -24,5 +24,21 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             }
             return sb;
         }
+
+        public static StringBuilder EnsureEndsWithSpace(this StringBuilder sb, int count = 1, bool allowLeading = false) {
+            if (sb.Length == 0 && !allowLeading) {
+                return sb;
+            }
+
+            for (var i = sb.Length - 1; i >= 0 && char.IsWhiteSpace(sb[i]); i--) {
+                count--;
+            }
+
+            if (count > 0) {
+                sb.Append(new string(' ', count));
+            }
+
+            return sb;
+        }
     }
 }
