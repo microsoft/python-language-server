@@ -3464,7 +3464,6 @@ g = f()";
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/52")]
         public async Task ReferencesGeneratorsV2() {
             var text = @"
 [f for f in x]
@@ -3488,7 +3487,6 @@ g = f()";
                 );
                 referencesX.Should().OnlyHaveReferences(
                     (uri, (2, 7, 2, 8), ReferenceKind.Definition),
-                    (uri, (1, 12, 1, 13), ReferenceKind.Reference),
                     (uri, (2, 1, 2, 2), ReferenceKind.Reference)
                 );
                 referencesG.Should().OnlyHaveReferences(

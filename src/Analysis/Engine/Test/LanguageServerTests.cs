@@ -644,7 +644,7 @@ mc
             #endregion
 
             #region ICompletionExtension
-            public Task HandleCompletionAsync(IModuleAnalysis analysis, PythonAst tree, SourceLocation location, CompletionList completions, CancellationToken token) {
+            public Task HandleCompletionAsync(Uri documentUri, IModuleAnalysis analysis, PythonAst tree, SourceLocation location, CompletionList completions, CancellationToken token) {
                 Assert.IsNotNull(tree);
                 Assert.IsNotNull(analysis);
                 for (int i = 0; i < completions.items.Length; ++i) {

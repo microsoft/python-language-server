@@ -315,6 +315,7 @@ namespace Microsoft.PythonTools.Analysis {
             Analysis = new ModuleAnalysis(
                 _unit,
                 ((ModuleScope)_unit.Scope).CloneForPublish(),
+                DocumentUri,
                 AnalysisVersion
             );
         }
