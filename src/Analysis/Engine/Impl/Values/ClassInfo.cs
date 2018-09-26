@@ -271,7 +271,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                                                 overload.Parameters,
                                                 ClassDefinition.Name,
                                                 overload.Documentation,
-                                                overload.ReturnTypes
+                                                overload.ReturnType
                                             )
                                         );
                                     }
@@ -289,7 +289,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                         new ParameterResult[0],
                         ClassDefinition.Name,
                         ClassDefinition.Body.Documentation.TrimDocumentation(),
-                        AnalysisSet.Empty
+                        new[] { ShortDescription }
                     ));
                 }
 
@@ -304,7 +304,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 overload.Parameters.RemoveFirst(),
                 ClassDefinition.Name,
                 string.IsNullOrEmpty(doc) ? Documentation : doc,
-                overload.ReturnTypes
+                overload.ReturnType
             );
         }
 
@@ -314,7 +314,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 overload.Parameters.RemoveFirst(),
                 ClassDefinition.Name,
                 string.IsNullOrEmpty(doc) ? Documentation : doc,
-                overload.ReturnTypes
+                overload.ReturnType
             );
         }
 

@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,26 +27,25 @@ using Microsoft.PythonTools.Interpreter;
 namespace Microsoft.PythonTools.Analysis {
     public class OverloadResult : IOverloadResult {
         private readonly ParameterResult[] _parameters;
-        private readonly IAnalysisSet _returnTypes;
+        private readonly string[] _returnType;
 
-        public OverloadResult(ParameterResult[] parameters, string name, string documentation, IAnalysisSet returnTypes) {
+        public OverloadResult(ParameterResult[] parameters, string name, string documentation, IEnumerable<string> returnType) {
             _parameters = parameters;
             Name = name;
             Documentation = documentation;
-            _returnTypes = returnTypes;
+            _returnType = returnType.MaybeEnumerate().ToArray();
         }
 
         public string Name { get; }
-        public virtual IReadOnlyList<string> ReturnType => _returnTypes.Select(t => t.Name).ToArray();
-        public virtual IAnalysisSet ReturnTypes => _returnTypes;
+        public virtual IReadOnlyList<string> ReturnType => _returnType;
         public virtual string Documentation { get; }
         public virtual ParameterResult[] Parameters => _parameters;
 
         internal virtual OverloadResult WithNewParameters(ParameterResult[] newParameters)
-            => new OverloadResult(newParameters, Name, Documentation, ReturnTypes);
+            => new OverloadResult(newParameters, Name, Documentation, _returnType);
 
         internal virtual OverloadResult WithoutLeadingParameters(int skipCount = 1)
-            => new OverloadResult(_parameters.Skip(skipCount).ToArray(), Name, Documentation, _returnTypes);
+            => new OverloadResult(_parameters.Skip(skipCount).ToArray(), Name, Documentation, _returnType);
 
         private static string Longest(string x, string y) {
             if (x == null) {
@@ -115,8 +115,8 @@ namespace Microsoft.PythonTools.Analysis {
                 return res;
             });
 
-            var returnTypes = overloads.SelectMany(o => o.ReturnTypes).Distinct();
-            return new OverloadResult(parameters, name, doc, AnalysisSet.Create(returnTypes));
+            var returnType = overloads.SelectMany(o => o.ReturnType).Distinct();
+            return new OverloadResult(parameters, name, doc, returnType);
         }
 
         public override string ToString() {
@@ -131,7 +131,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             var returnType = "{0}{1}{2}".FormatInvariant(
                 ReturnType.Count > 1 ? "[" : string.Empty,
-                ReturnType.Count > 0 ? string.Join(",", ReturnType.OrderBy(k => k)) : "None",
+                ReturnType.Count > 0 ? string.Join(", ", ReturnType.OrderBy(k => k)) : "None",
                 ReturnType.Count > 1 ? "]" : string.Empty
             );
 
@@ -146,7 +146,7 @@ namespace Microsoft.PythonTools.Analysis {
         private string[] _pnames;
         private IAnalysisSet[] _ptypes;
         private string[] _pdefaults;
-        private IAnalysisSet _rtypes;
+        private readonly HashSet<string> _rtypes;
 
         public AccumulatedOverloadResult(string name, string documentation, int parameters) {
             _name = name;
@@ -155,7 +155,7 @@ namespace Microsoft.PythonTools.Analysis {
             _ptypes = new IAnalysisSet[parameters];
             _pdefaults = new string[parameters];
             ParameterCount = parameters;
-            _rtypes = AnalysisSet.Empty;
+            _rtypes = new HashSet<string>();
         }
 
         public int ParameterCount { get; }
@@ -184,12 +184,12 @@ namespace Microsoft.PythonTools.Analysis {
                 return (y == null) ? AnalysisSet.Empty : y;
             }
             if (y == null || y.IsObjectOrUnknown()) {
-                return null;
+                return AnalysisSet.Empty;
             }
-            return MergeTypes(x, y);
+            return x.Union(y);
         }
 
-        public bool TryAddOverload(string name, string documentation, string[] names, IAnalysisSet[] types, string[] defaults, IAnalysisSet returnTypes) {
+        public bool TryAddOverload(string name, string documentation, string[] names, IAnalysisSet[] types, string[] defaults, IEnumerable<string> returnTypes) {
             if (names.Length != _pnames.Length || types.Length != _ptypes.Length) {
                 return false;
             }
@@ -203,7 +203,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return false;
             }
 
-            for (int i = 0; i < _pnames.Length; ++i) {
+            for (var i = 0; i < _pnames.Length; ++i) {
                 _pnames[i] = ChooseBest(_pnames[i], names[i]);
                 _ptypes[i] = ChooseBest(_ptypes[i], types[i]);
                 _pdefaults[i] = ChooseBest(_pdefaults[i], defaults[i]);
@@ -217,7 +217,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             if (returnTypes != null) {
-                _rtypes = ChooseBest(_rtypes, returnTypes);
+                _rtypes.UnionWith(returnTypes);
             }
 
             return true;
@@ -240,27 +240,6 @@ namespace Microsoft.PythonTools.Analysis {
                 );
             }
             return new OverloadResult(parameters, _name, _doc, _rtypes);
-        }
-
-        private IAnalysisSet MergeTypes(IAnalysisSet x, IAnalysisSet y) {
-            // Merge types so we get simple parameter description such as 
-            // list[int] rather than duplicates such as  list[int],list[int, int, int].
-            var cmp = UnionComparer.Instances[1];
-            var xA = x.ToArray();
-            var yA = y.ToArray();
-            var mergedValues = new List<AnalysisValue>();
-            for (var i = 0; i < xA.Length; i++) {
-                // Order types for merging in the order of description length
-                // so more complex type would possibly fold into the simpler type
-                // such as list[int, int, int] will fold into the list[int].
-                
-                // TODO: this is not bulletproof. 
-                // For example, it will merge user type derived from int into the int.
-                var xd = string.Join(",", xA[i].GetShortDescriptions());
-                var yd = string.Join(",", yA[i].GetShortDescriptions());
-                mergedValues.Add(xd.Length < yd.Length ? cmp.MergeTypes(xA[i], yA[i], out _) : cmp.MergeTypes(yA[i], xA[i], out _));
-            }
-            return AnalysisSet.CreateUnion(mergedValues, cmp);
         }
     }
 

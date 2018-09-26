@@ -391,7 +391,7 @@ def scale(scalar: float, vector: Vector) -> Vector:
 new_vector = scale(2.0, [1.0, -4.2, 5.4])
 ",
                 new[] {
-                    "scale:scale(scalar:float, vector:list[float]) -> list[float]"
+                    "scale:scale(scalar:float, vector:list[float, float, float], list[float]) -> list[float]"
                 }
             );
         }
@@ -438,7 +438,7 @@ user_a = get_user_name(UserId(42351))
 user_b = get_user_name(-1)
 ",
                 new[] {
-                    "get_user_name:get_user_name(user_id:int) -> str"
+                    "get_user_name:get_user_name(user_id:int, UserId) -> str"
                 }
             );
         }
@@ -543,7 +543,7 @@ def zero_all_vars(vars: Iterable[LoggedVar[int]]) -> None:
         var.set(0)
 ",
                 new[] {
-                    "LoggedVar.set:set(self:LoggedVar, new:T) -> None",
+                    "LoggedVar.set:set(self:LoggedVar, new:int, T) -> None",
                     "zero_all_vars:zero_all_vars(vars:iterable[LoggedVar]) -> None"
                 }
             );
@@ -553,13 +553,13 @@ def zero_all_vars(vars: Iterable[LoggedVar[int]]) -> None:
         public async Task TypingModuleDocumentationExample_10() {
             await TypingModuleDocumentationExampleAsync(@"from typing import NewType
 
-UserId = NewType('UserId', int)
+UserId = NewType('UserId', float)
 
-def f(u : UserId=345, a : float=1.0):
+def f(u : UserId=345., a : float=1.0):
     return u
 ",
                 new[] {
-                    "f:f(u:int=345, a:float=1.0) -> UserId"
+                    "f:f(u:float, UserId=345.0, a:float=1.0) -> [float, UserId]"
                 }
             );
         }
