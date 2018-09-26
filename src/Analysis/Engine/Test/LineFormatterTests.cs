@@ -390,6 +390,19 @@ limit { limit_num}; """"""", line: 5);
             AssertSingleLineFormat("a+# comment\nb", "a +  # comment");
         }
 
+        [DataRow("'a''b'", "'a' 'b'")]
+        [DataRow("'a' 'b'", "'a' 'b'")]
+        [DataRow("'''a''''''b'''", "'''a''' '''b'''")]
+        [DataRow("'''a'''r'''b'''", "'''a''' r'''b'''")]
+        [DataRow("\"a\"\"b\"", "\"a\" \"b\"")]
+        [DataRow("\"a\" \"b\"", "\"a\" \"b\"")]
+        [DataRow("\"\"\"a\"\"\"\"\"\"b\"\"\"", "\"\"\"a\"\"\" \"\"\"b\"\"\"")]
+        [DataRow("\"\"\"a\"\"\"r\"\"\"b\"\"\"", "\"\"\"a\"\"\" r\"\"\"b\"\"\"")]
+        [DataTestMethod, Priority(0)]
+        public void StringConcat(string code, string expected) {
+            AssertSingleLineFormat(code, expected);
+        }
+
 
         [TestMethod, Priority(0)]
         public void GrammarFile() {

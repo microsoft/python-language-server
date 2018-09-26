@@ -287,8 +287,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         builder.EnsureEndsWithSpace();
                         break;
 
-                    case TokenKind.Name:
                     case TokenKind.Constant:
+                        if (token.IsString && next != null && next.IsString) {
+                            builder.Append(token);
+                            builder.EnsureEndsWithSpace();
+                            break;
+                        }
+                        goto case TokenKind.Name;
+
+                    case TokenKind.Name:
                     case TokenKind.KeywordFalse:
                     case TokenKind.KeywordTrue:
                     case TokenKind.Ellipsis: // Ellipsis is a value
@@ -410,19 +417,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             public bool IsKeyword => (Kind >= TokenKind.FirstKeyword && Kind <= TokenKind.LastKeyword) || Kind == TokenKind.KeywordAsync || Kind == TokenKind.KeywordAwait;
 
-            public bool IsMultilineString {
-                get {
-                    if (Span.Start.Line == Span.End.Line) {
-                        return false;
-                    }
+            public bool IsString => Kind == TokenKind.Constant && Token != Tokens.NoneToken && (Token.Value is string || Token.Value is AsciiString);
 
-                    if (Kind != TokenKind.Constant || Token == Tokens.NoneToken) {
-                        return false;
-                    }
-
-                    return Token.Value is string || Token.Value is AsciiString;
-                }
-            }
+            public bool IsMultilineString => Span.Start.Line != Span.End.Line && IsString;
 
             public bool IsSimpleSliceToLeft {
                 get {
