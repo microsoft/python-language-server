@@ -876,7 +876,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private static string GetSafeParameterName(ParameterResult result, int index) {
             if (!string.IsNullOrEmpty(result.DefaultValue)) {
-                return GetSafeArgumentName(result, index) + " = " + result.DefaultValue;
+                return GetSafeArgumentName(result, index) + "=" + result.DefaultValue;
             }
             return GetSafeArgumentName(result, index);
         }
