@@ -24,6 +24,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.Python.Tests.Utilities;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
@@ -482,7 +483,6 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/63")]
         public async Task ScrapedTypeWithWrongModule() {
             var version = PythonVersions.Versions
                 .Concat(PythonVersions.AnacondaVersions)
@@ -490,10 +490,11 @@ class BankAccount(object):
             version.AssertInstalled();
 
             Console.WriteLine("Using {0}", version.PrefixPath);
-            using (var server = await CreateServerAsync()) {
-                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync("import numpy.core.numeric as NP; ndarray = NP.ndarray");
-
-                analysis.Should().HaveVariable("ndarray").WithValue<BuiltinClassInfo>();
+            using (var server = await CreateServerAsync(version)) {
+                var uri = await server.OpenDefaultDocumentAndGetUriAsync("import numpy.core.numeric as NP; ndarray = NP.ndarray");
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                var hover = await server.SendHover(uri, 0, 34);
+                hover.Should().HaveTypeName("numpy.core.multiarray.ndarray");
             }
         }
 
