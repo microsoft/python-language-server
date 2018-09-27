@@ -5341,7 +5341,7 @@ t.x, t. =
 
             var files = Directory.GetFiles(Path.Combine(configuration.PrefixPath, "Lib"), "*.py", SearchOption.AllDirectories);
             Trace.TraceInformation($"Files count: {files}");
-            var contentTasks = files.Select(f => File.ReadAllTextAsync(f)).ToArray();
+            var contentTasks = files.Take(Math.Min(50, files.Length)).Select(f => File.ReadAllTextAsync(f)).ToArray();
 
             await Task.WhenAll(contentTasks);
 
@@ -5350,7 +5350,7 @@ t.x, t. =
             var analysisCompleteTask = Task.CompletedTask;
             try {
                 server = await CreateServerAsync(configuration);
-                for (var i = 0; i < files.Length && server.AnalysisQueue.Count < 50; i++) {
+                for (var i = 0; i < contentTasks.Length && server.AnalysisQueue.Count < 50; i++) {
                     await server.SendDidOpenTextDocument(new Uri(files[i]), contentTasks[i].Result);
                 }
 
@@ -5358,7 +5358,7 @@ t.x, t. =
             } finally {
                 if (server != null) {
                     analysisCompleteTask = EventTaskSources.AnalysisQueue.AnalysisComplete.Create(server.AnalysisQueue, new CancellationTokenSource(10000).Token);
-                    serverDisposeTask = Task.WhenAny(Task.Run(() => server.Dispose()), Task.Delay(1000));
+                    serverDisposeTask = Task.WhenAny(Task.Run(() => server.Dispose()), Task.Delay(5000));
                 }
             }
 

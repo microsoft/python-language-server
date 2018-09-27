@@ -96,9 +96,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _disposableBag
                 .Add(ProjectFiles)
-                .Add(() => Analyzer?.Dispose())
-                .Add(() => _shutdownCts.Cancel())
-                .Add(AnalysisQueue)
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
                         (ext as IDisposable)?.Dispose();
@@ -121,7 +118,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         internal ServerSettings Settings { get; private set; } = new ServerSettings();
         internal ProjectFiles ProjectFiles { get; } = new ProjectFiles();
 
-        public void Dispose() => _disposableBag.TryDispose();
+        public void Dispose() {
+            _shutdownCts.Cancel();
+            AnalysisQueue.Dispose();
+            Analyzer?.Dispose();
+            _disposableBag.TryDispose();
+        }
 
         #region ILogger
         public void TraceMessage(IFormattable message) {
@@ -625,6 +627,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         LogMessage(MessageType.Error, t.Exception.Message);
                         return;
                     }
+                    _shutdownCts.Token.ThrowIfCancellationRequested();
                     await OnDocumentChangeProcessingCompleteAsync(doc, t.Result as VersionCookie, enqueueForAnalysis, priority, pending);
                 });
             } catch {
@@ -635,6 +638,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private async Task OnDocumentChangeProcessingCompleteAsync(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
             try {
+                _shutdownCts.Token.ThrowIfCancellationRequested();
                 _disposableBag.ThrowIfDisposed();
                 if (vc != null) {
                     foreach (var kv in vc.GetAllParts(doc.DocumentUri)) {
@@ -645,6 +649,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
 
                 if (doc is IAnalyzable analyzable && enqueueForAnalysis) {
+                    _shutdownCts.Token.ThrowIfCancellationRequested();
                     AnalysisQueued(doc.DocumentUri);
                     AnalysisQueue.Enqueue(analyzable, priority);
                 }
@@ -658,6 +663,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 if (doc is ProjectEntry entry) {
                     var reanalyzeEntries = Analyzer.GetEntriesThatImportModule(entry.ModuleName, false);
                     foreach (var d in reanalyzeEntries.OfType<IDocument>()) {
+                        _shutdownCts.Token.ThrowIfCancellationRequested();
                         await EnqueueItemAsync(d, parse: false);
                     }
                 }
