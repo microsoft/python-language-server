@@ -40,7 +40,6 @@ namespace Microsoft.Python.LanguageServer {
 
             _onChanged = onChanged;
 
-            var list = new List<FileSystemWatcher>();
             var reduced = ReduceToCommonRoots(paths);
             foreach (var p in reduced) {
                 try {
@@ -59,12 +58,10 @@ namespace Microsoft.Python.LanguageServer {
                         NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
                     };
 
-                    fsw.Changed += OnChanged;
                     fsw.Created += OnChanged;
                     fsw.Deleted += OnChanged;
 
                     _disposableBag
-                        .Add(() => fsw.Changed -= OnChanged)
                         .Add(() => fsw.Created -= OnChanged)
                         .Add(() => fsw.Deleted -= OnChanged)
                         .Add(() => fsw.EnableRaisingEvents = false)
