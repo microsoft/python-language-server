@@ -33,7 +33,8 @@ namespace Microsoft.Python.LanguageServer {
 
         public PathsWatcher(string[] paths, Action onChanged, ILogger log) {
             _log = log;
-            if (paths?.Length == 0) {
+            paths = paths.Where(p => Path.IsPathRooted(p)).ToArray() ?? Array.Empty<string>();
+            if (paths.Length == 0) {
                 return;
             }
 
@@ -54,7 +55,8 @@ namespace Microsoft.Python.LanguageServer {
                 try {
                     var fsw = new System.IO.FileSystemWatcher(p) {
                         IncludeSubdirectories = true,
-                        EnableRaisingEvents = true
+                        EnableRaisingEvents = true,
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
                     };
 
                     fsw.Changed += OnChanged;
@@ -84,9 +86,9 @@ namespace Microsoft.Python.LanguageServer {
 
         private void TimerProc(object o) {
             lock (_lock) {
-                if (!_changedSinceLastTick && _throttleTimer != null) {
+                if (_changedSinceLastTick) {
                     ThreadPool.QueueUserWorkItem(_ => _onChanged());
-                    _throttleTimer.Dispose();
+                    _throttleTimer?.Dispose();
                     _throttleTimer = null;
                 }
                 _changedSinceLastTick = false;
