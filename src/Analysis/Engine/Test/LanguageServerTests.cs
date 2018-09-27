@@ -992,6 +992,42 @@ datetime.datetime.now().day
             );
         }
 
+        [TestMethod, Priority(0)]
+        public async Task OnTypeFormatting() {
+            using (var s = await CreateServer()) {
+                var uri = await AddModule(s, "def foo  ( ) :\n    x = a + b\n    x+= 1");
+
+                // Extended tests for line formatting are in LineFormatterTests.
+                // These just verify that the language server formats and returns something correct.
+                var edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(2, 1), "\n");
+                edits.Should().OnlyContain(new TextEdit {
+                    newText = "def foo():",
+                    range = new Range {
+                        start = new SourceLocation(1, 1),
+                        end = new SourceLocation(1, 15)
+                    }
+                });
+
+                edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(3, 1), "\n");
+                edits.Should().OnlyContain(new TextEdit {
+                    newText = "x = a + b",
+                    range = new Range {
+                        start = new SourceLocation(2, 5),
+                        end = new SourceLocation(2, 14)
+                    }
+                });
+
+                edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(4, 1), "\n");
+                edits.Should().OnlyContain(new TextEdit {
+                    newText = "x += 1",
+                    range = new Range {
+                        start = new SourceLocation(3, 5),
+                        end = new SourceLocation(3, 10)
+                    }
+                });
+            }
+        }
+
         class GetAllExtensionProvider : ILanguageServerExtensionProvider {
             public Task<ILanguageServerExtension> CreateAsync(IPythonLanguageServer server, IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken) {
                 return Task.FromResult<ILanguageServerExtension>(new GetAllExtension((Server)server, properties));
