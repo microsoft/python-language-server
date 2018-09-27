@@ -33,13 +33,13 @@ namespace Microsoft.Python.LanguageServer {
 
         public PathsWatcher(string[] paths, Action onChanged, ILogger log) {
             _log = log;
-            if (paths?.Length == 0) {
+            paths = paths.Where(p => Path.IsPathRooted(p)).ToArray() ?? Array.Empty<string>();
+            if (paths.Length == 0) {
                 return;
             }
 
             _onChanged = onChanged;
 
-            var list = new List<FileSystemWatcher>();
             var reduced = ReduceToCommonRoots(paths);
             foreach (var p in reduced) {
                 try {
@@ -54,15 +54,14 @@ namespace Microsoft.Python.LanguageServer {
                 try {
                     var fsw = new System.IO.FileSystemWatcher(p) {
                         IncludeSubdirectories = true,
-                        EnableRaisingEvents = true
+                        EnableRaisingEvents = true,
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
                     };
 
-                    fsw.Changed += OnChanged;
                     fsw.Created += OnChanged;
                     fsw.Deleted += OnChanged;
 
                     _disposableBag
-                        .Add(() => fsw.Changed -= OnChanged)
                         .Add(() => fsw.Created -= OnChanged)
                         .Add(() => fsw.Deleted -= OnChanged)
                         .Add(() => fsw.EnableRaisingEvents = false)
@@ -84,9 +83,9 @@ namespace Microsoft.Python.LanguageServer {
 
         private void TimerProc(object o) {
             lock (_lock) {
-                if (!_changedSinceLastTick && _throttleTimer != null) {
+                if (_changedSinceLastTick) {
                     ThreadPool.QueueUserWorkItem(_ => _onChanged());
-                    _throttleTimer.Dispose();
+                    _throttleTimer?.Dispose();
                     _throttleTimer = null;
                 }
                 _changedSinceLastTick = false;
