@@ -381,11 +381,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
             _displayTextBuilder = DocumentationBuilder.Create(DisplayOptions);
 
-            if (string.IsNullOrEmpty(Analyzer.InterpreterFactory?.Configuration?.InterpreterPath)) {
-                LogMessage(MessageType._General, "Initializing for generic interpreter");
-            } else {
-                LogMessage(MessageType._General, $"Initializing for {Analyzer.InterpreterFactory.Configuration.InterpreterPath}");
-            }
+            DisplayStartupInfo();
 
             if (@params.rootUri != null) {
                 _rootDir = @params.rootUri.ToAbsolutePath();
@@ -397,6 +393,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             SetTypeStubSearchPaths(@params.initializationOptions.typeStubSearchPaths);
 
             Analyzer.Interpreter.ModuleNamesChanged += Interpreter_ModuleNamesChanged;
+        }
+
+        private void DisplayStartupInfo() {
+            LogMessage(MessageType._General, Resources.LanguageServerVersion.FormatInvariant(Assembly.GetExecutingAssembly().GetName().Version));
+            LogMessage(MessageType._General,
+                string.IsNullOrEmpty(Analyzer.InterpreterFactory?.Configuration?.InterpreterPath)
+                ? Resources.InitializingForGenericInterpreter
+                : Resources.InitializingForPythonInterpreter.FormatInvariant(Analyzer.InterpreterFactory.Configuration.InterpreterPath));
         }
 
         private void Interpreter_ModuleNamesChanged(object sender, EventArgs e) {
@@ -437,7 +441,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var interp = factory.CreateInterpreter();
             if (interp == null) {
-                throw new InvalidOperationException("Failed to create interpreter");
+                throw new InvalidOperationException(Resources.Error_FailedToCreateInterpreter);
             }
 
             LogMessage(MessageType.Info, $"Created {interp.GetType().FullName} instance from {factory.GetType().FullName}");
