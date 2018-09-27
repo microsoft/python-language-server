@@ -79,6 +79,42 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to create interpreter.
+        /// </summary>
+        internal static string Error_FailedToCreateInterpreter {
+            get {
+                return ResourceManager.GetString("Error_FailedToCreateInterpreter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Initializing for generic interpreter.
+        /// </summary>
+        internal static string InitializingForGenericInterpreter {
+            get {
+                return ResourceManager.GetString("InitializingForGenericInterpreter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Initializing for {0}.
+        /// </summary>
+        internal static string InitializingForPythonInterpreter {
+            get {
+                return ResourceManager.GetString("InitializingForPythonInterpreter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Microsoft Python Language Server version {0}.
+        /// </summary>
+        internal static string LanguageServerVersion {
+            get {
+                return ResourceManager.GetString("LanguageServerVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cannot rename.
         /// </summary>
         internal static string RenameVariable_CannotRename {

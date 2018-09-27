@@ -1,7 +1,7 @@
 ﻿<Project>
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RootNamespace>Microsoft.PythonTools.Analysis</RootNamespace>
+    <RootNamespace>AnalysisTests</RootNamespace>
     <AssemblyName>Microsoft.Python.Analysis.Engine.Tests</AssemblyName>
   </PropertyGroup>
   <PropertyGroup>
