@@ -444,6 +444,16 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
+        public async Task CompletionForOverrideArgs() {
+            using (var s = await CreateServer()) {
+                var u = await AddModule(s, "class A:\n    def bar(arg=None): pass\n\nclass B(A):\n    def b");
+
+                await AssertNoCompletion(s, u, new SourceLocation(2, 9));
+                await AssertCompletion(s, u, new[] { "bar(arg=None):\r\n    return super().bar()" }, new[] { "bar(arg = None):\r\n    return super().bar()" }, new SourceLocation(5, 10));
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task CompletionInDecorator() {
             var s = await CreateServer();
             var u = await AddModule(s, "@dec\ndef f(): pass\n\nx = a @ b");
