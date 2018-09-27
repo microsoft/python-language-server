@@ -33,7 +33,7 @@ namespace Microsoft.Python.LanguageServer {
 
         public PathsWatcher(string[] paths, Action onChanged, ILogger log) {
             _log = log;
-            paths = paths.Where(p => Path.IsPathRooted(p)).ToArray() ?? Array.Empty<string>();
+            paths = paths != null ? paths.Where(p => Path.IsPathRooted(p)).ToArray() : Array.Empty<string>();
             if (paths.Length == 0) {
                 return;
             }
@@ -46,7 +46,7 @@ namespace Microsoft.Python.LanguageServer {
                     if (!Directory.Exists(p)) {
                         continue;
                     }
-                } catch(IOException ex) {
+                } catch (IOException ex) {
                     _log.TraceMessage($"Unable to access directory {p}, exception {ex.Message}");
                     continue;
                 }
@@ -66,7 +66,7 @@ namespace Microsoft.Python.LanguageServer {
                         .Add(() => fsw.Deleted -= OnChanged)
                         .Add(() => fsw.EnableRaisingEvents = false)
                         .Add(fsw);
-                } catch(ArgumentException ex) {
+                } catch (ArgumentException ex) {
                     _log.TraceMessage($"Unable to create file watcher for {p}, exception {ex.Message}");
                 }
             }
