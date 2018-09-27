@@ -79,6 +79,15 @@ namespace Microsoft.PythonTools.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Documentation is still being calculated, please try again soon..
+        /// </summary>
+        internal static string CalculatingDocumentation {
+            get {
+                return ResourceManager.GetString("CalculatingDocumentation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The number of empty lines to include between class or function declarations at the top level of a module..
         /// </summary>
         internal static string LinesBetweenLevelDeclarationsLong {

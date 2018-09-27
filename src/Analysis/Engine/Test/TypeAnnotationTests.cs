@@ -369,19 +369,18 @@ x = f()
         }
 
         [TestMethod, Priority(0)]
-        public async Task TypingModuleDocumentationExample_1() {
+        public async Task TypingModuleDocumentationExample_01() {
             await TypingModuleDocumentationExampleAsync(@"def greeting(name: str) -> str:
     return 'Hello ' + name
-", 
+",
                 new[] {
-                    "greeting:greeting(name:str=)->[str]"
+                    "greeting:greeting(name:str) -> str"
                 }
             );
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/38")]
-        public async Task TypingModuleDocumentationExample_2() {
+        public async Task TypingModuleDocumentationExample_02() {
             await TypingModuleDocumentationExampleAsync(@"from typing import List
 Vector = List[float]
 
@@ -392,13 +391,13 @@ def scale(scalar: float, vector: Vector) -> Vector:
 new_vector = scale(2.0, [1.0, -4.2, 5.4])
 ",
                 new[] {
-                    "scale:scale(scalar:float=,vector:list[float]=)->[list,list[float]]"
+                    "scale:scale(scalar:float, vector:list[float]) -> list[float]"
                 }
             );
         }
 
         [TestMethod, Priority(0)]
-        public async Task TypingModuleDocumentationExample_3() {
+        public async Task TypingModuleDocumentationExample_03() {
             await TypingModuleDocumentationExampleAsync(@"from typing import Dict, Tuple, List
 
 ConnectionOptions = Dict[str, str]
@@ -417,13 +416,13 @@ def broadcast_message(
 ",
                 new[] {
                     // Two matching functions means only one overload is returned
-                    "broadcast_message:broadcast_message(message:str=,servers:list[tuple[tuple[str, int], dict[str, str]]]=)->[]"
+                    "broadcast_message:broadcast_message(message:str, servers:list[tuple[tuple[str, int], dict[str, str]]]) -> None"
                 }
             );
         }
 
         [TestMethod, Priority(0)]
-        public async Task TypingModuleDocumentationExample_4() {
+        public async Task TypingModuleDocumentationExample_04() {
             await TypingModuleDocumentationExampleAsync(@"from typing import NewType
 
 UserId = NewType('UserId', int)
@@ -439,13 +438,13 @@ user_a = get_user_name(UserId(42351))
 user_b = get_user_name(-1)
 ",
                 new[] {
-                    "get_user_name:get_user_name(user_id:int, UserId=)->[str]"
+                    "get_user_name:get_user_name(user_id:UserId) -> str"
                 }
             );
         }
 
         [TestMethod, Priority(0)]
-        public async Task TypingModuleDocumentationExample_5() {
+        public async Task TypingModuleDocumentationExample_05() {
             await TypingModuleDocumentationExampleAsync(@"from typing import NewType
 
 UserId = NewType('UserId', int)
@@ -459,13 +458,13 @@ def f(u : UserId, a : AdminUserId, p : ProUserId):
     return p
 ",
                 new[] {
-                    "f:f(u:UserId=,a:AdminUserId=,p:ProUserId=)->[ProUserId]"
+                    "f:f(u:UserId, a:AdminUserId, p:ProUserId) -> ProUserId"
                 }
             );
         }
 
         [TestMethod, Priority(0)]
-        public async Task TypingModuleDocumentationExample_6() {
+        public async Task TypingModuleDocumentationExample_06() {
             await TypingModuleDocumentationExampleAsync(@"from typing import Callable
 
 def feeder(get_next_item: Callable[[], str]) -> None:
@@ -479,14 +478,14 @@ def async_query(on_success: Callable[[int], None],
 
 ",
                 new[] {
-                    "feeder:feeder(get_next_item:function() -> str=)->[]",
-                    "async_query:async_query(on_success:function(int)=,on_error:function(int, Exception)=)->[]"
+                    "feeder:feeder(get_next_item:function() -> str) -> None",
+                    "async_query:async_query(on_success:function(int), on_error:function(int, Exception)) -> None"
                 }
             );
         }
 
         [TestMethod, Priority(0)]
-        public async Task TypingModuleDocumentationExample_7() {
+        public async Task TypingModuleDocumentationExample_07() {
             await TypingModuleDocumentationExampleAsync(@"from typing import Mapping, Sequence
 
 class Employee: pass
@@ -495,13 +494,13 @@ def notify_by_email(employees: Sequence[Employee],
                     overrides: Mapping[str, str]) -> None: ...
 ",
                 new[] {
-                    "notify_by_email:notify_by_email(employees:list[Employee]=,overrides:dict[str, str]=)->[]"
+                    "notify_by_email:notify_by_email(employees:list[Employee], overrides:dict[str, str]) -> None"
                 }
             );
         }
 
         [TestMethod, Priority(0)]
-        public async Task TypingModuleDocumentationExample_8() {
+        public async Task TypingModuleDocumentationExample_08() {
             await TypingModuleDocumentationExampleAsync(@"from typing import Sequence, TypeVar
 
 T = TypeVar('T')      # Declare type variable
@@ -510,13 +509,13 @@ def first(l: Sequence[T]) -> T:   # Generic function
     return l[0]
 ",
                 new[] {
-                    "first:first(l:list[T]=)->[T]"
+                    "first:first(l:list[T]) -> T"
                 }
             );
         }
 
         [TestMethod, Priority(0)]
-        public async Task TypingModuleDocumentationExample_9() {
+        public async Task TypingModuleDocumentationExample_09() {
             await TypingModuleDocumentationExampleAsync(@"from typing import TypeVar, Generic, Iterable
 from logging import Logger
 
@@ -544,36 +543,23 @@ def zero_all_vars(vars: Iterable[LoggedVar[int]]) -> None:
         var.set(0)
 ",
                 new[] {
-                    "LoggedVar.set:set(self:LoggedVar=,new:int, T=)->[]",
-                    "zero_all_vars:zero_all_vars(vars:iterable[LoggedVar]=)->[]"
+                    "LoggedVar.set:set(self:LoggedVar, new:T) -> None",
+                    "zero_all_vars:zero_all_vars(vars:iterable[LoggedVar]) -> None"
                 }
             );
         }
 
         [TestMethod, Priority(0)]
         public async Task TypingModuleDocumentationExample_10() {
-            await TypingModuleDocumentationExampleAsync(@"from typing import TypeVar, Generic
-...
+            await TypingModuleDocumentationExampleAsync(@"from typing import NewType
 
-T = TypeVar('T')
-S = TypeVar('S', int, str)
+UserId = NewType('UserId', float)
 
-class StrangePair(Generic[T, S]):
-    ...
-
-class Pair(Generic[T, T]):   # INVALID
-    ...
-
-class LinkedList(Sized, Generic[T]):
-    ...
-
-class MyDict(Mapping[str, T]):
-    ...
-
-def f(s: StrangePair[int, int], p: Pair, l: LinkedList, m: MyDict): ...
+def f(u : UserId=345., a : float=1.0):
+    return u
 ",
                 new[] {
-                    "f:f(s:StrangePair=,p:Pair=,l:LinkedList=,m:MyDict=)->[]"
+                    "f:f(u:float, UserId=345.0, a:float=1.0) -> [float, UserId]"
                 }
             );
         }

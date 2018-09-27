@@ -33,6 +33,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         IBuiltinClassInfo IBuiltinInstanceInfo.ClassInfo => ClassInfo;
         public BuiltinClassInfo ClassInfo => _klass;
 
+        public override string Name => _klass.Name;
         public override IPythonType PythonType => _type;
 
         public override IAnalysisSet GetInstanceType() {
@@ -165,7 +166,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     Pop();
                 }
             }
-            
+
             return res;
         }
 
@@ -330,18 +331,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return ProjectState.ClassInfos[BuiltinTypeId.Object].Instance;
 
             } else if (strength >= MergeStrength.ToBaseClass) {
-                var bii = ns as BuiltinInstanceInfo;
-                if (bii != null) {
+                if (ns is BuiltinInstanceInfo bii) {
                     return ClassInfo.UnionMergeTypes(bii.ClassInfo, strength).GetInstanceType().Single();
                 }
-                var ii = ns as InstanceInfo;
-                if (ii != null) {
+                if (ns is InstanceInfo ii) {
                     return ClassInfo.UnionMergeTypes(ii.ClassInfo, strength).GetInstanceType().Single();
                 }
             } else if (this is ConstantInfo || ns is ConstantInfo) {
                 return ClassInfo.Instance;
             }
-
             return base.UnionMergeTypes(ns, strength);
         }
 

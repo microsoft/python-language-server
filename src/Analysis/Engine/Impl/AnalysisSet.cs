@@ -593,9 +593,7 @@ namespace Microsoft.PythonTools.Analysis {
             return (x == null) ? (y == null) : x.UnionEquals(y, Strength);
         }
 
-        public int GetHashCode(AnalysisValue obj) {
-            return (obj == null) ? 0 : obj.UnionHashCode(Strength);
-        }
+        public int GetHashCode(AnalysisValue obj) => obj == null ? 0 : obj.UnionHashCode(Strength);
 
         public AnalysisValue MergeTypes(AnalysisValue x, AnalysisValue y, out bool wasChanged) {
             if (Object.ReferenceEquals(x, y)) {
