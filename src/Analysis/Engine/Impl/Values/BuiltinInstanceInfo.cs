@@ -337,9 +337,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 if (ns is InstanceInfo ii) {
                     return ClassInfo.UnionMergeTypes(ii.ClassInfo, strength).GetInstanceType().Single();
                 }
-                if (ns is ProtocolInfo pi) {
-                    return pi.UnionMergeTypes(this, strength).GetInstanceType().Single();
-                }
             } else if (this is ConstantInfo || ns is ConstantInfo) {
                 return ClassInfo.Instance;
             }

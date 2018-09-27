@@ -144,7 +144,7 @@ namespace Microsoft.PythonTools.Analysis {
         private string _name;
         private string _doc;
         private string[] _pnames;
-        private IAnalysisSet[] _ptypes;
+        private string[] _ptypes;
         private string[] _pdefaults;
         private readonly HashSet<string> _rtypes;
 
@@ -152,7 +152,7 @@ namespace Microsoft.PythonTools.Analysis {
             _name = name;
             _doc = documentation;
             _pnames = new string[parameters];
-            _ptypes = new IAnalysisSet[parameters];
+            _ptypes = new string[parameters];
             _pdefaults = new string[parameters];
             ParameterCount = parameters;
             _rtypes = new HashSet<string>();
@@ -181,7 +181,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         private IAnalysisSet ChooseBest(IAnalysisSet x, IAnalysisSet y) {
             if (x == null || x.IsObjectOrUnknown()) {
-                return (y == null) ? AnalysisSet.Empty : y;
+                return (y == null || y.IsObjectOrUnknown()) ? AnalysisSet.Empty : y;
             }
             if (y == null || y.IsObjectOrUnknown()) {
                 return AnalysisSet.Empty;
@@ -189,7 +189,7 @@ namespace Microsoft.PythonTools.Analysis {
             return x.Union(y);
         }
 
-        public bool TryAddOverload(string name, string documentation, string[] names, IAnalysisSet[] types, string[] defaults, IEnumerable<string> returnTypes) {
+        public bool TryAddOverload(string name, string documentation, string[] names, string[] types, string[] defaults, IEnumerable<string> returnTypes) {
             if (names.Length != _pnames.Length || types.Length != _ptypes.Length) {
                 return false;
             }
@@ -233,7 +233,7 @@ namespace Microsoft.PythonTools.Analysis {
                 parameters[i] = new ParameterResult(
                     _pnames[i],
                     null,
-                    (_ptypes[i] == null || _ptypes[i].IsObjectOrUnknown()) ? null : string.Join(", ", _ptypes[i].GetShortDescriptions()),
+                    _ptypes[i],
                     false,
                     null,
                     _pdefaults[i]
