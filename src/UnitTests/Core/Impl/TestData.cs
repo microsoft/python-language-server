@@ -16,6 +16,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -66,6 +67,14 @@ namespace TestUtilities {
 
         public static Uri GetDefaultModuleUri() => new Uri(GetDefaultModulePath());
         public static Uri GetNextModuleUri() => new Uri(GetNextModulePath());
+        public static Uri[] GetNextModuleUris(int count) {
+            var uris = new Uri[count];
+            for (var i = 0; i < count; i++) {
+                uris[i] = GetNextModuleUri();
+            }
+            return uris;
+        }
+
         public static Uri GetTestSpecificUri(string relativePath) => new Uri(GetTestSpecificPath(relativePath));
         public static Uri GetTestSpecificRootUri() => TestRunScopeAsyncLocal.Value.RootUri;
 

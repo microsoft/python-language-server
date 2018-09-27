@@ -93,6 +93,18 @@ namespace Microsoft.PythonTools.Analysis {
             }, CancellationToken.None);
         }
 
+        public static Task<Hover> SendHover(this Server server, Uri uri, int line, int character) {
+            return server.Hover(new TextDocumentPositionParams() {
+                textDocument = new TextDocumentIdentifier {
+                    uri = uri
+                },
+                position = new Position {
+                    line = line,
+                    character = character
+                }
+            }, CancellationToken.None);
+        }
+
         public static Task<SignatureHelp> SendSignatureHelp(this Server server, Uri uri, int line, int character) {
             return server.SignatureHelp(new TextDocumentPositionParams {
                 textDocument = uri,

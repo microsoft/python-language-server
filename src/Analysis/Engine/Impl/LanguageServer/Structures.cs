@@ -71,46 +71,7 @@ namespace Microsoft.PythonTools.Analysis.LanguageServer {
         public Uri uri;
         public Range range;
     }
-
-    [Serializable]
-    public class Diagnostic {
-        /// <summary>
-        /// The range at which the message applies.
-        /// </summary>
-        public Range range;
-
-        /// <summary>
-        /// The diagnostic's severity. Can be omitted. If omitted it is up to the
-        /// client to interpret diagnostics as error, warning, info or hint.
-        /// </summary>
-        public DiagnosticSeverity severity;
-
-        /// <summary>
-        /// The diagnostic's code (string, such as 'unresolved-import'). Can be omitted.
-        /// <seealso cref="Analyzer.ErrorMessages"/>
-        /// </summary>
-        public string code;
-
-        /// <summary>
-        /// A human-readable string describing the source of this
-        /// diagnostic, e.g. 'typescript' or 'super lint'.
-        /// </summary>
-        public string source;
-
-        /// <summary>
-        /// The diagnostic's message.
-        /// </summary>
-        public string message;
-    }
-
-    public enum DiagnosticSeverity : int {
-        Unspecified = 0,
-        Error = 1,
-        Warning = 2,
-        Information = 3,
-        Hint = 4
-    }
-
+    
     [Serializable]
     public struct Command {
         /// <summary>

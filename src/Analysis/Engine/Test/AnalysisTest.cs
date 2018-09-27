@@ -1099,26 +1099,29 @@ z = None
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task ImportStarMro() {
-            await PermutedTestAsync(
-                "mod",
-                new[] {
-                    @"
+        [PermutationalTestMethod(2), Priority(0)]
+        public async Task ImportStarMro(int[] permutation) {
+            var contents = new[] {
+                @"
 class Test_test1(object):
     def test_A(self):
         pass
 ",
- @"from mod1 import *
+                @"from module1 import *
 
 class Test_test2(Test_test1):
     def test_newtest(self):pass"
-                },
-                analysis => {
-                    analysis["mod2"].Should().HaveClassInfo("Test_test2")
+            };
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var uris = TestData.GetNextModuleUris(2);
+                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                
+                var analysis = await server.GetAnalysisAsync(uris[1]);
+                analysis.Should().HaveClassInfo("Test_test2")
                         .WithMethodResolutionOrder("Test_test2", "Test_test1", "type object");
-                }
-            );
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -4967,77 +4970,107 @@ def g(a, b, c): pass
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task CrossModule() {
-            var text1 = @"
-import mod2
-";
-            var text2 = @"
-x = 42
-";
+        [PermutationalTestMethod(2), Priority(0)]
+        public async Task CrossModule(int[] permutation) {
+            var contents = new [] { "import module2",  "x = 42" };
 
-            await PermutedTestAsync("mod", new[] { text1, text2 }, analysis => {
-                analysis["mod1"].Should().HaveVariable("mod2").WithValue<IModuleInfo>()
+            using (var server = await CreateServerAsync()) {
+                var uris = TestData.GetNextModuleUris(2);
+
+                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+
+                var analysis = await server.GetAnalysisAsync(uris[0]);
+                analysis.Should().HaveVariable("module2").WithValue<IModuleInfo>()
                     .Which.Should().HaveMembers("x");
-            });
+            }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task CrossModuleCall() {
-            var text1 = @"
-import mod2
-y = mod2.f('abc')
-";
-            var text2 = @"
+        [PermutationalTestMethod(2), Priority(0)]
+        public async Task CrossModuleCall(int[] permutation) {
+            var contents = new [] { @"
+import module2
+y = module2.f('abc')
+",
+                @"
 def f(x):
     return x
-";
+" };
 
-            await PermutedTestAsync("mod", new[] { text1, text2 }, analysis => {
-                analysis["mod2"].Should().HaveFunction("f").WithParameter("x").OfType(BuiltinTypeId.Str);
-                analysis["mod1"].Should().HaveVariable("y").OfType(BuiltinTypeId.Str);
-            });
+            using (var server = await CreateServerAsync()) {
+                var uris = TestData.GetNextModuleUris(2);
+
+                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+
+                var analysis1 = await server.GetAnalysisAsync(uris[0]);
+                var analysis2 = await server.GetAnalysisAsync(uris[1]);
+
+                analysis2.Should().HaveFunction("f").WithParameter("x").OfType(BuiltinTypeId.Str);
+                analysis1.Should().HaveVariable("y").OfType(BuiltinTypeId.Str);
+            }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task CrossModuleCallType() {
-            var text1 = @"
-import mod2
-y = mod2.c('abc').x
-";
-            var text2 = @"
+        [PermutationalTestMethod(2), Priority(0)]
+        public async Task CrossModuleCallType(int[] permutation) {
+            var contents = new[] { @"
+import module2
+y = module2.c('abc').x
+",
+                @"
 class c:
     def __init__(self, x):
         self.x = x
-";
-            await PermutedTestAsync("mod", new[] { text1, text2 }, analysis => {
-                analysis["mod2"].Should().HaveClass("c").WithFunction("__init__").WithParameter("x").OfType(BuiltinTypeId.Str);
-                analysis["mod1"].Should().HaveVariable("y").OfType(BuiltinTypeId.Str);
-            });
+" };
+
+            using (var server = await CreateServerAsync()) {
+                var uris = TestData.GetNextModuleUris(2);
+
+                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+
+                var analysis1 = await server.GetAnalysisAsync(uris[0]);
+                var analysis2 = await server.GetAnalysisAsync(uris[1]);
+
+                analysis2.Should().HaveClass("c").WithFunction("__init__").WithParameter("x").OfType(BuiltinTypeId.Str);
+                analysis1.Should().HaveVariable("y").OfType(BuiltinTypeId.Str);
+            }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task CrossModuleCallType2() {
-            var text1 = @"
-from mod2 import c
+        [PermutationalTestMethod(2), Priority(0)]
+        public async Task CrossModuleCallType2(int[] permutation) {
+            var contents = new[] {@"
+from module2 import c
 class x(object):
     def Fob(self):
         y = c('abc').x
-";
-            var text2 = @"
+",
+                @"
 class c:
     def __init__(self, x):
         self.x = x
-";
-            await PermutedTestAsync("mod", new[] { text1, text2 }, analysis => {
-                analysis["mod2"].Should().HaveClass("c").WithFunction("__init__").WithParameter("x").OfType(BuiltinTypeId.Str);
-                analysis["mod1"].Should().HaveClass("x").WithFunction("Fob").WithVariable("y").OfType(BuiltinTypeId.Str);
-            });
+"
+            };
+
+            using (var server = await CreateServerAsync()) {
+                var uris = TestData.GetNextModuleUris(2);
+
+                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+
+                var analysis1 = await server.GetAnalysisAsync(uris[0]);
+                var analysis2 = await server.GetAnalysisAsync(uris[1]);
+
+                analysis2.Should().HaveClass("c").WithFunction("__init__").WithParameter("x").OfType(BuiltinTypeId.Str);
+                analysis1.Should().HaveClass("x").WithFunction("Fob").WithVariable("y").OfType(BuiltinTypeId.Str);
+            }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task CrossModuleFuncAndType() {
-            var text1 = @"
+        [PermutationalTestMethod(3), Priority(0)]
+        public async Task CrossModuleFuncAndType(int[] permutation) {
+            using (var server = await CreateServerAsync()) {
+                var contents = new[] {
+                    @"
 class Something(object):
     def f(self): pass
     def g(self): pass
@@ -5046,24 +5079,32 @@ class Something(object):
 def SomeFunc():
     x = Something()
     return x
-";
-            var text2 = @"
-from mod1 import SomeFunc
+",
+                    @"
+from module1 import SomeFunc
 
 x = SomeFunc()
-";
-
-            var text3 = @"
-from mod2 import x
+",
+                    @"
+from module2 import x
 a = x
-";
+"              };
 
-            await PermutedTestAsync(text1, text2, text3, (a1, a2, analysis) => {
+                var uris = TestData.GetNextModuleUris(3);
+
+                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                await server.SendDidOpenTextDocument(uris[permutation[2]], contents[permutation[2]]);
+
+                await server.GetAnalysisAsync(uris[0]);
+                await server.GetAnalysisAsync(uris[1]);
+                var analysis = await server.GetAnalysisAsync(uris[2]);
+
                 var objectMemberNames = analysis.ProjectState.Types[BuiltinTypeId.Object].GetMemberNames(analysis.InterpreterContext);
                 analysis.Should().HaveVariable("a").WithValue<IInstanceInfo>()
                     .Which.Should().HaveMembers(objectMemberNames)
                     .And.HaveMembers("f", "g");
-            });
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -5514,55 +5555,60 @@ a = f()
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task Decorator() {
-            var text1 = @"
-import mod2
+        [PermutationalTestMethod(2), Priority(0)]
+        public async Task Decorator(int[] permutation) {
+            var contents = new [] { @"
+import module2
 
-inst = mod2.MyClass()
+inst = module2.MyClass()
 
 @inst.mydec
 def f():
     return 42
 
 
-";
-
-            var text2 = @"
-import mod1
+",
+                @"
+import module1
 
 class MyClass(object):
     def mydec(self, x):
         return x
-";
-            await PermutedTestAsync(text1, text2, (analysis1, analysis2) => {
+
+g = MyClass().mydec(module1.f)
+" };
+
+
+            using (var server = await CreateServerAsync()) {
+                var uris = TestData.GetNextModuleUris(2);
+
+                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+
+                var analysis1 = await server.GetAnalysisAsync(uris[0]);
+                var analysis2 = await server.GetAnalysisAsync(uris[1]);
+
                 analysis1.Should().HaveFunction("f");
-                analysis2.Should().HaveVariable("mod1").WithValue<IModuleInfo>()
+                analysis2.Should().HaveVariable("g").OfType(BuiltinTypeId.Function)
+                    .And.HaveVariable("module1").WithValue<IModuleInfo>()
                     .Which.Should().HaveMemberOfType("f", BuiltinTypeId.Function);
-            });
-
-            //PermutedTest("mod", new[] { text1, text2 }, state => {
-            //    state.AssertIsInstance(state.Modules["mod1"], "f", BuiltinTypeId.Function);
-            //    state.AssertIsInstance(state.Modules["mod2"], "mod1.f", BuiltinTypeId.Function);
-            //    state.AssertIsInstance(state.Modules["mod2"], "MyClass().mydec(mod1.f)", BuiltinTypeId.Function);
-            //});
+            }
         }
-/*
-        [TestMethod, Priority(0)]
-        public async Task DecoratorFlow() {
-            var text1 = @"
-import mod2
 
-inst = mod2.MyClass()
+        [PermutationalTestMethod(2), Priority(0)]
+        public async Task DecoratorFlow(int[] permutation) {
+            var contents = new[] { @"
+import module2
+
+inst = module2.MyClass()
 
 @inst.filter(fob=42)
 def f():
     return 42
 
-";
-
-            var text2 = @"
-import mod1
+",
+                @"
+import module1
 
 class MyClass(object):
     def filter(self, name=None, filter_func=None, **flags):
@@ -5572,26 +5618,40 @@ class MyClass(object):
         return dec
     def filter_function(self, func, **flags):
         name = getattr(func, ""_decorated_function"", func).__name__
-        return self.filter(name, func, **flags)
-";
+        res = self.filter(name, func, **flags)
+        return res
+" };
 
-            PermutedTest("mod", new[] { text1, text2 }, state => {
+            using (var server = await CreateServerAsync()) {
+                var uris = TestData.GetNextModuleUris(2);
+
+                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+
+                var analysis2 = await server.GetAnalysisAsync(uris[1]);
+                var analysis1 = await server.GetAnalysisAsync(uris[0]);
+
                 // Ensure we ended up with a function
-                state.AssertIsInstance(state.Modules["mod1"], "f", 0, BuiltinTypeId.Function);
+                analysis1.Should().HaveVariable("f").OfTypes(BuiltinTypeId.Function, BuiltinTypeId.Function);
 
                 // Ensure we passed a function in to the decorator (def dec(func))
-                //state.AssertIsInstance(state.Modules["mod2"], "func", text2.IndexOf("return self.filter_function("), BuiltinTypeId.Function);
+                analysis2.Should().HaveClass("MyClass")
+                    .WithFunction("filter")
+                    .WithVariable("dec")
+                    .OfType(BuiltinTypeId.Function);
 
                 // Ensure we saw the function passed *through* the decorator
-                state.AssertIsInstance(state.Modules["mod2"], "func", text2.IndexOf("return self.filter("), BuiltinTypeId.Function);
+                analysis2.Should().HaveClass("MyClass")
+                    .WithFunction("filter_function")
+                    .WithVariable("res")
+                    .OfType(BuiltinTypeId.Function);
 
                 // Ensure we saw the function passed *back into* the original decorator constructor
-                state.AssertIsInstance(
-                    state.Modules["mod2"], "filter_func", text2.IndexOf("# @register.filter()"),
-                    BuiltinTypeId.Function,
-                    BuiltinTypeId.NoneType
-                );
-            });
+                analysis2.Should().HaveClass("MyClass")
+                    .WithFunction("filter")
+                    .WithParameter("filter_func")
+                    .OfTypes(BuiltinTypeId.Function, BuiltinTypeId.NoneType);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -5624,13 +5684,14 @@ y = a_list()
 z = a_float()
 w = a_string()
 ";
-            var entry = ProcessTextV2(text);
-            entry.AssertIsInstance("x", BuiltinTypeId.Tuple);
-            entry.AssertIsInstance("y", BuiltinTypeId.List);
-            entry.AssertIsInstance("z", BuiltinTypeId.Float);
-            entry.AssertIsInstance("w", BuiltinTypeId.Str);
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
+                analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Tuple)
+                    .And.HaveVariable("y").OfType(BuiltinTypeId.List)
+                    .And.HaveVariable("z").OfType(BuiltinTypeId.Float)
+                    .And.HaveVariable("w").OfType(BuiltinTypeId.Str);
 
-            text = @"
+                text = @"
 def as_list(fn):
     def wrap(v):
         if v == 0:
@@ -5649,9 +5710,11 @@ items2 = as_list(lambda: (1, 2, 3))
 
 x = items(0)
 ";
-            entry = ProcessTextV2(text);
-            entry.AssertIsInstance("items", entry.GetTypeIds("items2").ToArray());
-            entry.AssertIsInstance("x", BuiltinTypeId.List, BuiltinTypeId.Set, BuiltinTypeId.Str);
+                analysis = await server.ChangeDefaultDocumentAndGetAnalysisAsync(text);
+                analysis.Should().HaveVariable("items").OfType(BuiltinTypeId.Function)
+                    .And.HaveVariable("items2").OfType(BuiltinTypeId.Function)
+                    .And.HaveVariable("x").OfTypes(BuiltinTypeId.List, BuiltinTypeId.Set, BuiltinTypeId.Str);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -5666,11 +5729,12 @@ retGivenString = returnsGiven('str')
 retGivenBool = returnsGiven(True)
 ";
 
-            var entry = ProcessText(text);
-
-            entry.AssertIsInstance("retGivenInt", BuiltinTypeId.Int);
-            entry.AssertIsInstance("retGivenString", BuiltinTypeId.Str);
-            entry.AssertIsInstance("retGivenBool", BuiltinTypeId.Bool);
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
+                analysis.Should().HaveVariable("retGivenInt").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("retGivenString").OfType(BuiltinTypeId.Str)
+                    .And.HaveVariable("retGivenBool").OfType(BuiltinTypeId.Bool);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -5691,11 +5755,12 @@ retGivenString = returnsGivenWithDecorator1('str')
 retGivenBool = returnsGivenWithDecorator1(True)
 ";
 
-            var entry = ProcessText(text);
-
-            entry.AssertIsInstance("retGivenInt", BuiltinTypeId.Int);
-            entry.AssertIsInstance("retGivenString", BuiltinTypeId.Str);
-            entry.AssertIsInstance("retGivenBool", BuiltinTypeId.Bool);
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
+                analysis.Should().HaveVariable("retGivenInt").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("retGivenString").OfType(BuiltinTypeId.Str)
+                    .And.HaveVariable("retGivenBool").OfType(BuiltinTypeId.Bool);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -5718,16 +5783,17 @@ retGivenInt = returnsGivenWithDecorator2(1)
 retGivenString = returnsGivenWithDecorator2('str')
 retGivenBool = returnsGivenWithDecorator2(True)";
 
-            var entry = ProcessText(text);
-
-            entry.AssertIsInstance("retGivenInt", BuiltinTypeId.Int);
-            entry.AssertIsInstance("retGivenString", BuiltinTypeId.Str);
-            entry.AssertIsInstance("retGivenBool", BuiltinTypeId.Bool);
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
+                analysis.Should().HaveVariable("retGivenInt").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("retGivenString").OfType(BuiltinTypeId.Str)
+                    .And.HaveVariable("retGivenBool").OfType(BuiltinTypeId.Bool);
+            }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task DecoratorOverflow() {
-            var text1 = @"
+        [PermutationalTestMethod(2), Priority(0)]
+        public async Task DecoratorOverflow(int[] permutation) {
+            var contents = new [] { @"
 import mod2
 
 @mod2.decorator_b
@@ -5735,21 +5801,27 @@ def decorator_a(fn):
     return fn
 
 
-";
-
-            var text2 = @"
+",
+            @"
 import mod1
 
 @mod1.decorator_a
 def decorator_b(fn):
     return fn
-";
+"};
 
-            PermutedTest("mod", new[] { text1, text2 }, state => {
-                // Neither decorator is callable, but at least analysis completed
-                state.AssertIsInstance(state.Modules["mod1"], "decorator_a", BuiltinTypeId.Function);
-                state.AssertIsInstance(state.Modules["mod2"], "decorator_b", BuiltinTypeId.Function);
-            });
+            using (var server = await CreateServerAsync()) {
+                var uris = TestData.GetNextModuleUris(2);
+
+                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+
+                var analysis1 = await server.GetAnalysisAsync(uris[0]);
+                var analysis2 = await server.GetAnalysisAsync(uris[1]);
+
+                analysis1.Should().HaveVariable("decorator_a").OfType(BuiltinTypeId.Function);
+                analysis2.Should().HaveVariable("decorator_b").OfType(BuiltinTypeId.Function);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -5763,13 +5835,13 @@ def my_fn():
     return None
 ";
 
-            var entry = CreateAnalyzer();
-            entry.Analyzer.Limits.ProcessCustomDecorators = true;
-            entry.AddModule("fob", text);
-            entry.WaitForAnalysis();
+            using (var server = await CreateServerAsync()) {
+                server.Analyzer.Limits.ProcessCustomDecorators = true;
 
-            entry.AssertIsInstance("my_fn", BuiltinTypeId.List);
-            entry.AssertIsInstance("fn", text.IndexOf("return"), BuiltinTypeId.Function);
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
+                analysis.Should().HaveVariable("my_fn").OfType(BuiltinTypeId.List)
+                    .And.HaveFunction("d").WithParameter("fn").OfType(BuiltinTypeId.Function);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -5783,15 +5855,16 @@ def my_fn():
     return None
 ";
 
-            var entry = CreateAnalyzer();
-            entry.Analyzer.Limits.ProcessCustomDecorators = false;
-            entry.AddModule("fob", text);
-            entry.WaitForAnalysis();
+            
+            using (var server = await CreateServerAsync()) {
+                server.Analyzer.Limits.ProcessCustomDecorators = false;
 
-            entry.AssertIsInstance("my_fn", BuiltinTypeId.Function);
-            entry.AssertIsInstance("fn", text.IndexOf("return"), BuiltinTypeId.Function);
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
+                analysis.Should().HaveVariable("my_fn").OfType(BuiltinTypeId.Function)
+                    .And.HaveFunction("d").WithParameter("fn").OfType(BuiltinTypeId.Function);
+            }
         }
-
+/*
         [TestMethod, Priority(0)]
         public async Task DecoratorReferences() {
             var text = @"
@@ -7649,67 +7722,6 @@ e = Employee('Guido')
         }
 
         protected virtual AnalysisLimits GetLimits() => AnalysisLimits.GetDefaultLimits();
-
-
-        /// <summary>
-        /// Returns all the permutations of the set [0 ... n-1]
-        /// </summary>
-        /// <param name="n"></param>
-        /// <returns></returns>
-        private static IEnumerable<List<int>> Permutations(int n) {
-            if (n <= 0) {
-                yield return new List<int>();
-            } else {
-                foreach (var prev in Permutations(n - 1)) {
-                    for (int i = n - 1; i >= 0; i--) {
-                        var result = new List<int>(prev);
-                        result.Insert(i, n - 1);
-                        yield return result;
-                    }
-                }
-            }
-        }
-
-        private Task PermutedTestAsync(string text1, string text2, Action<IModuleAnalysis, IModuleAnalysis> test)
-            => PermutedTestAsync("mod", new[] { text1, text2 }, analysis => test(analysis["mod1"], analysis["mod2"]));
-
-        private Task PermutedTestAsync(string text1, string text2, string text3, Action<IModuleAnalysis, IModuleAnalysis, IModuleAnalysis> test)
-            => PermutedTestAsync("mod", new[] { text1, text2, text3 }, analysis => test(analysis["mod1"], analysis["mod2"], analysis["mod3"]));
-
-        /// <summary>
-        /// For a given set of module definitions, build analysis info for each unique permutation
-        /// of the ordering of the defintions and run the test against each analysis.
-        /// </summary>
-        /// <param name="prefix">Prefix for the module names. The first source text will become prefix + "1", etc.</param>
-        /// <param name="code">The source code for each of the modules</param>
-        /// <param name="test">The test to run against the analysis</param>
-        private async Task PermutedTestAsync(string prefix, string[] code, Action<IReadOnlyDictionary<string, IModuleAnalysis>> test) {
-            foreach (var p in Permutations(code.Length)) {
-                using (var server = await CreateServerAsync()) {
-                    var uris = new Uri[code.Length];
-                    for (var i = 0; i < code.Length; i++) {
-                        var name = "{0}{1}".FormatInvariant(prefix, p[i] + 1);
-                        var content = code[p[i]];
-                        var filename = name.Replace('.', '\\') + ".py";
-
-                        var uri = TestData.GetTestSpecificUri(filename);
-                        await server.SendDidOpenTextDocument(uri, content);
-                        uris[p[i]] = uri;
-                    }
-
-                    var token = new CancellationTokenSource(10000).Token;
-                    var analysis = uris
-                        .Select(e => server.GetAnalysisAsync(e))
-                        .ToArray();
-
-                    await Task.WhenAll(analysis);
-
-                    test(analysis.ToDictionary(a => a.Result.ModuleName, a => a.Result));
-                    Trace.WriteLine($"--- End Permutation [{string.Join(',', p)}] ---");
-                }
-            }
-        }
-
 
         private static string[] GetUnion(params object[] objs) {
             var result = new HashSet<string>();

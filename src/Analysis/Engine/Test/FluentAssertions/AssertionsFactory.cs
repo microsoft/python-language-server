@@ -88,6 +88,9 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public static ModuleAnalysisAssertions Should(this IModuleAnalysis moduleAnalysis)
             => new ModuleAnalysisAssertions(moduleAnalysis);
 
+        public static HoverAssertions Should(this Hover hover)
+            => new HoverAssertions(hover);
+
         public static ParameterResultAssertions Should(this ParameterResult overloadResult)
             => new ParameterResultAssertions(overloadResult);
 
