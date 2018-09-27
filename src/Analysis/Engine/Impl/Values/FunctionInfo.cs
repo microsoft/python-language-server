@@ -466,27 +466,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
                 foreach (var unit in units) {
                     var names = FunctionDefinition.Parameters.Select(MakeParameterName).ToArray();
-
-                    var vars = FunctionDefinition.Parameters.Select(p => {
-                        if (unit != AnalysisUnit && unit.InterpreterScope.TryGetVariable(p.Name, out var param)) {
-                            return param.Types.Resolve(unit);
-                        } else if (_analysisUnit._scope is FunctionScope fs) {
-                            return fs.GetParameter(p.Name)?.Types.Resolve(unit) ?? AnalysisSet.Empty;
-                        }
-                        return AnalysisSet.Empty;
-                    }).ToArray();
-
+                    var vars = FunctionDefinition.Parameters.Select(p => GetAnnotation(ProjectState, p, DeclaringModule.Tree)).ToArray();
                     var defaults = FunctionDefinition.Parameters.Select(p => GetDefaultValue(unit.State, p, DeclaringModule.Tree)).ToArray();
-
-                    var rtypes = (unit.Scope as FunctionScope)?.ReturnValue
-                        .Types
-                        .Resolve(unit, new ResolutionContext {
-                            Caller = this,
-                            LazyCallArgs = new Lazy<ArgumentSet>(() => new ArgumentSet(vars, null, null, null)),
-                            ResolveFully = true
-                        }, out _)
-                        .GetShortDescriptions()
-                        .ToArray();
+                    var rtypes = GetReturnValue().GetShortDescriptions().ToArray();
 
                     bool needNewSet = true;
                     foreach (var set in parameterSets) {

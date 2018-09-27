@@ -33,6 +33,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _classInfo = classInfo;
         }
 
+        public override string Name => _classInfo.Name;
+        public override IPythonType PythonType => _classInfo.PythonType;
+
         public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None) {
             var res = new Dictionary<string, IAnalysisSet>();
             if (_instanceAttrs != null) {

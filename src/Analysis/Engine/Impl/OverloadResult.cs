@@ -35,17 +35,15 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public string Name { get; }
-        public virtual IReadOnlyList<string> ReturnType { get { return _returnType; } }
+        public virtual IReadOnlyList<string> ReturnType => _returnType;
         public virtual string Documentation { get; }
-        public virtual ParameterResult[] Parameters { get { return _parameters; } }
+        public virtual ParameterResult[] Parameters => _parameters;
 
-        internal virtual OverloadResult WithNewParameters(ParameterResult[] newParameters) {
-            return new OverloadResult(newParameters, Name, Documentation, ReturnType);
-        }
+        internal virtual OverloadResult WithNewParameters(ParameterResult[] newParameters)
+            => new OverloadResult(newParameters, Name, Documentation, _returnType);
 
-        internal virtual OverloadResult WithoutLeadingParameters(int skipCount = 1) {
-            return new OverloadResult(_parameters.Skip(skipCount).ToArray(), Name, Documentation, _returnType);
-        }
+        internal virtual OverloadResult WithoutLeadingParameters(int skipCount = 1)
+            => new OverloadResult(_parameters.Skip(skipCount).ToArray(), Name, Documentation, _returnType);
 
         private static string Longest(string x, string y) {
             if (x == null) {
@@ -63,7 +61,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             var sb = new StringBuilder();
-            int nestCount = 0;
+            var nestCount = 0;
             foreach (var c in x) {
                 if (c == ',' && nestCount == 0) {
                     yield return sb.ToString().Trim();
@@ -84,11 +82,8 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        private static string Merge(string x, string y) {
-            return string.Join(", ",
-                CommaSplit(x).Concat(CommaSplit(y)).OrderBy(n => n).Distinct()
-            );
-        }
+        private static string Merge(string x, string y)
+            => string.Join(", ", CommaSplit(x).Concat(CommaSplit(y)).OrderBy(n => n).Distinct());
 
         public static OverloadResult Merge(IEnumerable<OverloadResult> overloads) {
             overloads = overloads.ToArray();
@@ -98,7 +93,7 @@ namespace Microsoft.PythonTools.Analysis {
             var parameters = overloads.Select(o => o.Parameters).Aggregate(Array.Empty<ParameterResult>(), (all, pms) => {
                 var res = all.Concat(pms.Skip(all.Length)).ToArray();
 
-                for (int i = 0; i < res.Length; ++i) {
+                for (var i = 0; i < res.Length; ++i) {
                     if (res[i] == null) {
                         res[i] = pms[i];
                     } else {
@@ -117,18 +112,29 @@ namespace Microsoft.PythonTools.Analysis {
 
                 return res;
             });
-            var returnType = overloads.SelectMany(o => o.ReturnType).Distinct();
 
+            var returnType = overloads.SelectMany(o => o.ReturnType).Distinct();
             return new OverloadResult(parameters, name, doc, returnType);
         }
 
         public override string ToString() {
-            return "{0}({1})->[{2}]{3}".FormatInvariant(
-                Name,
-                string.Join(",", Parameters.Select(p => "{0}{1}:{2}={3}".FormatInvariant(p.Name, p.IsOptional ? "?" : "", p.Type ?? "", p.DefaultValue ?? ""))),
-                string.Join(",", ReturnType.OrderBy(k => k)),
-                string.IsNullOrEmpty(Documentation) ? "" : ("'''{0}'''".FormatInvariant(Documentation))
+            var parameters = string.Join(", ",
+                Parameters.Select(p => "{0}{1}:{2}{3}{4}"
+                    .FormatInvariant(p.Name,
+                                     p.IsOptional ? "?" : string.Empty,
+                                     p.Type ?? string.Empty,
+                                     p.DefaultValue != null ? "=" : string.Empty,
+                                     p.DefaultValue ?? string.Empty))
+            ).TrimEnd();
+
+            var returnType = "{0}{1}{2}".FormatInvariant(
+                ReturnType.Count > 1 ? "[" : string.Empty,
+                ReturnType.Count > 0 ? string.Join(", ", ReturnType.OrderBy(k => k)) : "None",
+                ReturnType.Count > 1 ? "]" : string.Empty
             );
+
+            var doc = string.IsNullOrEmpty(Documentation) ? "" : "'''{0}'''".FormatInvariant(Documentation);
+            return "{0}({1}) -> {2}{3}".FormatInvariant(Name, parameters, returnType, doc);
         }
     }
 
@@ -136,7 +142,7 @@ namespace Microsoft.PythonTools.Analysis {
         private string _name;
         private string _doc;
         private string[] _pnames;
-        private IAnalysisSet[] _ptypes;
+        private string[] _ptypes;
         private string[] _pdefaults;
         private readonly HashSet<string> _rtypes;
 
@@ -144,7 +150,7 @@ namespace Microsoft.PythonTools.Analysis {
             _name = name;
             _doc = documentation;
             _pnames = new string[parameters];
-            _ptypes = new IAnalysisSet[parameters];
+            _ptypes = new string[parameters];
             _pdefaults = new string[parameters];
             ParameterCount = parameters;
             _rtypes = new HashSet<string>();
@@ -152,9 +158,8 @@ namespace Microsoft.PythonTools.Analysis {
 
         public int ParameterCount { get; }
 
-        private bool AreNullOrEqual(string x, string y) {
-            return string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) || string.Equals(x, y, StringComparison.Ordinal);
-        }
+        private bool AreNullOrEqual(string x, string y) =>
+            string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) || string.Equals(x, y, StringComparison.Ordinal);
 
         private bool AreNullOrEqual(IAnalysisSet x, IAnalysisSet y) {
             return x == null || x.IsObjectOrUnknown() ||
@@ -172,17 +177,7 @@ namespace Microsoft.PythonTools.Analysis {
             return x.Length >= y.Length ? x : y;
         }
 
-        private IAnalysisSet ChooseBest(IAnalysisSet x, IAnalysisSet y) {
-            if (x == null || x.IsObjectOrUnknown()) {
-                return (y == null || y.IsObjectOrUnknown()) ? AnalysisSet.Empty : y;
-            }
-            if (y == null || y.IsObjectOrUnknown()) {
-                return AnalysisSet.Empty;
-            }
-            return x.Union(y);
-        }
-
-        public bool TryAddOverload(string name, string documentation, string[] names, IAnalysisSet[] types, string[] defaults, IEnumerable<string> returnTypes) {
+        public bool TryAddOverload(string name, string documentation, string[] names, string[] types, string[] defaults, IEnumerable<string> returnTypes) {
             if (names.Length != _pnames.Length || types.Length != _ptypes.Length) {
                 return false;
             }
@@ -196,7 +191,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return false;
             }
 
-            for (int i = 0; i < _pnames.Length; ++i) {
+            for (var i = 0; i < _pnames.Length; ++i) {
                 _pnames[i] = ChooseBest(_pnames[i], names[i]);
                 _ptypes[i] = ChooseBest(_ptypes[i], types[i]);
                 _pdefaults[i] = ChooseBest(_pdefaults[i], defaults[i]);
@@ -218,7 +213,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public OverloadResult ToOverloadResult() {
             var parameters = new ParameterResult[_pnames.Length];
-            for (int i = 0; i < parameters.Length; ++i) {
+            for (var i = 0; i < parameters.Length; ++i) {
                 if (string.IsNullOrEmpty(_pnames[i])) {
                     return null;
                 }
@@ -226,7 +221,7 @@ namespace Microsoft.PythonTools.Analysis {
                 parameters[i] = new ParameterResult(
                     _pnames[i],
                     null,
-                    (_ptypes[i] == null || _ptypes[i].IsObjectOrUnknown()) ? null : string.Join(", ", _ptypes[i].GetShortDescriptions()),
+                    _ptypes[i],
                     false,
                     null,
                     _pdefaults[i]
@@ -245,7 +240,6 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly Func<string> _fallbackDoc;
         private string _doc;
         private IReadOnlyList<string> _returnTypes;
-        private static readonly string _calculating = "Documentation is still being calculated, please try again soon.";
 
         // Used by ToString to ensure docs have completed
         private Task _docTask;
@@ -306,7 +300,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         private void Calculate() {
             // initially fill in w/ a string saying we don't yet have the documentation
-            _doc = _calculating;
+            _doc = Resources.CalculatingDocumentation;
             _docTask = Task.Factory.StartNew(DocCalculator);
         }
 
@@ -322,7 +316,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             foreach (var param in _overload.GetParameters()) {
-                if (!String.IsNullOrEmpty(param.Documentation)) {
+                if (!string.IsNullOrEmpty(param.Documentation)) {
                     doc.AppendLine();
                     doc.Append(param.Name);
                     doc.Append(": ");
@@ -330,7 +324,7 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }
 
-            if (!String.IsNullOrEmpty(_overload.ReturnDocumentation)) {
+            if (!string.IsNullOrEmpty(_overload.ReturnDocumentation)) {
                 doc.AppendLine();
                 doc.AppendLine();
                 doc.Append("Returns: ");
@@ -353,7 +347,7 @@ namespace Microsoft.PythonTools.Analysis {
 
                         var pinfo = _overload.GetParameters();
                         var result = new List<ParameterResult>(pinfo.Length + _extraParameters.Length);
-                        int ignored = 0;
+                        var ignored = 0;
                         ParameterResult kwDict = null;
                         foreach (var param in pinfo) {
                             if (ignored < _removedParams) {
@@ -386,7 +380,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         internal ParameterResult GetParameterResultFromParameterInfo(IParameterInfo param) {
-            string name = param.Name;
+            var name = param.Name;
 
             string typeName;
             if (param.ParameterTypes != null) {
@@ -396,8 +390,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
             if (param.IsParamArray) {
                 name = "*" + name;
-                var advType = param.ParameterTypes as IAdvancedPythonType;
-                if (advType != null && advType.IsArray) {
+                if (param.ParameterTypes is IAdvancedPythonType advType && advType.IsArray) {
                     var elemType = advType.GetElementType();
                     if (elemType == _projectState.Types[BuiltinTypeId.Object]) {
                         typeName = "sequence";
@@ -410,8 +403,8 @@ namespace Microsoft.PythonTools.Analysis {
                 typeName = "object";
             }
 
-            bool isOptional = false;
-            string defaultValue = param.DefaultValue;
+            var isOptional = false;
+            var defaultValue = param.DefaultValue;
             if (defaultValue != null && defaultValue.Length == 0) {
                 isOptional = true;
                 defaultValue = null;
@@ -450,7 +443,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return false;
             }
 
-            for (int i = 0; i < x.Parameters.Length; ++i) {
+            for (var i = 0; i < x.Parameters.Length; ++i) {
                 if (_weak) {
                     if (!x.Parameters[i].Name.Equals(y.Parameters[i].Name)) {
                         return false;
@@ -468,7 +461,7 @@ namespace Microsoft.PythonTools.Analysis {
         public override int GetHashCode(OverloadResult obj) {
             // Don't use Documentation for hash code, since it changes over time
             // in some implementations of IOverloadResult.
-            int hc = 552127 ^ obj.Name.GetHashCode();
+            var hc = 552127 ^ obj.Name.GetHashCode();
             if (obj.Parameters != null) {
                 foreach (var p in obj.Parameters) {
                     hc ^= _weak ? p.Name.GetHashCode() : p.GetHashCode();

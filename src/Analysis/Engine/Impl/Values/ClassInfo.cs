@@ -303,7 +303,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return new OverloadResult(
                 overload.Parameters.RemoveFirst(),
                 ClassDefinition.Name,
-                String.IsNullOrEmpty(doc) ? Documentation : doc,
+                string.IsNullOrEmpty(doc) ? Documentation : doc,
                 overload.ReturnType
             );
         }
@@ -313,7 +313,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return new OverloadResult(
                 overload.Parameters.RemoveFirst(),
                 ClassDefinition.Name,
-                String.IsNullOrEmpty(doc) ? Documentation : doc,
+                string.IsNullOrEmpty(doc) ? Documentation : doc,
                 overload.ReturnType
             );
         }
