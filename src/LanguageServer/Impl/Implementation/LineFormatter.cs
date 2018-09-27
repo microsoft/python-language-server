@@ -146,7 +146,31 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         break;
 
                     case TokenKind.Assign:
-                        if (token.IsInsideFunctionArgs && prev?.PrevNonIgnored?.Kind != TokenKind.Colon) {
+                        if (token.IsInsideFunctionArgs) {
+                            // Search backwards through the tokens looking for a colon for this argument,
+                            // indicating that there's a type hint and spacing should surround the equals.
+                            for (var p = token.PrevNonIgnored; p != null; p = p.PrevNonIgnored) {
+                                if (p == token.Inside) {
+                                    // Hit the surrounding left parenthesis, so stop the search.
+                                    break;
+                                }
+
+                                if (p.Inside != token.Inside) {
+                                    // Inside another grouping than the =, so skip over it.
+                                    continue;
+                                }
+
+                                if (p.Kind == TokenKind.Comma) {
+                                    // Found a comma, indicating the end of another argument, so stop.
+                                    break;
+                                }
+
+                                if (p.Kind == TokenKind.Colon) {
+                                    // Found a colon before hitting another argument or the opening parenthesis, so add spacing.
+                                    goto case TokenKind.AddEqual;
+                                }
+                            }
+
                             builder.Append(token);
                             break;
                         }

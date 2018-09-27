@@ -207,9 +207,11 @@ namespace AnalysisTests {
             AssertSingleLineFormat(code, expected);
         }
 
-        [TestMethod, Priority(0)]
-        public void EqualsWithTypeHints() {
-            AssertSingleLineFormat("def foo(x:int=3,x=100.)", "def foo(x: int = 3, x=100.)");
+        [DataRow("def foo(x:int=3,x=100.)", "def foo(x: int = 3, x=100.)")]
+        [DataRow("def foo(x:Union[int,str]=3,x=100.)", "def foo(x: Union[int, str] = 3, x=100.)")]
+        [DataTestMethod, Priority(0)]
+        public void EqualsWithTypeHints(string code, string expected) {
+            AssertSingleLineFormat(code, expected);
         }
 
         [TestMethod, Priority(0)]
@@ -402,7 +404,6 @@ limit { limit_num}; """"""", line: 5);
         public void StringConcat(string code, string expected) {
             AssertSingleLineFormat(code, expected);
         }
-
 
         [TestMethod, Priority(0)]
         public void GrammarFile() {
