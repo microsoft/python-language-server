@@ -131,9 +131,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // after it if needed (i.e. in the case of a following comment).
                 beginCol = first.Span.End.Column;
                 startIdx = 1;
-                builder.EnsureEndsWithSpace(allowLeading: true);
+                if (builder.Length == 0) {
+                    builder.Append(' ');
+                } else { 
+                    builder.EnsureEndsWithWhiteSpace();
+                }
             }
-
+            
             for (var i = startIdx; i < tokens.Count; i++) {
                 var token = tokens[i];
                 var prev = tokens.ElementAtOrDefault(i - 1);
@@ -141,17 +145,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 switch (token.Kind) {
                     case TokenKind.Comment:
-                        builder.EnsureEndsWithSpace(2);
+                        builder.EnsureEndsWithWhiteSpace(2);
                         builder.Append(token);
                         break;
 
+                    case TokenKind.Assign when token.IsInsideFunctionArgs && prev?.PrevNonIgnored?.Kind != TokenKind.Colon:
+                        builder.Append(token);
+                        break;
                     case TokenKind.Assign:
-                        if (token.IsInsideFunctionArgs && prev?.PrevNonIgnored?.Kind != TokenKind.Colon) {
-                            builder.Append(token);
-                            break;
-                        }
-
-                        goto case TokenKind.AddEqual;
+                        AppendTokenEnsureWhiteSpacesAround(builder, token);
+                        break;
 
                     // "Normal" assignment and function parameters with type hints
                     case TokenKind.AddEqual:
@@ -167,80 +170,70 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     case TokenKind.BitwiseAndEqual:
                     case TokenKind.BitwiseOrEqual:
                     case TokenKind.ExclusiveOrEqual:
-                        builder.EnsureEndsWithSpace();
-                        builder.Append(token);
-                        builder.EnsureEndsWithSpace();
+                        AppendTokenEnsureWhiteSpacesAround(builder, token);
                         break;
 
                     case TokenKind.Comma:
                         builder.Append(token);
                         if (next != null && !next.IsClose && next.Kind != TokenKind.Colon) {
-                            builder.EnsureEndsWithSpace();
+                            builder.EnsureEndsWithWhiteSpace();
                         }
                         break;
 
-                    case TokenKind.Colon:
-                        // Slicing
-                        if (token.Inside?.Kind == TokenKind.LeftBracket) {
-                            if (!token.IsSimpleSliceToLeft) {
-                                builder.EnsureEndsWithSpace();
-                            }
-
-                            builder.Append(token);
-
-                            if (!token.IsSimpleSliceToRight) {
-                                builder.EnsureEndsWithSpace();
-                            }
-
-                            break;
+                    // Slicing
+                    case TokenKind.Colon when token.Inside?.Kind == TokenKind.LeftBracket:
+                        if (!token.IsSimpleSliceToLeft) {
+                            builder.EnsureEndsWithWhiteSpace();
                         }
 
                         builder.Append(token);
-                        if (next != null && !next.Is(TokenKind.Colon, TokenKind.Comma)) {
-                            builder.EnsureEndsWithSpace();
+
+                        if (!token.IsSimpleSliceToRight) {
+                            builder.EnsureEndsWithWhiteSpace();
+                        }
+
+                        break;
+
+                    case TokenKind.Colon:
+                        builder.Append(token);
+                        if (next != null && !next.IsColonOrComma) {
+                            builder.EnsureEndsWithWhiteSpace();
                         }
                         break;
 
                     case TokenKind.At:
                         if (prev != null) {
-                            goto case TokenKind.MatMultiply;
+                            AppendTokenEnsureWhiteSpacesAround(builder, token);
+                        } else {
+                            builder.Append(token);
                         }
-
-                        builder.Append(token);
                         break;
 
                     // Unary
                     case TokenKind.Add:
                     case TokenKind.Subtract:
                     case TokenKind.Twiddle:
-                        if (prev != null && (prev.IsOperator || prev.IsOpen || prev.Is(TokenKind.Comma, TokenKind.Colon))) {
+                        if (prev != null && (prev.IsOperator || prev.IsOpen || prev.IsColonOrComma)) {
                             builder.Append(token);
-                            break;
+                        } else {
+                            AppendTokenEnsureWhiteSpacesAround(builder, token);
                         }
-                        goto case TokenKind.MatMultiply;
+                        break;
 
                     case TokenKind.Power:
                     case TokenKind.Multiply:
-                        if (token.Inside != null) {
-                            var actualPrev = token.PrevNonIgnored;
-                            if (actualPrev != null) {
-                                if (actualPrev.Kind == TokenKind.Comma || actualPrev.IsOpen || token.Inside.Kind == TokenKind.KeywordLambda) {
-                                    builder.Append(token);
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (token.Kind == TokenKind.Multiply) {
+                    {
+                        var actualPrev = token.PrevNonIgnored;
+                        if (token.Inside != null && actualPrev != null && (actualPrev.Kind == TokenKind.Comma || actualPrev.IsOpen || token.Inside.Kind == TokenKind.KeywordLambda)) {
+                            builder.Append(token);
                             // Check unpacking case
-                            var actualPrev = token.PrevNonIgnored;
-                            if (actualPrev == null || (actualPrev.Kind != TokenKind.Name && actualPrev.Kind != TokenKind.Constant && !actualPrev.IsClose)) {
-                                builder.Append(token);
-                                break;
-                            }
+                        } else if (token.Kind == TokenKind.Multiply && (actualPrev == null || actualPrev.Kind != TokenKind.Name && actualPrev.Kind != TokenKind.Constant && !actualPrev.IsClose)) {
+                            builder.Append(token);
+                        } else { 
+                            AppendTokenEnsureWhiteSpacesAround(builder, token);
                         }
-
-                        goto case TokenKind.MatMultiply;
+                        break;
+                    }
 
                     // Operators
                     case TokenKind.MatMultiply:
@@ -260,14 +253,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     case TokenKind.NotEquals:
                     case TokenKind.LessThanGreaterThan:
                     case TokenKind.Arrow:
-                        builder.EnsureEndsWithSpace();
-                        builder.Append(token);
-                        builder.EnsureEndsWithSpace();
+                        AppendTokenEnsureWhiteSpacesAround(builder, token);
                         break;
 
                     case TokenKind.Dot:
                         if (prev != null && (prev.Kind == TokenKind.KeywordFrom || prev.IsNumber)) {
-                            builder.EnsureEndsWithSpace();
+                            builder.EnsureEndsWithWhiteSpace();
                         }
 
                         builder.Append(token);
@@ -284,16 +275,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                     case TokenKind.Semicolon:
                         builder.Append(token);
-                        builder.EnsureEndsWithSpace();
+                        builder.EnsureEndsWithWhiteSpace();
+                        break;
+
+                    case TokenKind.Constant when next != null && next.IsString:
+                        builder.Append(token);
+                        builder.EnsureEndsWithWhiteSpace();
                         break;
 
                     case TokenKind.Constant:
-                        if (token.IsString && next != null && next.IsString) {
-                            builder.Append(token);
-                            builder.EnsureEndsWithSpace();
-                            break;
-                        }
-                        goto case TokenKind.Name;
+                        builder.Append(token);
+                        break;
 
                     case TokenKind.Name:
                     case TokenKind.KeywordFalse:
@@ -303,7 +295,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         break;
 
                     case TokenKind.ExplicitLineJoin:
-                        builder.EnsureEndsWithSpace();
+                        builder.EnsureEndsWithWhiteSpace();
                         builder.Append("\\"); // Hardcoded string so that any following whitespace doesn't make it in.
                         break;
 
@@ -311,37 +303,30 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         builder.Append(token);
                         break;
 
-                    default:
-                        if (token.Kind == TokenKind.KeywordLambda) {
-                            if (token.IsInsideFunctionArgs && prev?.Kind == TokenKind.Assign) {
-                                builder.Append(token);
+                    case TokenKind.KeywordLambda when token.IsInsideFunctionArgs && prev?.Kind == TokenKind.Assign:
+                        builder.Append(token);
 
-                                if (next?.Kind != TokenKind.Colon) {
-                                    builder.EnsureEndsWithSpace();
-                                }
-
-                                break;
-                            }
+                        if (next?.Kind != TokenKind.Colon) {
+                            builder.EnsureEndsWithWhiteSpace();
                         }
 
+                        break;
+
+                    default:
                         if (token.IsKeyword) {
                             if (prev != null && !prev.IsOpen) {
-                                builder.EnsureEndsWithSpace();
+                                builder.EnsureEndsWithWhiteSpace();
                             }
 
                             builder.Append(token);
 
                             if (next != null && next.Kind != TokenKind.Colon && next.Kind != TokenKind.Semicolon) {
-                                builder.EnsureEndsWithSpace();
+                                builder.EnsureEndsWithWhiteSpace();
                             }
-
-                            break;
+                        } else { 
+                            // No tokens should make it to this case, but try to keep things separated.
+                            AppendTokenEnsureWhiteSpacesAround(builder, token);
                         }
-
-                        // No tokens should make it to this case, but try to keep things separated.
-                        builder.EnsureEndsWithSpace();
-                        builder.Append(token);
-                        builder.EnsureEndsWithSpace();
                         break;
                 }
             }
@@ -374,6 +359,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return new[] { edit };
         }
 
+        private static void AppendTokenEnsureWhiteSpacesAround(StringBuilder builder, TokenExt token) 
+            => builder.EnsureEndsWithWhiteSpace()
+            .Append(token)
+            .EnsureEndsWithWhiteSpace();
+
         private class TokenExt {
             public Token Token { get; set; }
             public SourceSpan Span { get; set; }
@@ -381,18 +371,18 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             public TokenExt Inside { get; set; }
             public TokenExt Prev { get; set; }
             public TokenExt Next { get; set; }
-            public string PreceedingWhitespace { get; set; }
+            public string PrecedingWhitespace { get; set; }
             public TokenKind Kind => Token.Kind;
 
             public override string ToString() => Token.VerbatimImage;
-
-            public bool Is(params TokenKind[] kinds) => kinds.Contains(Kind);
 
             public bool IsIgnored => Is(TokenKind.NewLine, TokenKind.NLToken, TokenKind.Indent, TokenKind.Dedent, TokenKind.ExplicitLineJoin);
 
             public bool IsOpen => Is(TokenKind.LeftBrace, TokenKind.LeftBracket, TokenKind.LeftParenthesis);
 
             public bool IsClose => Is(TokenKind.RightBrace, TokenKind.RightBracket, TokenKind.RightParenthesis);
+
+            public bool IsColonOrComma => Is(TokenKind.Colon, TokenKind.Comma);
 
             public bool MatchesClose(TokenExt other) {
                 switch (Kind) {
@@ -511,6 +501,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     return null;
                 }
             }
+
+            private bool Is(params TokenKind[] kinds) => kinds.Contains(Kind);
         }
 
         /// <summary>
@@ -557,7 +549,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 var tokenExt = new TokenExt {
                     Token = token,
-                    PreceedingWhitespace = _tokenizer.PreceedingWhiteSpace,
+                    PrecedingWhitespace = _tokenizer.PreceedingWhiteSpace,
                     Span = sourceSpan,
                     Prev = _prev
                 };

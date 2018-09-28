@@ -1010,31 +1010,13 @@ datetime.datetime.now().day
                 // Extended tests for line formatting are in LineFormatterTests.
                 // These just verify that the language server formats and returns something correct.
                 var edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(2, 1), "\n");
-                edits.Should().OnlyContain(new TextEdit {
-                    newText = "def foo():",
-                    range = new Range {
-                        start = new SourceLocation(1, 1),
-                        end = new SourceLocation(1, 15)
-                    }
-                });
+                edits.Should().OnlyHaveTextEdit("def foo():", (0, 0, 0, 14));
 
                 edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(3, 1), "\n");
-                edits.Should().OnlyContain(new TextEdit {
-                    newText = "x = a + b",
-                    range = new Range {
-                        start = new SourceLocation(2, 5),
-                        end = new SourceLocation(2, 14)
-                    }
-                });
+                edits.Should().OnlyHaveTextEdit("x = a + b", (1, 4, 1, 13));
 
                 edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(4, 1), "\n");
-                edits.Should().OnlyContain(new TextEdit {
-                    newText = "x += 1",
-                    range = new Range {
-                        start = new SourceLocation(3, 5),
-                        end = new SourceLocation(3, 10)
-                    }
-                });
+                edits.Should().OnlyHaveTextEdit("x += 1", (2, 4, 2, 9));
             }
         }
 
