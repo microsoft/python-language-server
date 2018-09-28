@@ -3132,6 +3132,7 @@ def f(a):
         print(a)
         assert isinstance(a, int)
         a = 200
+        print(a)
 ";
                 await server.SendDidOpenTextDocument(uri, text);
 
@@ -3139,16 +3140,20 @@ def f(a):
                 references.Should().OnlyHaveReferences(
                     (uri, (1, 6, 1, 7), ReferenceKind.Definition),
                     (uri, (3, 14, 3, 15), ReferenceKind.Reference),
-                    (uri, (4, 26, 4, 27), ReferenceKind.Reference),
-                    (uri, (5, 8, 5, 9), ReferenceKind.Definition)
+                    (uri, (4, 26, 4, 27), ReferenceKind.Reference)
                 );
 
                 references = await server.SendFindReferences(uri, 5, 9);
                 references.Should().OnlyHaveReferences(
                     (uri, (1, 6, 1, 7), ReferenceKind.Definition),
                     (uri, (3, 14, 3, 15), ReferenceKind.Reference),
-                    (uri, (4, 26, 4, 27), ReferenceKind.Reference),
-                    (uri, (5, 8, 5, 9), ReferenceKind.Definition)
+                    (uri, (4, 26, 4, 27), ReferenceKind.Reference)
+                );
+
+                references = await server.SendFindReferences(uri, 6, 15);
+                references.Should().OnlyHaveReferences(
+                    (uri, (5, 9, 5, 10), ReferenceKind.Definition),
+                    (uri, (6, 15, 6, 16), ReferenceKind.Reference)
                 );
             }
         }
@@ -4367,7 +4372,7 @@ f('a', 'b', 1)
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
                 var signatures = await server.SendSignatureHelp(uri, 6, 2);
 
-                signatures.Should().OnlyHaveSignature("f(a: float, int, str, b: float, int, str, c: float, int, str=0)");
+                signatures.Should().OnlyHaveSignature("f(a, b, c: int=0)");
             }
         }
 

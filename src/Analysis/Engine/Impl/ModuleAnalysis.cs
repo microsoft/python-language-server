@@ -237,7 +237,15 @@ namespace Microsoft.PythonTools.Analysis {
                     foreach (var defScope in scope.EnumerateTowardsGlobal
                         .Where(s => s.ContainsVariable(name.Name) && (s == scope || s.VisibleToChildren || IsFirstLineOfFunction(scope, s, location)))) {
                         var scopeVariables = GetVariablesInScope(name, defScope).Distinct();
-                        variables = variables.Union(scopeVariables);
+                        // Filter our definitions that are below the requested location (such as reassignments)
+                        var above = scopeVariables.Where(v => new SourceLocation(v.Location.StartLine, v.Location.StartColumn) <= location);
+                        variables = variables.Union(above);
+                        
+                        // Break at the first definition so we don't spill into global scope
+                        // for similarly named function parameters.
+                        if (scopeVariables.Any(v => v.Type == VariableType.Definition)) {
+                            break;
+                        }
                     }
                 }
             } else if (expr is MemberExpression member && !string.IsNullOrEmpty(member.Name)) {
