@@ -73,9 +73,13 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             };
             
             var errorMessage = GetHaveTextEditErrorMessage(expectedText, range);
-            Execute.Assertion.ForCondition(errorMessage == string.Empty)
-                .BecauseOf(because, reasonArgs)
-                .FailWith(errorMessage);
+            if (errorMessage != string.Empty) {
+                var assertion = Execute.Assertion.BecauseOf(because, reasonArgs);
+                assertion.AddNonReportable("expectedText", expectedText);
+                assertion.AddNonReportable("expectedRange", GetName(expectedRange));
+                assertion.AddNonReportable("currentTexts", GetQuotedNames(Subject.Select(te => te.newText)));
+                assertion.FailWith(errorMessage);
+            }
 
             return new AndConstraint<TextEditCollectionAssertions>(this);
         }
@@ -84,17 +88,17 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         private string GetHaveTextEditErrorMessage(string expectedText, Range expectedRange) {
             var candidates = Subject.Where(av => string.Equals(av.newText, expectedText, StringComparison.Ordinal)).ToArray();
             if (candidates.Length == 0) {
-                return $"Expected {GetSubjectName()} to have text edit with newText '{expectedText}'{{reason}}, but "
-                    + (Subject.Any() ? "it is empty" : $"it has {GetQuotedNames(Subject.Select(te => te.newText))}");
+                return "Expected {context:subject} to have text edit with newText \'{expectedText}\'{reason}, but "
+                    + (Subject.Any() ? "it has {currentTexts}" : "it is empty");
             }
 
             var candidatesWithRange = candidates.Where(c => RangeEquals(c.range, expectedRange)).ToArray();
             if (candidatesWithRange.Length > 1) {
-                return $"Expected {GetSubjectName()} to have only one text edit with newText '{expectedText}' and range {GetName(expectedRange)}{{reason}}, but there are {candidatesWithRange.Length}";
+                return $"Expected {{context:subject}} to have only one text edit with newText '{{expectedText}}' a nd range {{expectedRange}}{{reason}}, but there are {candidatesWithRange.Length}";
             }
 
             if (candidatesWithRange.Length == 0) {
-                return $"Expected {GetSubjectName()} to have text edit with newText '{expectedText}' in range {GetName(expectedRange)} {{reason}}, but "
+                return "Expected {context:subject} to have text edit with newText \'{expectedText}\' in range {expectedRange}{reason}, but "
                     + (candidatesWithRange.Length == 1 
                         ? $"it has range {GetName(candidatesWithRange[0].range)}" 
                         : $"they are in ranges {string.Join(", ", candidatesWithRange.Select(te => GetName(te.range)))}");
