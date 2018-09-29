@@ -16,20 +16,18 @@
 
 namespace Microsoft.PythonTools.Analysis {
     class AnalysisVariable : IAnalysisVariable {
-        public AnalysisVariable(VariableType type, ILocationInfo location, int? version = null) {
+        public AnalysisVariable(IVariableDefinition variable, VariableType type, ILocationInfo location, int? version = null) {
+            Variable = variable;
             Location = location;
             Type = type;
             Version = version;
         }
 
         #region IAnalysisVariable Members
-
         public ILocationInfo Location { get; }
-
         public VariableType Type { get; }
-
         public int? Version { get; }
-
+        public IVariableDefinition Variable { get; }
         #endregion
 
         public override bool Equals(object obj) {

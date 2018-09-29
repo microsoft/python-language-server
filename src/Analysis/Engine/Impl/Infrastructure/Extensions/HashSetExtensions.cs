@@ -1,4 +1,4 @@
-// Python Tools for Visual Studio
+﻿// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -14,15 +14,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.PythonTools.Analysis {
-    public interface IAnalysisVariable {
-        /// <summary>
-        /// Returns the location of where the variable is defined.
-        /// </summary>
-        ILocationInfo Location { get; }
+using System.Collections.Generic;
 
-        VariableType Type { get; }
-
-        IVariableDefinition Variable { get; }
+namespace Microsoft.PythonTools.Analysis.Infrastructure {
+    static class HashSetExtensions {
+         public static void Add<T>(this HashSet<T> set, IEnumerable<T> source) {
+            foreach(var e in source) {
+                set.Add(e);
+            }
+        }
     }
 }

@@ -114,7 +114,9 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         internal IEnumerable<AnalysisVariable> ToVariables(IReferenceable referenceable) {
-            if (referenceable is VariableDef def) {
+            var def = referenceable as VariableDef;
+
+            if (def != null) {
                 foreach (var type in def.Types.WhereNotNull()) {
                     var varType = VariableType.Value;
                     if (type.DeclaringModule == null) {
@@ -123,7 +125,7 @@ namespace Microsoft.PythonTools.Analysis {
                     }
 
                     foreach (var loc in type.Locations.WhereNotNull()) {
-                        yield return new AnalysisVariable(varType, loc);
+                        yield return new AnalysisVariable(def, varType, loc);
                     }
                 }
             }
@@ -131,14 +133,14 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var reference in referenceable.Definitions) {
                 var loc = reference.GetLocationInfo();
                 if (loc != null) {
-                    yield return new AnalysisVariable(VariableType.Definition, loc);
+                    yield return new AnalysisVariable(def, VariableType.Definition, loc);
                 }
             }
 
             foreach (var reference in referenceable.References) {
                 var loc = reference.GetLocationInfo();
                 if (loc != null) {
-                    yield return new AnalysisVariable(VariableType.Reference, loc);
+                    yield return new AnalysisVariable(def, VariableType.Reference, loc);
                 }
             }
         }
@@ -234,23 +236,33 @@ namespace Microsoft.PythonTools.Analysis {
                 if (!scope.EnumerateTowardsGlobal.Any()) {
                     variables = _unit.State.BuiltinModule.GetDefinitions(name.Name).SelectMany(ToVariables);
                 } else {
-                    foreach (var defScope in scope.EnumerateTowardsGlobal
-                        .Where(s => s.ContainsVariable(name.Name) && (s == scope || s.VisibleToChildren || IsFirstLineOfFunction(scope, s, location)))) {
-                        var scopeVariables = GetVariablesInScope(name, defScope).Distinct();
-                        // Filter our definitions that are below the requested location (such as reassignments)
-                        var above = scopeVariables.Where(v => new SourceLocation(v.Location.StartLine, v.Location.StartColumn) <= location);
-                        variables = variables.Union(above);
-                        
-                        // Break at the first definition so we don't spill into global scope
-                        // for similarly named function parameters.
-                        if (scopeVariables.Any(v => v.Type == VariableType.Definition)) {
+                    foreach (var s in scope.EnumerateTowardsGlobal.Where(s => s.VisibleToChildren)) {
+                        var scopeVariables = GetVariablesInScope(name, s).Distinct();
+                        var args = scopeVariables.Where(v => IsFunctionArgument(v.Variable));
+                        if(args.Any()) {
+                            variables = variables.Union(args);
                             break;
                         }
+                        variables = variables.Union(scopeVariables);
                     }
-                }
-            } else if (expr is MemberExpression member && !string.IsNullOrEmpty(member.Name)) {
-                var objects = eval.Evaluate(member.Target);
 
+                    // Now take outermost definition and treat inner ones (such as reassignments) as references
+                    var others = variables.Where(v => v.Type == VariableType.Reference || v.Type == VariableType.Value);
+                    var definitions = variables
+                        .Where(v => v.Type == VariableType.Definition)
+                        .OrderBy(v => v.Location.Span.Start)
+                        .ToArray();
+
+                    if (definitions.Length > 0) {
+                        var defsToRefs = definitions.Skip(1).Select(v => new AnalysisVariable(v.Variable, VariableType.Reference, v.Location));
+                        variables = definitions.Take(1).Concat(others.Concat(defsToRefs));
+                     }
+                }
+                return new VariablesResult(variables, unit.Tree);
+            }
+
+            if (expr is MemberExpression member && !string.IsNullOrEmpty(member.Name)) {
+                var objects = eval.Evaluate(member.Target);
                 foreach (var v in objects.OfType<IReferenceableContainer>()) {
                     variables = variables.Union(v.GetDefinitions(member.Name).SelectMany(ToVariables));
                 }
@@ -258,6 +270,9 @@ namespace Microsoft.PythonTools.Analysis {
 
             return new VariablesResult(variables, unit.Tree);
         }
+
+        private bool IsFunctionArgument(IVariableDefinition v)
+            => v?.Types?.MaybeEnumerate().FirstOrDefault() is ParameterInfo;
 
         private IEnumerable<IAnalysisVariable> GetVariablesInScope(NameExpression name, IScope scope) {
             var result = new List<IAnalysisVariable>();
@@ -295,19 +310,6 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             return result;
-        }
-
-        private static bool IsFirstLineOfFunction(IScope innerScope, IScope outerScope, SourceLocation location) {
-            if (innerScope.OuterScope == outerScope && innerScope is FunctionScope) {
-                var funcScope = (FunctionScope)innerScope;
-                var def = funcScope.Function.FunctionDefinition;
-
-                // TODO: Use indexes rather than lines to check location
-                if (location.Line == def.GetStart(def.GlobalParent).Line) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         private class ErrorWalker : PythonWalker {
