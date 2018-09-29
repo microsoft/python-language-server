@@ -236,14 +236,13 @@ namespace Microsoft.PythonTools.Analysis {
                 if (!scope.EnumerateTowardsGlobal.Any()) {
                     variables = _unit.State.BuiltinModule.GetDefinitions(name.Name).SelectMany(ToVariables);
                 } else {
-                    foreach (var s in scope.EnumerateTowardsGlobal.Where(s => s.VisibleToChildren)) {
+                    foreach (var s in scope.EnumerateTowardsGlobal) {
                         var scopeVariables = GetVariablesInScope(name, s).Distinct();
+                        variables = variables.Union(scopeVariables);
                         var args = scopeVariables.Where(v => IsFunctionArgument(v.Variable));
                         if(args.Any()) {
-                            variables = variables.Union(args);
                             break;
                         }
-                        variables = variables.Union(scopeVariables);
                     }
 
                     // Now take outermost definition and treat inner ones (such as reassignments) as references
