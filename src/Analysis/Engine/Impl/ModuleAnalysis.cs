@@ -275,9 +275,9 @@ namespace Microsoft.PythonTools.Analysis {
                 return true;
             }
             if (scope is FunctionScope funcScope) {
-                var def = funcScope.Function.FunctionDefinition;
-                // TODO: Use indexes rather than lines to check location
-                return v.Location.StartLine == def.GetStart(def.GlobalParent).Line;
+                var funcDef = funcScope.Function.FunctionDefinition;
+                var varSpan = v.Location.Span.ToLinearSpan(_unit.Tree);
+                return funcDef.NameExpression.EndIndex <= varSpan.Start && varSpan.End <= funcDef.HeaderIndex;
             }
             return false;
         }
