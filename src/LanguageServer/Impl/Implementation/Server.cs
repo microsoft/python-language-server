@@ -653,14 +653,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 if (vc != null) {
                     _editorFiles.GetDocument(doc.DocumentUri).UpdateParseDiagnostics(vc, doc.DocumentUri);
                 }
-
-                if (doc is ProjectEntry entry) {
-                    var reanalyzeEntries = Analyzer.GetEntriesThatImportModule(entry.ModuleName, false);
-                    foreach (var d in reanalyzeEntries.OfType<IDocument>()) {
-                        _shutdownCts.Token.ThrowIfCancellationRequested();
-                        await EnqueueItemAsync(d, parse: false);
-                    }
-                }
             } catch (BadSourceException) {
             } catch (ObjectDisposedException) when (_disposableBag.IsDisposed) {
             } catch (OperationCanceledException ex) {
