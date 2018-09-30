@@ -152,17 +152,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _idleTimeTracker?.Dispose();
                 _idleTimeTracker = new IdleTimeTracker(settings.diagnosticPublishDelay, PublishPendingDiagnostics);
 
-                _pathsWatcher?.Dispose();
-                var watchSearchPaths = GetSetting(analysis, "watchSearchPaths", true);
-                if (watchSearchPaths) {
-                    if (!_searchPaths.SetEquals(_initParams.initializationOptions.searchPaths)) {
-                        _pathsWatcher = new PathsWatcher(
-                            _initParams.initializationOptions.searchPaths,
-                            () => _server.ReloadModulesAsync(CancellationToken.None).DoNotWait(),
-                            _server
-                         );
-                    }
-                }
+                HandlePathWatchChange(token);
 
                 var errors = GetSetting(analysis, "errors", Array.Empty<string>());
                 var warnings = GetSetting(analysis, "warnings", Array.Empty<string>());
