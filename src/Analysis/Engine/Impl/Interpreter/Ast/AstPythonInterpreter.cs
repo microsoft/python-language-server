@@ -274,6 +274,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             _analyzer = state;
+            RemoveImportedModules();
 
             if (state != null) {
                 lock (_userSearchPathsLock) {
@@ -289,17 +290,21 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private void Analyzer_SearchPathsChanged(object sender, EventArgs e) {
             lock (_userSearchPathsLock) {
-                // Remove imported modules from search paths so we will
-                // import them again.
-                foreach (var name in _userSearchPathImported.MaybeEnumerate()) {
-                    IPythonModule mod;
-                    _modules.TryRemove(name, out mod);
-                }
+                RemoveImportedModules();
                 _userSearchPathImported = null;
                 _userSearchPathPackages = null;
                 _userSearchPaths = _analyzer.GetSearchPaths();
             }
             ModuleNamesChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void RemoveImportedModules() {
+            lock (_userSearchPathsLock) {
+                // Remove imported modules from search paths so we will import them again.
+                foreach (var name in _userSearchPathImported.MaybeEnumerate()) {
+                    _modules.TryRemove(name, out var mod);
+                }
+            }
         }
 
         public IEnumerable<string> GetModulesNamed(string name) {

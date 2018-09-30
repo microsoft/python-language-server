@@ -22,13 +22,14 @@ using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Extensions;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
         public override async Task<CompletionList> Completion(CompletionParams @params, CancellationToken cancellationToken) {
+            await ReloadModulesAsync(CancellationToken.None);
+
             var uri = @params.textDocument.uri;
 
             ProjectFiles.GetEntry(@params.textDocument, @params._version, out var entry, out var tree);

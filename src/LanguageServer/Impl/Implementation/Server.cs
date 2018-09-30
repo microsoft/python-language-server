@@ -40,12 +40,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// Implements ability to execute module reload on the analyzer thread
         /// </summary>
         private sealed class ReloadModulesQueueItem : IAnalyzable {
-            private readonly PythonAnalyzer _analyzer;
+            private readonly Server _server;
             private TaskCompletionSource<bool> _tcs = new TaskCompletionSource<bool>();
             public Task Task => _tcs.Task;
 
-            public ReloadModulesQueueItem(PythonAnalyzer analyzer) {
-                _analyzer = analyzer;
+            public ReloadModulesQueueItem(Server server) {
+                _server = server;
             }
             public void Analyze(CancellationToken cancel) {
                 if (cancel.IsCancellationRequested) {
@@ -54,7 +54,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 var currentTcs = Interlocked.Exchange(ref _tcs, new TaskCompletionSource<bool>());
                 try {
-                    _analyzer.ReloadModulesAsync(cancel).WaitAndUnwrapExceptions();
+                    _server.Analyzer.ReloadModulesAsync(cancel).WaitAndUnwrapExceptions();
+                    foreach (var entry in _server.Analyzer.ModulesByFilename) {
+                        _server.AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
+                    }
                     currentTcs.TrySetResult(true);
                 } catch (OperationCanceledException oce) {
                     currentTcs.TrySetCanceled(oce.CancellationToken);
@@ -393,8 +396,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             SetSearchPaths(@params.initializationOptions.searchPaths);
             SetTypeStubSearchPaths(@params.initializationOptions.typeStubSearchPaths);
-
-            Analyzer.Interpreter.ModuleNamesChanged += Interpreter_ModuleNamesChanged;
         }
 
         private void DisplayStartupInfo() {
@@ -403,13 +404,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 string.IsNullOrEmpty(Analyzer.InterpreterFactory?.Configuration?.InterpreterPath)
                 ? Resources.InitializingForGenericInterpreter
                 : Resources.InitializingForPythonInterpreter.FormatInvariant(Analyzer.InterpreterFactory.Configuration.InterpreterPath));
-        }
-
-        private void Interpreter_ModuleNamesChanged(object sender, EventArgs e) {
-            Analyzer.Modules.ReInit();
-            foreach (var entry in Analyzer.ModulesByFilename) {
-                AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
-            }
         }
 
         private T ActivateObject<T>(string assemblyName, string typeName, Dictionary<string, object> properties) {
