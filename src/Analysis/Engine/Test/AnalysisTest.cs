@@ -3923,6 +3923,7 @@ f('abc')
             using (var server = await CreateServerAsync()) {
                 var uri = TestData.GetDefaultModuleUri();
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
                 var referencesx1 = await server.SendFindReferences(uri, 2, 6);
                 var referencesx2 = await server.SendFindReferences(uri, 2, 10);
                 var referencesx3 = await server.SendFindReferences(uri, 3, 4);
@@ -4980,6 +4981,7 @@ def g(a, b, c): pass
 
                 await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                 await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
                 var analysis = await server.GetAnalysisAsync(uris[0]);
                 analysis.Should().HaveVariable("module2").WithValue<IModuleInfo>()
@@ -5586,6 +5588,7 @@ g = MyClass().mydec(module1.f)
                 await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                 await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
 

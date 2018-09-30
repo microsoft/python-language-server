@@ -239,8 +239,8 @@ namespace Microsoft.PythonTools.Analysis {
                     foreach (var s in scope.EnumerateTowardsGlobal) {
                         var scopeVariables = GetVariablesInScope(name, s).Distinct();
                         variables = variables.Union(scopeVariables);
-                        var args = scopeVariables.Where(v => IsFunctionArgument(v.Variable));
-                        if(args.Any()) {
+                        var args = scopeVariables.Where(v => IsFunctionArgument(s, v));
+                        if (args.Any()) {
                             break;
                         }
                     }
@@ -255,7 +255,7 @@ namespace Microsoft.PythonTools.Analysis {
                     if (definitions.Length > 0) {
                         var defsToRefs = definitions.Skip(1).Select(v => new AnalysisVariable(v.Variable, VariableType.Reference, v.Location));
                         variables = definitions.Take(1).Concat(others.Concat(defsToRefs));
-                     }
+                    }
                 }
                 return new VariablesResult(variables, unit.Tree);
             }
@@ -270,8 +270,17 @@ namespace Microsoft.PythonTools.Analysis {
             return new VariablesResult(variables, unit.Tree);
         }
 
-        private bool IsFunctionArgument(IVariableDefinition v)
-            => v?.Types?.MaybeEnumerate().FirstOrDefault() is ParameterInfo;
+        private bool IsFunctionArgument(IScope scope, IAnalysisVariable v) {
+            if (v.Variable?.Types?.MaybeEnumerate().FirstOrDefault() is ParameterInfo) {
+                return true;
+            }
+            if (scope is FunctionScope funcScope) {
+                var def = funcScope.Function.FunctionDefinition;
+                // TODO: Use indexes rather than lines to check location
+                return v.Location.StartLine == def.GetStart(def.GlobalParent).Line;
+            }
+            return false;
+        }
 
         private IEnumerable<IAnalysisVariable> GetVariablesInScope(NameExpression name, IScope scope) {
             var result = new List<IAnalysisVariable>();
