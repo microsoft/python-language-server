@@ -62,6 +62,7 @@ namespace Microsoft.Python.LanguageServer {
                     fsw.Deleted += OnChanged;
 
                     _disposableBag
+                        .Add(() => _throttleTimer?.Dispose())
                         .Add(() => fsw.Created -= OnChanged)
                         .Add(() => fsw.Deleted -= OnChanged)
                         .Add(() => fsw.EnableRaisingEvents = false)
@@ -83,7 +84,7 @@ namespace Microsoft.Python.LanguageServer {
 
         private void TimerProc(object o) {
             lock (_lock) {
-                if (_changedSinceLastTick) {
+                if (!_changedSinceLastTick) {
                     ThreadPool.QueueUserWorkItem(_ => _onChanged());
                     _throttleTimer?.Dispose();
                     _throttleTimer = null;
