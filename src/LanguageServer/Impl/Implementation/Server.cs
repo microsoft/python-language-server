@@ -379,7 +379,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _analysisUpdates = @params.initializationOptions.analysisUpdates;
 
             Analyzer.EnableDiagnostics = _clientCaps?.python?.liveLinting ?? false;
-            _reloadModulesQueueItem = new ReloadModulesQueueItem(Analyzer);
+            _reloadModulesQueueItem = new ReloadModulesQueueItem(this);
 
             if (@params.initializationOptions.displayOptions != null) {
                 DisplayOptions = @params.initializationOptions.displayOptions;
