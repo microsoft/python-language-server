@@ -65,7 +65,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var self = GetSelf();
             _selfType = (self as AstPythonConstant)?.Type as AstPythonType;
 
-            _overload.ReturnTypes.AddRange(_scope.GetTypesFromAnnotation(_target.ReturnAnnotation));
+            _overload.ReturnTypes.AddRange(_scope.GetTypesFromAnnotation(_target.ReturnAnnotation).ExcludeDefault());
 
             _scope.PushScope();
             if (self != null) {
@@ -163,7 +163,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public override bool Walk(ReturnStatement node) {
-            foreach (var type in _scope.GetTypesFromValue(_scope.GetValueFromExpression(node.Expression))) {
+            foreach (var type in _scope.GetTypesFromValue(_scope.GetValueFromExpression(node.Expression)).ExcludeDefault()) {
                 _overload.ReturnTypes.Add(type);
             }
             return true; // We want to evaluate all code so all private variables in __new__ get defined
