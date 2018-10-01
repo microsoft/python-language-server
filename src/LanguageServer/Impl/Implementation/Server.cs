@@ -618,15 +618,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // It is called from DidChangeTextDocument which must fully finish
                 // since otherwise Complete() may come before the change is enqueued
                 // for processing and the completion list will be driven off the stale data.
-                return cookieTask.ContinueWith(async t => {
+                return cookieTask.ContinueWith(t => {
                     if (t.IsFaulted) {
                         // Happens when file got deleted before processing 
                         pending.Dispose();
                         LogMessage(MessageType.Error, t.Exception.Message);
                         return;
                     }
-                    _shutdownCts.Token.ThrowIfCancellationRequested();
-                    await OnDocumentChangeProcessingCompleteAsync(doc, t.Result as VersionCookie, enqueueForAnalysis, priority, pending);
+                    OnDocumentChangeProcessingComplete(doc, t.Result as VersionCookie, enqueueForAnalysis, priority, pending);
                 });
             } catch {
                 pending?.Dispose();
@@ -634,10 +633,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private async Task OnDocumentChangeProcessingCompleteAsync(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
+        private void OnDocumentChangeProcessingComplete(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
             try {
                 _shutdownCts.Token.ThrowIfCancellationRequested();
-                _disposableBag.ThrowIfDisposed();
                 if (vc != null) {
                     foreach (var kv in vc.GetAllParts(doc.DocumentUri)) {
                         ParseComplete(kv.Key, kv.Value.Version);
@@ -646,8 +644,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     ParseComplete(doc.DocumentUri, 0);
                 }
 
-                if (doc is IAnalyzable analyzable && enqueueForAnalysis) {
-                    _shutdownCts.Token.ThrowIfCancellationRequested();
+                if (doc is IAnalyzable analyzable && enqueueForAnalysis && !_shutdownCts.Token.IsCancellationRequested) {
                     AnalysisQueued(doc.DocumentUri);
                     AnalysisQueue.Enqueue(analyzable, priority);
                 }
@@ -658,7 +655,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     _editorFiles.GetDocument(doc.DocumentUri).UpdateParseDiagnostics(vc, doc.DocumentUri);
                 }
             } catch (BadSourceException) {
-            } catch (ObjectDisposedException) when (_disposableBag.IsDisposed) {
             } catch (OperationCanceledException ex) {
                 LogMessage(MessageType.Warning, $"Parsing {doc.DocumentUri} cancelled");
                 TraceMessage($"{ex}");
