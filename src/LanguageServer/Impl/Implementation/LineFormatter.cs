@@ -120,11 +120,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // after it if needed (i.e. in the case of a following comment).
                 startIndex = first.Span.End;
                 startIdx = 1;
-                if (builder.Length == 0) {
-                    builder.Append(' ');
-                } else { 
-                    builder.EnsureEndsWithWhiteSpace();
-                }
+                builder.Append(' ');
             }
             
             for (var i = startIdx; i < tokens.Count; i++) {
