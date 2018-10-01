@@ -694,7 +694,7 @@ def f(a, *b, **c): pass
 ");
 
             await AssertSignature(s, mod, new SourceLocation(1, 3),
-                new string[] { "f()", "f(a)", "f(a, b)", "f(a, *b: tuple)", "f(a, **b: dict)", "f(a, *b: tuple, **c: dict)" },
+                new string[] { "f()", "f(a)", "f(a, b)", "f(a, *b)", "f(a, **b)", "f(a, *b, **c)" },
                 new string[0]
             );
 
