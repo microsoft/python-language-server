@@ -447,8 +447,8 @@ limit { limit_num}; """"""", line: 5);
         /// <summary>
         /// Checks that a single line of input text is formatted as expected.
         /// </summary>
-        /// <param name="text">Input code to format</param>
-        /// <param name="expected">The expected result from the formatter. If null, then text is used.</param>
+        /// <param name="text">Input code to format.</param>
+        /// <param name="expected">The expected result from the formatter.</param>
         /// <param name="line">The line number to request to be formatted.</param>
         /// <param name="languageVersion">Python language version to format.</param>
         /// <param name="editStart">Where the edit should begin (i.e. when whitespace or a multi-line string begins a line).</param>
