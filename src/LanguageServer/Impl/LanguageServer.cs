@@ -371,7 +371,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("textDocument/rename")]
         public async Task<WorkspaceEdit> Rename(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.Rename(token.ToObject<RenameParams>(), cancellationToken);
+            return await _server.Rename(ToObject<RenameParams>(token), cancellationToken);
         }
         #endregion
 
