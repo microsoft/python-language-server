@@ -31,7 +31,6 @@ namespace Microsoft.PythonTools.Intellisense {
         private static readonly AsyncLocal<AnalysisQueue> _current = new AsyncLocal<AnalysisQueue>();
         public static AnalysisQueue Current => _current.Value;
 
-        private readonly DisposeToken _disposeToken = DisposeToken.Create<AnalysisQueue>();
         private readonly HashSet<IGroupableAnalysisProject> _enqueuedGroups;
         private readonly PriorityProducerConsumer<QueueItem> _ppc;
         private readonly Task _consumerTask;
@@ -161,7 +160,6 @@ namespace Microsoft.PythonTools.Intellisense {
                     Trace.TraceWarning("Failed to wait for worker thread to terminate");
                 }
             }
-            _disposeToken.TryMarkDisposed();
         }
 
         private struct QueueItem {

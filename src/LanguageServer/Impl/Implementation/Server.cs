@@ -95,7 +95,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _editorFiles = new EditorFiles(this);
 
             _disposableBag
-                .Add(ProjectFiles)
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
                         (ext as IDisposable)?.Dispose();
@@ -103,7 +102,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     foreach (var ext in _oldExtensions.Values) {
                         (ext as IDisposable)?.Dispose();
                     }
-                });
+                })
+                .Add(ProjectFiles)
+                .Add(() => Analyzer?.Dispose())
+                .Add(AnalysisQueue)
+                .Add(() => _shutdownCts.Cancel());
         }
 
         private void Analysis_UnhandledException(object sender, UnhandledExceptionEventArgs e) {
@@ -118,12 +121,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         internal ServerSettings Settings { get; private set; } = new ServerSettings();
         internal ProjectFiles ProjectFiles { get; } = new ProjectFiles();
 
-        public void Dispose() {
-            _shutdownCts.Cancel();
-            AnalysisQueue.Dispose();
-            Analyzer?.Dispose();
-            _disposableBag.TryDispose();
-        }
+        public void Dispose()  => _disposableBag.TryDispose();
 
         #region ILogger
         public void TraceMessage(IFormattable message) {
