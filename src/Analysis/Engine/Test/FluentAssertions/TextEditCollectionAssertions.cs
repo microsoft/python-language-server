@@ -27,14 +27,14 @@ using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal sealed class TextEditCollectionAssertions : SelfReferencingCollectionAssertions<TextEdit, TextEditCollectionAssertions> {
-        public TextEditCollectionAssertions(IEnumerable<TextEdit> references) : base(references) {}
+        public TextEditCollectionAssertions(IEnumerable<TextEdit> references) : base(references) { }
 
         protected override string Identifier => nameof(TextEdit) + "Collection";
 
-        
+
         [CustomAssertion]
         public AndConstraint<TextEditCollectionAssertions> OnlyHaveTextEdit(string expectedText, (int startLine, int startCharacter, int endLine, int endCharacter) expectedRange, string because = "", params object[] reasonArgs)
-            => OnlyHaveTextEdits(new []{(expectedText, expectedRange)}, because, reasonArgs);
+            => OnlyHaveTextEdits(new[] {(expectedText, expectedRange)}, because, reasonArgs);
 
         [CustomAssertion]
         public AndConstraint<TextEditCollectionAssertions> OnlyHaveTextEdits(params (string expectedText, (int startLine, int startCharacter, int endLine, int endCharacter) expectedRange)[] textEdits)
@@ -64,14 +64,14 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             return new AndConstraint<TextEditCollectionAssertions>(this);
         }
-        
+
         [CustomAssertion]
         public AndConstraint<TextEditCollectionAssertions> HaveTextEditAt(string expectedText, (int startLine, int startCharacter, int endLine, int endCharacter) expectedRange, string because = "", params object[] reasonArgs) {
             var range = new Range {
                 start = new Position { line = expectedRange.startLine, character = expectedRange.startCharacter },
                 end = new Position { line = expectedRange.endLine, character = expectedRange.endCharacter }
             };
-            
+
             var errorMessage = GetHaveTextEditErrorMessage(expectedText, range);
             if (errorMessage != string.Empty) {
                 var assertion = Execute.Assertion.BecauseOf(because, reasonArgs);
@@ -99,8 +99,8 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             if (candidatesWithRange.Length == 0) {
                 return "Expected {context:subject} to have text edit with newText \'{expectedText}\' in range {expectedRange}{reason}, but "
-                    + (candidates.Length == 1 
-                        ? $"it has range {candidates[0].range.ToString()}" 
+                    + (candidates.Length == 1
+                        ? $"it has range {candidates[0].range.ToString()}"
                         : $"they are in ranges {string.Join(", ", candidates.Select(te => te.range.ToString()))}");
             }
 
