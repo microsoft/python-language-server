@@ -3155,6 +3155,27 @@ def f(a):
         }
 
         [TestMethod, Priority(0)]
+        public async Task References_ClassLocalVariable() {
+            var uri = TestData.GetDefaultModuleUri();
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
+                var text = @"
+a = 1
+class B:
+    a = 2
+";
+                await server.SendDidOpenTextDocument(uri, text);
+                var references = await server.SendFindReferences(uri, 3, 5);
+                references.Should().OnlyHaveReferences(
+                    (uri, (3, 4, 3, 5), ReferenceKind.Definition)
+                );
+                references = await server.SendFindReferences(uri, 1, 1);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 0, 1, 1), ReferenceKind.Definition)
+                );
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ListDictArgReferences() {
             var text = @"
 def f(*a, **k):

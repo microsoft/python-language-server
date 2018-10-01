@@ -246,39 +246,66 @@ namespace Microsoft.PythonTools.Analysis {
             return null;
         }
 
+        private class VariableScopePair : Tuple<IAnalysisVariable, int> {
+            public VariableScopePair(IAnalysisVariable v, int scopeLevel) : base(v, scopeLevel) { }
+            public IAnalysisVariable Variable => Item1;
+            public int ScopeLevel => Item2;
+            public VariableType VariableType => Variable.Type;
+            public ILocationInfo Location => Variable.Location;
+        }
+
         private VariablesResult GetVariablesFromNameExpression(Expression expr, AnalysisUnit unit, IScope scope) {
             if (!(expr is NameExpression name)) {
                 return null;
             }
 
-            var variables = Enumerable.Empty<IAnalysisVariable>();
             if (!scope.EnumerateTowardsGlobal.Any()) {
-                variables = _unit.State.BuiltinModule.GetDefinitions(name.Name).SelectMany(ToVariables);
-                return new VariablesResult(variables, unit.Tree);
+                var v = _unit.State.BuiltinModule.GetDefinitions(name.Name).SelectMany(ToVariables);
+                return new VariablesResult(v, unit.Tree);
             }
 
+            var variables = Enumerable.Empty<VariableScopePair>();
+            VariableScopePair mainDefinition = null;
+            var scopeLevel = 0;
             foreach (var s in scope.EnumerateTowardsGlobal) {
-                var scopeVariables = GetVariablesInScope(name, s).Distinct();
+                var scopeVariables = GetVariablesInScope(name, s)
+                    .Distinct()
+                    .Select(v => new VariableScopePair(v, scopeLevel))
+                    .ToArray();
+
                 variables = variables.Union(scopeVariables);
-                var args = scopeVariables.Where(v => IsFunctionArgument(s, v));
-                if (args.Any()) {
+
+                // If we already have definition and it is a function argument, then stop
+                // since function argument wins over definitions in the outer scope
+                mainDefinition = scopeVariables.FirstOrDefault(v => v.VariableType == VariableType.Definition && IsFunctionArgument(s, v.Variable));
+                if (mainDefinition != null) {
                     break;
                 }
+                scopeLevel++;
             }
 
-            // Now take outermost definition and treat inner ones (such as reassignments) as references
-            var others = variables.Where(v => v.Type == VariableType.Reference || v.Type == VariableType.Value);
+            // Now take innermost definition and treat inner ones (such as reassignments) as references
             var definitions = variables
-                .Where(v => v.Type == VariableType.Definition)
+                .Where(v => v.VariableType == VariableType.Definition)
                 .OrderBy(v => v.Location.Span.Start)
+                .Reverse()
                 .ToArray();
 
-            if (definitions.Length > 0) {
-                var defsToRefs = definitions.Skip(1).Select(v => new AnalysisVariable(v.Variable, VariableType.Reference, v.Location));
-                variables = definitions.Take(1).Concat(others.Concat(defsToRefs));
+            mainDefinition = mainDefinition ?? definitions.FirstOrDefault();
+            if (mainDefinition != null) {
+                // Drop definitions in outer scopes and convert those in inner scopes to references.
+                // Scope levels are numbered in reverse (X == main definition level, x+1 == one up).
+                var defsToRefs = definitions
+                    .Where(d => d != mainDefinition && d.ScopeLevel <= mainDefinition.ScopeLevel)
+                    .Select(v => new VariableScopePair(new AnalysisVariable(v.Variable.Variable, VariableType.Reference, v.Location), v.ScopeLevel));
+
+                var others = variables
+                            .Where(v => (v.VariableType == VariableType.Reference || v.VariableType == VariableType.Value) &&
+                                         v.ScopeLevel <= mainDefinition.ScopeLevel);
+                variables = new[] { mainDefinition }.Concat(others.Concat(defsToRefs));
             }
 
-            return new VariablesResult(variables, unit.Tree);
+            return new VariablesResult(variables.Select(v => v.Variable), unit.Tree);
         }
 
         private VariablesResult GetVariablesFromMemberExpression(Expression expr, AnalysisUnit unit, ExpressionEvaluator eval) {
