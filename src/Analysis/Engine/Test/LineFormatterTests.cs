@@ -348,12 +348,16 @@ limit { limit_num}; """"""", line: 5);
             AssertSingleLineFormat("a+b+ \\\n", "a + b + \\");
         }
 
-        [DataRow("foo.a() \\\n   .b() \\\n   .c()", "foo.a() \\", 0, 0)]
-        [DataRow("foo.a() \\\n   .b() \\\n   .c()", ".b() \\", 1, 3)]
-        [DataRow("foo.a() \\\n   .b() \\\n   .c()", ".c()", 2, 3)]
+        [DataRow("foo.a() \\\n   .b() \\\n   .c()", "foo.a() \\", 0, 0, 9)]
+        [DataRow("foo.a() \\\r\n   .b() \\\r\n   .c()", "foo.a() \\", 0, 0, 9)]
+        [DataRow("foo.a() \\\n   .b() \\\n   .c()", ".b() \\", 1, 3, 9)]
+        [DataRow("foo.a() \\\r\n   .b() \\\r\n   .c()", ".b() \\", 1, 3, 9)]
+        [DataRow("foo.a() \\\n   .b() \\\n   .c()", ".c()", 2, 3, 7)]
+        [DataRow("foo.a() \\\r\n   .b() \\\r\n   .c()", ".c()", 2, 3, 7)]
         [DataTestMethod, Priority(0)]
-        public void MultilineChainedCall(string code, string expected, int line, int editStart) {
-            AssertSingleLineFormat(code, expected, line: line, editStart: editStart);
+        public void MultilineChainedCall(string code, string expected, int line, int characterStart, int characterEnd) {
+            var edits = new LineFormatter(new StringReader(code), PythonLanguageVersion.V36).FormatLine(line + 1);
+            edits.Should().OnlyHaveTextEdit(expected, (line, characterStart, line, characterEnd));
         }
 
 

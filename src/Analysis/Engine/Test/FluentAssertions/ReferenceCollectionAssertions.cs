@@ -87,7 +87,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         private static string Format((Uri uri, (int, int, int, int) range, ReferenceKind? kind) reference) 
-            => $"({TestData.GetTestRelativePath(reference.uri)}, {GetName(reference.range)}, {reference.kind})";
+            => $"({TestData.GetTestRelativePath(reference.uri)}, {reference.range.ToString()}, {reference.kind})";
 
         [CustomAssertion]
         public AndConstraint<ReferenceCollectionAssertions> HaveReferenceAt(Uri documentUri, int startLine, int startCharacter, int endLine, int endCharacter, ReferenceKind? referenceKind = null, string because = "", params object[] reasonArgs) {
@@ -119,18 +119,18 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             foreach (var candidate in candidates.Where(c => RangeEquals(c.range, range))) {
                 return referenceKind.HasValue && candidate._kind != referenceKind
-                    ? $"Expected {GetSubjectName()} to have reference of type '{referenceKind}'{{reason}}, but reference in module '{moduleName}' at {GetName(range)} has type '{candidate._kind}'"
+                    ? $"Expected {GetSubjectName()} to have reference of type '{referenceKind}'{{reason}}, but reference in module '{moduleName}' at {range.ToString()} has type '{candidate._kind}'"
                     : string.Empty;
             }
 
-            var errorMessage = $"Expected {GetSubjectName()} to have reference at {GetName(range)}{{reason}}, but module '{moduleName}' has no references at that range.";
+            var errorMessage = $"Expected {GetSubjectName()} to have reference at {range.ToString()}{{reason}}, but module '{moduleName}' has no references at that range.";
             if (!referenceKind.HasValue) {
                 return errorMessage;
             }
 
             var matchingTypes = candidates.Where(av => av._kind == referenceKind).ToArray();
             var matchingTypesString = matchingTypes.Length > 0
-                ? $"References that match type '{referenceKind}' have spans {string.Join(" ,", matchingTypes.Select(av => GetName(av.range)))}"
+                ? $"References that match type '{referenceKind}' have spans {string.Join(" ,", matchingTypes.Select(av => av.range.ToString()))}"
                 : $"There are no references with type '{referenceKind}' either";
 
             return $"{errorMessage} {matchingTypesString}";

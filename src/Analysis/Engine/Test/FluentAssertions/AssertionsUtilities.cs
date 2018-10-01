@@ -186,10 +186,6 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                     return scope.Name;
                 case IAnalysisValue analysisValue:
                     return $"value {analysisValue.Name}";
-                case Range range:
-                    return $"({range.start.line}, {range.start.character}) - ({range.end.line}, {range.end.character})";
-                case Position position:
-                    return $"({position.line}, {position.character})";
                 case string str:
                     return str;
                 default:

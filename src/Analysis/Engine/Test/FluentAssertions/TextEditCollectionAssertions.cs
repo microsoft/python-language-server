@@ -52,7 +52,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                 .ToArray();
 
             if (excess.Length > 0) {
-                var excessString = string.Join(", ", excess.Select(((string text, (int, int, int, int) range) te) => $"({te.text}, {GetName(te.range)})"));
+                var excessString = string.Join(", ", excess.Select(((string text, (int, int, int, int) range) te) => $"({te.text}, {te.range.ToString()})"));
                 var errorMessage = expected.Length > 1
                     ? $"Expected {GetSubjectName()} to have only {expected.Length} textEdits{{reason}}, but it also has textEdits: {excessString}."
                     : expected.Length > 0
@@ -76,7 +76,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             if (errorMessage != string.Empty) {
                 var assertion = Execute.Assertion.BecauseOf(because, reasonArgs);
                 assertion.AddNonReportable("expectedText", expectedText);
-                assertion.AddNonReportable("expectedRange", GetName(expectedRange));
+                assertion.AddNonReportable("expectedRange", range);
                 assertion.AddNonReportable("currentTexts", GetQuotedNames(Subject.Select(te => te.newText)));
                 assertion.FailWith(errorMessage);
             }
@@ -94,14 +94,14 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             var candidatesWithRange = candidates.Where(c => RangeEquals(c.range, expectedRange)).ToArray();
             if (candidatesWithRange.Length > 1) {
-                return $"Expected {{context:subject}} to have only one text edit with newText '{{expectedText}}' a nd range {{expectedRange}}{{reason}}, but there are {candidatesWithRange.Length}";
+                return $"Expected {{context:subject}} to have only one text edit with newText '{{expectedText}}' and range {{expectedRange}}{{reason}}, but there are {candidatesWithRange.Length}";
             }
 
             if (candidatesWithRange.Length == 0) {
                 return "Expected {context:subject} to have text edit with newText \'{expectedText}\' in range {expectedRange}{reason}, but "
-                    + (candidatesWithRange.Length == 1 
-                        ? $"it has range {GetName(candidatesWithRange[0].range)}" 
-                        : $"they are in ranges {string.Join(", ", candidatesWithRange.Select(te => GetName(te.range)))}");
+                    + (candidates.Length == 1 
+                        ? $"it has range {candidates[0].range.ToString()}" 
+                        : $"they are in ranges {string.Join(", ", candidates.Select(te => te.range.ToString()))}");
             }
 
             return string.Empty;
