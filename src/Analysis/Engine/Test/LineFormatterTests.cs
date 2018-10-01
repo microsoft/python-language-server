@@ -356,10 +356,9 @@ limit { limit_num}; """"""", line: 5);
         [DataRow("foo.a() \\\r\n   .b() \\\r\n   .c()", ".c()", 2, 3, 7)]
         [DataTestMethod, Priority(0)]
         public void MultilineChainedCall(string code, string expected, int line, int characterStart, int characterEnd) {
-            var edits = new LineFormatter(new StringReader(code), PythonLanguageVersion.V36).FormatLine(line + 1);
+            var edits = new LineFormatter(new StringReader(code), PythonLanguageVersion.V36).FormatLine(line);
             edits.Should().OnlyHaveTextEdit(expected, (line, characterStart, line, characterEnd));
         }
-
 
         [DataRow("a[:, :, :, 1]")]
         [DataRow("a[x:y, x + 1 :y, :, 1]")]
@@ -425,9 +424,7 @@ limit { limit_num}; """"""", line: 5);
                 var lineFormatter = new LineFormatter(reader, PythonLanguageVersion.V37);
 
                 for (var i = 0; i < lines.Length; i++) {
-                    var lineNum = i + 1;
-
-                    var edits = lineFormatter.FormatLine(lineNum);
+                    var edits = lineFormatter.FormatLine(i);
                     edits.Should().NotBeNull().And.HaveCountLessOrEqualTo(1);
 
                     if (edits.Length == 0) {
@@ -442,7 +439,7 @@ limit { limit_num}; """"""", line: 5);
                     end.line.Should().Be(i);
 
                     var lineText = lines[i];
-                    edit.newText.Should().Be(lineText.Substring(start.character, end.character - start.character - 1), $"because line {lineNum} should be unchanged");
+                    edit.newText.Should().Be(lineText.Substring(start.character, end.character - start.character), $"because line {i} should be unchanged");
                 }
             }
         }
@@ -460,7 +457,7 @@ limit { limit_num}; """"""", line: 5);
             Check.ArgumentNull(nameof(expected), expected);
 
             using (var reader = new StringReader(text)) {
-                var edits = new LineFormatter(reader, languageVersion).FormatLine(line + 1);
+                var edits = new LineFormatter(reader, languageVersion).FormatLine(line);
                 edits.Should().OnlyHaveTextEdit(expected, (line, editStart, line, text.Split('\n')[line].Length));
             }
         }
@@ -469,7 +466,7 @@ limit { limit_num}; """"""", line: 5);
             Check.ArgumentNull(nameof(text), text);
 
             using (var reader = new StringReader(text)) {
-                var edits = new LineFormatter(reader, languageVersion).FormatLine(line + 1);
+                var edits = new LineFormatter(reader, languageVersion).FormatLine(line);
                 edits.Should().BeEmpty();
             }
         }

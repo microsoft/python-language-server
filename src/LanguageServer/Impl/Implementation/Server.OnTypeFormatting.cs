@@ -26,10 +26,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             switch (@params.ch) {
                 case "\n":
-                    targetLine = @params.position.line;
+                    targetLine = @params.position.line - 1;
                     break;
                 case ";":
-                    targetLine = @params.position.line + 1;
+                    targetLine = @params.position.line;
                     break;
                 default:
                     throw new ArgumentException("unexpected trigger character", nameof(@params.ch));

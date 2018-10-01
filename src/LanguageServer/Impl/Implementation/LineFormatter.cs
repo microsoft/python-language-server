@@ -77,30 +77,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// <param name="includeToken">A function which returns true if the token should be added to the final list. If null, all tokens will be added.</param>
         /// <returns>A non-null list of tokens on that line.</returns>
         private List<TokenExt> TokenizeLine(int line, Func<TokenExt, bool> includeToken = null) {
-            Check.Argument(nameof(line), () => line > 0);
+            Check.Argument(nameof(line), () => line >= 0);
 
             var extraToken = true;
-
-            var peeked = _tokenizer.Peek();
-            while (peeked != null && (peeked.Line <= line || extraToken)) {
-                var token = _tokenizer.Next();
-
-                if (includeToken == null || includeToken(token)) {
-                    AddToken(token);
+            for (var current = _tokenizer.Current ?? _tokenizer.Next(); current != null && (current.Line <= line || extraToken); current = _tokenizer.Next()) {
+                if (includeToken == null || includeToken(current)) {
+                    AddToken(current);
                 }
 
-                peeked = _tokenizer.Peek();
-
-                if (token.Line > line && !token.IsIgnored) {
+                if (current.Line > line && !current.IsIgnored) {
                     extraToken = false;
                 }
             }
 
-            if (!_lineTokens.TryGetValue(line, out List<TokenExt> tokens)) {
-                return new List<TokenExt>();
-            }
-
-            return tokens;
+            return _lineTokens.TryGetValue(line, out var tokens) ? tokens : new List<TokenExt>();
         }
 
         /// <summary>
@@ -109,11 +99,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// <param name="line">One-indexed line number.</param>
         /// <returns>A list of TextEdits needed to format the line.</returns>
         public TextEdit[] FormatLine(int line) {
-            if (line < 1) {
+            if (line < 0) {
                 return NoEdits;
             }
-
-            // Keep ExplictLineJoin because it has text associated with it.
+            // Keep ExplicitLineJoin because it has text associated with it.
             var tokens = TokenizeLine(line, t => !t.IsIgnored || t.Kind == TokenKind.ExplicitLineJoin);
 
             if (tokens.Count == 0) {
@@ -122,14 +111,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var builder = new StringBuilder();
             var first = tokens[0];
-            var beginCol = first.Span.Start.Column;
+            var startIndex = first.Span.Start;
             var startIdx = 0;
 
             if (first.IsMultilineString) {
                 // If the first token is a multiline string, start the edit afterward,
                 // skip looking at the first token, and ensure that there's a space
                 // after it if needed (i.e. in the case of a following comment).
-                beginCol = first.Span.End.Column;
+                startIndex = first.Span.End;
                 startIdx = 1;
                 if (builder.Length == 0) {
                     builder.Append(' ');
@@ -357,7 +346,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            var endCol = _tokenizer.EndOfLineCol(line);
+            var endIndex = _tokenizer.GetLineEndIndex(line);
 
             var afterLast = tokens.Last().Next;
             if (afterLast != null && afterLast.IsMultilineString) {
@@ -368,16 +357,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             builder.TrimEnd();
-            var newText = builder.ToString();
-
-            if (newText.Length == 0) {
+            if (builder.Length == 0) {
                 return NoEdits;
             }
 
+            var newText = builder.ToString();
+            var lineStartIndex = _tokenizer.GetLineStartIndex(line);
+
             var edit = new TextEdit {
                 range = new Range {
-                    start = new SourceLocation(line, beginCol),
-                    end = new SourceLocation(line, endCol)
+                    start = new Position{ line = line, character = startIndex - lineStartIndex },
+                    end = new Position{ line = line, character = endIndex - lineStartIndex }
                 },
                 newText = newText
             };
@@ -391,13 +381,25 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             .EnsureEndsWithWhiteSpace();
 
         private class TokenExt {
-            public Token Token { get; set; }
-            public SourceSpan Span { get; set; }
-            public int Line => Span.End.Line;
+            public TokenExt(Token token, string precedingWhitespace, IndexSpan span, int line, bool isMultiLine,
+                TokenExt prev) {
+                Token = token;
+                PrecedingWhitespace = precedingWhitespace;
+                Span = span;
+                Line = line;
+                Prev = prev;
+                IsMultilineString = IsString && isMultiLine;
+            }
+
+            public Token Token { get; }
+            public IndexSpan Span { get; }
+            public int Line { get; }
             public TokenExt Inside { get; set; }
-            public TokenExt Prev { get; set; }
+            public TokenExt Prev { get; }
             public TokenExt Next { get; set; }
-            public string PrecedingWhitespace { get; set; }
+            public string PrecedingWhitespace { get; }
+            public bool IsMultilineString { get; }
+
             public TokenKind Kind => Token.Kind;
 
             public override string ToString() => Token.VerbatimImage;
@@ -434,9 +436,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             public bool IsKeyword => (Kind >= TokenKind.FirstKeyword && Kind <= TokenKind.LastKeyword) || Kind == TokenKind.KeywordAsync || Kind == TokenKind.KeywordAwait;
 
             public bool IsString => Kind == TokenKind.Constant && Token != Tokens.NoneToken && (Token.Value is string || Token.Value is AsciiString);
-
-            public bool IsMultilineString => Span.Start.Line != Span.End.Line && IsString;
-
+            
             public bool IsSimpleSliceToLeft {
                 get {
                     if (Kind != TokenKind.Colon) {
@@ -540,26 +540,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private class TokenizerWrapper {
             private readonly Tokenizer _tokenizer;
             private readonly Stack<TokenExt> _insides = new Stack<TokenExt>();
-            private TokenExt _peeked = null;
-            private TokenExt _prev = null;
+            public TokenExt Current { get; private set; }
 
             public TokenizerWrapper(Tokenizer tokenizer) {
                 _tokenizer = tokenizer;
             }
 
             /// <summary>
-            /// Returns the next token, and advances the tokenizer. Note that
-            /// the returned token's Next will not be set until the tokenizer
-            /// actually reads that next token.
+            /// Returns the next token, and advances the tokenizer. 
             /// </summary>
             /// <returns>The next token</returns>
             public TokenExt Next() {
-                if (_peeked != null) {
-                    var tmp = _peeked;
-                    _peeked = null;
-                    return tmp;
-                }
-
                 if (_tokenizer.IsEndOfFile) {
                     return null;
                 }
@@ -571,14 +562,18 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
 
                 var tokenSpan = _tokenizer.TokenSpan;
-                var sourceSpan = new SourceSpan(_tokenizer.IndexToLocation(tokenSpan.Start), _tokenizer.IndexToLocation(tokenSpan.End));
+                var line = _tokenizer.CurrentLine;
+                var lineStart = GetLineStartIndex(line);
+                var isMultiLine = tokenSpan.Start < lineStart;
 
-                var tokenExt = new TokenExt {
-                    Token = token,
-                    PrecedingWhitespace = _tokenizer.PreceedingWhiteSpace,
-                    Span = sourceSpan,
-                    Prev = _prev
-                };
+                var tokenExt = new TokenExt(
+                    token,
+                    _tokenizer.PreceedingWhiteSpace,
+                    tokenSpan,
+                    line,
+                    isMultiLine,
+                    Current
+                );
 
                 if (tokenExt.IsClose) {
                     if (_insides.Count == 0 || !_insides.Peek().MatchesClose(tokenExt)) {
@@ -597,52 +592,27 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     _insides.Push(tokenExt);
                 }
 
-                if (_prev != null) {
-                    _prev.Next = tokenExt;
+                if (Current != null) {
+                    Current.Next = tokenExt;
                 }
 
-                _prev = tokenExt;
+                Current = tokenExt;
                 return tokenExt;
             }
 
             /// <summary>
-            /// Returns the next token without advancing the tokenizer. Note that
-            /// the returned token's Next will not be set until the tokenizer
-            /// actually reads that next token.
+            /// Gets the index of the start of the line
             /// </summary>
-            /// <returns>The next token</returns>
-            public TokenExt Peek() {
-                if (_peeked != null) {
-                    return _peeked;
-                }
-
-                _peeked = Next();
-                return _peeked;
-            }
+            /// <param name="line">Line number.</param>
+            public int GetLineStartIndex(int line) => line > 0 ? _tokenizer.GetNewLineLocation(line - 1).EndIndex : 0;
 
             /// <summary>
-            /// Gets the one-indexed column number of the end of a line. The
-            /// tokenizer must be past the line's newline (or at EOF) in order
-            /// for this function to work.
+            /// Gets the index of the end of the line, excluding line break 
             /// </summary>
-            /// <param name="line">A one-indexed line number.</param>
-            /// <returns>One-indexed column number for the end of the line</returns>
-            public int EndOfLineCol(int line) {
-                if (line > _tokenizer.CurrentPosition.Line || (line == _tokenizer.CurrentPosition.Line && !_tokenizer.IsEndOfFile)) {
-                    throw new ArgumentException("tokenizer must be at EOF or past line's newline", nameof(line));
-                }
-
-                var idx = line - 1;
-                var lines = _tokenizer.GetLineLocations();
-
-                if (idx < lines.Length) {
-                    var nlLoc = lines[idx];
-
-                    var sourceLocation = _tokenizer.IndexToLocation(nlLoc.EndIndex - 1);
-                    return sourceLocation.Column;
-                }
-
-                return _tokenizer.CurrentPosition.Column;
+            /// <param name="line">Line number.</param>
+            public int GetLineEndIndex(int line) {
+                var newLineLocation = _tokenizer.GetNewLineLocation(line);
+                return newLineLocation.EndIndex - newLineLocation.Kind.GetSize();
             }
         }
 
