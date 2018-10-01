@@ -61,7 +61,7 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Analyzing workspace, {0} items remaining....
+        ///   Looks up a localized string similar to Background analysis: {0} items remaining....
         /// </summary>
         internal static string AnalysisProgress_MultipleItemsRemaining {
             get {
@@ -70,7 +70,7 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Analyzing workspace, 1 item remaining....
+        ///   Looks up a localized string similar to Background analysis: 1 item remaining....
         /// </summary>
         internal static string AnalysisProgress_SingleItemRemaining {
             get {
