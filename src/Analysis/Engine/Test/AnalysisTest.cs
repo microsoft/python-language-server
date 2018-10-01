@@ -2423,7 +2423,7 @@ b = ~~C()
 
 
         [TestMethod, Priority(0)]
-        public async Task TrueDividePython3X() {
+        public async Task TrueDividePython35() {
             var text = @"
 class C:
     def __truediv__(self, other):
@@ -2437,6 +2437,27 @@ c = 'abc' / a
 ";
 
             using (var server = await CreateServerAsync(PythonVersions.Required_Python35X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
+                analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("c").OfType(BuiltinTypeId.Float);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TrueDividePython36() {
+            var text = @"
+class C:
+    def __truediv__(self, other):
+        return 42
+    def __rtruediv__(self, other):
+        return 3.0
+
+a = C()
+b = a / 'abc'
+c = 'abc' / a
+";
+
+            using (var server = await CreateServerAsync(PythonVersions.Required_Python36X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Float);
