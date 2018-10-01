@@ -237,7 +237,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                     case TokenKind.Power:
                     case TokenKind.Multiply:
-                    {
                         var actualPrev = token.PrevNonIgnored;
                         if (token.Inside != null && actualPrev != null && (actualPrev.Kind == TokenKind.Comma || actualPrev.IsOpen || token.Inside.Kind == TokenKind.KeywordLambda)) {
                             builder.Append(token);
@@ -248,7 +247,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                             AppendTokenEnsureWhiteSpacesAround(builder, token);
                         }
                         break;
-                    }
 
                     // Operators
                     case TokenKind.MatMultiply:
