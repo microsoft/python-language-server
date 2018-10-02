@@ -58,9 +58,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         protected override Stream LoadCachedCode(AstPythonInterpreter interpreter) {
             var fact = interpreter.Factory as AstPythonInterpreterFactory;
             if (fact?.Configuration.InterpreterPath == null) {
-                return fact.ReadCachedModule("python.exe");
+                return fact.ModuleCache.ReadCachedModule("python.exe");
             }
-            return fact.ReadCachedModule(fact.Configuration.InterpreterPath);
+            return fact.ModuleCache.ReadCachedModule(fact.Configuration.InterpreterPath);
         }
 
         protected override void SaveCachedCode(AstPythonInterpreter interpreter, Stream code) {
@@ -68,7 +68,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             if (fact?.Configuration.InterpreterPath == null) {
                 return;
             }
-            fact.WriteCachedModule(fact.Configuration.InterpreterPath, code);
+            fact.ModuleCache.WriteCachedModule(fact.Configuration.InterpreterPath, code);
         }
 
         protected override List<string> GetScrapeArguments(IPythonInterpreterFactory factory) {
@@ -82,7 +82,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         protected override PythonWalker PrepareWalker(IPythonInterpreter interpreter, PythonAst ast) {
 #if DEBUG
             var fact = (interpreter as AstPythonInterpreter)?.Factory as AstPythonInterpreterFactory;
-            var filePath = fact?.GetCacheFilePath(fact?.Configuration.InterpreterPath ?? "python.exe");
+            var filePath = fact?.ModuleCache.GetCacheFilePath(fact?.Configuration.InterpreterPath ?? "python.exe");
             const bool includeLocations = true;
 #else
             string filePath = null;

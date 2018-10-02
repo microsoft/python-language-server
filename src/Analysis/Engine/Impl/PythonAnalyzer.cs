@@ -122,9 +122,6 @@ namespace Microsoft.PythonTools.Analysis {
             _itemCache = new Dictionary<object, AnalysisValue>();
 
             Limits = AnalysisLimits.GetDefaultLimits();
-
-            Queue = new Deque<AnalysisUnit>();
-
             _defaultContext = _interpreter.CreateModuleContext();
 
             _evalUnit = new AnalysisUnit(null, null, new ModuleInfo("$global", new ProjectEntry(this, "$global", String.Empty, null, null), _defaultContext).Scope, true);
@@ -697,7 +694,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        internal Deque<AnalysisUnit> Queue { get; }
+        internal Queue<AnalysisUnit> Queue { get; } = new Queue<AnalysisUnit>();
 
         /// <summary>
         /// Returns the cached value for the provided key, creating it with
@@ -986,7 +983,7 @@ namespace Microsoft.PythonTools.Analysis {
         protected virtual void Dispose(bool disposing) {
             if (disposing) {
                 Queue.Clear();
-                IDisposable interpreter = _interpreter as IDisposable;
+                var interpreter = _interpreter as IDisposable;
                 if (_disposeInterpreter && interpreter != null) {
                     interpreter.Dispose();
                 }

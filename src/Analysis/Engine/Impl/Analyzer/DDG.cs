@@ -30,7 +30,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         private SuiteStatement _curSuite;
         public readonly HashSet<IPythonProjectEntry> AnalyzedEntries = new HashSet<IPythonProjectEntry>();
 
-        public void Analyze(Deque<AnalysisUnit> queue, CancellationToken cancel, Action<int> reportQueueSize = null, int reportQueueInterval = 1) {
+        public void Analyze(Queue<AnalysisUnit> queue, CancellationToken cancel, Action<int> reportQueueSize = null, int reportQueueInterval = 1) {
             if (cancel.IsCancellationRequested) {
                 return;
             }
@@ -38,15 +38,15 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 // Including a marker at the end of the queue allows us to see in
                 // the log how frequently the queue empties.
                 var endOfQueueMarker = new AnalysisUnit(null, null);
-                int queueCountAtStart = queue.Count;
-                int reportInterval = reportQueueInterval - 1;
+                var queueCountAtStart = queue.Count;
+                var reportInterval = reportQueueInterval - 1;
 
                 if (queueCountAtStart > 0) {
                     queue.Append(endOfQueueMarker);
                 }
 
                 while (queue.Count > 0 && !cancel.IsCancellationRequested) {
-                    _unit = queue.PopLeft();
+                    _unit = queue.Dequeue();
 
                     if (_unit == endOfQueueMarker) {
                         AnalysisLog.EndOfQueue(queueCountAtStart, queue.Count);
@@ -130,9 +130,8 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         public ClassScope CurrentClass => CurrentContainer<ClassScope>();
 
-        private T CurrentContainer<T>() where T : InterpreterScope {
-            return Scope.EnumerateTowardsGlobal.OfType<T>().FirstOrDefault();
-        }
+        private T CurrentContainer<T>() where T : InterpreterScope
+            => Scope.EnumerateTowardsGlobal.OfType<T>().FirstOrDefault();
 
         public override bool Walk(AssignmentStatement node) {
             var valueType = _eval.Evaluate(node.Right);
@@ -381,8 +380,8 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
             var asNames = node.AsNames ?? node.Names;
 
-            int len = Math.Min(node.Names.Count, asNames.Count);
-            for (int i = 0; i < len; i++) {
+            var len = Math.Min(node.Names.Count, asNames.Count);
+            for (var i = 0; i < len; i++) {
                 var impName = node.Names[i].Name;
 
                 if (string.IsNullOrEmpty(impName)) {
@@ -424,7 +423,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             foreach (var name in candidates) {
                 ModuleReference modRef;
 
-                bool gotAllParents = true;
+                var gotAllParents = true;
                 AnalysisValue lastParent = null;
                 remainingParts = name.Split('.');
                 foreach (var part in ModulePath.GetParents(name, includeFullName: false)) {
@@ -458,7 +457,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             var result = new List<AnalysisValue>();
             foreach (var @class in mro.Skip(1)) {
                 foreach (var curType in @class) {
-                    bool isClass = curType is ClassInfo || curType is BuiltinClassInfo;
+                    var isClass = curType is ClassInfo || curType is BuiltinClassInfo;
                     if (isClass) {
                         var value = curType.GetMember(node, unit, name);
                         if (value != null) {
@@ -539,6 +538,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 if (TryImportModule(importing, node.ForceAbsolute, out var modRef, out var bits)) {
                     modRef.Module.Imported(_unit);
                 } else {
+                    //while (!Debugger.IsAttached) {
+                    //}
+                    //Debugger.Break();
                     _unit.DeclaringModule.AddUnresolvedModule(importing, node.ForceAbsolute);
                 }
 
@@ -589,7 +591,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                     analysisUnit
                 );
 
-                foreach (FunctionInfo baseFunction in bases.OfType<FunctionInfo>()) {
+                foreach (var baseFunction in bases.OfType<FunctionInfo>()) {
                     var baseAnalysisUnit = (FunctionAnalysisUnit)baseFunction.AnalysisUnit;
                     baseAnalysisUnit.ReturnValue.AddTypes(_unit, lookupRes);
                 }
@@ -676,14 +678,14 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         }
 
         private void DeleteExpression(Expression expr) {
-            NameExpression name = expr as NameExpression;
+            var name = expr as NameExpression;
             if (name != null) {
                 var var = Scope.CreateVariable(name, _unit, name.Name);
 
                 return;
             }
 
-            IndexExpression index = expr as IndexExpression;
+            var index = expr as IndexExpression;
             if (index != null) {
                 var values = _eval.Evaluate(index.Target);
                 var indexValues = _eval.Evaluate(index.Index);
@@ -693,7 +695,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 return;
             }
 
-            MemberExpression member = expr as MemberExpression;
+            var member = expr as MemberExpression;
             if (member != null) {
                 if (!string.IsNullOrEmpty(member.Name)) {
                     var values = _eval.Evaluate(member.Target);
@@ -704,13 +706,13 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 return;
             }
 
-            ParenthesisExpression paren = expr as ParenthesisExpression;
+            var paren = expr as ParenthesisExpression;
             if (paren != null) {
                 DeleteExpression(paren.Expression);
                 return;
             }
 
-            SequenceExpression seq = expr as SequenceExpression;
+            var seq = expr as SequenceExpression;
             if (seq != null) {
                 foreach (var item in seq.Items) {
                     DeleteExpression(item);
@@ -748,12 +750,12 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
                         if (handler.Target != null) {
                             foreach (var type in testTypes) {
-                                ClassInfo klass = type as ClassInfo;
+                                var klass = type as ClassInfo;
                                 if (klass != null) {
                                     test = test.Union(klass.Instance.SelfSet);
                                 }
 
-                                BuiltinClassInfo builtinClass = type as BuiltinClassInfo;
+                                var builtinClass = type as BuiltinClassInfo;
                                 if (builtinClass != null) {
                                     test = test.Union(builtinClass.Instance.SelfSet);
                                 }

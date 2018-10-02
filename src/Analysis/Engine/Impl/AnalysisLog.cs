@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis {
@@ -50,10 +51,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private static bool Active => _log != null;
-
-        public static void Flush() {
-            _log?.Flush();
-        }
+        public static void Flush() => _log?.Flush();
 
         public static void Add(string Event, params object[] Args) {
             if (_log == null) {
@@ -76,13 +74,13 @@ namespace Microsoft.PythonTools.Analysis {
             LastDisplayedTime = null;
         }
 
-        public static void Enqueue(Deque<AnalysisUnit> deque, AnalysisUnit unit) {
+        public static void Enqueue(Queue<AnalysisUnit> deque, AnalysisUnit unit) {
             if (Active) {
                 Add("E", IdDispenser.GetId(unit), deque.Count);
             }
         }
 
-        public static void Dequeue(Deque<AnalysisUnit> deque, AnalysisUnit unit) {
+        public static void Dequeue(Queue<AnalysisUnit> deque, AnalysisUnit unit) {
             if (Active) {
                 Add("D", IdDispenser.GetId(unit), deque.Count);
             }
@@ -100,28 +98,21 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        public static void EndOfQueue(int beforeLength, int afterLength) {
-            Add("Q", beforeLength, afterLength, afterLength - beforeLength);
-        }
+        public static void EndOfQueue(int beforeLength, int afterLength)
+            => Add("Q", beforeLength, afterLength, afterLength - beforeLength);
 
-        public static void ExceedsTypeLimit(string variableDefType, int total, string contents) {
-            Add("X", variableDefType, total, contents);
-        }
+        public static void ExceedsTypeLimit(string variableDefType, int total, string contents)
+            => Add("X", variableDefType, total, contents);
 
-        public static void Cancelled(Deque<AnalysisUnit> queue) {
-            Add("Cancel", queue.Count);
-        }
+        public static void Cancelled(Queue<AnalysisUnit> queue)
+            => Add("Cancel", queue.Count);
 
-        public static void ReduceCallDepth(FunctionInfo functionInfo, int callCount, int newLimit) {
-            Add("R", functionInfo, callCount, newLimit);
-        }
+        public static void ReduceCallDepth(FunctionInfo functionInfo, int callCount, int newLimit)
+            => Add("R", functionInfo, callCount, newLimit);
 
-        public static void StartFileGroup(string library, int fileCount) {
-            Add("FG", library, fileCount);
-        }
+        public static void StartFileGroup(string library, int fileCount)
+            => Add("FG", library, fileCount);
 
-        public static void EndFileGroup() {
-            Add("EFG");
-        }
+        public static void EndFileGroup() => Add("EFG");
     }
 }

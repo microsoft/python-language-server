@@ -24,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     internal class AstPythonInterpreter : IPythonInterpreter2, IModuleContext, ICanFindModuleMembers {
@@ -37,10 +38,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         internal readonly AnalysisLogWriter _log;
 
-        private readonly object _userSearchPathsLock = new object();
-        private IReadOnlyList<string> _userSearchPaths;
         private IReadOnlyDictionary<string, string> _userSearchPathPackages;
-        private HashSet<string> _userSearchPathImported;
+        private ConcurrentBag<string> _userSearchPathImported = new ConcurrentBag<string>();
 
         public AstPythonInterpreter(AstPythonInterpreterFactory factory, AnalysisLogWriter log = null) {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
@@ -70,7 +69,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IModuleContext CreateModuleContext() => this;
         public IPythonInterpreterFactory Factory => _factory;
-        public string BuiltinModuleName => _factory.BuiltinModuleName;
+        public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_factory.Configuration.Version.ToLanguageVersion());
 
         public IPythonType GetBuiltinType(BuiltinTypeId id) {
             if (id < 0 || id > BuiltinTypeIdExtensions.LastTypeId) {
@@ -101,57 +100,37 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private async Task<IReadOnlyDictionary<string, string>> GetUserSearchPathPackagesAsync(CancellationToken cancellationToken) {
             _log?.Log(TraceLevel.Verbose, "GetUserSearchPathPackagesAsync");
-            var ussp = _userSearchPathPackages;
-            if (ussp == null) {
-                IReadOnlyList<string> usp;
-                lock (_userSearchPathsLock) {
-                    usp = _userSearchPaths;
-                    ussp = _userSearchPathPackages;
-                }
-                if (ussp != null || usp == null || !usp.Any()) {
-                    return ussp;
-                }
-
-                _log?.Log(TraceLevel.Verbose, "GetImportableModulesAsync");
-                var requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_factory.Configuration.Version);
-                ussp = await AstPythonInterpreterFactory.GetImportableModulesAsync(usp, requireInitPy, cancellationToken);
-                lock (_userSearchPathsLock) {
-                    if (_userSearchPathPackages == null) {
-                        _userSearchPathPackages = ussp;
-                    } else {
-                        ussp = _userSearchPathPackages;
-                    }
-                }
+            if (_userSearchPathPackages == null) {
+                _userSearchPathPackages = await GetPackagesFromSearchPathsAsync(_analyzer.GetSearchPaths(), cancellationToken);
+                _log?.Log(TraceLevel.Verbose, "GetPackagesFromSearchPathsAsync", _userSearchPathPackages.Keys.Cast<object>().ToArray());
             }
-
-            _log?.Log(TraceLevel.Verbose, "GetUserSearchPathPackagesAsync", ussp.Keys.Cast<object>().ToArray());
-            return ussp;
+            return _userSearchPathPackages;
         }
 
-        private void ImportedFromUserSearchPath(string name) {
-            lock (_userSearchPathsLock) {
-                if (_userSearchPathImported == null) {
-                    _userSearchPathImported = new HashSet<string>();
-                }
-                _userSearchPathImported.Add(name);
+        private async Task<IReadOnlyDictionary<string, string>> GetPackagesFromSearchPathsAsync(IReadOnlyList<string> searchPaths, CancellationToken cancellationToken) {
+            if (searchPaths == null || searchPaths.Count == 0) {
+                return new Dictionary<string, string>();
             }
+
+            _log?.Log(TraceLevel.Verbose, "GetImportableModulesAsync");
+            var requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_factory.Configuration.Version);
+            return await GetImportableModulesAsync(searchPaths, requireInitPy, cancellationToken);
         }
 
-        private async Task<ModulePath?> FindModuleInUserSearchPathAsync(string name, CancellationToken cancel) {
-            var searchPaths = _userSearchPaths;
-
+        private async Task<ModulePath?> FindModuleOnDiskAsync(string name, CancellationToken cancellationToken) {
+            var searchPaths = _analyzer.GetSearchPaths();
             if (searchPaths == null || searchPaths.Count == 0) {
                 return null;
             }
 
-            var packages = await GetUserSearchPathPackagesAsync(cancel);
+            var packages = await GetPackagesFromSearchPathsAsync(searchPaths, cancellationToken);
 
             var i = name.IndexOf('.');
             var firstBit = i < 0 ? name : name.Remove(i);
             string searchPath;
 
             ModulePath mp;
-            Func<string, bool> isPackage = _factory.IsPackage;
+            Func<string, bool> isPackage = _factory.ModuleResolution.IsPackage;
             if (firstBit.EndsWithOrdinal("-stubs", ignoreCase: true)) {
                 isPackage = Directory.Exists;
             }
@@ -159,14 +138,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_factory.Configuration.Version);
             if (packages != null && packages.TryGetValue(firstBit, out searchPath) && !string.IsNullOrEmpty(searchPath)) {
                 if (ModulePath.FromBasePathAndName_NoThrow(searchPath, name, isPackage, null, requireInitPy, out mp, out _, out _, out _)) {
-                    ImportedFromUserSearchPath(name);
+                    _userSearchPathImported.Add(name);
                     return mp;
                 }
             }
 
             foreach (var sp in searchPaths.MaybeEnumerate()) {
                 if (ModulePath.FromBasePathAndName_NoThrow(sp, name, isPackage, null, requireInitPy, out mp, out _, out _, out _)) {
-                    ImportedFromUserSearchPath(name);
+                    _userSearchPathImported.Add(name);
                     return mp;
                 }
             }
@@ -176,7 +155,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IList<string> GetModuleNames() {
             var ussp = GetUserSearchPathPackagesAsync(CancellationToken.None).WaitAndUnwrapExceptions();
-            var ssp = _factory.GetImportableModulesAsync(CancellationToken.None).WaitAndUnwrapExceptions();
+            var ssp = _factory.ModuleResolution.GetImportableModulesAsync(CancellationToken.None).WaitAndUnwrapExceptions();
             var bmn = _builtinModuleNames;
             if (bmn == null && _builtinModule != null) {
                 var builtinModules = (_builtinModule as IBuiltinPythonModule)?.GetAnyMember("__builtin_module_names__");
@@ -208,11 +187,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             Debug.Assert(_analyzer != null);
 
-            var ctxt = new AstPythonInterpreterFactory.TryImportModuleContext {
+            var ctxt = new TryImportModuleContext {
                 Interpreter = this,
                 ModuleCache = _modules,
                 BuiltinModule = _builtinModule,
-                FindModuleInUserSearchPathAsync = FindModuleInUserSearchPathAsync,
+                FindModuleAsync = FindModuleOnDiskAsync,
                 TypeStubPaths = _analyzer.Limits.UseTypeStubPackages ? _analyzer.GetTypeStubPaths() : null,
                 MergeTypeStubPackages = !_analyzer.Limits.UseTypeStubPackagesExclusively
             };
@@ -224,9 +203,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 // possible, but if all else fails then we'll abort and treat it as an
                 // error.
                 // (And if we've got a debugger attached, don't time out at all.)
-                AstPythonInterpreterFactory.TryImportModuleResult result;
+                TryImportModuleResult result;
                 try {
-                    result = await _factory.TryImportModuleAsync(name, ctxt, token);
+                    result = await _factory.ModuleResolution.TryImportModuleAsync(name, ctxt, token);
                 } catch (OperationCanceledException) {
                     _log.Log(TraceLevel.Error, "ImportTimeout", name);
                     Debug.Fail("Import timeout");
@@ -234,15 +213,15 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 }
 
                 switch (result.Status) {
-                    case AstPythonInterpreterFactory.TryImportModuleResultCode.Success:
+                    case TryImportModuleResultCode.Success:
                         return result.Module;
-                    case AstPythonInterpreterFactory.TryImportModuleResultCode.ModuleNotFound:
+                    case TryImportModuleResultCode.ModuleNotFound:
                         _log?.Log(TraceLevel.Info, "ImportNotFound", name);
                         return null;
-                    case AstPythonInterpreterFactory.TryImportModuleResultCode.NeedRetry:
-                    case AstPythonInterpreterFactory.TryImportModuleResultCode.Timeout:
+                    case TryImportModuleResultCode.NeedRetry:
+                    case TryImportModuleResultCode.Timeout:
                         break;
-                    case AstPythonInterpreterFactory.TryImportModuleResultCode.NotSupported:
+                    case TryImportModuleResultCode.NotSupported:
                         _log?.Log(TraceLevel.Error, "ImportNotSupported", name);
                         return null;
                 }
@@ -268,43 +247,33 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return null;
         }
 
-        public void Initialize(PythonAnalyzer state) {
+        public void Initialize(PythonAnalyzer analyzer) {
             if (_analyzer != null) {
                 _analyzer.SearchPathsChanged -= Analyzer_SearchPathsChanged;
             }
 
-            _analyzer = state;
+            _analyzer = analyzer;
 
-            if (state != null) {
-                lock (_userSearchPathsLock) {
-                    _userSearchPaths = state.GetSearchPaths();
-                }
-                state.SearchPathsChanged += Analyzer_SearchPathsChanged;
-                var bm = state.BuiltinModule;
+            if (analyzer != null) {
+                analyzer.SearchPathsChanged += Analyzer_SearchPathsChanged;
+                var bm = analyzer.BuiltinModule;
                 if (!string.IsNullOrEmpty(bm?.Name)) {
-                    _modules[state.BuiltinModule.Name] = state.BuiltinModule.InterpreterModule;
+                    _modules[analyzer.BuiltinModule.Name] = analyzer.BuiltinModule.InterpreterModule;
                 }
             }
         }
 
         private void Analyzer_SearchPathsChanged(object sender, EventArgs e) {
-            lock (_userSearchPathsLock) {
-                // Remove imported modules from search paths so we will
-                // import them again.
-                foreach (var name in _userSearchPathImported.MaybeEnumerate()) {
-                    IPythonModule mod;
-                    _modules.TryRemove(name, out mod);
-                }
-                _userSearchPathImported = null;
-                _userSearchPathPackages = null;
-                _userSearchPaths = _analyzer.GetSearchPaths();
+            // Remove imported modules from search paths so we will import them again.
+            foreach (var name in _userSearchPathImported.MaybeEnumerate().ToArray()) {
+                _modules.TryRemove(name, out var mod);
             }
             ModuleNamesChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public IEnumerable<string> GetModulesNamed(string name) {
             var usp = GetUserSearchPathPackagesAsync(CancellationToken.None).WaitAndUnwrapExceptions();
-            var ssp = _factory.GetImportableModulesAsync(CancellationToken.None).WaitAndUnwrapExceptions();
+            var ssp = _factory.ModuleResolution.GetImportableModulesAsync(CancellationToken.None).WaitAndUnwrapExceptions();
 
             var dotName = "." + name;
 
@@ -328,6 +297,39 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             // TODO: Some efficient way of searching every module
 
             yield break;
+        }
+
+        internal static async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, bool requireInitPy, CancellationToken cancellationToken) {
+            var packageDict = new Dictionary<string, string>();
+
+            foreach (var searchPath in searchPaths.MaybeEnumerate()) {
+                IReadOnlyCollection<string> packages = null;
+                if (File.Exists(searchPath)) {
+                    packages = GetPackagesFromZipFile(searchPath, cancellationToken);
+                } else if (Directory.Exists(searchPath)) {
+                    packages = await Task.Run(() => GetPackagesFromDirectory(searchPath, requireInitPy, cancellationToken)).ConfigureAwait(false);
+                }
+                foreach (var package in packages.MaybeEnumerate()) {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    packageDict[package] = searchPath;
+                }
+            }
+
+            return packageDict;
+        }
+
+        private static IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, bool requireInitPy, CancellationToken cancellationToken) {
+            return ModulePath.GetModulesInPath(
+                searchPath,
+                recurse: false,
+                includePackages: true,
+                requireInitPy: requireInitPy
+            ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
+        }
+
+        private static IReadOnlyCollection<string> GetPackagesFromZipFile(string searchPath, CancellationToken cancellationToken) {
+            // TODO: Search zip files for packages
+            return new string[0];
         }
     }
 }

@@ -509,7 +509,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 aliases = new[] { Path.GetFileNameWithoutExtension(path) };
             }
 
-            var reanalyzeEntries = aliases.SelectMany(a => Analyzer.GetEntriesThatImportModule(a, true)).ToArray();
             var first = aliases.FirstOrDefault();
 
             var pyItem = Analyzer.AddModule(first, path, documentUri, cookie);
@@ -527,10 +526,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             if (item is IDocument doc) {
                 await EnqueueItemAsync(doc);
-            }
-
-            foreach (var entryRef in reanalyzeEntries) {
-                await EnqueueItemAsync(entryRef as IDocument, AnalysisPriority.Low, parse: false);
             }
 
             return item;

@@ -309,14 +309,14 @@ class BankAccount(object):
                     var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
 
                     var moduleNamesChanged = EventTaskSources.AstPythonInterpreter.ModuleNamesChanged.Create(interpreter, new CancellationTokenSource(1000).Token);
-                    factory.SetCurrentSearchPaths(new[] { TestData.GetPath("TestData\\AstAnalysis") });
+                    await factory.SetCurrentSearchPathsAsync(new[] { TestData.GetPath("TestData\\AstAnalysis") }, CancellationToken.None);
                     await moduleNamesChanged;
 
                     interpreter.GetModuleNames().Should().Contain("Values");
                     interpreter.ImportModule("Values").Should().NotBeNull("module should be available");
 
                     moduleNamesChanged = EventTaskSources.AstPythonInterpreter.ModuleNamesChanged.Create(interpreter, new CancellationTokenSource(1000).Token);
-                    factory.SetCurrentSearchPaths(Enumerable.Empty<string>());
+                    await factory.ModuleResolution.SetCurrentSearchPathsAsync(Enumerable.Empty<string>(), CancellationToken.None);
                     await moduleNamesChanged;
 
                     interpreter.GetModuleNames().Should().NotContain("Values");
@@ -558,7 +558,7 @@ class BankAccount(object):
                     Assert.IsInstanceOfType(mod, typeof(AstBuiltinsPythonModule));
                     mod.Imported(ctxt);
 
-                    var modPath = factory.GetCacheFilePath(factory.Configuration.InterpreterPath);
+                    var modPath = factory.ModuleCache.GetCacheFilePath(factory.Configuration.InterpreterPath);
                     if (File.Exists(modPath)) {
                         _moduleCache = File.ReadAllText(modPath);
                     }
@@ -684,7 +684,7 @@ class BankAccount(object):
                         Assert.IsInstanceOfType(mod, typeof(AstScrapedPythonModule));
                         mod.Imported(ctxt);
 
-                        var modPath = factory.GetCacheFilePath(pyd);
+                        var modPath = factory.ModuleCache.GetCacheFilePath(pyd);
                         Assert.IsTrue(File.Exists(modPath), "No cache file created");
                         _moduleCache = File.ReadAllText(modPath);
 
