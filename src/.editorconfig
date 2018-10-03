@@ -29,7 +29,7 @@ csharp_space_between_parentheses = None
 
 csharp_space_after_cast = false
 
-csharp_style_inlined_variable_declaration = true:error
+csharp_style_inlined_variable_declaration = true:message
 
 csharp_space_before_open_square_brackets = false
 
