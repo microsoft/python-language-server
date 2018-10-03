@@ -14,6 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
@@ -166,6 +167,18 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             Execute.Assertion.ForCondition(description == actualDescription || description == actualShortDescription)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected description of '{_moduleName}.{_name}' to have description '{description}'{{reason}}, but found '{actualDescription}' or '{actualShortDescription}'.");
+
+            return new AndConstraint<VariableDefAssertions>(this);
+        }
+
+        public AndConstraint<VariableDefAssertions> HaveDocumentation(string documentation, string because = "", params object[] reasonArgs) {
+            var values = FlattenAnalysisValues(Subject.Types).ToArray();
+            var value = AssertSingle(because, reasonArgs, values);
+
+            var actualDocumentation = value.Documentation;
+            Execute.Assertion.ForCondition(string.Equals(documentation, actualDocumentation, StringComparison.Ordinal))
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected documentation of '{_moduleName}.{_name}' to have documentation '{documentation}'{{reason}}, but found '{actualDocumentation}'.");
 
             return new AndConstraint<VariableDefAssertions>(this);
         }

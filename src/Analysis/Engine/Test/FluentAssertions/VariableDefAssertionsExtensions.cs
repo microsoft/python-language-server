@@ -100,6 +100,11 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return andWhichConstraint;
         }
 
+        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> WithDocumentation<TAssertion>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, string documentation, string because = "", params object[] reasonArgs) {
+            andWhichConstraint.Which.Should().HaveDocumentation(documentation, because, reasonArgs);
+            return andWhichConstraint;
+        }
+
         public static AndWhichConstraint<TAssertion, VariableDefTestInfo> WithShortDescriptions<TAssertion>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, params string[] descriptions) {
             andWhichConstraint.Which.Should().HaveShortDescriptions(descriptions);
             return andWhichConstraint;

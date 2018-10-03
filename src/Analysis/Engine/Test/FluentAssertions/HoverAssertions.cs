@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using FluentAssertions;
@@ -26,7 +27,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             NotBeNull(because, reasonArgs);
 
             var expected = typeNames.ToArray();
-            var actual = Subject._typeNames;
+            var actual = Subject._typeNames ?? Array.Empty<string>();
             var errorMessage = GetAssertCollectionContainsMessage(actual, expected, "hover", "type name", "type names");
 
             Execute.Assertion.ForCondition(errorMessage == null)

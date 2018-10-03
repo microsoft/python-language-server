@@ -128,9 +128,8 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public AndConstraint<TAssertions> HaveMemberOfTypes(string memberName, IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            Execute.Assertion.ForCondition(GetMember(memberName, out var member, out var errorMessage))
-                .BecauseOf(because, reasonArgs)
-                .FailWith(errorMessage);
+            Execute.Assertion.BecauseOf(because, reasonArgs)
+                .AssertHasMember(Subject, OwnerScope, GetName(), $"member '{memberName}'", out var member);
 
             AssertTypeIds(member, typeIds, memberName, Is3X(OwnerScope), because, reasonArgs);
             return new AndConstraint<TAssertions>((TAssertions)this);
@@ -212,44 +211,10 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             where TMember : class, IAnalysisValue {
             NotBeNull(because, reasonArgs);
 
-            Execute.Assertion.ForCondition(GetMember(name, out TMember typedMember, out var errorMessage))
-                .BecauseOf(because, reasonArgs)
-                .FailWith(errorMessage);
+            Execute.Assertion.BecauseOf(because, reasonArgs)
+                .AssertHasMemberOfType(Subject, OwnerScope, GetName(), $"member '{name}'", out TMember typedMember);
 
             return new AndWhichConstraint<TAssertions, AnalysisValueTestInfo<TMember>>((TAssertions)this, new AnalysisValueTestInfo<TMember>(typedMember, null, OwnerScope));
-        }
-
-        private bool GetMember<TMember>(string name, out TMember typedMember, out string errorMessage) where TMember : class, IAnalysisValue {
-            try {
-                var member = Subject.GetMember(null, new AnalysisUnit(null, null, OwnerScope, true), name);
-                typedMember = member as TMember;
-
-                errorMessage = member != null
-                    ? typedMember != null
-                        ? null
-                        : $"Expected {GetName()} to have a member '{name}' of type {typeof(TMember)}{{reason}}, but its type is {member.GetType()}."
-                    : $"Expected {GetName()} to have a member {name} of type {typeof(TMember)}{{reason}}.";
-                return typedMember != null;
-            } catch (Exception e) {
-                errorMessage = $"Expected {GetName()} to have a member {name} of type {typeof(TMember)}{{reason}}, but {nameof(GetMember)} has failed with exception: {e}.";
-                typedMember = null;
-                return false;
-            }
-        }
-
-        private bool GetMember(string name, out IAnalysisSet member, out string errorMessage) {
-            try {
-                member = Subject.GetMember(null, new AnalysisUnit(null, null, OwnerScope, true), name);
-
-                errorMessage = member != null
-                    ? null
-                    : $"Expected {GetName()} to have a member {name}{{reason}}.";
-                return member != null;
-            } catch (Exception e) {
-                errorMessage = $"Expected {GetName()} to have a member {name}{{reason}}, but {nameof(GetMember)} has failed with exception: {e}.";
-                member = null;
-                return false;
-            }
         }
 
         protected virtual string GetName() => $"{GetQuotedName(Subject)} {ScopeDescription}";
