@@ -483,10 +483,9 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private static IAnalysisSet ResolveModule(Node node, AnalysisUnit unit, string moduleName) {
-            ModuleReference modRef;
             var modules = unit.State.Modules;
 
-            if (modules.TryImport(moduleName, out modRef)) {
+            if (modules.TryImport(moduleName, out var modRef)) {
                 modRef.Module?.Imported(unit);
                 return modRef.AnalysisModule ?? AnalysisSet.Empty;
             }
@@ -948,9 +947,8 @@ namespace Microsoft.PythonTools.Analysis {
 
                     // update memberDict
                     foreach (var name in adding) {
-                        IEnumerable<AnalysisValue> values;
                         List<AnalysisValue> valueList;
-                        if (!memberDict.TryGetValue(name, out values)) {
+                        if (!memberDict.TryGetValue(name, out var values)) {
                             memberDict[name] = values = new List<AnalysisValue>();
                         }
                         if ((valueList = values as List<AnalysisValue>) == null) {
@@ -1169,8 +1167,7 @@ namespace Microsoft.PythonTools.Analysis {
                 var name = GetMemberName(privatePrefix, options, kvp.Key);
                 var completion = name;
                 if (name != null) {
-                    IEnumerable<AnalysisValue> owners;
-                    if (ownerDict != null && ownerDict.TryGetValue(kvp.Key, out owners) &&
+                    if (ownerDict != null && ownerDict.TryGetValue(kvp.Key, out var owners) &&
                         owners.Any() && owners.Count() < maximumOwners) {
                         // This member came from less than the full set of types.
                         var seenNames = new HashSet<string>();

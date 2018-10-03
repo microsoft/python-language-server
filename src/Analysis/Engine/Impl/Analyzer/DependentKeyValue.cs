@@ -51,13 +51,11 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
             bool anyAdded = false;
             foreach (var key in keyTypes) {
-                IAnalysisSet values;
-                if (!dependencies.KeyValues.TryGetValue(key, out values)) {
+                if (!dependencies.KeyValues.TryGetValue(key, out var values)) {
                     values = AnalysisSet.Create(valueTypes);
                     anyAdded = true;
                 } else {
-                    bool added;
-                    values = values.Union(valueTypes, out added);
+                    values = values.Union(valueTypes, out var added);
                     anyAdded |= added;
                 }
                 if (anyAdded && values.Count > projectState.Limits.DictValueTypes) {
@@ -163,8 +161,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                             }
                         } else {
                             foreach (var keyValue in mod.KeyValues) {
-                                IAnalysisSet existing;
-                                if (!res.TryGetValue(keyValue.Key, out existing)) {
+                                if (!res.TryGetValue(keyValue.Key, out var existing)) {
                                     res[keyValue.Key] = keyValue.Value;
                                 } else {
                                     res[keyValue.Key] = existing.Union(keyValue.Value, canMutate: false);
@@ -194,13 +191,11 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 }
 
                 foreach (var keyValue in otherDependency.Value.KeyValues) {
-                    IAnalysisSet union;
-                    if (!deps.KeyValues.TryGetValue(keyValue.Key, out union)) {
+                    if (!deps.KeyValues.TryGetValue(keyValue.Key, out var union)) {
                         deps.KeyValues[keyValue.Key] = union = keyValue.Value;
                         anyAdded = true;
                     } else {
-                        bool added;
-                        deps.KeyValues[keyValue.Key] = union.Union(keyValue.Value, out added, canMutate: false);
+                        deps.KeyValues[keyValue.Key] = union.Union(keyValue.Value, out var added, canMutate: false);
                         anyAdded |= added;
                     }
                 }
