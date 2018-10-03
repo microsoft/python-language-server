@@ -40,6 +40,6 @@ namespace Microsoft.PythonTools.Analysis {
         public static bool operator >(Position p1, Position p2) => p1.line > p2.line || p1.line == p2.line && p1.character > p2.character;
         public static bool operator <(Position p1, Position p2) => p1.line < p2.line || p1.line == p2.line && p1.character < p2.character;
 
-        public override string ToString() => ((SourceLocation)this).ToString();
+        public override string ToString() => $"({line}, {character})";
     }
 }
