@@ -4415,19 +4415,21 @@ class oar(list):
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task OverrideCompletions3X() {
+        [DataRow(PythonLanguageVersion.V36, "value")]
+        [DataRow(PythonLanguageVersion.V37, "object")]
+        [DataTestMethod, Priority(0)]
+        public async Task OverrideCompletions3X(PythonLanguageVersion version, string parameterName) {
             var code = @"
 class oar(list):
     def 
     pass
 ";
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+            using (var server = await CreateServerAsync(PythonVersions.GetRequiredCPythonConfiguration(version))) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
                 var completions = await server.SendCompletion(uri, 2, 8);
 
                 completions.Should().HaveItem("append")
-                    .Which.Should().HaveInsertText("append(self, value):\r\n    return super().append(value)");
+                    .Which.Should().HaveInsertText($"append(self, {parameterName}):\r\n    return super().append({parameterName})");
             }
         }
 
