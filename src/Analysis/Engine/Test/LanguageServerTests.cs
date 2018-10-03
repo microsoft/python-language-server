@@ -449,7 +449,10 @@ namespace AnalysisTests {
                 var u = await AddModule(s, "class A:\n    def bar(arg=None): pass\n\nclass B(A):\n    def b");
 
                 await AssertNoCompletion(s, u, new SourceLocation(2, 9));
-                await AssertCompletion(s, u, new[] { "bar(arg=None):\r\n    return super().bar()" }, new[] { "bar(arg = None):\r\n    return super().bar()" }, new SourceLocation(5, 10));
+                await AssertCompletion(s, u, 
+                    new[] { "bar(arg=None):\r\n    return super(B, arg).bar()" }, 
+                    new[] { "bar(arg = None):\r\n    return super().bar()" }, 
+                    new SourceLocation(5, 10));
             }
         }
 
@@ -694,7 +697,7 @@ def f(a, *b, **c): pass
 ");
 
             await AssertSignature(s, mod, new SourceLocation(1, 3),
-                new string[] { "f()", "f(a)", "f(a, b)", "f(a, *b: tuple)", "f(a, **b: dict)", "f(a, *b: tuple, **c: dict)" },
+                new string[] { "f()", "f(a)", "f(a, b)", "f(a, *b)", "f(a, **b)", "f(a, *b, **c)" },
                 new string[0]
             );
 
@@ -762,7 +765,7 @@ mod1.f(a=D)", "mod2");
             await AssertReferences(s, mod1, new SourceLocation(10, 2), expected, unexpected);
             await AssertReferences(s, mod2, new SourceLocation(17, 6), expected, unexpected);
 
-            await AssertReferences(s, mod1, new SourceLocation(8, 5), unexpected, expected);
+            await AssertReferences(s, mod1, new SourceLocation(8, 5), unexpected, Enumerable.Empty<string>());
 
             // a
             expected = new[] {
@@ -800,14 +803,11 @@ mod1.f(a=D)", "mod2");
 
             // C.real
             expected = new[] {
-                "Reference;(3, 7) - (3, 11)",
-                "Definition;(7, 5) - (7, 9)"
-            };
-            unexpected = new[] {
                 "Definition;(11, 1) - (11, 5)",
-                "Definition;(14, 5) - (14, 9)"
+                "Reference;(3, 7) - (3, 11)",
+                "Reference;(7, 5) - (7, 9)"
             };
-            await AssertReferences(s, mod1, new SourceLocation(7, 8), expected, unexpected);
+            await AssertReferences(s, mod1, new SourceLocation(7, 8), expected, Enumerable.Empty<string>());
 
             // D.real
             expected = new[] {
@@ -1210,7 +1210,11 @@ datetime.datetime.now().day
                 }
             }, CancellationToken.None);
 
-            refs.Select(r => $"{r._kind ?? ReferenceKind.Reference};{r.range}").Should().Contain(contains).And.NotContain(excludes);
+            if (excludes.Any()) {
+                refs.Select(r => $"{r._kind ?? ReferenceKind.Reference};{r.range}").Should().Contain(contains).And.NotContain(excludes);
+            } else {
+                refs.Select(r => $"{r._kind ?? ReferenceKind.Reference};{r.range}").Should().Contain(contains);
+            }
         }
 
         public Task<ILanguageServerExtension> CreateAsync(IPythonLanguageServer server, IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken) => throw new NotImplementedException();

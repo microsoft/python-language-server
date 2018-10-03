@@ -50,7 +50,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private bool _filesLoaded;
         private PathsWatcher _pathsWatcher;
         private IdleTimeTracker _idleTimeTracker;
-        private AnalysisProgressReporter _analysisProgressReporter;
 
         private bool _watchSearchPaths;
         private string[] _searchPaths = Array.Empty<string>();
@@ -62,7 +61,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _rpc = rpc;
 
             var progress = services.GetService<IProgressService>();
-            _analysisProgressReporter = new AnalysisProgressReporter(_server, progress, _server, _shutdownCts.Token);
 
             _server.OnLogMessage += OnLogMessage;
             _server.OnShowMessage += OnShowMessage;
@@ -82,7 +80,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(() => _server.OnUnregisterCapability -= OnUnregisterCapability)
                 .Add(() => _shutdownCts.Cancel())
                 .Add(_prioritizer)
-                .Add(_analysisProgressReporter)
                 .Add(() => _pathsWatcher?.Dispose());
 
             return _sessionTokenSource.Token;
@@ -374,7 +371,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("textDocument/rename")]
         public async Task<WorkspaceEdit> Rename(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.Rename(token.ToObject<RenameParams>(), cancellationToken);
+            return await _server.Rename(ToObject<RenameParams>(token), cancellationToken);
         }
         #endregion
 

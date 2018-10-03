@@ -113,8 +113,10 @@ namespace Microsoft.PythonTools.Analysis {
             return set.Union(value.Resolve(unit));
         }
 
-        internal IEnumerable<AnalysisVariable> ToVariables(IReferenceable referenceable) {
-            if (referenceable is VariableDef def) {
+        internal static IEnumerable<AnalysisVariable> ToVariables(IReferenceable referenceable) {
+            var def = referenceable as VariableDef;
+
+            if (def != null) {
                 foreach (var type in def.Types.WhereNotNull()) {
                     var varType = VariableType.Value;
                     if (type.DeclaringModule == null) {
@@ -123,7 +125,7 @@ namespace Microsoft.PythonTools.Analysis {
                     }
 
                     foreach (var loc in type.Locations.WhereNotNull()) {
-                        yield return new AnalysisVariable(varType, loc);
+                        yield return new AnalysisVariable(def, varType, loc);
                     }
                 }
             }
@@ -131,14 +133,14 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var reference in referenceable.Definitions) {
                 var loc = reference.GetLocationInfo();
                 if (loc != null) {
-                    yield return new AnalysisVariable(VariableType.Definition, loc);
+                    yield return new AnalysisVariable(def, VariableType.Definition, loc);
                 }
             }
 
             foreach (var reference in referenceable.References) {
                 var loc = reference.GetLocationInfo();
                 if (loc != null) {
-                    yield return new AnalysisVariable(VariableType.Reference, loc);
+                    yield return new AnalysisVariable(def, VariableType.Reference, loc);
                 }
             }
         }
@@ -208,10 +210,22 @@ namespace Microsoft.PythonTools.Analysis {
 
             var unit = GetNearestEnclosingAnalysisUnit(scope);
             var tree = unit.Tree;
-
             var eval = new ExpressionEvaluator(unit.CopyForEval(), scope, mergeScopes: true);
-            var variables = Enumerable.Empty<IAnalysisVariable>();
 
+            var result = GetVariablesFromCallExpression(unit, eval, scope, location, originalText);
+            if (result != null) {
+                return result;
+            }
+
+            result = GetVariablesFromNameExpression(expr, unit, scope);
+            if (result != null) {
+                return result;
+            }
+
+            return GetVariablesFromMemberExpression(expr, unit, eval);
+        }
+
+        private static VariablesResult GetVariablesFromCallExpression(AnalysisUnit unit, ExpressionEvaluator eval, IScope scope, SourceLocation location, string originalText) {
             var finder = new ExpressionFinder(unit.Tree, new GetExpressionOptions { Calls = true });
             var callNode = finder.GetExpression(location) as CallExpression;
             if (callNode != null) {
@@ -229,29 +243,95 @@ namespace Microsoft.PythonTools.Analysis {
                         unit.Tree);
                 }
             }
+            return null;
+        }
 
-            if (expr is NameExpression name) {
-                if (!scope.EnumerateTowardsGlobal.Any()) {
-                    variables = _unit.State.BuiltinModule.GetDefinitions(name.Name).SelectMany(ToVariables);
-                } else {
-                    foreach (var defScope in scope.EnumerateTowardsGlobal
-                        .Where(s => s.ContainsVariable(name.Name) && (s == scope || s.VisibleToChildren || IsFirstLineOfFunction(scope, s, location)))) {
-                        var scopeVariables = GetVariablesInScope(name, defScope).Distinct();
-                        variables = variables.Union(scopeVariables);
-                    }
+        private class VariableScopePair : Tuple<IAnalysisVariable, int> {
+            public VariableScopePair(IAnalysisVariable v, int scopeLevel) : base(v, scopeLevel) { }
+            public IAnalysisVariable Variable => Item1;
+            public int ScopeLevel => Item2;
+            public VariableType VariableType => Variable.Type;
+            public ILocationInfo Location => Variable.Location;
+        }
+
+        private VariablesResult GetVariablesFromNameExpression(Expression expr, AnalysisUnit unit, IScope scope) {
+            if (!(expr is NameExpression name)) {
+                return null;
+            }
+
+            if (!scope.EnumerateTowardsGlobal.Any()) {
+                var v = _unit.State.BuiltinModule.GetDefinitions(name.Name).SelectMany(ToVariables);
+                return new VariablesResult(v, unit.Tree);
+            }
+
+            var variables = Enumerable.Empty<VariableScopePair>();
+            VariableScopePair mainDefinition = null;
+            var scopeLevel = 0;
+            foreach (var s in scope.EnumerateTowardsGlobal) {
+                var scopeVariables = GetVariablesInScope(name, s)
+                    .Distinct()
+                    .Select(v => new VariableScopePair(v, scopeLevel))
+                    .ToArray();
+
+                variables = variables.Union(scopeVariables);
+
+                // If we already have definition and it is a function argument, then stop
+                // since function argument wins over definitions in the outer scope
+                mainDefinition = scopeVariables.FirstOrDefault(v => v.VariableType == VariableType.Definition && IsFunctionArgument(s, v.Variable));
+                if (mainDefinition != null) {
+                    break;
                 }
-            } else if (expr is MemberExpression member && !string.IsNullOrEmpty(member.Name)) {
-                var objects = eval.Evaluate(member.Target);
+                scopeLevel++;
+            }
 
+            // Now take innermost definition and treat inner ones (such as reassignments) as references
+            var definitions = variables
+                .Where(v => v.VariableType == VariableType.Definition)
+                .OrderBy(v => v.Location.Span.Start)
+                .Reverse()
+                .ToArray();
+
+            mainDefinition = mainDefinition ?? definitions.FirstOrDefault();
+            if (mainDefinition != null) {
+                // Drop definitions in outer scopes and convert those in inner scopes to references.
+                // Scope levels are numbered in reverse (X == main definition level, x+1 == one up).
+                var defsToRefs = definitions
+                    .Where(d => d != mainDefinition && d.ScopeLevel <= mainDefinition.ScopeLevel)
+                    .Select(v => new VariableScopePair(new AnalysisVariable(v.Variable.Variable, VariableType.Reference, v.Location), v.ScopeLevel));
+
+                var others = variables
+                            .Where(v => (v.VariableType == VariableType.Reference || v.VariableType == VariableType.Value) &&
+                                         v.ScopeLevel <= mainDefinition.ScopeLevel);
+                variables = new[] { mainDefinition }.Concat(others.Concat(defsToRefs));
+            }
+
+            return new VariablesResult(variables.Select(v => v.Variable), unit.Tree);
+        }
+
+        private VariablesResult GetVariablesFromMemberExpression(Expression expr, AnalysisUnit unit, ExpressionEvaluator eval) {
+            var variables = Enumerable.Empty<IAnalysisVariable>();
+            if (expr is MemberExpression member && !string.IsNullOrEmpty(member.Name)) {
+                var objects = eval.Evaluate(member.Target);
                 foreach (var v in objects.OfType<IReferenceableContainer>()) {
                     variables = variables.Union(v.GetDefinitions(member.Name).SelectMany(ToVariables));
                 }
             }
-
             return new VariablesResult(variables, unit.Tree);
         }
 
-        private IEnumerable<IAnalysisVariable> GetVariablesInScope(NameExpression name, IScope scope) {
+        private bool IsFunctionArgument(IScope scope, IAnalysisVariable v) {
+            if (v.Variable?.Types?.MaybeEnumerate().FirstOrDefault() is ParameterInfo) {
+                return true;
+            }
+            if (scope is FunctionScope funcScope) {
+                var funcDef = funcScope.Function.FunctionDefinition;
+                var varSpan = v.Location.Span.ToLinearSpan(_unit.Tree);
+                return funcDef.NameExpression.EndIndex <= varSpan.Start && varSpan.End <= funcDef.HeaderIndex;
+            }
+            return false;
+        }
+
+        private static IEnumerable<IAnalysisVariable> GetVariablesInScope(NameExpression name, IScope scope) {
             var result = new List<IAnalysisVariable>();
 
             result.AddRange(scope.GetMergedVariables(name.Name).SelectMany(ToVariables));
@@ -287,19 +367,6 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             return result;
-        }
-
-        private static bool IsFirstLineOfFunction(IScope innerScope, IScope outerScope, SourceLocation location) {
-            if (innerScope.OuterScope == outerScope && innerScope is FunctionScope) {
-                var funcScope = (FunctionScope)innerScope;
-                var def = funcScope.Function.FunctionDefinition;
-
-                // TODO: Use indexes rather than lines to check location
-                if (location.Line == def.GetStart(def.GlobalParent).Line) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         private class ErrorWalker : PythonWalker {

@@ -1117,7 +1117,7 @@ class Test_test2(Test_test1):
                 var uris = TestData.GetNextModuleUris(2);
                 await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                 await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
-                
+
                 var analysis = await server.GetAnalysisAsync(uris[1]);
                 analysis.Should().HaveClassInfo("Test_test2")
                         .WithMethodResolutionOrder("Test_test2", "Test_test1", "type object");
@@ -2907,7 +2907,7 @@ def f(abc):
                 var references = await server.SendFindReferences(uri, 2, 11);
                 references.Should().OnlyHaveReferences(
                     (uri, (1, 6, 1, 9), ReferenceKind.Definition),
-                    (uri, (3, 4, 3, 7), ReferenceKind.Definition),
+                    (uri, (3, 4, 3, 7), ReferenceKind.Reference),
                     (uri, (2, 10, 2, 13), ReferenceKind.Reference),
                     (uri, (4, 8, 4, 11), ReferenceKind.Reference)
                 );
@@ -3132,23 +3132,45 @@ def f(a):
         print(a)
         assert isinstance(a, int)
         a = 200
+        print(a)
 ";
                 await server.SendDidOpenTextDocument(uri, text);
 
-                var references = await server.SendFindReferences(uri, 3, 15);
-                references.Should().OnlyHaveReferences(
+                var expected = new (Uri documentUri, (int, int, int, int), ReferenceKind?) [] {
                     (uri, (1, 6, 1, 7), ReferenceKind.Definition),
                     (uri, (3, 14, 3, 15), ReferenceKind.Reference),
                     (uri, (4, 26, 4, 27), ReferenceKind.Reference),
-                    (uri, (5, 8, 5, 9), ReferenceKind.Definition)
-                );
+                    (uri, (5, 8, 5, 9), ReferenceKind.Reference),
+                    (uri, (6, 14, 6, 15), ReferenceKind.Reference)
+                };
+                var references = await server.SendFindReferences(uri, 3, 15);
+                references.Should().OnlyHaveReferences(expected);
 
                 references = await server.SendFindReferences(uri, 5, 9);
+                references.Should().OnlyHaveReferences(expected);
+
+                references = await server.SendFindReferences(uri, 6, 15);
+                references.Should().OnlyHaveReferences(expected);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task References_ClassLocalVariable() {
+            var uri = TestData.GetDefaultModuleUri();
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
+                var text = @"
+a = 1
+class B:
+    a = 2
+";
+                await server.SendDidOpenTextDocument(uri, text);
+                var references = await server.SendFindReferences(uri, 3, 5);
                 references.Should().OnlyHaveReferences(
-                    (uri, (1, 6, 1, 7), ReferenceKind.Definition),
-                    (uri, (3, 14, 3, 15), ReferenceKind.Reference),
-                    (uri, (4, 26, 4, 27), ReferenceKind.Reference),
-                    (uri, (5, 8, 5, 9), ReferenceKind.Definition)
+                    (uri, (3, 4, 3, 5), ReferenceKind.Definition)
+                );
+                references = await server.SendFindReferences(uri, 1, 1);
+                references.Should().OnlyHaveReferences(
+                    (uri, (1, 0, 1, 1), ReferenceKind.Definition)
                 );
             }
         }
@@ -3922,6 +3944,7 @@ f('abc')
             using (var server = await CreateServerAsync()) {
                 var uri = TestData.GetDefaultModuleUri();
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
                 var referencesx1 = await server.SendFindReferences(uri, 2, 6);
                 var referencesx2 = await server.SendFindReferences(uri, 2, 10);
                 var referencesx3 = await server.SendFindReferences(uri, 3, 4);
@@ -4019,7 +4042,7 @@ f = x().g", 6, "g", DisplayName = "class x, def g")]
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
                 var signatures = await server.SendSignatureHelp(TestData.GetDefaultModuleUri(), signatureLine, 1);
 
-                signatures.Should().OnlyHaveSignature($"{expectedName}(a: complex, b: int, c: str)");
+                signatures.Should().OnlyHaveSignature($"{expectedName}(a, b, c)");
             }
         }
 
@@ -4068,7 +4091,7 @@ f = x().g", 6, "g", DisplayName = "class x, def g")]
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
                 var signatures = await server.SendSignatureHelp(TestData.GetDefaultModuleUri(), signatureLine, 1);
 
-                signatures.Should().OnlyHaveSignature($"{expectedName}(a: complex, b: int, c: str, *d: {expectedDType})");
+                signatures.Should().OnlyHaveSignature($"{expectedName}(a, b, c, *d)");
             }
         }
 
@@ -4098,7 +4121,7 @@ f = x().g", 6, "g", DisplayName = "class x, def g")]
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
                 var signatures = await server.SendSignatureHelp(TestData.GetDefaultModuleUri(), signatureLine, 1);
 
-                signatures.Should().OnlyHaveSignature($"{expectedName}(a: complex, b: int, c: str, **d: dict)");
+                signatures.Should().OnlyHaveSignature($"{expectedName}(a, b, c, **d)");
             }
         }
 
@@ -4367,7 +4390,7 @@ f('a', 'b', 1)
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
                 var signatures = await server.SendSignatureHelp(uri, 6, 2);
 
-                signatures.Should().OnlyHaveSignature("f(a: float, int, str, b: float, int, str, c: float, int, str=0)");
+                signatures.Should().OnlyHaveSignature("f(a, b, c: int=0)");
             }
         }
 
@@ -4972,13 +4995,14 @@ def g(a, b, c): pass
 
         [PermutationalTestMethod(2), Priority(0)]
         public async Task CrossModule(int[] permutation) {
-            var contents = new [] { "import module2",  "x = 42" };
+            var contents = new[] { "import module2", "x = 42" };
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
 
                 await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                 await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
                 var analysis = await server.GetAnalysisAsync(uris[0]);
                 analysis.Should().HaveVariable("module2").WithValue<IModuleInfo>()
@@ -4988,7 +5012,7 @@ def g(a, b, c): pass
 
         [PermutationalTestMethod(2), Priority(0)]
         public async Task CrossModuleCall(int[] permutation) {
-            var contents = new [] { @"
+            var contents = new[] { @"
 import module2
 y = module2.f('abc')
 ",
@@ -5341,7 +5365,7 @@ t.x, t. =
 
             var files = Directory.GetFiles(Path.Combine(configuration.PrefixPath, "Lib"), "*.py", SearchOption.AllDirectories);
             Trace.TraceInformation($"Files count: {files}");
-            var contentTasks = files.Select(f => File.ReadAllTextAsync(f)).ToArray();
+            var contentTasks = files.Take(50).Select(f => File.ReadAllTextAsync(f)).ToArray();
 
             await Task.WhenAll(contentTasks);
 
@@ -5350,7 +5374,7 @@ t.x, t. =
             var analysisCompleteTask = Task.CompletedTask;
             try {
                 server = await CreateServerAsync(configuration);
-                for (var i = 0; i < files.Length && server.AnalysisQueue.Count < 50; i++) {
+                for (var i = 0; i < contentTasks.Length && server.AnalysisQueue.Count < 50; i++) {
                     await server.SendDidOpenTextDocument(new Uri(files[i]), contentTasks[i].Result);
                 }
 
@@ -5454,7 +5478,7 @@ abc = 42
                     .And.HaveVariable("abc").OfType(BuiltinTypeId.Int);
             }
         }
-        
+
         [TestMethod, Priority(0)]
         public async Task PackageRelativeImport() {
             var src1 = "from .y import abc";
@@ -5514,7 +5538,7 @@ abc = 42
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysisX = await server.GetAnalysisAsync(subpackageModuleXUri);
-                
+
                 analysisX.Should().HaveVariable(variable).OfType(BuiltinTypeId.Function);
             }
         }
@@ -5557,7 +5581,7 @@ a = f()
 
         [PermutationalTestMethod(2), Priority(0)]
         public async Task Decorator(int[] permutation) {
-            var contents = new [] { @"
+            var contents = new[] { @"
 import module2
 
 inst = module2.MyClass()
@@ -5585,6 +5609,7 @@ g = MyClass().mydec(module1.f)
                 await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                 await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
 
@@ -5793,7 +5818,7 @@ retGivenBool = returnsGivenWithDecorator2(True)";
 
         [PermutationalTestMethod(2), Priority(0)]
         public async Task DecoratorOverflow(int[] permutation) {
-            var contents = new [] { @"
+            var contents = new[] { @"
 import mod2
 
 @mod2.decorator_b
@@ -5855,7 +5880,7 @@ def my_fn():
     return None
 ";
 
-            
+
             using (var server = await CreateServerAsync()) {
                 server.Analyzer.Limits.ProcessCustomDecorators = false;
 
@@ -6354,12 +6379,12 @@ r2 = fn(123, None, 4.5)
             Console.WriteLine($"Actual:{Environment.NewLine}{dump}");
 
             Assert.AreEqual(entry.DefaultModule + @"
-  <statements>
-  <isinstance scope>
+    <statements>
+    <isinstance scope>
     <comprehension scope>
-      <lambda>
+        <lambda>
         <statements>
-  <statements>", dump);
+    <statements>", dump);
         }
 
         [TestMethod, Priority(0)]

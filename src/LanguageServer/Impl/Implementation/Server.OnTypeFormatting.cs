@@ -21,7 +21,7 @@ using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
-        public override async Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params, CancellationToken cancellationToken) {
+        public override Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params, CancellationToken cancellationToken) {
             int targetLine; // One-indexed line number
 
             switch (@params.ch) {
@@ -38,13 +38,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
 
             if (!(ProjectFiles.GetEntry(uri) is IDocument doc)) {
-                return Array.Empty<TextEdit>();
+                return Task.FromResult(Array.Empty<TextEdit>());
             }
             var part = ProjectFiles.GetPart(uri);
 
             using (var reader = doc.ReadDocument(part, out _)) {
                 var lineFormatter = new LineFormatter(reader, Analyzer.LanguageVersion);
-                return lineFormatter.FormatLine(targetLine);
+                return Task.FromResult(lineFormatter.FormatLine(targetLine));
             }
         }
     }
