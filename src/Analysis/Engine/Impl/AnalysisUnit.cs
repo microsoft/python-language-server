@@ -109,7 +109,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         internal void Enqueue() {
-            if (!ForEval && !IsInQueue && !_suppressEnqueue && NeedsAnalysis()) {
+            if (!ForEval && !IsInQueue && !_suppressEnqueue) {
                 State.Queue.Append(this);
                 AnalysisLog.Enqueue(State.Queue, this);
                 IsInQueue = true;
@@ -119,10 +119,6 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }
         }
-
-        private bool NeedsAnalysis()
-            => _analysisCount == 0 || (_scope != null && _scope.AllVariables.Select(k => k.Value).Any(v => !v.HasTypes));
-
 
         /// <summary>
         /// The AST which will be analyzed when this node is analyzed
