@@ -27,7 +27,6 @@ using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.Python.UnitTests.Core.MSTest;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
@@ -2994,7 +2993,7 @@ def f(abc):
 
                 // External module 'abc', URI varies depending on install
                 var externalUri = references[1].uri;
-                externalUri.LocalPath.Should().Contain("abc.py");
+                externalUri.LocalPath.Should().EndWith("abc.py");
  
                 references.Should().OnlyHaveReferences(
                     (uri, (1, 6, 1, 9), ReferenceKind.Definition),
