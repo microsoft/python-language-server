@@ -19,12 +19,6 @@
     <Compile Remove="ProcessHelperTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <!--Removal candidates-->
-    <Compile Remove="BaseAnalysisTest.cs" />
-    <Compile Remove="AnalysisTest.Perf.cs" />
-    <Compile Remove="TestRunner.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <None Remove="app.config" />
   </ItemGroup>
   <ItemGroup>

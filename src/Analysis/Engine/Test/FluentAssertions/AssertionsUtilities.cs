@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Infrastructure;
@@ -207,5 +208,43 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
         public static string DoubleEscape(string input) 
             => input.Replace("\r", "\\\u200Br").Replace("\n", "\\\u200Bn").Replace("\t", @"\t");
+
+        [CustomAssertion]
+        public static Continuation AssertIsNotNull<T>(this AssertionScope assertionScope, T instance, string subjectName, string itemName, string accessorName)
+            where T : class
+            => assertionScope.ForCondition(!(instance is null))
+                .FailWith($"Expected {subjectName} to have {itemName}{{reason}}, but {accessorName} is null.");
+
+        [CustomAssertion]
+        public static Continuation AssertAtIndex<T, TItem>(this AssertionScope assertionScope, IReadOnlyList<T> collection, int index, string subjectName, string itemName)
+            where T : class => assertionScope.ForCondition(collection.Count > index)
+            .FailWith($"Expected {subjectName} to have {itemName} of type {typeof(T).Name} at index {index}{{reason}}, but collection has only {collection.Count} items.", subjectName, itemName)
+            .Then
+            .ForCondition(collection[index] is TItem)
+            .FailWith($"Expected {subjectName} to have {itemName} of type `{typeof(T).Name}` at index {index}{{reason}}, but its type is `{collection[index].GetType().Name}`.");
+
+        [CustomAssertion]
+        public static Continuation AssertHasMember(this AssertionScope assertionScope,  IAnalysisValue analysisValue, IScope scope, string memberName, string analysisValueName, string memberPrintName, out IAnalysisSet member) {
+            try {
+                member = analysisValue.GetMember(null, new AnalysisUnit(null, null, scope, true), memberName);
+            } catch (Exception e) {
+                member = null;
+                return assertionScope.FailWith($"Expected {analysisValueName} to have a {memberPrintName}{{reason}}, but {nameof(analysisValue.GetMember)} has failed with exception: {e}.");
+            }
+
+            return assertionScope.ForCondition(!(member is null))
+                .FailWith($"Expected {analysisValueName} to have a {memberPrintName}{{reason}}.");
+        }
+
+        [CustomAssertion]
+        public static Continuation AssertHasMemberOfType<TMember>(this AssertionScope assertionScope,  IAnalysisValue analysisValue, IScope scope, string memberName, string analysisValueName, string memberPrintName, out TMember typedMember)
+            where TMember : class, IAnalysisValue {
+            var continuation = assertionScope.AssertHasMember(analysisValue, scope, memberName, analysisValueName, memberPrintName, out var member)
+                .Then
+                .ForCondition(member is TMember)
+                .FailWith($"Expected {analysisValueName} to have a {memberPrintName} of type {typeof(TMember)}{{reason}}, but its type is {member.GetType()}.");
+            typedMember = member as TMember;
+            return continuation;
+        }
     }
 }
