@@ -579,8 +579,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private IDisposable GetDocumentParseCounter(IDocument doc, out int count) {
+            VolatileCounter counter;
             lock (_pendingParse) {
-                if (!_pendingParse.TryGetValue(doc, out var counter)) {
+                if (!_pendingParse.TryGetValue(doc, out counter)) {
                     _pendingParse[doc] = counter = new VolatileCounter();
                     // Automatically remove counter from the dictionary when it reaches zero.
                     counter.WaitForChangeToZeroAsync().ContinueWith(t => RemoveDocumentParseCounter(t, doc, counter));

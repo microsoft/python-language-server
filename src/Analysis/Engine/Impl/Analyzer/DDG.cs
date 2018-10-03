@@ -30,7 +30,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         private SuiteStatement _curSuite;
         public readonly HashSet<IPythonProjectEntry> AnalyzedEntries = new HashSet<IPythonProjectEntry>();
 
-        public void Analyze(Queue<AnalysisUnit> queue, CancellationToken cancel, Action<int> reportQueueSize = null, int reportQueueInterval = 1) {
+        public void Analyze(Deque<AnalysisUnit> queue, CancellationToken cancel, Action<int> reportQueueSize = null, int reportQueueInterval = 1) {
             if (cancel.IsCancellationRequested) {
                 return;
             }
@@ -46,7 +46,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 }
 
                 while (queue.Count > 0 && !cancel.IsCancellationRequested) {
-                    _unit = queue.Dequeue();
+                    _unit = queue.PopLeft();
 
                     if (_unit == endOfQueueMarker) {
                         AnalysisLog.EndOfQueue(queueCountAtStart, queue.Count);
@@ -107,9 +107,10 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         public PythonAnalyzer ProjectState => _unit.State;
 
         public override bool Walk(PythonAst node) {
+            ModuleReference existingRef;
             Debug.Assert(node == _unit.Ast);
 
-            if (!ProjectState.Modules.TryImport(_unit.DeclaringModule.Name, out var existingRef)) {
+            if (!ProjectState.Modules.TryImport(_unit.DeclaringModule.Name, out existingRef)) {
                 // publish our module ref now so that we don't collect dependencies as we'll be fully processed
                 if (existingRef == null) {
                     ProjectState.Modules[_unit.DeclaringModule.Name] = new ModuleReference(_unit.DeclaringModule, _unit.DeclaringModule.Name);
@@ -470,7 +471,8 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         }
 
         public override bool Walk(FunctionDefinition node) {
-            if (_unit.InterpreterScope.TryGetNodeScope(node, out var funcScope)) {
+            InterpreterScope funcScope;
+            if (_unit.InterpreterScope.TryGetNodeScope(node, out funcScope)) {
                 var function = ((FunctionScope)funcScope).Function;
                 var analysisUnit = (FunctionAnalysisUnit)((FunctionScope)funcScope).Function.AnalysisUnit;
 
@@ -630,7 +632,8 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         }
 
         private void TryPushIsInstanceScope(Node node, Expression test) {
-            if (Scope.TryGetNodeScope(node, out var newScope)) {
+            InterpreterScope newScope;
+            if (Scope.TryGetNodeScope(node, out newScope)) {
                 var outerScope = Scope;
                 var isInstanceScope = (IsInstanceScope)newScope;
 

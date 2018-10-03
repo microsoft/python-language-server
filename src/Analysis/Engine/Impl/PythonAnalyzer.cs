@@ -123,6 +123,8 @@ namespace Microsoft.PythonTools.Analysis {
 
             Limits = AnalysisLimits.GetDefaultLimits();
 
+            Queue = new Deque<AnalysisUnit>();
+
             _defaultContext = _interpreter.CreateModuleContext();
 
             _evalUnit = new AnalysisUnit(null, null, new ModuleInfo("$global", new ProjectEntry(this, "$global", String.Empty, null, null), _defaultContext).Scope, true);
@@ -220,7 +222,8 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         /// <remarks>New in 2.1</remarks>
         public void AddModuleAlias(string moduleName, string moduleAlias) {
-            if (Modules.TryImport(moduleName, out var modRef)) {
+            ModuleReference modRef;
+            if (Modules.TryImport(moduleName, out modRef)) {
                 Modules[moduleAlias] = modRef;
             }
         }
@@ -277,8 +280,9 @@ namespace Microsoft.PythonTools.Analysis {
         /// '__init__'.
         /// </param>
         public IEnumerable<IPythonProjectEntry> GetEntriesThatImportModule(string moduleName, bool includeUnresolved) {
+            ModuleReference modRef;
             var entries = new List<IPythonProjectEntry>();
-            if (_modules.TryImport(moduleName, out var modRef) && modRef.HasReferences) {
+            if (_modules.TryImport(moduleName, out modRef) && modRef.HasReferences) {
                 entries.AddRange(modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>());
             }
 
@@ -362,7 +366,8 @@ namespace Microsoft.PythonTools.Analysis {
                 }
 
                 if (moduleRef.IsValid) {
-                    if (!d.TryGetValue(modName, out var l)) {
+                    List<ModuleLoadState> l;
+                    if (!d.TryGetValue(modName, out l)) {
                         d[modName] = l = new List<ModuleLoadState>();
                     }
                     if (moduleRef.HasModule) {
@@ -525,7 +530,8 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         /// <returns></returns>
         public IMemberResult[] GetModuleMembers(IModuleContext moduleContext, string[] names, bool includeMembers = false) {
-            if (Modules.TryImport(names[0], out var moduleRef)) {
+            ModuleReference moduleRef;
+            if (Modules.TryImport(names[0], out moduleRef)) {
                 var module = moduleRef.Module as IModule;
                 if (module != null) {
                     return GetModuleMembers(moduleContext, names, includeMembers, module);
@@ -691,7 +697,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        internal Queue<AnalysisUnit> Queue { get; } = new Queue<AnalysisUnit>();
+        internal Deque<AnalysisUnit> Queue { get; }
 
         /// <summary>
         /// Returns the cached value for the provided key, creating it with
@@ -702,7 +708,8 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="maker">Function to create the value.</param>
         /// <returns>The cached value or <c>null</c>.</returns>
         internal AnalysisValue GetCached(object key, Func<AnalysisValue> maker) {
-            if (!_itemCache.TryGetValue(key, out var result)) {
+            AnalysisValue result;
+            if (!_itemCache.TryGetValue(key, out result)) {
                 // Set the key to prevent recursion
                 _itemCache[key] = null;
                 _itemCache[key] = result = maker();
@@ -808,7 +815,8 @@ namespace Microsoft.PythonTools.Analysis {
             var children = (container as IModule)?.GetChildrenPackages(moduleContext);
             if (children?.Any() ?? false) {
                 foreach (var child in children) {
-                    if (result.TryGetValue(child.Key, out var existing)) {
+                    IAnalysisSet existing;
+                    if (result.TryGetValue(child.Key, out existing)) {
                         result[child.Key] = existing.Add(child.Value);
                     } else {
                         result[child.Key] = child.Value;
@@ -824,7 +832,8 @@ namespace Microsoft.PythonTools.Analysis {
         internal ConcurrentDictionary<string, ModuleInfo> ModulesByFilename => _modulesByFilename;
 
         public bool TryGetProjectEntryByPath(string path, out IProjectEntry projEntry) {
-            if (_modulesByFilename.TryGetValue(path, out var modInfo)) {
+            ModuleInfo modInfo;
+            if (_modulesByFilename.TryGetValue(path, out modInfo)) {
                 projEntry = modInfo.ProjectEntry;
                 return true;
             }
@@ -1029,7 +1038,8 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private AggregateProjectEntry GetAggregateWorker(IProjectEntry[] all) {
-            if (!_aggregates.TryGetValue(all, out var agg)) {
+            AggregateProjectEntry agg;
+            if (!_aggregates.TryGetValue(all, out agg)) {
                 _aggregates[all] = agg = new AggregateProjectEntry(new HashSet<IProjectEntry>(all));
 
                 foreach (var proj in all) {
