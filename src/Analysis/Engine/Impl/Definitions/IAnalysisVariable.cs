@@ -22,5 +22,7 @@ namespace Microsoft.PythonTools.Analysis {
         ILocationInfo Location { get; }
 
         VariableType Type { get; }
+
+        IVariableDefinition Variable { get; }
     }
 }
