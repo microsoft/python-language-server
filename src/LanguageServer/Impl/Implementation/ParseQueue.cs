@@ -29,7 +29,7 @@ using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
-    class ParseQueue {
+    class ParseQueue: IDisposable {
         public const string PythonParserSource = "Python (parser)";
         private const string TaskCommentSource = "Task comment";
 
@@ -40,6 +40,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _parsingInProgress = new VolatileCounter();
             _parsing = new ConcurrentDictionary<Uri, ParseTask>();
         }
+
+        public void Dispose() => _parsing.Clear();
 
         public int Count => _parsingInProgress.Count;
 

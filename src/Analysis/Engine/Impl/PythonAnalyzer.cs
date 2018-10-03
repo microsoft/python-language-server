@@ -985,6 +985,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         protected virtual void Dispose(bool disposing) {
             if (disposing) {
+                Queue.Clear();
                 IDisposable interpreter = _interpreter as IDisposable;
                 if (_disposeInterpreter && interpreter != null) {
                     interpreter.Dispose();

@@ -82,8 +82,6 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public void Clear() {
-            AssertScope();
-
             _version++;
 
             _head = _tail = 0;
