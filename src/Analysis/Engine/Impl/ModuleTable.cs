@@ -172,7 +172,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// Modules that are already in the table as builtins are replaced or
         /// removed, but no new modules are added.
         /// </summary>
-        public void ReInit() {
+        public void Reload() {
             var newNames = new HashSet<string>(_interpreter.GetModuleNames(), StringComparer.Ordinal);
 
             foreach (var keyValue in _modules) {

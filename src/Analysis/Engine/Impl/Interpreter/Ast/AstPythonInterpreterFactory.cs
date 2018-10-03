@@ -18,14 +18,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    public class AstPythonInterpreterFactory : IPythonInterpreterFactory, IPythonInterpreterFactoryWithLog, ICustomInterpreterSerialization, IDisposable {
+    public class AstPythonInterpreterFactory : IPythonInterpreterFactory2, IPythonInterpreterFactoryWithLog, ICustomInterpreterSerialization, IDisposable {
         private readonly bool _useDefaultDatabase;
         private bool _disposed;
 
@@ -125,12 +123,15 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         /// <summary>
         /// For test use only
         /// </summary>
-        internal async Task SetCurrentSearchPathsAsync(IEnumerable<string> paths, CancellationToken cancellationToken) {
-            await ModuleResolution.SetCurrentSearchPathsAsync(paths, cancellationToken);
+        internal void SetCurrentSearchPaths(IEnumerable<string> paths) {
+            ModuleResolution.SetCurrentSearchPaths(paths);
             ImportableModulesChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public virtual IPythonInterpreter CreateInterpreter() => new AstPythonInterpreter(this, _log);
+        public virtual IPythonInterpreter CreateInterpreter(string workspaceRoot) 
+            => new AstPythonInterpreter(this, workspaceRoot, _log);
+        public virtual IPythonInterpreter CreateInterpreter() 
+            => CreateInterpreter(string.Empty);
 
         internal void Log(TraceLevel level, string eventName, params object[] args) {
             _log?.Log(level, eventName, args);

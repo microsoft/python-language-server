@@ -35,31 +35,28 @@ namespace Microsoft.PythonTools.Analysis {
     /// Performs analysis of multiple Python code files and enables interrogation of the resulting analysis.
     /// </summary>
     public partial class PythonAnalyzer : IPythonAnalyzer, IDisposable {
-        private readonly IPythonInterpreter _interpreter;
+        private static object _nullKey = new object();
+
         private readonly bool _disposeInterpreter;
-        private readonly IPythonInterpreterFactory _interpreterFactory;
-        private readonly ModuleTable _modules;
-        private readonly ConcurrentDictionary<string, ModuleInfo> _modulesByFilename;
         private readonly HashSet<ModuleInfo> _modulesWithUnresolvedImports;
         private readonly object _modulesWithUnresolvedImportsLock = new object();
-        private IKnownPythonTypes _knownTypes;
         private readonly Dictionary<object, AnalysisValue> _itemCache;
-        internal readonly string _builtinName;
-        internal BuiltinModule _builtinModule;
-        internal ConstantInfo _noneInst;
-        private Action<int> _reportQueueSize;
-        private int _reportQueueInterval;
-        internal readonly IModuleContext _defaultContext;
-        private readonly PythonLanguageVersion _langVersion;
-        internal readonly AnalysisUnit _evalUnit;   // a unit used for evaluating when we don't otherwise have a unit available
         private readonly List<string> _searchPaths = new List<string>();
         private readonly List<string> _typeStubPaths = new List<string>();
         private readonly Dictionary<string, List<SpecializationInfo>> _specializationInfo = new Dictionary<string, List<SpecializationInfo>>();  // delayed specialization information, for modules not yet loaded...
-        private AnalysisLimits _limits = AnalysisLimits.GetDefaultLimits();
-        private static object _nullKey = new object();
         private readonly SemaphoreSlim _reloadLock = new SemaphoreSlim(1, 1);
-        private Dictionary<IProjectEntry[], AggregateProjectEntry> _aggregates = new Dictionary<IProjectEntry[], AggregateProjectEntry>(AggregateComparer.Instance);
         private readonly Dictionary<IProjectEntry, Dictionary<Node, Diagnostic>> _diagnostics = new Dictionary<IProjectEntry, Dictionary<Node, Diagnostic>>();
+
+        internal readonly IModuleContext _defaultContext;
+        internal readonly AnalysisUnit _evalUnit;   // a unit used for evaluating when we don't otherwise have a unit available
+
+        private IKnownPythonTypes _knownTypes;
+        private Action<int> _reportQueueSize;
+        private int _reportQueueInterval;
+        private AnalysisLimits _limits = AnalysisLimits.GetDefaultLimits();
+        private Dictionary<IProjectEntry[], AggregateProjectEntry> _aggregates = new Dictionary<IProjectEntry[], AggregateProjectEntry>(AggregateComparer.Instance);
+
+        internal ConstantInfo _noneInst;
 
         public const string PythonAnalysisSource = "Python (analysis)";
 
@@ -69,9 +66,10 @@ namespace Microsoft.PythonTools.Analysis {
         public static async Task<PythonAnalyzer> CreateAsync(
             IPythonInterpreterFactory factory,
             IPythonInterpreter interpreter = null,
+            string workspaceRoot = null,
             CancellationToken token = default(CancellationToken)
         ) {
-            var res = new PythonAnalyzer(factory, interpreter);
+            var res = new PythonAnalyzer(factory, interpreter, workspaceRoot);
             try {
                 await res.ReloadModulesAsync(token).ConfigureAwait(false);
                 var r = res;
@@ -89,7 +87,7 @@ namespace Microsoft.PythonTools.Analysis {
             IPythonInterpreterFactory factory,
             IPythonInterpreter interpreter = null
         ) {
-            var res = new PythonAnalyzer(factory, interpreter);
+            var res = new PythonAnalyzer(factory, interpreter, null);
             try {
                 res.ReloadModulesAsync(CancellationToken.None).WaitAndUnwrapExceptions();
                 var r = res;
@@ -106,23 +104,29 @@ namespace Microsoft.PythonTools.Analysis {
         /// Creates a new analyzer that is not ready for use. You must call and
         /// wait for <see cref="ReloadModulesAsync"/> to complete before using.
         /// </summary>
-        public static PythonAnalyzer Create(IPythonInterpreterFactory factory, IPythonInterpreter interpreter = null) {
-            return new PythonAnalyzer(factory, interpreter);
+        public static PythonAnalyzer Create(IPythonInterpreterFactory factory, IPythonInterpreter interpreter = null, string workspaceRoot = null) {
+            return new PythonAnalyzer(factory, interpreter, null);
         }
-
-        internal PythonAnalyzer(IPythonInterpreterFactory factory, IPythonInterpreter pythonInterpreter) {
-            _interpreterFactory = factory;
-            _langVersion = factory.GetLanguageVersion();
+        internal PythonAnalyzer(IPythonInterpreterFactory factory, IPythonInterpreter pythonInterpreter, string workspaceRoot) {
+            InterpreterFactory = factory;
+            LanguageVersion = factory.GetLanguageVersion();
             _disposeInterpreter = pythonInterpreter == null;
-            _interpreter = pythonInterpreter ?? factory.CreateInterpreter();
-            _builtinName = BuiltinTypeId.Unknown.GetModuleName(_langVersion);
-            _modules = new ModuleTable(this, _interpreter);
-            _modulesByFilename = new ConcurrentDictionary<string, ModuleInfo>(StringComparer.OrdinalIgnoreCase);
+
+            Interpreter = pythonInterpreter;
+            if (Interpreter == null) {
+                Interpreter = factory is IPythonInterpreterFactory2 f2
+                    ? f2.CreateInterpreter(workspaceRoot)
+                    : factory.CreateInterpreter();
+            }
+
+            BuiltinName = BuiltinTypeId.Unknown.GetModuleName(LanguageVersion);
+            Modules = new ModuleTable(this, Interpreter);
+            ModulesByFilename = new ConcurrentDictionary<string, ModuleInfo>(StringComparer.OrdinalIgnoreCase);
             _modulesWithUnresolvedImports = new HashSet<ModuleInfo>();
             _itemCache = new Dictionary<object, AnalysisValue>();
 
             Limits = AnalysisLimits.GetDefaultLimits();
-            _defaultContext = _interpreter.CreateModuleContext();
+            _defaultContext = Interpreter.CreateModuleContext();
 
             _evalUnit = new AnalysisUnit(null, null, new ModuleInfo("$global", new ProjectEntry(this, "$global", String.Empty, null, null), _defaultContext).Scope, true);
             AnalysisLog.NewUnit(_evalUnit);
@@ -131,16 +135,16 @@ namespace Microsoft.PythonTools.Analysis {
         private async Task LoadKnownTypesAsync(CancellationToken token) {
             _itemCache.Clear();
 
-            var fallback = new FallbackBuiltinModule(_langVersion);
+            var fallback = new FallbackBuiltinModule(LanguageVersion);
 
-            var moduleRef = await Modules.TryImportAsync(_builtinName, token).ConfigureAwait(false);
+            var moduleRef = await Modules.TryImportAsync(BuiltinName, token).ConfigureAwait(false);
             if (moduleRef != null) {
-                _builtinModule = (BuiltinModule)moduleRef.Module;
+                BuiltinModule = (BuiltinModule)moduleRef.Module;
             } else {
-                _builtinModule = new BuiltinModule(fallback, this);
-                Modules[_builtinName] = new ModuleReference(_builtinModule, _builtinName);
+                BuiltinModule = new BuiltinModule(fallback, this);
+                Modules[BuiltinName] = new ModuleReference(BuiltinModule, BuiltinName);
             }
-            _builtinModule.InterpreterModule.Imported(_defaultContext);
+            BuiltinModule.InterpreterModule.Imported(_defaultContext);
 
             Modules.AddBuiltinModuleWrapper("sys", SysModuleInfo.Wrap);
             Modules.AddBuiltinModuleWrapper("typing", TypingModuleInfo.Wrap);
@@ -171,13 +175,14 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             try {
-                _interpreterFactory.NotifyImportNamesChanged();
-                _modules.ReInit();
-                _interpreter.Initialize(this);
+                Interpreter.Initialize(this);
+
+                InterpreterFactory.NotifyImportNamesChanged();
+                Modules.Reload();
 
                 await LoadKnownTypesAsync(token);
 
-                foreach (var mod in _modulesByFilename.Values) {
+                foreach (var mod in ModulesByFilename.Values) {
                     mod.Clear();
                     mod.EnsureModuleVariables(this);
                 }
@@ -188,7 +193,8 @@ namespace Microsoft.PythonTools.Analysis {
 
         #region Public API
 
-        public PythonLanguageVersion LanguageVersion => _langVersion;
+        public PythonLanguageVersion LanguageVersion { get; }
+        internal string BuiltinName { get; }
 
         /// <summary>
         /// Adds a new module of code to the list of available modules and returns a ProjectEntry object.
@@ -209,7 +215,7 @@ namespace Microsoft.PythonTools.Analysis {
                 DoDelayedSpecialization(moduleName);
             }
             if (filePath != null) {
-                _modulesByFilename[filePath] = entry.MyScope;
+                ModulesByFilename[filePath] = entry.MyScope;
             }
             return entry;
         }
@@ -247,7 +253,7 @@ namespace Microsoft.PythonTools.Analysis {
                 importers = GetEntriesThatImportModule(pyEntry.ModuleName, false).ToArray();
             }
 
-            if (!string.IsNullOrEmpty(entry.FilePath) && _modulesByFilename.TryRemove(entry.FilePath, out var moduleInfo)) {
+            if (!string.IsNullOrEmpty(entry.FilePath) && ModulesByFilename.TryRemove(entry.FilePath, out var moduleInfo)) {
                 lock (_modulesWithUnresolvedImportsLock) {
                     _modulesWithUnresolvedImports.Remove(moduleInfo);
                 }
@@ -279,7 +285,7 @@ namespace Microsoft.PythonTools.Analysis {
         public IEnumerable<IPythonProjectEntry> GetEntriesThatImportModule(string moduleName, bool includeUnresolved) {
             ModuleReference modRef;
             var entries = new List<IPythonProjectEntry>();
-            if (_modules.TryImport(moduleName, out modRef) && modRef.HasReferences) {
+            if (Modules.TryImport(moduleName, out modRef) && modRef.HasReferences) {
                 entries.AddRange(modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>());
             }
 
@@ -433,7 +439,7 @@ namespace Microsoft.PythonTools.Analysis {
         public IEnumerable<ExportedMemberInfo> FindNameInAllModules(string name) {
             string pkgName;
 
-            if (_interpreter is ICanFindModuleMembers finder) {
+            if (Interpreter is ICanFindModuleMembers finder) {
                 foreach (var modName in finder.GetModulesNamed(name)) {
                     int dot = modName.LastIndexOf('.');
                     if (dot < 0) {
@@ -448,7 +454,7 @@ namespace Microsoft.PythonTools.Analysis {
                 }
 
                 // Scan added modules directly
-                foreach (var mod in _modulesByFilename.Values) {
+                foreach (var mod in ModulesByFilename.Values) {
                     if (mod.Name == name) {
                         yield return new ExportedMemberInfo(null, mod.Name);
                     } else if (GetPackageNameIfMatch(name, mod.Name, out pkgName)) {
@@ -478,7 +484,7 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }
 
-            foreach (var modName in _interpreter.GetModuleNames()) {
+            foreach (var modName in Interpreter.GetModuleNames()) {
                 if (modName == name) {
                     yield return new ExportedMemberInfo(null, modName);
                 } else if (GetPackageNameIfMatch(name, modName, out pkgName)) {
@@ -513,12 +519,12 @@ namespace Microsoft.PythonTools.Analysis {
         /// 
         /// This property is thread safe.
         /// </summary>
-        public IPythonInterpreter Interpreter => _interpreter;
+        public IPythonInterpreter Interpreter { get; }
 
         /// <summary>
         /// Returns the interpreter factory that the analyzer is using.
         /// </summary>
-        public IPythonInterpreterFactory InterpreterFactory => _interpreterFactory;
+        public IPythonInterpreterFactory InterpreterFactory { get; }
 
         /// <summary>
         /// returns the MemberResults associated with modules in the specified
@@ -714,7 +720,7 @@ namespace Microsoft.PythonTools.Analysis {
             return result;
         }
 
-        internal BuiltinModule BuiltinModule => _builtinModule;
+        internal BuiltinModule BuiltinModule { get; private set; }
 
         internal BuiltinInstanceInfo GetInstance(IPythonType type) {
             return GetBuiltinType(type).Instance;
@@ -781,7 +787,7 @@ namespace Microsoft.PythonTools.Analysis {
             } else if (attr is IBuiltinProperty bp) {
                 return GetCached(attr, () => new BuiltinPropertyInfo(bp, this)) ?? _noneInst;
             } else if (attr is IPythonModule pm) {
-                return _modules.GetBuiltinModule(pm);
+                return Modules.GetBuiltinModule(pm);
             } else if (attr is IPythonEvent pe) {
                 return GetCached(attr, () => new BuiltinEventInfo(pe, this)) ?? _noneInst;
             } else if (attr is IPythonConstant ||
@@ -824,13 +830,12 @@ namespace Microsoft.PythonTools.Analysis {
             return result;
         }
 
-        internal ModuleTable Modules => _modules;
+        internal ModuleTable Modules { get; }
 
-        internal ConcurrentDictionary<string, ModuleInfo> ModulesByFilename => _modulesByFilename;
+        internal ConcurrentDictionary<string, ModuleInfo> ModulesByFilename { get; }
 
         public bool TryGetProjectEntryByPath(string path, out IProjectEntry projEntry) {
-            ModuleInfo modInfo;
-            if (_modulesByFilename.TryGetValue(path, out modInfo)) {
+            if (ModulesByFilename.TryGetValue(path, out var modInfo)) {
                 projEntry = modInfo.ProjectEntry;
                 return true;
             }
@@ -913,7 +918,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return;
             }
 
-            if (_builtinModule == null) {
+            if (BuiltinModule == null) {
                 Debug.Fail("Used analyzer without reloading modules");
                 ReloadModulesAsync(cancel).WaitAndUnwrapExceptions();
             }
@@ -983,7 +988,7 @@ namespace Microsoft.PythonTools.Analysis {
         protected virtual void Dispose(bool disposing) {
             if (disposing) {
                 Queue.Clear();
-                var interpreter = _interpreter as IDisposable;
+                var interpreter = Interpreter as IDisposable;
                 if (_disposeInterpreter && interpreter != null) {
                     interpreter.Dispose();
                 }

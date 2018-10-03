@@ -31,7 +31,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private readonly AstModuleCache _moduleCache;
         private readonly InterpreterConfiguration _configuration;
         private readonly AnalysisLogWriter _log;
-        private readonly SemaphoreSlim _sem = new SemaphoreSlim(1);
+        private readonly bool _requireInitPy;
 
         private IReadOnlyDictionary<string, string> _searchPathPackages;
         private IReadOnlyList<string> _searchPaths;
@@ -40,6 +40,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             _moduleCache = moduleCache;
             _configuration = configuration;
             _log = log;
+            _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_configuration.Version);
         }
 
         public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken) {
@@ -47,24 +48,18 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return _searchPathPackages;
             }
 
-            await _sem.WaitAsync(cancellationToken);
-            try  {
-                var sp = await GetSearchPathsAsync(cancellationToken).ConfigureAwait(false);
-                if (sp == null) {
-                    return _emptyModuleSet;
-                }
-
-                var requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_configuration.Version);
-                var packageDict = await GetImportableModulesAsync(sp, requireInitPy, cancellationToken).ConfigureAwait(false);
-                if (!packageDict.Any()) {
-                    return _emptyModuleSet;
-                }
-
-                _searchPathPackages = packageDict;
-                return packageDict;
-            } finally {
-                _sem.Release();
+            var sp = await GetSearchPathsAsync(cancellationToken).ConfigureAwait(false);
+            if (sp == null) {
+                return _emptyModuleSet;
             }
+
+            var packageDict = await GetImportableModulesAsync(sp, cancellationToken).ConfigureAwait(false);
+            if (!packageDict.Any()) {
+                return _emptyModuleSet;
+            }
+
+            _searchPathPackages = packageDict;
+            return packageDict;
         }
 
         public async Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken) {
@@ -72,15 +67,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return _searchPaths;
             }
 
-            await _sem.WaitAsync(cancellationToken);
-            try {
-                _searchPaths = await GetCurrentSearchPathsAsync(cancellationToken).ConfigureAwait(false);
-                Debug.Assert(_searchPaths != null, "Should have search paths");
-                _log?.Log(TraceLevel.Info, "SearchPaths", _searchPaths.Cast<object>().ToArray());
-                return _searchPaths;
-            } finally {
-                _sem.Release();
-            }
+            _searchPaths = await GetCurrentSearchPathsAsync(cancellationToken).ConfigureAwait(false);
+            Debug.Assert(_searchPaths != null, "Should have search paths");
+            _log?.Log(TraceLevel.Info, "SearchPaths", _searchPaths.Cast<object>().ToArray());
+            return _searchPaths;
         }
 
         private async Task<IReadOnlyList<string>> GetCurrentSearchPathsAsync(CancellationToken cancellationToken) {
@@ -99,7 +89,16 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             //}
         }
 
-        public static async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, bool requireInitPy, CancellationToken cancellationToken) {
+        public async Task<IReadOnlyDictionary<string, string>> GetPackagesFromSearchPathsAsync(IReadOnlyList<string> searchPaths, CancellationToken cancellationToken) {
+            if (searchPaths == null || searchPaths.Count == 0) {
+                return new Dictionary<string, string>();
+            }
+
+            _log?.Log(TraceLevel.Verbose, "GetImportableModulesAsync");
+            return await GetImportableModulesAsync(searchPaths, cancellationToken);
+        }
+
+        public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken) {
             var packageDict = new Dictionary<string, string>();
 
             foreach (var searchPath in searchPaths.MaybeEnumerate()) {
@@ -107,7 +106,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 if (File.Exists(searchPath)) {
                     packages = GetPackagesFromZipFile(searchPath, cancellationToken);
                 } else if (Directory.Exists(searchPath)) {
-                    packages = await Task.Run(() => GetPackagesFromDirectory(searchPath, requireInitPy, cancellationToken)).ConfigureAwait(false);
+                    packages = await Task.Run(() => GetPackagesFromDirectory(searchPath, cancellationToken)).ConfigureAwait(false);
                 }
                 foreach (var package in packages.MaybeEnumerate()) {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -118,12 +117,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return packageDict;
         }
 
-        private static IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, bool requireInitPy, CancellationToken cancellationToken) {
+        private IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken) {
             return ModulePath.GetModulesInPath(
                 searchPath,
                 recurse: false,
                 includePackages: true,
-                requireInitPy: requireInitPy
+                requireInitPy: _requireInitPy
             ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
         }
 
@@ -135,14 +134,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         /// <summary>
         /// For test use only
         /// </summary>
-        internal async Task SetCurrentSearchPathsAsync(IEnumerable<string> paths, CancellationToken cancellationToken) {
-            await _sem.WaitAsync(cancellationToken);
-            try { 
-                _searchPaths = paths.ToArray();
-                _searchPathPackages = null;
-            } finally {
-                _sem.Release();
-            }
+        internal void SetCurrentSearchPaths(IEnumerable<string> paths) {
+            _searchPaths = paths.ToArray();
+            _searchPathPackages = null;
         }
 
         public async Task<TryImportModuleResult> TryImportModuleAsync(
@@ -402,7 +396,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             var mp = mmp.Value;
-
             IPythonModule module;
 
             if (mp.IsCompiled) {
@@ -424,6 +417,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 !string.IsNullOrEmpty(ModulePath.GetPackageInitPy(directory)) :
                 Directory.Exists(directory);
         }
+
         private async Task<ModulePath> FindModuleAsync(string filePath, CancellationToken cancellationToken) {
             var sp = await GetSearchPathsAsync(cancellationToken);
             var bestLibraryPath = "";
@@ -465,6 +459,5 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
             return p;
         }
-
     }
 }

@@ -5600,6 +5600,45 @@ a = f()
             }
         }
 
+        [TestMethod, Priority(0)]
+        public async Task ImportFromClosedUserFile() {
+            var contents1 = @"
+import module2
+
+inst = module2.MyClass()
+
+@inst.mydec
+def f():
+    return 42
+
+
+";
+var contents2 = @"
+import module1
+
+class MyClass(object):
+    def mydec(self, x):
+        return x
+
+g = MyClass().mydec(module1.f)
+";
+
+            var uriSrc1 = await TestData.CreateTestSpecificFileAsync(@"m1.py", contents1);
+            var uriSrc2 = TestData.CreateTestSpecificFile(@"m2.py");
+
+            var rootUri = new Uri(Path.GetDirectoryName(uriSrc1.LocalPath));
+            using (var server = await CreateServerAsync(rootUri: rootUri)) {
+                await server.SendDidOpenTextDocument(uriSrc2, contents2);
+
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                var analysis2 = await server.GetAnalysisAsync(uriSrc2);
+
+                analysis2.Should().HaveVariable("g").OfType(BuiltinTypeId.Function)
+                    .And.HaveVariable("module1").WithValue<IModuleInfo>()
+                    .Which.Should().HaveMemberOfType("f", BuiltinTypeId.Function);
+            }
+        }
+
         [PermutationalTestMethod(2), Priority(0)]
         public async Task Decorator(int[] permutation) {
             var contents = new[] { @"
@@ -5624,14 +5663,14 @@ g = MyClass().mydec(module1.f)
 " };
 
 
+            var uris = TestData.GetNextModuleUris(2);
             using (var server = await CreateServerAsync()) {
-                var uris = TestData.GetNextModuleUris(2);
 
-                //await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                 await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
-                //var analysis1 = await server.GetAnalysisAsync(uris[0]);
+                var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
 
                 //analysis1.Should().HaveFunction("f");

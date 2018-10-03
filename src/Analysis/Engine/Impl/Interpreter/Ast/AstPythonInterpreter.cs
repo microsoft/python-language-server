@@ -30,20 +30,21 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
     internal class AstPythonInterpreter : IPythonInterpreter2, IModuleContext, ICanFindModuleMembers {
         private readonly AstPythonInterpreterFactory _factory;
         private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes;
-        private PythonAnalyzer _analyzer;
-        private AstScrapedPythonModule _builtinModule;
-        private IReadOnlyList<string> _builtinModuleNames;
+        private readonly string _workspaceRoot;
         private readonly ConcurrentDictionary<string, IPythonModule> _modules;
         private readonly AstPythonBuiltinType _noneType;
 
-        internal readonly AnalysisLogWriter _log;
+        private PythonAnalyzer _analyzer;
+        private AstScrapedPythonModule _builtinModule;
+        private IReadOnlyList<string> _builtinModuleNames;
 
         private IReadOnlyDictionary<string, string> _userSearchPathPackages;
         private ConcurrentBag<string> _userSearchPathImported = new ConcurrentBag<string>();
 
-        public AstPythonInterpreter(AstPythonInterpreterFactory factory, AnalysisLogWriter log = null) {
+        public AstPythonInterpreter(AstPythonInterpreterFactory factory, string workspaceRoot, AnalysisLogWriter log = null) {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
-            _log = log;
+            _workspaceRoot = workspaceRoot;
+            Log = log;
             _factory.ImportableModulesChanged += Factory_ImportableModulesChanged;
             _modules = new ConcurrentDictionary<string, IPythonModule>();
             _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>();
@@ -56,6 +57,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             _factory.ImportableModulesChanged -= Factory_ImportableModulesChanged;
         }
 
+
+        public event EventHandler ModuleNamesChanged;
+        public IModuleContext CreateModuleContext() => this;
+        public IPythonInterpreterFactory Factory => _factory;
+        public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_factory.Configuration.Version.ToLanguageVersion());
+        public AnalysisLogWriter Log { get; }
+
         private void Factory_ImportableModulesChanged(object sender, EventArgs e) {
             _modules.Clear();
             ModuleNamesChanged?.Invoke(this, EventArgs.Empty);
@@ -64,12 +72,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public void AddUnimportableModule(string moduleName) {
             _modules[moduleName] = new SentinelModule(moduleName, false);
         }
-
-        public event EventHandler ModuleNamesChanged;
-
-        public IModuleContext CreateModuleContext() => this;
-        public IPythonInterpreterFactory Factory => _factory;
-        public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_factory.Configuration.Version.ToLanguageVersion());
 
         public IPythonType GetBuiltinType(BuiltinTypeId id) {
             if (id < 0 || id > BuiltinTypeIdExtensions.LastTypeId) {
@@ -99,31 +101,25 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         private async Task<IReadOnlyDictionary<string, string>> GetUserSearchPathPackagesAsync(CancellationToken cancellationToken) {
-            _log?.Log(TraceLevel.Verbose, "GetUserSearchPathPackagesAsync");
+            Log?.Log(TraceLevel.Verbose, "GetUserSearchPathPackagesAsync");
             if (_userSearchPathPackages == null) {
-                _userSearchPathPackages = await GetPackagesFromSearchPathsAsync(_analyzer.GetSearchPaths(), cancellationToken);
-                _log?.Log(TraceLevel.Verbose, "GetPackagesFromSearchPathsAsync", _userSearchPathPackages.Keys.Cast<object>().ToArray());
+                _userSearchPathPackages = await _factory.ModuleResolution.GetPackagesFromSearchPathsAsync(_analyzer.GetSearchPaths(), cancellationToken);
+                Log?.Log(TraceLevel.Verbose, "GetPackagesFromSearchPathsAsync", _userSearchPathPackages.Keys.Cast<object>().ToArray());
             }
             return _userSearchPathPackages;
         }
 
-        private async Task<IReadOnlyDictionary<string, string>> GetPackagesFromSearchPathsAsync(IReadOnlyList<string> searchPaths, CancellationToken cancellationToken) {
-            if (searchPaths == null || searchPaths.Count == 0) {
-                return new Dictionary<string, string>();
-            }
-
-            _log?.Log(TraceLevel.Verbose, "GetImportableModulesAsync");
-            var requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_factory.Configuration.Version);
-            return await GetImportableModulesAsync(searchPaths, requireInitPy, cancellationToken);
-        }
-
         private async Task<ModulePath?> FindModuleOnDiskAsync(string name, CancellationToken cancellationToken) {
-            var searchPaths = _analyzer.GetSearchPaths();
-            if (searchPaths == null || searchPaths.Count == 0) {
-                return null;
-            }
+            IReadOnlyList<string> searchPaths = new[] { _workspaceRoot };
 
-            var packages = await GetPackagesFromSearchPathsAsync(searchPaths, cancellationToken);
+            var packages = await _factory.ModuleResolution.GetPackagesFromSearchPathsAsync(searchPaths, cancellationToken);
+            if (packages == null) {
+                searchPaths = _analyzer.GetSearchPaths();
+                if (searchPaths == null || searchPaths.Count == 0) {
+                    return null;
+                }
+                packages = await _factory.ModuleResolution.GetPackagesFromSearchPathsAsync(searchPaths, cancellationToken);
+            }
 
             var i = name.IndexOf('.');
             var firstBit = i < 0 ? name : name.Remove(i);
@@ -207,7 +203,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 try {
                     result = await _factory.ModuleResolution.TryImportModuleAsync(name, ctxt, token);
                 } catch (OperationCanceledException) {
-                    _log.Log(TraceLevel.Error, "ImportTimeout", name);
+                    Log.Log(TraceLevel.Error, "ImportTimeout", name);
                     Debug.Fail("Import timeout");
                     return null;
                 }
@@ -216,18 +212,18 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     case TryImportModuleResultCode.Success:
                         return result.Module;
                     case TryImportModuleResultCode.ModuleNotFound:
-                        _log?.Log(TraceLevel.Info, "ImportNotFound", name);
+                        Log?.Log(TraceLevel.Info, "ImportNotFound", name);
                         return null;
                     case TryImportModuleResultCode.NeedRetry:
                     case TryImportModuleResultCode.Timeout:
                         break;
                     case TryImportModuleResultCode.NotSupported:
-                        _log?.Log(TraceLevel.Error, "ImportNotSupported", name);
+                        Log?.Log(TraceLevel.Error, "ImportNotSupported", name);
                         return null;
                 }
             }
             // Never succeeded, so just log the error and fail
-            _log?.Log(TraceLevel.Error, "RetryImport", name);
+            Log?.Log(TraceLevel.Error, "RetryImport", name);
             return null;
         }
 
@@ -297,39 +293,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             // TODO: Some efficient way of searching every module
 
             yield break;
-        }
-
-        internal static async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, bool requireInitPy, CancellationToken cancellationToken) {
-            var packageDict = new Dictionary<string, string>();
-
-            foreach (var searchPath in searchPaths.MaybeEnumerate()) {
-                IReadOnlyCollection<string> packages = null;
-                if (File.Exists(searchPath)) {
-                    packages = GetPackagesFromZipFile(searchPath, cancellationToken);
-                } else if (Directory.Exists(searchPath)) {
-                    packages = await Task.Run(() => GetPackagesFromDirectory(searchPath, requireInitPy, cancellationToken)).ConfigureAwait(false);
-                }
-                foreach (var package in packages.MaybeEnumerate()) {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    packageDict[package] = searchPath;
-                }
-            }
-
-            return packageDict;
-        }
-
-        private static IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, bool requireInitPy, CancellationToken cancellationToken) {
-            return ModulePath.GetModulesInPath(
-                searchPath,
-                recurse: false,
-                includePackages: true,
-                requireInitPy: requireInitPy
-            ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
-        }
-
-        private static IReadOnlyCollection<string> GetPackagesFromZipFile(string searchPath, CancellationToken cancellationToken) {
-            // TODO: Search zip files for packages
-            return new string[0];
         }
     }
 }

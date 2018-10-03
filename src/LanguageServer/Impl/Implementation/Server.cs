@@ -366,12 +366,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private async Task DoInitializeAsync(InitializeParams @params, CancellationToken token) {
             _disposableBag.ThrowIfDisposed();
-            Analyzer = await AnalysisQueue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
 
-            _disposableBag.ThrowIfDisposed();
+            if (@params.rootUri != null) {
+                _rootDir = @params.rootUri.ToAbsolutePath();
+            } else if (!string.IsNullOrEmpty(@params.rootPath)) {
+                _rootDir = PathUtils.NormalizePath(@params.rootPath);
+            }
+
             _clientCaps = @params.capabilities;
             _traceLogging = @params.initializationOptions.traceLogging;
             _analysisUpdates = @params.initializationOptions.analysisUpdates;
+
+             Analyzer = await AnalysisQueue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
+            _disposableBag.ThrowIfDisposed();
 
             Analyzer.EnableDiagnostics = _clientCaps?.python?.liveLinting ?? false;
             _reloadModulesQueueItem = new ReloadModulesQueueItem(Analyzer);
@@ -382,12 +389,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _displayTextBuilder = DocumentationBuilder.Create(DisplayOptions);
 
             DisplayStartupInfo();
-
-            if (@params.rootUri != null) {
-                _rootDir = @params.rootUri.ToAbsolutePath();
-            } else if (!string.IsNullOrEmpty(@params.rootPath)) {
-                _rootDir = PathUtils.NormalizePath(@params.rootPath);
-            }
 
             SetSearchPaths(@params.initializationOptions.searchPaths);
             SetTypeStubSearchPaths(@params.initializationOptions.typeStubSearchPaths);
@@ -404,7 +405,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void Interpreter_ModuleNamesChanged(object sender, EventArgs e) {
-            Analyzer.Modules.ReInit();
+            Analyzer.Modules.Reload();
             foreach (var entry in Analyzer.ModulesByFilename) {
                 AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
             }
@@ -436,17 +437,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private async Task<PythonAnalyzer> CreateAnalyzer(PythonInitializationOptions.Interpreter interpreter, CancellationToken token) {
-            var factory = ActivateObject<IPythonInterpreterFactory>(interpreter.assembly, interpreter.typeName, interpreter.properties)
+            var factory = ActivateObject<IPythonInterpreterFactory2>(interpreter.assembly, interpreter.typeName, interpreter.properties)
                 ?? new AstPythonInterpreterFactory(interpreter.properties);
 
-            var interp = factory.CreateInterpreter();
+            var interp = factory.CreateInterpreter(_rootDir);
             if (interp == null) {
                 throw new InvalidOperationException(Resources.Error_FailedToCreateInterpreter);
             }
 
             LogMessage(MessageType.Info, $"Created {interp.GetType().FullName} instance from {factory.GetType().FullName}");
 
-            var analyzer = await PythonAnalyzer.CreateAsync(factory, interp, token);
+            var analyzer = await PythonAnalyzer.CreateAsync(factory, interp, _rootDir, token);
             return analyzer;
         }
 

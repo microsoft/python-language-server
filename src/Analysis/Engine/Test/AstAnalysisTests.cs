@@ -309,14 +309,14 @@ class BankAccount(object):
                     var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
 
                     var moduleNamesChanged = EventTaskSources.AstPythonInterpreter.ModuleNamesChanged.Create(interpreter, new CancellationTokenSource(1000).Token);
-                    await factory.SetCurrentSearchPathsAsync(new[] { TestData.GetPath("TestData\\AstAnalysis") }, CancellationToken.None);
+                    factory.SetCurrentSearchPaths(new[] { TestData.GetPath("TestData\\AstAnalysis") });
                     await moduleNamesChanged;
 
                     interpreter.GetModuleNames().Should().Contain("Values");
                     interpreter.ImportModule("Values").Should().NotBeNull("module should be available");
 
                     moduleNamesChanged = EventTaskSources.AstPythonInterpreter.ModuleNamesChanged.Create(interpreter, new CancellationTokenSource(1000).Token);
-                    await factory.ModuleResolution.SetCurrentSearchPathsAsync(Enumerable.Empty<string>(), CancellationToken.None);
+                    factory.ModuleResolution.SetCurrentSearchPaths(Enumerable.Empty<string>());
                     await moduleNamesChanged;
 
                     interpreter.GetModuleNames().Should().NotContain("Values");
