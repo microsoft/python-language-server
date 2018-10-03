@@ -2936,7 +2936,6 @@ f(abc = 123)
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/40")]
         public async Task References_GrammarTest_Statements() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var uri = TestData.GetDefaultModuleUri();
@@ -2992,12 +2991,19 @@ def f(abc):
                 await server.SendDidOpenTextDocument(uri, text);
 
                 var references = await server.SendFindReferences(uri, 3, 12);
+
+                // External module 'abc', URI varies depending on install
+                var externalUri = references[1].uri;
+                externalUri.LocalPath.Should().Contain("abc.py");
+ 
                 references.Should().OnlyHaveReferences(
                     (uri, (1, 6, 1, 9), ReferenceKind.Definition),
-                    (uri, (3, 11, 3, 14), ReferenceKind.Reference),
-                    (uri, (6, 22, 6, 25), ReferenceKind.Definition),
+                    (externalUri, (0, 0, 0, 0), ReferenceKind.Definition),
 
-                    (uri, (8, 4, 8, 7), ReferenceKind.Definition),
+                    (uri, (3, 11, 3, 14), ReferenceKind.Reference),
+                    (uri, (6, 22, 6, 25), ReferenceKind.Reference),
+
+                    (uri, (8, 4, 8, 7), ReferenceKind.Reference),
                     (uri, (9, 4, 9, 7), ReferenceKind.Reference),
                     (uri, (10, 4, 10, 7), ReferenceKind.Reference),
                     (uri, (11, 4, 11, 7), ReferenceKind.Reference),
