@@ -36,7 +36,7 @@ b = a.virt()";
             using (var server = await new Server().InitializeAsync(PythonVersions.Required_Python36X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
-                analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int);
+                analysis.Should().HaveVariable("b").OfTypes(BuiltinTypeId.Int);
             }
         }
 
@@ -61,7 +61,7 @@ b = a.virt";
             using (var server = await new Server().InitializeAsync(PythonVersions.Required_Python36X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
-                analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int);
+                analysis.Should().HaveVariable("b").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Function);
             }
         }
     }
