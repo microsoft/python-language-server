@@ -121,7 +121,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private bool NeedsAnalysis()
-            => _analysisCount == 0 || _scope != null && _scope.AllVariables.Select(k => k.Value).Any(v => !v.HasTypes);
+            => _analysisCount == 0 || (_scope != null && _scope.AllVariables.Select(k => k.Value).Any(v => !v.HasTypes));
 
 
         /// <summary>
