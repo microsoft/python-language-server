@@ -224,25 +224,25 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             .FailWith($"Expected {subjectName} to have {itemName} of type `{typeof(T).Name}` at index {index}{{reason}}, but its type is `{collection[index].GetType().Name}`.");
 
         [CustomAssertion]
-        public static Continuation AssertHasMember(this AssertionScope assertionScope,  IAnalysisValue analysisValue, IScope scope, string analysisValueName, string memberName, out IAnalysisSet member) {
+        public static Continuation AssertHasMember(this AssertionScope assertionScope,  IAnalysisValue analysisValue, IScope scope, string memberName, string analysisValueName, string memberPrintName, out IAnalysisSet member) {
             try {
                 member = analysisValue.GetMember(null, new AnalysisUnit(null, null, scope, true), memberName);
             } catch (Exception e) {
                 member = null;
-                return assertionScope.FailWith($"Expected {analysisValueName} to have a {memberName}{{reason}}, but {nameof(analysisValue.GetMember)} has failed with exception: {e}.");
+                return assertionScope.FailWith($"Expected {analysisValueName} to have a {memberPrintName}{{reason}}, but {nameof(analysisValue.GetMember)} has failed with exception: {e}.");
             }
 
             return assertionScope.ForCondition(!(member is null))
-                .FailWith($"Expected {analysisValueName} to have a {memberName}{{reason}}.");
+                .FailWith($"Expected {analysisValueName} to have a {memberPrintName}{{reason}}.");
         }
 
         [CustomAssertion]
-        public static Continuation AssertHasMemberOfType<TMember>(this AssertionScope assertionScope,  IAnalysisValue analysisValue, IScope scope, string analysisValueName, string memberName, out TMember typedMember)
+        public static Continuation AssertHasMemberOfType<TMember>(this AssertionScope assertionScope,  IAnalysisValue analysisValue, IScope scope, string memberName, string analysisValueName, string memberPrintName, out TMember typedMember)
             where TMember : class, IAnalysisValue {
-            var continuation = assertionScope.AssertHasMember(analysisValue, scope, analysisValueName, memberName, out var member)
+            var continuation = assertionScope.AssertHasMember(analysisValue, scope, memberName, analysisValueName, memberPrintName, out var member)
                 .Then
                 .ForCondition(member is TMember)
-                .FailWith($"Expected {analysisValueName} to have a {memberName} of type {typeof(TMember)}{{reason}}, but its type is {member.GetType()}.");
+                .FailWith($"Expected {analysisValueName} to have a {memberPrintName} of type {typeof(TMember)}{{reason}}, but its type is {member.GetType()}.");
             typedMember = member as TMember;
             return continuation;
         }

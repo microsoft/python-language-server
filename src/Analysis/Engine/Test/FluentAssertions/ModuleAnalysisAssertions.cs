@@ -45,7 +45,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                 .Then
                 .AssertIsNotNull(Subject.ProjectState.BuiltinModule, $"module '{Subject.ModuleName}'", "builtin module", "\'IModuleAnalysis.ProjectState.BuiltinModule\'")
                 .Then
-                .AssertHasMemberOfType<TMember>(Subject.ProjectState.BuiltinModule, Subject.Scope, $"module '{Subject.ModuleName}'", $"builtin member '{name}'", out var typedMember);
+                .AssertHasMemberOfType<TMember>(Subject.ProjectState.BuiltinModule, Subject.Scope, name, $"module '{Subject.ModuleName}'", $"builtin member '{name}'", out var typedMember);
 
             return new AndWhichConstraint<ModuleAnalysisAssertions, AnalysisValueTestInfo<TMember>>(this, new AnalysisValueTestInfo<TMember>(typedMember, null, Subject.Scope));
         }

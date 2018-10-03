@@ -129,7 +129,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             NotBeNull(because, reasonArgs);
 
             Execute.Assertion.BecauseOf(because, reasonArgs)
-                .AssertHasMember(Subject, OwnerScope, GetName(), $"member '{memberName}'", out var member);
+                .AssertHasMember(Subject, OwnerScope, memberName, GetName(), $"member '{memberName}'", out var member);
 
             AssertTypeIds(member, typeIds, memberName, Is3X(OwnerScope), because, reasonArgs);
             return new AndConstraint<TAssertions>((TAssertions)this);
@@ -212,8 +212,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             NotBeNull(because, reasonArgs);
 
             Execute.Assertion.BecauseOf(because, reasonArgs)
-                .AssertHasMemberOfType(Subject, OwnerScope, GetName(), $"member '{name}'", out TMember typedMember);
-
+                .AssertHasMemberOfType(Subject, OwnerScope, name, GetName(), $"member '{name}'", out TMember typedMember);
             return new AndWhichConstraint<TAssertions, AnalysisValueTestInfo<TMember>>((TAssertions)this, new AnalysisValueTestInfo<TMember>(typedMember, null, OwnerScope));
         }
 
