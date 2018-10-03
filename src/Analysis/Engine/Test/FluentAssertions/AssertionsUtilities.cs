@@ -206,6 +206,9 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             }
         }
 
+        public static bool RangeEquals(Range r1, Range r2) => PositionEquals(r1.start, r2.start) && PositionEquals(r1.end, r2.end);
+        public static bool PositionEquals(Position p1, Position p2) => p1.line == p2.line && p1.character == p2.character;
+
         public static string DoubleEscape(string input) 
             => input.Replace("\r", "\\\u200Br").Replace("\n", "\\\u200Bn").Replace("\t", @"\t");
 

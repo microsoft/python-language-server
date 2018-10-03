@@ -102,5 +102,8 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
         public static SignatureInformationAssertions Should(this SignatureInformation signatureInformation)
             => new SignatureInformationAssertions(signatureInformation);
+
+        public static TextEditCollectionAssertions Should(this IEnumerable<TextEdit> textEdits)
+            => new TextEditCollectionAssertions(textEdits);
     }
 }
