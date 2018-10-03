@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis {
@@ -76,13 +77,13 @@ namespace Microsoft.PythonTools.Analysis {
             LastDisplayedTime = null;
         }
 
-        public static void Enqueue(Deque<AnalysisUnit> deque, AnalysisUnit unit) {
+        public static void Enqueue(Queue<AnalysisUnit> deque, AnalysisUnit unit) {
             if (Active) {
                 Add("E", IdDispenser.GetId(unit), deque.Count);
             }
         }
 
-        public static void Dequeue(Deque<AnalysisUnit> deque, AnalysisUnit unit) {
+        public static void Dequeue(Queue<AnalysisUnit> deque, AnalysisUnit unit) {
             if (Active) {
                 Add("D", IdDispenser.GetId(unit), deque.Count);
             }
@@ -108,7 +109,7 @@ namespace Microsoft.PythonTools.Analysis {
             Add("X", variableDefType, total, contents);
         }
 
-        public static void Cancelled(Deque<AnalysisUnit> queue) {
+        public static void Cancelled(Queue<AnalysisUnit> queue) {
             Add("Cancel", queue.Count);
         }
 

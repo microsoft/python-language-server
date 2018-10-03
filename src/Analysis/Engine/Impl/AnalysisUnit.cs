@@ -109,7 +109,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         internal void Enqueue() {
-            if (!ForEval && !IsInQueue && !_suppressEnqueue) {
+            if (!ForEval && !IsInQueue && !_suppressEnqueue && NeedsAnalysis()) {
                 State.Queue.Append(this);
                 AnalysisLog.Enqueue(State.Queue, this);
                 IsInQueue = true;
@@ -119,6 +119,10 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }
         }
+
+        private bool NeedsAnalysis()
+            => _analysisCount == 0 || _scope != null && _scope.AllVariables.Select(k => k.Value).Any(v => !v.HasTypes);
+
 
         /// <summary>
         /// The AST which will be analyzed when this node is analyzed
@@ -361,8 +365,7 @@ namespace Microsoft.PythonTools.Analysis {
         public new ClassDefinition Ast => (ClassDefinition)base.Ast;
 
         internal override void AnalyzeWorker(DDG ddg, CancellationToken cancel) {
-            InterpreterScope scope;
-            if (!ddg.Scope.TryGetNodeScope(Ast, out scope)) {
+            if (!ddg.Scope.TryGetNodeScope(Ast, out var scope)) {
                 return;
             }
 
@@ -418,8 +421,7 @@ namespace Microsoft.PythonTools.Analysis {
                 foreach (var d in Ast.Decorators.Decorators.ExcludeDefault()) {
                     var decorator = ddg._eval.Evaluate(d);
 
-                    Expression nextExpr;
-                    if (!_decoratorCalls.TryGetValue(d, out nextExpr)) {
+                    if (!_decoratorCalls.TryGetValue(d, out var nextExpr)) {
                         nextExpr = _decoratorCalls[d] = new CallExpression(d, new[] { new Arg(expr) });
                         nextExpr.SetLoc(d.IndexSpan);
                     }
