@@ -17,10 +17,24 @@
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Microsoft.PythonTools.Analysis.Values;
+using Microsoft.PythonTools.Interpreter;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class AnalysisValueAssertionsExtensions {
+        public static AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TAnalysisValue>> OfPythonMemberType<TAssertion, TAnalysisValue>(this AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TAnalysisValue>> constraint, PythonMemberType memberType) 
+            where TAnalysisValue : IAnalysisValue {
+            new AnalysisValueAssertions<TAnalysisValue>(constraint.Which).HaveMemberType(memberType);
+            return constraint;
+        }
+
+        public static AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TAnalysisValue>> WithMemberOfType<TAssertion, TAnalysisValue>(this AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TAnalysisValue>> constraint, string name, PythonMemberType memberType) 
+            where TAnalysisValue : IAnalysisValue {
+            var member = new AnalysisValueAssertions<TAnalysisValue>(constraint.Which).HaveMember<IAnalysisValue>(name) .Which;
+            new AnalysisValueAssertions<IAnalysisValue>(member).HaveMemberType(memberType);
+            return constraint;
+        }
+
         public static AndWhichConstraint<TAssertion, AnalysisValueTestInfo<IClassInfo>> 
             WithMethodResolutionOrder<TAssertion>(this AndWhichConstraint<TAssertion, AnalysisValueTestInfo<IClassInfo>> constraint, params string[] classNames) {
             constraint.Which.Should().HaveMethodResolutionOrder(classNames);
