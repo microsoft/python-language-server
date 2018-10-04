@@ -25,4 +25,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
         bool IsClosure { get; }
         IPythonProjectEntry ProjectEntry { get; }
     }
+
+    public interface IFunctionInfo2 : IFunctionInfo {
+        bool IsAbstract { get; }
+    }
 }

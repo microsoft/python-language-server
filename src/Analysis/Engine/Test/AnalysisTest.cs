@@ -29,7 +29,6 @@ using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
@@ -2425,7 +2424,9 @@ b = ~~C()
 
 
         [TestMethod, Priority(0)]
-        public async Task TrueDividePython3X() {
+        [DataRow(PythonLanguageVersion.V35)]
+        [DataRow(PythonLanguageVersion.V36)]
+        public async Task TrueDividePython3X(PythonLanguageVersion version) {
             var text = @"
 class C:
     def __truediv__(self, other):
@@ -2438,7 +2439,7 @@ b = a / 'abc'
 c = 'abc' / a
 ";
 
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python35X)) {
+            using (var server = await CreateServerAsync(PythonVersions.GetRequiredCPythonConfiguration(version))) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Float);
@@ -2938,7 +2939,6 @@ f(abc = 123)
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/40")]
         public async Task References_GrammarTest_Statements() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var uri = TestData.GetDefaultModuleUri();
@@ -2994,12 +2994,19 @@ def f(abc):
                 await server.SendDidOpenTextDocument(uri, text);
 
                 var references = await server.SendFindReferences(uri, 3, 12);
+
+                // External module 'abc', URI varies depending on install
+                var externalUri = references[1].uri;
+                externalUri.LocalPath.Should().EndWith("abc.py");
+ 
                 references.Should().OnlyHaveReferences(
                     (uri, (1, 6, 1, 9), ReferenceKind.Definition),
-                    (uri, (3, 11, 3, 14), ReferenceKind.Reference),
-                    (uri, (6, 22, 6, 25), ReferenceKind.Definition),
+                    (externalUri, (0, 0, 0, 0), ReferenceKind.Definition),
 
-                    (uri, (8, 4, 8, 7), ReferenceKind.Definition),
+                    (uri, (3, 11, 3, 14), ReferenceKind.Reference),
+                    (uri, (6, 22, 6, 25), ReferenceKind.Reference),
+
+                    (uri, (8, 4, 8, 7), ReferenceKind.Reference),
                     (uri, (9, 4, 9, 7), ReferenceKind.Reference),
                     (uri, (10, 4, 10, 7), ReferenceKind.Reference),
                     (uri, (11, 4, 11, 7), ReferenceKind.Reference),

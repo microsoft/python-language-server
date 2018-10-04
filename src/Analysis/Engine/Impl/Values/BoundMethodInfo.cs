@@ -46,6 +46,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IPythonProjectEntry DeclaringModule => Function.DeclaringModule;
         public override int DeclaringVersion => Function.DeclaringVersion;
         public override IEnumerable<ILocationInfo> Locations => Function.Locations;
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Function; 
 
         public IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (Push()) {
