@@ -120,7 +120,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var childMap = new Dictionary<IMemberResult, List<IMemberResult>>();
             var totalCount = 0;
 
-            foreach (var m in members) {
+            foreach (var m in members.Take(_symbolHierarchyMaxSymbols)) {
                 var parent = members.FirstOrDefault(x => x.Scope?.Node == m.Scope?.OuterScope?.Node && x.Name == m.Scope?.Name);
                 if (parent != null) {
                     if (!childMap.TryGetValue(parent, out var children)) {
@@ -129,9 +129,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     children.Add(m);
                 } else {
                     topLevel.Add(m);
-                }
-                if (++totalCount >= _symbolHierarchyMaxSymbols) {
-                    break;
                 }
             }
 
