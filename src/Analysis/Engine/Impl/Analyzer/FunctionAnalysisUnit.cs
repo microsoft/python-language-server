@@ -109,17 +109,21 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 switch (d.Name) {
                     case "abstractmethod":
                         res = true;
+                        Function.IsAbstract = true;
                         break;
                     case "abstractstaticmethod":
                         Function.IsStatic = true;
+                        Function.IsAbstract = true;
                         res = true;
                         break;
                     case "abstractclassmethod":
                         Function.IsClassMethod = true;
+                        Function.IsAbstract = true;
                         res = true;
                         break;
                     case "abstractproperty":
                         Function.IsProperty = true;
+                        Function.IsAbstract = true;
                         res = true;
                         break;
                 }

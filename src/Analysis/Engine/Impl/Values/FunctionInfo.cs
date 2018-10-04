@@ -25,7 +25,7 @@ using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
-    internal class FunctionInfo : AnalysisValue, IFunctionInfo, IHasRichDescription, IHasQualifiedName {
+    internal class FunctionInfo : AnalysisValue, IFunctionInfo2, IHasRichDescription, IHasQualifiedName {
         private Dictionary<AnalysisValue, IAnalysisSet> _methods;
         private Dictionary<string, VariableDef> _functionAttrs;
         private readonly FunctionAnalysisUnit _analysisUnit;
@@ -84,6 +84,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public bool IsStatic { get; set; }
         public bool IsClassMethod { get; set; }
         public bool IsProperty { get; set; }
+        public bool IsAbstract { get; internal set; }
         public bool IsClosure => _callsWithClosure != null;
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
