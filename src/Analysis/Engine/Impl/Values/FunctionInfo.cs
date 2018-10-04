@@ -27,6 +27,7 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class FunctionInfo : AnalysisValue, IFunctionInfo, IHasRichDescription, IHasQualifiedName {
         private Dictionary<AnalysisValue, IAnalysisSet> _methods;
+        private HashSet<FunctionInfo> _derived;
         private Dictionary<string, VariableDef> _functionAttrs;
         private readonly FunctionAnalysisUnit _analysisUnit;
         private ReferenceDict _references;
@@ -94,6 +95,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
 
             var res = DoCall(node, unit, _analysisUnit, callArgs);
+            if (_derived != null) {
+                foreach (FunctionInfo derived in _derived) {
+                    var derivedResult = derived.DoCall(node, unit, derived._analysisUnit, callArgs);
+                    res = res.Union(derivedResult);
+                }
+            }
 
             if (_callsWithClosure != null) {
                 var chain = new CallChain(node, unit, _callDepthLimit);
@@ -156,6 +163,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
 
             return agg;
+        }
+
+        internal bool AddDerived(FunctionInfo derived) {
+            if (derived == null) throw new ArgumentNullException(nameof(derived));
+
+            _derived = _derived ?? new HashSet<FunctionInfo>();
+
+            bool @new = _derived.Add(derived);
+            // TODO: do we need to re-queue this function analysis if a new derived was added?
+            return @new;
         }
 
         internal void AddParameterReference(Node node, AnalysisUnit unit, string name) {
