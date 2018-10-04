@@ -27,6 +27,7 @@ using Microsoft.PythonTools.Interpreter;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
+        private static int _symbolHierarchyDepthLimit = 10;
         private static int _symbolHierarchyMaxSymbols = 1000;
 
         public override async Task<SymbolInformation[]> WorkspaceSymbols(WorkspaceSymbolParams @params, CancellationToken cancellationToken) {
@@ -73,8 +74,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private static IEnumerable<IMemberResult> GetModuleVariables(ProjectEntry entry, GetMemberOptions opts, string prefix, IModuleAnalysis analysis) {
-            var all = analysis.GetAllMembers(SourceLocation.None, opts);
-            return all
+            var breadthFirst = analysis.Scope.TraverseBreadthFirst(s => s.Children);
+            var all = breadthFirst.SelectMany(c => analysis.GetAllAvailableMembersFromScope(c, opts));
+            var result = all
                 .Where(m => {
                     if (m.Values.Any(v => v.DeclaringModule == entry || v.Locations.Any(l => l.DocumentUri == entry.DocumentUri))) {
                         if (string.IsNullOrEmpty(prefix) || m.Name.StartsWithOrdinal(prefix, ignoreCase: true)) {
@@ -83,16 +85,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     }
                     return false;
                 })
-                .Take(_symbolHierarchyMaxSymbols)
-                .Concat(GetChildScopesVariables(analysis, analysis.Scope, opts))
                 .Take(_symbolHierarchyMaxSymbols);
+            return result;
         }
-
-        private static IEnumerable<IMemberResult> GetChildScopesVariables(IModuleAnalysis analysis, IScope scope, GetMemberOptions opts)
-            => scope.TraverseBreadthFirst(s => s.Children).SelectMany(c => GetScopeVariables(analysis, c, opts));
-
-        private static IEnumerable<IMemberResult> GetScopeVariables(IModuleAnalysis analysis, IScope scope, GetMemberOptions opts)
-            => analysis.GetAllAvailableMembersFromScope(scope, opts).Concat(GetChildScopesVariables(analysis, scope, opts));
 
         private SymbolInformation ToSymbolInformation(IMemberResult m) {
             var res = new SymbolInformation {
@@ -118,9 +113,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private DocumentSymbol[] ToDocumentSymbols(List<IMemberResult> members) {
             var topLevel = new List<IMemberResult>();
             var childMap = new Dictionary<IMemberResult, List<IMemberResult>>();
-            var totalCount = 0;
 
-            foreach (var m in members.Take(_symbolHierarchyMaxSymbols)) {
+            foreach (var m in members) {
                 var parent = members.FirstOrDefault(x => x.Scope?.Node == m.Scope?.OuterScope?.Node && x.Name == m.Scope?.Name);
                 if (parent != null) {
                     if (!childMap.TryGetValue(parent, out var children)) {
@@ -132,18 +126,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            var symbols = topLevel.SelectMany(t => t
-                    .TraverseBreadthFirst(c => childMap.ContainsKey(c) ? childMap[c] : Enumerable.Empty<IMemberResult>())
-                    .Take(_symbolHierarchyMaxSymbols)
+            var symbols = topLevel
                     .GroupBy(mr => mr.Name)
                     .Select(g => g.First())
-                    .Select(m => ToDocumentSymbol(m, childMap)))
+                    .Select(m => ToDocumentSymbol(m, childMap, 0))
                     .ToArray();
 
             return symbols;
         }
 
-        private DocumentSymbol ToDocumentSymbol(IMemberResult m, Dictionary<IMemberResult, List<IMemberResult>> childMap) {
+        private DocumentSymbol ToDocumentSymbol(IMemberResult m, Dictionary<IMemberResult, List<IMemberResult>> childMap, int currentDepth) {
             var res = new DocumentSymbol {
                 name = m.Name,
                 detail = m.Name,
@@ -152,9 +144,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _functionKind = GetFunctionKind(m)
             };
 
-            if (childMap.TryGetValue(m, out var children)) {
+            if (childMap.TryGetValue(m, out var children) && currentDepth < _symbolHierarchyDepthLimit) {
                 res.children = children
-                    .Select(x => ToDocumentSymbol(x, childMap))
+                    .Select(x => ToDocumentSymbol(x, childMap, currentDepth + 1))
                     .ToArray();
             } else {
                 res.children = Array.Empty<DocumentSymbol>();

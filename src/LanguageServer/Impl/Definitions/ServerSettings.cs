@@ -24,6 +24,7 @@ namespace Microsoft.Python.LanguageServer {
             private Dictionary<string, DiagnosticSeverity> _map = new Dictionary<string, DiagnosticSeverity>();
 
             public bool openFilesOnly;
+            public int symbolsHierarchyDepthLimit = 10;
             public int symbolsHierarchyMaxSymbols = 1000;
 
             public string[] errors { get; } = Array.Empty<string>();

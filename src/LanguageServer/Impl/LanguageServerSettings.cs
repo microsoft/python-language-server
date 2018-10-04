@@ -17,6 +17,7 @@
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed class LanguageServerSettings: ServerSettings {
         public int diagnosticPublishDelay = 1000;
+        public int symbolsHierarchyDepthLimit = 10;
         public int symbolsHierarchyMaxSymbols = 1000;
     }
 }
