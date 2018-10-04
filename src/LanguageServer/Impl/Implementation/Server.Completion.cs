@@ -61,8 +61,21 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 members = members.Where(m => m.kind == filterKind.Value);
             }
 
+            var completions = members.ToArray();
+            if (Settings.completion.addBrackets && (!filterKind.HasValue || CanHaveBrackets(filterKind.Value))) {
+                foreach (var completionItem in completions.Where(ci => CanHaveBrackets(ci.kind))) {
+                    completionItem.insertText += "($0)";
+                    completionItem.insertTextFormat = InsertTextFormat.Snippet;
+                }
+            }
+
+            bool CanHaveBrackets(CompletionItemKind kind)
+                => kind == CompletionItemKind.Constructor ||
+                   kind == CompletionItemKind.Function ||
+                   kind == CompletionItemKind.Method;
+
             var res = new CompletionList {
-                items = members.ToArray(),
+                items = completions,
                 _expr = ctxt.ParentExpression?.ToCodeString(tree, CodeFormattingOptions.Traditional),
                 _commitByDefault = ctxt.ShouldCommitByDefault,
                 _allowSnippet = ctxt.ShouldAllowSnippets

@@ -42,7 +42,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var actual = Subject.items?.Select(i => i.label).ToArray() ?? new string[0];
             var expected = labels.ToArray();
 
-            var errorMessage = GetAssertCollectionOnlyContainsMessage(actual, expected, "completion list items", "label", "labels");
+            var errorMessage = GetAssertCollectionOnlyContainsMessage(actual, expected, GetName(), "label", "labels");
 
             Execute.Assertion.ForCondition(errorMessage == null)
                 .BecauseOf(because, reasonArgs)
@@ -56,7 +56,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             NotBeNull(because, reasonArgs);
 
             var actual = Subject?.items.Where(i => string.Equals(i.label, label, StringComparison.Ordinal)).ToArray() ?? Array.Empty<CompletionItem>();
-            var errorMessage = GetAssertCollectionContainsMessage(actual.Select(i => i.label).ToArray(), new [] { label }, "completion list items", "label", "labels");
+            var errorMessage = GetAssertCollectionContainsMessage(actual.Select(i => i.label).ToArray(), new [] { label }, GetName(), "label", "labels");
 
             Execute.Assertion.ForCondition(errorMessage == null)
                 .BecauseOf(because, reasonArgs)
@@ -76,7 +76,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var actual = Subject.items?.Select(i => i.label).ToArray() ?? new string[0];
             var expected = labels.ToArray();
 
-            var errorMessage = GetAssertCollectionContainsMessage(actual, expected, "completion list items", "label", "labels");
+            var errorMessage = GetAssertCollectionContainsMessage(actual, expected, GetName(), "label", "labels");
 
             Execute.Assertion.ForCondition(errorMessage == null)
                 .BecauseOf(because, reasonArgs)
@@ -96,7 +96,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var actual = Subject.items?.Select(i => i.label).ToArray() ?? new string[0];
             var expected = labels.ToArray();
 
-            var errorMessage = GetAssertCollectionNotContainMessage(actual, expected, "completion list items", "label", "labels");
+            var errorMessage = GetAssertCollectionNotContainMessage(actual, expected, GetName(), "label", "labels");
 
             Execute.Assertion.ForCondition(errorMessage == null)
                 .BecauseOf(because, reasonArgs)
@@ -104,5 +104,8 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             return new AndConstraint<CompletionListAssertions>(this);
         }
+
+        [CustomAssertion]
+        private static string GetName() => CallerIdentifier.DetermineCallerIdentity() ?? "completion list items";
     }
 }

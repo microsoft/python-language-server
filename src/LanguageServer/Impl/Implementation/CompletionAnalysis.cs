@@ -180,7 +180,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public IEnumerable<CompletionItem> GetCompletions() {
             var opts = Options | GetMemberOptions.ForEval;
-            bool allowKeywords = true, allowArguments = true;
+            bool allowKeywords = true;
             List<CompletionItem> additional = null;
 
             var res = GetNoCompletionsInComments() ??
@@ -191,10 +191,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 GetCompletionsInDefinition(ref allowKeywords, ref additional) ??
                 GetCompletionsInForStatement() ??
                 GetCompletionsInWithStatement() ??
-                GetCompletionsInRaiseStatement(ref allowArguments, ref opts) ??
+                GetCompletionsInRaiseStatement(ref opts) ??
                 GetCompletionsInExceptStatement(ref allowKeywords, ref opts) ??
                 GetCompletionsFromError() ??
-                GetCompletionsFromTopLevel(allowKeywords, allowArguments, opts);
+                GetCompletionsFromTopLevel(allowKeywords, opts);
 
             if (additional != null) {
                 res = res.Concat(additional);
@@ -548,7 +548,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return null;
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInRaiseStatement(ref bool allowKeywords, ref GetMemberOptions opts) {
+        private IEnumerable<CompletionItem> GetCompletionsInRaiseStatement(ref GetMemberOptions opts) {
             if (Statement is RaiseStatement rs) {
                 // raise Type, Value, Traceback with Cause
                 if (rs.Cause != null) {
@@ -751,7 +751,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return null;
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsFromTopLevel(bool allowKeywords, bool allowArguments, GetMemberOptions opts) {
+        private IEnumerable<CompletionItem> GetCompletionsFromTopLevel(bool allowKeywords, GetMemberOptions opts) {
             if (Node?.EndIndex < Index) {
                 return Empty;
             }
@@ -773,22 +773,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log.TraceMessage($"Completing all names");
             var members = Analysis.GetAllMembers(Position, opts);
 
-            if (allowArguments) {
-                var finder = new ExpressionFinder(Tree, new GetExpressionOptions { Calls = true });
-                if (finder.GetExpression(Index) is CallExpression callExpr &&
-                    callExpr.GetArgumentAtIndex(Tree, Index, out _)) {
-                    var argNames = Analysis.GetSignatures(callExpr.Target, Position)
-                        .SelectMany(o => o.Parameters).Select(p => p?.Name)
-                        .Where(n => !string.IsNullOrEmpty(n))
-                        .Distinct()
-                        .Except(callExpr.Args.MaybeEnumerate().Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n)))
-                        .Select(n => new MemberResult($"{n}=", PythonMemberType.NamedArgument) as IMemberResult);
+            var finder = new ExpressionFinder(Tree, new GetExpressionOptions { Calls = true });
+            if (finder.GetExpression(Index) is CallExpression callExpr &&
+                callExpr.GetArgumentAtIndex(Tree, Index, out _)) {
+                var argNames = Analysis.GetSignatures(callExpr.Target, Position)
+                    .SelectMany(o => o.Parameters).Select(p => p?.Name)
+                    .Where(n => !string.IsNullOrEmpty(n))
+                    .Distinct()
+                    .Except(callExpr.Args.MaybeEnumerate().Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n)))
+                    .Select(n => new MemberResult($"{n}=", PythonMemberType.NamedArgument) as IMemberResult);
 
-                    argNames = argNames.MaybeEnumerate().ToArray();
-                    _log.TraceMessage($"Including {argNames.Count()} named arguments");
+                argNames = argNames.MaybeEnumerate().ToArray();
+                _log.TraceMessage($"Including {argNames.Count()} named arguments");
 
-                    members = members?.Concat(argNames) ?? argNames;
-                }
+                members = members?.Concat(argNames) ?? argNames;
             }
 
             return members.Select(ToCompletionItem).Where(c => !string.IsNullOrEmpty(c.insertText));
@@ -802,14 +800,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private static readonly CompletionItem ImportKeywordCompletion = ToCompletionItem("import", PythonMemberType.Keyword);
         private static readonly CompletionItem WithKeywordCompletion = ToCompletionItem("with", PythonMemberType.Keyword);
         private static readonly CompletionItem StarCompletion = ToCompletionItem("*", PythonMemberType.Keyword);
-
-        private static CompletionItem KeywordCompletion(string keyword) => new CompletionItem {
-            label = keyword,
-            insertText = keyword,
-            kind = CompletionItemKind.Keyword,
-            _kind = PythonMemberType.Keyword.ToString().ToLowerInvariant()
-        };
-
+        
         private CompletionItem ToCompletionItem(IMemberResult m) {
             var completion = m.Completion;
             if (string.IsNullOrEmpty(completion)) {
