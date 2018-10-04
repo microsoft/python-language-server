@@ -385,10 +385,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
     }
 
     class TupleProtocol : IterableProtocol {
-        internal readonly IAnalysisSet[] _values;
+        private readonly IAnalysisSet[] _values;
 
         public TupleProtocol(ProtocolInfo self, IEnumerable<IAnalysisSet> values) : base(self, AnalysisSet.UnionAll(values)) {
             _values = values.Select(s => s.AsUnion(1)).ToArray();
+            Name = "tuple[{0}]".FormatInvariant(string.Join(", ", _values.Select(v => v.GetShortDescriptions())));
         }
 
         protected override void EnsureMembers(IDictionary<string, IAnalysisSet> members) {
@@ -415,7 +416,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return AnalysisSet.UnionAll(constants.Select(GetItem));
         }
 
-        public override string Name => "tuple[{0}]".FormatInvariant(string.Join(", ", _values.Select(v => v.GetShortDescriptions())));
+        public override string Name { get; }
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (_values.Any()) {
