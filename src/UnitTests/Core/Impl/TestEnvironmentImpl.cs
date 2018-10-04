@@ -32,6 +32,7 @@ namespace TestUtilities {
         public static void AddBeforeAfterTest(Func<IDisposable> beforeAfterTest) => Instance?.AddBeforeAfterTestAction(beforeAfterTest);
 
         private readonly AsyncLocal<List<Func<IDisposable>>> _beforeAfterTestActions = new AsyncLocal<List<Func<IDisposable>>>();
+        private readonly AsyncLocal<Stack<IDisposable>> _beforeAfterTestActionDisposables = new AsyncLocal<Stack<IDisposable>>();
         private readonly AsyncLocal<TaskObserver> _taskObserver = new AsyncLocal<TaskObserver>();
         private readonly AsyncLocal<Stopwatch> _stopwatch = new AsyncLocal<Stopwatch>();
         private readonly AssemblyLoader _assemblyLoader = new AssemblyLoader();
@@ -67,19 +68,32 @@ namespace TestUtilities {
             _stopwatch.Value.Start();
             TestData.SetTestRunScope(testFullName);
 
-            var disposables = new Stack<IDisposable>();
-            try {
-                foreach (var beforeAfterTestAction in beforeAfterTestActions) {
-                    disposables.Push(beforeAfterTestAction());
+            if (beforeAfterTestActions != null) {
+                var disposables = new Stack<IDisposable>();
+                try {
+                    foreach (var beforeAfterTestAction in beforeAfterTestActions) {
+                        disposables.Push(beforeAfterTestAction());
+                    }
+                } catch (Exception) {
+                    RunDisposablesSafe(disposables);
+                    throw;
                 }
-            } catch (Exception) {
-                RunDisposables(disposables);
-                throw;
+
+                _beforeAfterTestActionDisposables.Value = disposables;
             }
         }
 
         protected virtual void AfterTestRun() {
             try {
+                var disposables = _beforeAfterTestActionDisposables.Value;
+                _beforeAfterTestActionDisposables.Value = null;
+                if (disposables != null) {
+                    var afterTestRunException = RunDisposablesSafe(disposables);
+                    if (afterTestRunException != null) {
+                        throw afterTestRunException;
+                    }
+                }
+
                 _taskObserver.Value?.WaitForObservedTask();
                 _stopwatch.Value?.Stop();
                 TestData.ClearTestRunScope();
@@ -94,14 +108,18 @@ namespace TestUtilities {
             actions.Add(beforeAfterTest);
         }
 
-        private void RunDisposables(Stack<IDisposable> disposables) {
+        private AggregateException RunDisposablesSafe(Stack<IDisposable> disposables) {
+            var exceptions = new List<Exception>();
             while (disposables.Count > 0) {
                 var disposable = disposables.Pop();
                 try {
                     disposable.Dispose();
-                } catch (Exception) {
+                } catch (Exception ex) {
+                    exceptions.Add(ex);
                 }
             }
+
+            return exceptions.Count > 0 ? new AggregateException(exceptions) : null;
         }
     }
 }
