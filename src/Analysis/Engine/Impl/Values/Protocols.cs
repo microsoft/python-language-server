@@ -415,7 +415,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return AnalysisSet.UnionAll(constants.Select(GetItem));
         }
 
-        public override string Name => "tuple";
+        public override string Name => "tuple[{0}]".FormatInvariant(string.Join(", ", _values.Select(v => v.GetShortDescriptions())));
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (_values.Any()) {
