@@ -64,5 +64,38 @@ b = a.virt";
                 analysis.Should().HaveVariable("b").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Function);
             }
         }
+
+        [TestMethod]
+        public async Task ParameterTypesPropagateDownAndBackUp() {
+            var code = @"
+class Baze:
+  def foo(self, x):
+    pass
+
+class Derived1(Baze):
+  def foo(self, x):
+    pass
+
+class Derived2(Baze):
+  def foo(self, x):
+    pass
+
+Derived2().foo(42)
+";
+
+            using (var server = await new Server().InitializeAsync(PythonVersions.Required_Python36X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                // the class, for which we know parameter type initially
+                analysis.Should().HaveClass("Derived2").WithFunction("foo")
+                    .WithParameter("x").OfType(BuiltinTypeId.Int);
+                // its most base class with the same function
+                analysis.Should().HaveClass("Baze").WithFunction("foo")
+                    .WithParameter("x").OfType(BuiltinTypeId.Int);
+                // all the classes, derived from the base
+                analysis.Should().HaveClass("Derived1").WithFunction("foo")
+                    .WithParameter("x").OfType(BuiltinTypeId.Int);
+            }
+        }
     }
 }
