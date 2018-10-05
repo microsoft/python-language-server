@@ -389,9 +389,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public TupleProtocol(ProtocolInfo self, IEnumerable<IAnalysisSet> values) : base(self, AnalysisSet.UnionAll(values)) {
             _values = values.Select(s => s.AsUnion(1)).ToArray();
-
-            var argTypes = _values.SelectMany(e => e.Select(v => v is IHasQualifiedName qn ? qn.FullyQualifiedName : v.ShortDescription));
-            Name = "tuple[{0}]".FormatInvariant(string.Join(", ", argTypes));
+            Name = "tuple[{0}]".FormatInvariant(string.Join(", ", _values.Select(v => v.GetShortDescriptions())));
         }
 
         protected override void EnsureMembers(IDictionary<string, IAnalysisSet> members) {
@@ -419,6 +417,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override string Name { get; }
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Tuple;
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (_values.Any()) {
