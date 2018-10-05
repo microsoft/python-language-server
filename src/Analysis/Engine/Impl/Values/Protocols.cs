@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
@@ -389,7 +390,41 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public TupleProtocol(ProtocolInfo self, IEnumerable<IAnalysisSet> values) : base(self, AnalysisSet.UnionAll(values)) {
             _values = values.Select(s => s.AsUnion(1)).ToArray();
-            Name = "tuple[{0}]".FormatInvariant(string.Join(", ", _values.Select(v => v.GetShortDescriptions())));
+            Name = GetNameFromValues();
+        }
+
+        private string GetNameFromValues() {
+            // Enumerate manually since SelectMany drops empty/unknown values
+            var sb = new StringBuilder("tuple[");
+            for (var i = 0; i < _values.Length; i++) {
+                if (i > 0) {
+                    sb.Append(", ");
+                }
+                sb.Append(GetParameterString(_values[i].ToArray()));
+            }
+            sb.Append(']');
+            return sb.ToString();
+        }
+
+        private string GetParameterString(AnalysisValue[] sets) {
+            if (sets.Length == 0) {
+                return "?";
+            }
+            var sb = new StringBuilder();
+            if (sets.Length > 1) {
+                sb.Append('[');
+            }
+            for (var i = 0; i < sets.Length; i++) {
+                if (i > 0) {
+                    sb.Append(", ");
+                }
+                var desc = sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription;
+                sb.Append(desc);
+            }
+            if (sets.Length > 1) {
+                sb.Append(']');
+            }
+            return sb.ToString();
         }
 
         protected override void EnsureMembers(IDictionary<string, IAnalysisSet> members) {
