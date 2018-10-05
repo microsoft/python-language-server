@@ -138,6 +138,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 var autoComplete = pythonSection["autoComplete"];
                 settings.completion.showAdvancedMembers = GetSetting(autoComplete, "showAdvancedMembers", true);
+                settings.completion.addBrackets = GetSetting(autoComplete, "addBrackets", false);
 
                 var analysis = pythonSection["analysis"];
                 settings.analysis.openFilesOnly = GetSetting(analysis, "openFilesOnly", false);
@@ -175,7 +176,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         [JsonRpcMethod("workspace/symbol")]
         public async Task<SymbolInformation[]> WorkspaceSymbols(JToken token, CancellationToken cancellationToken) {
-            await _prioritizer.DefaultPriorityAsync();
+            await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token), cancellationToken);
         }
 

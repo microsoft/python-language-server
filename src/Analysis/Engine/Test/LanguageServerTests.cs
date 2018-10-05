@@ -386,18 +386,6 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionInWithStatementDerivedClass() {
-            using (var server = await CreateServer()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("with open(x) as fs:\n  fs. ");
-                await server.GetAnalysisAsync(uri);
-                var completions = await server.SendCompletion(uri, 1, 5);
-
-                completions.Should().HaveLabels("read", "write");
-                await server.UnloadFileAsync(uri);
-            }
-        }
-
-        [TestMethod, Priority(0)]
         public async Task CompletionInImport() {
             var s = await CreateServer();
             var u = await AddModule(s, "import unittest.case as C, unittest\nfrom unittest.case import TestCase as TC, TestCase");

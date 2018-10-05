@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -27,7 +28,11 @@ namespace TestUtilities {
         public static TimeSpan Elapsed() => Instance?._stopwatch.Value?.Elapsed ?? new TimeSpan();
         public static void TestInitialize(string testFullName, int secondsTimeout = 10) => Instance?.BeforeTestRun(testFullName, secondsTimeout);
         public static void TestCleanup() => Instance?.AfterTestRun();
+        public static void AddBeforeAfterTest(Func<Task<IDisposable>> beforeAfterTest) => Instance?.AddBeforeAfterTestAction(() => beforeAfterTest().GetAwaiter().GetResult());
+        public static void AddBeforeAfterTest(Func<IDisposable> beforeAfterTest) => Instance?.AddBeforeAfterTestAction(beforeAfterTest);
 
+        private readonly AsyncLocal<List<Func<IDisposable>>> _beforeAfterTestActions = new AsyncLocal<List<Func<IDisposable>>>();
+        private readonly AsyncLocal<Stack<IDisposable>> _beforeAfterTestActionDisposables = new AsyncLocal<Stack<IDisposable>>();
         private readonly AsyncLocal<TaskObserver> _taskObserver = new AsyncLocal<TaskObserver>();
         private readonly AsyncLocal<Stopwatch> _stopwatch = new AsyncLocal<Stopwatch>();
         private readonly AssemblyLoader _assemblyLoader = new AssemblyLoader();
@@ -55,14 +60,40 @@ namespace TestUtilities {
                 throw new InvalidOperationException("AsyncLocal<Stopwatch> reentrancy");
             }
 
+            var beforeAfterTestActions = _beforeAfterTestActions.Value;
+            _beforeAfterTestActions.Value = null;
+
             _taskObserver.Value = new TaskObserver(secondsTimeout);
             _stopwatch.Value = new Stopwatch();
             _stopwatch.Value.Start();
             TestData.SetTestRunScope(testFullName);
+
+            if (beforeAfterTestActions != null) {
+                var disposables = new Stack<IDisposable>();
+                try {
+                    foreach (var beforeAfterTestAction in beforeAfterTestActions) {
+                        disposables.Push(beforeAfterTestAction());
+                    }
+                } catch (Exception) {
+                    RunDisposablesSafe(disposables);
+                    throw;
+                }
+
+                _beforeAfterTestActionDisposables.Value = disposables;
+            }
         }
 
         protected virtual void AfterTestRun() {
             try {
+                var disposables = _beforeAfterTestActionDisposables.Value;
+                _beforeAfterTestActionDisposables.Value = null;
+                if (disposables != null) {
+                    var afterTestRunException = RunDisposablesSafe(disposables);
+                    if (afterTestRunException != null) {
+                        throw afterTestRunException;
+                    }
+                }
+
                 _taskObserver.Value?.WaitForObservedTask();
                 _stopwatch.Value?.Stop();
                 TestData.ClearTestRunScope();
@@ -70,6 +101,25 @@ namespace TestUtilities {
                 _stopwatch.Value = null;
                 _taskObserver.Value = null;
             }
+        }
+
+        private void AddBeforeAfterTestAction(Func<IDisposable> beforeAfterTest) {
+            var actions = _beforeAfterTestActions.Value ?? (_beforeAfterTestActions.Value = new List<Func<IDisposable>>());
+            actions.Add(beforeAfterTest);
+        }
+
+        private AggregateException RunDisposablesSafe(Stack<IDisposable> disposables) {
+            var exceptions = new List<Exception>();
+            while (disposables.Count > 0) {
+                var disposable = disposables.Pop();
+                try {
+                    disposable.Dispose();
+                } catch (Exception ex) {
+                    exceptions.Add(ex);
+                }
+            }
+
+            return exceptions.Count > 0 ? new AggregateException(exceptions) : null;
         }
     }
 }
