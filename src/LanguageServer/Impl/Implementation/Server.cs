@@ -685,6 +685,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             Settings = newSettings;
 
             _symbolHierarchyDepthLimit = Settings.analysis.symbolsHierarchyDepthLimit;
+            _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
 
             if (oldSettings == null) {
                 return true;

@@ -59,5 +59,24 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
 
         public static IEnumerable<T> Keys<T, U>(this IEnumerable<KeyValuePair<T, U>> source) => source.Select(GetKey);
         public static IEnumerable<T> ExcludeDefault<T>(this IEnumerable<T> source) => source.Where(i => !Equals(i, default(T)));
+
+
+        public static IEnumerable<T> TraverseBreadthFirst<T>(this T root, Func<T, IEnumerable<T>> selectChildren) {
+            var items = new Queue<T>();
+            items.Enqueue(root);
+            while (items.Count > 0) {
+                var item = items.Dequeue();
+                yield return item;
+
+                var childen = selectChildren(item);
+                if (childen == null) {
+                    continue;
+                }
+
+                foreach (var child in childen) {
+                    items.Enqueue(child);
+                }
+            }
+        }
     }
 }

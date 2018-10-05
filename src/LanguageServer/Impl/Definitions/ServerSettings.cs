@@ -25,6 +25,7 @@ namespace Microsoft.Python.LanguageServer {
 
             public bool openFilesOnly;
             public int symbolsHierarchyDepthLimit = 10;
+            public int symbolsHierarchyMaxSymbols = 1000;
 
             public string[] errors { get; } = Array.Empty<string>();
             public string[] warnings { get; } = Array.Empty<string>();
