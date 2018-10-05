@@ -410,17 +410,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return;
             }
 
-            if (sets.Length == 1) {
-                sb.Append(sets[0] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[0].ShortDescription);
-                return;
-            }
-
-            sb.Append('[');
+            sb.AppendIf(sets.Length > 1, "[");
             for (var i = 0; i < sets.Length; i++) {
                 sb.AppendIf(i > 0, ", ");
                 sb.Append(sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription);
             }
-            sb.Append(']');
+            sb.AppendIf(sets.Length > 1, "]");
         }
 
         protected override void EnsureMembers(IDictionary<string, IAnalysisSet> members) {
