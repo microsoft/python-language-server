@@ -294,15 +294,23 @@ namespace Microsoft.PythonTools.Analysis {
             mainDefinition = mainDefinition ?? definitions.FirstOrDefault();
             if (mainDefinition != null) {
                 // Drop definitions in outer scopes and convert those in inner scopes to references.
+                // Exception is when variable is an import as in 
+                //   abc = 1
+                //   import abc
+                 var imports = definitions
+                    .Where(d => d.Variable.Variable.Types.Any(t => t.TypeId == BuiltinTypeId.Module) && d.Location.DocumentUri != DocumentUri)
+                    .ToArray();
+
                 // Scope levels are numbered in reverse (X == main definition level, x+1 == one up).
                 var defsToRefs = definitions
+                    .Except(imports)
                     .Where(d => d != mainDefinition && d.ScopeLevel <= mainDefinition.ScopeLevel)
                     .Select(v => new VariableScopePair(new AnalysisVariable(v.Variable.Variable, VariableType.Reference, v.Location), v.ScopeLevel));
 
                 var others = variables
                             .Where(v => (v.VariableType == VariableType.Reference || v.VariableType == VariableType.Value) &&
                                          v.ScopeLevel <= mainDefinition.ScopeLevel);
-                variables = new[] { mainDefinition }.Concat(others.Concat(defsToRefs));
+                variables = new[] { mainDefinition }.Concat(imports).Concat(others.Concat(defsToRefs));
             }
 
             return new VariablesResult(variables.Select(v => v.Variable), unit.Tree);

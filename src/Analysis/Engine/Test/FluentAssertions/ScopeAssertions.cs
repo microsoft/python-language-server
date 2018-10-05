@@ -14,8 +14,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
@@ -38,6 +40,24 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         protected override string Identifier => nameof(IScope);
+
+        [CustomAssertion]
+        public AndWhichConstraint<TScopeAssertions, TChildScope> OnlyHaveChildScope<TChildScope>(string because = "", params object[] reasonArgs)
+            where TChildScope : IScope => HaveChildScopeAt<TChildScope>(0, because, reasonArgs);
+
+        [CustomAssertion]
+        public AndWhichConstraint<TScopeAssertions, TChildScope> HaveChildScopeAt<TChildScope>(int index, string because = "", params object[] reasonArgs)
+            where TChildScope : IScope {
+            NotBeNull(because, reasonArgs);
+            var childScopes = Subject.Children;
+            var subjectName = $"scope '{Subject.Name}'";
+            Execute.Assertion.BecauseOf(because, reasonArgs)
+                .AssertIsNotNull(childScopes, subjectName, $"child scope of type '{typeof(TScope).Name}'", $"'{Subject.Name}.Children'")
+                .Then
+                .AssertAtIndex<IScope, TChildScope>(childScopes, index, subjectName, "child scope");
+
+            return new AndWhichConstraint<TScopeAssertions, TChildScope>((TScopeAssertions)this, (TChildScope)childScopes[index]);
+        }
 
         public AndWhichConstraint<TScopeAssertions, IPythonModule> HavePythonModuleVariable(string name, string because = "", params object[] reasonArgs) {
             var assertion = HaveVariable(name, because, reasonArgs)

@@ -98,7 +98,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return _doc;
             }
         }
-
+        public override BuiltinTypeId TypeId => BuiltinTypeId.BuiltinFunction;
         public override PythonMemberType MemberType => _memberType;
         public override string Name => _function.Name;
         public override ILocatedMember GetLocatedMember() => _function as ILocatedMember;

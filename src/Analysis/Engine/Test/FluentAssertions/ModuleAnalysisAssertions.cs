@@ -14,9 +14,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Values;
@@ -33,7 +35,21 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         protected override string Identifier => nameof(IModuleAnalysis);
-        
+
+        public AndWhichConstraint<ModuleAnalysisAssertions, AnalysisValueTestInfo<TMember>> HaveBuiltinMember<TMember>(string name, string because = "", params object[] reasonArgs) 
+            where TMember : class, IAnalysisValue {
+            NotBeNull(because, reasonArgs);
+
+            Execute.Assertion.BecauseOf(because, reasonArgs)
+                .AssertIsNotNull(Subject.ProjectState, $"module '{Subject.ModuleName}'", "python analyzer", "\'IModuleAnalysis.ProjectState\'")
+                .Then
+                .AssertIsNotNull(Subject.ProjectState.BuiltinModule, $"module '{Subject.ModuleName}'", "builtin module", "\'IModuleAnalysis.ProjectState.BuiltinModule\'")
+                .Then
+                .AssertHasMemberOfType<TMember>(Subject.ProjectState.BuiltinModule, Subject.Scope, name, $"module '{Subject.ModuleName}'", $"builtin member '{name}'", out var typedMember);
+
+            return new AndWhichConstraint<ModuleAnalysisAssertions, AnalysisValueTestInfo<TMember>>(this, new AnalysisValueTestInfo<TMember>(typedMember, null, Subject.Scope));
+        }
+
         public AndWhichConstraint<ModuleAnalysisAssertions, IPythonModule> HavePythonModuleVariable(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
             var constraint = _scopeAssertions.HavePythonModuleVariable(name, because, reasonArgs);

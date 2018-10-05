@@ -24,6 +24,6 @@ namespace Microsoft.PythonTools.Analysis {
         public static implicit operator SourceSpan(Range r) => new SourceSpan(r.start, r.end);
         public static implicit operator Range(SourceSpan span) => new Range { start = span.Start, end = span.End };
 
-        public override string ToString() => ((SourceSpan)this).ToString();
+        public override string ToString() => $"{start} - {end}";
     }
 }

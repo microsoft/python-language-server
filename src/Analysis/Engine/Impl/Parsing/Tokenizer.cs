@@ -130,17 +130,9 @@ namespace Microsoft.PythonTools.Parsing {
             return tokens;
         }
 
-        public object CurrentState {
-            get {
-                return _state;
-            }
-        }
-
-        public SourceLocation CurrentPosition {
-            get {
-                return IndexToLocation(CurrentIndex);
-            }
-        }
+        public object CurrentState => _state;
+        public int CurrentLine => _newLineLocations.Count;
+        public SourceLocation CurrentPosition => IndexToLocation(CurrentIndex);
 
         public SourceLocation IndexToLocation(int index) {
             int match = _newLineLocations.BinarySearch(new NewLineLocation(index, NewLineKind.None));
@@ -2235,6 +2227,7 @@ namespace Microsoft.PythonTools.Parsing {
             Console.WriteLine("{0} `{1}`", token.Kind, token.Image.Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t"));
         }
 
+        internal NewLineLocation GetNewLineLocation(int line) => _newLineLocations.Count == line ? new NewLineLocation(CurrentIndex, NewLineKind.None) : _newLineLocations[line];
         internal NewLineLocation[] GetLineLocations() => _newLineLocations.ToArray();
         internal SourceLocation[] GetCommentLocations() => _commentLocations.ToArray();
 
@@ -2564,11 +2557,7 @@ namespace Microsoft.PythonTools.Parsing {
             }
         }
 
-        private int CurrentIndex {
-            get {
-                return _tokenStartIndex + Math.Min(_position, _end) - _start;
-            }
-        }
+        private int CurrentIndex => _tokenStartIndex + Math.Min(_position, _end) - _start;
 
         private void DiscardToken() {
             CheckInvariants();

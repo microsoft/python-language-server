@@ -39,5 +39,16 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             return new AndConstraint<CompletionItemAssertions>(this);
         }
+
+        [CustomAssertion]
+        public AndConstraint<CompletionItemAssertions> HaveDocumentation(string documentation, string because = "", params object[] reasonArgs) {
+            Execute.Assertion.BecauseOf(because, reasonArgs)
+                .AssertIsNotNull(Subject.documentation, $"'{Subject.label}' completion", "documentation", "\'CompletionItem.documentation\'")
+                .Then
+                .ForCondition(string.Equals(Subject.documentation.value, documentation, StringComparison.Ordinal))
+                .FailWith($"Expected '{Subject.label}' completion to have documentation '{documentation}'{{reason}}, but it has '{Subject.documentation.value}'");
+
+            return new AndConstraint<CompletionItemAssertions>(this);
+        }
     }
 }
