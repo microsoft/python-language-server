@@ -397,34 +397,30 @@ namespace Microsoft.PythonTools.Analysis.Values {
             // Enumerate manually since SelectMany drops empty/unknown values
             var sb = new StringBuilder("tuple[");
             for (var i = 0; i < _values.Length; i++) {
-                if (i > 0) {
-                    sb.Append(", ");
-                }
-                sb.Append(GetParameterString(_values[i].ToArray()));
+               sb.AppendIf(i > 0, ", ");
+               AppendParameterString(sb, _values[i].ToArray());
             }
             sb.Append(']');
             return sb.ToString();
         }
 
-        private string GetParameterString(AnalysisValue[] sets) {
+        private void AppendParameterString(StringBuilder sb, AnalysisValue[] sets) {
             if (sets.Length == 0) {
-                return "?";
+                sb.Append('?');
+                return;
             }
-            var sb = new StringBuilder();
-            if (sets.Length > 1) {
-                sb.Append('[');
+
+            if (sets.Length == 1) {
+                sb.Append(sets[0] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[0].ShortDescription);
+                return;
             }
+
+            sb.Append('[');
             for (var i = 0; i < sets.Length; i++) {
-                if (i > 0) {
-                    sb.Append(", ");
-                }
-                var desc = sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription;
-                sb.Append(desc);
+                sb.AppendIf(i > 0, ", ");
+                sb.Append(sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription);
             }
-            if (sets.Length > 1) {
-                sb.Append(']');
-            }
-            return sb.ToString();
+            sb.Append(']');
         }
 
         protected override void EnsureMembers(IDictionary<string, IAnalysisSet> members) {
