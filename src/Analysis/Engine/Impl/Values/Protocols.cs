@@ -436,7 +436,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        protected override bool Equals(Protocol other) => 
+        protected override bool Equals(Protocol other) =>
             other is TupleProtocol tp &&
             _values.Zip(tp._values, (x, y) => x.SetEquals(y)).All(b => b);
 
@@ -523,6 +523,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override string Name => "dict";
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Dict;
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (_valueType.Any()) {
@@ -575,14 +576,13 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override string Name => "generator";
-
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Generator;
+        
         public IAnalysisSet Yielded => _yielded;
         public IAnalysisSet Sent { get; }
         public IAnalysisSet Returned { get; }
 
-        public override IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) {
-            return Returned;
-        }
+        public override IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) => Returned;
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (_yielded.Any() || Sent.Any() || Returned.Any()) {
