@@ -103,6 +103,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 }
             }
 
+            if (_analysisUnit.State.Limits.PropagateParameterTypeToBaseMethods
+                && _analysisUnit.Scope.OuterScope is ClassScope parentClass) {
+                var baseMethods = DDG.LookupBaseMethods(Name, parentClass.Class.Mro, AnalysisUnit.Ast, AnalysisUnit);
+                foreach (FunctionInfo baseMethod in baseMethods.OfType<FunctionInfo>()) {
+                    baseMethod.DoCall(node, unit, baseMethod._analysisUnit, callArgs);
+                }
+            }
+
             if (_callsWithClosure != null) {
                 var chain = new CallChain(node, unit, _callDepthLimit);
                 var aggregate = GetAggregate(unit);
