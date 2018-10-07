@@ -109,7 +109,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         internal void Enqueue() {
-            if (!ForEval && !IsInQueue && !_suppressEnqueue) {
+            if (!ForEval && !IsInQueue && !_suppressEnqueue && NeedsAnalysis(_scope)) {
                 State.Queue.Append(this);
                 AnalysisLog.Enqueue(State.Queue, this);
                 IsInQueue = true;
@@ -118,6 +118,16 @@ namespace Microsoft.PythonTools.Analysis {
                     DeclaringModule.ModuleDefinition.EnqueueDependents();
                 }
             }
+        }
+
+        private bool NeedsAnalysis(IScope scope) {
+            if (_analysisCount == 0 || scope == null) {
+                return true;
+            }
+            if (scope.AllVariables.Select(k => k.Value).Any(v => !v.HasTypes)) {
+                return true;
+            }
+            return scope.Children.MaybeEnumerate().Any(s => NeedsAnalysis(s));
         }
 
         /// <summary>
