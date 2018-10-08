@@ -6813,7 +6813,8 @@ def f(s: lambda s: s > 0 = 123):
                 analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType)
                     .And.HaveFunction("f")
                     .Which.Should().HaveParameter("s").OfTypes(BuiltinTypeId.Int)
-                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int);
+                    // Function returns int and type of the passed argument (Unknown/ParameterInfo)
+                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Unknown);
             }
         }
 
@@ -6829,7 +6830,8 @@ def f(s = 123) -> s:
                 analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType)
                     .And.HaveFunction("f")
                     .Which.Should().HaveParameter("s").OfTypes(BuiltinTypeId.Int)
-                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int);
+                    // Function returns int, s (None) and also type of the passed argument (Unknown/ParameterInfo)
+                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType, BuiltinTypeId.Unknown);
             }
         }
 /*
