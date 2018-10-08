@@ -27,7 +27,6 @@ using Microsoft.PythonTools.Parsing;
 namespace Microsoft.PythonTools.Interpreter.Ast {
     internal sealed class AstModuleCache {
         private readonly InterpreterConfiguration _configuration;
-        private readonly string _searchPathCachePath;
         private readonly bool _skipCache;
         private readonly bool _useDefaultDatabase;
         private readonly AnalysisLogWriter _log;
@@ -48,12 +47,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     _skipCache = true;
                 }
             } else {
-                _searchPathCachePath = Path.Combine(DatabasePath, "database.path");
+                SearchPathCachePath = Path.Combine(DatabasePath, "database.path");
             }
             _skipCache = !useExistingCache;
         }
 
         public string DatabasePath { get; }
+        public string SearchPathCachePath { get; }
 
         public IPythonModule ImportFromCache(string name, TryImportModuleContext context) {
             if (string.IsNullOrEmpty(DatabasePath)) {
@@ -75,8 +75,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public void Clear() {
-            if (File.Exists(_searchPathCachePath)) {
-                PathUtils.DeleteFile(_searchPathCachePath);
+            if (!string.IsNullOrEmpty(SearchPathCachePath) && File.Exists(SearchPathCachePath)) {
+                PathUtils.DeleteFile(SearchPathCachePath);
             }
         }
 

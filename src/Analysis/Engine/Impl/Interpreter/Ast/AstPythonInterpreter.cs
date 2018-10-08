@@ -35,11 +35,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         };
         private readonly string _workspaceRoot;
         private readonly AstPythonInterpreterFactory _factory;
+        private readonly object _userSearchPathsLock = new object();
 
         private PythonAnalyzer _analyzer;
         private AstScrapedPythonModule _builtinModule;
         private IReadOnlyList<string> _builtinModuleNames;
 
+        private IReadOnlyList<string> _userSearchPaths;
         private IReadOnlyDictionary<string, string> _userSearchPathPackages;
         private ConcurrentBag<string> _userSearchPathImported = new ConcurrentBag<string>();
 
@@ -100,11 +102,28 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private async Task<IReadOnlyDictionary<string, string>> GetUserSearchPathPackagesAsync(CancellationToken cancellationToken) {
             Log?.Log(TraceLevel.Verbose, "GetUserSearchPathPackagesAsync");
-            if (_userSearchPathPackages == null) {
-                _userSearchPathPackages = await _factory.ModuleResolution.GetPackagesFromSearchPathsAsync(_analyzer.GetSearchPaths(), cancellationToken);
-                Log?.Log(TraceLevel.Verbose, "GetPackagesFromSearchPathsAsync", _userSearchPathPackages.Keys.Cast<object>().ToArray());
+            var ussp = _userSearchPathPackages;
+            if (ussp == null) {
+                IReadOnlyList<string> usp;
+                lock (_userSearchPathsLock) {
+                    usp = _userSearchPaths;
+                    ussp = _userSearchPathPackages;
+                }
+                if (ussp != null || usp == null || !usp.Any()) {
+                    return ussp;
+                }
+
+                ussp = await _factory.ModuleResolution.GetPackagesFromSearchPathsAsync(_analyzer.GetSearchPaths(), cancellationToken);
+                lock (_userSearchPathsLock) {
+                    if (_userSearchPathPackages == null) {
+                        _userSearchPathPackages = ussp;
+                    } else {
+                        ussp = _userSearchPathPackages;
+                    }
+                }
             }
-            return _userSearchPathPackages;
+            Log?.Log(TraceLevel.Verbose, "GetPackagesFromSearchPathsAsync", _userSearchPathPackages.Keys.Cast<object>().ToArray());
+            return ussp;
         }
 
         private async Task<ModulePath?> FindModuleOnDiskAsync(string name, CancellationToken cancellationToken) {
@@ -247,8 +266,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             _analyzer = analyzer;
-
             if (analyzer != null) {
+                lock (_userSearchPathsLock) {
+                    _userSearchPaths = analyzer.GetSearchPaths();
+                }
                 analyzer.SearchPathsChanged += Analyzer_SearchPathsChanged;
                 var bm = analyzer.BuiltinModule;
                 if (!string.IsNullOrEmpty(bm?.Name)) {
