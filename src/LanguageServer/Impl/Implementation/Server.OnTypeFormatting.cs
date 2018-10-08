@@ -21,14 +21,15 @@ using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
-        public override Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params, CancellationToken cancellationToken) {
-            int targetLine; // One-indexed line number
+        public override async Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params, CancellationToken cancellationToken) {
+            int targetLine;
 
             switch (@params.ch) {
                 case "\n":
                     targetLine = @params.position.line - 1;
                     break;
                 case ";":
+                case ":":
                     targetLine = @params.position.line;
                     break;
                 default:
@@ -38,13 +39,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
 
             if (!(ProjectFiles.GetEntry(uri) is IDocument doc)) {
-                return Task.FromResult(Array.Empty<TextEdit>());
+                return Array.Empty<TextEdit>();
             }
             var part = ProjectFiles.GetPart(uri);
 
             using (var reader = doc.ReadDocument(part, out _)) {
+                if (@params.ch == ":") {
+                    return await BlockFormatter.ProvideEdits(reader, @params.position, @params.options);
+                }
+
                 var lineFormatter = new LineFormatter(reader, Analyzer.LanguageVersion);
-                return Task.FromResult(lineFormatter.FormatLine(targetLine));
+                return lineFormatter.FormatLine(targetLine);
             }
         }
     }
