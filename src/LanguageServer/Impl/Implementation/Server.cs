@@ -151,10 +151,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 workspaceSymbolProvider = true,
                 documentSymbolProvider = true,
                 renameProvider = true,
-                documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
-                    firstTriggerCharacter = "\n",
-                    moreTriggerCharacter = new[] { ";" }
-                },
+                //documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
+                //    firstTriggerCharacter = "\n",
+                //    moreTriggerCharacter = new[] { ";" }
+                //},
             }
         };
 
@@ -679,6 +679,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             Settings = newSettings;
 
             _symbolHierarchyDepthLimit = Settings.analysis.symbolsHierarchyDepthLimit;
+            _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
 
             if (oldSettings == null) {
                 return true;

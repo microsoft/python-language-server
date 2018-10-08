@@ -186,6 +186,31 @@ namespace Microsoft.PythonTools.Analysis {
             }, CancellationToken.None);
         }
 
+        public static Task SendDidChangeConfiguration(this Server server, ServerSettings.PythonCompletionOptions pythonCompletionOptions, int failAfter = 30000) {
+            var currentSettings = server.Settings;
+            var settings = new LanguageServerSettings();
+
+            settings.completion.showAdvancedMembers = pythonCompletionOptions.showAdvancedMembers;
+            settings.completion.addBrackets = pythonCompletionOptions.addBrackets;
+
+            settings.analysis.openFilesOnly = currentSettings.analysis.openFilesOnly;
+            if (currentSettings is LanguageServerSettings languageServerSettings) {
+                settings.diagnosticPublishDelay = languageServerSettings.diagnosticPublishDelay;
+                settings.symbolsHierarchyDepthLimit = languageServerSettings.symbolsHierarchyDepthLimit;
+            }
+
+            var errors = currentSettings.analysis.errors;
+            var warnings = currentSettings.analysis.warnings;
+            var information = currentSettings.analysis.information;
+            var disabled = currentSettings.analysis.disabled;
+            settings.analysis.SetErrorSeverityOptions(errors, warnings, information, disabled);
+
+            return server.SendDidChangeConfiguration(settings, failAfter);
+        }
+
+        public static Task SendDidChangeConfiguration(this Server server, ServerSettings settings, int failAfter = 30000) 
+            => server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, new CancellationTokenSource(failAfter).Token);
+
         public static async Task<IModuleAnalysis> ChangeDefaultDocumentAndGetAnalysisAsync(this Server server, string text, int failAfter = 30000) {
             var projectEntry = (ProjectEntry) server.ProjectFiles.Single();
             await server.SendDidChangeTextDocumentAsync(projectEntry.DocumentUri, text);

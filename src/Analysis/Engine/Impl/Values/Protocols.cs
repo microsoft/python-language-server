@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
@@ -389,9 +390,32 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public TupleProtocol(ProtocolInfo self, IEnumerable<IAnalysisSet> values) : base(self, AnalysisSet.UnionAll(values)) {
             _values = values.Select(s => s.AsUnion(1)).ToArray();
+            Name = GetNameFromValues();
+        }
 
-            var argTypes = _values.SelectMany(e => e.Select(v => v is IHasQualifiedName qn ? qn.FullyQualifiedName : v.ShortDescription));
-            Name = "tuple[{0}]".FormatInvariant(string.Join(", ", argTypes));
+        private string GetNameFromValues() {
+            // Enumerate manually since SelectMany drops empty/unknown values
+            var sb = new StringBuilder("tuple[");
+            for (var i = 0; i < _values.Length; i++) {
+               sb.AppendIf(i > 0, ", ");
+               AppendParameterString(sb, _values[i].ToArray());
+            }
+            sb.Append(']');
+            return sb.ToString();
+        }
+
+        private void AppendParameterString(StringBuilder sb, AnalysisValue[] sets) {
+            if (sets.Length == 0) {
+                sb.Append('?');
+                return;
+            }
+
+            sb.AppendIf(sets.Length > 1, "[");
+            for (var i = 0; i < sets.Length; i++) {
+                sb.AppendIf(i > 0, ", ");
+                sb.Append(sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription);
+            }
+            sb.AppendIf(sets.Length > 1, "]");
         }
 
         protected override void EnsureMembers(IDictionary<string, IAnalysisSet> members) {
@@ -419,6 +443,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override string Name { get; }
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Tuple;
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (_values.Any()) {
@@ -437,7 +462,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        protected override bool Equals(Protocol other) => 
+        protected override bool Equals(Protocol other) =>
             other is TupleProtocol tp &&
             _values.Zip(tp._values, (x, y) => x.SetEquals(y)).All(b => b);
 
@@ -524,6 +549,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override string Name => "dict";
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Dict;
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (_valueType.Any()) {
@@ -576,14 +602,13 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override string Name => "generator";
-
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Generator;
+        
         public IAnalysisSet Yielded => _yielded;
         public IAnalysisSet Sent { get; }
         public IAnalysisSet Returned { get; }
 
-        public override IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) {
-            return Returned;
-        }
+        public override IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) => Returned;
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (_yielded.Any() || Sent.Any() || Returned.Any()) {
