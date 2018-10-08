@@ -404,7 +404,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void Interpreter_ModuleNamesChanged(object sender, EventArgs e) {
-            Analyzer.Modules.ReInit();
+            Analyzer.Modules.Reload();
             foreach (var entry in Analyzer.ModulesByFilename) {
                 AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
             }

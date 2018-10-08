@@ -47,4 +47,11 @@ namespace Microsoft.PythonTools.Interpreter {
         /// </summary>
         void NotifyImportNamesChanged();
     }
+
+    public interface IPythonInterpreterFactory2: IPythonInterpreterFactory {
+        /// <summary>
+        /// Creates an IPythonInterpreter instance.
+        /// </summary>
+        IPythonInterpreter CreateInterpreter(string workspaceRoot);
+    }
 }

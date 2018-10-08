@@ -46,7 +46,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             bool warnAboutUndefinedValues,
             AnalysisLogWriter log = null
         ) {
-            _log = log ?? (interpreter as AstPythonInterpreter)?._log;
+            _log = log ?? (interpreter as AstPythonInterpreter)?.Log;
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _members = members ?? throw new ArgumentNullException(nameof(members));
             Scope = new NameLookupContext(

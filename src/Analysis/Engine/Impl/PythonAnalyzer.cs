@@ -174,9 +174,8 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             try {
-                _interpreterFactory.NotifyImportNamesChanged();
-                _modules.ReInit();
                 _interpreter.Initialize(this);
+                _modules.Reload();
 
                 await LoadKnownTypesAsync(token);
 
@@ -184,6 +183,8 @@ namespace Microsoft.PythonTools.Analysis {
                     mod.Clear();
                     mod.EnsureModuleVariables(this);
                 }
+
+                _interpreterFactory.NotifyImportNamesChanged();
             } finally {
                 _reloadLock.Release();
             }
