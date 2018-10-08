@@ -260,7 +260,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public async Task ReloadModulesAsync(CancellationToken token) {
-            LogMessage(MessageType._General, "Reloading modules...");
+            LogMessage(MessageType._General, Resources.ReloadingModules);
 
             // Make sure reload modules is executed on the analyzer thread.
             var task = _reloadModulesQueueItem.Task;
@@ -271,6 +271,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             foreach (var entry in Analyzer.ModulesByFilename) {
                 AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
             }
+            LogMessage(MessageType._General, Resources.Done);
         }
 
         public override Task<object> ExecuteCommand(ExecuteCommandParams @params, CancellationToken token) {
