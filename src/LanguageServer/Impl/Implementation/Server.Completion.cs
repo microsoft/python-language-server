@@ -22,7 +22,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Extensions;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 

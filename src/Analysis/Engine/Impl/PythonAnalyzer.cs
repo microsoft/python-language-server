@@ -174,16 +174,16 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             try {
-                _interpreterFactory.NotifyImportNamesChanged();
-                _modules.ReInit();
+                _modules.Reload();
                 _interpreter.Initialize(this);
 
                 await LoadKnownTypesAsync(token);
-
                 foreach (var mod in _modulesByFilename.Values) {
                     mod.Clear();
                     mod.EnsureModuleVariables(this);
                 }
+
+                _interpreterFactory.NotifyImportNamesChanged();
             } finally {
                 _reloadLock.Release();
             }
