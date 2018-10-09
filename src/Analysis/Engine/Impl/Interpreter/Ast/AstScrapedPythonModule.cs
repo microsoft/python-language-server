@@ -96,7 +96,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         protected virtual List<string> GetScrapeArguments(IPythonInterpreterFactory factory) {
             var args = new List<string> { "-B", "-E" };
 
-            ModulePath mp = AstPythonInterpreterFactory.FindModuleAsync(factory, _filePath, CancellationToken.None)
+            ModulePath mp = AstModuleResolution.FindModuleAsync(factory, _filePath, CancellationToken.None)
                 .WaitAndUnwrapExceptions();
             if (string.IsNullOrEmpty(mp.FullName)) {
                 return null;
@@ -119,7 +119,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             // In debug builds we let you F12 to the scraped file
             var filePath = string.IsNullOrEmpty(_filePath)
                 ? null
-                : ((interpreter as AstPythonInterpreter)?.Factory as AstPythonInterpreterFactory)?.GetCacheFilePath(_filePath);
+                : ((interpreter as AstPythonInterpreter)?.Factory as AstPythonInterpreterFactory)?.ModuleCache.GetCacheFilePath(_filePath);
             var uri = string.IsNullOrEmpty(filePath) ? null : new Uri(filePath);
             const bool includeLocations = true;
 #else
@@ -135,11 +135,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         protected virtual Stream LoadCachedCode(AstPythonInterpreter interpreter) {
-            return (interpreter.Factory as AstPythonInterpreterFactory)?.ReadCachedModule(_filePath);
+            return (interpreter.Factory as AstPythonInterpreterFactory)?.ModuleCache.ReadCachedModule(_filePath);
         }
 
         protected virtual void SaveCachedCode(AstPythonInterpreter interpreter, Stream code) {
-            (interpreter.Factory as AstPythonInterpreterFactory)?.WriteCachedModule(_filePath, code);
+            (interpreter.Factory as AstPythonInterpreterFactory)?.ModuleCache.WriteCachedModule(_filePath, code);
         }
 
         public void Imported(IModuleContext context) {
@@ -233,7 +233,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
 #if DEBUG
             if (!string.IsNullOrEmpty(_filePath)) {
-                var cachePath = fact.GetCacheFilePath(_filePath);
+                var cachePath = fact.ModuleCache.GetCacheFilePath(_filePath);
                 if (!string.IsNullOrEmpty(cachePath)) {
                     Locations = new[] { new LocationInfo(cachePath, null, 1, 1) };
                 }

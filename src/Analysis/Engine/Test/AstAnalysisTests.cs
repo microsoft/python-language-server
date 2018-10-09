@@ -558,7 +558,7 @@ class BankAccount(object):
                     Assert.IsInstanceOfType(mod, typeof(AstBuiltinsPythonModule));
                     mod.Imported(ctxt);
 
-                    var modPath = factory.GetCacheFilePath(factory.Configuration.InterpreterPath);
+                    var modPath = factory.ModuleCache.GetCacheFilePath(factory.Configuration.InterpreterPath);
                     if (File.Exists(modPath)) {
                         _moduleCache = File.ReadAllText(modPath);
                     }
@@ -684,7 +684,7 @@ class BankAccount(object):
                         Assert.IsInstanceOfType(mod, typeof(AstScrapedPythonModule));
                         mod.Imported(ctxt);
 
-                        var modPath = factory.GetCacheFilePath(pyd);
+                        var modPath = factory.ModuleCache.GetCacheFilePath(pyd);
                         Assert.IsTrue(File.Exists(modPath), "No cache file created");
                         _moduleCache = File.ReadAllText(modPath);
 

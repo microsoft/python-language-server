@@ -61,6 +61,15 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to done..
+        /// </summary>
+        internal static string Done {
+            get {
+                return ResourceManager.GetString("Done", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to create interpreter.
         /// </summary>
         internal static string Error_FailedToCreateInterpreter {
@@ -93,6 +102,15 @@ namespace Microsoft.Python.LanguageServer {
         internal static string LanguageServerVersion {
             get {
                 return ResourceManager.GetString("LanguageServerVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reloading modules... .
+        /// </summary>
+        internal static string ReloadingModules {
+            get {
+                return ResourceManager.GetString("ReloadingModules", resourceCulture);
             }
         }
         
