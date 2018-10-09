@@ -151,10 +151,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 workspaceSymbolProvider = true,
                 documentSymbolProvider = true,
                 renameProvider = true,
-                //documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
-                //    firstTriggerCharacter = "\n",
-                //    moreTriggerCharacter = new[] { ";" }
-                //},
+                documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
+                    firstTriggerCharacter = "\n",
+                    moreTriggerCharacter = new[] { ";", ":" }
+                },
             }
         };
 
