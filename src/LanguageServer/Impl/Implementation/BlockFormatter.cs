@@ -1,4 +1,20 @@
-﻿using System;
+﻿// Python Tools for Visual Studio
+// Copyright(c) Microsoft Corporation
+// All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the License); you may not use
+// this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0
+//
+// THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
+// OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
+// IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+// MERCHANTABLITY OR NON-INFRINGEMENT.
+//
+// See the Apache Version 2.0 License for specific language governing
+// permissions and limitations under the License.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -36,6 +52,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         };
 
         public static async Task<TextEdit[]> ProvideEdits(TextReader reader, Position position, FormattingOptions options) {
+            Check.ArgumentNull(nameof(reader), reader);
             Check.ArgumentOutOfRange(nameof(position), () => position.line < 0);
 
             if (position.line == 0) {
@@ -55,6 +72,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             var line = lines[position.line];
+            var prevLine = lines[position.line - 1];
+
+            // We're only interested in cases where the current block is at the same indentation level as the previous line
+            // E.g. if we have an if..else block, generally the else statement would be at the same level as the code in the if...
+            if (FirstNonWhitespaceCharacterIndex(line) != FirstNonWhitespaceCharacterIndex(prevLine)) {
+                return Array.Empty<TextEdit>();
+            }
 
             var formatter = Formatters.FirstOrDefault(f => f.CanProvideEdits(line));
             if (formatter == null) {
@@ -116,11 +140,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
 
                 if (options.insertSpaces) {
-                    return new[] { new TextEdit {
-                        range = new Range {start = startPosition, end = endPosition }
-                    } };
+                    return new[] {
+                        new TextEdit {
+                            range = new Range {start = startPosition, end = endPosition },
+                            newText = string.Empty
+                        }
+                    };
                 }
 
+                // Delete everything before the block and insert the same characters we have in the previous block
                 var prefixOfPreviousBlock = prevLine.Substring(0, startOfBlockInLine);
 
                 return new[] {
@@ -137,7 +165,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return Array.Empty<TextEdit>();
         }
 
-        private int FirstNonWhitespaceCharacterIndex(string s) => s.TakeWhile(c => char.IsWhiteSpace(c)).Count();
+        private static int FirstNonWhitespaceCharacterIndex(string s) => s.TakeWhile(char.IsWhiteSpace).Count();
 
         private static Regex CompileRegex(string pattern) => new Regex(pattern, RegexOptions.Compiled);
     }
