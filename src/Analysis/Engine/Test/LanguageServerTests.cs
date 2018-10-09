@@ -1006,6 +1006,13 @@ datetime.datetime.now().day
                 edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(4, 1), "\n");
                 edits.Should().OnlyHaveTextEdit("x += 1", (2, 4, 2, 9));
             }
+
+            using (var s = await CreateServer()) {
+                var uri = await AddModule(s, "if x:\n    pass\n    else:");
+
+                var edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(3, 9), ":");
+                edits.Should().OnlyHaveTextEdit("", (2, 0, 2, 4));
+            }
         }
 
         class GetAllExtensionProvider : ILanguageServerExtensionProvider {
