@@ -5880,6 +5880,7 @@ a, b = f()
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/215")]
         public async Task Nonlocal() {
             var text = @"
 def f():
@@ -6797,7 +6798,8 @@ def f(s: s = 123):
                 analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType)
                     .And.HaveFunction("f")
                     .Which.Should().HaveParameter("s").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType)
-                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType);
+                    // Function returns int, s (None) and type of the passed argument (Unknown/ParameterInfo)
+                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType, BuiltinTypeId.Unknown);
             }
         }
 
