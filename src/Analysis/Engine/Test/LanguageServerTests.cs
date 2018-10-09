@@ -991,7 +991,7 @@ datetime.datetime.now().day
         }
 
         [TestMethod, Priority(0)]
-        public async Task OnTypeFormatting() {
+        public async Task OnTypeFormattingLine() {
             using (var s = await CreateServer()) {
                 var uri = await AddModule(s, "def foo  ( ) :\n    x = a + b\n    x+= 1");
 
@@ -1006,7 +1006,10 @@ datetime.datetime.now().day
                 edits = await s.SendDocumentOnTypeFormatting(uri, new SourceLocation(4, 1), "\n");
                 edits.Should().OnlyHaveTextEdit("x += 1", (2, 4, 2, 9));
             }
+        }
 
+        [TestMethod, Priority(0)]
+        public async Task OnTypeFormattingBlock() {
             using (var s = await CreateServer()) {
                 var uri = await AddModule(s, "if x:\n    pass\n    else:");
 
