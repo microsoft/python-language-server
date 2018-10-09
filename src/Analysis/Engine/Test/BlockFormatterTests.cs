@@ -48,7 +48,7 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public async Task FirstLine() {
-            using (var reader = new StringReader("")) {
+            using (var reader = new StringReader(string.Empty)) {
                 var edits = await BlockFormatter.ProvideEdits(reader, new Position { line = 0, character = 4 }, new FormattingOptions());
                 edits.Should().BeEmpty();
             }
@@ -74,7 +74,6 @@ namespace AnalysisTests {
             }
         }
 
-
         [DataRow("elseBlocksFirstLine2.py", 3, 7, true, 2, 0, 2)]
         [DataRow("elseBlocksFirstLine4.py", 3, 9, true, 4, 0, 4)]
         [DataRow("elseBlocksFirstLineTab.py", 3, 6, false, 4, 0, 1)]
@@ -87,7 +86,7 @@ namespace AnalysisTests {
 
             using (var reader = new StreamReader(src)) {
                 var edits = await BlockFormatter.ProvideEdits(reader, position, options);
-                edits.Should().OnlyHaveTextEdit("", (line, startCharacter, line, endCharacter));
+                edits.Should().OnlyHaveTextEdit(string.Empty, (line, startCharacter, line, endCharacter));
             }
         }
 
@@ -107,7 +106,7 @@ namespace AnalysisTests {
 
             using (var reader = new StreamReader(src)) {
                 var edits = await BlockFormatter.ProvideEdits(reader, position, options);
-                edits.Should().OnlyHaveTextEdit("", (line, startCharacter, line, endCharacter));
+                edits.Should().OnlyHaveTextEdit(string.Empty, (line, startCharacter, line, endCharacter));
             }
         }
 
@@ -143,7 +142,7 @@ namespace AnalysisTests {
 
             using (var reader = new StreamReader(src)) {
                 var edits = await BlockFormatter.ProvideEdits(reader, position, options);
-                edits.Should().OnlyHaveTextEdit("", (line, startCharacter, line, endCharacter));
+                edits.Should().OnlyHaveTextEdit(string.Empty, (line, startCharacter, line, endCharacter));
             }
         }
 
@@ -205,7 +204,7 @@ namespace AnalysisTests {
 
             using (var reader = new StreamReader(src)) {
                 var edits = await BlockFormatter.ProvideEdits(reader, position, options);
-                edits.Should().OnlyHaveTextEdit("", (line, startCharacter, line, endCharacter));
+                edits.Should().OnlyHaveTextEdit(string.Empty, (line, startCharacter, line, endCharacter));
             }
         }
 
@@ -245,7 +244,7 @@ namespace AnalysisTests {
 
             using (var reader = new StreamReader(src)) {
                 var edits = await BlockFormatter.ProvideEdits(reader, position, options);
-                edits.Should().OnlyHaveTextEdit("", (line, startCharacter, line, endCharacter));
+                edits.Should().OnlyHaveTextEdit(string.Empty, (line, startCharacter, line, endCharacter));
             }
         }
 
@@ -284,7 +283,7 @@ namespace AnalysisTests {
 
             using (var reader = new StreamReader(src)) {
                 var edits = await BlockFormatter.ProvideEdits(reader, position, options);
-                edits.Should().OnlyHaveTextEdit("", (line, startCharacter, line, endCharacter));
+                edits.Should().OnlyHaveTextEdit(string.Empty, (line, startCharacter, line, endCharacter));
             }
         }
 
