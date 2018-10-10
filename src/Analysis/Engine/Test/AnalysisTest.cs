@@ -5167,6 +5167,7 @@ t.x, t. =
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/117")]
         public async Task MoveClass() {
             var fobSrc = "";
 
@@ -5284,6 +5285,7 @@ abc = 42
         [DataRow("from ..moduleA import foo", "foo")]
         [DataRow("from ...package import bar", "bar")]
         [DataTestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/157")]
         public async Task PackageRelativeImportPep328(string subpackageModuleXContent, string variable) {
             var initContent = "def bar():\n  pass\n";
             var moduleAContent = "def foo():\n  pass\n";
@@ -5353,6 +5355,7 @@ a = f()
         }
 
         [PermutationalTestMethod(2), Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/230")]
         public async Task Decorator(int[] permutation) {
             var contents = new[] { @"
 import module2
@@ -5781,6 +5784,7 @@ a = x(2)
         /// we properly understand the imported value.
         /// </summary>
         [PermutationalTestMethod(2), Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/231")]
         public async Task ImportScopesOrder(int[] permutation) {
             var contents = new[] { @"
 import _io
@@ -6437,6 +6441,7 @@ d[0] = d
         /// Variable is referred to in the base class, defined in the derived class, we should know the type information.
         /// </summary>
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/229")]
         public async Task BaseReferencedDerivedDefined() {
             var text = @"
 class Base(object):
@@ -6531,6 +6536,7 @@ tyt0 = tyt[0]
         }
         
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/218")]
         public async Task SubclassFindAllRefs() {
             var text = @"
 class Base(object):
