@@ -20,13 +20,25 @@ using Microsoft.PythonTools.Interpreter;
 
 namespace Microsoft.PythonTools.Analysis {
     public static class PythonInstallPathResolver {
-        public static IPythonInstallPathResolver Instance { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? new WindowsPythonInstallPathResolver()
-            : null;
+        private static readonly Lazy<IPythonInstallPathResolver> _instance = new Lazy<IPythonInstallPathResolver>(() => {
+            switch (Environment.OSVersion.Platform) {
+                case PlatformID.Win32Windows:
+                case PlatformID.Win32NT:
+                    return new WindowsPythonInstallPathResolver();
+                case PlatformID.MacOSX:
+                case PlatformID.Unix:
+                    return new UnixPythonInstallPathResolver();
+                default:
+                    return null;
+            }
+        });
+
+        public static IPythonInstallPathResolver Instance => _instance.Value ?? throw new PlatformNotSupportedException();
     }
 
     public interface IPythonInstallPathResolver {
-        InterpreterConfiguration GetPythonConfiguration(string prefix, InterpreterArchitecture architecture, Version version);
+        InterpreterConfiguration GetCorePythonConfiguration(InterpreterArchitecture architecture, Version version);
+        InterpreterConfiguration GetCondaPythonConfiguration(InterpreterArchitecture architecture, Version version);
         InterpreterConfiguration GetIronPythonConfiguration(bool x64);
     }
 }

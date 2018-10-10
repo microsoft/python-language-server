@@ -52,10 +52,6 @@ namespace Microsoft.PythonTools.Analysis {
         public static readonly InterpreterConfiguration IronPython27_x64 = GetIronPythonVersion(true);
         public static readonly InterpreterConfiguration Jython27 = GetJythonVersion(PythonLanguageVersion.V27);
 
-        public static IEnumerable<InterpreterConfiguration> IronPythonVersions => GetVersions(
-            IronPython27,
-            IronPython27_x64);
-
         public static IEnumerable<InterpreterConfiguration> AnacondaVersions => GetVersions(
             Anaconda36,
             Anaconda36_x64,
@@ -147,11 +143,11 @@ namespace Microsoft.PythonTools.Analysis {
         private static IEnumerable<InterpreterConfiguration> GetVersions(params InterpreterConfiguration[] configurations) => configurations.Where(v => v != null);
 
         private static InterpreterConfiguration GetCPythonVersion(PythonLanguageVersion version, InterpreterArchitecture arch) {            
-            return PythonInstallPathResolver.Instance.GetPythonConfiguration("Global|PythonCore|", arch, version.ToVersion());
+            return PythonInstallPathResolver.Instance.GetCorePythonConfiguration(arch, version.ToVersion());
         }
         
         private static InterpreterConfiguration GetAnacondaVersion(PythonLanguageVersion version, InterpreterArchitecture arch) {
-            return PythonInstallPathResolver.Instance.GetPythonConfiguration("Global|ContinuumAnalytics|", arch, version.ToVersion());
+            return PythonInstallPathResolver.Instance.GetCondaPythonConfiguration(arch, version.ToVersion());
         }
         
         private static InterpreterConfiguration GetIronPythonVersion(bool x64) {
