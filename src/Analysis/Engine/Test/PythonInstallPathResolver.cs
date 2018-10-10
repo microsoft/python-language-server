@@ -26,7 +26,7 @@ namespace Microsoft.PythonTools.Analysis {
                 case PlatformID.Win32NT:
                     return new WindowsPythonInstallPathResolver();
                 case PlatformID.MacOSX:
-                    return new MacPythonInstallPathResolver();
+                    return new MacOSXPythonInstallPathResolver();
                 default:
                     return null;
             }
