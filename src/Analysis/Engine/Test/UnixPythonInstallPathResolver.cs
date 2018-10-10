@@ -23,7 +23,7 @@ using System.Text.RegularExpressions;
 using Microsoft.PythonTools.Interpreter;
 
 namespace Microsoft.PythonTools.Analysis {
-    internal class MacOSXPythonInstallPathResolver : IPythonInstallPathResolver {
+    internal class UnixPythonInstallPathResolver : IPythonInstallPathResolver {
         private static readonly Regex _pythonNameRegex = new Regex(@"^python(\d+(.\d+)?)?$", RegexOptions.Compiled);
         private readonly Dictionary<Version, InterpreterConfiguration> _coreCache;
         private readonly Dictionary<Version, InterpreterConfiguration> _condaCache;
@@ -45,11 +45,13 @@ namespace Microsoft.PythonTools.Analysis {
 
         private void GetConfigurationsFromKnownPaths() {
             var homePath = Environment.GetEnvironmentVariable("HOME");
-            var knownFolders = new [] { "/usr/local/bin", "/usr/local/bin", "/bin", "/usr/sbin", "/sbin", "/usr/local/sbin" };
+            var knownFolders = new [] { "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin", "/usr/local/sbin" };
             foreach (var folder in knownFolders.Concat(knownFolders.Select(p => Path.Combine(homePath, p)))) {
                 try {
-                    foreach (var file in Directory.EnumerateFiles(folder).Where(f => _pythonNameRegex.IsMatch(f))) {
-                        var configuration = GetConfiguration("Python Core", file);
+                    var filePaths = Directory.EnumerateFiles(folder)
+                        .Where(p => _pythonNameRegex.IsMatch(Path.GetFileName(p)));
+                    foreach (var filePath in filePaths) {
+                        var configuration = GetConfiguration("Python Core", filePath);
                         _coreCache.TryAdd(configuration.Version, configuration);
                     }
                 } catch (IOException) {
