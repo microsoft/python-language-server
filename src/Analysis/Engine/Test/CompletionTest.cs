@@ -278,6 +278,7 @@ class oar(int):
         }
 
         [ServerTestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/237")]
         public async Task CompletionDocumentation(Server server) {
             var text = @"
 import sys
