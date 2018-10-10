@@ -773,6 +773,7 @@ class D(object):
 
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/46")]
         public async Task MutatingCalls() {
             var text1 = @"
 def f(abc):
@@ -784,12 +785,18 @@ import mod1
 z = mod1.f(42)
 ";
 
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri1 = TestData.GetTempPathUri("mod1.py");
-                var uri2 = TestData.GetTempPathUri("mod2.py");
+            var uri1 = await TestData.CreateTestSpecificFileAsync("mod1.py", text1);
+            var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+            var root = new Uri(Path.GetDirectoryName(uri1.LocalPath));
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X, root)) {
+                await server.LoadFileAsync(uri1);
+                await server.LoadFileAsync(uri2);
+                    
                 await server.SendDidOpenTextDocument(uri1, text1);
                 await server.SendDidOpenTextDocument(uri2, text2);
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis1 = await server.GetAnalysisAsync(uri1);
                 var analysis2 = await server.GetAnalysisAsync(uri2);
 

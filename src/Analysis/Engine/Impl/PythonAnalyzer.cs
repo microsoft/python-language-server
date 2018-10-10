@@ -280,8 +280,9 @@ namespace Microsoft.PythonTools.Analysis {
         /// '__init__'.
         /// </param>
         public IEnumerable<IPythonProjectEntry> GetEntriesThatImportModule(string moduleName, bool includeUnresolved) {
-            var entries = new HashSet<IPythonProjectEntry>();
+            HashSet<IPythonProjectEntry> entries = null;
             if (Modules.TryImport(moduleName, out var modRef) && modRef.HasReferences) {
+                entries = entries ?? new HashSet<IPythonProjectEntry>();
                 entries.Add(modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>());
             }
 
@@ -291,12 +292,13 @@ namespace Microsoft.PythonTools.Analysis {
                 lock (_modulesWithUnresolvedImportsLock) {
                     foreach (var module in _modulesWithUnresolvedImports) {
                         if (module.GetAllUnresolvedModules().Contains(moduleName)) {
+                            entries = entries ?? new HashSet<IPythonProjectEntry>();
                             entries.Add(module.ProjectEntry);
                         }
                     }
                 }
             }
-            return entries;
+            return entries ?? Enumerable.Empty<IPythonProjectEntry>();
         }
 
         /// <summary>
