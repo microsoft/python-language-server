@@ -643,7 +643,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     AnalysisQueue.Enqueue(analyzable, priority);
 
                     if (doc is ProjectEntry entry) {
-                        var reanalyzeEntries = Analyzer.GetEntriesThatImportModule(entry.ModuleName, false);
+                        var reanalyzeEntries = Analyzer.GetAllModuleDependents(entry.ModuleName, false);
                         foreach (var d in reanalyzeEntries.OfType<IAnalyzable>().OfType<IDocument>()) {
                             _shutdownCts.Token.ThrowIfCancellationRequested();
                             await EnqueueItemAsync(d, priority);
