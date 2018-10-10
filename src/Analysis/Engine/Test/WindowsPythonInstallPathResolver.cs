@@ -32,12 +32,17 @@ namespace Microsoft.PythonTools.Analysis {
             _registryCache = FindPythonConfigurationsInRegistry();
         }
 
-        public InterpreterConfiguration GetPythonConfiguration(string prefix, InterpreterArchitecture architecture, Version version) {
-            return _registryCache.FirstOrDefault(configuration =>
-                configuration.Id.StartsWith(prefix) &&
-                configuration.Architecture == architecture &&
-                configuration.Version == version);
-        }
+        public InterpreterConfiguration GetCorePythonConfiguration(InterpreterArchitecture architecture, Version version) 
+            => GetPythonConfiguration("Global|PythonCore|", architecture, version);
+
+        public InterpreterConfiguration GetCondaPythonConfiguration(InterpreterArchitecture architecture, Version version) 
+            => GetPythonConfiguration("Global|ContinuumAnalytics|", architecture, version);
+
+        private InterpreterConfiguration GetPythonConfiguration(string prefix, InterpreterArchitecture architecture, Version version) 
+            => _registryCache.FirstOrDefault(configuration =>
+            configuration.Id.StartsWith(prefix) &&
+            configuration.Architecture == architecture &&
+            configuration.Version == version);
 
         public InterpreterConfiguration GetIronPythonConfiguration(bool x64) {
             var installPath = GetIronPythonInstallDir();

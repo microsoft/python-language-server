@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Infrastructure;
@@ -58,6 +59,7 @@ namespace Microsoft.PythonTools.Interpreter {
             => d.TryGetValue(k, out var o) ? o as string: null;
 
         private InterpreterConfiguration(Dictionary<string, object> properties) {
+            Debugger.Launch();
             Id = Read(properties, nameof(Id));
             _description = Read(properties, nameof(Description)) ?? "";
             PrefixPath = Read(properties, nameof(PrefixPath));

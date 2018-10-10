@@ -50,7 +50,7 @@ namespace TestUtilities {
             if (Directory.Exists(path)) {
                 foreach (var landmark in new[] {
                     "TestData",
-                    @"src\UnitTests\TestData"
+                    Path.Combine("src", "UnitTests", "TestData")
                 }) {
                     var candidate = PathUtils.GetAbsoluteDirectoryPath(path, landmark);
                     if (Directory.Exists(candidate)) {
