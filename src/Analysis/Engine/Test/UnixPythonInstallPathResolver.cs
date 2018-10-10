@@ -28,7 +28,7 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly Dictionary<Version, InterpreterConfiguration> _coreCache;
         private readonly Dictionary<Version, InterpreterConfiguration> _condaCache;
 
-        public MacOSXPythonInstallPathResolver() {
+        public UnixPythonInstallPathResolver() {
             _coreCache = new Dictionary<Version, InterpreterConfiguration>();
             _condaCache = new Dictionary<Version, InterpreterConfiguration>();
             GetConfigurationsFromKnownPaths();
@@ -45,8 +45,10 @@ namespace Microsoft.PythonTools.Analysis {
 
         private void GetConfigurationsFromKnownPaths() {
             var homePath = Environment.GetEnvironmentVariable("HOME");
-            var knownFolders = new [] { "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin", "/usr/local/sbin" };
-            foreach (var folder in knownFolders.Concat(knownFolders.Select(p => Path.Combine(homePath, p)))) {
+            var foldersFromPathVariable = Environment.GetEnvironmentVariable("PATH")?.Split(':') ?? Array.Empty<string>();
+            var knownFolders = new[] {"/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin", "/usr/local/sbin"};
+            var folders = knownFolders.Concat(knownFolders.Select(p => Path.Combine(homePath, p))).Union(foldersFromPathVariable);
+            foreach (var folder in folders) {
                 try {
                     var filePaths = Directory.EnumerateFiles(folder)
                         .Where(p => _pythonNameRegex.IsMatch(Path.GetFileName(p)));
@@ -62,9 +64,15 @@ namespace Microsoft.PythonTools.Analysis {
         private void GetConfigurationsFromConda() {
             var homePath = Environment.GetEnvironmentVariable("HOME");
             var condaEnvironmentsPath = Path.Combine(homePath, ".conda", "environments.txt");
-            var paths = File.ReadAllLines(condaEnvironmentsPath)
-                .Where(p => !string.IsNullOrWhiteSpace(p))
-                .Select(p => Path.Combine(p.Trim(), "bin", "python"));
+            IEnumerable<string> paths;
+            try {
+                paths = File.ReadAllLines(condaEnvironmentsPath)
+                    .Where(p => !string.IsNullOrWhiteSpace(p))
+                    .Select(p => Path.Combine(p.Trim(), "bin", "python"));
+            } catch (IOException) {
+                return;
+            }
+
             foreach (var path in paths) {
                 var configuration = GetConfiguration("Conda", path);
                 _coreCache.TryAdd(configuration.Version, configuration);
