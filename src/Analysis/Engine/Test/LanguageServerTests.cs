@@ -438,7 +438,7 @@ namespace AnalysisTests {
 
                 await AssertNoCompletion(s, u, new SourceLocation(2, 9));
                 await AssertCompletion(s, u, 
-                    new[] { "bar(arg=None):\r\n    return super(B, arg).bar()" }, 
+                    new[] { "bar(arg=None):\r\n    return super().bar()" },
                     new[] { "bar(arg = None):\r\n    return super().bar()" }, 
                     new SourceLocation(5, 10));
             }
