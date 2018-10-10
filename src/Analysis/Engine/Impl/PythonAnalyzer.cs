@@ -281,11 +281,6 @@ namespace Microsoft.PythonTools.Analysis {
         /// </param>
         public IEnumerable<IPythonProjectEntry> GetEntriesThatImportModule(string moduleName, bool includeUnresolved) {
             var entries = new HashSet<IPythonProjectEntry>();
-            AddEntriesThatImportModule(entries, moduleName, includeUnresolved);
-            return entries;
-        }
-
-        private void AddEntriesThatImportModule(HashSet<IPythonProjectEntry> entries, string moduleName, bool includeUnresolved) {
             if (Modules.TryImport(moduleName, out var modRef) && modRef.HasReferences) {
                 entries.Add(modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>());
             }
@@ -301,6 +296,7 @@ namespace Microsoft.PythonTools.Analysis {
                     }
                 }
             }
+            return entries;
         }
 
         /// <summary>
@@ -318,7 +314,9 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private HashSet<IPythonProjectEntry> AddModuleDependents(HashSet<IPythonProjectEntry> set, string moduleName, bool includeUnresolved) {
-            var entries = GetEntriesThatImportModule(moduleName, includeUnresolved).Where(x => set != null ? !set.Contains(x) : true);
+            var entries = GetEntriesThatImportModule(moduleName, includeUnresolved)
+                .Where(x => set != null ? !set.Contains(x) : true);
+
             if (entries.Any()) {
                 foreach (var e in entries.ToArray()) {
                     set = set ?? new HashSet<IPythonProjectEntry>();
