@@ -1477,5 +1477,174 @@ class Derived(Base):
                 references3.Should().OnlyHaveReferences(expectedReferences);
             }
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassMethod() {
+            var text = @"
+class Base(object):
+    @classmethod
+    def fob_base(cls): 
+        pass
+
+class Derived(Base):
+    @classmethod
+    def fob_derived(cls): 
+        'x'
+
+Base.fob_base()
+Derived.fob_derived()
+";
+
+            using (var server = await CreateServerAsync()) {
+                var uri = await server.OpenDefaultDocumentAndGetUriAsync(text);
+                var references = await server.SendFindReferences(uri, 11, 6);
+
+                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
+                    (uri, (3, 8, 3, 16), ReferenceKind.Definition),
+                    (uri, (2, 4, 4, 12), ReferenceKind.Value),
+                    (uri, (11, 5, 11, 13), ReferenceKind.Reference),
+                };
+
+                references.Should().OnlyHaveReferences(expectedReferences);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassMethodInBase() {
+            var text = @"
+class Base(object):
+    @classmethod
+    def fob_base(cls): 
+        pass
+
+class Derived(Base):
+    pass
+
+Derived.fob_base()
+";
+
+            using (var server = await CreateServerAsync()) {
+                var uri = await server.OpenDefaultDocumentAndGetUriAsync(text);
+                var references = await server.SendFindReferences(uri, 9, 9);
+
+                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
+                    (uri, (3, 8, 3, 16), ReferenceKind.Definition),
+                    (uri, (2, 4, 4, 12), ReferenceKind.Value),
+                    (uri, (9, 8, 9, 16), ReferenceKind.Reference),
+                };
+
+                references.Should().OnlyHaveReferences(expectedReferences);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassMethodInImportedBase() {
+            var text1 = @"
+import mod2
+
+class Derived(mod2.Base):
+    pass
+
+Derived.fob_base()
+";
+
+            var text2 = @"
+class Base(object):
+    @classmethod
+    def fob_base(cls): 
+        pass
+";
+
+            using (var server = await CreateServerAsync()) {
+                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
+                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+                await server.LoadFileAsync(uri2);
+
+                var references = await server.SendFindReferences(uri1, 6, 9);
+
+                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
+                    (uri2, (3, 8, 3, 16), ReferenceKind.Definition),
+                    (uri2, (2, 4, 4, 12), ReferenceKind.Value),
+                    (uri1, (6, 8, 6, 16), ReferenceKind.Reference),
+                };
+
+                references.Should().OnlyHaveReferences(expectedReferences);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassMethodInRelativeImportedBase() {
+            var text1 = @"
+from .mod2 import Base
+
+class Derived(Base):
+    pass
+
+Derived.fob_base()
+";
+
+            var text2 = @"
+class Base(object):
+    @classmethod
+    def fob_base(cls): 
+        pass
+";
+
+            using (var server = await CreateServerAsync()) {
+                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
+                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+                await server.LoadFileAsync(uri2);
+
+                var references = await server.SendFindReferences(uri1, 6, 9);
+
+                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
+                    (uri2, (3, 8, 3, 16), ReferenceKind.Definition),
+                    (uri2, (2, 4, 4, 12), ReferenceKind.Value),
+                    (uri1, (6, 8, 6, 16), ReferenceKind.Reference),
+                };
+
+                references.Should().OnlyHaveReferences(expectedReferences);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassMethodInRelativeImportedBaseCircularRef() {
+            var text1 = @"
+from .mod2 import Derived1
+
+class Base(object):
+    @classmethod
+    def fob_base(cls): 
+        pass
+
+class Derived2(Derived1):
+    pass
+
+Derived2.fob_base()
+";
+
+            var text2 = @"
+from module1 import *
+
+class Derived1(Base):
+    pass
+";
+
+            using (var server = await CreateServerAsync()) {
+                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
+                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+                await server.LoadFileAsync(uri2);
+
+                var references = await server.SendFindReferences(uri1, 11, 9);
+
+                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
+                    (uri2, (3, 8, 3, 16), ReferenceKind.Definition),
+                    (uri2, (2, 4, 4, 12), ReferenceKind.Value),
+                    (uri1, (6, 8, 6, 16), ReferenceKind.Reference),
+                };
+
+                references.Should().OnlyHaveReferences(expectedReferences);
+            }
+        }
     }
 }
