@@ -50,6 +50,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         /// <summary>
         /// Returns possible variable refs associated with the expr in the expression evaluators scope.
         /// </summary>
+        [DebuggerStepThrough]
         public IAnalysisSet Evaluate(Expression node) {
             var res = EvaluateWorker(node);
             Debug.Assert(res != null);
@@ -84,11 +85,11 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return res;
         }
 
+        [DebuggerStepThrough]
         public IAnalysisSet EvaluateMaybeNull(Expression node) {
             if (node == null) {
                 return null;
             }
-
             return Evaluate(node);
         }
 
@@ -208,12 +209,11 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return result;
         }
 
+        [DebuggerStepThrough]
         private IAnalysisSet EvaluateWorker(Node node) {
-            EvalDelegate eval;
-            if (_evaluators.TryGetValue(node.GetType(), out eval)) {
+            if (_evaluators.TryGetValue(node.GetType(), out var eval)) {
                 return eval(this, node);
             }
-
             return AnalysisSet.Empty;
         }
 

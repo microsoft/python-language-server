@@ -636,19 +636,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return result;
         }
 
-        private IEnumerable<IReferenceable> GetDefinitions(string name, IEnumerable<AnalysisValue> nses) {
-            var result = new List<IReferenceable>();
-            foreach (var subType in nses) {
-                if (subType.Push()) {
-                    IReferenceableContainer container = subType as IReferenceableContainer;
-                    if (container != null) {
-                        result.AddRange(container.GetDefinitions(name));
-                    }
-                    subType.Pop();
-                }
-            }
-            return result;
-        }
+        private IEnumerable<IReferenceable> GetDefinitions(string name, IEnumerable<AnalysisValue> nses)
+            => nses.OfType<IReferenceableContainer>().SelectMany(c => c.GetDefinitions(name));
 
         #endregion
 
@@ -698,7 +687,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public void Recompute() {
-            if(_classInfo == null) {
+            if (_classInfo == null) {
                 return;
             }
             var mroList = new List<AnalysisValue> { _classInfo };
