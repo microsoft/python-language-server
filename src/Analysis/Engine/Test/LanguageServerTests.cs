@@ -442,7 +442,7 @@ class B(A):
     def f";
 
             using (var s = await CreateServer()) {
-                var u = await AddModule(s, code);
+                var u = await s.OpenDefaultDocumentAndGetUriAsync(code);
 
                 await AssertNoCompletion(s, u, new SourceLocation(3, 9));
 
