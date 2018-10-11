@@ -26,15 +26,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// Represents an instance of a class implemented in Python
     /// </summary>
     internal class InstanceInfo : AnalysisValue, IInstanceInfo {
-        private readonly ClassInfo _classInfo;
         private Dictionary<string, VariableDef> _instanceAttrs;
 
         public InstanceInfo(ClassInfo classInfo) {
-            _classInfo = classInfo;
+            ClassInfo = classInfo;
         }
 
-        public override string Name => _classInfo.Name;
-        public override IPythonType PythonType => _classInfo.PythonType;
+        public override string Name => ClassInfo.Name;
+        public override IPythonType PythonType => ClassInfo.PythonType;
+        public override BuiltinTypeId TypeId => ClassInfo.TypeId;
 
         public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None) {
             var res = new Dictionary<string, IAnalysisSet>();
@@ -53,7 +53,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             // check and see if it's defined in a base class instance as well...
             if (!options.HasFlag(GetMemberOptions.DeclaredOnly)) {
-                foreach (var b in _classInfo.Bases) {
+                foreach (var b in ClassInfo.Bases) {
                     foreach (var ns in b) {
                         if (ns.Push()) {
                             try {
@@ -76,7 +76,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     }
                 }
 
-                foreach (var classMem in _classInfo.GetAllMembers(moduleContext, options)) {
+                foreach (var classMem in ClassInfo.GetAllMembers(moduleContext, options)) {
                     MergeTypes(res, classMem.Key, classMem.Value);
                 }
             }
@@ -96,12 +96,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
         IReadOnlyDictionary<string, IVariableDefinition> IInstanceInfo.InstanceAttributes
             => InstanceAttributes.ToDictionary(kvp => kvp.Key, kvp => kvp.Value as IVariableDefinition);
 
-        public PythonAnalyzer ProjectState => _classInfo.AnalysisUnit.State;
+        public PythonAnalyzer ProjectState => ClassInfo.AnalysisUnit.State;
 
         public override IEnumerable<OverloadResult> Overloads {
             get {
                 IAnalysisSet callRes;
-                if (_classInfo.GetAllMembers(ProjectState._defaultContext).TryGetValue("__call__", out callRes)) {
+                if (ClassInfo.GetAllMembers(ProjectState._defaultContext).TryGetValue("__call__", out callRes)) {
                     foreach (var overload in callRes.SelectMany(av => av.Overloads)) {
                         yield return overload.WithoutLeadingParameters(1);
                     }
@@ -140,16 +140,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) {
             var result = AnalysisSet.Empty;
-            var classMem = _classInfo.GetMemberNoReferences(node, unit, name);
+            var classMem = ClassInfo.GetMemberNoReferences(node, unit, name);
             if (classMem.Count > 0) {
-                result = classMem.GetDescriptor(node, this, _classInfo, unit);
+                result = classMem.GetDescriptor(node, this, ClassInfo, unit);
                 if (result.Count > 0) {
                     // TODO: Check if it's a data descriptor...
                 }
                 return result;
             } else {
                 // if the class gets a value later we need to be re-analyzed
-                _classInfo.Scope.CreateEphemeralVariable(node, unit, name, false).AddDependency(unit);
+                ClassInfo.Scope.CreateEphemeralVariable(node, unit, name, false).AddDependency(unit);
             }
 
             return result;
@@ -158,7 +158,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) {
             // __getattribute__ takes precedence over everything.
             IAnalysisSet getattrRes = AnalysisSet.Empty;
-            var getAttribute = _classInfo.GetMemberNoReferences(node, unit.CopyForEval(), "__getattribute__");
+            var getAttribute = ClassInfo.GetMemberNoReferences(node, unit.CopyForEval(), "__getattribute__");
             if (getAttribute.Count > 0) {
                 foreach (var getAttrFunc in getAttribute) {
                     if (getAttrFunc is BuiltinMethodInfo f && f.Function.DeclaringType.TypeId == BuiltinTypeId.Object ||
@@ -187,7 +187,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             res = res.Union(def.Types);
 
             // check and see if it's defined in a base class instance as well...
-            foreach (var b in _classInfo.Bases) {
+            foreach (var b in ClassInfo.Bases) {
                 foreach (var ns in b) {
                     if (ns.Push()) {
                         try {
@@ -206,10 +206,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             if (res.Count == 0) {
                 // and if that doesn't exist fall back to __getattr__
-                var getAttr = _classInfo.GetMemberNoReferences(node, unit, "__getattr__");
+                var getAttr = ClassInfo.GetMemberNoReferences(node, unit, "__getattr__");
                 if (getAttr.Count > 0) {
                     foreach (var getAttrFunc in getAttr) {
-                        getattrRes = getattrRes.Union(getAttr.Call(node, unit, new[] { SelfSet, _classInfo.AnalysisUnit.State.ClassInfos[BuiltinTypeId.Str].Instance.SelfSet }, ExpressionEvaluator.EmptyNames));
+                        getattrRes = getattrRes.Union(getAttr.Call(node, unit, new[] { SelfSet, ClassInfo.AnalysisUnit.State.ClassInfos[BuiltinTypeId.Str].Instance.SelfSet }, ExpressionEvaluator.EmptyNames));
                     }
                 }
                 return getattrRes;
@@ -222,7 +222,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 try {
                     var getter = GetTypeMember(node, unit, "__get__");
                     if (getter.Count > 0) {
-                        var get = getter.GetDescriptor(node, this, _classInfo, unit);
+                        var get = getter.GetDescriptor(node, this, ClassInfo, unit);
                         return get.Call(node, unit, new[] { instance, context }, ExpressionEvaluator.EmptyNames);
                     }
                 } finally {
@@ -258,7 +258,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             instMember.AddReference(node, unit);
 
-            _classInfo.GetMember(node, unit, name);
+            ClassInfo.GetMember(node, unit, name);
         }
 
         public override IAnalysisSet UnaryOperation(Node node, AnalysisUnit unit, PythonOperator operation) {
@@ -399,7 +399,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return base.GetAsyncEnumeratorTypes(node, unit);
         }
 
-        public ClassInfo ClassInfo => _classInfo;
+        public ClassInfo ClassInfo { get; }
         IClassInfo IInstanceInfo.ClassInfo => ClassInfo;
 
         public override IPythonProjectEntry DeclaringModule => ClassInfo.DeclaringModule;
@@ -492,7 +492,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 yield return def;
             }
 
-            foreach (var classDef in _classInfo.GetDefinitions(name)) {
+            foreach (var classDef in ClassInfo.GetDefinitions(name)) {
                 yield return classDef;
             }
         }
