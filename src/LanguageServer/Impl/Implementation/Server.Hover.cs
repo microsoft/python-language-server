@@ -14,6 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -62,35 +63,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             TraceMessage($"Getting hover for {expr.ToCodeString(tree, CodeFormattingOptions.Traditional)}");
 
+            var hover = await GetSelfHoverAsync(expr, analysis, @params.position, cancellationToken);
+
             // First try values from expression. This works for the import statement most of the time.
             var values = analysis.GetValues(expr, @params.position, null).ToList();
             if (values.Count == 0) {
-                // See if this is hover over import statement
-                var index = tree.LocationToIndex(@params.position);
-                var w = new ImportedModuleNameWalker(entry, index, tree);
-                tree.Walk(w);
-
-                if (w.ImportedType != null) {
-                    values = analysis.GetValues(w.ImportedType.Name, @params.position).ToList();
-                } else {
-                    var sb = new StringBuilder();
-                    var span = SourceSpan.Invalid;
-                    foreach (var n in w.ImportedModules) {
-                        if (Analyzer.Modules.TryGetImportedModule(n.Name, out var modRef) && modRef.AnalysisModule != null) {
-                            if (sb.Length > 0) {
-                                sb.AppendLine();
-                                sb.AppendLine();
-                            }
-                            sb.Append(_displayTextBuilder.GetModuleDocumentation(modRef));
-                            span = span.IsValid ? span.Union(n.SourceSpan) : n.SourceSpan;
-                        }
-                    }
-                    if (sb.Length > 0) {
-                        return new Hover {
-                            contents = sb.ToString(),
-                            range = span
-                        };
-                    }
+                values = GetImportHover(entry, analysis, tree, @params.position, out var hover).ToList();
+                if(hover != null) {
+                    return hover;
                 }
             }
 
@@ -118,6 +98,53 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             return EmptyHover;
+        }
+
+        private Task<Hover> GetSelfHoverAsync(Expression expr, IModuleAnalysis analysis, Position position, CancellationToken cancellationToken) {
+            if(!(expr is NameExpression name) || name.Name != "self") {
+                return null;
+            }
+            var classDef = analysis.GetVariables(expr, position).FirstOrDefault(v => v.Type == VariableType.Definition);
+            if(classDef == null) {
+                return null;
+            }
+            var classParams = new TextDocumentPositionParams {
+                position = classDef.Location.Span.Start,
+                textDocument =  new TextDocumentIdentifier { uri = classDef.Location.DocumentUri }
+            };
+            return Hover(classParams, cancellationToken);
+        }
+
+        private IEnumerable<AnalysisValue> GetImportHover(IPythonProjectEntry entry, IModuleAnalysis analysis, PythonAst tree, Position position, out Hover hover) {
+            hover = null;
+
+            var index = tree.LocationToIndex(position);
+            var w = new ImportedModuleNameWalker(entry, index, tree);
+            tree.Walk(w);
+
+            if (w.ImportedType != null) {
+                return analysis.GetValues(w.ImportedType.Name, position);
+            }
+
+            var sb = new StringBuilder();
+            var span = SourceSpan.Invalid;
+            foreach (var n in w.ImportedModules) {
+                if (Analyzer.Modules.TryGetImportedModule(n.Name, out var modRef) && modRef.AnalysisModule != null) {
+                    if (sb.Length > 0) {
+                        sb.AppendLine();
+                        sb.AppendLine();
+                    }
+                    sb.Append(_displayTextBuilder.GetModuleDocumentation(modRef));
+                    span = span.IsValid ? span.Union(n.SourceSpan) : n.SourceSpan;
+                }
+            }
+            if (sb.Length > 0) {
+                hover = new Hover {
+                    contents = sb.ToString(),
+                    range = span
+                };
+            }
+            return Enumerable.Empty<AnalysisValue>();
         }
 
         private static string GetFullTypeName(AnalysisValue value) {
