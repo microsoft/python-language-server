@@ -738,14 +738,14 @@ mod1.f(a=D)", "mod2");
 
             // f
             var expected = new[] {
-                "Definition;(2, 5) - (2, 6)",
-                "Value;(2, 1) - (3, 11)",
-                "Reference;(5, 1) - (5, 2)",
-                "Reference;(10, 1) - (10, 2)",
-                "Reference;(17, 6) - (17, 7)"
+                "Definition;(1, 4) - (1, 5)",
+                "Value;(1, 0) - (2, 10)",
+                "Reference;(4, 0) - (4, 1)",
+                "Reference;(9, 0) - (9, 1)",
+                "Reference;(16, 5) - (16, 6)"
             };
             var unexpected = new[] {
-                "Definition;(8, 5) - (8, 6)",
+                "Definition;(7, 4) - (7, 5)",
             };
             await AssertReferences(s, mod1, SourceLocation.MinValue, expected, unexpected, "f");
             await AssertReferences(s, mod1, new SourceLocation(2, 5), expected, unexpected);
@@ -757,15 +757,15 @@ mod1.f(a=D)", "mod2");
 
             // a
             expected = new[] {
-                "Definition;(2, 7) - (2, 8)",
-                "Reference;(3, 5) - (3, 6)",
-                "Reference;(5, 3) - (5, 4)",
-                "Reference;(10, 3) - (10, 4)",
-                "Reference;(17, 8) - (17, 9)"
+                "Definition;(1, 6) - (1, 7)",
+                "Reference;(2, 4) - (2, 5)",
+                "Reference;(4, 2) - (4, 3)",
+                "Reference;(9, 2) - (9, 3)",
+                "Reference;(16, 7) - (16, 8)"
             };
             unexpected = new[] {
-                "Definition;(15, 5) - (15, 6)",
-                "Reference;(16, 9) - (16, 10)"
+                "Definition;(14, 4) - (14, 5)",
+                "Reference;(15, 8) - (15, 9)"
             };
             await AssertReferences(s, mod1, new SourceLocation(3, 8), expected, unexpected, "a");
             await AssertReferences(s, mod1, new SourceLocation(2, 8), expected, unexpected);
@@ -779,32 +779,32 @@ mod1.f(a=D)", "mod2");
 
             // real (in f)
             expected = new[] {
-                "Reference;(3, 7) - (3, 11)",
-                "Definition;(7, 5) - (7, 9)",
-                "Definition;(14, 5) - (14, 9)"
+                "Reference;(2, 6) - (2, 10)",
+                "Definition;(6, 4) - (6, 8)",
+                "Definition;(13, 4) - (13, 8)"
             };
             unexpected = new[] {
-                "Definition;(11, 1) - (11, 5)"
+                "Definition;(10, 0) - (10, 4)"
             };
             await AssertReferences(s, mod1, new SourceLocation(3, 5), expected, unexpected, "a.real");
             await AssertReferences(s, mod1, new SourceLocation(3, 8), expected, unexpected);
 
             // C.real
             expected = new[] {
-                "Definition;(11, 1) - (11, 5)",
-                "Reference;(3, 7) - (3, 11)",
-                "Reference;(7, 5) - (7, 9)"
+                "Definition;(10, 0) - (10, 4)",
+                "Reference;(2, 6) - (2, 10)",
+                "Reference;(6, 4) - (6, 8)"
             };
             await AssertReferences(s, mod1, new SourceLocation(7, 8), expected, Enumerable.Empty<string>());
 
             // D.real
             expected = new[] {
-                "Reference;(3, 7) - (3, 11)",
-                "Definition;(14, 5) - (14, 9)"
+                "Reference;(2, 6) - (2, 10)",
+                "Definition;(13, 4) - (13, 8)"
             };
             unexpected = new[] {
-                "Definition;(7, 5) - (7, 9)",
-                "Definition;(11, 1) - (11, 5)"
+                "Definition;(6, 4) - (6, 8)",
+                "Definition;(10, 0) - (10, 4)"
             };
             await AssertReferences(s, mod2, new SourceLocation(14, 8), expected, unexpected);
         }
