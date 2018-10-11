@@ -433,14 +433,30 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public async Task CompletionForOverrideArgs() {
-            using (var s = await CreateServer()) {
-                var u = await AddModule(s, "class A:\n    def bar(arg=None): pass\n\nclass B(A):\n    def b");
+            var code = @"
+class A(object):
+    def foo(self, a, b=None, *args, **kwargs):
+        pass
 
-                await AssertNoCompletion(s, u, new SourceLocation(2, 9));
-                await AssertCompletion(s, u, 
-                    new[] { "bar(arg=None):\r\n    return super().bar()" },
-                    new[] { "bar(arg = None):\r\n    return super().bar()" }, 
-                    new SourceLocation(5, 10));
+class B(A):
+    def f";
+
+            using (var s = await CreateServer()) {
+                var u = await AddModule(s, code);
+
+                await AssertNoCompletion(s, u, new SourceLocation(3, 9));
+
+                if (!(this is LanguageServerTests_V2)) {
+                    await AssertCompletion(s, u,
+                        new[] { "foo(self, a, b=None, *args, **kwargs):\r\n    return super().foo(a, b=b, *args, **kwargs)" },
+                        new[] { "foo(self, a, b = None, *args, **kwargs):\r\n    return super().foo(a, b = b, *args, **kwargs)" },
+                        new SourceLocation(7, 10));
+                } else {
+                    await AssertCompletion(s, u,
+                        new[] { "foo(self, a, b=None, *args, **kwargs):\r\n    return super(B, self).foo(a, b=b, *args, **kwargs)" },
+                        new[] { "foo(self, a, b = None, *args, **kwargs):\r\n    return super(B, self).foo(a, b = b, *args, **kwargs)" },
+                        new SourceLocation(7, 10));
+                }
             }
         }
 
