@@ -26,7 +26,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public IPythonInterpreter Interpreter { get; set; }
         public ConcurrentDictionary<string, IPythonModule> ModuleCache { get; set; }
         public IPythonModule BuiltinModule { get; set; }
-        public Func<string, CancellationToken, Task<ModulePath?>> FindModuleAsync { get; set; }
+        public Func<string, CancellationToken, Task<ModulePath?>> FindModuleInUserSearchPathAsync { get; set; }
         public IReadOnlyList<string> TypeStubPaths { get; set; }
         public bool MergeTypeStubPackages { get; set; }
     }

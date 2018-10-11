@@ -196,7 +196,6 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/234")]
         public async Task AstMultiValues() {
             using (var server = await CreateServerAsync()) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync("from MultiValues import *");
@@ -220,7 +219,6 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/232")]
         public async Task AstReturnTypes() {
             using (var server = await CreateServerAsync()) {
                 var code = @"from ReturnValues import *
@@ -242,7 +240,6 @@ R_A3 = R_A1.r_A()";
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/233")]
         public async Task AstInstanceMembers() {
             using (var server = await CreateServerAsync()) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync("from InstanceMethod import f1, f2");
