@@ -15,10 +15,14 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.LanguageServer;
+using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Values;
@@ -28,7 +32,7 @@ using TestUtilities;
 
 namespace AnalysisTests {
     [TestClass]
-    public class ReferencesTests: ServerBasedTest {
+    public class FindReferencesTests : ServerBasedTest {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -1479,171 +1483,123 @@ class Derived(Base):
         }
 
         [TestMethod, Priority(0)]
-        public async Task ClassMethod() {
-            var text = @"
-class Base(object):
-    @classmethod
-    def fob_base(cls): 
-        pass
+        public async Task FindReferences() {
+            using (var s = await CreateServerAsync()) {
+                var mod1 = await TestData.CreateTestSpecificFileAsync("mod1.py", @"
+def f(a):
+    a.real
+b = 1
+f(a=b)
+class C:
+    real = []
+    f = 2
+c=C()
+f(a=c)
+real = None");
+                await s.LoadFileAsync(mod1);
 
-class Derived(Base):
-    @classmethod
-    def fob_derived(cls): 
-        'x'
+                // Add 10 blank lines to ensure the line numbers do not collide
+                // We only check line numbers below, and by design we only get one
+                // reference per location, so we disambiguate by ensuring mod2's
+                // line numbers are larger than mod1's
+                var mod2 = await s.OpenDocumentAndGetUriAsync("mod2.py", @"import mod1
+" + "\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n" + @"
+class D:
+    real = None
+    a = 1
+    b = a
+mod1.f(a=D)");
 
-Base.fob_base()
-Derived.fob_derived()
-";
-
-            using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(text);
-                var references = await server.SendFindReferences(uri, 11, 6);
-
-                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
-                    (uri, (3, 8, 3, 16), ReferenceKind.Definition),
-                    (uri, (2, 4, 4, 12), ReferenceKind.Value),
-                    (uri, (11, 5, 11, 13), ReferenceKind.Reference),
+                // f
+                var expected = new[] {
+                    "Definition;(1, 4) - (1, 5)",
+                    "Value;(1, 0) - (2, 10)",
+                    "Reference;(4, 0) - (4, 1)",
+                    "Reference;(9, 0) - (9, 1)",
+                    "Reference;(16, 5) - (16, 6)"
+                };
+                var unexpected = new[] {
+                    "Definition;(7, 4) - (7, 5)",
                 };
 
-                references.Should().OnlyHaveReferences(expectedReferences);
+                await AssertReferences(s, mod1, SourceLocation.MinValue, expected, unexpected, "f");
+                await AssertReferences(s, mod1, new SourceLocation(2, 5), expected, unexpected);
+                await AssertReferences(s, mod1, new SourceLocation(5, 2), expected, unexpected);
+                await AssertReferences(s, mod1, new SourceLocation(10, 2), expected, unexpected);
+                await AssertReferences(s, mod2, new SourceLocation(17, 6), expected, unexpected);
+
+                await AssertReferences(s, mod1, new SourceLocation(8, 5), unexpected, Enumerable.Empty<string>());
+
+                // a
+                expected = new[] {
+                    "Definition;(1, 6) - (1, 7)",
+                    "Reference;(2, 4) - (2, 5)",
+                    "Reference;(4, 2) - (4, 3)",
+                    "Reference;(9, 2) - (9, 3)",
+                    "Reference;(16, 7) - (16, 8)"
+                };
+                    unexpected = new[] {
+                    "Definition;(14, 4) - (14, 5)",
+                    "Reference;(15, 8) - (15, 9)"
+                };
+                await AssertReferences(s, mod1, new SourceLocation(3, 8), expected, unexpected, "a");
+                await AssertReferences(s, mod1, new SourceLocation(2, 8), expected, unexpected);
+                await AssertReferences(s, mod1, new SourceLocation(3, 5), expected, unexpected);
+                await AssertReferences(s, mod1, new SourceLocation(5, 3), expected, unexpected);
+                await AssertReferences(s, mod1, new SourceLocation(10, 3), expected, unexpected);
+                await AssertReferences(s, mod2, new SourceLocation(17, 8), expected, unexpected);
+
+                await AssertReferences(s, mod2, new SourceLocation(15, 5), unexpected, expected);
+                await AssertReferences(s, mod2, new SourceLocation(16, 9), unexpected, expected);
+
+                // real (in f)
+                expected = new[] {
+                    "Reference;(2, 6) - (2, 10)",
+                    "Definition;(6, 4) - (6, 8)",
+                    "Definition;(13, 4) - (13, 8)"
+                };
+                unexpected = new[] {
+                    "Definition;(10, 0) - (10, 4)"
+                };
+                await AssertReferences(s, mod1, new SourceLocation(3, 5), expected, unexpected, "a.real");
+                await AssertReferences(s, mod1, new SourceLocation(3, 8), expected, unexpected);
+
+                // C.real
+                expected = new[] {
+                    "Definition;(10, 0) - (10, 4)",
+                    "Reference;(2, 6) - (2, 10)",
+                    "Reference;(6, 4) - (6, 8)"
+                };
+                await AssertReferences(s, mod1, new SourceLocation(7, 8), expected, Enumerable.Empty<string>());
+
+                // D.real
+                expected = new[] {
+                    "Reference;(2, 6) - (2, 10)",
+                    "Definition;(13, 4) - (13, 8)"
+                };
+                unexpected = new[] {
+                    "Definition;(6, 4) - (6, 8)",
+                    "Definition;(10, 0) - (10, 4)"
+                };
+                await AssertReferences(s, mod2, new SourceLocation(14, 8), expected, unexpected);
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task ClassMethodInBase() {
-            var text = @"
-class Base(object):
-    @classmethod
-    def fob_base(cls): 
-        pass
+        public static async Task AssertReferences(Server s, TextDocumentIdentifier document, SourceLocation position, IEnumerable<string> contains, IEnumerable<string> excludes, string expr = null) {
+            var refs = await s.FindReferences(new ReferencesParams {
+                textDocument = document,
+                position = position,
+                _expr = expr,
+                context = new ReferenceContext {
+                    includeDeclaration = true,
+                    _includeValues = true
+                }
+            }, CancellationToken.None);
 
-class Derived(Base):
-    pass
-
-Derived.fob_base()
-";
-
-            using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(text);
-                var references = await server.SendFindReferences(uri, 9, 9);
-
-                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
-                    (uri, (3, 8, 3, 16), ReferenceKind.Definition),
-                    (uri, (2, 4, 4, 12), ReferenceKind.Value),
-                    (uri, (9, 8, 9, 16), ReferenceKind.Reference),
-                };
-
-                references.Should().OnlyHaveReferences(expectedReferences);
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task ClassMethodInImportedBase() {
-            var text1 = @"
-import mod2
-
-class Derived(mod2.Base):
-    pass
-
-Derived.fob_base()
-";
-
-            var text2 = @"
-class Base(object):
-    @classmethod
-    def fob_base(cls): 
-        pass
-";
-
-            using (var server = await CreateServerAsync()) {
-                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
-                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
-                await server.LoadFileAsync(uri2);
-
-                var references = await server.SendFindReferences(uri1, 6, 9);
-
-                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
-                    (uri2, (3, 8, 3, 16), ReferenceKind.Definition),
-                    (uri2, (2, 4, 4, 12), ReferenceKind.Value),
-                    (uri1, (6, 8, 6, 16), ReferenceKind.Reference),
-                };
-
-                references.Should().OnlyHaveReferences(expectedReferences);
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task ClassMethodInRelativeImportedBase() {
-            var text1 = @"
-from .mod2 import Base
-
-class Derived(Base):
-    pass
-
-Derived.fob_base()
-";
-
-            var text2 = @"
-class Base(object):
-    @classmethod
-    def fob_base(cls): 
-        pass
-";
-
-            using (var server = await CreateServerAsync()) {
-                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
-                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
-                await server.LoadFileAsync(uri2);
-
-                var references = await server.SendFindReferences(uri1, 6, 9);
-
-                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
-                    (uri2, (3, 8, 3, 16), ReferenceKind.Definition),
-                    (uri2, (2, 4, 4, 12), ReferenceKind.Value),
-                    (uri1, (6, 8, 6, 16), ReferenceKind.Reference),
-                };
-
-                references.Should().OnlyHaveReferences(expectedReferences);
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task ClassMethodInRelativeImportedBaseCircularRef() {
-            var text1 = @"
-from .mod2 import Derived1
-
-class Base(object):
-    @classmethod
-    def fob_base(cls): 
-        pass
-
-class Derived2(Derived1):
-    pass
-
-Derived2.fob_base()
-";
-
-            var text2 = @"
-from module1 import *
-
-class Derived1(Base):
-    pass
-";
-
-            using (var server = await CreateServerAsync()) {
-                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
-                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
-                await server.LoadFileAsync(uri2);
-
-                var references = await server.SendFindReferences(uri1, 11, 9);
-
-                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
-                    (uri2, (3, 8, 3, 16), ReferenceKind.Definition),
-                    (uri2, (2, 4, 4, 12), ReferenceKind.Value),
-                    (uri1, (6, 8, 6, 16), ReferenceKind.Reference),
-                };
-
-                references.Should().OnlyHaveReferences(expectedReferences);
+            if (excludes.Any()) {
+                refs.Select(r => $"{r._kind ?? ReferenceKind.Reference};{r.range}").Should().Contain(contains).And.NotContain(excludes);
+            } else {
+                refs.Select(r => $"{r._kind ?? ReferenceKind.Reference};{r.range}").Should().Contain(contains);
             }
         }
     }
