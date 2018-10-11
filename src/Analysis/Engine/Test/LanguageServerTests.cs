@@ -726,106 +726,6 @@ def f(a = 2, b): pass
         }
 
         [TestMethod, Priority(0)]
-        public async Task FindReferences() {
-            var s = await CreateServer();
-            var mod1 = await AddModule(s, @"
-def f(a):
-    a.real
-b = 1
-f(a=b)
-class C:
-    real = []
-    f = 2
-c=C()
-f(a=c)
-real = None", "mod1");
-
-            // Add 10 blank lines to ensure the line numbers do not collide
-            // We only check line numbers below, and by design we only get one
-            // reference per location, so we disambiguate by ensuring mod2's
-            // line numbers are larger than mod1's
-            var mod2 = await AddModule(s, @"import mod1
-" + "\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n" + @"
-class D:
-    real = None
-    a = 1
-    b = a
-mod1.f(a=D)", "mod2");
-
-            // f
-            var expected = new[] {
-                "Definition;(2, 5) - (2, 6)",
-                "Value;(2, 1) - (3, 11)",
-                "Reference;(5, 1) - (5, 2)",
-                "Reference;(10, 1) - (10, 2)",
-                "Reference;(17, 6) - (17, 7)"
-            };
-            var unexpected = new[] {
-                "Definition;(8, 5) - (8, 6)",
-            };
-            await AssertReferences(s, mod1, SourceLocation.MinValue, expected, unexpected, "f");
-            await AssertReferences(s, mod1, new SourceLocation(2, 5), expected, unexpected);
-            await AssertReferences(s, mod1, new SourceLocation(5, 2), expected, unexpected);
-            await AssertReferences(s, mod1, new SourceLocation(10, 2), expected, unexpected);
-            await AssertReferences(s, mod2, new SourceLocation(17, 6), expected, unexpected);
-
-            await AssertReferences(s, mod1, new SourceLocation(8, 5), unexpected, Enumerable.Empty<string>());
-
-            // a
-            expected = new[] {
-                "Definition;(2, 7) - (2, 8)",
-                "Reference;(3, 5) - (3, 6)",
-                "Reference;(5, 3) - (5, 4)",
-                "Reference;(10, 3) - (10, 4)",
-                "Reference;(17, 8) - (17, 9)"
-            };
-            unexpected = new[] {
-                "Definition;(15, 5) - (15, 6)",
-                "Reference;(16, 9) - (16, 10)"
-            };
-            await AssertReferences(s, mod1, new SourceLocation(3, 8), expected, unexpected, "a");
-            await AssertReferences(s, mod1, new SourceLocation(2, 8), expected, unexpected);
-            await AssertReferences(s, mod1, new SourceLocation(3, 5), expected, unexpected);
-            await AssertReferences(s, mod1, new SourceLocation(5, 3), expected, unexpected);
-            await AssertReferences(s, mod1, new SourceLocation(10, 3), expected, unexpected);
-            await AssertReferences(s, mod2, new SourceLocation(17, 8), expected, unexpected);
-
-            await AssertReferences(s, mod2, new SourceLocation(15, 5), unexpected, expected);
-            await AssertReferences(s, mod2, new SourceLocation(16, 9), unexpected, expected);
-
-            // real (in f)
-            expected = new[] {
-                "Reference;(3, 7) - (3, 11)",
-                "Definition;(7, 5) - (7, 9)",
-                "Definition;(14, 5) - (14, 9)"
-            };
-            unexpected = new[] {
-                "Definition;(11, 1) - (11, 5)"
-            };
-            await AssertReferences(s, mod1, new SourceLocation(3, 5), expected, unexpected, "a.real");
-            await AssertReferences(s, mod1, new SourceLocation(3, 8), expected, unexpected);
-
-            // C.real
-            expected = new[] {
-                "Definition;(11, 1) - (11, 5)",
-                "Reference;(3, 7) - (3, 11)",
-                "Reference;(7, 5) - (7, 9)"
-            };
-            await AssertReferences(s, mod1, new SourceLocation(7, 8), expected, Enumerable.Empty<string>());
-
-            // D.real
-            expected = new[] {
-                "Reference;(3, 7) - (3, 11)",
-                "Definition;(14, 5) - (14, 9)"
-            };
-            unexpected = new[] {
-                "Definition;(7, 5) - (7, 9)",
-                "Definition;(11, 1) - (11, 5)"
-            };
-            await AssertReferences(s, mod2, new SourceLocation(14, 8), expected, unexpected);
-        }
-
-        [TestMethod, Priority(0)]
         public async Task Hover() {
             var s = await CreateServer();
             var mod = await AddModule(s, @"123
@@ -1210,24 +1110,6 @@ datetime.datetime.now().day
             }
             if (range.HasValue) {
                 hover.range.Should().Be((Range?)range);
-            }
-        }
-
-        public static async Task AssertReferences(Server s, TextDocumentIdentifier document, SourceLocation position, IEnumerable<string> contains, IEnumerable<string> excludes, string expr = null) {
-            var refs = await s.FindReferences(new ReferencesParams {
-                textDocument = document,
-                position = position,
-                _expr = expr,
-                context = new ReferenceContext {
-                    includeDeclaration = true,
-                    _includeValues = true
-                }
-            }, CancellationToken.None);
-
-            if (excludes.Any()) {
-                refs.Select(r => $"{r._kind ?? ReferenceKind.Reference};{r.range}").Should().Contain(contains).And.NotContain(excludes);
-            } else {
-                refs.Select(r => $"{r._kind ?? ReferenceKind.Reference};{r.range}").Should().Contain(contains);
             }
         }
 
