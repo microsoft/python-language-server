@@ -370,6 +370,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private async Task DoInitializeAsync(InitializeParams @params, CancellationToken token) {
             _disposableBag.ThrowIfDisposed();
+
             Analyzer = await AnalysisQueue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
 
             _disposableBag.ThrowIfDisposed();
@@ -395,6 +396,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             SetSearchPaths(@params.initializationOptions.searchPaths);
             SetTypeStubSearchPaths(@params.initializationOptions.typeStubSearchPaths);
+
+            Analyzer.Interpreter.ModuleNamesChanged += Interpreter_ModuleNamesChanged;
+        }
+
+        private void Interpreter_ModuleNamesChanged(object sender, EventArgs e) {
+            Analyzer.Modules.Reload();
+            foreach (var entry in Analyzer.ModulesByFilename) {
+                AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
+            }
         }
 
         private void DisplayStartupInfo() {

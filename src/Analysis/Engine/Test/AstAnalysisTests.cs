@@ -220,7 +220,6 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/232")]
         public async Task AstReturnTypes() {
             using (var server = await CreateServerAsync()) {
                 var code = @"from ReturnValues import *

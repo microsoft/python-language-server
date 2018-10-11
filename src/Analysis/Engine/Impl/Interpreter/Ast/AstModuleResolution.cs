@@ -263,9 +263,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 }
                 var stubName = i < 0 ? (name + "-stubs") : (name.Remove(i)) + "-stubs" + name.Substring(i);
                 ModulePath? stubMp = null;
-                if (context.FindModuleAsync != null) {
+                if (context.FindModuleInUserSearchPathAsync != null) {
                     try {
-                        stubMp = await context.FindModuleAsync(stubName, cancellationToken);
+                        stubMp = await context.FindModuleInUserSearchPathAsync(stubName, cancellationToken);
                     } catch (Exception ex) {
                         _log?.Log(TraceLevel.Error, "Exception", ex.ToString());
                         _log?.Flush();
@@ -378,9 +378,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private async Task<IPythonModule> ImportFromSearchPathsAsync(string name, TryImportModuleContext context, CancellationToken cancellationToken) {
             ModulePath? mmp = null;
-            if (context.FindModuleAsync != null) {
+            if (context.FindModuleInUserSearchPathAsync != null) {
                 try {
-                    mmp = await context.FindModuleAsync(name, cancellationToken);
+                    mmp = await context.FindModuleInUserSearchPathAsync(name, cancellationToken);
                 } catch (Exception ex) {
                     _log?.Log(TraceLevel.Error, "Exception", ex.ToString());
                     _log?.Flush();
