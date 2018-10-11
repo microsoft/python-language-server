@@ -713,16 +713,15 @@ class D(object):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/47")]
         public async Task MutatingReferences() {
             var text1 = @"
-import mod2
+import module2
 
 class C(object):
     def SomeMethod(self):
         pass
 
-mod2.D(C())
+module2.D(C())
 ";
 
             var text2 = @"
@@ -731,14 +730,17 @@ class D(object):
         self.value = value
         self.value.SomeMethod()
 ";
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri1 = TestData.GetNextModuleUri();
-                var uri2 = TestData.GetNextModuleUri();
+            var uri1 = await TestData.CreateTestSpecificFileAsync("module1.py", text1);
+            var uri2 = await TestData.CreateTestSpecificFileAsync("module2.py", text2);
+            var root = new Uri(Path.GetDirectoryName(uri1.LocalPath));
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X, root)) {
+                await server.LoadFileAsync(uri1);
+                await server.LoadFileAsync(uri2);
+
                 await server.SendDidOpenTextDocument(uri1, text1);
-                await server.SendDidOpenTextDocument(uri2, text2);
 
                 var references = await server.SendFindReferences(uri1, 4, 9);
-
                 references.Should().OnlyHaveReferences(
                     (uri1, (4, 4, 5, 12), ReferenceKind.Value),
                     (uri1, (4, 8, 4, 18), ReferenceKind.Definition),
@@ -754,6 +756,8 @@ class D(object):
                     (uri1, (5, 8, 5, 18), ReferenceKind.Definition),
                     (uri2, (4, 19, 4, 29), ReferenceKind.Reference)
                 );
+
+                await server.SendDidOpenTextDocument(uri2, text2);
 
                 text2 = Environment.NewLine + text2;
                 await server.SendDidChangeTextDocumentAsync(uri2, text2);
@@ -781,12 +785,18 @@ import mod1
 z = mod1.f(42)
 ";
 
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri1 = TestData.GetTempPathUri("mod1.py");
-                var uri2 = TestData.GetTempPathUri("mod2.py");
+            var uri1 = await TestData.CreateTestSpecificFileAsync("mod1.py", text1);
+            var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+            var root = new Uri(Path.GetDirectoryName(uri1.LocalPath));
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X, root)) {
+                await server.LoadFileAsync(uri1);
+                await server.LoadFileAsync(uri2);
+                    
                 await server.SendDidOpenTextDocument(uri1, text1);
                 await server.SendDidOpenTextDocument(uri2, text2);
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis1 = await server.GetAnalysisAsync(uri1);
                 var analysis2 = await server.GetAnalysisAsync(uri2);
 
@@ -801,6 +811,7 @@ z = mod1.f('abc')
 ";
 
                 await server.SendDidChangeTextDocumentAsync(uri2, text2);
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 analysis2 = await server.GetAnalysisAsync(uri2);
 
                 analysis1.Should().HaveFunction("f")

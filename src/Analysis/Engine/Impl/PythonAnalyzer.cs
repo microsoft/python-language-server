@@ -25,6 +25,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.PythonTools.Analysis.Infrastructure.Extensions;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
@@ -279,10 +280,10 @@ namespace Microsoft.PythonTools.Analysis {
         /// '__init__'.
         /// </param>
         public IEnumerable<IPythonProjectEntry> GetEntriesThatImportModule(string moduleName, bool includeUnresolved) {
-            ModuleReference modRef;
-            var entries = new List<IPythonProjectEntry>();
-            if (Modules.TryImport(moduleName, out modRef) && modRef.HasReferences) {
-                entries.AddRange(modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>());
+            HashSet<IPythonProjectEntry> entries = null;
+            if (Modules.TryImport(moduleName, out var modRef) && modRef.HasReferences) {
+                entries = entries ?? new HashSet<IPythonProjectEntry>();
+                entries.Add(modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>());
             }
 
             if (includeUnresolved) {
@@ -291,13 +292,41 @@ namespace Microsoft.PythonTools.Analysis {
                 lock (_modulesWithUnresolvedImportsLock) {
                     foreach (var module in _modulesWithUnresolvedImports) {
                         if (module.GetAllUnresolvedModules().Contains(moduleName)) {
+                            entries = entries ?? new HashSet<IPythonProjectEntry>();
                             entries.Add(module.ProjectEntry);
                         }
                     }
                 }
             }
+            return entries ?? Enumerable.Empty<IPythonProjectEntry>();
+        }
 
-            return entries;
+        /// <summary>
+        /// Returns a sequence of project entries that import the specified
+        /// module as well as entries that import modules in the first set,
+        /// and so on, recursively.
+        /// </summary>
+        /// <param name="moduleName">
+        /// The absolute name of the module. This should never end with
+        /// '__init__'.
+        /// </param>
+        public IEnumerable<IPythonProjectEntry> GetAllModuleDependents(string moduleName, bool includeUnresolved) {
+            var set = AddModuleDependents(null, moduleName, includeUnresolved);
+            return set ?? Enumerable.Empty<IPythonProjectEntry>();
+        }
+
+        private HashSet<IPythonProjectEntry> AddModuleDependents(HashSet<IPythonProjectEntry> set, string moduleName, bool includeUnresolved) {
+            var entries = GetEntriesThatImportModule(moduleName, includeUnresolved)
+                .Where(x => set != null ? !set.Contains(x) : true);
+
+            if (entries.Any()) {
+                foreach (var e in entries.ToArray()) {
+                    set = set ?? new HashSet<IPythonProjectEntry>();
+                    set.Add(e);
+                    set = AddModuleDependents(set, e.ModuleName, includeUnresolved);
+                }
+            }
+            return set;
         }
 
         /// <summary>
