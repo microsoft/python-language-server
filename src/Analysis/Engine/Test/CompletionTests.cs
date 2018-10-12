@@ -856,6 +856,25 @@ mc
             }
         }
 
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task CompletionFromBaseClassMethod(bool is2X) {
+            using (var s = await CreateServerAsync(is2X ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X)) {
+                var uri = await s.OpenDefaultDocumentAndGetUriAsync(@"
+import unittest
+class Simple(unittest.TestCase):
+    def test_exception(self):
+        self.assertRaises().
+");
+                await AssertCompletion(s, uri,
+                    position: new Position { line = 4, character = 29 },
+                    contains: new[] { "exception" },
+                    excludes: Array.Empty<string>()
+                );
+            }
+        }
+
         [TestMethod, Priority(0)]
         public async Task CompletionHook() {
             using (var s = await CreateServerAsync()) {
