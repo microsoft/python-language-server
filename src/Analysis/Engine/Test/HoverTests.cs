@@ -124,6 +124,25 @@ datetime.datetime.now().day
             }
         }
 
+        [TestMethod, Priority(0)]
+        public async Task SelfHover() {
+            var text = @"
+class Base(object):
+    def fob_base(self):
+       pass
+
+class Derived(Base):
+    def fob_derived(self):
+       self.fob_base()
+       pass
+";
+            using (var s = await CreateServerAsync()) {
+                var uri = await s.OpenDefaultDocumentAndGetUriAsync(text);
+                await AssertHover(s, uri, new SourceLocation(3, 19), "class module.Base(object)", null, new SourceSpan(2, 7, 2, 11));
+                await AssertHover(s, uri, new SourceLocation(8, 8), "class module.Derived(Base)", null, new SourceSpan(6, 7, 6, 14));
+            }
+        }
+
         private static async Task AssertHover(Server s, Uri uri, SourceLocation position, string hoverText, IEnumerable<string> typeNames, SourceSpan? range = null, string expr = null) {
             await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
             var hover = await s.Hover(new TextDocumentPositionParams {
