@@ -185,46 +185,35 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     return null;
             }
 
-            IEnumerable<CompletionItem> result = null;
             switch (Statement) {
-                case ImportStatement import:
-                    result = GetCompletionsInImport(import);
-                    break;
-
-                case FromImportStatement fromImport:
-                    result = GetCompletionsInFromImport(fromImport);
-                    break;
-
-                case FunctionDefinition fd:
-                    result = GetCompletionsForOverride(fd) ?? GetCompletionsInFunctionDefinition(fd);
-                    break;
-
+                case ImportStatement import when TryGetCompletionsInImport(import, out var result):
+                    return result;
+                case FromImportStatement fromImport when TryGetCompletionsInFromImport(fromImport, out var result):
+                    return result;
+                case FunctionDefinition fd when TryGetCompletionsForOverride(fd, out var result):
+                    return result;
+                case FunctionDefinition fd when NoCompletionsInFunctionDefinition(fd):
+                    return null;
                 case ClassDefinition cd:
-                    result = GetCompletionsInClassDefinition(cd, out var addMetadataArg);
-                    if (addMetadataArg) {
-                        return GetCompletionsFromTopLevel().Append(MetadataArgCompletion);
+                    if (NoCompletionsInClassDefinition(cd, out var addMetadataArg)) {
+                        return null;
                     }
-                    break;
 
-                case ForStatement forStatement when forStatement.Left != null:
-                    result = GetCompletionsInForStatement(forStatement);
-                    break;
+                    return addMetadataArg 
+                        ? GetCompletionsFromTopLevel().Append(MetadataArgCompletion) 
+                        : GetCompletionsFromTopLevel();
 
-                case WithStatement withStatement:
-                    result = GetCompletionsInWithStatement(withStatement);
-                    break;
-
-                case RaiseStatement raiseStatement:
-                    result = GetCompletionsInRaiseStatement(raiseStatement);
-                    break;
-
-                case TryStatementHandler tryStatement:
-                    result = GetCompletionsInExceptStatement(tryStatement);
-                    break;
+                case ForStatement forStatement when TryGetCompletionsInForStatement(forStatement, out var result):
+                    return result;
+                case WithStatement withStatement when TryGetCompletionsInWithStatement(withStatement, out var result):
+                    return result;
+                case RaiseStatement raiseStatement when TryGetCompletionsInRaiseStatement(raiseStatement, out var result):
+                    return result;
+                case TryStatementHandler tryStatement when TryGetCompletionsInExceptStatement(tryStatement, out var result):
+                    return result;
+                default:
+                    return GetCompletionsFromError() ?? GetCompletionsFromTopLevel();
             }
-
-            result = result ?? GetCompletionsFromError() ?? GetCompletionsFromTopLevel();
-            return ReferenceEquals(result, Empty) ? null : result;
         }
 
         private static IEnumerable<CompletionItem> Once(CompletionItem item) {
@@ -303,63 +292,63 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInImport(ImportStatement import) {
-            if (import.Names == null || import.Names.Count == 0) {
-                // No names, so if we're at the end return modules
-                if (Index > import.KeywordEndIndex) {
-                    return GetModulesFromNode(null);
-                }
+        private bool TryGetCompletionsInImport(ImportStatement import, out IEnumerable<CompletionItem> result) {
+            result = null;
+
+            // No names, so if we're at the end return modules
+            if (import.Names.Count == 0 && Index > import.KeywordEndIndex) {
+                result = GetModulesFromNode(null);
+                return true;
             }
 
             foreach (var (name, asName) in ZipLongest(import.Names, import.AsNames).Reverse()) {
                 if (asName != null && Index >= asName.StartIndex) {
-                    return Empty;
+                    return true;
                 }
 
                 if (name != null) {
                     if (Index > name.EndIndex && name.EndIndex > name.StartIndex) {
                         SetApplicableSpanToLastToken(import);
-                        return Once(AsKeywordCompletion);
+                        result = Once(AsKeywordCompletion);
+                        return true;
                     }
 
                     if (Index >= name.StartIndex) {
-                        Node = name.Names.MaybeEnumerate()
-                            .LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
-                        return GetModulesFromNode(name);
+                        Node = name.Names.MaybeEnumerate().LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
+                        result = GetModulesFromNode(name);
+                        return true;
                     }
                 }
             }
 
-            return null;
+            return false;
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInFromImport(FromImportStatement fromImport) {
+        private bool TryGetCompletionsInFromImport(FromImportStatement fromImport, out IEnumerable<CompletionItem> result) {
+            result = null;
+
             // No more completions after '*', ever!
             if (fromImport.Names != null && fromImport.Names.Any(n => n?.Name == "*" && Index > n.EndIndex)) {
-                return Empty;
+                return true;
             }
 
             foreach (var (name, asName) in ZipLongest(fromImport.Names, fromImport.AsNames).Reverse()) {
-                if (asName != null) {
-                    if (Index >= asName.StartIndex) {
-                        return Empty;
-                    }
+                if (asName != null && Index >= asName.StartIndex) {
+                    return true;
                 }
 
                 if (name != null) {
                     if (Index > name.EndIndex && name.EndIndex > name.StartIndex) {
                         SetApplicableSpanToLastToken(fromImport);
-                        return Once(AsKeywordCompletion);
+                        result = Once(AsKeywordCompletion);
+                        return true;
                     }
 
                     if (Index >= name.StartIndex) {
                         ApplicableSpan = name.GetSpan(Tree);
                         var mods = GetModulesFromNode(fromImport.Root, true).ToArray();
-                        if (mods.Any() && fromImport.Names.Count == 1) {
-                            return Once(StarCompletion).Concat(mods);
-                        }
-
-                        return mods;
+                        result = mods.Any() && fromImport.Names.Count == 1 ? Once(StarCompletion).Concat(mods) : mods;
+                        return true;
                     }
                 }
             }
@@ -367,15 +356,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if (fromImport.ImportIndex > fromImport.StartIndex) {
                 if (Index > fromImport.ImportIndex + 6) {
                     if (fromImport.Root == null) {
-                        return Empty;
+                        return true;
                     }
 
                     var mods = GetModulesFromNode(fromImport.Root, true).ToArray();
-                    if (mods.Any() && fromImport.Names.Count <= 1) {
-                        return Once(StarCompletion).Concat(mods);
-                    }
-
-                    return mods;
+                    result = mods.Any() && fromImport.Names.Count <= 1 ? Once(StarCompletion).Concat(mods) : mods;
+                    return true;
                 }
 
                 if (Index >= fromImport.ImportIndex) {
@@ -383,7 +369,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         Tree.IndexToLocation(fromImport.ImportIndex),
                         Tree.IndexToLocation(Math.Min(fromImport.ImportIndex + 6, fromImport.EndIndex))
                     );
-                    return Once(ImportKeywordCompletion);
+                    result = Once(ImportKeywordCompletion);
+                    return true;
                 }
             }
 
@@ -398,35 +385,36 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         }
                     }
 
-                    return Once(ImportKeywordCompletion);
+                    result = Once(ImportKeywordCompletion);
+                    return true;
                 }
 
                 if (Index >= fromImport.Root.StartIndex) {
                     Node = fromImport.Root.Names.MaybeEnumerate()
                         .LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
-                    return GetModulesFromNode(fromImport.Root);
+                    result = GetModulesFromNode(fromImport.Root);
+                    return true;
                 }
             }
 
             if (Index > fromImport.KeywordEndIndex) {
-                return GetModulesFromNode(null);
+                result = GetModulesFromNode(null);
+                return true;
             }
 
-            return null;
+            return false;
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsForOverride(FunctionDefinition function) {
-            if (function.Parent is ClassDefinition cd && 
-                string.IsNullOrEmpty(function.Name) && 
-                function.NameExpression != null && 
-                Index > function.NameExpression.StartIndex) {
-
+        private bool TryGetCompletionsForOverride(FunctionDefinition function, out IEnumerable<CompletionItem> result) {
+            if (function.Parent is ClassDefinition cd && string.IsNullOrEmpty(function.Name) && function.NameExpression != null && Index > function.NameExpression.StartIndex) {
                 var loc = function.GetStart(Tree);
                 ShouldCommitByDefault = false;
-                return Analysis.GetOverrideable(loc).Select(o => ToOverrideCompletionItem(o, cd, new string(' ', loc.Column - 1)));
+                result = Analysis.GetOverrideable(loc).Select(o => ToOverrideCompletionItem(o, cd, new string(' ', loc.Column - 1)));
+                return true;
             }
 
-            return null;
+            result = null;
+            return false;
         }
 
         private CompletionItem ToOverrideCompletionItem(IOverloadResult o, ClassDefinition cd, string indent) {
@@ -437,60 +425,46 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             };
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInFunctionDefinition(FunctionDefinition fd) {
+        private bool NoCompletionsInFunctionDefinition(FunctionDefinition fd) {
             // Here we work backwards through the various parts of the definitions.
             // When we find that Index is within a part, we return either the available
             // completions 
             if (fd.HeaderIndex > fd.StartIndex && Index > fd.HeaderIndex) {
-                return null;
+                return false;
             }
 
             if (Index == fd.HeaderIndex) {
-                return Empty;
+                return true;
             }
 
             foreach (var p in fd.Parameters.Reverse()) {
                 if (Index >= p.StartIndex) {
                     if (p.Annotation != null) {
-                        if (Index < p.Annotation.StartIndex) {
-                            return Empty;
-                        }
-
-                        return null;
+                        return Index < p.Annotation.StartIndex;
                     }
 
                     if (p.DefaultValue != null) {
-                        if (Index < p.DefaultValue.StartIndex) {
-                            return Empty;
-                        }
-
-                        return null;
+                        return Index < p.DefaultValue.StartIndex;
                     }
                 }
             }
 
-            if (fd.NameExpression != null) {
-                if (fd.NameExpression.StartIndex > fd.KeywordEndIndex && Index >= fd.NameExpression.StartIndex) {
-                    return Empty;
-                }
+            if (fd.NameExpression != null && fd.NameExpression.StartIndex > fd.KeywordEndIndex && Index >= fd.NameExpression.StartIndex) {
+                return true;
             }
 
-            if (Index > fd.KeywordEndIndex) {
-                return Empty;
-            }
-
-            return null;
+            return Index > fd.KeywordEndIndex;
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInClassDefinition(ClassDefinition cd, out bool addMetadataArg) {
+        private bool NoCompletionsInClassDefinition(ClassDefinition cd, out bool addMetadataArg) {
             addMetadataArg = false;
 
             if (cd.HeaderIndex > cd.StartIndex && Index > cd.HeaderIndex) {
-                return null;
+                return false;
             }
 
             if (Index == cd.HeaderIndex) {
-                return Empty;
+                return true;
             }
 
             if (cd.Bases.Length > 0 && Index >= cd.Bases[0].StartIndex) {
@@ -500,131 +474,132 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                             addMetadataArg = true;
                         }
 
-                        return null;
+                        return false;
                     }
                 }
             }
 
             if (cd.NameExpression != null && cd.NameExpression.StartIndex > cd.KeywordEndIndex && Index >= cd.NameExpression.StartIndex) {
-                return Empty;
+                return true;
             }
 
-            if (Index > cd.KeywordEndIndex) {
-                return Empty;
-            }
-
-            return null;
+            return Index > cd.KeywordEndIndex;
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInForStatement(ForStatement forStatement) {
+        private bool TryGetCompletionsInForStatement(ForStatement forStatement, out IEnumerable<CompletionItem> result) {
+            result = null;
+
+            if (forStatement.Left == null) {
+                return false;
+            }
+
             if (forStatement.InIndex > forStatement.StartIndex) {
                 if (Index > forStatement.InIndex + 2) {
-                    return null;
+                    return false;
                 }
 
                 if (Index >= forStatement.InIndex) {
-                    ApplicableSpan = new SourceSpan(Tree.IndexToLocation(forStatement.InIndex),
-                        Tree.IndexToLocation(forStatement.InIndex + 2));
-                    return Once(InKeywordCompletion);
+                    ApplicableSpan = new SourceSpan(Tree.IndexToLocation(forStatement.InIndex), Tree.IndexToLocation(forStatement.InIndex + 2));
+                    result = Once(InKeywordCompletion);
+                    return true;
                 }
             }
 
-            if (forStatement.Left.StartIndex > forStatement.StartIndex &&
-                forStatement.Left.EndIndex > forStatement.Left.StartIndex && Index > forStatement.Left.EndIndex) {
+            if (forStatement.Left.StartIndex > forStatement.StartIndex && forStatement.Left.EndIndex > forStatement.Left.StartIndex && Index > forStatement.Left.EndIndex) {
                 SetApplicableSpanToLastToken(forStatement);
-                return Once(InKeywordCompletion);
+                result = Once(InKeywordCompletion);
+                return true;
             }
 
-            if (forStatement.ForIndex >= forStatement.StartIndex && Index > forStatement.ForIndex + 3) {
-                return Empty;
-            }
-
-            return null;
+            return forStatement.ForIndex >= forStatement.StartIndex && Index > forStatement.ForIndex + 3;
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInWithStatement(WithStatement withStatement) {
+        private bool TryGetCompletionsInWithStatement(WithStatement withStatement, out IEnumerable<CompletionItem> result) {
+            result = null;
+
             if (Index > withStatement.HeaderIndex && withStatement.HeaderIndex > withStatement.StartIndex) {
-                return null;
+                return false;
             }
 
             foreach (var item in withStatement.Items.Reverse().MaybeEnumerate()) {
                 if (item.AsIndex > item.StartIndex) {
                     if (Index > item.AsIndex + 2) {
-                        return Empty;
+                        return true;
                     }
 
                     if (Index >= item.AsIndex) {
-                        ApplicableSpan = new SourceSpan(Tree.IndexToLocation(item.AsIndex),
-                            Tree.IndexToLocation(item.AsIndex + 2));
-                        return Once(AsKeywordCompletion);
+                        ApplicableSpan = new SourceSpan(Tree.IndexToLocation(item.AsIndex), Tree.IndexToLocation(item.AsIndex + 2));
+                        result = Once(AsKeywordCompletion);
+                        return true;
                     }
                 }
 
                 if (item.ContextManager != null && !(item.ContextManager is ErrorExpression)) {
-                    if (Index > item.ContextManager.EndIndex &&
-                        item.ContextManager.EndIndex > item.ContextManager.StartIndex) {
-                        return Once(AsKeywordCompletion);
+                    if (Index > item.ContextManager.EndIndex && item.ContextManager.EndIndex > item.ContextManager.StartIndex) {
+                        result = Once(AsKeywordCompletion);
+                        return true;
                     }
 
                     if (Index >= item.ContextManager.StartIndex) {
-                        return null;
+                        return false;
                     }
                 }
             }
 
-            return null;
+            return false;
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInRaiseStatement(RaiseStatement raiseStatement) {
+        private bool TryGetCompletionsInRaiseStatement(RaiseStatement raiseStatement, out IEnumerable<CompletionItem> result) {
+            result = null;
+
             // raise Type, Value, Traceback with Cause
             if (raiseStatement.Cause != null && Index >= raiseStatement.CauseFieldStartIndex) {
-                return null;
+                return false;
             }
 
             if (raiseStatement.Traceback != null && Index >= raiseStatement.TracebackFieldStartIndex) {
-                return null;
+                return false;
             }
 
             if (raiseStatement.Value != null && Index >= raiseStatement.ValueFieldStartIndex) {
-                return null;
+                return false;
             }
 
             if (raiseStatement.ExceptType == null) {
-                return null;
+                return false;
             }
 
             if (Index <= raiseStatement.ExceptType.EndIndex) {
-                return null;
+                return false;
             }
 
             if (Tree.LanguageVersion.Is3x()) {
                 SetApplicableSpanToLastToken(raiseStatement);
-                return Once(FromKeywordCompletion);
+                result = Once(FromKeywordCompletion);
             }
 
-            return Empty;
+            return true;
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInExceptStatement(TryStatementHandler tryStatement) {
+        private bool TryGetCompletionsInExceptStatement(TryStatementHandler tryStatement, out IEnumerable<CompletionItem> result) {
+            result = null;
+
             // except Test as Target
             if (tryStatement.Target != null && Index >= tryStatement.Target.StartIndex) {
-                return Empty;
+                return true;
             }
 
-            if (tryStatement.Test is TupleExpression) {
-                return null;
-            }
-
-            if (tryStatement.Test == null) {
-                return null;
+            if (tryStatement.Test is TupleExpression || tryStatement.Test is null) {
+                return false;
             }
 
             if (Index <= tryStatement.Test.EndIndex) {
-                return null;
+                return false;
             }
 
             SetApplicableSpanToLastToken(tryStatement);
-            return Once(AsKeywordCompletion);
+            result = Once(AsKeywordCompletion);
+            return true;
         }
 
         private bool IsInsideComment() {
