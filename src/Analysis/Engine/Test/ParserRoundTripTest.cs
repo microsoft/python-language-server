@@ -1181,19 +1181,19 @@ def f(): pass");
 
             // From Import Statement
             TestOneString(PythonLanguageVersion.V27, "from sys import *");
-            TestOneString(PythonLanguageVersion.V27, "from sys import winver");
-            TestOneString(PythonLanguageVersion.V27, "from sys import winver as wv");
-            TestOneString(PythonLanguageVersion.V27, "from sys import winver as wv, stdin as si");
-            TestOneString(PythonLanguageVersion.V27, "from sys import (winver)");
-            TestOneString(PythonLanguageVersion.V27, "from sys import (winver,)");
+            TestOneString(PythonLanguageVersion.V27, "from sys import platform");
+            TestOneString(PythonLanguageVersion.V27, "from sys import platform as pt");
+            TestOneString(PythonLanguageVersion.V27, "from sys import platform as pt, stdin as si");
+            TestOneString(PythonLanguageVersion.V27, "from sys import (platform)");
+            TestOneString(PythonLanguageVersion.V27, "from sys import (platform,)");
             TestOneString(PythonLanguageVersion.V27, "from  sys   import    *");
-            TestOneString(PythonLanguageVersion.V27, "from  sys   import    winver");
-            TestOneString(PythonLanguageVersion.V27, "from  sys   import    winver     as      wv");
-            TestOneString(PythonLanguageVersion.V27, "from  sys   import    winver     as      wv       ,        stdin         as           si");
-            TestOneString(PythonLanguageVersion.V27, "from  sys   import    (     winver      )");
-            TestOneString(PythonLanguageVersion.V27, "from  sys   import    (     winver       as       wv        )");
-            TestOneString(PythonLanguageVersion.V27, "from  sys   import    (     winver       as       wv        ,         stdin          as          si           )");
-            TestOneString(PythonLanguageVersion.V27, "from  sys   import    (     winver       ,        )");
+            TestOneString(PythonLanguageVersion.V27, "from  sys   import    platform");
+            TestOneString(PythonLanguageVersion.V27, "from  sys   import    platform     as      pt");
+            TestOneString(PythonLanguageVersion.V27, "from  sys   import    platform     as      pt       ,        stdin         as           si");
+            TestOneString(PythonLanguageVersion.V27, "from  sys   import    (     platform      )");
+            TestOneString(PythonLanguageVersion.V27, "from  sys   import    (     platform       as       pt        )");
+            TestOneString(PythonLanguageVersion.V27, "from  sys   import    (     platform       as       pt        ,         stdin          as          si           )");
+            TestOneString(PythonLanguageVersion.V27, "from  sys   import    (     platform       ,        )");
             TestOneString(PythonLanguageVersion.V27, "from xyz import A, B, C, D, E");
 
 
