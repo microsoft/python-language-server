@@ -710,81 +710,6 @@ def f(a = 2, b): pass
         }
 
         [TestMethod, Priority(0)]
-        public async Task Hover() {
-            var s = await CreateServer();
-            var mod = await AddModule(s, @"123
-'abc'
-f()
-def f(): pass
-
-class C:
-    def f(self):
-        def g(self):
-            pass
-        return g
-
-C.f
-c = C()
-c_g = c.f()
-
-x = 123
-x = 3.14
-");
-
-            await AssertHover(s, mod, new SourceLocation(1, 1), "int", new[] { "int" }, new SourceSpan(1, 1, 1, 4));
-            await AssertHover(s, mod, new SourceLocation(2, 1), "str", new[] { "str" }, new SourceSpan(2, 1, 2, 6));
-            await AssertHover(s, mod, new SourceLocation(3, 1), "built-in function test-module.f()", new[] { "test-module.f" }, new SourceSpan(3, 1, 3, 2));
-            await AssertHover(s, mod, new SourceLocation(4, 6), "built-in function test-module.f()", new[] { "test-module.f" }, new SourceSpan(4, 5, 4, 6));
-
-            await AssertHover(s, mod, new SourceLocation(12, 1), "class test-module.C", new[] { "test-module.C" }, new SourceSpan(12, 1, 12, 2));
-            await AssertHover(s, mod, new SourceLocation(13, 1), "c: C", new[] { "test-module.C" }, new SourceSpan(13, 1, 13, 2));
-            await AssertHover(s, mod, new SourceLocation(14, 7), "c: C", new[] { "test-module.C" }, new SourceSpan(14, 7, 14, 8));
-            await AssertHover(s, mod, new SourceLocation(14, 9), "c.f: method f of test-module.C objects*", new[] { "test-module.C.f" }, new SourceSpan(14, 7, 14, 10));
-            await AssertHover(s, mod, new SourceLocation(14, 1), $"built-in function test-module.C.f.g(self)  {Environment.NewLine}declared in C.f", new[] { "test-module.C.f.g" }, new SourceSpan(14, 1, 14, 4));
-
-            await AssertHover(s, mod, new SourceLocation(16, 1), "x: int, float", new[] { "int", "float" }, new SourceSpan(16, 1, 16, 2));
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task HoverSpanCheck() {
-            var s = await CreateServer();
-            var mod = await AddModule(s, @"import datetime
-datetime.datetime.now().day
-");
-
-            await AssertHover(s, mod, new SourceLocation(2, 1), "built-in module datetime*", new[] { "datetime" }, new SourceSpan(2, 1, 2, 9));
-            if (this is LanguageServerTests_V2) {
-                await AssertHover(s, mod, new SourceLocation(2, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(2, 1, 2, 18));
-            } else {
-                await AssertHover(s, mod, new SourceLocation(2, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(2, 1, 2, 18));
-            }
-            await AssertHover(s, mod, new SourceLocation(2, 20), "datetime.datetime.now: bound built-in method now*", null, new SourceSpan(2, 1, 2, 22));
-
-            if (!(this is LanguageServerTests_V2)) {
-                await AssertHover(s, mod, new SourceLocation(2, 28), "datetime.datetime.now().day: int*", new[] { "int" }, new SourceSpan(2, 1, 2, 28));
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task FromImportHover() {
-            using (var s = await CreateServer()) {
-                var mod = await AddModule(s, @"from os import path as p\n");
-                await AssertHover(s, mod, new SourceLocation(1, 7), "built-in module os*", null, new SourceSpan(1, 6, 1, 8));
-                await AssertHover(s, mod, new SourceLocation(1, 17), "built-in module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 16, 1, 20));
-                await AssertHover(s, mod, new SourceLocation(1, 25), "built-in module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 24, 1, 25));
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task FromImportRelativeHover() {
-            using (var s = await CreateServer()) {
-                var mod1 = await AddModule(s, @"from . import mod2\n", "mod1");
-                var mod2 = await AddModule(s, @"def foo():\n  pass\n", "mod2");
-                await AssertHover(s, mod1, new SourceLocation(1, 16), "built-in module mod2", null, new SourceSpan(1, 15, 1, 19));
-            }
-        }
-
-        [TestMethod, Priority(0)]
         public async Task MultiPartDocument() {
             var s = await CreateServer();
 
@@ -1071,29 +996,6 @@ datetime.datetime.now().day
 
             if (excludes != null && excludes.Any()) {
                 labels.Should().NotContain(excludes);
-            }
-        }
-
-        public static async Task AssertHover(Server s, TextDocumentIdentifier document, SourceLocation position, string hoverText, IEnumerable<string> typeNames, SourceSpan? range = null, string expr = null) {
-            var hover = await s.Hover(new TextDocumentPositionParams {
-                textDocument = document,
-                position = position,
-                _expr = expr
-            }, CancellationToken.None);
-
-            if (hoverText.EndsWith("*")) {
-                // Check prefix first, but then show usual message for mismatched value
-                if (!hover.contents.value.StartsWith(hoverText.Remove(hoverText.Length - 1))) {
-                    Assert.AreEqual(hoverText, hover.contents.value);
-                }
-            } else {
-                Assert.AreEqual(hoverText, hover.contents.value);
-            }
-            if (typeNames != null) {
-                hover._typeNames.Should().OnlyContain(typeNames.ToArray());
-            }
-            if (range.HasValue) {
-                hover.range.Should().Be((Range?)range);
             }
         }
 

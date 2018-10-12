@@ -63,12 +63,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             TraceMessage($"Getting hover for {expr.ToCodeString(tree, CodeFormattingOptions.Traditional)}");
 
-            var hover = await GetSelfHoverAsync(expr, analysis, @params.position, cancellationToken);
+            var hover = await GetSelfHoverAsync(expr, analysis, tree, @params.position, cancellationToken);
+            if (hover != null && hover != EmptyHover) {
+                return hover;
+            }
 
             // First try values from expression. This works for the import statement most of the time.
             var values = analysis.GetValues(expr, @params.position, null).ToList();
             if (values.Count == 0) {
-                values = GetImportHover(entry, analysis, tree, @params.position, out var hover).ToList();
+                values = GetImportHover(entry, analysis, tree, @params.position, out hover).ToList();
                 if(hover != null) {
                     return hover;
                 }
@@ -100,7 +103,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return EmptyHover;
         }
 
-        private Task<Hover> GetSelfHoverAsync(Expression expr, IModuleAnalysis analysis, Position position, CancellationToken cancellationToken) {
+        private async Task<Hover> GetSelfHoverAsync(Expression expr, IModuleAnalysis analysis, PythonAst tree, Position position, CancellationToken cancellationToken) {
             if(!(expr is NameExpression name) || name.Name != "self") {
                 return null;
             }
@@ -108,11 +111,18 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if(classDef == null) {
                 return null;
             }
+
+            var instanceInfo = classDef.Variable.Types.OfType<IInstanceInfo>().FirstOrDefault();
+            if (instanceInfo == null) {
+                return null;
+            }
+
+            var cd = instanceInfo.ClassInfo.ClassDefinition;
             var classParams = new TextDocumentPositionParams {
-                position = classDef.Location.Span.Start,
+                position = cd.NameExpression.GetStart(tree),
                 textDocument =  new TextDocumentIdentifier { uri = classDef.Location.DocumentUri }
             };
-            return Hover(classParams, cancellationToken);
+            return await Hover(classParams, cancellationToken);
         }
 
         private IEnumerable<AnalysisValue> GetImportHover(IPythonProjectEntry entry, IModuleAnalysis analysis, PythonAst tree, Position position, out Hover hover) {

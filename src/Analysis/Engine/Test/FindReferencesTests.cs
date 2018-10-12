@@ -1808,5 +1808,41 @@ class Derived1(Base):
                 references.Should().OnlyHaveReferences(expectedReferences);
             }
         }
+
+        /// <summary>
+        /// Verifies that go to definition on 'self' goes to the class definition
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod, Priority(0)]
+        public async Task SelfReferences() {
+            var text = @"
+class Base(object):
+    def fob_base(self):
+        pass
+
+class Derived(Base):
+    def fob_derived(self):
+        self.fob_base()
+        pass
+";
+
+            using (var server = await CreateServerAsync()) {
+                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text);
+
+                var references = await server.SendFindReferences(uri1, 2, 18); // on first 'self'
+                var expectedReferences1 = new (Uri, (int, int, int, int), ReferenceKind?)[] {
+                    (uri1, (1, 0, 1, 0), ReferenceKind.Definition),
+                    (uri1, (2, 17, 2, 21), ReferenceKind.Reference)
+                };
+                references.Should().OnlyHaveReferences(expectedReferences1);
+
+                references = await server.SendFindReferences(uri1, 7, 8); // on second 'self'
+                var expectedReferences2 = new (Uri, (int, int, int, int), ReferenceKind?)[] {
+                    (uri1, (5, 0, 5, 0), ReferenceKind.Definition),
+                    (uri1, (6, 20, 6, 24), ReferenceKind.Reference)
+                };
+                references.Should().OnlyHaveReferences(expectedReferences2);
+            }
+        }
     }
 }

@@ -31,15 +31,18 @@ namespace Microsoft.PythonTools {
         /// </summary>
         /// <param name="start">The beginning of the span.</param>
         /// <param name="end">The end of the span.</param>
+        [DebuggerStepThrough]
         public SourceSpan(SourceLocation start, SourceLocation end) {
             ValidateLocations(start, end);
             Start = start;
             End = end;
         }
 
+        [DebuggerStepThrough]
         public SourceSpan(int startLine, int startColumn, int endLine, int endColumn)
             : this(new SourceLocation(startLine, startColumn), new SourceLocation(endLine, endColumn)) { }
 
+        [DebuggerStepThrough]
         private static void ValidateLocations(SourceLocation start, SourceLocation end) {
             if (start.IsValid && end.IsValid) {
                 if (start > end) {
