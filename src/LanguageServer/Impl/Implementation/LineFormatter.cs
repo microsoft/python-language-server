@@ -321,21 +321,21 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                         break;
 
-                    default:
-                        if (token.IsKeyword) {
-                            if (prev != null && !prev.IsOpen) {
-                                builder.EnsureEndsWithWhiteSpace();
-                            }
-
-                            builder.Append(token);
-
-                            if (next != null && next.Kind != TokenKind.Colon && next.Kind != TokenKind.Semicolon) {
-                                builder.EnsureEndsWithWhiteSpace();
-                            }
-                        } else { 
-                            // No tokens should make it to this case, but try to keep things separated.
-                            AppendTokenEnsureWhiteSpacesAround(builder, token);
+                    case var _ when token.IsKeyword:
+                        if (prev != null && !prev.IsOpen) {
+                            builder.EnsureEndsWithWhiteSpace();
                         }
+
+                        builder.Append(token);
+
+                        if (next != null && next.Kind != TokenKind.Colon && next.Kind != TokenKind.Semicolon) {
+                            builder.EnsureEndsWithWhiteSpace();
+                        }
+                        break;
+
+                    default:
+                        // No tokens should make it to this case, but try to keep things separated.
+                        AppendTokenEnsureWhiteSpacesAround(builder, token);
                         break;
                 }
             }

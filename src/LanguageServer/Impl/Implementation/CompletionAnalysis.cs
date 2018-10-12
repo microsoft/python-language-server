@@ -20,7 +20,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Documentation;
@@ -36,12 +35,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly ILogger _log;
         private readonly DocumentationBuilder _textBuilder;
         private readonly Func<TextReader> _openDocument;
+        private readonly bool _addBrackets;
 
         public CompletionAnalysis(
             IModuleAnalysis analysis,
             PythonAst tree,
             SourceLocation position,
             GetMemberOptions opts,
+            ServerSettings.PythonCompletionOptions completionSettings,
             DocumentationBuilder textBuilder,
             ILogger log,
             Func<TextReader> openDocument
@@ -54,6 +55,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _textBuilder = textBuilder;
             _log = log;
             _openDocument = openDocument;
+            _addBrackets = completionSettings.addBrackets;
 
             var finder = new ExpressionFinder(Tree, new GetExpressionOptions {
                 Names = true,
@@ -65,11 +67,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 Errors = true
             });
 
-            Node node;
-            finder.Get(Index, Index, out node, out _statement, out _scope);
+            finder.Get(Index, Index, out var node, out _statement, out _scope);
 
-            int index = Index;
-            int col = Position.Column;
+            var index = Index;
+            var col = Position.Column;
             while (CanBackUp(Tree, node, _statement, _scope, col)) {
                 col -= 1;
                 index -= 1;
@@ -80,27 +81,23 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private static bool CanBackUp(PythonAst tree, Node node, Node statement, ScopeStatement scope, int column) {
-            if (node != null || (statement != null && !((statement as ExpressionStatement)?.Expression is ErrorExpression))) {
+            if (node != null || !((statement as ExpressionStatement)?.Expression is ErrorExpression)) {
                 return false;
             }
 
-            int top = 1;
+            var top = 1;
             if (scope != null) {
                 var scopeStart = scope.GetStart(tree);
                 if (scope.Body != null) {
-                    top = (scope.Body.GetEnd(tree).Line == scopeStart.Line) ?
-                        scope.Body.GetStart(tree).Column :
-                        scopeStart.Column;
+                    top = scope.Body.GetEnd(tree).Line == scopeStart.Line
+                        ? scope.Body.GetStart(tree).Column
+                        : scopeStart.Column;
                 } else {
                     top = scopeStart.Column;
                 }
             }
 
-            if (column <= top) {
-                return false;
-            }
-
-            return true;
+            return column > top;
         }
 
         private static readonly IEnumerable<CompletionItem> Empty = Enumerable.Empty<CompletionItem>();
@@ -118,6 +115,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public Node Node { get; private set; }
         public Node Statement => _statement;
         public ScopeStatement Scope => _scope;
+
         /// <summary>
         /// The node that members were returned for, if any.
         /// </summary>
@@ -126,6 +124,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private IReadOnlyList<KeyValuePair<IndexSpan, Token>> _tokens;
         private NewLineLocation[] _tokenNewlines;
+
         private IEnumerable<KeyValuePair<IndexSpan, Token>> Tokens {
             get {
                 EnsureTokens();
@@ -159,7 +158,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             using (reader) {
                 tokenizer = new Tokenizer(Tree.LanguageVersion, options: TokenizerOptions.GroupingRecovery);
                 tokenizer.Initialize(reader);
-                for (var t = tokenizer.GetNextToken(); t.Kind != TokenKind.EndOfFile && tokenizer.TokenSpan.Start < Index; t = tokenizer.GetNextToken()) {
+                for (var t = tokenizer.GetNextToken();
+                    t.Kind != TokenKind.EndOfFile && tokenizer.TokenSpan.Start < Index;
+                    t = tokenizer.GetNextToken()) {
                     tokens.Add(new KeyValuePair<IndexSpan, Token>(tokenizer.TokenSpan, t));
                 }
             }
@@ -169,113 +170,128 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
 
-
         public IEnumerable<CompletionItem> GetCompletionsFromString(string expr) {
-            if (string.IsNullOrEmpty(expr)) {
-                return null;
-            }
+            Check.ArgumentNotNullOrEmpty(nameof(expr), expr);
             _log.TraceMessage($"Completing expression '{expr}'");
             return Analysis.GetMembers(expr, Position, Options).Select(ToCompletionItem);
         }
 
         public IEnumerable<CompletionItem> GetCompletions() {
-            var opts = Options | GetMemberOptions.ForEval;
-            bool allowKeywords = true;
-            List<CompletionItem> additional = null;
-
-            var res = GetNoCompletionsInComments() ??
-                GetCompletionsFromMembers(ref opts) ??
-                GetCompletionsInLiterals() ??
-                GetCompletionsInImport(ref opts, ref additional) ??
-                GetCompletionsForOverride() ??
-                GetCompletionsInDefinition(ref allowKeywords, ref additional) ??
-                GetCompletionsInForStatement() ??
-                GetCompletionsInWithStatement() ??
-                GetCompletionsInRaiseStatement(ref opts) ??
-                GetCompletionsInExceptStatement(ref allowKeywords, ref opts) ??
-                GetCompletionsFromError() ??
-                GetCompletionsFromTopLevel(allowKeywords, opts);
-
-            if (additional != null) {
-                res = res.Concat(additional);
+            switch (Node) {
+                case MemberExpression me when me.Target != null && me.DotIndex > me.StartIndex && Index > me.DotIndex:
+                    return GetCompletionsFromMembers(me);
+                case ConstantExpression ce when ce.Value != null:
+                case null when IsInsideComment():
+                    return null;
             }
 
-            if (ReferenceEquals(res, Empty)) {
-                return null;
+            IEnumerable<CompletionItem> result = null;
+            switch (Statement) {
+                case ImportStatement import:
+                    result = GetCompletionsInImport(import);
+                    break;
+
+                case FromImportStatement fromImport:
+                    result = GetCompletionsInFromImport(fromImport);
+                    break;
+
+                case FunctionDefinition fd:
+                    result = GetCompletionsForOverride(fd) ?? GetCompletionsInFunctionDefinition(fd);
+                    break;
+
+                case ClassDefinition cd:
+                    result = GetCompletionsInClassDefinition(cd, out var addMetadataArg);
+                    if (addMetadataArg) {
+                        return GetCompletionsFromTopLevel().Append(MetadataArgCompletion);
+                    }
+                    break;
+
+                case ForStatement forStatement when forStatement.Left != null:
+                    result = GetCompletionsInForStatement(forStatement);
+                    break;
+
+                case WithStatement withStatement:
+                    result = GetCompletionsInWithStatement(withStatement);
+                    break;
+
+                case RaiseStatement raiseStatement:
+                    result = GetCompletionsInRaiseStatement(raiseStatement);
+                    break;
+
+                case TryStatementHandler tryStatement:
+                    result = GetCompletionsInExceptStatement(tryStatement);
+                    break;
             }
 
-            return res;
+            result = result ?? GetCompletionsFromError() ?? GetCompletionsFromTopLevel();
+            return ReferenceEquals(result, Empty) ? null : result;
         }
 
         private static IEnumerable<CompletionItem> Once(CompletionItem item) {
             yield return item;
         }
 
-        private static IEnumerable<Tuple<T1, T2>> ZipLongest<T1, T2>(IEnumerable<T1> src1, IEnumerable<T2> src2, T1 default1 = default(T1), T2 default2 = default(T2)) {
+        private static IEnumerable<(T1, T2)> ZipLongest<T1, T2>(IEnumerable<T1> src1, IEnumerable<T2> src2) {
             using (var e1 = src1?.GetEnumerator())
             using (var e2 = src2?.GetEnumerator()) {
                 bool b1 = e1?.MoveNext() ?? false, b2 = e2?.MoveNext() ?? false;
                 while (b1 && b2) {
-                    yield return Tuple.Create(e1.Current, e2.Current);
+                    yield return (e1.Current, e2.Current);
                     b1 = e1.MoveNext();
                     b2 = e2.MoveNext();
                 }
+
                 while (b1) {
-                    yield return Tuple.Create(e1.Current, default2);
+                    yield return (e1.Current, default(T2));
                     b1 = e1.MoveNext();
                 }
+
                 while (b2) {
-                    yield return Tuple.Create(default1, e2.Current);
+                    yield return (default(T1), e2.Current);
                     b2 = e2.MoveNext();
                 }
             }
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsFromMembers(ref GetMemberOptions opts) {
-            if (Node is MemberExpression me && me.Target != null && me.DotIndex > me.StartIndex && Index > me.DotIndex) {
-                _log.TraceMessage($"Completing expression {me.Target.ToCodeString(Tree, CodeFormattingOptions.Traditional)}");
-                ParentExpression = me.Target;
-                if (!string.IsNullOrEmpty(me.Name)) {
-                    Node = new NameExpression(me.Name);
-                    Node.SetLoc(me.NameHeader, me.NameHeader + me.Name.Length);
-                } else {
-                    Node = null;
-                }
-                ShouldCommitByDefault = true;
-                return Analysis.GetMembers(me.Target, Position, opts, null).Select(ToCompletionItem);
+        private IEnumerable<CompletionItem> GetCompletionsFromMembers(MemberExpression me) {
+            _log.TraceMessage(
+                $"Completing expression {me.Target.ToCodeString(Tree, CodeFormattingOptions.Traditional)}");
+            ParentExpression = me.Target;
+            if (!string.IsNullOrEmpty(me.Name)) {
+                Node = new NameExpression(me.Name);
+                Node.SetLoc(me.NameHeader, me.NameHeader + me.Name.Length);
+            } else {
+                Node = null;
             }
-            return null;
+
+            ShouldCommitByDefault = true;
+            return Analysis.GetMembers(me.Target, Position, Options | GetMemberOptions.ForEval)
+                .Select(ToCompletionItem);
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInLiterals() {
-            if (Node is ConstantExpression ce && ce.Value != null) {
-                return Empty;
-            }
-            return null;
-        }
-
-        private IEnumerable<CompletionItem> GetModules(IEnumerable<string> names, bool includeMembers) {
-            if (names != null && names.Any()) {
-                return Analysis.ProjectState.GetModuleMembers(Analysis.InterpreterContext, names.ToArray(), includeMembers)
+        private IEnumerable<CompletionItem> GetModules(string[] names, bool includeMembers) {
+            if (names.Any()) {
+                return Analysis.ProjectState
+                    .GetModuleMembers(Analysis.InterpreterContext, names.ToArray(), includeMembers)
                     .Select(ToCompletionItem);
             }
+
             return Analysis.ProjectState.GetModules().Select(ToCompletionItem);
         }
 
         private IEnumerable<CompletionItem> GetModulesFromNode(Node name, bool includeMembers = false) {
-            if (name is DottedName dn) {
-                if (dn.Names == null) {
+            switch (name) {
+                case DottedName dn when dn.Names == null:
                     return Empty;
-                }
-
-                var names = dn.Names.TakeWhile(n => Index > n.EndIndex).Select(n => n.Name).ToArray();
-
-                return GetModules(names, includeMembers);
-            } else if (name == null || name is NameExpression) {
-                return Analysis.ProjectState.GetModules().Select(ToCompletionItem);
+                case DottedName dn:
+                    var names = dn.Names.TakeWhile(n => Index > n.EndIndex).Select(n => n.Name).ToArray();
+                    return GetModules(names, includeMembers);
+                case NameExpression _:
+                case null:
+                    return Analysis.ProjectState.GetModules().Select(ToCompletionItem);
+                default:
+                    return Empty;
             }
-
-            return Empty;
         }
 
         private void SetApplicableSpanToLastToken(Node containingNode) {
@@ -287,116 +303,129 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInImport(ref GetMemberOptions opts, ref List<CompletionItem> additional) {
-            if (Statement is ImportStatement imp) {
-                if (imp.Names == null || imp.Names.Count == 0) {
-                    // No names, so if we're at the end return modules
-                    if (Index > imp.KeywordEndIndex) {
-                        return GetModulesFromNode(null);
-                    }
+        private IEnumerable<CompletionItem> GetCompletionsInImport(ImportStatement import) {
+            if (import.Names == null || import.Names.Count == 0) {
+                // No names, so if we're at the end return modules
+                if (Index > import.KeywordEndIndex) {
+                    return GetModulesFromNode(null);
                 }
-                foreach (var t in ZipLongest(imp.Names, imp.AsNames).Reverse()) {
-                    if (t.Item2 != null) {
-                        if (Index >= t.Item2.StartIndex) {
-                            return Empty;
-                        }
-                    }
-                    if (t.Item1 != null) {
-                        if (Index > t.Item1.EndIndex && t.Item1.EndIndex > t.Item1.StartIndex) {
-                            SetApplicableSpanToLastToken(imp);
-                            return Once(AsKeywordCompletion);
-                        }
-                        if (Index >= t.Item1.StartIndex) {
-                            Node = t.Item1.Names.MaybeEnumerate().LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
-                            return GetModulesFromNode(t.Item1);
-                        }
-                    }
-                }
+            }
 
-                opts |= GetMemberOptions.IncludeStatementKeywords;
-            } else if (Statement is FromImportStatement fimp) {
-                // No more completions after '*', ever!
-                if (fimp.Names?.Any(n => n?.Name == "*" && Index > n.EndIndex) ?? false) {
+            foreach (var (name, asName) in ZipLongest(import.Names, import.AsNames).Reverse()) {
+                if (asName != null && Index >= asName.StartIndex) {
                     return Empty;
                 }
 
-                foreach (var t in ZipLongest(fimp.Names, fimp.AsNames).Reverse()) {
-                    if (t.Item2 != null) {
-                        if (Index >= t.Item2.StartIndex) {
-                            return Empty;
-                        }
+                if (name != null) {
+                    if (Index > name.EndIndex && name.EndIndex > name.StartIndex) {
+                        SetApplicableSpanToLastToken(import);
+                        return Once(AsKeywordCompletion);
                     }
-                    if (t.Item1 != null) {
-                        if (Index > t.Item1.EndIndex && t.Item1.EndIndex > t.Item1.StartIndex) {
-                            SetApplicableSpanToLastToken(fimp);
-                            return Once(AsKeywordCompletion);
-                        }
-                        if (Index >= t.Item1.StartIndex) {
-                            ApplicableSpan = t.Item1.GetSpan(Tree);
-                            var mods = GetModulesFromNode(fimp.Root, true);
-                            if (mods.Any() && fimp.Names.Count == 1) {
-                                return Once(StarCompletion).Concat(mods);
-                            }
-                            return mods;
-                        }
+
+                    if (Index >= name.StartIndex) {
+                        Node = name.Names.MaybeEnumerate()
+                            .LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
+                        return GetModulesFromNode(name);
                     }
                 }
-
-                if (fimp.ImportIndex > fimp.StartIndex) {
-                    if (Index > fimp.ImportIndex + 6) {
-                        if (fimp.Root == null) {
-                            return Empty;
-                        }
-                        var mods = GetModulesFromNode(fimp.Root, true);
-                        if (mods.Any() && fimp.Names.Count <= 1) {
-                            return Once(StarCompletion).Concat(mods);
-                        }
-                        return mods;
-                    }
-                    if (Index >= fimp.ImportIndex) {
-                        ApplicableSpan = new SourceSpan(
-                            Tree.IndexToLocation(fimp.ImportIndex),
-                            Tree.IndexToLocation(Math.Min(fimp.ImportIndex + 6, fimp.EndIndex))
-                        );
-                        return Once(ImportKeywordCompletion);
-                    }
-                }
-
-                if (fimp.Root != null) {
-                    if (Index > fimp.Root.EndIndex && fimp.Root.EndIndex > fimp.Root.StartIndex) {
-                        if (Index > fimp.EndIndex) {
-                            // Only end up here for "from ... imp", and "imp" is not counted
-                            // as part of our span
-                            var token = Tokens.LastOrDefault();
-                            if (token.Key.End >= Index) {
-                                ApplicableSpan = GetTokenSpan(token.Key);
-                            }
-                        }
-                        return Once(ImportKeywordCompletion);
-                    } else if (Index >= fimp.Root.StartIndex) {
-                        Node = fimp.Root.Names.MaybeEnumerate().LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
-                        return GetModulesFromNode(fimp.Root);
-                    }
-                }
-
-                if (Index > fimp.KeywordEndIndex) {
-                    return GetModulesFromNode(null);
-                }
-
-                opts |= GetMemberOptions.IncludeStatementKeywords;
             }
+
             return null;
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsForOverride() {
-            if (Statement is FunctionDefinition fd && fd.Parent is ClassDefinition cd && string.IsNullOrEmpty(fd.Name)) {
-                if (fd.NameExpression == null || Index <= fd.NameExpression.StartIndex) {
-                    return null;
+        private IEnumerable<CompletionItem> GetCompletionsInFromImport(FromImportStatement fromImport) {
+            // No more completions after '*', ever!
+            if (fromImport.Names != null && fromImport.Names.Any(n => n?.Name == "*" && Index > n.EndIndex)) {
+                return Empty;
+            }
+
+            foreach (var (name, asName) in ZipLongest(fromImport.Names, fromImport.AsNames).Reverse()) {
+                if (asName != null) {
+                    if (Index >= asName.StartIndex) {
+                        return Empty;
+                    }
                 }
-                var loc = fd.GetStart(Tree);
+
+                if (name != null) {
+                    if (Index > name.EndIndex && name.EndIndex > name.StartIndex) {
+                        SetApplicableSpanToLastToken(fromImport);
+                        return Once(AsKeywordCompletion);
+                    }
+
+                    if (Index >= name.StartIndex) {
+                        ApplicableSpan = name.GetSpan(Tree);
+                        var mods = GetModulesFromNode(fromImport.Root, true).ToArray();
+                        if (mods.Any() && fromImport.Names.Count == 1) {
+                            return Once(StarCompletion).Concat(mods);
+                        }
+
+                        return mods;
+                    }
+                }
+            }
+
+            if (fromImport.ImportIndex > fromImport.StartIndex) {
+                if (Index > fromImport.ImportIndex + 6) {
+                    if (fromImport.Root == null) {
+                        return Empty;
+                    }
+
+                    var mods = GetModulesFromNode(fromImport.Root, true).ToArray();
+                    if (mods.Any() && fromImport.Names.Count <= 1) {
+                        return Once(StarCompletion).Concat(mods);
+                    }
+
+                    return mods;
+                }
+
+                if (Index >= fromImport.ImportIndex) {
+                    ApplicableSpan = new SourceSpan(
+                        Tree.IndexToLocation(fromImport.ImportIndex),
+                        Tree.IndexToLocation(Math.Min(fromImport.ImportIndex + 6, fromImport.EndIndex))
+                    );
+                    return Once(ImportKeywordCompletion);
+                }
+            }
+
+            if (fromImport.Root != null) {
+                if (Index > fromImport.Root.EndIndex && fromImport.Root.EndIndex > fromImport.Root.StartIndex) {
+                    if (Index > fromImport.EndIndex) {
+                        // Only end up here for "from ... imp", and "imp" is not counted
+                        // as part of our span
+                        var token = Tokens.LastOrDefault();
+                        if (token.Key.End >= Index) {
+                            ApplicableSpan = GetTokenSpan(token.Key);
+                        }
+                    }
+
+                    return Once(ImportKeywordCompletion);
+                }
+
+                if (Index >= fromImport.Root.StartIndex) {
+                    Node = fromImport.Root.Names.MaybeEnumerate()
+                        .LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
+                    return GetModulesFromNode(fromImport.Root);
+                }
+            }
+
+            if (Index > fromImport.KeywordEndIndex) {
+                return GetModulesFromNode(null);
+            }
+
+            return null;
+        }
+
+        private IEnumerable<CompletionItem> GetCompletionsForOverride(FunctionDefinition function) {
+            if (function.Parent is ClassDefinition cd && 
+                string.IsNullOrEmpty(function.Name) && 
+                function.NameExpression != null && 
+                Index > function.NameExpression.StartIndex) {
+
+                var loc = function.GetStart(Tree);
                 ShouldCommitByDefault = false;
                 return Analysis.GetOverrideable(loc).Select(o => ToOverrideCompletionItem(o, cd, new string(' ', loc.Column - 1)));
             }
+
             return null;
         }
 
@@ -408,279 +437,224 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             };
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsInDefinition(ref bool allowKeywords, ref List<CompletionItem> additional) {
+        private IEnumerable<CompletionItem> GetCompletionsInFunctionDefinition(FunctionDefinition fd) {
             // Here we work backwards through the various parts of the definitions.
             // When we find that Index is within a part, we return either the available
             // completions 
-
-            if (Statement is FunctionDefinition fd) {
-                if (fd.HeaderIndex > fd.StartIndex && Index > fd.HeaderIndex) {
-                    return null;
-                } else if (Index == fd.HeaderIndex) {
-                    return Empty;
-                }
-
-                foreach (var p in fd.Parameters.Reverse()) {
-                    if (Index >= p.StartIndex) {
-                        if (p.Annotation != null) {
-                            if (Index < p.Annotation.StartIndex) {
-                                return Empty;
-                            }
-                            return null;
-                        }
-                        if (p.DefaultValue != null) {
-                            if (Index < p.DefaultValue.StartIndex) {
-                                return Empty;
-                            }
-                            return null;
-                        }
-                    }
-                }
-
-                if (fd.NameExpression != null) {
-                    if (fd.NameExpression.StartIndex > fd.KeywordEndIndex && Index >= fd.NameExpression.StartIndex) {
-                        return Empty;
-                    }
-                }
-
-                if (Index > fd.KeywordEndIndex) {
-                    return Empty;
-                }
-
-                // Disallow keywords, unless we're between the end of decorators and the
-                // end of the "[async] def" keyword.
-                allowKeywords = false;
-                if (Index <= fd.KeywordEndIndex) {
-                    if (fd.Decorators == null || Index >= fd.Decorators.EndIndex) {
-                        allowKeywords = true;
-                    }
-                }
-                return null;
-
-            } else if (Statement is ClassDefinition cd) {
-                if (cd.HeaderIndex > cd.StartIndex && Index > cd.HeaderIndex) {
-                    return null;
-                } else if (Index == cd.HeaderIndex) {
-                    return Empty;
-                }
-
-                if (cd.Bases.Length > 0 && Index >= cd.Bases[0].StartIndex) {
-                    foreach (var p in cd.Bases.Reverse()) {
-                        if (Index >= p.StartIndex) {
-                            if (p.Name == null && Tree.LanguageVersion.Is3x() && !cd.Bases.Any(b => b.Name == "metaclass")) {
-                                additional = additional ?? new List<CompletionItem>();
-                                additional.Add(MetadataArgCompletion);
-                            }
-                            return null;
-                        }
-                    }
-                }
-
-                if (cd.NameExpression != null) {
-                    if (cd.NameExpression.StartIndex > cd.KeywordEndIndex && Index >= cd.NameExpression.StartIndex) {
-                        return Empty;
-                    }
-                }
-
-                if (Index > cd.KeywordEndIndex) {
-                    return Empty;
-                }
-
-                // Disallow keywords, unless we're between the end of decorators and the
-                // end of the "[async] def" keyword.
-                allowKeywords = false;
-                if (Index <= cd.KeywordEndIndex) {
-                    if (cd.Decorators == null || Index >= cd.Decorators.EndIndex) {
-                        allowKeywords = true;
-                    }
-                }
+            if (fd.HeaderIndex > fd.StartIndex && Index > fd.HeaderIndex) {
                 return null;
             }
-            return null;
-        }
 
-        private IEnumerable<CompletionItem> GetCompletionsInForStatement() {
-            if (Statement is ForStatement fs) {
-                if (fs.Left != null) {
-                    if (fs.InIndex > fs.StartIndex) {
-                        if (Index > fs.InIndex + 2) {
-                            return null;
-                        } else if (Index >= fs.InIndex) {
-                            ApplicableSpan = new SourceSpan(Tree.IndexToLocation(fs.InIndex), Tree.IndexToLocation(fs.InIndex + 2));
-                            return Once(InKeywordCompletion);
-                        }
-                    }
-                    if (fs.Left.StartIndex > fs.StartIndex && fs.Left.EndIndex > fs.Left.StartIndex && Index > fs.Left.EndIndex) {
-                        SetApplicableSpanToLastToken(fs);
-                        return Once(InKeywordCompletion);
-                    } else if (fs.ForIndex >= fs.StartIndex && Index > fs.ForIndex + 3) {
-                        return Empty;
-                    }
-                }
+            if (Index == fd.HeaderIndex) {
+                return Empty;
             }
-            return null;
-        }
 
-        private IEnumerable<CompletionItem> GetCompletionsInWithStatement() {
-            if (Statement is WithStatement ws) {
-                if (Index > ws.HeaderIndex && ws.HeaderIndex > ws.StartIndex) {
-                    return null;
-                }
-
-                foreach (var item in ws.Items.Reverse().MaybeEnumerate()) {
-                    if (item.AsIndex > item.StartIndex) {
-                        if (Index > item.AsIndex + 2) {
+            foreach (var p in fd.Parameters.Reverse()) {
+                if (Index >= p.StartIndex) {
+                    if (p.Annotation != null) {
+                        if (Index < p.Annotation.StartIndex) {
                             return Empty;
-                        } else if (Index >= item.AsIndex) {
-                            ApplicableSpan = new SourceSpan(Tree.IndexToLocation(item.AsIndex), Tree.IndexToLocation(item.AsIndex + 2));
-                            return Once(AsKeywordCompletion);
                         }
+
+                        return null;
                     }
-                    if (item.ContextManager != null && !(item.ContextManager is ErrorExpression)) {
-                        if (Index > item.ContextManager.EndIndex && item.ContextManager.EndIndex > item.ContextManager.StartIndex) {
-                            return Once(AsKeywordCompletion);
-                        } else if (Index >= item.ContextManager.StartIndex) {
-                            return null;
+
+                    if (p.DefaultValue != null) {
+                        if (Index < p.DefaultValue.StartIndex) {
+                            return Empty;
                         }
-                    }
-                }
-            }
-            return null;
-        }
 
-        private IEnumerable<CompletionItem> GetCompletionsInRaiseStatement(ref GetMemberOptions opts) {
-            if (Statement is RaiseStatement rs) {
-                // raise Type, Value, Traceback with Cause
-                if (rs.Cause != null) {
-                    if (Index >= rs.CauseFieldStartIndex) {
-                        return null;
-                    }
-                }
-                if (rs.Traceback != null) {
-                    if (Index >= rs.TracebackFieldStartIndex) {
-                        return null;
-                    }
-                }
-                if (rs.Value != null) {
-                    if (Index >= rs.ValueFieldStartIndex) {
-                        return null;
-                    }
-                }
-                if (rs.ExceptType != null) {
-                    if (Index > rs.ExceptType.EndIndex) {
-                        if (Tree.LanguageVersion.Is3x()) {
-                            SetApplicableSpanToLastToken(rs);
-                            return Once(FromKeywordCompletion);
-                        }
-                        return Empty;
-                    } else if (Index >= rs.ExceptType.StartIndex) {
-                        opts |= GetMemberOptions.ExceptionsOnly;
-                        return null;
-                    }
-                }
-                if (Index > rs.KeywordEndIndex) {
-                    opts |= GetMemberOptions.ExceptionsOnly;
-                    return null;
-                }
-            }
-            return null;
-        }
-
-        private IEnumerable<CompletionItem> GetCompletionsInExceptStatement(ref bool allowKeywords, ref GetMemberOptions opts) {
-            if (Statement is TryStatementHandler ts) {
-                // except Test as Target
-                if (ts.Target != null) {
-                    if (Index >= ts.Target.StartIndex) {
-                        return Empty;
-                    }
-                }
-
-                if (ts.Test is TupleExpression te) {
-                    opts |= GetMemberOptions.ExceptionsOnly;
-                    allowKeywords = false;
-                    return null;
-                } else if (ts.Test != null) {
-                    if (Index > ts.Test.EndIndex) {
-                        SetApplicableSpanToLastToken(ts);
-                        return Once(AsKeywordCompletion);
-                    } else if (Index >= ts.Test.StartIndex) {
-                        opts |= GetMemberOptions.ExceptionsOnly;
-                        allowKeywords = false;
                         return null;
                     }
                 }
             }
-            return null;
-        }
 
-        private static bool ShouldIncludeStatementKeywords(Node statement, int index, out IndexSpan? span) {
-            span = null;
-            if (statement == null) {
-                return true;
-            }
-            // Always allow keywords in non-keyword statements
-            if (statement is ExpressionStatement) {
-                return true;
-            }
-            // Allow keywords at start of assignment, but not in subsequent names
-            if (statement is AssignmentStatement ss) {
-                var firstAssign = ss.Left?.FirstOrDefault();
-                return firstAssign == null || index <= firstAssign.EndIndex;
-            }
-            // Allow keywords when we are in another keyword
-            if (statement is Statement s && index <= s.KeywordEndIndex) {
-                int keywordStart = s.KeywordEndIndex - s.KeywordLength;
-                if (index >= keywordStart) {
-                    span = new IndexSpan(keywordStart, s.KeywordLength);
-                } else if ((s as IMaybeAsyncStatement)?.IsAsync == true) {
-                    // Must be in the "async" at the start of the keyword
-                    span = new IndexSpan(s.StartIndex, "async".Length);
-                }
-                return true;
-            }
-            // TryStatementHandler is 'except', but not a Statement subclass
-            if (statement is TryStatementHandler except && index <= except.KeywordEndIndex) {
-                int keywordStart = except.KeywordEndIndex - except.KeywordLength;
-                if (index >= keywordStart) {
-                    span = new IndexSpan(keywordStart, except.KeywordLength);
-                }
-                return true;
-            }
-            // Allow keywords in function body (we'd have a different statement if we were deeper)
-            if (statement is FunctionDefinition fd && index >= fd.HeaderIndex) {
-                return true;
-            }
-            // Allow keywords within with blocks, but not in their definition
-            if (statement is WithStatement ws) {
-                return index >= ws.HeaderIndex || index <= ws.KeywordEndIndex;
-            }
-            return false;
-        }
-
-        private IEnumerable<CompletionItem> GetNoCompletionsInComments() {
-            if (Node == null) {
-                int match = Array.BinarySearch(Tree._commentLocations, Position);
-                if (match < 0) {
-                    // If our index = -1, it means we're before the first comment
-                    if (match == -1) {
-                        return null;
-                    }
-                    // If we couldn't find an exact match for this position, get the nearest
-                    // matching comment before this point
-                    match = ~match - 1;
-                }
-                if (match < 0 || match >= Tree._commentLocations.Length) {
-                    Debug.Fail("Failed to find nearest preceding comment in AST");
-                    return null;
-                }
-
-                if (Tree._commentLocations[match].Line == Position.Line &&
-                    Tree._commentLocations[match].Column < Position.Column) {
-                    // We are inside a comment
+            if (fd.NameExpression != null) {
+                if (fd.NameExpression.StartIndex > fd.KeywordEndIndex && Index >= fd.NameExpression.StartIndex) {
                     return Empty;
                 }
             }
+
+            if (Index > fd.KeywordEndIndex) {
+                return Empty;
+            }
+
             return null;
+        }
+
+        private IEnumerable<CompletionItem> GetCompletionsInClassDefinition(ClassDefinition cd, out bool addMetadataArg) {
+            addMetadataArg = false;
+
+            if (cd.HeaderIndex > cd.StartIndex && Index > cd.HeaderIndex) {
+                return null;
+            }
+
+            if (Index == cd.HeaderIndex) {
+                return Empty;
+            }
+
+            if (cd.Bases.Length > 0 && Index >= cd.Bases[0].StartIndex) {
+                foreach (var p in cd.Bases.Reverse()) {
+                    if (Index >= p.StartIndex) {
+                        if (p.Name == null && Tree.LanguageVersion.Is3x() && cd.Bases.All(b => b.Name != "metaclass")) {
+                            addMetadataArg = true;
+                        }
+
+                        return null;
+                    }
+                }
+            }
+
+            if (cd.NameExpression != null && cd.NameExpression.StartIndex > cd.KeywordEndIndex && Index >= cd.NameExpression.StartIndex) {
+                return Empty;
+            }
+
+            if (Index > cd.KeywordEndIndex) {
+                return Empty;
+            }
+
+            return null;
+        }
+
+        private IEnumerable<CompletionItem> GetCompletionsInForStatement(ForStatement forStatement) {
+            if (forStatement.InIndex > forStatement.StartIndex) {
+                if (Index > forStatement.InIndex + 2) {
+                    return null;
+                }
+
+                if (Index >= forStatement.InIndex) {
+                    ApplicableSpan = new SourceSpan(Tree.IndexToLocation(forStatement.InIndex),
+                        Tree.IndexToLocation(forStatement.InIndex + 2));
+                    return Once(InKeywordCompletion);
+                }
+            }
+
+            if (forStatement.Left.StartIndex > forStatement.StartIndex &&
+                forStatement.Left.EndIndex > forStatement.Left.StartIndex && Index > forStatement.Left.EndIndex) {
+                SetApplicableSpanToLastToken(forStatement);
+                return Once(InKeywordCompletion);
+            }
+
+            if (forStatement.ForIndex >= forStatement.StartIndex && Index > forStatement.ForIndex + 3) {
+                return Empty;
+            }
+
+            return null;
+        }
+
+        private IEnumerable<CompletionItem> GetCompletionsInWithStatement(WithStatement withStatement) {
+            if (Index > withStatement.HeaderIndex && withStatement.HeaderIndex > withStatement.StartIndex) {
+                return null;
+            }
+
+            foreach (var item in withStatement.Items.Reverse().MaybeEnumerate()) {
+                if (item.AsIndex > item.StartIndex) {
+                    if (Index > item.AsIndex + 2) {
+                        return Empty;
+                    }
+
+                    if (Index >= item.AsIndex) {
+                        ApplicableSpan = new SourceSpan(Tree.IndexToLocation(item.AsIndex),
+                            Tree.IndexToLocation(item.AsIndex + 2));
+                        return Once(AsKeywordCompletion);
+                    }
+                }
+
+                if (item.ContextManager != null && !(item.ContextManager is ErrorExpression)) {
+                    if (Index > item.ContextManager.EndIndex &&
+                        item.ContextManager.EndIndex > item.ContextManager.StartIndex) {
+                        return Once(AsKeywordCompletion);
+                    }
+
+                    if (Index >= item.ContextManager.StartIndex) {
+                        return null;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private IEnumerable<CompletionItem> GetCompletionsInRaiseStatement(RaiseStatement raiseStatement) {
+            // raise Type, Value, Traceback with Cause
+            if (raiseStatement.Cause != null && Index >= raiseStatement.CauseFieldStartIndex) {
+                return null;
+            }
+
+            if (raiseStatement.Traceback != null && Index >= raiseStatement.TracebackFieldStartIndex) {
+                return null;
+            }
+
+            if (raiseStatement.Value != null && Index >= raiseStatement.ValueFieldStartIndex) {
+                return null;
+            }
+
+            if (raiseStatement.ExceptType == null) {
+                return null;
+            }
+
+            if (Index <= raiseStatement.ExceptType.EndIndex) {
+                return null;
+            }
+
+            if (Tree.LanguageVersion.Is3x()) {
+                SetApplicableSpanToLastToken(raiseStatement);
+                return Once(FromKeywordCompletion);
+            }
+
+            return Empty;
+        }
+
+        private IEnumerable<CompletionItem> GetCompletionsInExceptStatement(TryStatementHandler tryStatement) {
+            // except Test as Target
+            if (tryStatement.Target != null && Index >= tryStatement.Target.StartIndex) {
+                return Empty;
+            }
+
+            if (tryStatement.Test is TupleExpression) {
+                return null;
+            }
+
+            if (tryStatement.Test == null) {
+                return null;
+            }
+
+            if (Index <= tryStatement.Test.EndIndex) {
+                return null;
+            }
+
+            SetApplicableSpanToLastToken(tryStatement);
+            return Once(AsKeywordCompletion);
+        }
+
+        private bool IsInsideComment() {
+            var match = Array.BinarySearch(Tree._commentLocations, Position);
+            // If our index = -1, it means we're before the first comment
+            if (match == -1) {
+                return false;
+            }
+
+            if (match < 0) {
+                // If we couldn't find an exact match for this position, get the nearest
+                // matching comment before this point
+                match = ~match - 1;
+            }
+
+            if (match >= Tree._commentLocations.Length) {
+                Debug.Fail("Failed to find nearest preceding comment in AST");
+                return false;
+            }
+
+            if (Tree._commentLocations[match].Line != Position.Line) {
+                return false;
+            }
+
+            if (Tree._commentLocations[match].Column >= Position.Column) {
+                return false;
+            }
+
+            // We are inside a comment
+            return true;
         }
 
         private IEnumerable<CompletionItem> GetCompletionsFromError() {
@@ -692,106 +666,154 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return null;
             }
 
+            bool ScopeIsClassDefinition(out ClassDefinition classDefinition) {
+                classDefinition = Scope as ClassDefinition ?? (Scope as FunctionDefinition)?.Parent as ClassDefinition;
+                return classDefinition != null;
+            }
+
             var tokens = Tokens.Reverse().ToArray();
 
             string exprString;
+            SourceLocation loc;
             var lastToken = tokens.FirstOrDefault();
             var nextLast = tokens.ElementAtOrDefault(1).Value?.Kind ?? TokenKind.EndOfFile;
             switch (lastToken.Value.Kind) {
                 case TokenKind.Dot:
                     exprString = ReadExpression(tokens.Skip(1));
-                    if (exprString != null) {
-                        ApplicableSpan = new SourceSpan(Position, Position);
-                        return Analysis.GetMembers(exprString, Position, Options).Select(ToCompletionItem);
-                    }
-                    break;
-                case TokenKind.KeywordDef:
-                    if (lastToken.Key.End < Index) {
-                        var cd = Scope as ClassDefinition ?? ((Scope as FunctionDefinition)?.Parent as ClassDefinition);
-                        if (cd == null) {
-                            return null;
-                        }
+                    ApplicableSpan = new SourceSpan(Position, Position);
+                    return Analysis.GetMembers(exprString, Position, Options).Select(ToCompletionItem);
 
-                        ApplicableSpan = new SourceSpan(Position, Position);
+                case TokenKind.KeywordDef when lastToken.Key.End < Index && ScopeIsClassDefinition(out var cd):
+                    ApplicableSpan = new SourceSpan(Position, Position);
+                    loc = GetTokenSpan(lastToken.Key).Start;
+                    ShouldCommitByDefault = false;
+                    return Analysis.GetOverrideable(loc).Select(o => ToOverrideCompletionItem(o, cd, new string(' ', loc.Column - 1)));
 
-                        var loc = GetTokenSpan(lastToken.Key).Start;
-                        ShouldCommitByDefault = false;
-                        return Analysis.GetOverrideable(loc).Select(o => ToOverrideCompletionItem(o, cd, new string(' ', loc.Column - 1)));
-                    }
-                    break;
-                case TokenKind.Name:
-                        if (nextLast == TokenKind.Dot) {
-                        exprString = ReadExpression(tokens.Skip(2));
-                            if (exprString != null) {
-                            ApplicableSpan = new SourceSpan(GetTokenSpan(lastToken.Key).Start, Position);
-                                return Analysis.GetMembers(exprString, Position, Options).Select(ToCompletionItem);
-                            }
-                        } else if (nextLast == TokenKind.KeywordDef) {
-                            var cd = Scope as ClassDefinition ?? ((Scope as FunctionDefinition)?.Parent as ClassDefinition);
-                            if (cd == null) {
-                                return null;
-                            }
+                case TokenKind.Name when nextLast == TokenKind.Dot:
+                    exprString = ReadExpression(tokens.Skip(2));
+                    ApplicableSpan = new SourceSpan(GetTokenSpan(lastToken.Key).Start, Position);
+                    return Analysis.GetMembers(exprString, Position, Options).Select(ToCompletionItem);
 
-                        ApplicableSpan = new SourceSpan(GetTokenSpan(lastToken.Key).Start, Position);
+                case TokenKind.Name when nextLast == TokenKind.KeywordDef && ScopeIsClassDefinition(out var cd):
+                    ApplicableSpan = new SourceSpan(GetTokenSpan(lastToken.Key).Start, Position);
+                    loc = GetTokenSpan(tokens.ElementAt(1).Key).Start;
+                    ShouldCommitByDefault = false;
+                    return Analysis.GetOverrideable(loc).Select(o => ToOverrideCompletionItem(o, cd, new string(' ', loc.Column - 1)));
 
-                        var loc = GetTokenSpan(tokens.ElementAt(1).Key).Start;
-                            ShouldCommitByDefault = false;
-                            return Analysis.GetOverrideable(loc).Select(o => ToOverrideCompletionItem(o, cd, new string(' ', loc.Column - 1)));
-                        }
-                    break;
                 case TokenKind.KeywordFor:
                 case TokenKind.KeywordAs:
-                    if (lastToken.Key.Start <= Index && Index <= lastToken.Key.End) {
-                        return null;
-                    }
-                    return Empty;
-            }
+                    return lastToken.Key.Start <= Index && Index <= lastToken.Key.End ? null : Empty;
 
-            Debug.WriteLine($"Unhandled completions from error.\nTokens were: ({lastToken.Value.Image}:{lastToken.Value.Kind}), {string.Join(", ", tokens.AsEnumerable().Take(10).Select(t => $"({t.Value.Image}:{t.Value.Kind})"))}");
-            return null;
+                default:
+                    Debug.WriteLine($"Unhandled completions from error.\nTokens were: ({lastToken.Value.Image}:{lastToken.Value.Kind}), {string.Join(", ", tokens.AsEnumerable().Take(10).Select(t => $"({t.Value.Image}:{t.Value.Kind})"))}");
+                    return null;
+            }
         }
 
-        private IEnumerable<CompletionItem> GetCompletionsFromTopLevel(bool allowKeywords, GetMemberOptions opts) {
-            if (Node?.EndIndex < Index) {
+        private IEnumerable<CompletionItem> GetCompletionsFromTopLevel() {
+            if (Node != null && Node.EndIndex < Index) {
                 return Empty;
             }
 
-            if (allowKeywords) {
-                opts |= GetMemberOptions.IncludeExpressionKeywords;
-                if (ShouldIncludeStatementKeywords(Statement, Index, out var span)) {
-                    opts |= GetMemberOptions.IncludeStatementKeywords;
-                    if (span.HasValue) {
-                        ApplicableSpan = new SourceSpan(
-                            Tree.IndexToLocation(span.Value.Start),
-                            Tree.IndexToLocation(span.Value.End)
-                        );
-                    }
-                }
-                ShouldAllowSnippets = true;
+            var options = Options | GetMemberOptions.ForEval | GetMemberOptionsForTopLevelCompletions(Statement, Index, out var span);
+            if (span.HasValue) {
+                ApplicableSpan = new SourceSpan(Tree.IndexToLocation(span.Value.Start), Tree.IndexToLocation(span.Value.End));
             }
 
+            ShouldAllowSnippets = options.HasFlag(GetMemberOptions.IncludeExpressionKeywords);
+
             _log.TraceMessage($"Completing all names");
-            var members = Analysis.GetAllMembers(Position, opts);
+            var members = Analysis.GetAllMembers(Position, options);
 
             var finder = new ExpressionFinder(Tree, new GetExpressionOptions { Calls = true });
-            if (finder.GetExpression(Index) is CallExpression callExpr &&
-                callExpr.GetArgumentAtIndex(Tree, Index, out _)) {
+            if (finder.GetExpression(Index) is CallExpression callExpr && callExpr.GetArgumentAtIndex(Tree, Index, out _)) {
                 var argNames = Analysis.GetSignatures(callExpr.Target, Position)
                     .SelectMany(o => o.Parameters).Select(p => p?.Name)
                     .Where(n => !string.IsNullOrEmpty(n))
                     .Distinct()
                     .Except(callExpr.Args.MaybeEnumerate().Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n)))
-                    .Select(n => new MemberResult($"{n}=", PythonMemberType.NamedArgument) as IMemberResult);
+                    .Select(n => new MemberResult($"{n}=", PythonMemberType.NamedArgument) as IMemberResult)
+                    .ToArray();
 
-                argNames = argNames.MaybeEnumerate().ToArray();
-                _log.TraceMessage($"Including {argNames.Count()} named arguments");
-
-                members = members?.Concat(argNames) ?? argNames;
+                _log.TraceMessage($"Including {argNames.Length} named arguments");
+                members = members.Concat(argNames);
             }
 
-            return members.Select(ToCompletionItem).Where(c => !string.IsNullOrEmpty(c.insertText));
+            return members
+                .Where(m => !string.IsNullOrEmpty(m.Completion) || !string.IsNullOrEmpty(m.Name))
+                .Select(ToCompletionItem);
         }
 
+        private static GetMemberOptions GetMemberOptionsForTopLevelCompletions(Node statement, int index, out IndexSpan? span) {
+            span = null;
+
+            const GetMemberOptions noKeywords = GetMemberOptions.None;
+            const GetMemberOptions exceptionsOnly = GetMemberOptions.ExceptionsOnly;
+            const GetMemberOptions includeExpressionKeywords = GetMemberOptions.IncludeExpressionKeywords;
+            const GetMemberOptions includeStatementKeywords = GetMemberOptions.IncludeStatementKeywords;
+            const GetMemberOptions includeAllKeywords = includeExpressionKeywords | includeStatementKeywords;
+
+            switch (statement) {
+                // Disallow keywords, unless we're between the end of decorators and the
+                // end of the "[async] def" keyword.
+                case FunctionDefinition fd when index > fd.KeywordEndIndex || fd.Decorators != null && index < fd.Decorators.EndIndex:
+                case ClassDefinition cd when index > cd.KeywordEndIndex || cd.Decorators != null && index < cd.Decorators.EndIndex:
+                    return noKeywords;
+
+                case TryStatementHandler tryStatement when tryStatement.Test is TupleExpression || index >= tryStatement.Test.StartIndex:
+                    return exceptionsOnly;
+
+                case null:
+                    return includeAllKeywords;
+
+                // Always allow keywords in non-keyword statements
+                case ExpressionStatement _:
+                    return includeAllKeywords;
+
+                case ImportStatement _:
+                case FromImportStatement _:
+                    return includeAllKeywords;
+
+                // Allow keywords at start of assignment, but not in subsequent names
+                case AssignmentStatement ss:
+                    var firstAssign = ss.Left?.FirstOrDefault();
+                    return firstAssign == null || index <= firstAssign.EndIndex ? includeAllKeywords : includeExpressionKeywords;
+
+                // Allow keywords when we are in another keyword
+                case Statement s when index <= s.KeywordEndIndex:
+                    var keywordStart = s.KeywordEndIndex - s.KeywordLength;
+                    if (index >= keywordStart) {
+                        span = new IndexSpan(keywordStart, s.KeywordLength);
+                    } else if ((s as IMaybeAsyncStatement)?.IsAsync == true) {
+                        // Must be in the "async" at the start of the keyword
+                        span = new IndexSpan(s.StartIndex, "async".Length);
+                    }
+                    return includeAllKeywords;
+
+                case RaiseStatement raise when raise.ExceptType != null && index >= raise.ExceptType.StartIndex || index > raise.KeywordEndIndex:
+                    return includeExpressionKeywords | exceptionsOnly;
+
+                // TryStatementHandler is 'except', but not a Statement subclass
+                case TryStatementHandler except when index <= except.KeywordEndIndex:
+                    var exceptKeywordStart = except.KeywordEndIndex - except.KeywordLength;
+                    if (index >= exceptKeywordStart) {
+                        span = new IndexSpan(exceptKeywordStart, except.KeywordLength);
+                    }
+
+                    return includeAllKeywords;
+
+                // Allow keywords in function body (we'd have a different statement if we were deeper)
+                case FunctionDefinition fd when index >= fd.HeaderIndex:
+                    return includeAllKeywords;
+
+                // Allow keywords within with blocks, but not in their definition
+                case WithStatement ws:
+                    return index >= ws.HeaderIndex || index <= ws.KeywordEndIndex ? includeAllKeywords : includeExpressionKeywords;
+
+                default:
+                    return includeExpressionKeywords;
+            }
+        }
 
         private static readonly CompletionItem MetadataArgCompletion = ToCompletionItem("metaclass=", PythonMemberType.NamedArgument);
         private static readonly CompletionItem AsKeywordCompletion = ToCompletionItem("as", PythonMemberType.Keyword);
@@ -800,16 +822,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private static readonly CompletionItem ImportKeywordCompletion = ToCompletionItem("import", PythonMemberType.Keyword);
         private static readonly CompletionItem WithKeywordCompletion = ToCompletionItem("with", PythonMemberType.Keyword);
         private static readonly CompletionItem StarCompletion = ToCompletionItem("*", PythonMemberType.Keyword);
-        
+
         private CompletionItem ToCompletionItem(IMemberResult m) {
             var completion = m.Completion;
             if (string.IsNullOrEmpty(completion)) {
                 completion = m.Name;
             }
+
             if (string.IsNullOrEmpty(completion)) {
                 return default(CompletionItem);
             }
+
             var doc = _textBuilder.GetDocumentation(m.Values, string.Empty);
+            var kind = ToCompletionItemKind(m.MemberType);
+            
             var res = new CompletionItem {
                 label = m.Name,
                 insertText = completion,
@@ -822,6 +848,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 kind = ToCompletionItemKind(m.MemberType),
                 _kind = m.MemberType.ToString().ToLowerInvariant()
             };
+
+            if (_addBrackets && (kind == CompletionItemKind.Constructor || kind == CompletionItemKind.Function || kind == CompletionItemKind.Method)) {
+                res.insertText += "($0)";
+                res.insertTextFormat = InsertTextFormat.Snippet;
+            }
+
             return res;
         }
 
@@ -913,7 +945,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private string ReadExpression(IEnumerable<KeyValuePair<IndexSpan, Token>> tokens) {
             var expr = ReadExpressionTokens(tokens);
-
             return string.Join("", expr.Select(e => e.VerbatimImage ?? e.Image));
         }
 
@@ -945,6 +976,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                             exprTokens.Pop();
                             return exprTokens;
                         }
+
                         break;
 
                     case TokenKind.Comment:

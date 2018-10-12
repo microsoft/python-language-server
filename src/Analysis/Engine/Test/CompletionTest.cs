@@ -410,5 +410,23 @@ Class1().
             completion.Should().HaveItem(expectedLabel)
                 .Which.Should().HaveInsertText(expectedInsertText);
         }
+
+        [ServerTestMethod, Priority(0)]
+        public async Task Completion_AddBracketsEnabled_MethodOverride(Server server) {
+            var code = @"
+class A(object):
+    def foo(self):
+        pass
+
+class B(A):
+    def f";
+
+            await server.SendDidChangeConfiguration(new ServerSettings.PythonCompletionOptions { addBrackets = true });
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            var completion = await server.SendCompletion(uri, 6, 9);
+
+            completion.Should().HaveItem("foo")
+                .Which.Should().HaveInsertText("foo(self):\r\n    return super().foo()");
+        }
     }
 }
