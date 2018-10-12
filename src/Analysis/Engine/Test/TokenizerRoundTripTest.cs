@@ -148,7 +148,7 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public void BinaryTest() {
-            var filename = Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.System), "kernel32.dll");
+            var filename = TestData.GetPath("TestData", "random.bin");
             TestOneFile(filename, PythonLanguageVersion.V27, TokenizerOptions.Verbatim | TokenizerOptions.VerbatimCommentsAndLineJoins);
             TestOneFile(filename, PythonLanguageVersion.V27, TokenizerOptions.Verbatim);
         }

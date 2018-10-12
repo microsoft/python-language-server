@@ -23,6 +23,7 @@ using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestUtilities;
 
 namespace AnalysisTests {
     /// <summary>
@@ -852,8 +853,9 @@ import fob");
 
         [TestMethod, Priority(1)]
         public void TestBinaryFiles() {
-            var filename = Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.System), "kernel32.dll");
-            TestOneString(PythonLanguageVersion.V27, filename);
+            var filename = TestData.GetPath("TestData", "random.bin");
+            var originalText = File.ReadAllText(filename);
+            TestOneString(PythonLanguageVersion.V27, originalText);
         }
 
         [TestMethod, Priority(1)]
