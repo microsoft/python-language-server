@@ -654,13 +654,13 @@ class B(A):
                 await AssertNoCompletion(s, u, new SourceLocation(3, 9));
                 if (!is2X) {
                     await AssertCompletion(s, u,
-                        new[] { "foo(self, a, b=None, *args, **kwargs):\n    return super().foo(a, b=b, *args, **kwargs)" },
-                        new[] { "foo(self, a, b = None, *args, **kwargs):\n    return super().foo(a, b = b, *args, **kwargs)" },
+                        new[] { "foo(self, a, b=None, *args, **kwargs):\r\n    return super().foo(a, b=b, *args, **kwargs)" },
+                        new[] { "foo(self, a, b = None, *args, **kwargs):\r\n    return super().foo(a, b = b, *args, **kwargs)" },
                         new SourceLocation(7, 10));
                 } else {
                     await AssertCompletion(s, u,
-                        new[] { "foo(self, a, b=None, *args, **kwargs):\n    return super(B, self).foo(a, b=b, *args, **kwargs)" },
-                        new[] { "foo(self, a, b = None, *args, **kwargs):\n    return super(B, self).foo(a, b = b, *args, **kwargs)" },
+                        new[] { "foo(self, a, b=None, *args, **kwargs):\r\n    return super(B, self).foo(a, b=b, *args, **kwargs)" },
+                        new[] { "foo(self, a, b = None, *args, **kwargs):\r\n    return super(B, self).foo(a, b = b, *args, **kwargs)" },
                         new SourceLocation(7, 10));
                 }
             }
