@@ -15,10 +15,15 @@
 // permissions and limitations under the License.
 
 using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Interpreter;
+using TestUtilities;
 
 namespace AnalysisTests {
     public class ServerBasedTest {
@@ -34,5 +39,49 @@ namespace AnalysisTests {
         }
 
         protected virtual AnalysisLimits GetLimits() => AnalysisLimits.GetDefaultLimits();
+
+        protected Uri GetDocument(string file) {
+            if (!Path.IsPathRooted(file)) {
+                file = TestData.GetPath(file);
+            }
+            return new Uri(file);
+        }
+
+        protected static Task<Tuple<string, int>> ApplyChange(
+            Server s,
+            Uri document,
+            params DocumentChange[] e
+        ) {
+            var initialVersion = Math.Max((s.GetEntry(document) as IDocument)?.GetDocumentVersion(s.GetPart(document)) ?? 0, 0);
+            return ApplyChange(s, document, initialVersion, initialVersion + 1, e);
+        }
+
+        protected static async Task<Tuple<string, int>> ApplyChange(
+            Server s,
+            Uri document,
+            int initialVersion,
+            int finalVersion,
+            params DocumentChange[] e
+        ) {
+
+            var parseComplete = EventTaskSources.Server.OnParseComplete.Create(s);
+
+            await s.DidChangeTextDocument(new DidChangeTextDocumentParams {
+                textDocument = new VersionedTextDocumentIdentifier {
+                    uri = document,
+                    version = finalVersion,
+                },
+                contentChanges = e.Select(c => new TextDocumentContentChangedEvent {
+                    range = c.WholeBuffer ? null : (Range?)c.ReplacedSpan,
+                    text = c.InsertedText
+                }).ToArray()
+            }, CancellationToken.None);
+
+            await parseComplete;
+
+            var newVersion = -1;
+            var code = (s.GetEntry(document) as IDocument)?.ReadDocument(s.GetPart(document), out newVersion).ReadToEnd();
+            return Tuple.Create(code, newVersion);
+        }
     }
 }
