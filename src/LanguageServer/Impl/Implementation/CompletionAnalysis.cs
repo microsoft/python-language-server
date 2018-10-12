@@ -862,38 +862,34 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-
-        private static readonly Regex ValidParameterName = new Regex(@"^(\*|\*\*)?[a-z_][a-z0-9_]*", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
-        private static string GetSafeParameterName(ParameterResult result, int index) {
+        private static string MakeOverrideDefParamater(ParameterResult result) {
             if (!string.IsNullOrEmpty(result.DefaultValue)) {
-                return GetSafeArgumentName(result, index) + "=" + result.DefaultValue;
+                return result.Name + "=" + result.DefaultValue;
             }
-            return GetSafeArgumentName(result, index);
+
+            return result.Name;
         }
 
-        private static string GetSafeArgumentName(ParameterResult result, int index) {
-            var match = ValidParameterName.Match(result.Name);
-
-            if (match.Success) {
-                return match.Value;
-            } else if (result.Name.StartsWithOrdinal("**")) {
-                return "**kwargs";
-            } else if (result.Name.StartsWithOrdinal("*")) {
-                return "*args";
-            } else {
-                return "arg" + index.ToString();
+        private static string MakeOverrideCallParameter(ParameterResult result) {
+            if (result.Name.StartsWithOrdinal("*")) {
+                return result.Name;
             }
+
+            if (!string.IsNullOrEmpty(result.DefaultValue)) {
+                return result.Name + "=" + result.Name;
+            }
+
+            return result.Name;
         }
 
         private string MakeOverrideCompletionString(string indentation, IOverloadResult result, string className) {
             var sb = new StringBuilder();
 
-            sb.AppendLine(result.Name + "(" + string.Join(", ", result.Parameters.Select((p, i) => GetSafeParameterName(p, i))) + "):");
+            sb.AppendLine(result.Name + "(" + string.Join(", ", result.Parameters.Select(MakeOverrideDefParamater)) + "):");
             sb.Append(indentation);
 
             if (result.Parameters.Length > 0) {
-                var parameterString = string.Join(", ", result.Parameters.Skip(1).Select((p, i) => GetSafeArgumentName(p, i + 1)));
+                var parameterString = string.Join(", ", result.Parameters.Skip(1).Select(MakeOverrideCallParameter));
 
                 if (Tree.LanguageVersion.Is3x()) {
                     sb.AppendFormat("return super().{0}({1})",
