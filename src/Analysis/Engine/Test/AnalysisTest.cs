@@ -483,7 +483,7 @@ y = f('fob', 'oar')";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"import sys as s, array as a");
 
                 analysis.Should().HavePythonModuleVariable("s")
-                    .Which.Should().HaveMember<AstPythonStringLiteral>("winver");
+                    .Which.Should().HaveMember<AstPythonStringLiteral>("platform");
 
                 analysis.Should().HavePythonModuleVariable("a")
                     .Which.Should().HaveMember<AstPythonConstant>("ArrayType");
@@ -491,7 +491,7 @@ y = f('fob', 'oar')";
                 analysis = await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"import sys as s");
 
                 analysis.Should().HavePythonModuleVariable("s")
-                    .Which.Should().HaveMember<AstPythonStringLiteral>("winver");
+                    .Which.Should().HaveMember<AstPythonStringLiteral>("platform");
             }
         }
 
@@ -3346,7 +3346,7 @@ import sys
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
                 analysis.Should().HavePythonModuleVariable("sys")
-                    .Which.Should().HaveMembers("winver");
+                    .Which.Should().HaveMembers("platform");
             }
         }
 
@@ -3360,7 +3360,7 @@ def f():
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
                 analysis.Should().HaveFunction("f")
                     .Which.Should().HavePythonModuleVariable("sys")
-                    .Which.Should().HaveMembers("winver");
+                    .Which.Should().HaveMembers("platform");
             }
         }
 
@@ -3374,7 +3374,7 @@ class C:
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
                 analysis.Should().HaveClass("C")
                     .Which.Should().HavePythonModuleVariable("sys")
-                    .Which.Should().HaveMembers("winver");
+                    .Which.Should().HaveMembers("platform");
             }
         }
 
