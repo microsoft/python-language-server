@@ -34,6 +34,7 @@ namespace Microsoft.PythonTools.Intellisense {
         private readonly HashSet<IGroupableAnalysisProject> _enqueuedGroups;
         private readonly PriorityProducerConsumer<QueueItem> _ppc;
         private readonly Task _consumerTask;
+        private readonly ManualResetEventSlim _queueEnabled = new ManualResetEventSlim(true);
 
         public event EventHandler AnalysisStarted;
         public event EventHandler AnalysisComplete;
@@ -41,6 +42,8 @@ namespace Microsoft.PythonTools.Intellisense {
         public event EventHandler<UnhandledExceptionEventArgs> UnhandledException;
 
         public int Count => _ppc.Count;
+        public void Start() => _queueEnabled.Set();
+        public void Stop() => _queueEnabled.Reset();
 
         internal AnalysisQueue() {
             _ppc = new PriorityProducerConsumer<QueueItem>(4, excludeDuplicates: true, comparer: QueueItemComparer.Instance);
@@ -55,6 +58,7 @@ namespace Microsoft.PythonTools.Intellisense {
             RaiseEventOnThreadPool(AnalysisStarted);
             while (!_ppc.IsDisposed) {
                 try {
+                    _queueEnabled.Wait();
                     var item = await ConsumeAsync();
                     _current.Value = this;
                     await item.Handler(_ppc.CancellationToken);
@@ -160,6 +164,7 @@ namespace Microsoft.PythonTools.Intellisense {
                     Trace.TraceWarning("Failed to wait for worker thread to terminate");
                 }
             }
+            _queueEnabled.Dispose();
         }
 
         private struct QueueItem {

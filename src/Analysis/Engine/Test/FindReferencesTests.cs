@@ -61,9 +61,6 @@ class D(object):
                 var uri1 = TestData.GetTempPathUri("mod1.py");
                 var uri2 = TestData.GetTempPathUri("mod2.py");
 
-                await server.LoadFileAsync(uri1);
-                await server.LoadFileAsync(uri2);
-
                 await server.SendDidOpenTextDocument(uri1, text1);
                 await server.SendDidOpenTextDocument(uri2, text2);
 
@@ -850,9 +847,6 @@ abc()
             var fobUri = TestData.GetTempPathUri("fob.py");
             var oarUri = TestData.GetTempPathUri("oar.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                await server.LoadFileAsync(fobUri);
-                await server.LoadFileAsync(oarUri);
-
                 await server.SendDidOpenTextDocument(fobUri, fobText);
                 await server.SendDidOpenTextDocument(oarUri, oarText);
 
@@ -885,11 +879,10 @@ class bcd(abc):
             var fobUri = TestData.GetTempPathUri("fob.py");
             var oarUri = TestData.GetTempPathUri("oar.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                await server.LoadFileAsync(fobUri);
-                await server.LoadFileAsync(oarUri);
-
-                await server.SendDidOpenTextDocument(fobUri, fobText);
-                await server.SendDidOpenTextDocument(oarUri, oarText);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(fobUri, fobText);
+                    await server.SendDidOpenTextDocument(oarUri, oarText);
+                }
 
                 var references = await server.SendFindReferences(oarUri, 2, 14);
                 references.Should().OnlyHaveReferences(
@@ -1508,20 +1501,23 @@ class C:
 c=C()
 f(a=c)
 real = None");
-                await s.LoadFileAsync(mod1);
+                Uri mod2;
+                using (FileLoading()) {
 
-                // Add 10 blank lines to ensure the line numbers do not collide
-                // We only check line numbers below, and by design we only get one
-                // reference per location, so we disambiguate by ensuring mod2's
-                // line numbers are larger than mod1's
-                var mod2 = await s.OpenDocumentAndGetUriAsync("mod2.py", @"import mod1
+                    await s.LoadFileAsync(mod1);
+
+                    // Add 10 blank lines to ensure the line numbers do not collide
+                    // We only check line numbers below, and by design we only get one
+                    // reference per location, so we disambiguate by ensuring mod2's
+                    // line numbers are larger than mod1's
+                    mod2 = await s.OpenDocumentAndGetUriAsync("mod2.py", @"import mod1
 " + "\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n" + @"
 class D:
     real = None
     a = 1
     b = a
 mod1.f(a=D)");
-
+                }
                 // f
                 var expected = new[] {
                     "Definition;(1, 4) - (1, 5)",
@@ -1693,12 +1689,14 @@ class Base(object):
 ";
 
             using (var server = await CreateServerAsync()) {
-                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
-                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
-                await server.LoadFileAsync(uri2);
+                Uri uri1, uri2;
+                using (FileLoading()) {
+                    uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
+                    uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+                    await server.LoadFileAsync(uri2);
+                }
 
                 var references = await server.SendFindReferences(uri1, 6, 9);
-
                 var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
                     (uri2, (3, 8, 3, 16), ReferenceKind.Definition),
                     (uri2, (2, 4, 4, 12), ReferenceKind.Value),
@@ -1728,9 +1726,12 @@ class Base(object):
 ";
 
             using (var server = await CreateServerAsync()) {
-                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
-                await server.LoadFileAsync(uri2);
-                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
+                Uri uri1, uri2;
+                using (FileLoading()) {
+                    uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+                    await server.LoadFileAsync(uri2);
+                    uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
+                }
 
                 var references = await server.SendFindReferences(uri1, 6, 9);
 
@@ -1763,9 +1764,12 @@ class Base(object):
 ";
 
             using (var server = await CreateServerAsync()) {
-                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
-                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
-                await server.LoadFileAsync(uri2);
+                Uri uri1, uri2;
+                using (FileLoading()) {
+                    uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
+                    uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+                    await server.LoadFileAsync(uri2);
+                }
 
                 var references = await server.SendFindReferences(uri1, 6, 9);
 
@@ -1803,14 +1807,16 @@ class Derived1(Base):
 ";
 
             using (var server = await CreateServerAsync()) {
-                var uri1 = await TestData.CreateTestSpecificFileAsync("mod1.py", text1);
-                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+                Uri uri1, uri2;
+                using (FileLoading()) {
+                    uri1 = await TestData.CreateTestSpecificFileAsync("mod1.py", text1);
+                    uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
 
-                await server.LoadFileAsync(uri2);
-                uri1 = await server.OpenDocumentAndGetUriAsync("mod1.py", text1);
+                    await server.LoadFileAsync(uri2);
+                    uri1 = await server.OpenDocumentAndGetUriAsync("mod1.py", text1);
+                }
 
                 var references = await server.SendFindReferences(uri1, 11, 9);
-
                 var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
                     (uri1, (5, 8, 5, 16), ReferenceKind.Definition),
                     (uri1, (4, 4, 6, 12), ReferenceKind.Value),

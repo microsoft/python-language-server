@@ -18,21 +18,37 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Intellisense;
 using Microsoft.PythonTools.Interpreter;
 
 namespace AnalysisTests {
     public class ServerBasedTest {
+        private Server _server;
+
         protected async Task<Server> CreateServerAsync(InterpreterConfiguration configuration = null, Uri rootUri = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable2X ?? PythonVersions.LatestAvailable3X;
             configuration.AssertInstalled();
 
-            var server = await new Server().InitializeAsync(configuration, rootUri);
-            server.Analyzer.EnableDiagnostics = true;
-            server.Analyzer.Limits = GetLimits();
+            _server = await new Server().InitializeAsync(configuration, rootUri);
+            _server.Analyzer.EnableDiagnostics = true;
+            _server.Analyzer.Limits = GetLimits();
 
-            return server;
+            return _server;
         }
 
         protected virtual AnalysisLimits GetLimits() => AnalysisLimits.GetDefaultLimits();
+
+        protected IDisposable FileLoading() => new AnalysisQueueControl(_server.AnalysisQueue);
+
+        class AnalysisQueueControl: IDisposable {
+            private readonly AnalysisQueue _queue;
+
+            public AnalysisQueueControl(AnalysisQueue queue) {
+                _queue = queue;
+                _queue.Stop();
+            }
+
+            public void Dispose() => _queue.Start();
+        }
     }
 }
