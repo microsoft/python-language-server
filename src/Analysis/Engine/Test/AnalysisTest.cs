@@ -939,11 +939,10 @@ class Test_test2(Test_test1):
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uris = TestData.GetNextModuleUris(2);
-                foreach (var u in uris) {
-                    await server.LoadFileAsync(u);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis = await server.GetAnalysisAsync(uris[1]);
@@ -3657,12 +3656,10 @@ def g(a, b, c): pass
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                foreach (var u in uris) {
-                    await server.LoadFileAsync(u);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
                 var analysis = await server.GetAnalysisAsync(uris[0]);
@@ -3684,12 +3681,10 @@ def f(x):
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                foreach (var u in uris) {
-                    await server.LoadFileAsync(u);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
@@ -3713,12 +3708,10 @@ class c:
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                foreach(var u in uris) {
-                    await server.LoadFileAsync(u);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
@@ -3745,12 +3738,10 @@ class c:
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                foreach (var u in uris) {
-                    await server.LoadFileAsync(u);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
@@ -3785,13 +3776,11 @@ a = x
 "              };
 
                 var uris = TestData.GetNextModuleUris(3);
-                foreach (var u in uris) {
-                    await server.LoadFileAsync(u);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[2]], contents[permutation[2]]);
                 }
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
-                await server.SendDidOpenTextDocument(uris[permutation[2]], contents[permutation[2]]);
 
                 await server.GetAnalysisAsync(uris[0]);
                 await server.GetAnalysisAsync(uris[1]);
@@ -4224,12 +4213,10 @@ g = MyClass().mydec(module1.f)
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                foreach (var u in uris) {
-                    await server.LoadFileAsync(u);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
@@ -4271,12 +4258,10 @@ class MyClass(object):
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                foreach (var u in uris) {
-                    await server.LoadFileAsync(u);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
@@ -4462,12 +4447,10 @@ def decorator_b(fn):
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                foreach (var u in uris) {
-                    await server.LoadFileAsync(u);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
@@ -4630,12 +4613,10 @@ import imp as impp
 " };
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uris = TestData.GetNextModuleUris(2);
-                foreach (var u in uris) {
-                    await server.LoadFileAsync(u);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
 
                 var analysis = await server.GetAnalysisAsync(uris[0]);
                 analysis.Should().HaveVariable("g").WithDescription("module1.g() -> _io")

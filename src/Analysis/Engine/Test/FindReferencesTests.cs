@@ -60,9 +60,10 @@ class D(object):
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uri1 = TestData.GetTempPathUri("mod1.py");
                 var uri2 = TestData.GetTempPathUri("mod2.py");
-
-                await server.SendDidOpenTextDocument(uri1, text1);
-                await server.SendDidOpenTextDocument(uri2, text2);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uri1, text1);
+                    await server.SendDidOpenTextDocument(uri2, text2);
+                }
 
                 var references = await server.SendFindReferences(uri2, 1, 7);
                 references.Should().OnlyHaveReferences(
@@ -95,8 +96,10 @@ class D(object):
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uri1 = TestData.GetNextModuleUri();
                 var uri2 = TestData.GetNextModuleUri();
-                await server.SendDidOpenTextDocument(uri1, text1);
-                await server.SendDidOpenTextDocument(uri2, text2);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uri1, text1);
+                    await server.SendDidOpenTextDocument(uri2, text2);
+                }
 
                 var references = await server.SendFindReferences(uri1, 4, 9);
 
@@ -847,8 +850,10 @@ abc()
             var fobUri = TestData.GetTempPathUri("fob.py");
             var oarUri = TestData.GetTempPathUri("oar.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                await server.SendDidOpenTextDocument(fobUri, fobText);
-                await server.SendDidOpenTextDocument(oarUri, oarText);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(fobUri, fobText);
+                    await server.SendDidOpenTextDocument(oarUri, oarText);
+                }
 
                 var references = await server.SendFindReferences(oarUri, 0, 7);
                 references.Should().OnlyHaveReferences(
@@ -909,10 +914,12 @@ from baz import abc2 as abc";
             var bazUri = TestData.GetTempPathUri("baz.py");
             var oarBazUri = TestData.GetTempPathUri("oarbaz.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                await server.SendDidOpenTextDocument(fobUri, fobText);
-                await server.SendDidOpenTextDocument(oarUri, oarText);
-                await server.SendDidOpenTextDocument(bazUri, bazText);
-                await server.SendDidOpenTextDocument(oarBazUri, oarBazText);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(fobUri, fobText);
+                    await server.SendDidOpenTextDocument(oarUri, oarText);
+                    await server.SendDidOpenTextDocument(bazUri, bazText);
+                    await server.SendDidOpenTextDocument(oarBazUri, oarBazText);
+                }
 
                 var referencesAbc1 = await server.SendFindReferences(oarUri, 0, 7);
                 var referencesAbc2 = await server.SendFindReferences(bazUri, 4, 7);
@@ -961,8 +968,10 @@ f = fn()";
             var fobUri = TestData.GetTempPathUri("fob.py");
             var oarUri = TestData.GetTempPathUri("oar.py");
             using (var server = await CreateServerAsync()) {
-                await server.SendDidOpenTextDocument(fobUri, fobText);
-                await server.SendDidOpenTextDocument(oarUri, oarText);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(fobUri, fobText);
+                    await server.SendDidOpenTextDocument(oarUri, oarText);
+                }
 
                 var referencesConstant = await server.SendFindReferences(oarUri, 4, 5);
                 var referencesClass = await server.SendFindReferences(oarUri, 5, 5);
@@ -1004,8 +1013,10 @@ g = f()";
             var fobUri = TestData.GetTempPathUri("fob.py");
             var oarUri = TestData.GetTempPathUri("oar.py");
             using (var server = await CreateServerAsync()) {
-                await server.SendDidOpenTextDocument(fobUri, fobText);
-                await server.SendDidOpenTextDocument(oarUri, oarText);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(fobUri, fobText);
+                    await server.SendDidOpenTextDocument(oarUri, oarText);
+                }
 
                 var referencesConstant = await server.SendFindReferences(fobUri, 1, 1);
                 var referencesClass = await server.SendFindReferences(fobUri, 2, 7);
