@@ -224,20 +224,19 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         private bool Push() {
-            //if (_processing.Value == null) {
-            //    _processing.Value = new HashSet<AstPythonType> { this };
-            //    return true;
-            //} else {
-            //    return _processing.Value.Add(this);
-            //}
-            return true;
+            if (_processing.Value == null) {
+                _processing.Value = new HashSet<AstPythonType> { this };
+                return true;
+            } else {
+                return _processing.Value.Add(this);
+            }
         }
 
         private void Pop() {
-            //_processing.Value.Remove(this);
-            //if (_processing.Value.Count == 0) {
-            //    _processing.Value = null;
-            //}
+            _processing.Value.Remove(this);
+            if (_processing.Value.Count == 0) {
+                _processing.Value = null;
+            }
         }
 
         public IPythonFunction GetConstructors() => GetMember(null, "__init__") as IPythonFunction;

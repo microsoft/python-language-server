@@ -1433,7 +1433,6 @@ n1 = g(1)";
         /// Variable is referred to in the base class, defined in the derived class, we should know the type information.
         /// </summary>
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/229")]
         public async Task BaseReferencedDerivedDefined() {
             var text = @"
 class Base(object):
@@ -1451,7 +1450,10 @@ derived = Derived()
 
             using (var server = await CreateServerAsync()) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
-                analysis.Should().HaveVariable("derived").WithValue<IInstanceInfo>().WithMemberOfType("map", PythonMemberType.Field);
+                analysis.Should()
+                    .HaveVariable("derived")
+                    .WithValue<IInstanceInfo>()
+                    .WithMemberOfType("map", PythonMemberType.Instance);
             }
         }
 
@@ -1726,9 +1728,9 @@ class Base(object):
 ";
 
             using (var server = await CreateServerAsync()) {
-                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
                 var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
                 await server.LoadFileAsync(uri2);
+                var uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
 
                 var references = await server.SendFindReferences(uri1, 6, 9);
 
