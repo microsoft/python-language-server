@@ -105,13 +105,13 @@ namespace Microsoft.PythonTools.Analysis {
             Python32,
             Python32_x64,
             Python31,
-            Python31_x64).First();
+            Python31_x64).FirstOrDefault() ?? NotInstalled("v3");
 
         public static InterpreterConfiguration LatestAvailable2X => GetVersions(
             Python27,
             Python27_x64,
             Python26,
-            Python26_x64).First();
+            Python26_x64).FirstOrDefault() ?? NotInstalled("v2");
 
         public static InterpreterConfiguration EarliestAvailable => EarliestAvailable2X ?? EarliestAvailable3X;
 
@@ -129,13 +129,13 @@ namespace Microsoft.PythonTools.Analysis {
             Python36,
             Python36_x64,
             Python37,
-            Python37_x64).First();
+            Python37_x64).FirstOrDefault() ?? NotInstalled("v3");
 
         public static InterpreterConfiguration EarliestAvailable2X => GetVersions(
             Python26,
             Python26_x64,
             Python27,
-            Python27_x64).First();
+            Python27_x64).FirstOrDefault() ?? NotInstalled("v2");
 
         public static InterpreterConfiguration GetRequiredCPythonConfiguration(PythonLanguageVersion version) 
             => GetCPythonVersion(version, InterpreterArchitecture.x86) ?? GetCPythonVersion(version, InterpreterArchitecture.x64) ?? NotInstalled(version.ToString());
