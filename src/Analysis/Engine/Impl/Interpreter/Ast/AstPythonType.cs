@@ -16,22 +16,21 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonType : IPythonType, IMemberContainer, ILocatedMember, IHasQualifiedName {
+        private static readonly IPythonModule NoDeclModule = new AstPythonModule();
+        private static readonly AsyncLocal<HashSet<AstPythonType>> _processing = new AsyncLocal<HashSet<AstPythonType>>();
+
         private readonly string _name;
-        protected readonly Dictionary<string, IMember> _members;
         private IReadOnlyList<IPythonType> _mro;
 
-        private static readonly IPythonModule NoDeclModule = new AstPythonModule();
-
-        [ThreadStatic]
-        private static HashSet<AstPythonType> _processing;
+        protected readonly Dictionary<string, IMember> _members;
 
         public AstPythonType(string name): this(name, new Dictionary<string, IMember>(), Array.Empty<ILocationInfo>()) { }
 
@@ -225,19 +224,20 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         private bool Push() {
-            if (_processing == null) {
-                _processing = new HashSet<AstPythonType> { this };
-                return true;
-            } else {
-                return _processing.Add(this);
-            }
+            //if (_processing.Value == null) {
+            //    _processing.Value = new HashSet<AstPythonType> { this };
+            //    return true;
+            //} else {
+            //    return _processing.Value.Add(this);
+            //}
+            return true;
         }
 
         private void Pop() {
-            _processing.Remove(this);
-            if (_processing.Count == 0) {
-                _processing = null;
-            }
+            //_processing.Value.Remove(this);
+            //if (_processing.Value.Count == 0) {
+            //    _processing.Value = null;
+            //}
         }
 
         public IPythonFunction GetConstructors() => GetMember(null, "__init__") as IPythonFunction;

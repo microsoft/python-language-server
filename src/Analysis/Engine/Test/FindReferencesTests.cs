@@ -1804,8 +1804,8 @@ class Derived1(Base):
                 var uri1 = await TestData.CreateTestSpecificFileAsync("mod1.py", text1);
                 var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
 
-                await server.LoadFileAsync(uri1);
                 await server.LoadFileAsync(uri2);
+                uri1 = await server.OpenDocumentAndGetUriAsync("mod1.py", text1);
 
                 var references = await server.SendFindReferences(uri1, 11, 9);
 
