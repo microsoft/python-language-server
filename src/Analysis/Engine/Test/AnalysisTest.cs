@@ -287,7 +287,7 @@ w = f(a='p', p=1, q='abc')
         }
 
         [TestMethod, Priority(0), Timeout(5000)]
-        public async Task RecursiveListComprehensionV32() {
+        public async Task RecursiveListComprehension() {
             var code = @"
 def f(x):
     x = []
@@ -298,7 +298,7 @@ def f(x):
 
 
             // If we complete processing then we have succeeded
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python32X)) {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
             }
         }
@@ -703,9 +703,12 @@ z = mod1.f(42)
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uri1 = TestData.GetTempPathUri("mod1.py");
                 var uri2 = TestData.GetTempPathUri("mod2.py");
-                await server.SendDidOpenTextDocument(uri1, text1);
-                await server.SendDidOpenTextDocument(uri2, text2);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uri1, text1);
+                    await server.SendDidOpenTextDocument(uri2, text2);
+                }
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis1 = await server.GetAnalysisAsync(uri1);
                 var analysis2 = await server.GetAnalysisAsync(uri2);
 
@@ -1283,8 +1286,7 @@ b = next(a)
 
 
         [DataRow(PythonLanguageVersion.V27)]
-        [DataRow(PythonLanguageVersion.V31)]
-        [DataRow(PythonLanguageVersion.V33)]
+        [DataRow(PythonLanguageVersion.V36)]
         [DataTestMethod, Priority(0)]
         public async Task LambdaInComprehension(PythonLanguageVersion version) {
             var text = "x = [(lambda a:[a**i for i in range(a+1)])(j) for j in range(5)]";
@@ -1311,7 +1313,7 @@ list(x for x, in [(7,), (8,), (9,)])
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
             }
 
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python32X)) {
+            using (var server = await CreateServerAsync(PythonVersions.Required_Python36X)) {
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
             }
         }
@@ -1335,7 +1337,7 @@ for some_str, some_int, some_bool in x:
 
         [TestMethod, Priority(0)]
         public async Task ForIterator() {
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python34X)) {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
 class X(object):
     def __iter__(self): return self
@@ -2103,9 +2105,7 @@ b = ~~C()
 
 
         [TestMethod, Priority(0)]
-        [DataRow(PythonLanguageVersion.V35)]
-        [DataRow(PythonLanguageVersion.V36)]
-        public async Task TrueDividePython3X(PythonLanguageVersion version) {
+        public async Task TrueDividePython3X() {
             var text = @"
 class C:
     def __truediv__(self, other):
@@ -2118,7 +2118,7 @@ b = a / 'abc'
 c = 'abc' / a
 ";
 
-            using (var server = await CreateServerAsync(PythonVersions.GetRequiredCPythonConfiguration(version))) {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Float);
@@ -2140,7 +2140,7 @@ c = 'abc' / a
                 new { Method = "rshift", Operator = ">>", Version = PythonVersions.Required_Python27X },
                 new { Method = "pow", Operator = "**", Version = PythonVersions.Required_Python27X },
                 new { Method = "floordiv", Operator = "//", Version = PythonVersions.Required_Python27X },
-                new { Method = "matmul", Operator = "@", Version = PythonVersions.Required_Python35X },
+                new { Method = "matmul", Operator = "@", Version = PythonVersions.Required_Python36X },
             };
 
             var text = @"
@@ -4136,13 +4136,15 @@ abc = 42
                 var subpackage2InitUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage2", "__init__.py"), string.Empty);
                 var subpackage2ModuleZUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage2", "moduleZ.py"), subpackage2ModuleZContent);
 
-                await server.SendDidOpenTextDocument(initUri, initContent);
-                await server.SendDidOpenTextDocument(moduleAUri, moduleAContent);
-                await server.SendDidOpenTextDocument(subpackageInitUri, string.Empty);
-                await server.SendDidOpenTextDocument(subpackageModuleXUri, subpackageModuleXContent);
-                await server.SendDidOpenTextDocument(subpackageModuleYUri, subpackageModuleYContent);
-                await server.SendDidOpenTextDocument(subpackage2InitUri, string.Empty);
-                await server.SendDidOpenTextDocument(subpackage2ModuleZUri, subpackage2ModuleZContent);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(initUri, initContent);
+                    await server.SendDidOpenTextDocument(moduleAUri, moduleAContent);
+                    await server.SendDidOpenTextDocument(subpackageInitUri, string.Empty);
+                    await server.SendDidOpenTextDocument(subpackageModuleXUri, subpackageModuleXContent);
+                    await server.SendDidOpenTextDocument(subpackageModuleYUri, subpackageModuleYContent);
+                    await server.SendDidOpenTextDocument(subpackage2InitUri, string.Empty);
+                    await server.SendDidOpenTextDocument(subpackage2ModuleZUri, subpackage2ModuleZContent);
+                }
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysisX = await server.GetAnalysisAsync(subpackageModuleXUri);
@@ -4575,7 +4577,6 @@ a = x(2)
         /// we properly understand the imported value.
         /// </summary>
         [PermutationalTestMethod(2), Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/231")]
         public async Task ImportScopesOrder(int[] permutation) {
             var contents = new[] { @"
 import _io
@@ -4618,7 +4619,9 @@ import imp as impp
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis = await server.GetAnalysisAsync(uris[0]);
+
                 analysis.Should().HaveVariable("g").WithDescription("module1.g() -> _io")
                     .And.HaveVariable("f").WithDescription("module1.f() -> sys")
                     .And.HaveVariable("h").WithDescription("module1.h() -> sys")
