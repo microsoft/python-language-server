@@ -24,7 +24,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
 namespace AnalysisTests {
+    public enum PythonLanguageMajorVersion { None, EarliestV2, EarliestV3, LatestV2, LatestV3 }
+
     public class ServerTestMethodAttribute : TestMethodAttribute {
+        public bool LatestAvailable3X { get; set; }
         public bool LatestAvailable2X { get; set; }
         public int VersionArgumentIndex { get; set; } = -1;
 
@@ -49,13 +52,15 @@ namespace AnalysisTests {
             return testMethod.Invoke(arguments);
         }
 
-        private InterpreterConfiguration GetInterpreterConfiguration(object[] arguments) {
-            return VersionArgumentIndex >= 0 && VersionArgumentIndex < arguments.Length 
-                ? PythonVersions.GetRequiredCPythonConfiguration((PythonLanguageVersion)arguments[VersionArgumentIndex])
-                : LatestAvailable2X ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable;
-        }
+        private InterpreterConfiguration GetInterpreterConfiguration(object[] arguments) => VersionArgumentIndex > 0 && VersionArgumentIndex < arguments.Length 
+            ? PythonVersions.GetRequiredCPythonConfiguration((PythonLanguageVersion)arguments[VersionArgumentIndex])
+            : LatestAvailable2X 
+                ? PythonVersions.LatestAvailable2X 
+                : LatestAvailable3X 
+                    ? PythonVersions.LatestAvailable3X 
+                    : PythonVersions.LatestAvailable;
 
-        private static object[] ExtendArguments(object[] arguments) {
+        private object[] ExtendArguments(object[] arguments) {
             if (arguments == null || arguments.Length == 0) {
                 return new object[1];
             }
@@ -63,7 +68,27 @@ namespace AnalysisTests {
             var length = arguments.Length;
             var args = new object[length + 1];
             Array.Copy(arguments, 0, args, 1, length);
+
+            if (VersionArgumentIndex > 0 && VersionArgumentIndex < args.Length && args[VersionArgumentIndex] is PythonLanguageMajorVersion majorVersion) {
+                args[VersionArgumentIndex] = GetInstalledPythonLanguageVersion(majorVersion);
+            }
+
             return args;
+        }
+
+        private PythonLanguageVersion GetInstalledPythonLanguageVersion(PythonLanguageMajorVersion majorVersion) {
+            switch (majorVersion) {
+                case PythonLanguageMajorVersion.LatestV2:
+                    return PythonVersions.LatestAvailable2X.Version.ToLanguageVersion();
+                case PythonLanguageMajorVersion.LatestV3:
+                    return PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
+                case PythonLanguageMajorVersion.EarliestV2:
+                    return PythonVersions.EarliestAvailable2X.Version.ToLanguageVersion();
+                case PythonLanguageMajorVersion.EarliestV3:
+                    return PythonVersions.EarliestAvailable3X.Version.ToLanguageVersion();
+                default:
+                    throw new AssertFailedException($"Unexpected major python version {majorVersion}");
+            }
         }
     }
 }

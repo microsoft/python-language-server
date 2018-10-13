@@ -410,5 +410,25 @@ Class1().
             completion.Should().HaveItem(expectedLabel)
                 .Which.Should().HaveInsertText(expectedInsertText);
         }
+        
+        [DataRow(PythonLanguageMajorVersion.LatestV2, "foo(self):\r\n    return super(B, self).foo()")]
+        [DataRow(PythonLanguageMajorVersion.LatestV3, "foo(self):\r\n    return super().foo()")]
+        [ServerTestMethod(VersionArgumentIndex = 1), Priority(0)]
+        public async Task Completion_AddBracketsEnabled_MethodOverride(Server server, PythonLanguageVersion version, string expectedInsertText) {
+            var code = @"
+class A(object):
+    def foo(self):
+        pass
+
+class B(A):
+    def f";
+
+            await server.SendDidChangeConfiguration(new ServerSettings.PythonCompletionOptions { addBrackets = true });
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            var completion = await server.SendCompletion(uri, 6, 9);
+
+            completion.Should().HaveItem("foo")
+                .Which.Should().HaveInsertText(expectedInsertText);
+        }
     }
 }
