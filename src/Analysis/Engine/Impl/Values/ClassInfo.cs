@@ -318,7 +318,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             );
         }
 
-        public IEnumerable<IAnalysisSet> Bases => _bases;
+        public IEnumerable<IAnalysisSet> Bases => _bases.AsLockedEnumerable();
 
         public override IMro Mro => _mro;
 
@@ -331,9 +331,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         private void RecomputeBaseSpecialization() {
-            IAnalysisSet builtinClassSet = AnalysisSet.Empty;
+            var builtinClassSet = AnalysisSet.Empty;
             foreach (var classInfo in _mro) {
-                BuiltinClassInfo builtin = classInfo as BuiltinClassInfo;
+                var builtin = classInfo as BuiltinClassInfo;
                 if (builtin != null && builtin.TypeId != BuiltinTypeId.Object) {
                     var builtinType = _projectState.GetBuiltinType(builtin.PythonType);
 
