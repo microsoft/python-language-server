@@ -324,10 +324,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// skipped.
         /// </returns>
         public bool Push() {
-            if (_processing == null) {
-                _processing = new HashSet<AnalysisValue>();
-            }
-
+            _processing = _processing ?? new HashSet<AnalysisValue>();
             return _processing.Add(this);
         }
 

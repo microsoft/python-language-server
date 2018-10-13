@@ -156,10 +156,10 @@ f(x=42, y = 'abc')
         [TestMethod, Priority(0)]
         public async Task TestPackageImportStar() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var fob = await server.AddModuleWithContentAsync("fob", "fob\\__init__.py", "from oar import *");
-                var oar = await server.AddModuleWithContentAsync("fob.oar", "fob\\oar\\__init__.py", "from .baz import *");
-                var baz = await server.AddModuleWithContentAsync("fob.oar.baz", "fob\\oar\\baz.py", "import fob.oar.quox as quox\r\nfunc = quox.func");
-                var quox = await server.AddModuleWithContentAsync("fob.oar.quox", "fob\\oar\\quox.py", "def func(): return 42");
+                var fob = await server.AddModuleWithContentAsync("fob", Path.Combine("fob", "__init__.py"), "from oar import *");
+                var oar = await server.AddModuleWithContentAsync("fob.oar", Path.Combine("fob", "oar", "__init__.py"), "from .baz import *");
+                var baz = await server.AddModuleWithContentAsync("fob.oar.baz", Path.Combine("fob", "oar", "baz.py"), "import fob.oar.quox as quox\r\nfunc = quox.func");
+                var quox = await server.AddModuleWithContentAsync("fob.oar.quox", Path.Combine("fob", "oar", "quox.py"), "def func(): return 42");
 
                 var fobAnalysis = await fob.GetAnalysisAsync();
                 var oarAnalysis = await oar.GetAnalysisAsync();
@@ -4061,9 +4061,9 @@ abc = 42
 ";
 
             using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
-                var uriSrc1 = TestData.CreateTestSpecificFile(@"fob\__init__.py");
-                var uriSrc2 = TestData.GetTestSpecificUri(@"fob\x.py");
-                var uriSrc3 = TestData.GetTestSpecificUri(@"fob\y.py");
+                var uriSrc1 = TestData.CreateTestSpecificFile(Path.Combine("fob", "__init__.py"));
+                var uriSrc2 = TestData.GetTestSpecificUri(Path.Combine("fob", "x.py"));
+                var uriSrc3 = TestData.GetTestSpecificUri(Path.Combine("fob", "y.py"));
 
                 await server.SendDidOpenTextDocument(uriSrc1, src1);
                 await server.SendDidOpenTextDocument(uriSrc2, src2);
@@ -4085,9 +4085,9 @@ abc = 42
             var src3 = "abc = 42";
 
             using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
-                var uriSrc1 = await TestData.CreateTestSpecificFileAsync(@"fob\__init__.py", src1);
-                var uriSrc2 = await TestData.CreateTestSpecificFileAsync(@"fob\x.py", src2);
-                var uriSrc3 = await TestData.CreateTestSpecificFileAsync(@"fob\y.py", src3);
+                var uriSrc1 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "__init__.py"), src1);
+                var uriSrc2 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "x.py"), src2);
+                var uriSrc3 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), src3);
 
                 await server.SendDidOpenTextDocument(uriSrc1, src1);
                 await server.SendDidOpenTextDocument(uriSrc2, src2);
@@ -4118,15 +4118,15 @@ abc = 42
             var subpackage2ModuleZContent = "def eggs():\n  pass\n";
 
             using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
-                var initUri = await TestData.CreateTestSpecificFileAsync(@"package\__init__.py", initContent);
-                var moduleAUri = await TestData.CreateTestSpecificFileAsync(@"package\moduleA.py", moduleAContent);
+                var initUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "__init__.py"), initContent);
+                var moduleAUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "moduleA.py"), moduleAContent);
 
-                var subpackageInitUri = await TestData.CreateTestSpecificFileAsync(@"package\subpackage1\__init__.py", string.Empty);
-                var subpackageModuleXUri = await TestData.CreateTestSpecificFileAsync(@"package\subpackage1\moduleX.py", subpackageModuleXContent);
-                var subpackageModuleYUri = await TestData.CreateTestSpecificFileAsync(@"package\subpackage1\moduleY.py", subpackageModuleYContent);
+                var subpackageInitUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage1", "__init__.py"), string.Empty);
+                var subpackageModuleXUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage1", "moduleX.py"), subpackageModuleXContent);
+                var subpackageModuleYUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage1", "moduleY.py"), subpackageModuleYContent);
 
-                var subpackage2InitUri = await TestData.CreateTestSpecificFileAsync(@"package\subpackage2\__init__.py", string.Empty);
-                var subpackage2ModuleZUri = await TestData.CreateTestSpecificFileAsync(@"package\subpackage2\moduleZ.py", subpackage2ModuleZContent);
+                var subpackage2InitUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage2", "__init__.py"), string.Empty);
+                var subpackage2ModuleZUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage2", "moduleZ.py"), subpackage2ModuleZContent);
 
                 await server.SendDidOpenTextDocument(initUri, initContent);
                 await server.SendDidOpenTextDocument(moduleAUri, moduleAContent);
@@ -4151,8 +4151,8 @@ abc = 42
             var src2 = "def y(): pass";
 
             using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
-                var uriSrc1 = await TestData.CreateTestSpecificFileAsync(@"fob\__init__.py", src1);
-                var uriSrc2 = await TestData.CreateTestSpecificFileAsync(@"fob\y.py", src2);
+                var uriSrc1 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "__init__.py"), src1);
+                var uriSrc2 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), src2);
 
                 await server.SendDidOpenTextDocument(uriSrc1, src1);
                 await server.SendDidOpenTextDocument(uriSrc2, src2);
@@ -6051,8 +6051,8 @@ e = Employee('Guido')
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable)) {
                 // Hack to avoid creation of the real files
                 // Project entries are explicitly added to the server before DidOpenTextDocument is called
-                var path1 = TestData.GetTestSpecificPath(@"p\__init__.py");
-                var path2 = TestData.GetTestSpecificPath(@"p\m.py");
+                var path1 = TestData.GetTestSpecificPath(Path.Combine("p", "__init__.py"));
+                var path2 = TestData.GetTestSpecificPath(Path.Combine("p", "m.py"));
                 var uri1 = new Uri(path1);
                 var uri2 = new Uri(path2);
                 server.ProjectFiles.GetOrAddEntry(uri1, server.Analyzer.AddModule("p", path1, uri1));
