@@ -20,6 +20,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -86,7 +87,7 @@ namespace AnalysisTests {
         private static Task<Server> CreateServerAsync(InterpreterConfiguration configuration = null, string searchPath = null)
             => new Server().InitializeAsync(
                 configuration ?? PythonVersions.LatestAvailable,
-                searchPaths: new [] { searchPath ?? TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
+                searchPaths: new[] { searchPath ?? TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
 
         private static AstPythonInterpreterFactory CreateInterpreterFactory() => CreateInterpreterFactory(PythonVersions.LatestAvailable);
 
@@ -357,7 +358,7 @@ class BankAccount(object):
         public async Task AstTypeStubPaths_NoStubs() {
             using (var server = await CreateServerAsync()) {
                 var analysis = await GetStubBasedAnalysis(
-                    server, 
+                    server,
                     "import Package.Module\n\nc = Package.Module.Class()",
                     new AnalysisLimits { UseTypeStubPackages = false },
                     searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
@@ -398,7 +399,7 @@ class BankAccount(object):
         public async Task AstTypeStubPaths_MergeStubsPath() {
             using (var server = await CreateServerAsync()) {
                 var analysis = await GetStubBasedAnalysis(
-                    server, 
+                    server,
                     "import Package.Module\n\nc = Package.Module.Class()",
                     null,
                     searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
@@ -417,7 +418,7 @@ class BankAccount(object):
         public async Task AstTypeStubPaths_ExclusiveStubs() {
             using (var server = await CreateServerAsync()) {
                 var analysis = await GetStubBasedAnalysis(
-                    server, 
+                    server,
                     "import Package.Module\n\nc = Package.Module.Class()",
                     new AnalysisLimits {
                         UseTypeStubPackages = true,
@@ -810,7 +811,17 @@ class BankAccount(object):
                 DatabasePath = TestData.GetAstAnalysisCachePath(configuration.Version, true),
                 UseExistingCache = false
             });
-            var modules = ModulePath.GetModulesInLib(configuration.PrefixPath).ToList();
+
+            IEnumerable<ModulePath> modules;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                modules = ModulePath.GetModulesInLib(configuration.PrefixPath).ToList();
+            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                var libPath = $"/Library/Frameworks/Python.framework/Versions/{configuration.Version}/lib/python{configuration.Version}";
+                modules = ModulePath.GetModulesInLib(configuration.PrefixPath, libPath).ToList();
+            } else {
+                var libPath = $"/usr/lib/python{configuration.Version}";
+                modules = ModulePath.GetModulesInLib(configuration.PrefixPath, libPath).ToList();
+            }
 
             var skip = new HashSet<string>(skipModules);
             skip.UnionWith(new[] {
