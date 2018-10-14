@@ -831,7 +831,7 @@ namespace Microsoft.PythonTools.Analysis {
             var path = PathUtils.TrimEndSeparator(PathUtils.GetParent(sourceFile));
             bool lastWasStubs = false;
 
-            while (PathEqualityComparer.Instance.StartsWith(path, basePath)) {
+            while (PathEqualityComparer.Instance.StartsWith(path, basePath, allowFullMatch: false)) {
                 if (!isPackage(path)) {
                     isMissing = true;
                     return false;
