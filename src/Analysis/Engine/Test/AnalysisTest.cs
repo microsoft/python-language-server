@@ -4057,30 +4057,28 @@ t.x, t. =
 
         [TestMethod, Priority(0)]
         public async Task Package() {
-            var src1 = "";
-
-            var src2 = @"
+            var srcX = @"
 from fob.y import abc
 import fob.y as y
 ";
 
-            var src3 = @"
+            var srcY = @"
 abc = 42
 ";
 
             using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
-                var uriSrc1 = TestData.CreateTestSpecificFile(Path.Combine("fob", "__init__.py"));
-                var uriSrc2 = TestData.GetTestSpecificUri(Path.Combine("fob", "x.py"));
-                var uriSrc3 = TestData.GetTestSpecificUri(Path.Combine("fob", "y.py"));
+                var initX = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "__init__.py"), string.Empty);
+                var modX = TestData.GetTestSpecificUri(Path.Combine("fob", "x.py"));
+                var modY = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), srcY);
                 
                 using (FileLoading()) {
-                    await server.SendDidOpenTextDocument(uriSrc1, src1);
-                    await server.SendDidOpenTextDocument(uriSrc2, src2);
-                    await server.SendDidOpenTextDocument(uriSrc3, src3);
+                    await server.LoadFileAsync(initX);
+                    await server.SendDidOpenTextDocument(modX, srcX);
+                    await server.LoadFileAsync(modY);
                 }
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
-                var analysis = await server.GetAnalysisAsync(uriSrc2);
+                var analysis = await server.GetAnalysisAsync(modX);
 
                 analysis.Should()
                     .HaveVariable("y").WithDescription("Python module fob.y")

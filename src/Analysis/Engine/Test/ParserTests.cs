@@ -627,10 +627,11 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public void InvalidUnicodeLiteral() {
+            var position = 42 + Environment.NewLine.Length;
             foreach (var version in V26AndUp) {
                 ParseErrors("InvalidUnicodeLiteral26Up.py",
                     version,
-                    new ErrorInfo("'unicodeescape' codec can't decode bytes in position 44: truncated \\uXXXX escape", 
+                    new ErrorInfo($"'unicodeescape' codec can't decode bytes in position {position}: truncated \\uXXXX escape", 
                         39 + Environment.NewLine.Length, 2, 1, 47 + Environment.NewLine.Length, 2, 9)
                 );
             }
