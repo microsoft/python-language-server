@@ -607,7 +607,7 @@ namespace Microsoft.PythonTools.Analysis {
                 PathEqualityComparer.IsValidPath(remainder) &&
                 isPackage(PathUtils.EnsureEndSeparator(remainder)) &&
                 (string.IsNullOrEmpty(topLevelPath) ||
-                 PathEqualityComparer.Instance.StartsWith(remainder, topLevelPath, allowFullMatch: false))
+                 PathEqualityComparer.Instance.StartsWith(remainder, topLevelPath))
             ) {
                 fullName = PathUtils.GetFileName(remainder) + "." + fullName;
                 remainder = Path.GetDirectoryName(remainder);
@@ -831,7 +831,7 @@ namespace Microsoft.PythonTools.Analysis {
             var path = PathUtils.TrimEndSeparator(PathUtils.GetParent(sourceFile));
             bool lastWasStubs = false;
 
-            while (PathEqualityComparer.Instance.StartsWith(path, basePath, allowFullMatch: false)) {
+            while (PathEqualityComparer.Instance.StartsWith(path, basePath)) {
                 if (!isPackage(path)) {
                     isMissing = true;
                     return false;
