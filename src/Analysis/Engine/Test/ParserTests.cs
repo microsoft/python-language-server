@@ -630,7 +630,8 @@ namespace AnalysisTests {
             foreach (var version in V26AndUp) {
                 ParseErrors("InvalidUnicodeLiteral26Up.py",
                     version,
-                    new ErrorInfo("'unicodeescape' codec can't decode bytes in position 44: truncated \\uXXXX escape", 41, 2, 1, 47 + Environment.NewLine.Length, 2, 9)
+                    new ErrorInfo("'unicodeescape' codec can't decode bytes in position 44: truncated \\uXXXX escape", 
+                        39 + Environment.NewLine.Length, 2, 1, 47 + Environment.NewLine.Length, 2, 9)
                 );
             }
 
