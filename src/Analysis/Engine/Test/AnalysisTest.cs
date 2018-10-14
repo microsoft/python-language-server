@@ -4072,10 +4072,12 @@ abc = 42
                 var uriSrc1 = TestData.CreateTestSpecificFile(Path.Combine("fob", "__init__.py"));
                 var uriSrc2 = TestData.GetTestSpecificUri(Path.Combine("fob", "x.py"));
                 var uriSrc3 = TestData.GetTestSpecificUri(Path.Combine("fob", "y.py"));
-
-                await server.SendDidOpenTextDocument(uriSrc1, src1);
-                await server.SendDidOpenTextDocument(uriSrc2, src2);
-                await server.SendDidOpenTextDocument(uriSrc3, src3);
+                
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uriSrc1, src1);
+                    await server.SendDidOpenTextDocument(uriSrc2, src2);
+                    await server.SendDidOpenTextDocument(uriSrc3, src3);
+                }
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis = await server.GetAnalysisAsync(uriSrc2);
@@ -4097,9 +4099,11 @@ abc = 42
                 var uriSrc2 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "x.py"), src2);
                 var uriSrc3 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), src3);
 
-                await server.SendDidOpenTextDocument(uriSrc1, src1);
-                await server.SendDidOpenTextDocument(uriSrc2, src2);
-                await server.SendDidOpenTextDocument(uriSrc3, src3);
+                using (FileLoading()) {
+                    await server.SendDidOpenTextDocument(uriSrc1, src1);
+                    await server.SendDidOpenTextDocument(uriSrc2, src2);
+                    await server.SendDidOpenTextDocument(uriSrc3, src3);
+                }
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysisPackage = await server.GetAnalysisAsync(uriSrc1);

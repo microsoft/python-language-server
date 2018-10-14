@@ -59,21 +59,21 @@ namespace AnalysisTests {
         [TestMethod, Priority(0)]
         public void IsPythonFile() {
             foreach (var test in new[] {
-                new { SourceFile = @"spam\abc.py", ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = true },
-                new { SourceFile = @"spam\abc.pyc", ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
-                new { SourceFile = @"spam\abc.pyo", ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
-                new { SourceFile = @"spam\abc.pyd", ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
-                new { SourceFile = @"spam\abc.cp35-win_amd64.pyd", ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
-                new { SourceFile = @"spam\abc_d.pyd", ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
-                new { SourceFile = @"spam\abc_d.cp35-win_amd64.pyd", ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
-                new { SourceFile = @"spam\abc-123.py", ExpectedStrict = false, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = true },
-                new { SourceFile = @"spam\abc-123.pyc", ExpectedStrict = false, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
-                new { SourceFile = @"spam\abc-123.pyo", ExpectedStrict = false, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
-                new { SourceFile = @"spam\abc-123.pyd", ExpectedStrict = false, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
-                new { SourceFile = @"spam\abc.123.py", ExpectedStrict = false, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = true },
-                new { SourceFile = @"spam\abc.123.pyc", ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
-                new { SourceFile = @"spam\abc.123.pyo", ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
-                new { SourceFile = @"spam\abc.123.pyd", ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
+                new { SourceFile =Path.Combine("spam", "abc.py"), ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = true },
+                new { SourceFile =Path.Combine("spam", "abc.pyc"), ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
+                new { SourceFile =Path.Combine("spam", "abc.pyo"), ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
+                new { SourceFile =Path.Combine("spam", "abc.pyd"), ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
+                new { SourceFile =Path.Combine("spam", "abc.cp35-win_amd64.pyd"), ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
+                new { SourceFile =Path.Combine("spam", "abc_d.pyd"), ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
+                new { SourceFile =Path.Combine("spam", "abc_d.cp35-win_amd64.pyd"), ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
+                new { SourceFile =Path.Combine("spam", "abc-123.py"), ExpectedStrict = false, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = true },
+                new { SourceFile =Path.Combine("spam", "abc-123.pyc"), ExpectedStrict = false, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
+                new { SourceFile =Path.Combine("spam", "abc-123.pyo"), ExpectedStrict = false, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
+                new { SourceFile =Path.Combine("spam", "abc-123.pyd"), ExpectedStrict = false, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
+                new { SourceFile =Path.Combine("spam", "abc.123.py"), ExpectedStrict = false, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = true },
+                new { SourceFile =Path.Combine("spam", "abc.123.pyc"), ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
+                new { SourceFile =Path.Combine("spam", "abc.123.pyo"), ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = true, ExpectedWithoutCache = false },
+                new { SourceFile =Path.Combine("spam", "abc.123.pyd"), ExpectedStrict = true, ExpectedNoStrict = true, ExpectedWithoutCompiled = false, ExpectedWithoutCache = true },
             }) {
                 Assert.AreEqual(test.ExpectedStrict, ModulePath.IsPythonFile(test.SourceFile, true, true, true), test.SourceFile);
                 Assert.AreEqual(test.ExpectedNoStrict, ModulePath.IsPythonFile(test.SourceFile, false, true, true), test.SourceFile);
@@ -88,19 +88,19 @@ namespace AnalysisTests {
         [TestMethod, Priority(0)]
         public void IsDebug() {
             foreach (var test in new[] {
-                new { SourceFile = @"spam\abc.py", Expected = false },
-                new { SourceFile = @"spam\abc.pyd", Expected = false },
-                new { SourceFile = @"spam\abc.cp35-win32.pyd", Expected = false },
-                new { SourceFile = @"spam\abc.cpython-35d.pyd", Expected = true },  // not a real filename, but should match the tag still
-                new { SourceFile = @"spam\abc_d.pyd", Expected = true },
-                new { SourceFile = @"spam\abc_d.cp3-win_amd64.pyd", Expected = true },
-                new { SourceFile = @"spam\abc.cpython-35.so", Expected = false },
-                new { SourceFile = @"spam\abc.cpython-35u.so", Expected = false },
-                new { SourceFile = @"spam\abc.pypy-35m.so", Expected = false },
-                new { SourceFile = @"spam\abc.cpython-35d.so", Expected = true },
-                new { SourceFile = @"spam\abc.cpython-35dmu.so", Expected = true },
-                new { SourceFile = @"spam\abc.jython-35udm.dylib", Expected = true },
-                new { SourceFile = @"spam\abc.cpython-35umd.dylib", Expected = true },
+                new { SourceFile =Path.Combine("spam", "abc.py"), Expected = false },
+                new { SourceFile =Path.Combine("spam", "abc.pyd"), Expected = false },
+                new { SourceFile =Path.Combine("spam", "abc.cp35-win32.pyd"), Expected = false },
+                new { SourceFile =Path.Combine("spam", "abc.cpython-35d.pyd"), Expected = true },  // not a real filename, but should match the tag still
+                new { SourceFile =Path.Combine("spam", "abc_d.pyd"), Expected = true },
+                new { SourceFile =Path.Combine("spam", "abc_d.cp3-win_amd64.pyd"), Expected = true },
+                new { SourceFile =Path.Combine("spam", "abc.cpython-35.so"), Expected = false },
+                new { SourceFile =Path.Combine("spam", "abc.cpython-35u.so"), Expected = false },
+                new { SourceFile =Path.Combine("spam", "abc.pypy-35m.so"), Expected = false },
+                new { SourceFile =Path.Combine("spam", "abc.cpython-35d.so"), Expected = true },
+                new { SourceFile =Path.Combine("spam", "abc.cpython-35dmu.so"), Expected = true },
+                new { SourceFile =Path.Combine("spam", "abc.jython-35udm.dylib"), Expected = true },
+                new { SourceFile =Path.Combine("spam", "abc.cpython-35umd.dylib"), Expected = true },
             }) {
                 Assert.AreEqual(test.Expected, new ModulePath("abc", test.SourceFile, null).IsDebug, test.SourceFile);
             }
@@ -111,13 +111,13 @@ namespace AnalysisTests {
         /// </summary>
         [TestMethod, Priority(0)]
         public void ModulePathFromFullPath() {
-            var basePath = @"C:\Not\A\Real\Path\";
+            var basePath = @"/Not/A/Real/Path/";
 
             // Replace the usual File.Exists(p + '__init__.py') check so we can
             // test without real files.
             var packagePaths = new HashSet<string>(PathEqualityComparer.Instance) {
-                basePath + @"A\",
-                basePath + @"A\B\"
+                basePath + @"A/",
+                basePath + @"A/B/"
             };
 
             Func<string, bool> isPackage = p => {
