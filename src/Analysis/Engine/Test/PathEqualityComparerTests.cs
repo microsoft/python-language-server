@@ -32,28 +32,32 @@ namespace AnalysisTests {
                 "C:\\NORMalized\\\\path",
                 "C:/normalized/path\\",
                 "C:/normalized/path/",
+                "C:/normalized/path/p1/p2/p3/../../..",
+                "C:/normalized/path/p1/../p3/../",
+                "C:/normalized/path/",
                 "C:/normalized/here////..////path/"
             }) {
-                Assert.AreEqual("C:\\NORMALIZED\\PATH", cmp.GetCompareKeyUncached(path), path);
+                Assert.AreEqual(@"C:\NORMALIZED\PATH", cmp.GetCompareKeyUncached(path), path);
             }
             foreach (var path in new[] {
-                "\\\\computer/normalized//path/",
-                "//computer/normalized/.\\path",
-                "\\\\computer\\NORMalized\\\\path",
-                "\\\\computer/normalized/path\\",
-                "\\/computer/normalized/path/",
-                "\\\\computer/normalized/here////..////path/"
+                @"\\computer/normalized//path/",
+                @"//computer/normalized/.\\path",
+                @"\\computer\NORMalized\\path",
+                @"\\computer/normalized/path\\",
+                @"\/computer/normalized/path/",
+                @"\\computer/normalized/here////..////path/"
             }) {
-                Assert.AreEqual("\\\\COMPUTER\\NORMALIZED\\PATH", cmp.GetCompareKeyUncached(path), path);
+                Assert.AreEqual(@"\\COMPUTER\NORMALIZED\PATH", cmp.GetCompareKeyUncached(path), path);
             }
 
-            Assert.AreEqual("C:\\..\\..\\PATH", cmp.GetCompareKeyUncached("C:/.././.././path/"));
-            Assert.AreEqual("\\\\COMPUTER\\SHARE\\..\\..\\PATH", cmp.GetCompareKeyUncached("//computer/share/.././.././path/"));
+            Assert.AreEqual(@"C:\PATH", cmp.GetCompareKeyUncached(@"C:\..\..\PATH/"));
+            Assert.AreEqual(@"C:\PATH", cmp.GetCompareKeyUncached("C:/.././.././path/"));
+            Assert.AreEqual(@"\\COMPUTER\SHARE\PATH", cmp.GetCompareKeyUncached("//computer/share/.././.././path/"));
         }
 
         [TestMethod]
         public void GetPathCompareKey_OSX() {
-             var cmp = new PathEqualityComparer(isCaseSensitivePath: false, directorySeparator: '/');
+            var cmp = new PathEqualityComparer(isCaseSensitivePath: false, directorySeparator: '/');
             foreach (var path in new[] {
                 "/normalized//path/",
                 "/normalized/./path",
@@ -78,7 +82,7 @@ namespace AnalysisTests {
 
         [TestMethod]
         public void GetPathCompareKey_Linux() {
-             var cmp = new PathEqualityComparer(isCaseSensitivePath: true, directorySeparator: '/');
+            var cmp = new PathEqualityComparer(isCaseSensitivePath: true, directorySeparator: '/');
             foreach (var path in new[] {
                 "/normalized//path/",
                 "/normalized/./path",
@@ -103,24 +107,70 @@ namespace AnalysisTests {
         public void PathEqualityStartsWith_Windows() {
             var cmp = new PathEqualityComparer(isCaseSensitivePath: false, directorySeparator: '\\', altDirectorySeparator: '/');
             foreach (var path in new[] {
-                new { p="C:/root/a/b", isFull=false },
-                new { p ="C:\\ROOT\\", isFull=true },
-                new { p="C:\\Root", isFull=true },
-                new { p="C:\\notroot\\..\\root", isFull=true },
-                new { p="C:\\.\\root\\", isFull = true }
+                new { p ="C:/root/a/b", isFull = false },
+                new { p = @"C:\ROOT\", isFull = true },
+                new { p = @"C:\Root", isFull = true },
+                new { p = @"C:\notroot\..\root", isFull=true },
+                new { p = @"C:\.\root\", isFull = true }
             }) {
-                Assert.IsTrue(cmp.StartsWith(path.p, "C:\\Root"));
+                Assert.IsTrue(cmp.StartsWith(path.p, @"C:\Root"), path.p);
                 if (path.isFull) {
-                    Assert.IsFalse(cmp.StartsWith(path.p, "C:\\Root", allowFullMatch: false));
+                    Assert.IsFalse(cmp.StartsWith(path.p, @"C:\Root", allowFullMatch: false));
                 } else {
-                    Assert.IsTrue(cmp.StartsWith(path.p, "C:\\Root", allowFullMatch: false));
+                    Assert.IsTrue(cmp.StartsWith(path.p, @"C:\Root", allowFullMatch: false));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void PathEqualityStartsWith_OSX() {
+            var cmp = new PathEqualityComparer(isCaseSensitivePath: false, directorySeparator: '/');
+            foreach (var path in new[] {
+                new { p = "/root/a/b", isFull = false },
+                new { p ="/ROOT/", isFull = true },
+                new { p = "/Root", isFull = true },
+                new { p = "/notroot/../root", isFull = true },
+                new { p = "/./root/", isFull = true }
+            }) {
+                Assert.IsTrue(cmp.StartsWith(path.p, "/Root"), path.p);
+                if (path.isFull) {
+                    Assert.IsFalse(cmp.StartsWith(path.p, "/Root", allowFullMatch: false));
+                } else {
+                    Assert.IsTrue(cmp.StartsWith(path.p, "/Root", allowFullMatch: false));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void PathEqualityStartsWith_Linux() {
+            var cmp = new PathEqualityComparer(isCaseSensitivePath: true, directorySeparator: '/');
+            foreach (var path in new[] {
+                new { p = "/root/a/b", isFull = false },
+                new { p = "/notroot/../root", isFull = true },
+                new { p = "/./root/", isFull = true }
+            }) {
+                Assert.IsTrue(cmp.StartsWith(path.p, "/root"), path.p);
+                if (path.isFull) {
+                    Assert.IsFalse(cmp.StartsWith(path.p, "/root", allowFullMatch: false));
+                } else {
+                    Assert.IsTrue(cmp.StartsWith(path.p, "/root", allowFullMatch: false));
+                }
+            }
+            foreach (var path in new[] {
+                new { p ="/ROOT/", isFull = true },
+            }) {
+                Assert.IsFalse(cmp.StartsWith(path.p, "/root"), path.p);
+                if (path.isFull) {
+                    Assert.IsFalse(cmp.StartsWith(path.p, "/Root", allowFullMatch: false));
+                } else {
+                    Assert.IsTrue(cmp.StartsWith(path.p, "/ROOT", allowFullMatch: false));
                 }
             }
         }
 
         [TestMethod]
         public void PathEqualityCache_Windows() {
-             var cmp = new PathEqualityComparer(isCaseSensitivePath: false, directorySeparator: '\\', altDirectorySeparator: '/');
+            var cmp = new PathEqualityComparer(isCaseSensitivePath: false, directorySeparator: '\\', altDirectorySeparator: '/');
 
             var path1 = "C:\\normalized\\path\\";
             var path2 = "c:/normalized/here/../path";

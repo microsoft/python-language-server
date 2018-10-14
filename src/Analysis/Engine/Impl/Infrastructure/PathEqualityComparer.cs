@@ -47,6 +47,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         private readonly char _directorySeparator;
         private readonly char _altDirectorySeparator;
         private readonly char[] _directorySeparators;
+        private readonly StringComparer _stringComparer;
 
         internal PathEqualityComparer(bool isCaseSensitivePath, char directorySeparator, char altDirectorySeparator = '\0') {
             _isCaseSensitivePath = isCaseSensitivePath;
@@ -58,6 +59,8 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             } else {
                 _directorySeparators = new[] { directorySeparator };
             }
+
+            _stringComparer = _isCaseSensitivePath ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
         }
 
         internal string GetCompareKeyUncached(string path) {
@@ -68,50 +71,51 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             var root = string.Empty;
             var rootParts = 0;
             var parts = new List<string>();
-            int next_i = int.MaxValue;
-            for (var i = 0; next_i > 0 && i < path.Length; i = next_i) {
+
+            var next_i = path.IndexOfAny(_directorySeparators) + 1;
+            // Check roots
+            if (next_i > 2 && next_i < path.Length - 1 && path[next_i - 2] == ':' && path[next_i] == '/') {
+                // smb://computer/share
+                next_i++;
+                root = path.Substring(0, next_i);
+            }
+            if (_directorySeparator == '\\') {
+                // Windows
+                if (next_i == 3 && char.IsLetter(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/')) {
+                    // Windows root like C:\
+                    root = path.Substring(0, next_i).Replace('/', '\\');
+                }
+                if (next_i == 1 && (path[0] == '\\' || path[0] == '/') && (path[1] == '\\' || path[1] == '/')) {
+                    // Windows UNC
+                    next_i = 2;
+                    root = @"\\";
+                    // Segment 1: 'computer'
+                    // Segment 2: 'share'
+                    rootParts = 2;
+                }
+            }
+            if (_directorySeparator == '/' && next_i == 1 && path[0] == '/') {
+                root = "/";
+            }
+
+            for (var i = next_i; i < path.Length; i = next_i) {
                 string segment;
                 next_i = path.IndexOfAny(_directorySeparators, i) + 1;
 
                 if (next_i <= 0) {
                     segment = path.Substring(i);
-                } else if (i == 0 && next_i > 2 && next_i < path.Length - 1 && path[next_i - 2] == ':' && path[next_i] == '/') {
-                    // smb://computer/share
-                    next_i++;
-                    segment = path.Substring(0, next_i);
+                    next_i = int.MaxValue;
                 } else {
                     segment = path.Substring(i, next_i - i - 1);
                 }
 
-                if (segment.Length == 0) {
-                    if (i == 0 && next_i == 1 && _directorySeparator == '\\') {
-                        // Windows UNC
-                        // There are two slashes, so our first four segments will
-                        // be protected:
-                        //
-                        //   \\computer\share
-                        //
-                        // Segment 1: '' before first \
-                        // Segment 2: '' between first and second \
-                        // Segment 3: 'computer'
-                        // Segment 4: 'share'
-                        parts.Add(string.Empty);
-                        parts.Add(string.Empty);    // the second one will be skipped
-                        rootParts = 4;
-                    }
-                } else if (segment == ".") {
+                if (segment == ".") {
                     // Do nothing
                 } else if (segment == "..") {
                     if (parts.Count > rootParts) {
                         parts.RemoveAt(parts.Count - 1);
-                    } else {
-                        parts.Add(segment);
-                        rootParts += 1;
                     }
-                } else {
-                    if (parts.Count == 0 && segment.Last() == ':') {
-                        rootParts = 1;
-                    }
+                } else if (segment.Length > 0) {
                     segment = segment.TrimEnd('.', ' ', '\t');
                     if (!_isCaseSensitivePath) {
                         segment = segment.ToUpperInvariant();
@@ -187,17 +191,18 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             prefix = GetCompareKey(prefix);
             x = GetCompareKey(x);
 
-            if (StringComparer.Ordinal.Equals(prefix, x)) {
+            if (_stringComparer.Equals(prefix, x)) {
                 return allowFullMatch;
             }
 
-            return x.StartsWithOrdinal(prefix + Path.DirectorySeparatorChar);
+            return x.StartsWith(prefix + _directorySeparator, 
+                _isCaseSensitivePath ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
         }
 
         public bool Equals(string x, string y)
-            => StringComparer.Ordinal.Equals(GetCompareKey(x), GetCompareKey(y));
+            => _stringComparer.Equals(GetCompareKey(x), GetCompareKey(y));
 
         public int GetHashCode(string obj)
-            => StringComparer.Ordinal.GetHashCode(GetCompareKey(obj));
+            => _stringComparer.GetHashCode(GetCompareKey(obj));
     }
 }
