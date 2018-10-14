@@ -86,7 +86,7 @@ namespace AnalysisTests {
         private static Task<Server> CreateServerAsync(InterpreterConfiguration configuration = null, string searchPath = null)
             => new Server().InitializeAsync(
                 configuration ?? PythonVersions.LatestAvailable,
-                searchPaths: new [] { searchPath ?? TestData.GetPath(@"TestData\AstAnalysis") });
+                searchPaths: new [] { searchPath ?? TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
 
         private static AstPythonInterpreterFactory CreateInterpreterFactory() => CreateInterpreterFactory(PythonVersions.LatestAvailable);
 

@@ -448,13 +448,13 @@ class B(A):
 
                 if (!(this is LanguageServerTests_V2)) {
                     await AssertCompletion(s, u,
-                        new[] { "foo(self, a, b=None, *args, **kwargs):\r\n    return super().foo(a, b=b, *args, **kwargs)" },
-                        new[] { "foo(self, a, b = None, *args, **kwargs):\r\n    return super().foo(a, b = b, *args, **kwargs)" },
+                        new[] { $"foo(self, a, b=None, *args, **kwargs):{Environment.NewLine}    return super().foo(a, b=b, *args, **kwargs)" },
+                        new[] { $"foo(self, a, b = None, *args, **kwargs):{Environment.NewLine}    return super().foo(a, b = b, *args, **kwargs)" },
                         new SourceLocation(7, 10));
                 } else {
                     await AssertCompletion(s, u,
-                        new[] { "foo(self, a, b=None, *args, **kwargs):\r\n    return super(B, self).foo(a, b=b, *args, **kwargs)" },
-                        new[] { "foo(self, a, b = None, *args, **kwargs):\r\n    return super(B, self).foo(a, b = b, *args, **kwargs)" },
+                        new[] { $"foo(self, a, b=None, *args, **kwargs):{Environment.NewLine}    return super(B, self).foo(a, b=b, *args, **kwargs)" },
+                        new[] { $"foo(self, a, b = None, *args, **kwargs):{Environment.NewLine}    return super(B, self).foo(a, b = b, *args, **kwargs)" },
                         new SourceLocation(7, 10));
                 }
             }
@@ -799,7 +799,7 @@ def f(a = 2, b): pass
                 await s.DidChangeTextDocument(new DidChangeTextDocumentParams {
                     contentChanges = new[] {
                             new TextDocumentContentChangedEvent {
-                                text = "def f():\r\n        pass\r\n\tpass"
+                                text = $"def f():{Environment.NewLine}        pass{Environment.NewLine}\tpass"
                             }
                         },
                     textDocument = new VersionedTextDocumentIdentifier { uri = mod, version = 2 }

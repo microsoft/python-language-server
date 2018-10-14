@@ -1522,7 +1522,7 @@ real = None");
                     // reference per location, so we disambiguate by ensuring mod2's
                     // line numbers are larger than mod1's
                     mod2 = await s.OpenDocumentAndGetUriAsync("mod2.py", @"import mod1
-" + "\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n" + @"
+" + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}" + @"
 class D:
     real = None
     a = 1

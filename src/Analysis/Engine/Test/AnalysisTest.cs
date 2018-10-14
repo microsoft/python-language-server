@@ -158,7 +158,7 @@ f(x=42, y = 'abc')
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var fob = await server.AddModuleWithContentAsync("fob", Path.Combine("fob", "__init__.py"), "from oar import *");
                 var oar = await server.AddModuleWithContentAsync("fob.oar", Path.Combine("fob", "oar", "__init__.py"), "from .baz import *");
-                var baz = await server.AddModuleWithContentAsync("fob.oar.baz", Path.Combine("fob", "oar", "baz.py"), "import fob.oar.quox as quox\r\nfunc = quox.func");
+                var baz = await server.AddModuleWithContentAsync("fob.oar.baz", Path.Combine("fob", "oar", "baz.py"), $"import fob.oar.quox as quox{Environment.NewLine}func = quox.func");
                 var quox = await server.AddModuleWithContentAsync("fob.oar.quox", Path.Combine("fob", "oar", "quox.py"), "def func(): return 42");
 
                 var fobAnalysis = await fob.GetAnalysisAsync();
@@ -662,7 +662,7 @@ x = a()
         public async Task ImportStar() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
-from nt import *
+from os import *
             ");
                 analysis.Should().HaveVariable("abort");
 
@@ -677,10 +677,10 @@ from nt import *
         public async Task ImportTrailingComma() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
-import nt,
+import sys,
             ");
-                analysis.Should().HavePythonModuleVariable("nt")
-                    .Which.Should().HaveMembers("abort");
+                analysis.Should().HavePythonModuleVariable("sys")
+                    .Which.Should().HaveMembers("path");
             }
         }
 
@@ -3460,7 +3460,7 @@ class S0(object): pass
 it = g(S0())
 val = next(it)
 
-" + string.Join("\r\n", Enumerable.Range(1, 100).Select(i => string.Format("class S{0}(object): pass\r\nf(S{0}())", i)));
+" + string.Join(Environment.NewLine, Enumerable.Range(1, 100).Select(i => string.Format("class S{0}(object): pass{1}f(S{0}())", i, Environment.NewLine)));
             Console.WriteLine(code);
 
             // Ensure the returned generators are distinct
@@ -4763,7 +4763,7 @@ print(z)";
 
                 // http://pytools.codeplex.com/workitem/636
                 // this just shouldn't crash, we should handle the malformed code, not much to inspect afterwards...
-                await server.ChangeDefaultDocumentAndGetAnalysisAsync("if isinstance(x, list):\r\n");
+                await server.ChangeDefaultDocumentAndGetAnalysisAsync($"if isinstance(x, list):{Environment.NewLine}");
                 await server.ChangeDefaultDocumentAndGetAnalysisAsync("if isinstance(x, list):");
             }
         }
@@ -4990,7 +4990,7 @@ rf = return_func_class().return_func
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
 
-                analysis.Should().HaveClass("fob").WithVariable("f").WithDescription("module.fob.f(self: fob)\r\ndeclared in fob")
+                analysis.Should().HaveClass("fob").WithVariable("f").WithDescription($"module.fob.f(self: fob){Environment.NewLine}declared in fob")
                     .And.HaveVariable("a").OfType(BuiltinTypeId.Float).WithDescription("float")
                     .And.HaveVariable("b").OfType(BuiltinTypeId.Long).WithDescription("long")
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Str).WithDescription("str")

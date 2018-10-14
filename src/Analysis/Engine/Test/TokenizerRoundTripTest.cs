@@ -99,13 +99,13 @@ namespace AnalysisTests {
             var tokens = TestOneString(
                 PythonLanguageVersion.V27, 
                 TokenizerOptions.Verbatim | TokenizerOptions.VerbatimCommentsAndLineJoins,
-                "fob\r\n\\"
+                $"fob{Environment.NewLine}\\"
             );
             AssertEqualTokens(
                 tokens, 
                 new[] { 
                     new ExpectedToken(TokenKind.Name, new IndexSpan(0, 3), "fob"), 
-                    new ExpectedToken(TokenKind.NewLine, new IndexSpan(3, 2), "\r\n"), 
+                    new ExpectedToken(TokenKind.NewLine, new IndexSpan(3, 2), Environment.NewLine), 
                     new ExpectedToken(TokenKind.EndOfFile, new IndexSpan(5, 1), "\\"),
                 }
             );
@@ -113,13 +113,13 @@ namespace AnalysisTests {
             tokens = TestOneString(
                 PythonLanguageVersion.V27,
                 TokenizerOptions.Verbatim | TokenizerOptions.VerbatimCommentsAndLineJoins,
-                "fob\r\n\\b"
+                $"fob{Environment.NewLine}\\b"
             );
             AssertEqualTokens(
                 tokens,
                 new[] { 
                     new ExpectedToken(TokenKind.Name, new IndexSpan(0, 3), "fob"), 
-                    new ExpectedToken(TokenKind.NewLine, new IndexSpan(3, 2), "\r\n"), 
+                    new ExpectedToken(TokenKind.NewLine, new IndexSpan(3, 2), Environment.NewLine), 
                     new ExpectedToken(TokenKind.Error, new IndexSpan(5, 1), "\\"), 
                     new ExpectedToken(TokenKind.Name, new IndexSpan(6, 1), "b")
                 }

@@ -14,6 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
@@ -235,7 +236,7 @@ class oar(list):
             var completions = await server.SendCompletion(uri, 2, 8);
 
             completions.Should().HaveItem("append")
-                .Which.Should().HaveInsertText("append(self, value):\r\n    return super(oar, self).append(value)");
+                .Which.Should().HaveInsertText($"append(self, value):{Environment.NewLine}    return super(oar, self).append(value)");
         }
 
         [DataRow(PythonLanguageVersion.V36, "value")]
@@ -251,7 +252,7 @@ class oar(list):
             var completions = await server.SendCompletion(uri, 2, 8);
 
             completions.Should().HaveItem("append")
-                .Which.Should().HaveInsertText($"append(self, {parameterName}):\r\n    return super().append({parameterName})");
+                .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super().append({parameterName})");
         }
 
         [ServerTestMethod(LatestAvailable2X = true), Priority(0)]
@@ -411,10 +412,11 @@ Class1().
                 .Which.Should().HaveInsertText(expectedInsertText);
         }
         
-        [DataRow(PythonLanguageMajorVersion.LatestV2, "foo(self):\r\n    return super(B, self).foo()")]
-        [DataRow(PythonLanguageMajorVersion.LatestV3, "foo(self):\r\n    return super().foo()")]
+        [DataRow(PythonLanguageMajorVersion.LatestV2, "foo(self):{0}    return super(B, self).foo()")]
+        [DataRow(PythonLanguageMajorVersion.LatestV3, "foo(self):{0}    return super().foo()")]
         [ServerTestMethod(VersionArgumentIndex = 1), Priority(0)]
         public async Task Completion_AddBracketsEnabled_MethodOverride(Server server, PythonLanguageVersion version, string expectedInsertText) {
+            expectedInsertText = expectedInsertText.FormatInvariant(Environment.NewLine);
             var code = @"
 class A(object):
     def foo(self):

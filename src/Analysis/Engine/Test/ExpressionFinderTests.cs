@@ -14,6 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.IO;
 using System.Linq;
 using Microsoft.PythonTools;
@@ -422,7 +423,7 @@ b = C().f(1)
             int start = ast.LocationToIndex(new SourceLocation(startLine, 1));
             int end = ast.LocationToIndex(new SourceLocation(endLine + 1, 1));
             var fullLine = code.Substring(start);
-            int lastNewline = "\r\n".Select(c => fullLine.LastIndexOf(c, end - start - 1)).Where(i => i > 0).DefaultIfEmpty(-1).Min();
+            int lastNewline = Environment.NewLine.Select(c => fullLine.LastIndexOf(c, end - start - 1)).Where(i => i > 0).DefaultIfEmpty(-1).Min();
             if (lastNewline > 0) {
                 fullLine = fullLine.Remove(lastNewline);
             }
@@ -452,7 +453,7 @@ b = C().f(1)
             int start = ast.LocationToIndex(new SourceLocation(startLine, 1));
             int end = ast.LocationToIndex(new SourceLocation(endLine + 1, 1));
             var fullLine = code.Substring(start);
-            int lastNewline = "\r\n".Select(c => fullLine.LastIndexOf(c, end - start - 1)).Where(i => i > 0).DefaultIfEmpty(-1).Min();
+            int lastNewline = Environment.NewLine.Select(c => fullLine.LastIndexOf(c, end - start - 1)).Where(i => i > 0).DefaultIfEmpty(-1).Min();
             if (lastNewline > 0) {
                 fullLine = fullLine.Remove(lastNewline);
             }
