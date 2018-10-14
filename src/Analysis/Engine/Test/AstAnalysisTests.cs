@@ -309,7 +309,7 @@ class BankAccount(object):
                     var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
 
                     var moduleNamesChanged = EventTaskSources.AstPythonInterpreter.ModuleNamesChanged.Create(interpreter, new CancellationTokenSource(1000).Token);
-                    factory.SetCurrentSearchPaths(new[] { TestData.GetPath("TestData\\AstAnalysis") });
+                    factory.SetCurrentSearchPaths(new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
                     await moduleNamesChanged;
 
                     interpreter.GetModuleNames().Should().Contain("Values");
@@ -335,7 +335,7 @@ class BankAccount(object):
                     var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
 
                     var moduleNamesChanged = EventTaskSources.AstPythonInterpreter.ModuleNamesChanged.Create(interpreter, new CancellationTokenSource(1000).Token);
-                    analyzer.SetSearchPaths(new[] { TestData.GetPath("TestData\\AstAnalysis") });
+                    analyzer.SetSearchPaths(new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
                     await moduleNamesChanged;
 
                     interpreter.GetModuleNames().Should().Contain("Values");
@@ -360,7 +360,7 @@ class BankAccount(object):
                     server, 
                     "import Package.Module\n\nc = Package.Module.Class()",
                     new AnalysisLimits { UseTypeStubPackages = false },
-                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
+                    searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
                     stubPaths: Enumerable.Empty<string>());
 
                 analysis.Should().HavePythonModuleVariable("Package");
@@ -381,7 +381,7 @@ class BankAccount(object):
                         UseTypeStubPackages = true,
                         UseTypeStubPackagesExclusively = false
                     },
-                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
+                    searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
                     stubPaths: Enumerable.Empty<string>());
 
                 analysis.Should().HavePythonModuleVariable("Package");
@@ -401,8 +401,8 @@ class BankAccount(object):
                     server, 
                     "import Package.Module\n\nc = Package.Module.Class()",
                     null,
-                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
-                    stubPaths: new[] { TestData.GetPath("TestData\\AstAnalysis\\Stubs") });
+                    searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
+                    stubPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis", "Stubs")) });
 
                 analysis.Should().HavePythonModuleVariable("Package"); // member information comes from multiple sources
 
@@ -423,8 +423,8 @@ class BankAccount(object):
                         UseTypeStubPackages = true,
                         UseTypeStubPackagesExclusively = true
                     },
-                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
-                    stubPaths: new[] { TestData.GetPath("TestData\\AstAnalysis\\Stubs") });
+                    searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
+                    stubPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis", "Stubs")) });
 
                 analysis.Should().HavePythonModuleVariable("Package");
 

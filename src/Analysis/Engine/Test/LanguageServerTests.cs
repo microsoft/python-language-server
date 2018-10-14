@@ -161,7 +161,7 @@ namespace AnalysisTests {
         public async Task Initialize() {
             var s = await CreateServer(TestData.GetPath(Path.Combine("TestData", "HelloWorld")));
 
-            var u = GetDocument(@"TestData\HelloWorld\Program.py").uri.AbsoluteUri;
+            var u = GetDocument(Path.Combine("TestData", "HelloWorld", "Program.py")).uri.AbsoluteUri;
             s.GetLoadedFiles().Should().OnlyContain(u);
         }
 
