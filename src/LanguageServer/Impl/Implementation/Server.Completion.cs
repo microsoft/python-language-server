@@ -42,10 +42,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             var opts = GetOptions(@params.context);
-            var ctxt = new CompletionAnalysis(analysis, tree, @params.position, opts, _displayTextBuilder, this,
-                () => entry.ReadDocument(ProjectFiles.GetPart(uri), out _));
+            var ctxt = new CompletionAnalysis(analysis, tree, @params.position, opts, Settings.completion, _displayTextBuilder, this, () => entry.ReadDocument(ProjectFiles.GetPart(uri), out _));
 
-            var members = ctxt.GetCompletionsFromString(@params._expr) ?? ctxt.GetCompletions();
+            var members = string.IsNullOrEmpty(@params._expr)
+                ? ctxt.GetCompletions()
+                : ctxt.GetCompletionsFromString(@params._expr);
+
             if (members == null) {
                 TraceMessage($"Do not trigger at {@params.position} in {uri}");
                 return new CompletionList();
@@ -61,21 +63,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 members = members.Where(m => m.kind == filterKind.Value);
             }
 
-            var completions = members.ToArray();
-            if (Settings.completion.addBrackets && (!filterKind.HasValue || CanHaveBrackets(filterKind.Value))) {
-                foreach (var completionItem in completions.Where(ci => CanHaveBrackets(ci.kind))) {
-                    completionItem.insertText += "($0)";
-                    completionItem.insertTextFormat = InsertTextFormat.Snippet;
-                }
-            }
-
-            bool CanHaveBrackets(CompletionItemKind kind)
-                => kind == CompletionItemKind.Constructor ||
-                   kind == CompletionItemKind.Function ||
-                   kind == CompletionItemKind.Method;
-
             var res = new CompletionList {
-                items = completions,
+                items = members.ToArray(),
                 _expr = ctxt.ParentExpression?.ToCodeString(tree, CodeFormattingOptions.Traditional),
                 _commitByDefault = ctxt.ShouldCommitByDefault,
                 _allowSnippet = ctxt.ShouldAllowSnippets

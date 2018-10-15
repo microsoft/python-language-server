@@ -627,10 +627,12 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(0)]
         public void InvalidUnicodeLiteral() {
+            var position = 42 + Environment.NewLine.Length;
             foreach (var version in V26AndUp) {
                 ParseErrors("InvalidUnicodeLiteral26Up.py",
                     version,
-                    new ErrorInfo("'unicodeescape' codec can't decode bytes in position 44: truncated \\uXXXX escape", 41, 2, 1, 49, 2, 9)
+                    new ErrorInfo($"'unicodeescape' codec can't decode bytes in position {position}: truncated \\uXXXX escape", 
+                        39 + Environment.NewLine.Length, 2, 1, 47 + Environment.NewLine.Length, 2, 9)
                 );
             }
 
@@ -1084,7 +1086,7 @@ namespace AnalysisTests {
                         CheckFuncDef("f", new Action<Parameter>[] {
                             p => {
                                 Assert.AreEqual("a", p.Name);
-                                Assert.AreEqual(15, p.StartIndex);
+                                Assert.AreEqual(13 + Environment.NewLine.Length, p.StartIndex);
                             }
                         }, CheckSuite(Pass))
                     )

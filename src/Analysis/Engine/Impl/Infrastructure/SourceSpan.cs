@@ -24,7 +24,7 @@ namespace Microsoft.PythonTools {
     /// Stores the location of a span of text in a source file.
     /// </summary>
     [Serializable]
-    [DebuggerDisplay("({Start._line}, {Start._column})-({End._line}, {End._column})")]
+    [DebuggerDisplay("({Start.Line}, {Start.Column})-({End.Line}, {End.Column})")]
     public struct SourceSpan {
         /// <summary>
         /// Constructs a new span with a specific start and end location.

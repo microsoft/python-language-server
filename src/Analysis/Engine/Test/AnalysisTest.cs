@@ -158,7 +158,7 @@ f(x=42, y = 'abc')
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var fob = await server.AddModuleWithContentAsync("fob", Path.Combine("fob", "__init__.py"), "from oar import *");
                 var oar = await server.AddModuleWithContentAsync("fob.oar", Path.Combine("fob", "oar", "__init__.py"), "from .baz import *");
-                var baz = await server.AddModuleWithContentAsync("fob.oar.baz", Path.Combine("fob", "oar", "baz.py"), "import fob.oar.quox as quox\r\nfunc = quox.func");
+                var baz = await server.AddModuleWithContentAsync("fob.oar.baz", Path.Combine("fob", "oar", "baz.py"), $"import fob.oar.quox as quox{Environment.NewLine}func = quox.func");
                 var quox = await server.AddModuleWithContentAsync("fob.oar.quox", Path.Combine("fob", "oar", "quox.py"), "def func(): return 42");
 
                 var fobAnalysis = await fob.GetAnalysisAsync();
@@ -287,7 +287,7 @@ w = f(a='p', p=1, q='abc')
         }
 
         [TestMethod, Priority(0), Timeout(5000)]
-        public async Task RecursiveListComprehensionV32() {
+        public async Task RecursiveListComprehension() {
             var code = @"
 def f(x):
     x = []
@@ -298,7 +298,7 @@ def f(x):
 
 
             // If we complete processing then we have succeeded
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python32X)) {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
             }
         }
@@ -662,7 +662,7 @@ x = a()
         public async Task ImportStar() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
-from nt import *
+from os import *
             ");
                 analysis.Should().HaveVariable("abort");
 
@@ -677,10 +677,10 @@ from nt import *
         public async Task ImportTrailingComma() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
-import nt,
+import sys,
             ");
-                analysis.Should().HavePythonModuleVariable("nt")
-                    .Which.Should().HaveMembers("abort");
+                analysis.Should().HavePythonModuleVariable("sys")
+                    .Which.Should().HaveMembers("path");
             }
         }
 
@@ -703,9 +703,12 @@ z = mod1.f(42)
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uri1 = TestData.GetTempPathUri("mod1.py");
                 var uri2 = TestData.GetTempPathUri("mod2.py");
-                await server.SendDidOpenTextDocument(uri1, text1);
-                await server.SendDidOpenTextDocument(uri2, text2);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uri1, text1);
+                    await server.SendDidOpenTextDocument(uri2, text2);
+                }
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis1 = await server.GetAnalysisAsync(uri1);
                 var analysis2 = await server.GetAnalysisAsync(uri2);
 
@@ -939,9 +942,12 @@ class Test_test2(Test_test1):
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uris = TestData.GetNextModuleUris(2);
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                }
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis = await server.GetAnalysisAsync(uris[1]);
                 analysis.Should().HaveClassInfo("Test_test2")
                         .WithMethodResolutionOrder("Test_test2", "Test_test1", "type object");
@@ -1280,8 +1286,7 @@ b = next(a)
 
 
         [DataRow(PythonLanguageVersion.V27)]
-        [DataRow(PythonLanguageVersion.V31)]
-        [DataRow(PythonLanguageVersion.V33)]
+        [DataRow(PythonLanguageVersion.V36)]
         [DataTestMethod, Priority(0)]
         public async Task LambdaInComprehension(PythonLanguageVersion version) {
             var text = "x = [(lambda a:[a**i for i in range(a+1)])(j) for j in range(5)]";
@@ -1308,7 +1313,7 @@ list(x for x, in [(7,), (8,), (9,)])
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
             }
 
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python32X)) {
+            using (var server = await CreateServerAsync(PythonVersions.Required_Python36X)) {
                 await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
             }
         }
@@ -1332,7 +1337,7 @@ for some_str, some_int, some_bool in x:
 
         [TestMethod, Priority(0)]
         public async Task ForIterator() {
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python34X)) {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
 class X(object):
     def __iter__(self): return self
@@ -2100,9 +2105,7 @@ b = ~~C()
 
 
         [TestMethod, Priority(0)]
-        [DataRow(PythonLanguageVersion.V35)]
-        [DataRow(PythonLanguageVersion.V36)]
-        public async Task TrueDividePython3X(PythonLanguageVersion version) {
+        public async Task TrueDividePython3X() {
             var text = @"
 class C:
     def __truediv__(self, other):
@@ -2115,7 +2118,7 @@ b = a / 'abc'
 c = 'abc' / a
 ";
 
-            using (var server = await CreateServerAsync(PythonVersions.GetRequiredCPythonConfiguration(version))) {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Float);
@@ -2137,7 +2140,7 @@ c = 'abc' / a
                 new { Method = "rshift", Operator = ">>", Version = PythonVersions.Required_Python27X },
                 new { Method = "pow", Operator = "**", Version = PythonVersions.Required_Python27X },
                 new { Method = "floordiv", Operator = "//", Version = PythonVersions.Required_Python27X },
-                new { Method = "matmul", Operator = "@", Version = PythonVersions.Required_Python35X },
+                new { Method = "matmul", Operator = "@", Version = PythonVersions.Required_Python36X },
             };
 
             var text = @"
@@ -3457,7 +3460,7 @@ class S0(object): pass
 it = g(S0())
 val = next(it)
 
-" + string.Join("\r\n", Enumerable.Range(1, 100).Select(i => string.Format("class S{0}(object): pass\r\nf(S{0}())", i)));
+" + string.Join(Environment.NewLine, Enumerable.Range(1, 100).Select(i => string.Format("class S{0}(object): pass{1}f(S{0}())", i, Environment.NewLine)));
             Console.WriteLine(code);
 
             // Ensure the returned generators are distinct
@@ -3653,9 +3656,10 @@ def g(a, b, c): pass
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                }
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
                 var analysis = await server.GetAnalysisAsync(uris[0]);
@@ -3677,9 +3681,10 @@ def f(x):
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                }
 
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
@@ -3703,9 +3708,10 @@ class c:
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                }
 
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
@@ -3732,9 +3738,10 @@ class c:
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                }
 
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
@@ -3769,10 +3776,11 @@ a = x
 "              };
 
                 var uris = TestData.GetNextModuleUris(3);
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
-                await server.SendDidOpenTextDocument(uris[permutation[2]], contents[permutation[2]]);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[2]], contents[permutation[2]]);
+                }
 
                 await server.GetAnalysisAsync(uris[0]);
                 await server.GetAnalysisAsync(uris[1]);
@@ -4049,28 +4057,28 @@ t.x, t. =
 
         [TestMethod, Priority(0)]
         public async Task Package() {
-            var src1 = "";
-
-            var src2 = @"
+            var srcX = @"
 from fob.y import abc
 import fob.y as y
 ";
 
-            var src3 = @"
+            var srcY = @"
 abc = 42
 ";
 
             using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
-                var uriSrc1 = TestData.CreateTestSpecificFile(Path.Combine("fob", "__init__.py"));
-                var uriSrc2 = TestData.GetTestSpecificUri(Path.Combine("fob", "x.py"));
-                var uriSrc3 = TestData.GetTestSpecificUri(Path.Combine("fob", "y.py"));
-
-                await server.SendDidOpenTextDocument(uriSrc1, src1);
-                await server.SendDidOpenTextDocument(uriSrc2, src2);
-                await server.SendDidOpenTextDocument(uriSrc3, src3);
+                var initX = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "__init__.py"), string.Empty);
+                var modX = TestData.GetTestSpecificUri(Path.Combine("fob", "x.py"));
+                var modY = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), srcY);
+                
+                using (server.AnalysisQueue.Pause()) {
+                    await server.LoadFileAsync(initX);
+                    await server.SendDidOpenTextDocument(modX, srcX);
+                    await server.LoadFileAsync(modY);
+                }
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
-                var analysis = await server.GetAnalysisAsync(uriSrc2);
+                var analysis = await server.GetAnalysisAsync(modX);
 
                 analysis.Should()
                     .HaveVariable("y").WithDescription("Python module fob.y")
@@ -4089,9 +4097,11 @@ abc = 42
                 var uriSrc2 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "x.py"), src2);
                 var uriSrc3 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), src3);
 
-                await server.SendDidOpenTextDocument(uriSrc1, src1);
-                await server.SendDidOpenTextDocument(uriSrc2, src2);
-                await server.SendDidOpenTextDocument(uriSrc3, src3);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uriSrc1, src1);
+                    await server.SendDidOpenTextDocument(uriSrc2, src2);
+                    await server.SendDidOpenTextDocument(uriSrc3, src3);
+                }
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysisPackage = await server.GetAnalysisAsync(uriSrc1);
@@ -4128,13 +4138,15 @@ abc = 42
                 var subpackage2InitUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage2", "__init__.py"), string.Empty);
                 var subpackage2ModuleZUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage2", "moduleZ.py"), subpackage2ModuleZContent);
 
-                await server.SendDidOpenTextDocument(initUri, initContent);
-                await server.SendDidOpenTextDocument(moduleAUri, moduleAContent);
-                await server.SendDidOpenTextDocument(subpackageInitUri, string.Empty);
-                await server.SendDidOpenTextDocument(subpackageModuleXUri, subpackageModuleXContent);
-                await server.SendDidOpenTextDocument(subpackageModuleYUri, subpackageModuleYContent);
-                await server.SendDidOpenTextDocument(subpackage2InitUri, string.Empty);
-                await server.SendDidOpenTextDocument(subpackage2ModuleZUri, subpackage2ModuleZContent);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(initUri, initContent);
+                    await server.SendDidOpenTextDocument(moduleAUri, moduleAContent);
+                    await server.SendDidOpenTextDocument(subpackageInitUri, string.Empty);
+                    await server.SendDidOpenTextDocument(subpackageModuleXUri, subpackageModuleXContent);
+                    await server.SendDidOpenTextDocument(subpackageModuleYUri, subpackageModuleYContent);
+                    await server.SendDidOpenTextDocument(subpackage2InitUri, string.Empty);
+                    await server.SendDidOpenTextDocument(subpackage2ModuleZUri, subpackage2ModuleZContent);
+                }
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysisX = await server.GetAnalysisAsync(subpackageModuleXUri);
@@ -4180,7 +4192,6 @@ a = f()
         }
 
         [PermutationalTestMethod(2), Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/230")]
         public async Task Decorator(int[] permutation) {
             var contents = new[] { @"
 import module2
@@ -4206,9 +4217,10 @@ g = MyClass().mydec(module1.f)
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                }
 
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
@@ -4250,9 +4262,10 @@ class MyClass(object):
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                }
 
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
@@ -4438,9 +4451,10 @@ def decorator_b(fn):
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                }
 
                 var analysis1 = await server.GetAnalysisAsync(uris[0]);
                 var analysis2 = await server.GetAnalysisAsync(uris[1]);
@@ -4565,7 +4579,6 @@ a = x(2)
         /// we properly understand the imported value.
         /// </summary>
         [PermutationalTestMethod(2), Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/231")]
         public async Task ImportScopesOrder(int[] permutation) {
             var contents = new[] { @"
 import _io
@@ -4603,10 +4616,14 @@ import imp as impp
 " };
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uris = TestData.GetNextModuleUris(2);
-                await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
-                await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                using (server.AnalysisQueue.Pause()) {
+                    await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
+                    await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
+                }
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis = await server.GetAnalysisAsync(uris[0]);
+
                 analysis.Should().HaveVariable("g").WithDescription("module1.g() -> _io")
                     .And.HaveVariable("f").WithDescription("module1.f() -> sys")
                     .And.HaveVariable("h").WithDescription("module1.h() -> sys")
@@ -4748,7 +4765,7 @@ print(z)";
 
                 // http://pytools.codeplex.com/workitem/636
                 // this just shouldn't crash, we should handle the malformed code, not much to inspect afterwards...
-                await server.ChangeDefaultDocumentAndGetAnalysisAsync("if isinstance(x, list):\r\n");
+                await server.ChangeDefaultDocumentAndGetAnalysisAsync($"if isinstance(x, list):{Environment.NewLine}");
                 await server.ChangeDefaultDocumentAndGetAnalysisAsync("if isinstance(x, list):");
             }
         }
@@ -4975,7 +4992,7 @@ rf = return_func_class().return_func
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
 
-                analysis.Should().HaveClass("fob").WithVariable("f").WithDescription("module.fob.f(self: fob)\r\ndeclared in fob")
+                analysis.Should().HaveClass("fob").WithVariable("f").WithDescription($"module.fob.f(self: fob){Environment.NewLine}declared in fob")
                     .And.HaveVariable("a").OfType(BuiltinTypeId.Float).WithDescription("float")
                     .And.HaveVariable("b").OfType(BuiltinTypeId.Long).WithDescription("long")
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Str).WithDescription("str")

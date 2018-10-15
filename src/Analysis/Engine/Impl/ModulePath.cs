@@ -813,7 +813,7 @@ namespace Microsoft.PythonTools.Analysis {
             isInvalid = false;
             isMissing = false;
 
-            if (!PathEqualityComparer.Instance.StartsWith(sourceFile, basePath)) {
+            if (!PathEqualityComparer.Instance.StartsWith(sourceFile, basePath, allowFullMatch: false)) {
                 return false;
             }
 

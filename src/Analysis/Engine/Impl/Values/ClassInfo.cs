@@ -27,7 +27,7 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class ClassInfo : AnalysisValue, IClassInfo, IHasRichDescription, IHasQualifiedName {
         private AnalysisUnit _analysisUnit;
-        private readonly List<IAnalysisSet> _bases;
+        private IAnalysisSet[] _bases = Array.Empty<IAnalysisSet>();
         internal Mro _mro;
         private ClassScope _scope;
         private readonly int _declVersion;
@@ -38,7 +38,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         internal ClassInfo(ClassDefinition klass, AnalysisUnit outerUnit) {
             Instance = new InstanceInfo(this);
-            _bases = new List<IAnalysisSet>();
             _declVersion = outerUnit.ProjectEntry.AnalysisVersion;
             _projectState = outerUnit.State;
             _mro = new Mro(this);
@@ -323,17 +322,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IMro Mro => _mro;
 
         public void SetBases(IEnumerable<IAnalysisSet> bases) {
-            _bases.Clear();
-            _bases.AddRange(bases);
+            _bases = bases.ToArray();
             _mro.Recompute();
 
             RecomputeBaseSpecialization();
         }
 
         private void RecomputeBaseSpecialization() {
-            IAnalysisSet builtinClassSet = AnalysisSet.Empty;
+            var builtinClassSet = AnalysisSet.Empty;
             foreach (var classInfo in _mro) {
-                BuiltinClassInfo builtin = classInfo as BuiltinClassInfo;
+                var builtin = classInfo as BuiltinClassInfo;
                 if (builtin != null && builtin.TypeId != BuiltinTypeId.Object) {
                     var builtinType = _projectState.GetBuiltinType(builtin.PythonType);
 
@@ -344,15 +342,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 }
             }
             _baseSpecialization = builtinClassSet;
-        }
-
-        public void SetBase(int index, IAnalysisSet baseSet) {
-            while (index >= _bases.Count) {
-                _bases.Add(AnalysisSet.Empty);
-            }
-            _bases[index] = baseSet;
-            _mro.Recompute();
-            RecomputeBaseSpecialization();
         }
 
         public InstanceInfo Instance { get; }

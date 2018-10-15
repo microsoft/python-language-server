@@ -920,8 +920,7 @@ namespace Microsoft.PythonTools.Parsing {
 
             var ann = ParseExpression();
 
-            var err = ann as ErrorExpression;
-            if (err != null) {
+            if (ann is ErrorExpression err) {
                 var image = ws2 + ":";
                 Dictionary<object, object> attr = null;
                 if (_verbatim && _attributes.TryGetValue(err, out attr)) {

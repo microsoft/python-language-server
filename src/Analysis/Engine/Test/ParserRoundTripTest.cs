@@ -261,17 +261,17 @@ namespace AnalysisTests {
             /* Statements */
             // ReplaceMultipleImportsWithMultipleStatements
             TestOneString(PythonLanguageVersion.V27, "import fob", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, "import fob");
-            TestOneString(PythonLanguageVersion.V27, "import fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, "import fob\r\nimport oar");
-            TestOneString(PythonLanguageVersion.V27, "\r\n\r\n\r\nimport fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, "\r\n\r\n\r\nimport fob\r\nimport oar");
-            TestOneString(PythonLanguageVersion.V27, "def f():\r\n    import fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, "def f():\r\n    import fob\r\n    import oar");
-            TestOneString(PythonLanguageVersion.V27, "import fob as quox, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, "import fob as quox\r\nimport oar");
-            TestOneString(PythonLanguageVersion.V27, "import   fob,  oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, "import   fob\r\nimport  oar");
-            TestOneString(PythonLanguageVersion.V27, "import fob  as  quox, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, "import fob  as  quox\r\nimport oar");
+            TestOneString(PythonLanguageVersion.V27, "import fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, $"import fob{Environment.NewLine}import oar");
+            TestOneString(PythonLanguageVersion.V27, $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}import fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}import fob{Environment.NewLine}import oar");
+            TestOneString(PythonLanguageVersion.V27, $"def f():{Environment.NewLine}    import fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, $"def f():{Environment.NewLine}    import fob{Environment.NewLine}    import oar");
+            TestOneString(PythonLanguageVersion.V27, "import fob as quox, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, $"import fob as quox{Environment.NewLine}import oar");
+            TestOneString(PythonLanguageVersion.V27, "import   fob,  oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, $"import   fob{Environment.NewLine}import  oar");
+            TestOneString(PythonLanguageVersion.V27, "import fob  as  quox, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = true }, $"import fob  as  quox{Environment.NewLine}import oar");
 
             TestOneString(PythonLanguageVersion.V27, "import fob", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = false }, "import fob");
             TestOneString(PythonLanguageVersion.V27, "import fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = false }, "import fob, oar");
-            TestOneString(PythonLanguageVersion.V27, "\r\n\r\n\r\nimport fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = false }, "\r\n\r\n\r\nimport fob, oar");
-            TestOneString(PythonLanguageVersion.V27, "def f():\r\n    import fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = false }, "def f():\r\n    import fob, oar");
+            TestOneString(PythonLanguageVersion.V27, $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}import fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = false }, $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}import fob, oar");
+            TestOneString(PythonLanguageVersion.V27, $"def f():{Environment.NewLine}    import fob, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = false }, $"def f():{Environment.NewLine}    import fob, oar");
             TestOneString(PythonLanguageVersion.V27, "import fob as quox, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = false }, "import fob as quox, oar");
             TestOneString(PythonLanguageVersion.V27, "import   fob,  oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = false }, "import   fob,  oar");
             TestOneString(PythonLanguageVersion.V27, "import fob  as  quox, oar", new CodeFormattingOptions() { ReplaceMultipleImportsWithMultipleStatements = false }, "import fob  as  quox, oar");
@@ -285,36 +285,36 @@ namespace AnalysisTests {
             TestOneString(PythonLanguageVersion.V27, "x = 42;  y = 100;", new CodeFormattingOptions() { RemoveTrailingSemicolons = false }, "x = 42;  y = 100;");
 
             // BreakMultipleStatementsPerLine
-            TestOneString(PythonLanguageVersion.V27, "x = 42; y = 100", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true }, "x = 42\r\ny = 100");
-            TestOneString(PythonLanguageVersion.V27, "def f():\r\n    x = 42; y = 100", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true }, "def f():\r\n    x = 42\r\n    y = 100");
-            TestOneString(PythonLanguageVersion.V27, "x = 42; y = 100;", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true }, "x = 42\r\ny = 100;");
-            TestOneString(PythonLanguageVersion.V27, "def f():\r\n    x = 42; y = 100;", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true }, "def f():\r\n    x = 42\r\n    y = 100;");
-            TestOneString(PythonLanguageVersion.V27, "x = 42; y = 100", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true, RemoveTrailingSemicolons = true }, "x = 42\r\ny = 100");
-            TestOneString(PythonLanguageVersion.V27, "def f():\r\n    x = 42; y = 100", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true, RemoveTrailingSemicolons = true }, "def f():\r\n    x = 42\r\n    y = 100");
+            TestOneString(PythonLanguageVersion.V27, "x = 42; y = 100", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true }, $"x = 42{Environment.NewLine}y = 100");
+            TestOneString(PythonLanguageVersion.V27, $"def f():{Environment.NewLine}    x = 42; y = 100", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true }, $"def f():{Environment.NewLine}    x = 42{Environment.NewLine}    y = 100");
+            TestOneString(PythonLanguageVersion.V27, "x = 42; y = 100;", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true }, $"x = 42{Environment.NewLine}y = 100;");
+            TestOneString(PythonLanguageVersion.V27, $"def f():{Environment.NewLine}    x = 42; y = 100;", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true }, $"def f():{Environment.NewLine}    x = 42{Environment.NewLine}    y = 100;");
+            TestOneString(PythonLanguageVersion.V27, "x = 42; y = 100", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true, RemoveTrailingSemicolons = true }, $"x = 42{Environment.NewLine}y = 100");
+            TestOneString(PythonLanguageVersion.V27, $"def f():{Environment.NewLine}    x = 42; y = 100", new CodeFormattingOptions() { BreakMultipleStatementsPerLine = true, RemoveTrailingSemicolons = true }, $"def f():{Environment.NewLine}    x = 42{Environment.NewLine}    y = 100");
         }
 
         [TestMethod, Priority(1)]
         public void TestReflowComment() {
             var commentTestCases = new[] { 
                 new {
-                    Before = "  # Beautiful is better than ugly. Explicit is better than implicit. Simple is better than complex. Complex is better than complicated.\r\n",
-                    After =  "  # Beautiful is better than ugly.  Explicit is better than implicit.  Simple\r\n  # is better than complex.  Complex is better than complicated.\r\n"
+                    Before = $"  # Beautiful is better than ugly. Explicit is better than implicit. Simple is better than complex. Complex is better than complicated.{Environment.NewLine}",
+                    After =  $"  # Beautiful is better than ugly.  Explicit is better than implicit.  Simple{Environment.NewLine}  # is better than complex.  Complex is better than complicated.{Environment.NewLine}"
                 },
                 new { 
-                    Before = "## Beautiful is better than ugly. Explicit is better than implicit. Simple is better than complex. Complex is better than complicated.\r\n",
-                    After =  "## Beautiful is better than ugly.  Explicit is better than implicit.  Simple is\r\n## better than complex.  Complex is better than complicated.\r\n"
+                    Before = $"## Beautiful is better than ugly. Explicit is better than implicit. Simple is better than complex. Complex is better than complicated.{Environment.NewLine}",
+                    After =  $"## Beautiful is better than ugly.  Explicit is better than implicit.  Simple is{Environment.NewLine}## better than complex.  Complex is better than complicated.{Environment.NewLine}"
                 },
                 new {
-                    Before = "############# Beautiful is better than ugly. Explicit is better than implicit. Simple is better than complex. Complex is better than complicated.\r\n",
-                    After =  "############# Beautiful is better than ugly.  Explicit is better than implicit.\r\n############# Simple is better than complex.  Complex is better than\r\n############# complicated.\r\n"
+                    Before = $"############# Beautiful is better than ugly. Explicit is better than implicit. Simple is better than complex. Complex is better than complicated.{Environment.NewLine}",
+                    After =  $"############# Beautiful is better than ugly.  Explicit is better than implicit.{Environment.NewLine}############# Simple is better than complex.  Complex is better than{Environment.NewLine}############# complicated.{Environment.NewLine}"
                 },
                 new {
-                    Before = "  # Beautiful is better than ugly.\r\n  # import fob\r\n  # Explicit is better than implicit. Simple is better than complex. Complex is better than complicated.\r\n",
-                    After =  "  # Beautiful is better than ugly.\r\n  # import fob\r\n  # Explicit is better than implicit.  Simple is better than complex.  Complex\r\n  # is better than complicated.\r\n"
+                    Before = $"  # Beautiful is better than ugly.{Environment.NewLine}  # import fob{Environment.NewLine}  # Explicit is better than implicit. Simple is better than complex. Complex is better than complicated.{Environment.NewLine}",
+                    After =  $"  # Beautiful is better than ugly.{Environment.NewLine}  # import fob{Environment.NewLine}  # Explicit is better than implicit.  Simple is better than complex.  Complex{Environment.NewLine}  # is better than complicated.{Environment.NewLine}"
                 },
                 new {
-                    Before = "  #\r\n  #   Beautiful is better than ugly.\r\n  #   import fob\r\n  #   Explicit is better than implicit. Simple is better than complex. Complex is better than complicated.\r\n",
-                    After =  "  #\r\n  #   Beautiful is better than ugly.\r\n  #   import fob\r\n  #   Explicit is better than implicit.  Simple is better than complex.\r\n  #   Complex is better than complicated.\r\n"
+                    Before = $"  #{Environment.NewLine}  #   Beautiful is better than ugly.{Environment.NewLine}  #   import fob{Environment.NewLine}  #   Explicit is better than implicit. Simple is better than complex. Complex is better than complicated.{Environment.NewLine}",
+                    After =  $"  #{Environment.NewLine}  #   Beautiful is better than ugly.{Environment.NewLine}  #   import fob{Environment.NewLine}  #   Explicit is better than implicit.  Simple is better than complex.{Environment.NewLine}  #   Complex is better than complicated.{Environment.NewLine}"
                 },
                 new {
                     Before = @"def fob ( ):
@@ -498,39 +498,39 @@ def f ( ):
         }
 
         static readonly string[] _commentInsertionSnippets = new[] {
-            "class C(a, [INSERT]\r\n    b): pass",
-            "class C( [INSERT]\r\n    ): pass", 
-            "def f(a, [INSERT]\r\n    b): pass",
-            "def f( [INSERT]\r\n    ): pass", 
-            "def f(a = [INSERT]\r\n    42): pass",
-            "g( f [INSERT]\r\n    (42))",
-            "f( [INSERT]\r\n    )",
-            "f( a, [INSERT]\r\n     )",
-            "f([INSERT]\r\n   a)",
-            "([INSERT]\r\n    a)",
-            "(a [INSERT]\r\n    )",
-            "(\r\n    [INSERT]\r\n)",
-            "([INSERT]\r\n 1, 2, 3)",
-            "(1,2,3[INSERT]\r\n)",
-            "[[INSERT]\r\n]",
-            "[[INSERT]\r\n1,2,3]",
-            "[1,2,3\r\n[INSERT]\r\n]",
-            "(x [INSERT]\r\n[42])",
-            "x[[INSERT]\r\n42]",
-            "x[42\r\n[INSERT]\r\n]",
-            "(a +[INSERT]\r\nb)",
-            "(a[INSERT]\r\n+b)",
+            $"class C(a, [INSERT]{Environment.NewLine}    b): pass",
+            $"class C( [INSERT]{Environment.NewLine}    ): pass", 
+            $"def f(a, [INSERT]{Environment.NewLine}    b): pass",
+            $"def f( [INSERT]{Environment.NewLine}    ): pass", 
+            $"def f(a = [INSERT]{Environment.NewLine}    42): pass",
+            $"g( f [INSERT]{Environment.NewLine}    (42))",
+            $"f( [INSERT]{Environment.NewLine}    )",
+            $"f( a, [INSERT]{Environment.NewLine}     )",
+            $"f([INSERT]{Environment.NewLine}   a)",
+            $"([INSERT]{Environment.NewLine}    a)",
+            $"(a [INSERT]{Environment.NewLine}    )",
+            $"({Environment.NewLine}    [INSERT]{Environment.NewLine})",
+            $"([INSERT]{Environment.NewLine} 1, 2, 3)",
+            $"(1,2,3[INSERT]{Environment.NewLine})",
+            $"[[INSERT]{Environment.NewLine}]",
+            $"[[INSERT]{Environment.NewLine}1,2,3]",
+            $"[1,2,3{Environment.NewLine}[INSERT]{Environment.NewLine}]",
+            $"(x [INSERT]{Environment.NewLine}[42])",
+            $"x[[INSERT]{Environment.NewLine}42]",
+            $"x[42{Environment.NewLine}[INSERT]{Environment.NewLine}]",
+            $"(a +[INSERT]{Environment.NewLine}b)",
+            $"(a[INSERT]{Environment.NewLine}+b)",
         };
 
         static readonly string[] _insertionSnippets = new[] {
-            "if True:\r\n    pass\r\n[INSERT]else:\r\n    pass",
-            "if True:\r\n    pass\r\n[INSERT]elif True:\r\n    pass",
-            "try:\r\n    pass\r\n[INSERT]finally:\r\n    pass",
-            "try:\r\n    pass\r\n[INSERT]except:\r\n    pass",
-            "try:\r\n    pass\r\n[INSERT]except Exception:\r\n    pass",
-            "try:\r\n    pass\r\nexcept Exception:\r\n    pass\r\n[INSERT]else:\r\n    pass",
-            "while True:\r\n    pass\r\n[INSERT]else:\r\n    pass",
-            "for x in [1,2,3]:\r\n    pass\r\n[INSERT]else:\r\n    pass",
+            $"if True:{Environment.NewLine}    pass{Environment.NewLine}[INSERT]else:{Environment.NewLine}    pass",
+            $"if True:{Environment.NewLine}    pass{Environment.NewLine}[INSERT]elif True:{Environment.NewLine}    pass",
+            $"try:{Environment.NewLine}    pass{Environment.NewLine}[INSERT]finally:{Environment.NewLine}    pass",
+            $"try:{Environment.NewLine}    pass{Environment.NewLine}[INSERT]except:{Environment.NewLine}    pass",
+            $"try:{Environment.NewLine}    pass{Environment.NewLine}[INSERT]except Exception:{Environment.NewLine}    pass",
+            $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass{Environment.NewLine}[INSERT]else:{Environment.NewLine}    pass",
+            $"while True:{Environment.NewLine}    pass{Environment.NewLine}[INSERT]else:{Environment.NewLine}    pass",
+            $"for x in [1,2,3]:{Environment.NewLine}    pass{Environment.NewLine}[INSERT]else:{Environment.NewLine}    pass",
             /*@"(1, [INSERT]
                2,
                3)"*/
@@ -542,7 +542,7 @@ def f ( ):
         /// </summary>
         [TestMethod, Priority(1)]
         public void TestStartWhiteSpace() {
-            foreach (var preceedingText in new[] { "#fob\r\n" }) {
+            foreach (var preceedingText in new[] { $"#fob{Environment.NewLine}" }) {
                 var allSnippets = 
                     TestExpressions.Snippets2x.Select(text => new { Text = text, Version = PythonLanguageVersion.V27 }).Concat(
                     TestExpressions.Statements3x.Select(text => new { Text = text, Version = PythonLanguageVersion.V33 }));
@@ -584,7 +584,7 @@ def f ( ):
             TestOneString(PythonLanguageVersion.V27, "x  =   not    42");
 
             // Constant Expressions
-            TestOneString(PythonLanguageVersion.V27, "\r\n42");
+            TestOneString(PythonLanguageVersion.V27, $"{Environment.NewLine}42");
             TestOneString(PythonLanguageVersion.V27, "42");
             TestOneString(PythonLanguageVersion.V27, "'abc'");
             TestOneString(PythonLanguageVersion.V27, "\"abc\"");
@@ -685,7 +685,7 @@ def f ( ):
             TestOneString(PythonLanguageVersion.V27, "fob .oar");
             TestOneString(PythonLanguageVersion.V27, "fob. oar");
             TestOneString(PythonLanguageVersion.V27, "fob .  oar");
-            TestOneString(PythonLanguageVersion.V27, "class C:\r\n    x = fob.__oar");
+            TestOneString(PythonLanguageVersion.V27, $"class C:{Environment.NewLine}    x = fob.__oar");
 
             // Parenthesis expression
             TestOneString(PythonLanguageVersion.V27, "(42)");
@@ -835,8 +835,8 @@ def f ( ):
         r'ghi'                                # handle it properly
         )");
 
-            TestOneString(PythonLanguageVersion.V27, "#fob\r\npass");
-            TestOneString(PythonLanguageVersion.V27, "#fob\r\n\r\npass"); 
+            TestOneString(PythonLanguageVersion.V27, $"#fob{Environment.NewLine}pass");
+            TestOneString(PythonLanguageVersion.V27, $"#fob{Environment.NewLine}{Environment.NewLine}pass"); 
             TestOneString(PythonLanguageVersion.V27, "#fob");
 
         }
@@ -867,7 +867,7 @@ import fob");
             TestOneString(PythonLanguageVersion.V27, "x[[val, val, ...], [val, val, ...], ..");
 
             // Suite Statement
-            TestOneString(PythonLanguageVersion.V27, "while X !=2 :\r\n");
+            TestOneString(PythonLanguageVersion.V27, $"while X !=2 :{Environment.NewLine}");
 
             // Lambda Expression
 
@@ -882,7 +882,7 @@ import fob");
             TestOneString(PythonLanguageVersion.V30, "[x for x in abc if lambda, X+Y Z");
 
             // print statement
-            TestOneString(PythonLanguageVersion.V27, "print >>sys.stderr, \\\r\n");
+            TestOneString(PythonLanguageVersion.V27, $"print >>sys.stderr, \\{Environment.NewLine}");
             TestOneString(PythonLanguageVersion.V27, "print pass");
             TestOneString(PythonLanguageVersion.V27, "print >>pass");
             TestOneString(PythonLanguageVersion.V27, "print >>pass, ");
@@ -899,8 +899,8 @@ import fob");
             TestOneString(PythonLanguageVersion.V27, "from ... import ...");
 
             // Parenthesis Expression
-            TestOneString(PythonLanguageVersion.V27, "(\r\n(x");
-            TestOneString(PythonLanguageVersion.V27, "(\r\n(");            
+            TestOneString(PythonLanguageVersion.V27, $"({Environment.NewLine}(x");
+            TestOneString(PythonLanguageVersion.V27, $"({Environment.NewLine}(");            
 
             TestOneString(PythonLanguageVersion.V27, "m .b'");
             TestOneString(PythonLanguageVersion.V27, "m . b'");
@@ -926,15 +926,15 @@ import fob");
             TestOneString(PythonLanguageVersion.V27, "e if x");
             TestOneString(PythonLanguageVersion.V27, "e if x pass");
 
-            TestOneString(PythonLanguageVersion.V27, ", 'hello'\r\n        self");
+            TestOneString(PythonLanguageVersion.V27, $", 'hello'{Environment.NewLine}        self");
             TestOneString(PythonLanguageVersion.V27, "http://xkcd.com/353/\")");
             TestOneString(PythonLanguageVersion.V27, "�g�\r��\r���\r��\r���\r���\r��\rt4�\r*V�\roA�\r\t�\r�$�\r\t.�\r�t�\r�q�\r�H�\r�|");
             TestOneString(PythonLanguageVersion.V27, "\r\t.�\r�t�\r�q�\r");
             TestOneString(PythonLanguageVersion.V27, "\r\t�\r�$�\r\t.�\r");
             TestOneString(PythonLanguageVersion.V27, "�\r�$�\r\t.�\r�t");
-            TestOneString(PythonLanguageVersion.V27, "\r\n.\r\n");
+            TestOneString(PythonLanguageVersion.V27, $"{Environment.NewLine}.{Environment.NewLine}");
             
-            TestOneString(PythonLanguageVersion.V27, "abc\r\n.\r\n");
+            TestOneString(PythonLanguageVersion.V27, $"abc{Environment.NewLine}.{Environment.NewLine}");
 
             // Dictionary Expressions
             TestOneString(PythonLanguageVersion.V27, "{");
@@ -1005,9 +1005,9 @@ import fob");
             TestOneString(PythonLanguageVersion.V27, "x(42 = 42)");
 
             // for statement
-            TestOneString(PythonLanguageVersion.V27, "for pass\r\nin abc: pass");
+            TestOneString(PythonLanguageVersion.V27, $"for pass{Environment.NewLine}in abc: pass");
             TestOneString(PythonLanguageVersion.V27, "for pass in abc: pass");
-            TestOneString(PythonLanguageVersion.V27, "def f():\r\nabc");
+            TestOneString(PythonLanguageVersion.V27, $"def f():{Environment.NewLine}abc");
             TestOneString(PythonLanguageVersion.V27, "for pass in");
 
             // class defs
@@ -1025,12 +1025,12 @@ import fob");
             TestOneString(PythonLanguageVersion.V27, "class X(=");
             TestOneString(PythonLanguageVersion.V27, "class X(pass");
 
-            TestOneString(PythonLanguageVersion.V27, "class C:\r\n    x = fob.42");
-            TestOneString(PythonLanguageVersion.V27, "class C:\r\n    @fob.42\r\n    def f(self): pass");
-            TestOneString(PythonLanguageVersion.V27, "class C:\r\n    @fob.[]\r\n    def f(self): pass");
+            TestOneString(PythonLanguageVersion.V27, $"class C:{Environment.NewLine}    x = fob.42");
+            TestOneString(PythonLanguageVersion.V27, $"class C:{Environment.NewLine}    @fob.42{Environment.NewLine}    def f(self): pass");
+            TestOneString(PythonLanguageVersion.V27, $"class C:{Environment.NewLine}    @fob.[]{Environment.NewLine}    def f(self): pass");
             TestOneString(PythonLanguageVersion.V27, "class 42");
             TestOneString(PythonLanguageVersion.V30, "class");
-            TestOneString(PythonLanguageVersion.V27, "@fob\r\nclass 42");
+            TestOneString(PythonLanguageVersion.V27, $"@fob{Environment.NewLine}class 42");
 
             // func defs
             TestOneString(PythonLanguageVersion.V30, "def f(A, *, *x");
@@ -1080,13 +1080,13 @@ def f(): pass");
             TestOneString(PythonLanguageVersion.V27, "assert");
 
             // while statements
-            TestOneString(PythonLanguageVersion.V27, "while True:\r\n    break\r\nelse:\r\npass");
+            TestOneString(PythonLanguageVersion.V27, $"while True:{Environment.NewLine}    break{Environment.NewLine}else:{Environment.NewLine}pass");
 
             // if statements
-            TestOneString(PythonLanguageVersion.V27, "if True:\r\n    pass\r\nelif False:\r\n    pass\r\n    else:\r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"if True:{Environment.NewLine}    pass{Environment.NewLine}elif False:{Environment.NewLine}    pass{Environment.NewLine}    else:{Environment.NewLine}    pass");
 
             // try/except
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept: pass\r\nelse: pass\r\nexcept Exception: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except: pass{Environment.NewLine}else: pass{Environment.NewLine}except Exception: pass");
             TestOneString(PythonLanguageVersion.V27, "try  :   pass\r\finally    :     pass");
 
             // Variable annotations
@@ -1111,7 +1111,7 @@ def f(): pass");
 
         [TestMethod, Priority(1)]
         public void TestTrailingComment() {
-            TestOneString(PythonLanguageVersion.V27, "def f(): pass\r\n#fob");
+            TestOneString(PythonLanguageVersion.V27, $"def f(): pass{Environment.NewLine}#fob");
         }
 
         [TestMethod, Priority(1)]
@@ -1204,7 +1204,7 @@ def f(): pass");
             TestOneString(PythonLanguageVersion.V27, "x  =   42");
             TestOneString(PythonLanguageVersion.V27, "x = abc = 42");
             TestOneString(PythonLanguageVersion.V27, "x  =   abc    =     42");
-            TestOneString(PythonLanguageVersion.V30, "def f():\r\n     a = True");
+            TestOneString(PythonLanguageVersion.V30, $"def f():{Environment.NewLine}     a = True");
 
             // Augmented Assignment Statement
             foreach (var op in new[] { "+", "-", "*", "/", "//", "%", "&", "|", "^", "<<", ">>", "**"}) {
@@ -1246,9 +1246,9 @@ def f(): pass");
 
             // For Statement
             TestOneString(PythonLanguageVersion.V27, "for i in xrange(10): pass");
-            TestOneString(PythonLanguageVersion.V27, "for i in xrange(10):\r\n    pass\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "for i in xrange(10):\r\n\r\n    pass\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "for i in xrange(10):\r\n    break\r\nelse:\r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"for i in xrange(10):{Environment.NewLine}    pass{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"for i in xrange(10):{Environment.NewLine}{Environment.NewLine}    pass{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"for i in xrange(10):{Environment.NewLine}    break{Environment.NewLine}else:{Environment.NewLine}    pass");
             
             TestOneString(PythonLanguageVersion.V27, "for (i), (j) in x.items(): print(i, j)");
             TestOneString(PythonLanguageVersion.V27, "for (i, j) in x.items(): print(i, j)");
@@ -1259,9 +1259,9 @@ def f(): pass");
             TestOneString(PythonLanguageVersion.V27, "for [[i], [j]] in x.items(): print(i, j)");
 
             TestOneString(PythonLanguageVersion.V27, "for  i   in    xrange(10)    :      pass");
-            TestOneString(PythonLanguageVersion.V27, "for  i   in    xrange(10)    :\r\n    pass \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "for  i   in    xrange(10)    :\r\n\r\n    pass \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "for  i   in    xrange(10)    :\r\n    break\r\nelse     :      \r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"for  i   in    xrange(10)    :{Environment.NewLine}    pass {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"for  i   in    xrange(10)    :{Environment.NewLine}{Environment.NewLine}    pass {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"for  i   in    xrange(10)    :{Environment.NewLine}    break{Environment.NewLine}else     :      {Environment.NewLine}    pass");
             TestOneString(PythonLanguageVersion.V27, "for  (i), (j)   in    x.items()     :      print(i, j)");
             TestOneString(PythonLanguageVersion.V27, "for  (i, j)   in    x.items()     :      print(i, j)");
             TestOneString(PythonLanguageVersion.V27, "for  i,j    in    xrange(10)     :      pass");
@@ -1270,34 +1270,34 @@ def f(): pass");
             TestOneString(PythonLanguageVersion.V27, "for  [i, j]   in    x.items()     :      print(i, j)");
             TestOneString(PythonLanguageVersion.V27, "for  [[i], [j]]   in    x.items()     :      print(i, j)");
 
-            TestOneString(PythonLanguageVersion.V35, "async def f():\r\n    async for i in xrange(10): pass");
-            TestOneString(PythonLanguageVersion.V35, "async def f():\r\n    async  for i in xrange(10):\r\n        pass\r\n        pass");
-            TestOneString(PythonLanguageVersion.V35, "async def f():\r\n    async  for  i in xrange(10):\r\n\r\n        pass\r\n        pass");
-            TestOneString(PythonLanguageVersion.V35, "async def f():\r\n    async for  i  in xrange(10):\r\n        break\r\nelse:\r\n        pass");
+            TestOneString(PythonLanguageVersion.V35, $"async def f():{Environment.NewLine}    async for i in xrange(10): pass");
+            TestOneString(PythonLanguageVersion.V35, $"async def f():{Environment.NewLine}    async  for i in xrange(10):{Environment.NewLine}        pass{Environment.NewLine}        pass");
+            TestOneString(PythonLanguageVersion.V35, $"async def f():{Environment.NewLine}    async  for  i in xrange(10):{Environment.NewLine}{Environment.NewLine}        pass{Environment.NewLine}        pass");
+            TestOneString(PythonLanguageVersion.V35, $"async def f():{Environment.NewLine}    async for  i  in xrange(10):{Environment.NewLine}        break{Environment.NewLine}else:{Environment.NewLine}        pass");
 
             // While Statement
             TestOneString(PythonLanguageVersion.V27, "while True: break");
-            TestOneString(PythonLanguageVersion.V27, "while True: break\r\nelse: pass");
-            TestOneString(PythonLanguageVersion.V27, "while True:\r\n    break\r\nelse:\r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"while True: break{Environment.NewLine}else: pass");
+            TestOneString(PythonLanguageVersion.V27, $"while True:{Environment.NewLine}    break{Environment.NewLine}else:{Environment.NewLine}    pass");
             TestOneString(PythonLanguageVersion.V27, "while  True   :    break");
-            TestOneString(PythonLanguageVersion.V27, "while  True   :    break\r\nelse     : pass");
-            TestOneString(PythonLanguageVersion.V27, "while  True:\r\n    break   \r\nelse    :     \r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"while  True   :    break{Environment.NewLine}else     : pass");
+            TestOneString(PythonLanguageVersion.V27, $"while  True:{Environment.NewLine}    break   {Environment.NewLine}else    :     {Environment.NewLine}    pass");
 
             // If Statement
             TestOneString(PythonLanguageVersion.V27, "if True: pass");
-            TestOneString(PythonLanguageVersion.V27, "if True:\r\n    pass\r\nelse:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "if True:\r\n    pass\r\nelif False:\r\n    pass\r\nelse:\r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"if True:{Environment.NewLine}    pass{Environment.NewLine}else:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"if True:{Environment.NewLine}    pass{Environment.NewLine}elif False:{Environment.NewLine}    pass{Environment.NewLine}else:{Environment.NewLine}    pass");
             TestOneString(PythonLanguageVersion.V27, "if  True   :    pass");
-            TestOneString(PythonLanguageVersion.V27, "if  True   :\r\n    pass\r\nelse    :     \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "if  True   :\r\n    pass\r\nelif     False     :\r\n    pass      \r\nelse       :        \r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"if  True   :{Environment.NewLine}    pass{Environment.NewLine}else    :     {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"if  True   :{Environment.NewLine}    pass{Environment.NewLine}elif     False     :{Environment.NewLine}    pass      {Environment.NewLine}else       :        {Environment.NewLine}    pass");
 
             // Suite Statement
             TestOneString(PythonLanguageVersion.V27, "abc;fob;oar");
             TestOneString(PythonLanguageVersion.V27, "abc  ;   fob    ;     oar");
-            TestOneString(PythonLanguageVersion.V27, "abc;fob\r\n\r\noar;baz");
-            TestOneString(PythonLanguageVersion.V27, "abc  ;   fob    \r\n\r\noar     ;      baz");
+            TestOneString(PythonLanguageVersion.V27, $"abc;fob{Environment.NewLine}{Environment.NewLine}oar;baz");
+            TestOneString(PythonLanguageVersion.V27, $"abc  ;   fob    {Environment.NewLine}{Environment.NewLine}oar     ;      baz");
             TestOneString(PythonLanguageVersion.V27, "fob;");
-            TestOneString(PythonLanguageVersion.V27, "def f():\r\n    if True:\r\n        fob;\r\n     oar");
+            TestOneString(PythonLanguageVersion.V27, $"def f():{Environment.NewLine}    if True:{Environment.NewLine}        fob;{Environment.NewLine}     oar");
             TestOneString(PythonLanguageVersion.V27, @"def f(x):
     length = x
     if length == 0:
@@ -1319,104 +1319,104 @@ def f(): pass");
             TestOneString(PythonLanguageVersion.V27, "with  fob   ,    oar     :      pass");
             TestOneString(PythonLanguageVersion.V27, "with  fob   as    f     ,       oar       as       b        :          pass");
             TestOneString(PythonLanguageVersion.V27, "with abc: pass");
-            TestOneString(PythonLanguageVersion.V27, "with abc as oar:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "with fob, oar:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "with fob as f, oar as b:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "with  abc   :\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "with  abc   as    oar     :  \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "with  fob   ,    oar     :  \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "with  fob   as    f     ,       oar       as       b        :  \r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"with abc as oar:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"with fob, oar:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"with fob as f, oar as b:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"with  abc   :{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"with  abc   as    oar     :  {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"with  fob   ,    oar     :  {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"with  fob   as    f     ,       oar       as       b        :  {Environment.NewLine}    pass");
 
-            TestOneString(PythonLanguageVersion.V35, "async def f():\r\n    async with abc: pass");
-            TestOneString(PythonLanguageVersion.V35, "async def f():\r\n    async  with  abc   :\r\n        pass");
-            TestOneString(PythonLanguageVersion.V35, "async def f():\r\n    async   with  fob   ,    oar     :\r\n          pass");
-            TestOneString(PythonLanguageVersion.V35, "async def f():\r\n    async  with  fob   ,    oar     :  \r\n        pass");
+            TestOneString(PythonLanguageVersion.V35, $"async def f():{Environment.NewLine}    async with abc: pass");
+            TestOneString(PythonLanguageVersion.V35, $"async def f():{Environment.NewLine}    async  with  abc   :{Environment.NewLine}        pass");
+            TestOneString(PythonLanguageVersion.V35, $"async def f():{Environment.NewLine}    async   with  fob   ,    oar     :{Environment.NewLine}          pass");
+            TestOneString(PythonLanguageVersion.V35, $"async def f():{Environment.NewLine}    async  with  fob   ,    oar     :  {Environment.NewLine}        pass");
 
             // Try Statement
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception, e: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception as e: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept TypeError: pass\r\nexcept Exception: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept TypeError, e: pass\r\nexcept Exception: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept TypeError as e: pass\r\nexcept Exception: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept: pass\r\nelse: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception: pass\r\nelse: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception, e: pass\r\nelse: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception as e: pass\r\nelse: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept: pass\r\nfinally: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception: pass\r\nfinally: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception, e: pass\r\nfinally: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception as e: pass\r\nfinally: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept: pass\r\nelse: pass\r\nfinally: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception: pass\r\nelse: pass\r\nfinally: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception, e: pass\r\nelse: pass\r\nfinally: pass");
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nexcept Exception as e: pass\r\nelse: pass\r\nfinally: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception, e: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception as e: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except TypeError: pass{Environment.NewLine}except Exception: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except TypeError, e: pass{Environment.NewLine}except Exception: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except TypeError as e: pass{Environment.NewLine}except Exception: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except: pass{Environment.NewLine}else: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception: pass{Environment.NewLine}else: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception, e: pass{Environment.NewLine}else: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception as e: pass{Environment.NewLine}else: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except: pass{Environment.NewLine}finally: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception: pass{Environment.NewLine}finally: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception, e: pass{Environment.NewLine}finally: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception as e: pass{Environment.NewLine}finally: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except: pass{Environment.NewLine}else: pass{Environment.NewLine}finally: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception: pass{Environment.NewLine}else: pass{Environment.NewLine}finally: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception, e: pass{Environment.NewLine}else: pass{Environment.NewLine}finally: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}except Exception as e: pass{Environment.NewLine}else: pass{Environment.NewLine}finally: pass");
 
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception, e:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception as e:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept TypeError:\r\n    pass\r\nexcept Exception:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept TypeError, e:\r\n    pass\r\nexcept Exception:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept TypeError as e:\r\n    pass\r\nexcept Exception:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept:\r\n    pass\r\nelse:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception:\r\n    pass\r\nelse:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception, e:\r\n    pass\r\nelse:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception as e:\r\n    pass\r\nelse:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept: pass\r\nfinally:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception:\r\n    pass\r\nfinally:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception, e:\r\n    pass\r\nfinally:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception as e:\r\n    pass\r\nfinally:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept: pass\r\nelse:\r\n    pass\r\nfinally:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception:\r\n    pass\r\nelse: pass\r\nfinally:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception, e:\r\n    pass\r\nelse:\r\n    pass\r\nfinally:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nexcept Exception as e:\r\n    pass\r\nelse:\r\n    pass\r\nfinally:\r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception, e:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception as e:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except TypeError:{Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except TypeError, e:{Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except TypeError as e:{Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except:{Environment.NewLine}    pass{Environment.NewLine}else:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass{Environment.NewLine}else:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception, e:{Environment.NewLine}    pass{Environment.NewLine}else:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception as e:{Environment.NewLine}    pass{Environment.NewLine}else:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except: pass{Environment.NewLine}finally:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass{Environment.NewLine}finally:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception, e:{Environment.NewLine}    pass{Environment.NewLine}finally:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception as e:{Environment.NewLine}    pass{Environment.NewLine}finally:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except: pass{Environment.NewLine}else:{Environment.NewLine}    pass{Environment.NewLine}finally:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass{Environment.NewLine}else: pass{Environment.NewLine}finally:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception, e:{Environment.NewLine}    pass{Environment.NewLine}else:{Environment.NewLine}    pass{Environment.NewLine}finally:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}except Exception as e:{Environment.NewLine}    pass{Environment.NewLine}else:{Environment.NewLine}    pass{Environment.NewLine}finally:{Environment.NewLine}    pass");
 
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   :    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    :     pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    ,     e      :        pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    as    e      :        pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   TypeError    :     pass      \r\nexcept        Exception        :          pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   TypeError    ,     e        :          pass\r\nexcept           Exception            :            pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   TypeError    as    e        :          pass\r\nexcept           Exception             :              pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   :    pass     \r\nelse      :         pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    :      pass     \r\nelse       :        pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    ,     e      :       pass        \r\nelse         :              pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    as     e      :       pass        \r\nelse         :              pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   :    pass     \r\nfinally      :       pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    :      pass       \r\nfinally       :        pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    ,      e       :       pass\r\nfinally         :          pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    as      e       :       pass\r\nfinally         :          pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   :    pass\r\nelse     :      pass       \r\nfinally        :        pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    :     pass      \r\nelse       :        pass         \r\nfinally          :           pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    ,    e:     pass      \r\nelse       :       pass         \r\nfinally          :          pass");
-            TestOneString(PythonLanguageVersion.V27, "try:  pass\r\nexcept   Exception    as    e:     pass      \r\nelse       :       pass         \r\nfinally          :          pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   :    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    :     pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    ,     e      :        pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    as    e      :        pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   TypeError    :     pass      {Environment.NewLine}except        Exception        :          pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   TypeError    ,     e        :          pass{Environment.NewLine}except           Exception            :            pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   TypeError    as    e        :          pass{Environment.NewLine}except           Exception             :              pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   :    pass     {Environment.NewLine}else      :         pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    :      pass     {Environment.NewLine}else       :        pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    ,     e      :       pass        {Environment.NewLine}else         :              pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    as     e      :       pass        {Environment.NewLine}else         :              pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   :    pass     {Environment.NewLine}finally      :       pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    :      pass       {Environment.NewLine}finally       :        pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    ,      e       :       pass{Environment.NewLine}finally         :          pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    as      e       :       pass{Environment.NewLine}finally         :          pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   :    pass{Environment.NewLine}else     :      pass       {Environment.NewLine}finally        :        pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    :     pass      {Environment.NewLine}else       :        pass         {Environment.NewLine}finally          :           pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    ,    e:     pass      {Environment.NewLine}else       :       pass         {Environment.NewLine}finally          :          pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:  pass{Environment.NewLine}except   Exception    as    e:     pass      {Environment.NewLine}else       :       pass         {Environment.NewLine}finally          :          pass");
 
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept      :\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       :\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       ,        e         :          \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       as        e          :\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       TypeError       :        \r\n    pass\r\nexcept Exception:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       TypeError       ,        e         :\r\n    pass\r\nexcept Exception:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       TypeError       as        e         :\r\n    pass\r\nexcept Exception:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept      :\r\n    pass    \r\nelse        :\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       :        \r\n    pass\r\nelse        :         \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       ,         e         :\r\n    pass\r\nelse          :\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       as       e        :\r\n    pass\r\nelse          :          \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept      : pass      \r\nfinally       :         \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception      :       \r\n    pass\r\nfinally          :\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       ,        e          :\r\n    pass\r\nfinally:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       as        e         :\r\n    pass\r\nfinally           :            \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept      :        pass        \r\nelse          :          \r\n    pass\r\nfinally           :           \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       :\r\n    pass\r\nelse        :         pass\r\nfinally          :           \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       ,       e         :\r\n    pass\r\nelse           :             \r\n    pass\r\nfinally             :               \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass     \r\nexcept       Exception       as       e        :\r\n    pass\r\nelse           :\r\n    pass\r\nfinally          :              \r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except      :{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       :{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       ,        e         :          {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       as        e          :{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       TypeError       :        {Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       TypeError       ,        e         :{Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       TypeError       as        e         :{Environment.NewLine}    pass{Environment.NewLine}except Exception:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except      :{Environment.NewLine}    pass    {Environment.NewLine}else        :{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       :        {Environment.NewLine}    pass{Environment.NewLine}else        :         {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       ,         e         :{Environment.NewLine}    pass{Environment.NewLine}else          :{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       as       e        :{Environment.NewLine}    pass{Environment.NewLine}else          :          {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except      : pass      {Environment.NewLine}finally       :         {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception      :       {Environment.NewLine}    pass{Environment.NewLine}finally          :{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       ,        e          :{Environment.NewLine}    pass{Environment.NewLine}finally:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       as        e         :{Environment.NewLine}    pass{Environment.NewLine}finally           :            {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except      :        pass        {Environment.NewLine}else          :          {Environment.NewLine}    pass{Environment.NewLine}finally           :           {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       :{Environment.NewLine}    pass{Environment.NewLine}else        :         pass{Environment.NewLine}finally          :           {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       ,       e         :{Environment.NewLine}    pass{Environment.NewLine}else           :             {Environment.NewLine}    pass{Environment.NewLine}finally             :               {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass     {Environment.NewLine}except       Exception       as       e        :{Environment.NewLine}    pass{Environment.NewLine}else           :{Environment.NewLine}    pass{Environment.NewLine}finally          :              {Environment.NewLine}    pass");
 
-            TestOneString(PythonLanguageVersion.V27, "try: pass\r\nfinally: pass");
-            TestOneString(PythonLanguageVersion.V27, "try  :   pass\r\nfinally    :     pass");
-            TestOneString(PythonLanguageVersion.V27, "try:\r\n    pass\r\nfinally:\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "try  :   \r\n    pass\r\nfinally    :     \r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try: pass{Environment.NewLine}finally: pass");
+            TestOneString(PythonLanguageVersion.V27, $"try  :   pass{Environment.NewLine}finally    :     pass");
+            TestOneString(PythonLanguageVersion.V27, $"try:{Environment.NewLine}    pass{Environment.NewLine}finally:{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, $"try  :   {Environment.NewLine}    pass{Environment.NewLine}finally    :     {Environment.NewLine}    pass");
 
             // Class Definition
             TestOneString(PythonLanguageVersion.V27, "class C: pass");
@@ -1447,38 +1447,38 @@ def f(): pass");
             TestOneString(PythonLanguageVersion.V30, "class  C   (    fob     =      oar       )        :         pass");
             TestOneString(PythonLanguageVersion.V30, "class  C   (    fob     =      oar       ,        baz         =          42           )           :             pass");
 
-            TestOneString(PythonLanguageVersion.V27, "class C: \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "class C(): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "class C(object): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "class C(object, ): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class C(object, metaclass=42): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class C(*fob): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class C(*fob, ): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class C(*fob, **oar): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class C(*fob, **oar, ): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class C(**fob): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class C(**fob, ): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class C(fob = oar): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class C(fob = oar, baz = 42): \r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, "class C: {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, "class C(): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, "class C(object): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, "class C(object, ): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class C(object, metaclass=42): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class C(*fob): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class C(*fob, ): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class C(*fob, **oar): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class C(*fob, **oar, ): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class C(**fob): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class C(**fob, ): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class C(fob = oar): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class C(fob = oar, baz = 42): {Environment.NewLine}    pass");
 
-            TestOneString(PythonLanguageVersion.V27, "class  C   :    \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "class  C   (    )     :      \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "class  C   (    object): \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "class  C   (    object      ,       )      : \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class  C   (    object      ,       metaclass        =         42          )           : \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class  C   (    *     fob      )       :         \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class  C   (    *     fob      ,       )        :        \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class  C   (    *     fob      ,       **        oar         )          :           \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class  C   (    *     fob      ,      **        oar         ,          )           :            \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class  C   (    **     fob      )       :         \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class  C   (    **     fob      ,       )        :         \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class  C   (    fob     =      oar       )        :         \r\n    pass");
-            TestOneString(PythonLanguageVersion.V30, "class  C   (    fob     =      oar       ,        baz         =          42           )           :             \r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "class Fob(int if y else object):\r\n    pass");
-            TestOneString(PythonLanguageVersion.V27, "class  Fob   (    int     if      y      else       object         )         :\r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, "class  C   :    {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, "class  C   (    )     :      {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, "class  C   (    object): {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, "class  C   (    object      ,       )      : {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class  C   (    object      ,       metaclass        =         42          )           : {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class  C   (    *     fob      )       :         {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class  C   (    *     fob      ,       )        :        {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class  C   (    *     fob      ,       **        oar         )          :           {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class  C   (    *     fob      ,      **        oar         ,          )           :            {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class  C   (    **     fob      )       :         {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class  C   (    **     fob      ,       )        :         {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class  C   (    fob     =      oar       )        :         {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V30, "class  C   (    fob     =      oar       ,        baz         =          42           )           :             {Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, "class Fob(int if y else object):{Environment.NewLine}    pass");
+            TestOneString(PythonLanguageVersion.V27, "class  Fob   (    int     if      y      else       object         )         :{Environment.NewLine}    pass");
 
-            TestOneString(PythonLanguageVersion.V27, "@fob\r\nclass C: pass");
-            TestOneString(PythonLanguageVersion.V27, "@  fob   \r\nclass    C     :       pass");
+            TestOneString(PythonLanguageVersion.V27, $"@fob{Environment.NewLine}class C: pass");
+            TestOneString(PythonLanguageVersion.V27, $"@  fob   {Environment.NewLine}class    C     :       pass");
 
             // Function Definition
             TestOneString(PythonLanguageVersion.V27, "def f(): pass");
@@ -1493,14 +1493,14 @@ def f(): pass");
             TestOneString(PythonLanguageVersion.V27, "def  f   (    a     ,       b          )          :           pass");
             TestOneString(PythonLanguageVersion.V30, "def  f   (    a     ,       b        )         ->          fob           :            pass");
             TestOneString(PythonLanguageVersion.V27, "def  f   (    *     a      ,        **        b         )          :           pass");
-            TestOneString(PythonLanguageVersion.V27, "@fob\r\ndef f(): pass");
-            TestOneString(PythonLanguageVersion.V27, "@fob.oar\r\ndef f(): pass");
-            TestOneString(PythonLanguageVersion.V27, "@fob(2)\r\ndef f(): pass");
-            TestOneString(PythonLanguageVersion.V27, "@fob.oar(2)\r\ndef f(): pass");
-            TestOneString(PythonLanguageVersion.V27, "@  fob   \r\ndef f(): pass");
-            TestOneString(PythonLanguageVersion.V27, "@  fob   .    oar\r\ndef f(): pass");
-            TestOneString(PythonLanguageVersion.V27, "@  fob   (    2     )\r\ndef f(): pass");
-            TestOneString(PythonLanguageVersion.V27, "@  fob   .    oar     (      2       )\r\ndef f(): pass");
+            TestOneString(PythonLanguageVersion.V27, $"@fob{Environment.NewLine}def f(): pass");
+            TestOneString(PythonLanguageVersion.V27, $"@fob.oar{Environment.NewLine}def f(): pass");
+            TestOneString(PythonLanguageVersion.V27, $"@fob(2){Environment.NewLine}def f(): pass");
+            TestOneString(PythonLanguageVersion.V27, $"@fob.oar(2){Environment.NewLine}def f(): pass");
+            TestOneString(PythonLanguageVersion.V27, $"@  fob   {Environment.NewLine}def f(): pass");
+            TestOneString(PythonLanguageVersion.V27, $"@  fob   .    oar{Environment.NewLine}def f(): pass");
+            TestOneString(PythonLanguageVersion.V27, $"@  fob   (    2     ){Environment.NewLine}def f(): pass");
+            TestOneString(PythonLanguageVersion.V27, $"@  fob   .    oar     (      2       ){Environment.NewLine}def f(): pass");
             TestOneString(PythonLanguageVersion.V27, "def f((a)): pass");
             TestOneString(PythonLanguageVersion.V27, "def  f   (    (     a         )      )       :        pass");
             TestOneString(PythonLanguageVersion.V27, "def f((a, b)): pass");
@@ -1508,20 +1508,20 @@ def f(): pass");
             TestOneString(PythonLanguageVersion.V27, "def f((a, (b, c))): pass");
             TestOneString(PythonLanguageVersion.V27, "def  f   (    (     a      ,       (         b          ,          c            )             )              )              :                pass");
 
-            TestOneString(PythonLanguageVersion.V27, "@fob\r\n\r\ndef f(): pass");
+            TestOneString(PythonLanguageVersion.V27, $"@fob{Environment.NewLine}{Environment.NewLine}def f(): pass");
 
-            TestOneString(PythonLanguageVersion.V27, "class C:\r\n    @fob.__oar\r\n    def f(self): pass");
+            TestOneString(PythonLanguageVersion.V27, $"class C:{Environment.NewLine}    @fob.__oar{Environment.NewLine}    def f(self): pass");
 
-            TestOneString(PythonLanguageVersion.V27, "class C:\r\n    def __f(self): pass");
+            TestOneString(PythonLanguageVersion.V27, $"class C:{Environment.NewLine}    def __f(self): pass");
 
             TestOneString(PythonLanguageVersion.V27, "def f(a,): pass");
             TestOneString(PythonLanguageVersion.V27, "def  f(   a    ,     )      :       pass");
 
-            TestOneString(PythonLanguageVersion.V27, "class C:\r\n    @property\r\n    def fob(self): return 42");
+            TestOneString(PythonLanguageVersion.V27, $"class C:{Environment.NewLine}    @property{Environment.NewLine}    def fob(self): return 42");
 
             TestOneString(PythonLanguageVersion.V35, "async def f(): pass");
-            TestOneString(PythonLanguageVersion.V35, "@fob\r\n\r\nasync def f(): pass");
-            TestOneString(PythonLanguageVersion.V35, "@fob(2)\r\nasync \\\r\ndef f(): pass");
+            TestOneString(PythonLanguageVersion.V35, $"@fob{Environment.NewLine}{Environment.NewLine}async def f(): pass");
+            TestOneString(PythonLanguageVersion.V35, $"@fob(2){Environment.NewLine}async \\{Environment.NewLine}def f(): pass");
 
             TestOneString(PythonLanguageVersion.V35, "def f(a, ");
 
@@ -1535,12 +1535,12 @@ def f(): pass");
 
         [TestMethod, Priority(0)]
         public void RoundTripSublistParameterWithDefault() {
-            TestOneString(PythonLanguageVersion.V27, "def f((a, b) = (1, 2)):\r\n    pass");
+            TestOneString(PythonLanguageVersion.V27, $"def f((a, b) = (1, 2)):{Environment.NewLine}    pass");
         }
 
         [TestMethod, Priority(0)]
         public void RoundTripDoubleAwait() {
-            TestOneString(PythonLanguageVersion.V35, "async def f(x):\r\n    await await x");
+            TestOneString(PythonLanguageVersion.V35, $"async def f(x):{Environment.NewLine}    await await x");
         }
 
         [TestMethod, Priority(0)]
@@ -1725,7 +1725,7 @@ class BaseSet(object):
                     output = ast.ToCodeString(ast, format);
                 }
             } catch(Exception e) {
-                Console.WriteLine("Failed to convert to code: {0}\r\n{1}", originalText, e);
+                Console.WriteLine($"Failed to convert to code: {0}{Environment.NewLine}{1}", originalText, e);
                 Assert.Fail();
                 return;
             }

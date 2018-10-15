@@ -3,20 +3,37 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using static System.FormattableString;
 
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
     public static class Check {
         [DebuggerStepThrough]
+        public static void FieldType<T>(string fieldName, object fieldValue) {
+            if (!(fieldValue is T)) {
+                throw new InvalidOperationException($"Field {fieldName} must be of type {fieldValue}");
+            }
+        }
+
+        [DebuggerStepThrough]
+        public static void ArgumentOfType<T>(string argumentName, object argument, [CallerMemberName] string callerName = null) {
+            ArgumentNull(argumentName, argument);
+
+            if (!(argument is T)) {
+                throw new ArgumentException($"Argument {argumentName} of method {callerName} must be of type {typeof(T)}");
+            }
+        }
+
+        [DebuggerStepThrough]
         public static void ArgumentNull(string argumentName, object argument) {
-            if (argument == null) {
+            if (argument is null) {
                 throw new ArgumentNullException(argumentName);
             }
         }
 
         [DebuggerStepThrough]
-        public static void ArgumentStringNullOrEmpty(string argumentName, string argument) {
-            Check.ArgumentNull(argumentName, argument);
+        public static void ArgumentNotNullOrEmpty(string argumentName, string argument) {
+            ArgumentNull(argumentName, argument);
 
             if (string.IsNullOrEmpty(argument)) {
                 throw new ArgumentException(argumentName);

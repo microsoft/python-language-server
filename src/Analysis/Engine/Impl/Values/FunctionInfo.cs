@@ -245,7 +245,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     try {
                         var desc = av.ShortDescription;
                         if (!string.IsNullOrWhiteSpace(desc) && seenNames.Add(desc)) {
-                            descriptions.Add(desc.Replace("\r\n", "\n").Replace("\n", "\r\n    "));
+                            descriptions.Add(desc.Replace("\r\n", "\n").Replace("\n", $"{Environment.NewLine}    "));
                         }
                     } finally {
                         av.Pop();

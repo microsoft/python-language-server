@@ -31,7 +31,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     public partial class LanguageServer {
         private InitializeParams _initParams;
         private bool _shutdown;
-        private Action<Task, object> DisposeStateContinuation { get; } = (t, o) => ((IDisposable) o).Dispose();
+        private Action<Task, object> DisposeStateContinuation { get; } = (t, o) => ((IDisposable)o).Dispose();
 
         [JsonRpcMethod("initialize")]
         public async Task<InitializeResult> Initialize(JToken token, CancellationToken cancellationToken) {
@@ -53,7 +53,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         [JsonRpcMethod("initialized")]
-        public async Task Initialized(JToken token, CancellationToken cancellationToken) { 
+        public async Task Initialized(JToken token, CancellationToken cancellationToken) {
             await _server.Initialized(ToObject<InitializedParams>(token), cancellationToken);
             _rpc.NotifyAsync("python/languageServerStarted").DoNotWait();
         }
@@ -101,19 +101,21 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private async Task LoadFromDirectoryAsync(string rootDir, PatternMatchingResult matchResult) {
-            foreach (var file in matchResult.Files) {
-                if (_sessionTokenSource.IsCancellationRequested) {
-                    break;
-                }
-
-                var path = Path.Combine(rootDir, PathUtils.NormalizePath(file.Path));
-                if (!ModulePath.IsPythonSourceFile(path)) {
-                    if (ModulePath.IsPythonFile(path, true, true, true)) {
-                        // TODO: Deal with scrapable files (if we need to do anything?)
+            using (_server.AnalysisQueue.Pause()) {
+                foreach (var file in matchResult.Files) {
+                    if (_sessionTokenSource.IsCancellationRequested) {
+                        break;
                     }
-                    continue;
+
+                    var path = Path.Combine(rootDir, PathUtils.NormalizePath(file.Path));
+                    if (!ModulePath.IsPythonSourceFile(path)) {
+                        if (ModulePath.IsPythonFile(path, true, true, true)) {
+                            // TODO: Deal with scrapable files (if we need to do anything?)
+                        }
+                        continue;
+                    }
+                    await _server.LoadFileAsync(new Uri(path));
                 }
-                await _server.LoadFileAsync(new Uri(path));
             }
         }
 
