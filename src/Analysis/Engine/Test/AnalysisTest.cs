@@ -703,7 +703,7 @@ z = mod1.f(42)
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uri1 = TestData.GetTempPathUri("mod1.py");
                 var uri2 = TestData.GetTempPathUri("mod2.py");
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uri1, text1);
                     await server.SendDidOpenTextDocument(uri2, text2);
                 }
@@ -942,7 +942,7 @@ class Test_test2(Test_test1):
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uris = TestData.GetNextModuleUris(2);
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
@@ -3656,7 +3656,7 @@ def g(a, b, c): pass
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
@@ -3681,7 +3681,7 @@ def f(x):
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
@@ -3708,7 +3708,7 @@ class c:
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
@@ -3738,7 +3738,7 @@ class c:
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
@@ -3776,7 +3776,7 @@ a = x
 "              };
 
                 var uris = TestData.GetNextModuleUris(3);
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                     await server.SendDidOpenTextDocument(uris[permutation[2]], contents[permutation[2]]);
@@ -4136,7 +4136,7 @@ abc = 42
                 var subpackage2InitUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage2", "__init__.py"), string.Empty);
                 var subpackage2ModuleZUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "subpackage2", "moduleZ.py"), subpackage2ModuleZContent);
 
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(initUri, initContent);
                     await server.SendDidOpenTextDocument(moduleAUri, moduleAContent);
                     await server.SendDidOpenTextDocument(subpackageInitUri, string.Empty);
@@ -4215,7 +4215,7 @@ g = MyClass().mydec(module1.f)
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
@@ -4260,7 +4260,7 @@ class MyClass(object):
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
@@ -4449,7 +4449,7 @@ def decorator_b(fn):
 
             using (var server = await CreateServerAsync()) {
                 var uris = TestData.GetNextModuleUris(2);
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }
@@ -4614,7 +4614,7 @@ import imp as impp
 " };
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uris = TestData.GetNextModuleUris(2);
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uris[permutation[0]], contents[permutation[0]]);
                     await server.SendDidOpenTextDocument(uris[permutation[1]], contents[permutation[1]]);
                 }

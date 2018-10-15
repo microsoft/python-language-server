@@ -31,10 +31,11 @@ namespace Microsoft.PythonTools.Intellisense {
         private static readonly AsyncLocal<AnalysisQueue> _current = new AsyncLocal<AnalysisQueue>();
         public static AnalysisQueue Current => _current.Value;
 
-        private readonly HashSet<IGroupableAnalysisProject> _enqueuedGroups;
+        private readonly HashSet<IGroupableAnalysisProject> _enqueuedGroups = new HashSet<IGroupableAnalysisProject>();
         private readonly PriorityProducerConsumer<QueueItem> _ppc;
         private readonly Task _consumerTask;
         private readonly ManualResetEventSlim _queueEnabled = new ManualResetEventSlim(true);
+        private readonly CountdownDisposable _queueControlCounter;
 
         public event EventHandler AnalysisStarted;
         public event EventHandler AnalysisComplete;
@@ -42,12 +43,11 @@ namespace Microsoft.PythonTools.Intellisense {
         public event EventHandler<UnhandledExceptionEventArgs> UnhandledException;
 
         public int Count => _ppc.Count;
-        public void Start() => _queueEnabled.Set();
-        public void Stop() => _queueEnabled.Reset();
+        public IDisposable Pause() => _queueControlCounter.Increment();
 
         internal AnalysisQueue() {
             _ppc = new PriorityProducerConsumer<QueueItem>(4, excludeDuplicates: true, comparer: QueueItemComparer.Instance);
-            _enqueuedGroups = new HashSet<IGroupableAnalysisProject>();
+            _queueControlCounter = new CountdownDisposable(() => _queueEnabled.Reset(), () => _queueEnabled.Set());
             _consumerTask = Task.Run(ConsumerLoop);
         }
 
@@ -63,9 +63,9 @@ namespace Microsoft.PythonTools.Intellisense {
                     _current.Value = this;
                     await item.Handler(_ppc.CancellationToken);
                     _current.Value = null;
-                } catch (OperationCanceledException) when (_ppc.IsDisposed)  {
+                } catch (OperationCanceledException) when (_ppc.IsDisposed) {
                     return;
-                } catch (Exception ex) when (!ex.IsCriticalException())  {
+                } catch (Exception ex) when (!ex.IsCriticalException()) {
                     UnhandledException?.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
                     Dispose();
                 }
@@ -208,7 +208,7 @@ namespace Microsoft.PythonTools.Intellisense {
         private sealed class QueueItemComparer : IEqualityComparer<QueueItem> {
             public static IEqualityComparer<QueueItem> Instance { get; } = new QueueItemComparer();
 
-            private QueueItemComparer() {}
+            private QueueItemComparer() { }
             public bool Equals(QueueItem x, QueueItem y) => Equals(x.Key, y.Key);
             public int GetHashCode(QueueItem obj) => obj.Key.GetHashCode();
         }

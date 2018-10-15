@@ -37,18 +37,5 @@ namespace AnalysisTests {
         }
 
         protected virtual AnalysisLimits GetLimits() => AnalysisLimits.GetDefaultLimits();
-
-        protected IDisposable FileLoading() => new AnalysisQueueControl(_server.AnalysisQueue);
-
-        class AnalysisQueueControl: IDisposable {
-            private readonly AnalysisQueue _queue;
-
-            public AnalysisQueueControl(AnalysisQueue queue) {
-                _queue = queue;
-                _queue.Stop();
-            }
-
-            public void Dispose() => _queue.Start();
-        }
     }
 }
