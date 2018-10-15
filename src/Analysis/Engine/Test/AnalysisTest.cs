@@ -4071,7 +4071,7 @@ abc = 42
                 var modX = TestData.GetTestSpecificUri(Path.Combine("fob", "x.py"));
                 var modY = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), srcY);
                 
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.LoadFileAsync(initX);
                     await server.SendDidOpenTextDocument(modX, srcX);
                     await server.LoadFileAsync(modY);
@@ -4097,7 +4097,7 @@ abc = 42
                 var uriSrc2 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "x.py"), src2);
                 var uriSrc3 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), src3);
 
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uriSrc1, src1);
                     await server.SendDidOpenTextDocument(uriSrc2, src2);
                     await server.SendDidOpenTextDocument(uriSrc3, src3);
