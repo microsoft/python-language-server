@@ -101,8 +101,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private async Task LoadFromDirectoryAsync(string rootDir, PatternMatchingResult matchResult) {
-            _server.AnalysisQueue.Stop();
-            try {
+            using (_server.AnalysisQueue.Pause()) {
                 foreach (var file in matchResult.Files) {
                     if (_sessionTokenSource.IsCancellationRequested) {
                         break;
@@ -117,8 +116,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     }
                     await _server.LoadFileAsync(new Uri(path));
                 }
-            } finally {
-                _server.AnalysisQueue.Start();
             }
         }
 

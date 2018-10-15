@@ -60,7 +60,7 @@ class D(object):
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uri1 = TestData.GetTempPathUri("mod1.py");
                 var uri2 = TestData.GetTempPathUri("mod2.py");
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uri1, text1);
                     await server.SendDidOpenTextDocument(uri2, text2);
                 }
@@ -96,7 +96,7 @@ class D(object):
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uri1 = TestData.GetNextModuleUri();
                 var uri2 = TestData.GetNextModuleUri();
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uri1, text1);
                     await server.SendDidOpenTextDocument(uri2, text2);
                 }
@@ -850,7 +850,7 @@ abc()
             var fobUri = TestData.GetTempPathUri("fob.py");
             var oarUri = TestData.GetTempPathUri("oar.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(fobUri, fobText);
                     await server.SendDidOpenTextDocument(oarUri, oarText);
                 }
@@ -884,7 +884,7 @@ class bcd(abc):
             var fobUri = TestData.GetTempPathUri("fob.py");
             var oarUri = TestData.GetTempPathUri("oar.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(fobUri, fobText);
                     await server.SendDidOpenTextDocument(oarUri, oarText);
                 }
@@ -914,7 +914,7 @@ from baz import abc2 as abc";
             var bazUri = TestData.GetTempPathUri("baz.py");
             var oarBazUri = TestData.GetTempPathUri("oarbaz.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(fobUri, fobText);
                     await server.SendDidOpenTextDocument(oarUri, oarText);
                     await server.SendDidOpenTextDocument(bazUri, bazText);
@@ -968,7 +968,7 @@ f = fn()";
             var fobUri = TestData.GetTempPathUri("fob.py");
             var oarUri = TestData.GetTempPathUri("oar.py");
             using (var server = await CreateServerAsync()) {
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(fobUri, fobText);
                     await server.SendDidOpenTextDocument(oarUri, oarText);
                 }
@@ -1013,7 +1013,7 @@ g = f()";
             var fobUri = TestData.GetTempPathUri("fob.py");
             var oarUri = TestData.GetTempPathUri("oar.py");
             using (var server = await CreateServerAsync()) {
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(fobUri, fobText);
                     await server.SendDidOpenTextDocument(oarUri, oarText);
                 }
@@ -1513,7 +1513,7 @@ c=C()
 f(a=c)
 real = None");
                 Uri mod2;
-                using (FileLoading()) {
+                using (s.AnalysisQueue.Pause()) {
 
                     await s.LoadFileAsync(mod1);
 
@@ -1701,7 +1701,7 @@ class Base(object):
 
             using (var server = await CreateServerAsync()) {
                 Uri uri1, uri2;
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
                     uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
                     await server.LoadFileAsync(uri2);
@@ -1738,7 +1738,7 @@ class Base(object):
 
             using (var server = await CreateServerAsync()) {
                 Uri uri1, uri2;
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
                     await server.LoadFileAsync(uri2);
                     uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
@@ -1776,7 +1776,7 @@ class Base(object):
 
             using (var server = await CreateServerAsync()) {
                 Uri uri1, uri2;
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
                     uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
                     await server.LoadFileAsync(uri2);
@@ -1819,7 +1819,7 @@ class Derived1(Base):
 
             using (var server = await CreateServerAsync()) {
                 Uri uri1, uri2;
-                using (FileLoading()) {
+                using (server.AnalysisQueue.Pause()) {
                     uri1 = await TestData.CreateTestSpecificFileAsync("mod1.py", text1);
                     uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
 
