@@ -14,15 +14,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using static System.FormattableString;
 
 namespace Microsoft.PythonTools.Analysis {
     public static class PythonVersions {
@@ -184,10 +181,9 @@ namespace Microsoft.PythonTools.Analysis {
                 }
 
                 return new InterpreterConfiguration(
-                    $"Global|Jython|{version.ToVersion()}",
-                    string.Format("Jython {0}", version.ToVersion()),
-                    dir.FullName,
-                    interpreter.FullName,
+                    id: $"Global|Jython|{version.ToVersion()}",
+                    description: string.Format("Jython {0}", version.ToVersion()),
+                    pythonExePath: interpreter.FullName,
                     version: version.ToVersion()
                 );
             }

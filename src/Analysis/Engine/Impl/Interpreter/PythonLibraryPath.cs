@@ -136,7 +136,7 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }
 
-            var ospy = PathUtils.FindFile(config.PrefixPath, "os.py", firstCheck: new[] { "Lib" });
+            var ospy = PathUtils.FindFile(config.LibraryPath, "os.py");
             if (!string.IsNullOrEmpty(ospy)) {
                 return GetDefaultDatabaseSearchPaths(IOPath.GetDirectoryName(ospy));
             }

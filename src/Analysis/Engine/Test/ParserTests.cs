@@ -2864,7 +2864,7 @@ namespace AnalysisTests {
             var files = new List<string>();
             var version = configuration.Version.ToLanguageVersion();
 
-            CollectFiles(Path.Combine(configuration.PrefixPath, "Lib"), files, new[] { "site-packages" });
+            CollectFiles(configuration.LibraryPath, files, new[] { "site-packages" });
 
             var skippedFiles = new HashSet<string>(new[] {
                     "py3_test_grammar.py",  // included in 2x distributions but includes 3x grammar

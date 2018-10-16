@@ -20,8 +20,8 @@ namespace Microsoft.PythonTools.Interpreter {
     /// <summary>
     /// Specifies the interpreter's behavior in the UI.
     /// </summary>
-    /// <remarks>New in 2.2</remarks>
     [Flags]
+    [Obsolete("Language Server does not support UI features related to the interpreter.")]
     public enum InterpreterUIMode : int {
         /// <summary>
         /// Interpreter can be set or selected as the default, and is visible to

@@ -4026,7 +4026,7 @@ t.x, t. =
                 Assert.Inconclusive("Test requires Python installation");
             }
 
-            var files = Directory.GetFiles(Path.Combine(configuration.PrefixPath, "Lib"), "*.py", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(configuration.LibraryPath, "*.py", SearchOption.AllDirectories);
             Trace.TraceInformation($"Files count: {files}");
             var contentTasks = files.Take(50).Select(f => File.ReadAllTextAsync(f)).ToArray();
 

@@ -294,7 +294,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            _log?.Log(TraceLevel.Verbose, "ImportTypeStub", mp?.FullName, FastRelativePath(mp?.SourceFile));
+            _log?.Log(TraceLevel.Verbose, "ImportTypeStub", mp?.FullName, mp?.SourceFile);
             return PythonModuleLoader.FromTypeStub(context.Interpreter, mp?.SourceFile, _configuration.Version.ToLanguageVersion(), mp?.FullName);
         }
 
@@ -327,7 +327,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            _log?.Log(TraceLevel.Info, "ImportBuiltins", name, FastRelativePath(_configuration.InterpreterPath));
+            _log?.Log(TraceLevel.Info, "ImportBuiltins", name, _configuration.InterpreterPath);
 
             try {
                 return new AstBuiltinPythonModule(name, _configuration.InterpreterPath);
@@ -401,10 +401,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             IPythonModule module;
 
             if (mp.IsCompiled) {
-                _log?.Log(TraceLevel.Verbose, "ImportScraped", mp.FullName, FastRelativePath(mp.SourceFile));
+                _log?.Log(TraceLevel.Verbose, "ImportScraped", mp.FullName, mp.SourceFile);
                 module = new AstScrapedPythonModule(mp.FullName, mp.SourceFile);
             } else {
-                _log?.Log(TraceLevel.Verbose, "Import", mp.FullName, FastRelativePath(mp.SourceFile));
+                _log?.Log(TraceLevel.Verbose, "Import", mp.FullName, mp.SourceFile);
                 module = PythonModuleLoader.FromFile(context.Interpreter, mp.SourceFile, _configuration.Version.ToLanguageVersion(), mp.FullName);
             }
 
@@ -446,20 +446,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             } catch (ArgumentException) {
                 return default(ModulePath);
             }
-        }
-
-        private string FastRelativePath(string fullPath) {
-            if (string.IsNullOrEmpty(fullPath)) {
-                return fullPath;
-            }
-            if (!fullPath.StartsWithOrdinal(_configuration.PrefixPath, ignoreCase: true)) {
-                return fullPath;
-            }
-            var p = fullPath.Substring(_configuration.PrefixPath.Length);
-            if (p.Length > 0 && p[0] == Path.DirectorySeparatorChar) {
-                return p.Substring(1);
-            }
-            return p;
         }
     }
 }

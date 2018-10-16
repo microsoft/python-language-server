@@ -26,12 +26,29 @@ namespace Microsoft.PythonTools.Interpreter {
         private string _fullDescription;
 
         /// <summary>
-        /// <para>Constructs a new interpreter configuration based on the
-        /// provided values.</para>
-        /// <para>No validation is performed on the parameters.</para>
-        /// <para>If winPath is null or empty,
-        /// <see cref="WindowsInterpreterPath"/> will be set to path.</para>
+        /// Constructs a new interpreter configuration based on the provided values.
         /// </summary>
+        public InterpreterConfiguration(
+            string id,
+            string description,
+            string pythonExePath = null,
+            string pathVar = "",
+            string libPath = null,
+            string sitePackagesPath = null,
+            InterpreterArchitecture architecture = default(InterpreterArchitecture),
+            Version version = null
+        ) {
+            Id = id;
+            _description = description ?? string.Empty;
+            InterpreterPath = pythonExePath;
+            PathEnvironmentVariable = pathVar;
+            Architecture = architecture ?? InterpreterArchitecture.Unknown;
+            Version = version ?? new Version();
+            LibraryPath = libPath ?? string.Empty;
+            SitePackagesPath = sitePackagesPath ?? string.Empty;
+        }
+
+        [Obsolete]
         public InterpreterConfiguration(
             string id,
             string description,
@@ -54,27 +71,20 @@ namespace Microsoft.PythonTools.Interpreter {
             UIMode = uiMode;
         }
 
-        private static string Read(Dictionary<string, object> d, string k) 
-            => d.TryGetValue(k, out var o) ? o as string: null;
+        private static string Read(Dictionary<string, object> d, string k)
+            => d.TryGetValue(k, out var o) ? o as string : null;
 
         private InterpreterConfiguration(Dictionary<string, object> properties) {
             Id = Read(properties, nameof(Id));
             _description = Read(properties, nameof(Description)) ?? "";
-            PrefixPath = Read(properties, nameof(PrefixPath));
             InterpreterPath = Read(properties, nameof(InterpreterPath));
-            WindowsInterpreterPath = Read(properties, nameof(WindowsInterpreterPath));
             PathEnvironmentVariable = Read(properties, nameof(PathEnvironmentVariable));
+            LibraryPath = Read(properties, nameof(LibraryPath));
             Architecture = InterpreterArchitecture.TryParse(Read(properties, nameof(Architecture)));
             try {
                 Version = Version.Parse(Read(properties, nameof(Version)));
             } catch (Exception ex) when (ex is ArgumentException || ex is FormatException) {
                 Version = new Version();
-            }
-            UIMode = 0;
-            foreach (var bit in (Read(properties, nameof(UIMode)) ?? "").Split('|')) {
-                if (Enum.TryParse(bit, out InterpreterUIMode m)) {
-                    UIMode |= m;
-                }
             }
             if (properties.TryGetValue(nameof(SearchPaths), out object o)) {
                 SearchPaths.Clear();
@@ -89,19 +99,12 @@ namespace Microsoft.PythonTools.Interpreter {
         internal void WriteToDictionary(Dictionary<string, object> properties) {
             properties[nameof(Id)] = Id;
             properties[nameof(Description)] = _description;
-            properties[nameof(PrefixPath)] = PrefixPath;
             properties[nameof(InterpreterPath)] = InterpreterPath;
-            properties[nameof(WindowsInterpreterPath)] = WindowsInterpreterPath;
             properties[nameof(PathEnvironmentVariable)] = PathEnvironmentVariable;
+            properties[nameof(LibraryPath)] = LibraryPath;
             properties[nameof(Architecture)] = Architecture.ToString();
             if (Version != null) {
                 properties[nameof(Version)] = Version.ToString();
-            }
-            var m = Enum.GetValues(typeof(InterpreterUIMode)).Cast<Enum>()
-                .Where(flag => UIMode.HasFlag(flag))
-                .Select(flag => Enum.GetName(typeof(InterpreterUIMode), flag));
-            if (m.Any()) {
-                properties[nameof(UIMode)] = string.Join("|", m);
             }
             properties[nameof(SearchPaths)] = SearchPaths.ToArray();
         }
@@ -109,9 +112,8 @@ namespace Microsoft.PythonTools.Interpreter {
         /// <summary>
         /// Reconstructs an interpreter configuration from a dictionary.
         /// </summary>
-        public static InterpreterConfiguration FromDictionary(Dictionary<string, object> properties) {
-            return new InterpreterConfiguration(properties);
-        }
+        public static InterpreterConfiguration FromDictionary(Dictionary<string, object> properties)
+            => new InterpreterConfiguration(properties);
 
         /// <summary>
         /// Serializes an interpreter configuration to a dictionary.
@@ -137,8 +139,8 @@ namespace Microsoft.PythonTools.Interpreter {
         /// ambiguous with other interpreters.
         /// </summary>
         public void SwitchToFullDescription() {
-            bool hasVersion = _description.Contains(Version.ToString());
-            bool hasArch = _description.IndexOf(Architecture.ToString(null, CultureInfo.CurrentCulture), StringComparison.CurrentCultureIgnoreCase) >= 0 ||
+            var hasVersion = _description.Contains(Version.ToString());
+            var hasArch = _description.IndexOf(Architecture.ToString(null, CultureInfo.CurrentCulture), StringComparison.CurrentCultureIgnoreCase) >= 0 ||
                 _description.IndexOf(Architecture.ToString("x", CultureInfo.CurrentCulture), StringComparison.CurrentCultureIgnoreCase) >= 0;
 
             if (hasVersion && hasArch) {
@@ -153,10 +155,7 @@ namespace Microsoft.PythonTools.Interpreter {
             }
         }
 
-        /// <summary>
-        /// Returns the prefix path of the Python installation. All files
-        /// related to the installation should be underneath this path.
-        /// </summary>
+        [Obsolete("Prefix path only applies to Windows.")]
         public string PrefixPath { get; }
 
         /// <summary>
@@ -169,6 +168,7 @@ namespace Microsoft.PythonTools.Interpreter {
         /// Returns the path to the interpreter executable for launching Python
         /// applications which are windows applications (pythonw.exe, ipyw.exe).
         /// </summary>
+        [Obsolete("Python Language Server is platform-agnostic and does not use Windows-specific settings.")]
         public string WindowsInterpreterPath { get; }
 
         /// <summary>
@@ -189,11 +189,19 @@ namespace Microsoft.PythonTools.Interpreter {
         public Version Version { get; }
 
         /// <summary>
+        /// Returns path to Python standard libraries.
+        /// </summary>
+        public string LibraryPath {get; }
+
+        /// <summary>
+        /// Returns path to Python site packages from 'import site; print(site.getsitepackages())'
+        /// </summary>
+        public string SitePackagesPath { get; }
+
+        /// <summary>
         /// The UI behavior of the interpreter.
         /// </summary>
-        /// <remarks>
-        /// New in 2.2
-        /// </remarks>
+        [Obsolete("Language Server does not support UI features related to the interpreter.")]
         public InterpreterUIMode UIMode { get; }
 
         /// <summary>
@@ -214,33 +222,25 @@ namespace Microsoft.PythonTools.Interpreter {
             }
 
             var cmp = StringComparer.OrdinalIgnoreCase;
-            return cmp.Equals(PrefixPath, other.PrefixPath) &&
-                string.Equals(Id, other.Id) &&
+            return string.Equals(Id, other.Id) &&
                 cmp.Equals(Description, other.Description) &&
                 cmp.Equals(InterpreterPath, other.InterpreterPath) &&
-                cmp.Equals(WindowsInterpreterPath, other.WindowsInterpreterPath) &&
                 cmp.Equals(PathEnvironmentVariable, other.PathEnvironmentVariable) &&
                 Architecture == other.Architecture &&
-                Version == other.Version &&
-                UIMode == other.UIMode;
+                Version == other.Version;
         }
 
         public override int GetHashCode() {
             var cmp = StringComparer.OrdinalIgnoreCase;
-            return cmp.GetHashCode(PrefixPath ?? "") ^
-                Id.GetHashCode() ^
+            return Id.GetHashCode() ^
                 cmp.GetHashCode(Description) ^
                 cmp.GetHashCode(InterpreterPath ?? "") ^
-                cmp.GetHashCode(WindowsInterpreterPath ?? "") ^
                 cmp.GetHashCode(PathEnvironmentVariable ?? "") ^
                 Architecture.GetHashCode() ^
-                Version.GetHashCode() ^
-                UIMode.GetHashCode();
+                Version.GetHashCode();
         }
 
-        public override string ToString() {
-            return Description;
-        }
+        public override string ToString() => Description;
 
         /// <summary>
         /// Attempts to update descriptions to be unique within the

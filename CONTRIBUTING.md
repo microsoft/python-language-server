@@ -55,6 +55,15 @@ On Windows you can also attach from Visual Studio 2017 (Debug | Attach To Proces
 ### Unit Tests
 1. Run the Unit Tests in VS Code via the `Launch Language Server Tests`.
 2. On Windows Open PLS.sln solution in Visual Studio 2017 and run its tests.
+3. Run `dotnet test` from Terminal.
+4. Install .NET Core Test Explorer for VS Code, open src folder in VS Code and run tests.
+
+NOTE: Language Server does not automatically discover Python installations on various operating systems.
+At run time path to the Python interpreter is provided by the client application. Therefore you may not
+be able to run tests if test code is unable to find the local Python installation as it only has basic
+capabilities for the discovery. Refer to the discovery code for 
+[Windows](https://github.com/Microsoft/python-language-server/blob/master/src/Analysis/Engine/Test/WindowsPythonInstallPathResolver.cs) 
+and [*nix](https://github.com/Microsoft/python-language-server/blob/master/src/Analysis/Engine/Test/UnixPythonInstallPathResolver.cs)
 
 
 ### Coding Standards

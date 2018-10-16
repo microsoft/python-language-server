@@ -487,10 +487,10 @@ class BankAccount(object):
         public async Task ScrapedTypeWithWrongModule() {
             var version = PythonVersions.Versions
                 .Concat(PythonVersions.AnacondaVersions)
-                .LastOrDefault(v => Directory.Exists(Path.Combine(v.PrefixPath, "Lib", "site-packages", "numpy")));
+                .LastOrDefault(v => Directory.Exists(Path.Combine(v.SitePackagesPath, "numpy")));
             version.AssertInstalled();
 
-            Console.WriteLine("Using {0}", version.PrefixPath);
+            Console.WriteLine("Using {0}", version.InterpreterPath);
             using (var server = await CreateServerAsync(version)) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync("import numpy.core.numeric as NP; ndarray = NP.ndarray");
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
@@ -663,8 +663,8 @@ class BankAccount(object):
                 try {
                     var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
                     var ctxt = interpreter.CreateModuleContext();
-
-                    var dllsDir = PathUtils.GetAbsoluteDirectoryPath(factory.Configuration.PrefixPath, "DLLs");
+                    // TODO: this is Windows only
+                    var dllsDir = PathUtils.GetAbsoluteDirectoryPath(Path.GetDirectoryName(factory.Configuration.LibraryPath), "DLLs");
                     if (!Directory.Exists(dllsDir)) {
                         Assert.Inconclusive("Configuration does not have DLLs");
                     }
@@ -812,16 +812,7 @@ class BankAccount(object):
                 UseExistingCache = false
             });
 
-            IEnumerable<ModulePath> modules;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                modules = ModulePath.GetModulesInLib(configuration.PrefixPath).ToList();
-            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-                var libPath = $"/Library/Frameworks/Python.framework/Versions/{configuration.Version}/lib/python{configuration.Version}";
-                modules = ModulePath.GetModulesInLib(configuration.PrefixPath, libPath).ToList();
-            } else {
-                var libPath = $"/usr/lib/python{configuration.Version}";
-                modules = ModulePath.GetModulesInLib(configuration.PrefixPath, libPath).ToList();
-            }
+            var modules = ModulePath.GetModulesInLib(configuration.LibraryPath, configuration.SitePackagesPath).ToList();
 
             var skip = new HashSet<string>(skipModules);
             skip.UnionWith(new[] {
