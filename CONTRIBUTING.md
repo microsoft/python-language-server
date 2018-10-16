@@ -56,7 +56,7 @@ On Windows you can also attach from Visual Studio 2017 (Debug | Attach To Proces
 To run unit tests, do one of the following:
 - Run the Unit Tests in the [VS Code Python Extension](https://github.com/Microsoft/vscode-python) project via the `Launch Language Server Tests`.
 - On Windows: open PLS.sln solution in Visual Studio 2017 and run tests from the Test Explorer.
-- Run `dotnet test` from Terminal in the `src` directory.
+- Run `dotnet test` from Terminal in the `src` directory or from `src/Analysis/Engine/Test` if you prefer not to see messages about projects that do not contain test code.
 - Install C# extension and .NET Core Test Explorer for VS Code, open src folder in VS Code and run tests.
 
 NOTE: Language Server does not automatically discover Python installations on various operating systems.
