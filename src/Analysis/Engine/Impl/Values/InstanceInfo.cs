@@ -123,13 +123,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     if (callRes.Any()) {
                         res = res.Union(callRes.Call(node, unit, args, keywordArgNames));
                     } else {
-                        unit.State.AddDiagnostic(
-                            (node as CallExpression)?.Target ?? node,
-                            unit,
-                            ErrorMessages.NotCallable(ClassInfo?.ShortDescription),
-                            DiagnosticSeverity.Warning,
-                            ErrorMessages.NotCallableCode
-                        );
+                        // This diagnostic is very noisy in a lot of cases where the analyzer
+                        // can't prove that something is actually callable. Let's not add this
+                        // diagnostic until we can properly collect and filter these warnings.
+                        // unit.State.AddDiagnostic(
+                        //     (node as CallExpression)?.Target ?? node,
+                        //     unit,
+                        //     ErrorMessages.NotCallable(ClassInfo?.ShortDescription),
+                        //     DiagnosticSeverity.Warning,
+                        //     ErrorMessages.NotCallableCode
+                        // );
                     }
                 } finally {
                     Pop();
