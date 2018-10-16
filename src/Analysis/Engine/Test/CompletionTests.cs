@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,7 +47,7 @@ namespace AnalysisTests {
         public void TestCleanup() => TestEnvironmentImpl.TestCleanup();
 
         [ServerTestMethod, Priority(0)]
-        public async Task CompletionInWithStatementDerivedClass(Server server) {
+        public async Task InWithStatementDerivedClass(Server server) {
             var uri = await server.OpenDefaultDocumentAndGetUriAsync("with open(x) as fs:\n  fs. ");
             await server.GetAnalysisAsync(uri);
             var completions = await server.SendCompletion(uri, 1, 5);
@@ -285,7 +284,7 @@ class oar(int):
         }
 
         [ServerTestMethod, Priority(0)]
-        public async Task CompletionDocumentation(Server server) {
+        public async Task Documentation(Server server) {
             var text = @"
 import sys
 z = 43
@@ -409,7 +408,7 @@ class Class1(list):
 Class1().
 ", 4, 9, "append", "append($0)")]
         [ServerTestMethod, Priority(0)]
-        public async Task Completion_AddBracketsEnabled(Server server, string code, int row, int character, string expectedLabel, string expectedInsertText) {
+        public async Task AddBracketsEnabled(Server server, string code, int row, int character, string expectedLabel, string expectedInsertText) {
             await server.SendDidChangeConfiguration(new ServerSettings.PythonCompletionOptions { addBrackets = true });
 
             var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
@@ -422,7 +421,7 @@ Class1().
         [DataRow(PythonLanguageMajorVersion.LatestV2, "foo(self):{0}    return super(B, self).foo()")]
         [DataRow(PythonLanguageMajorVersion.LatestV3, "foo(self):{0}    return super().foo()")]
         [ServerTestMethod(VersionArgumentIndex = 1), Priority(0)]
-        public async Task Completion_AddBracketsEnabled_MethodOverride(Server server, PythonLanguageVersion version, string expectedInsertText) {
+        public async Task AddBracketsEnabled_MethodOverride(Server server, PythonLanguageVersion version, string expectedInsertText) {
             expectedInsertText = expectedInsertText.FormatInvariant(Environment.NewLine);
             var code = @"
 class A(object):
@@ -465,7 +464,7 @@ class B(A):
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod, Priority(0)]
-        public async Task CompletionInForStatement(bool is2X) {
+        public async Task InForStatement(bool is2X) {
             using (var s = await CreateServerAsync(is2X ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X)) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("for  ");
                 await AssertCompletion(s, u, new[] { "for" }, new string[0], new SourceLocation(1, 4));
@@ -515,7 +514,7 @@ class B(A):
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod, Priority(0)]
-        public async Task CompletionInFunctionDefinition(bool is2X) {
+        public async Task InFunctionDefinition(bool is2X) {
             using (var s = await CreateServerAsync(is2X ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X)) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("def f(a, b:int, c=2, d:float=None): pass");
 
@@ -554,7 +553,7 @@ class B(A):
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod, Priority(0)]
-        public async Task CompletionInClassDefinition(bool is2X) {
+        public async Task InClassDefinition(bool is2X) {
             using (var s = await CreateServerAsync(is2X ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X)) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("class C(object, parameter=MC): pass");
 
@@ -580,7 +579,7 @@ class B(A):
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionInWithStatement() {
+        public async Task InWithStatement() {
             using (var s = await CreateServerAsync()) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("with x as y, z as w: pass");
                 await AssertAnyCompletion(s, u, new SourceLocation(1, 6));
@@ -610,7 +609,7 @@ class B(A):
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionInImport() {
+        public async Task InImport() {
             using (var s = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("import unittest.case as C, unittest\nfrom unittest.case import TestCase as TC, TestCase");
 
@@ -648,7 +647,7 @@ class B(A):
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionForOverride() {
+        public async Task ForOverride() {
             using (var s = await CreateServerAsync()) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("class A(object):\n    def i(): pass\n    def \npass");
 
@@ -661,7 +660,7 @@ class B(A):
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod, Priority(0)]
-        public async Task CompletionForOverrideArgs(bool is2X) {
+        public async Task ForOverrideArgs(bool is2X) {
             var code = @"
 class A(object):
     def foo(self, a, b=None, *args, **kwargs):
@@ -689,7 +688,7 @@ class B(A):
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionInDecorator() {
+        public async Task InDecorator() {
             using (var s = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("@dec\ndef f(): pass\n\nx = a @ b");
 
@@ -714,7 +713,7 @@ class B(A):
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod, Priority(0)]
-        public async Task CompletionInRaise(bool is2X) {
+        public async Task InRaise(bool is2X) {
             using (var s = await CreateServerAsync(is2X ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X)) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("raise ");
                 await AssertCompletion(s, u, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(1, 7));
@@ -740,7 +739,7 @@ class B(A):
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionInExcept() {
+        public async Task InExcept() {
             using (var s = await CreateServerAsync()) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexcept ");
                 await AssertCompletion(s, u, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(3, 8));
@@ -767,7 +766,7 @@ class B(A):
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionAfterDot() {
+        public async Task AfterDot() {
             using (var s = await CreateServerAsync()) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("x = 1\nx. n\nx.(  )\nx(x.  )\nx.  \nx  ");
                 await AssertCompletion(s, u, new[] { "real", "imag" }, new[] { "abs" }, new SourceLocation(2, 3));
@@ -782,7 +781,7 @@ class B(A):
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionAfterAssign() {
+        public async Task AfterAssign() {
             using (var s = await CreateServerAsync()) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("x = x\ny = ");
                 await AssertCompletion(s, u, new[] { "x", "abs" }, null, new SourceLocation(1, 5));
@@ -791,7 +790,7 @@ class B(A):
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionWithNewDot() {
+        public async Task WithNewDot() {
             // LSP assumes that the text buffer is up to date with typing,
             // which means the language server must know about dot for a
             // dot completion.
@@ -849,7 +848,7 @@ mc
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionAfterLoad() {
+        public async Task AfterLoad() {
             using (var s = await CreateServerAsync()) {
                 var mod1 = await s.OpenDocumentAndGetUriAsync("mod1.py", "import mod2\n\nmod2.");
 
@@ -879,7 +878,7 @@ mc
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionFromBaseClassMethod_V2() {
+        public async Task MethodFromBaseClass2X() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var code = @"
 import unittest
@@ -889,16 +888,16 @@ class Simple(unittest.TestCase):
 ";
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
 
-               await AssertCompletion(server, uri,
-                    position: new Position { line = 5, character = 29 },
-                    contains: new[] { "exception" },
-                    excludes: Array.Empty<string>()
-                );
+                await AssertCompletion(server, uri,
+                     position: new Position { line = 4, character = 28 },
+                     contains: new[] { "exception" },
+                     excludes: Array.Empty<string>()
+                 );
             }
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionFromBaseClassMethod_V3() {
+        public async Task MethodFromBaseClass3X() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var code = @"
 import unittest
@@ -914,7 +913,7 @@ class Simple(unittest.TestCase):
                                     stubPaths: new[] { GetTypeshedPath() });
 
                 await AssertCompletion(server, analysis.DocumentUri,
-                    position: new Position { line = 4, character = 29 },
+                    position: new Position { line = 4, character = 28 },
                     contains: new[] { "exception" },
                     excludes: Array.Empty<string>()
                 );
@@ -922,7 +921,7 @@ class Simple(unittest.TestCase):
         }
 
         [TestMethod, Priority(0)]
-        public async Task CompletionHook() {
+        public async Task Hook() {
             using (var s = await CreateServerAsync()) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("x = 123\nx.");
 
