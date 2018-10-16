@@ -24,22 +24,25 @@ namespace Microsoft.PythonTools {
     /// Stores the location of a span of text in a source file.
     /// </summary>
     [Serializable]
-    [DebuggerDisplay("({Start._line}, {Start._column})-({End._line}, {End._column})")]
+    [DebuggerDisplay("({Start.Line}, {Start.Column})-({End.Line}, {End.Column})")]
     public struct SourceSpan {
         /// <summary>
         /// Constructs a new span with a specific start and end location.
         /// </summary>
         /// <param name="start">The beginning of the span.</param>
         /// <param name="end">The end of the span.</param>
+        [DebuggerStepThrough]
         public SourceSpan(SourceLocation start, SourceLocation end) {
             ValidateLocations(start, end);
             Start = start;
             End = end;
         }
 
+        [DebuggerStepThrough]
         public SourceSpan(int startLine, int startColumn, int endLine, int endColumn)
             : this(new SourceLocation(startLine, startColumn), new SourceLocation(endLine, endColumn)) { }
 
+        [DebuggerStepThrough]
         private static void ValidateLocations(SourceLocation start, SourceLocation end) {
             if (start.IsValid && end.IsValid) {
                 if (start > end) {

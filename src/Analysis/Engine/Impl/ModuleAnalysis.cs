@@ -293,11 +293,20 @@ namespace Microsoft.PythonTools.Analysis {
 
             mainDefinition = mainDefinition ?? definitions.FirstOrDefault();
             if (mainDefinition != null) {
+                // If definition is 'self', replace definition with reference and add definition of the class instead.
+                // See https://github.com/Microsoft/vscode-python/issues/1637
+                if (name.Name == "self") {
+                    var selfDefinitions = GetSelfDefinition(mainDefinition, definitions, _unit);
+                    if (selfDefinitions != null) {
+                        return selfDefinitions;
+                    }
+                }
+
                 // Drop definitions in outer scopes and convert those in inner scopes to references.
                 // Exception is when variable is an import as in 
                 //   abc = 1
                 //   import abc
-                 var imports = definitions
+                var imports = definitions
                     .Where(d => d.Variable.Variable.Types.Any(t => t.TypeId == BuiltinTypeId.Module) && d.Location.DocumentUri != DocumentUri)
                     .ToArray();
 
@@ -325,6 +334,22 @@ namespace Microsoft.PythonTools.Analysis {
                 }
             }
             return new VariablesResult(variables, unit.Tree);
+        }
+
+        private VariablesResult GetSelfDefinition(VariableScopePair selfDefinition, VariableScopePair[] definitions, AnalysisUnit unit) {
+            var instanceInfo = selfDefinition.Variable.Variable.Types.OfType<IInstanceInfo>().FirstOrDefault();
+            if (instanceInfo == null) {
+                return null;
+            }
+            var cd = instanceInfo.ClassInfo.ClassDefinition;
+            var cdLocation = unit.Tree.IndexToLocation(cd.StartIndex);
+            var cdLocInfo = new LocationInfo(selfDefinition.Location.FilePath, selfDefinition.Location.DocumentUri, cdLocation.Line, cdLocation.Column);
+
+            var classDefinition = new AnalysisVariable(selfDefinition.Variable.Variable, VariableType.Definition, cdLocInfo);
+            var reference = new AnalysisVariable(selfDefinition.Variable.Variable, VariableType.Reference, selfDefinition.Location);
+            var otherRefs = definitions.Where(d => d.VariableType == VariableType.Reference).Select(d => d.Variable);
+
+            return new VariablesResult(new[] { classDefinition, reference }.Concat(otherRefs), unit.Tree);
         }
 
         private bool IsFunctionArgument(IScope scope, IAnalysisVariable v) {

@@ -16,22 +16,21 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonType : IPythonType, IMemberContainer, ILocatedMember, IHasQualifiedName {
-        private readonly string _name;
-        protected readonly Dictionary<string, IMember> _members;
-        private IReadOnlyList<IPythonType> _mro;
-
         private static readonly IPythonModule NoDeclModule = new AstPythonModule();
 
-        [ThreadStatic]
-        private static HashSet<AstPythonType> _processing;
+        private readonly string _name;
+        private IReadOnlyList<IPythonType> _mro;
+        private AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
+
+        protected readonly Dictionary<string, IMember> _members;
 
         public AstPythonType(string name): this(name, new Dictionary<string, IMember>(), Array.Empty<ILocationInfo>()) { }
 
@@ -224,21 +223,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return null;
         }
 
-        private bool Push() {
-            if (_processing == null) {
-                _processing = new HashSet<AstPythonType> { this };
-                return true;
-            } else {
-                return _processing.Add(this);
-            }
-        }
-
-        private void Pop() {
-            _processing.Remove(this);
-            if (_processing.Count == 0) {
-                _processing = null;
-            }
-        }
+        private bool Push() => _isProcessing.Value ? false : (_isProcessing.Value = true);
+        private void Pop() => _isProcessing.Value = false;
 
         public IPythonFunction GetConstructors() => GetMember(null, "__init__") as IPythonFunction;
 
