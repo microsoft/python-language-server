@@ -349,7 +349,7 @@ namespace Microsoft.PythonTools.Analysis {
             var reference = new AnalysisVariable(selfDefinition.Variable.Variable, VariableType.Reference, selfDefinition.Location);
             var otherRefs = definitions.Where(d => d.VariableType == VariableType.Reference).Select(d => d.Variable);
 
-            return new VariablesResult(new[] { classDefinition }.Concat(new[] { reference }).Concat(otherRefs), unit.Tree);
+            return new VariablesResult(new[] { classDefinition, reference }.Concat(otherRefs), unit.Tree);
         }
 
         private bool IsFunctionArgument(IScope scope, IAnalysisVariable v) {
