@@ -56,7 +56,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 try {
                     _server.Analyzer.ReloadModulesAsync(cancel).WaitAndUnwrapExceptions();
                     foreach (var entry in _server.Analyzer.ModulesByFilename) {
-                        _server.AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
+                        _server.EnqueueItemAsync(entry.Value.ProjectEntry, AnalysisPriority.Normal, false);
                     }
                     currentTcs.TrySetResult(true);
                 } catch (OperationCanceledException oce) {
