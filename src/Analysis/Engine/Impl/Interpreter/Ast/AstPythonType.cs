@@ -25,10 +25,10 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonType : IPythonType, IMemberContainer, ILocatedMember, IHasQualifiedName {
         private static readonly IPythonModule NoDeclModule = new AstPythonModule();
-        private static readonly AsyncLocal<HashSet<AstPythonType>> _processing = new AsyncLocal<HashSet<AstPythonType>>();
 
         private readonly string _name;
         private IReadOnlyList<IPythonType> _mro;
+        private AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
 
         protected readonly Dictionary<string, IMember> _members;
 
@@ -223,21 +223,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return null;
         }
 
-        private bool Push() {
-            if (_processing.Value == null) {
-                _processing.Value = new HashSet<AstPythonType> { this };
-                return true;
-            } else {
-                return _processing.Value.Add(this);
-            }
-        }
-
-        private void Pop() {
-            _processing.Value.Remove(this);
-            if (_processing.Value.Count == 0) {
-                _processing.Value = null;
-            }
-        }
+        private bool Push() => _isProcessing.Value ? false : (_isProcessing.Value = true);
+        private void Pop() => _isProcessing.Value = false;
 
         public IPythonFunction GetConstructors() => GetMember(null, "__init__") as IPythonFunction;
 
