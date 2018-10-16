@@ -15,8 +15,10 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer;
@@ -85,6 +87,28 @@ namespace AnalysisTests {
             var newVersion = -1;
             var code = (s.GetEntry(document) as IDocument)?.ReadDocument(s.GetPart(document), out newVersion).ReadToEnd();
             return Tuple.Create(code, newVersion);
+        }
+
+        protected async Task<IModuleAnalysis> GetStubBasedAnalysis(
+            Server server,
+            string code,
+            AnalysisLimits limits,
+            IEnumerable<string> searchPaths,
+            IEnumerable<string> stubPaths) {
+
+            if (limits != null) {
+                server.Analyzer.Limits = limits;
+            }
+            server.Analyzer.SetSearchPaths(searchPaths);
+            server.Analyzer.SetTypeStubPaths(stubPaths);
+
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            return await server.GetAnalysisAsync(uri);
+        }
+
+        protected static string GetTypeshedPath() {
+            var asmPath = Assembly.GetExecutingAssembly().GetAssemblyPath();
+            return Path.Combine(Path.GetDirectoryName(asmPath), "Typeshed");
         }
     }
 }
