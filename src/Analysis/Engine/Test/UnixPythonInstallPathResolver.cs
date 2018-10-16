@@ -35,7 +35,7 @@ namespace Microsoft.PythonTools.Analysis {
             GetConfigurationsFromConda();
         }
 
-        public InterpreterConfiguration GetCorePythonConfiguration(InterpreterArchitecture architecture, Version version) 
+        public InterpreterConfiguration GetCorePythonConfiguration(InterpreterArchitecture architecture, Version version)
             => architecture == InterpreterArchitecture.x86 ? null : _coreCache.TryGetValue(version, out var interpreterConfiguration) ? interpreterConfiguration : null;
 
         public InterpreterConfiguration GetCondaPythonConfiguration(InterpreterArchitecture architecture, Version version)
@@ -46,7 +46,7 @@ namespace Microsoft.PythonTools.Analysis {
         private void GetConfigurationsFromKnownPaths() {
             var homePath = Environment.GetEnvironmentVariable("HOME");
             var foldersFromPathVariable = Environment.GetEnvironmentVariable("PATH")?.Split(':') ?? Array.Empty<string>();
-            var knownFolders = new[] {"/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin", "/usr/local/sbin"};
+            var knownFolders = new[] { "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin", "/usr/local/sbin" };
             var folders = knownFolders.Concat(knownFolders.Select(p => Path.Combine(homePath, p))).Union(foldersFromPathVariable);
             foreach (var folder in folders) {
                 try {
@@ -87,15 +87,37 @@ namespace Microsoft.PythonTools.Analysis {
             var architecture = bool.Parse(configurationStrings[2])
                 ? InterpreterArchitecture.x64
                 : InterpreterArchitecture.x86;
+            var libPath = GetLibraryLocation(pythonFilePath);
+            var sitePackagesPath = GetSitePackagesLocation(pythonFilePath);
 
-            return new InterpreterConfiguration($"{idPrefix}|{version}", $"{idPrefix} {version} ({architecture})", prefix, pythonFilePath, pythonFilePath, string.Empty, architecture, version);
+            return new InterpreterConfiguration(
+                id: $"{idPrefix}|{version}",
+                description: $"{idPrefix} {version} ({architecture})",
+                pythonExePath: pythonFilePath,
+                pathVar: pythonFilePath,
+                libPath: libPath,
+                sitePackagesPath: sitePackagesPath,
+                architecture: architecture,
+                version: version);
         }
 
-        private static string[] GetConfigurationString(string pythonFilePath) {
+        private static string[] GetConfigurationString(string pythonFilePath)
+            => RunPythonAndGetOutput(pythonFilePath,
+                    "-c \"import sys; print('.'.join(str(x) for x in sys.version_info[:2])); print(sys.prefix); print(sys.maxsize > 2**32)\"");
+
+        private static string GetLibraryLocation(string pythonFilePath)
+            => RunPythonAndGetOutput(pythonFilePath,
+                    "-c \"import os, inspect; print(os.path.dirname(inspect.getfile(os)))\"").FirstOrDefault();
+
+        private static string GetSitePackagesLocation(string pythonFilePath)
+            => RunPythonAndGetOutput(pythonFilePath,
+                    "-c \"import site; print(site.getsitepackages())\"").FirstOrDefault(s => s.Contains("site-packages"));
+
+        private static string[] RunPythonAndGetOutput(string pythonFilePath, string arguments) {
             try {
                 var processStartInfo = new ProcessStartInfo {
                     FileName = pythonFilePath,
-                    Arguments = "-c \"import sys; print('.'.join(str(x) for x in sys.version_info[:2])); print(sys.prefix); print(sys.maxsize > 2**32)\"",
+                    Arguments = arguments,
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     CreateNoWindow = true

@@ -20,6 +20,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -86,7 +87,7 @@ namespace AnalysisTests {
         private static Task<Server> CreateServerAsync(InterpreterConfiguration configuration = null, string searchPath = null)
             => new Server().InitializeAsync(
                 configuration ?? PythonVersions.LatestAvailable,
-                searchPaths: new [] { searchPath ?? TestData.GetPath(@"TestData\AstAnalysis") });
+                searchPaths: new[] { searchPath ?? TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
 
         private static AstPythonInterpreterFactory CreateInterpreterFactory() => CreateInterpreterFactory(PythonVersions.LatestAvailable);
 
@@ -309,7 +310,7 @@ class BankAccount(object):
                     var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
 
                     var moduleNamesChanged = EventTaskSources.AstPythonInterpreter.ModuleNamesChanged.Create(interpreter, new CancellationTokenSource(1000).Token);
-                    factory.SetCurrentSearchPaths(new[] { TestData.GetPath("TestData\\AstAnalysis") });
+                    factory.SetCurrentSearchPaths(new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
                     await moduleNamesChanged;
 
                     interpreter.GetModuleNames().Should().Contain("Values");
@@ -335,7 +336,7 @@ class BankAccount(object):
                     var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
 
                     var moduleNamesChanged = EventTaskSources.AstPythonInterpreter.ModuleNamesChanged.Create(interpreter, new CancellationTokenSource(1000).Token);
-                    analyzer.SetSearchPaths(new[] { TestData.GetPath("TestData\\AstAnalysis") });
+                    analyzer.SetSearchPaths(new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
                     await moduleNamesChanged;
 
                     interpreter.GetModuleNames().Should().Contain("Values");
@@ -357,10 +358,10 @@ class BankAccount(object):
         public async Task AstTypeStubPaths_NoStubs() {
             using (var server = await CreateServerAsync()) {
                 var analysis = await GetStubBasedAnalysis(
-                    server, 
+                    server,
                     "import Package.Module\n\nc = Package.Module.Class()",
                     new AnalysisLimits { UseTypeStubPackages = false },
-                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
+                    searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
                     stubPaths: Enumerable.Empty<string>());
 
                 analysis.Should().HavePythonModuleVariable("Package");
@@ -381,7 +382,7 @@ class BankAccount(object):
                         UseTypeStubPackages = true,
                         UseTypeStubPackagesExclusively = false
                     },
-                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
+                    searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
                     stubPaths: Enumerable.Empty<string>());
 
                 analysis.Should().HavePythonModuleVariable("Package");
@@ -398,11 +399,11 @@ class BankAccount(object):
         public async Task AstTypeStubPaths_MergeStubsPath() {
             using (var server = await CreateServerAsync()) {
                 var analysis = await GetStubBasedAnalysis(
-                    server, 
+                    server,
                     "import Package.Module\n\nc = Package.Module.Class()",
                     null,
-                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
-                    stubPaths: new[] { TestData.GetPath("TestData\\AstAnalysis\\Stubs") });
+                    searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
+                    stubPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis", "Stubs")) });
 
                 analysis.Should().HavePythonModuleVariable("Package"); // member information comes from multiple sources
 
@@ -417,14 +418,14 @@ class BankAccount(object):
         public async Task AstTypeStubPaths_ExclusiveStubs() {
             using (var server = await CreateServerAsync()) {
                 var analysis = await GetStubBasedAnalysis(
-                    server, 
+                    server,
                     "import Package.Module\n\nc = Package.Module.Class()",
                     new AnalysisLimits {
                         UseTypeStubPackages = true,
                         UseTypeStubPackagesExclusively = true
                     },
-                    searchPaths: new[] { TestData.GetPath("TestData\\AstAnalysis") },
-                    stubPaths: new[] { TestData.GetPath("TestData\\AstAnalysis\\Stubs") });
+                    searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
+                    stubPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis", "Stubs")) });
 
                 analysis.Should().HavePythonModuleVariable("Package");
 
@@ -486,10 +487,10 @@ class BankAccount(object):
         public async Task ScrapedTypeWithWrongModule() {
             var version = PythonVersions.Versions
                 .Concat(PythonVersions.AnacondaVersions)
-                .LastOrDefault(v => Directory.Exists(Path.Combine(v.PrefixPath, "Lib", "site-packages", "numpy")));
+                .LastOrDefault(v => Directory.Exists(Path.Combine(v.SitePackagesPath, "numpy")));
             version.AssertInstalled();
 
-            Console.WriteLine("Using {0}", version.PrefixPath);
+            Console.WriteLine("Using {0}", version.InterpreterPath);
             using (var server = await CreateServerAsync(version)) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync("import numpy.core.numeric as NP; ndarray = NP.ndarray");
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
@@ -662,8 +663,8 @@ class BankAccount(object):
                 try {
                     var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
                     var ctxt = interpreter.CreateModuleContext();
-
-                    var dllsDir = PathUtils.GetAbsoluteDirectoryPath(factory.Configuration.PrefixPath, "DLLs");
+                    // TODO: this is Windows only
+                    var dllsDir = PathUtils.GetAbsoluteDirectoryPath(Path.GetDirectoryName(factory.Configuration.LibraryPath), "DLLs");
                     if (!Directory.Exists(dllsDir)) {
                         Assert.Inconclusive("Configuration does not have DLLs");
                     }
@@ -810,7 +811,8 @@ class BankAccount(object):
                 DatabasePath = TestData.GetAstAnalysisCachePath(configuration.Version, true),
                 UseExistingCache = false
             });
-            var modules = ModulePath.GetModulesInLib(configuration.PrefixPath).ToList();
+
+            var modules = ModulePath.GetModulesInLib(configuration.LibraryPath, configuration.SitePackagesPath).ToList();
 
             var skip = new HashSet<string>(skipModules);
             skip.UnionWith(new[] {

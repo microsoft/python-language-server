@@ -73,10 +73,10 @@ namespace AnalysisTests {
                 "print abc",
                 "raise Exception()",
                 "return abc",
-                "try:\r\n    pass\r\nexcept:\r\n    pass",
-                "while True:\r\n    pass",
+                $"try:{Environment.NewLine}    pass{Environment.NewLine}except:{Environment.NewLine}    pass",
+                $"while True:{Environment.NewLine}    pass",
                 "with abc: pass",
-                "@property\r\ndef f(): pass",
+                $"@property{Environment.NewLine}def f(): pass",
             };
 
         public static readonly string[] Statements3x = new[] { "nonlocal fob" };
@@ -88,7 +88,7 @@ namespace AnalysisTests {
                 res.Append(indentation);
                 res.Append(lines[i]);
                 if (i != lines.Length - 1) {
-                    res.Append("\r\n");
+                    res.Append(Environment.NewLine);
                 }
             }
             return res.ToString();

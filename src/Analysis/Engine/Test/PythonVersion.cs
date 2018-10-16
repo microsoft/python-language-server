@@ -28,7 +28,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public override string ToString() => Configuration.Description;
-        public string PrefixPath => Configuration.PrefixPath;
+        public string LibraryPath => Configuration.LibraryPath;
         public string InterpreterPath => Configuration.InterpreterPath;
         public PythonLanguageVersion Version => Configuration.Version.ToLanguageVersion();
         public string Id => Configuration.Id;

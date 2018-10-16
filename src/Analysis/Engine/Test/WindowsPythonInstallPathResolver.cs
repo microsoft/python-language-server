@@ -32,13 +32,13 @@ namespace Microsoft.PythonTools.Analysis {
             _registryCache = FindPythonConfigurationsInRegistry();
         }
 
-        public InterpreterConfiguration GetCorePythonConfiguration(InterpreterArchitecture architecture, Version version) 
+        public InterpreterConfiguration GetCorePythonConfiguration(InterpreterArchitecture architecture, Version version)
             => GetPythonConfiguration("Global|PythonCore|", architecture, version);
 
-        public InterpreterConfiguration GetCondaPythonConfiguration(InterpreterArchitecture architecture, Version version) 
+        public InterpreterConfiguration GetCondaPythonConfiguration(InterpreterArchitecture architecture, Version version)
             => GetPythonConfiguration("Global|ContinuumAnalytics|", architecture, version);
 
-        private InterpreterConfiguration GetPythonConfiguration(string prefix, InterpreterArchitecture architecture, Version version) 
+        private InterpreterConfiguration GetPythonConfiguration(string prefix, InterpreterArchitecture architecture, Version version)
             => _registryCache.FirstOrDefault(configuration =>
             configuration.Id.StartsWith(prefix) &&
             configuration.Architecture == architecture &&
@@ -57,11 +57,12 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             return new InterpreterConfiguration(
-                x64 ? "IronPython|2.7-64" : "IronPython|2.7-32",
-                string.Format("IronPython {0} 2.7", x64 ? "64-bit" : "32-bit"),
-                installPath,
-                Path.Combine(installPath, exeName),
-                arch: x64 ? InterpreterArchitecture.x64 : InterpreterArchitecture.x86,
+                id: x64 ? "IronPython|2.7-64" : "IronPython|2.7-32",
+                description: string.Format("IronPython {0} 2.7", x64 ? "64-bit" : "32-bit"),
+                pythonExePath: Path.Combine(installPath, exeName),
+                libPath: Path.Combine(installPath, "Lib"),
+                sitePackagesPath: Path.Combine(installPath, "Lib", "site-packages"),
+                architecture: x64 ? InterpreterArchitecture.x64 : InterpreterArchitecture.x86,
                 version: new Version(2, 7),
                 pathVar: "IRONPYTHONPATH"
             );
@@ -100,7 +101,7 @@ namespace Microsoft.PythonTools.Analysis {
                 if ("PyLauncher".Equals(company, StringComparison.OrdinalIgnoreCase)) {
                     continue;
                 }
-                
+
                 using (var companyKey = key.OpenSubKey(company)) {
                     if (companyKey == null) {
                         continue;
@@ -134,19 +135,12 @@ namespace Microsoft.PythonTools.Analysis {
             var pythonCoreCompatibility = "PythonCore".Equals(company, StringComparison.OrdinalIgnoreCase);
             var prefixPath = PathUtils.NormalizePath(installKey.GetValue(null) as string);
             var exePath = PathUtils.NormalizePath(installKey.GetValue("ExecutablePath") as string);
-            var exewPath = PathUtils.NormalizePath(installKey.GetValue("WindowedExecutablePath") as string);
 
 
             if (pythonCoreCompatibility && !string.IsNullOrEmpty(prefixPath)) {
                 if (string.IsNullOrEmpty(exePath)) {
                     try {
                         exePath = Python.Tests.Utilities.PathUtils.GetAbsoluteFilePath(prefixPath, "python.exe");
-                    } catch (ArgumentException) {
-                    }
-                }
-                if (string.IsNullOrEmpty(exewPath)) {
-                    try {
-                        exewPath = Python.Tests.Utilities.PathUtils.GetAbsoluteFilePath(prefixPath, "pythonw.exe");
                     } catch (ArgumentException) {
                     }
                 }
@@ -197,14 +191,14 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             return new InterpreterConfiguration(
-                id,
-                description,
-                prefixPath,
-                exePath,
-                exewPath,
-                pathVar,
-                architecture,
-                sysVersion
+                id: id,
+                description: description,
+                pythonExePath: exePath,
+                pathVar: pathVar,
+                libPath: Path.Combine(prefixPath, "Lib"),
+                sitePackagesPath: Path.Combine(prefixPath, "Lib", "site-packages"),
+                architecture: architecture,
+                version: sysVersion
             );
         }
 
@@ -249,7 +243,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             return null;
         }
-        
+
         private static bool IronPythonExistsIn(string/*!*/ dir) => File.Exists(Path.Combine(dir, "ipy.exe"));
 
         [DllImport("kernel32", EntryPoint = "GetBinaryTypeW", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Winapi)]

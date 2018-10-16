@@ -49,8 +49,12 @@ namespace Microsoft.PythonTools.Interpreter {
             IEnumerable<string> searchPaths = null
         ) {
             var config = new InterpreterConfiguration(
-                "AnalysisOnly|{0}".FormatInvariant(languageVersion),
-                description ?? "Analysis Only {0}".FormatUI(languageVersion),
+                id: "AnalysisOnly|{0}".FormatInvariant(languageVersion),
+                description: description ?? "Analysis Only {0}".FormatUI(languageVersion),
+                pythonExePath: null,
+                pathVar: null,
+                libPath: null,
+                sitePackagesPath: null,
                 version: languageVersion
             );
             config.SearchPaths.AddRange(searchPaths.MaybeEnumerate());

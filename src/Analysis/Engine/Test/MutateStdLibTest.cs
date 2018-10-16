@@ -90,11 +90,11 @@ namespace AnalysisTests {
                 Console.WriteLine("Seed == " + seed);
 
 
-                Console.WriteLine("Testing version {0} {1}", configuration.Version, Path.Combine(configuration.PrefixPath, "Lib"));
+                Console.WriteLine("Testing version {0} {1}", configuration.Version, configuration.LibraryPath);
                 int ran = 0, succeeded = 0;
                 string[] files;
                 try {
-                    files = Directory.GetFiles(Path.Combine(configuration.PrefixPath, "Lib"));
+                    files = Directory.GetFiles(configuration.LibraryPath);
                 } catch (DirectoryNotFoundException) {
                     continue;
                 }

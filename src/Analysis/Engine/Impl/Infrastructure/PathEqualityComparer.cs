@@ -18,11 +18,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
     class PathEqualityComparer : IEqualityComparer<string> {
-        public static readonly PathEqualityComparer Instance = new PathEqualityComparer();
+        public static readonly PathEqualityComparer Instance = new PathEqualityComparer(
+            RuntimeInformation.IsOSPlatform(OSPlatform.Linux), Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar
+        );
 
         private static readonly char[] InvalidPathChars = GetInvalidPathChars();
 
@@ -40,68 +43,87 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         private long _accessCount;
         private const int CACHE_UPPER_LIMIT = 32;
 
-        private readonly StringComparer Ordinal = StringComparer.Ordinal;
+        private readonly bool _isCaseSensitivePath;
+        private readonly char _directorySeparator;
+        private readonly char _altDirectorySeparator;
+        private readonly char[] _directorySeparators;
+        private readonly StringComparer _stringComparer;
 
-        internal PathEqualityComparer() { }
+        internal PathEqualityComparer(bool isCaseSensitivePath, char directorySeparator, char altDirectorySeparator = '\0') {
+            _isCaseSensitivePath = isCaseSensitivePath;
+            _directorySeparator = directorySeparator;
+            _altDirectorySeparator = altDirectorySeparator;
 
-        internal static string GetCompareKeyUncached(string path) {
+            if (altDirectorySeparator != '\0' && altDirectorySeparator != directorySeparator) {
+                _directorySeparators = new[] { directorySeparator, altDirectorySeparator };
+            } else {
+                _directorySeparators = new[] { directorySeparator };
+            }
+
+            _stringComparer = _isCaseSensitivePath ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+        }
+
+        internal string GetCompareKeyUncached(string path) {
             if (string.IsNullOrEmpty(path)) {
                 return path;
             }
 
-            string root = "";
-
-            int rootParts = 0;
+            var root = string.Empty;
+            var rootParts = 0;
             var parts = new List<string>();
-            int next_i = int.MaxValue;
-            for (int i = 0; next_i > 0 && i < path.Length; i = next_i) {
-                next_i = path.IndexOfAny(PathUtils.DirectorySeparators, i) + 1;
+
+            var next_i = path.IndexOfAny(_directorySeparators) + 1;
+            // Check roots
+            if (next_i > 2 && next_i < path.Length - 1 && path[next_i - 2] == ':' && path[next_i] == '/') {
+                // smb://computer/share
+                next_i++;
+                root = path.Substring(0, next_i);
+            }
+            if (_directorySeparator == '\\') {
+                // Windows
+                if (next_i == 3 && char.IsLetter(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/')) {
+                    // Windows root like C:\
+                    root = path.Substring(0, next_i).Replace('/', '\\');
+                }
+                if (next_i == 1 && (path[0] == '\\' || path[0] == '/') && (path[1] == '\\' || path[1] == '/')) {
+                    // Windows UNC
+                    next_i = 2;
+                    root = @"\\";
+                    // Segment 1: 'computer'
+                    // Segment 2: 'share'
+                    rootParts = 2;
+                }
+            }
+            if (_directorySeparator == '/' && next_i == 1 && path[0] == '/') {
+                root = "/";
+            }
+
+            for (var i = next_i; i < path.Length; i = next_i) {
                 string segment;
+                next_i = path.IndexOfAny(_directorySeparators, i) + 1;
+
                 if (next_i <= 0) {
                     segment = path.Substring(i);
+                    next_i = int.MaxValue;
                 } else {
                     segment = path.Substring(i, next_i - i - 1);
                 }
-                if (segment.Length == 0) {
-                    if (i == 0 && next_i == 1) {
-                        // Slash at the start should be preserved, but we may have
-                        // an SMB reference, so we need to check that too
-                        if (path.IndexOfAny(PathUtils.DirectorySeparators, next_i) != next_i) {
-                            parts.Add(string.Empty);
-                            continue;
-                        }
 
-                        // There are two slashes, so our first four segments will
-                        // be protected:
-                        //
-                        //   \\computer\share
-                        //
-                        // Segment 1: '' before first \
-                        // Segment 2: '' between first and second \
-                        // Segment 3: 'computer'
-                        // Segment 4: 'share'
-                        parts.Add(string.Empty);
-                        parts.Add(string.Empty);    // the second one will be skipped
-                        rootParts = 4;
-                    }
-                } else if (segment == ".") {
+                if (segment == ".") {
                     // Do nothing
                 } else if (segment == "..") {
                     if (parts.Count > rootParts) {
                         parts.RemoveAt(parts.Count - 1);
-                    } else {
-                        parts.Add(segment);
-                        rootParts += 1;
                     }
-                } else {
-                    if (parts.Count == 0 && segment.Last() == ':') {
-                        rootParts = 1;
+                } else if (segment.Length > 0) {
+                    segment = segment.TrimEnd('.', ' ', '\t');
+                    if (!_isCaseSensitivePath) {
+                        segment = segment.ToUpperInvariant();
                     }
-                    parts.Add(segment.TrimEnd('.', ' ', '\t').ToUpperInvariant());
+                    parts.Add(segment);
                 }
             }
-            
-            return root + string.Join(Path.DirectorySeparatorChar.ToString(), parts);
+            return root + string.Join(_directorySeparator.ToString(), parts);
         }
 
         internal CacheItem GetOrCreateCacheItem(string key, out bool created) {
@@ -136,7 +158,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
 
         private string GetCompareKey(string path) {
             var item = GetOrCreateCacheItem(path, out bool created);
-            
+
             string result;
             lock (item) {
                 if (created) {
@@ -169,19 +191,18 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             prefix = GetCompareKey(prefix);
             x = GetCompareKey(x);
 
-            if (Ordinal.Equals(prefix, x)) {
+            if (_stringComparer.Equals(prefix, x)) {
                 return allowFullMatch;
             }
 
-            return x.StartsWithOrdinal(prefix + Path.DirectorySeparatorChar);
+            return x.StartsWith(prefix + _directorySeparator, 
+                _isCaseSensitivePath ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
         }
 
-        public bool Equals(string x, string y) {
-            return Ordinal.Equals(GetCompareKey(x), GetCompareKey(y));
-        }
+        public bool Equals(string x, string y)
+            => _stringComparer.Equals(GetCompareKey(x), GetCompareKey(y));
 
-        public int GetHashCode(string obj) {
-            return Ordinal.GetHashCode(GetCompareKey(obj));
-        }
+        public int GetHashCode(string obj)
+            => _stringComparer.GetHashCode(GetCompareKey(obj));
     }
 }

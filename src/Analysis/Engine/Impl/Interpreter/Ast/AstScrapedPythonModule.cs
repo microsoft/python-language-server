@@ -176,7 +176,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 using (var proc = new ProcessHelper(
                     fact.Configuration.InterpreterPath,
                     args,
-                    fact.Configuration.PrefixPath
+                    fact.Configuration.LibraryPath
                 )) {
                     proc.StartInfo.StandardOutputEncoding = Encoding.UTF8;
                     proc.OnOutputLine = sw.WriteLine;
