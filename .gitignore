@@ -1,11 +1,20 @@
 output/
 packages/
+TestResults/
+
+
+# Databases
 *.sdf
 *.opensdf
+
+
+# VS Configs files/folders
 *.suo
-TestResults/
 *.vspscc
 *.user
 *.ipch
-.hg
 .vs
+
+
+# Mercurial root directory
+.hg
