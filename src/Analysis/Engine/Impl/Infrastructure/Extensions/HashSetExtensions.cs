@@ -14,10 +14,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.LanguageServer.Implementation {
-    public sealed class LanguageServerSettings: ServerSettings {
-        public int diagnosticPublishDelay = 1000;
-        public int symbolsHierarchyDepthLimit = 10;
-        public int symbolsHierarchyMaxSymbols = 1000;
+using System.Collections.Generic;
+
+namespace Microsoft.PythonTools.Analysis.Infrastructure.Extensions {
+    public static class HashSetExtensions {
+        public static void Add<T>(this HashSet<T> set, IEnumerable<T> items) {
+            foreach(var e in items) {
+                set.Add(e);
+            }
+        }
     }
 }

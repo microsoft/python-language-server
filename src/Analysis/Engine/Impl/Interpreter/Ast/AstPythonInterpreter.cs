@@ -28,29 +28,29 @@ using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     internal class AstPythonInterpreter : IPythonInterpreter2, IModuleContext, ICanFindModuleMembers {
-        private readonly AstPythonInterpreterFactory _factory;
-        private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes;
+        private readonly ConcurrentDictionary<string, IPythonModule> _modules = new ConcurrentDictionary<string, IPythonModule>();
+        private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>() {
+            { BuiltinTypeId.NoneType, new AstPythonBuiltinType("NoneType", BuiltinTypeId.NoneType) },
+            { BuiltinTypeId.Unknown, new AstPythonBuiltinType("Unknown", BuiltinTypeId.Unknown) }
+        };
         private readonly string _workspaceRoot;
-        private readonly ConcurrentDictionary<string, IPythonModule> _modules;
-        private readonly AstPythonBuiltinType _noneType;
+        private readonly AstPythonInterpreterFactory _factory;
+        private readonly object _userSearchPathsLock = new object();
 
         private PythonAnalyzer _analyzer;
         private AstScrapedPythonModule _builtinModule;
         private IReadOnlyList<string> _builtinModuleNames;
 
+        private IReadOnlyList<string> _userSearchPaths;
         private IReadOnlyDictionary<string, string> _userSearchPathPackages;
         private ConcurrentBag<string> _userSearchPathImported = new ConcurrentBag<string>();
 
         public AstPythonInterpreter(AstPythonInterpreterFactory factory, string workspaceRoot, AnalysisLogWriter log = null) {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+            _factory.ImportableModulesChanged += Factory_ImportableModulesChanged;
+
             _workspaceRoot = workspaceRoot;
             Log = log;
-            _factory.ImportableModulesChanged += Factory_ImportableModulesChanged;
-            _modules = new ConcurrentDictionary<string, IPythonModule>();
-            _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>();
-            _noneType = new AstPythonBuiltinType("NoneType", BuiltinTypeId.NoneType);
-            _builtinTypes[BuiltinTypeId.NoneType] = _noneType;
-            _builtinTypes[BuiltinTypeId.Unknown] = new AstPythonBuiltinType("Unknown", BuiltinTypeId.Unknown);
         }
 
         public void Dispose() {
@@ -102,11 +102,28 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private async Task<IReadOnlyDictionary<string, string>> GetUserSearchPathPackagesAsync(CancellationToken cancellationToken) {
             Log?.Log(TraceLevel.Verbose, "GetUserSearchPathPackagesAsync");
-            if (_userSearchPathPackages == null) {
-                _userSearchPathPackages = await _factory.ModuleResolution.GetPackagesFromSearchPathsAsync(_analyzer.GetSearchPaths(), cancellationToken);
-                Log?.Log(TraceLevel.Verbose, "GetPackagesFromSearchPathsAsync", _userSearchPathPackages.Keys.Cast<object>().ToArray());
+            var ussp = _userSearchPathPackages;
+            if (ussp == null) {
+                IReadOnlyList<string> usp;
+                lock (_userSearchPathsLock) {
+                    usp = _userSearchPaths;
+                    ussp = _userSearchPathPackages;
+                }
+                if (ussp != null || usp == null || !usp.Any()) {
+                    return ussp;
+                }
+
+                ussp = await _factory.ModuleResolution.GetPackagesFromSearchPathsAsync(_analyzer.GetSearchPaths(), cancellationToken);
+                lock (_userSearchPathsLock) {
+                    if (_userSearchPathPackages == null) {
+                        _userSearchPathPackages = ussp;
+                    } else {
+                        ussp = _userSearchPathPackages;
+                    }
+                }
             }
-            return _userSearchPathPackages;
+            Log?.Log(TraceLevel.Verbose, "GetPackagesFromSearchPathsAsync", _userSearchPathPackages.Keys.Cast<object>().ToArray());
+            return ussp;
         }
 
         private async Task<ModulePath?> FindModuleOnDiskAsync(string name, CancellationToken cancellationToken) {
@@ -245,12 +262,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public void Initialize(PythonAnalyzer analyzer) {
             if (_analyzer != null) {
-                _analyzer.SearchPathsChanged -= Analyzer_SearchPathsChanged;
+                return;
             }
 
             _analyzer = analyzer;
-
             if (analyzer != null) {
+                lock (_userSearchPathsLock) {
+                    _userSearchPaths = analyzer.GetSearchPaths();
+                }
                 analyzer.SearchPathsChanged += Analyzer_SearchPathsChanged;
                 var bm = analyzer.BuiltinModule;
                 if (!string.IsNullOrEmpty(bm?.Name)) {

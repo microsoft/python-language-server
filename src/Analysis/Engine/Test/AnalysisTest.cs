@@ -29,7 +29,6 @@ using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
@@ -39,7 +38,7 @@ using TestUtilities;
 
 namespace AnalysisTests {
     [TestClass]
-    public partial class AnalysisTest {
+    public class AnalysisTest {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -714,16 +713,15 @@ class D(object):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/47")]
         public async Task MutatingReferences() {
             var text1 = @"
-import mod2
+import module2
 
 class C(object):
     def SomeMethod(self):
         pass
 
-mod2.D(C())
+module2.D(C())
 ";
 
             var text2 = @"
@@ -732,14 +730,17 @@ class D(object):
         self.value = value
         self.value.SomeMethod()
 ";
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri1 = TestData.GetNextModuleUri();
-                var uri2 = TestData.GetNextModuleUri();
+            var uri1 = await TestData.CreateTestSpecificFileAsync("module1.py", text1);
+            var uri2 = await TestData.CreateTestSpecificFileAsync("module2.py", text2);
+            var root = new Uri(Path.GetDirectoryName(uri1.LocalPath));
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X, root)) {
+                await server.LoadFileAsync(uri1);
+                await server.LoadFileAsync(uri2);
+
                 await server.SendDidOpenTextDocument(uri1, text1);
-                await server.SendDidOpenTextDocument(uri2, text2);
 
                 var references = await server.SendFindReferences(uri1, 4, 9);
-
                 references.Should().OnlyHaveReferences(
                     (uri1, (4, 4, 5, 12), ReferenceKind.Value),
                     (uri1, (4, 8, 4, 18), ReferenceKind.Definition),
@@ -755,6 +756,8 @@ class D(object):
                     (uri1, (5, 8, 5, 18), ReferenceKind.Definition),
                     (uri2, (4, 19, 4, 29), ReferenceKind.Reference)
                 );
+
+                await server.SendDidOpenTextDocument(uri2, text2);
 
                 text2 = Environment.NewLine + text2;
                 await server.SendDidChangeTextDocumentAsync(uri2, text2);
@@ -782,12 +785,18 @@ import mod1
 z = mod1.f(42)
 ";
 
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri1 = TestData.GetTempPathUri("mod1.py");
-                var uri2 = TestData.GetTempPathUri("mod2.py");
+            var uri1 = await TestData.CreateTestSpecificFileAsync("mod1.py", text1);
+            var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+            var root = new Uri(Path.GetDirectoryName(uri1.LocalPath));
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X, root)) {
+                await server.LoadFileAsync(uri1);
+                await server.LoadFileAsync(uri2);
+                    
                 await server.SendDidOpenTextDocument(uri1, text1);
                 await server.SendDidOpenTextDocument(uri2, text2);
 
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysis1 = await server.GetAnalysisAsync(uri1);
                 var analysis2 = await server.GetAnalysisAsync(uri2);
 
@@ -802,6 +811,7 @@ z = mod1.f('abc')
 ";
 
                 await server.SendDidChangeTextDocumentAsync(uri2, text2);
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 analysis2 = await server.GetAnalysisAsync(uri2);
 
                 analysis1.Should().HaveFunction("f")
@@ -864,102 +874,6 @@ mod2.x = 'abc'
             }
         }
         */
-
-        [TestMethod, Priority(0)]
-        public async Task PrivateMembers() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test-module.py");
-
-                string code = @"
-class C:
-    def __init__(self):
-        self._C__X = 'abc'	# Completions here should only ever show __X
-        self.__X = 42
-
-class D(C):
-    def __init__(self):        
-        print(self.__X)		# self. here shouldn't have __X or _C__X (could be controlled by Text Editor->Python->general->Hide advanced members to show _C__X)
-";
-
-                await server.SendDidOpenTextDocument(uri, code);
-                await server.GetAnalysisAsync(uri);
-
-                var completions = await server.SendCompletion(uri, 4, 13);
-                completions.Should().OnlyHaveLabels("__X", "__init__", "__doc__", "__class__");
-
-                completions = await server.SendCompletion(uri, 8, 19);
-                completions.Should().OnlyHaveLabels("_C__X", "__init__", "__doc__", "__class__");
-
-                code = @"
-class C(object):
-    def __init__(self):
-        self.f(_C__A = 42)		# sig help should be _C__A
-    
-    def f(self, __A):
-        pass
-
-
-class D(C):
-    def __init__(self):
-        self.f(_C__A=42)		# sig help should be _C__A
-";
-
-                await server.SendDidChangeTextDocumentAsync(uri, code);
-                await server.GetAnalysisAsync(uri);
-
-                var signatures = await server.SendSignatureHelp(uri, 3, 15);
-                signatures.Should().HaveSingleSignature()
-                    .Which.Should().OnlyHaveParameterLabels("_C__A");
-
-                signatures = await server.SendSignatureHelp(uri, 11, 15);
-                signatures.Should().HaveSingleSignature()
-                    .Which.Should().OnlyHaveParameterLabels("_C__A");
-
-                code = @"
-class C(object):
-    def __init__(self):
-        self.__f(_C__A = 42)		# member should be __f
-
-    def __f(self, __A):
-        pass
-
-
-class D(C):
-    def __init__(self):
-        self._C__f(_C__A=42)		# member should be _C__f
-
-";
-
-                await server.SendDidChangeTextDocumentAsync(uri, code);
-                await server.GetAnalysisAsync(uri);
-
-                completions = await server.SendCompletion(uri, 3, 13);
-                completions.Should().HaveLabels("__f", "__init__");
-
-                completions = await server.SendCompletion(uri, 11, 13);
-                completions.Should().HaveLabels("_C__f", "__init__");
-
-                code = @"
-class C(object):
-    __FOB = 42
-
-    def f(self):
-        abc = C.__FOB  # Completion should work here
-
-
-xyz = C._C__FOB  # Advanced members completion should work here
-";
-
-                await server.SendDidChangeTextDocumentAsync(uri, code);
-                await server.GetAnalysisAsync(uri);
-
-                completions = await server.SendCompletion(uri, 5, 16);
-                completions.Should().HaveLabels("__FOB", "f");
-
-                completions = await server.SendCompletion(uri, 8, 8);
-                completions.Should().HaveLabels("_C__FOB", "f");
-            }
-        }
 
         [TestMethod, Priority(0)]
         public async Task BaseInstanceVariable() {
@@ -2425,7 +2339,9 @@ b = ~~C()
 
 
         [TestMethod, Priority(0)]
-        public async Task TrueDividePython35() {
+        [DataRow(PythonLanguageVersion.V35)]
+        [DataRow(PythonLanguageVersion.V36)]
+        public async Task TrueDividePython3X(PythonLanguageVersion version) {
             var text = @"
 class C:
     def __truediv__(self, other):
@@ -2438,28 +2354,7 @@ b = a / 'abc'
 c = 'abc' / a
 ";
 
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python35X)) {
-                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
-                analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
-                    .And.HaveVariable("c").OfType(BuiltinTypeId.Float);
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task TrueDividePython36() {
-            var text = @"
-class C:
-    def __truediv__(self, other):
-        return 42
-    def __rtruediv__(self, other):
-        return 3.0
-
-a = C()
-b = a / 'abc'
-c = 'abc' / a
-";
-
-            using (var server = await CreateServerAsync(PythonVersions.Required_Python36X)) {
+            using (var server = await CreateServerAsync(PythonVersions.GetRequiredCPythonConfiguration(version))) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("c").OfType(BuiltinTypeId.Float);
@@ -2959,7 +2854,6 @@ f(abc = 123)
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/40")]
         public async Task References_GrammarTest_Statements() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 var uri = TestData.GetDefaultModuleUri();
@@ -3015,12 +2909,19 @@ def f(abc):
                 await server.SendDidOpenTextDocument(uri, text);
 
                 var references = await server.SendFindReferences(uri, 3, 12);
+
+                // External module 'abc', URI varies depending on install
+                var externalUri = references[1].uri;
+                externalUri.LocalPath.Should().EndWith("abc.py");
+ 
                 references.Should().OnlyHaveReferences(
                     (uri, (1, 6, 1, 9), ReferenceKind.Definition),
-                    (uri, (3, 11, 3, 14), ReferenceKind.Reference),
-                    (uri, (6, 22, 6, 25), ReferenceKind.Definition),
+                    (externalUri, (0, 0, 0, 0), ReferenceKind.Definition),
 
-                    (uri, (8, 4, 8, 7), ReferenceKind.Definition),
+                    (uri, (3, 11, 3, 14), ReferenceKind.Reference),
+                    (uri, (6, 22, 6, 25), ReferenceKind.Reference),
+
+                    (uri, (8, 4, 8, 7), ReferenceKind.Reference),
                     (uri, (9, 4, 9, 7), ReferenceKind.Reference),
                     (uri, (10, 4, 10, 7), ReferenceKind.Reference),
                     (uri, (11, 4, 11, 7), ReferenceKind.Reference),
@@ -3990,28 +3891,6 @@ f('abc')
         }
 
         [TestMethod, Priority(0)]
-        public async Task RecursiveClass() {
-            var code = @"
-cls = object
-
-class cls(cls):
-    abc = 42
-
-a = cls().abc
-b = cls.abc
-";
-            using (var server = await CreateServerAsync()) {
-                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
-                var completion = await server.SendCompletion(TestData.GetDefaultModuleUri(), 8, 0);
-
-                analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
-                    .And.HaveVariable("b").OfType(BuiltinTypeId.Int);
-
-                completion.Should().HaveLabels("cls", "object");
-            }
-        }
-
-        [TestMethod, Priority(0)]
         public async Task BadMethod() {
             var code = @"
 class cls(object): 
@@ -4148,43 +4027,6 @@ f = x().g", 6, "g", DisplayName = "class x, def g")]
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task ForwardRef() {
-            var code = @"
-
-class D(object):
-    def oar(self, x):
-        abc = C()
-        abc.fob(2)
-        a = abc.fob(2.0)
-        a.oar(('a', 'b', 'c', 'd'))
-
-class C(object):
-    def fob(self, x):
-        D().oar('abc')
-        D().oar(['a', 'b', 'c'])
-        return D()
-    def baz(self): pass
-";
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
-                var completionInD = await server.SendCompletion(TestData.GetDefaultModuleUri(), 3, 4);
-                var completionInOar = await server.SendCompletion(TestData.GetDefaultModuleUri(), 5, 8);
-                var completionForAbc = await server.SendCompletion(TestData.GetDefaultModuleUri(), 5, 12);
-
-                completionInD.Should().HaveLabels("C", "D", "oar")
-                    .And.NotContainLabels("a", "abc", "self", "x", "fob", "baz");
-
-                completionInOar.Should().HaveLabels("C", "D", "a", "oar", "abc", "self", "x")
-                    .And.NotContainLabels("fob", "baz");
-
-                completionForAbc.Should().HaveLabels("baz", "fob");
-
-                analysis.Should().HaveClass("D").WithFunction("oar")
-                    .Which.Should().HaveParameter("x").OfTypes(BuiltinTypeId.List, BuiltinTypeId.Str, BuiltinTypeId.Tuple);
-            }
-        }
-
 
         [TestMethod, Priority(0)]
         public async Task Builtins() {
@@ -4292,28 +4134,6 @@ if y is not None:
         }
 
         [TestMethod, Priority(0)]
-        public async Task SimpleGlobals() {
-            var code = @"
-class x(object):
-    def abc(self):
-        pass
-        
-a = x()
-x.abc()
-";
-            using (var server = await CreateServerAsync()) {
-                var objectMemberNames = server.GetBuiltinTypeMemberNames(BuiltinTypeId.Object);
-
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
-                var completion = await server.SendCompletion(uri, 6, 0);
-                var completionX = await server.SendCompletion(uri, 6, 2);
-
-                completion.Should().HaveLabels("a", "x").And.NotContainLabels("abc", "self");
-                completionX.Should().HaveLabels(objectMemberNames).And.HaveLabels("abc");
-            }
-        }
-
-        [TestMethod, Priority(0)]
         public async Task FuncCallInIf() {
             var code = @"
 def Method(a, b, c):
@@ -4414,67 +4234,6 @@ f('a', 'b', 1)
                 var signatures = await server.SendSignatureHelp(uri, 6, 2);
 
                 signatures.Should().OnlyHaveSignature("f(a, b, c: int=0)");
-            }
-        }
-
-        /// <summary>
-        /// http://pytools.codeplex.com/workitem/799
-        /// </summary>
-        [TestMethod, Priority(0)]
-        public async Task OverrideCompletions2X() {
-            var code = @"
-class oar(list):
-    def 
-    pass
-";
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
-                var completions = await server.SendCompletion(uri, 2, 8);
-
-                completions.Should().HaveItem("append")
-                    .Which.Should().HaveInsertText("append(self, value):\r\n    return super(oar, self).append(value)");
-            }
-        }
-
-        [DataRow(PythonLanguageVersion.V36, "value")]
-        [DataRow(PythonLanguageVersion.V37, "object")]
-        [DataTestMethod, Priority(0)]
-        public async Task OverrideCompletions3X(PythonLanguageVersion version, string parameterName) {
-            var code = @"
-class oar(list):
-    def 
-    pass
-";
-            using (var server = await CreateServerAsync(PythonVersions.GetRequiredCPythonConfiguration(version))) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
-                var completions = await server.SendCompletion(uri, 2, 8);
-
-                completions.Should().HaveItem("append")
-                    .Which.Should().HaveInsertText($"append(self, {parameterName}):\r\n    return super().append({parameterName})");
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task OverrideCompletionsNested() {
-            // Ensure that nested classes are correctly resolved.
-            var code = @"
-class oar(int):
-    class fob(dict):
-        def 
-        pass
-    def 
-    pass
-";
-
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
-                var completionsOar = await server.SendCompletion(uri, 5, 8);
-                var completionsFob = await server.SendCompletion(uri, 3, 12);
-
-                completionsOar.Should().NotContainLabels("keys", "items")
-                    .And.HaveItem("bit_length");
-                completionsFob.Should().NotContainLabels("bit_length")
-                    .And.HaveLabels("keys", "items");
             }
         }
 
@@ -6171,6 +5930,7 @@ a, b = f()
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/215")]
         public async Task Nonlocal() {
             var text = @"
 def f():
@@ -6671,32 +6431,6 @@ rf = return_func_class().return_func
                     .And.HaveVariable("rf").WithDescription("method return_func of module.return_func_class objects...")
                                            .WithDocumentation("some help");
             }
-
-            
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task CompletionDocumentation() {
-            var text = @"
-import sys
-z = 43
-
-class fob(object):
-    @property
-    def f(self): pass
-
-    def g(self): pass
-
-d = fob()
-";
-            using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(text);
-                var completionD = await server.SendCompletion(uri, 15, 1);
-                completionD.Should().HaveItem("d")
-                    .Which.Should().HaveDocumentation("fob");
-                completionD.Should().HaveItem("z")
-                    .Which.Should().HaveDocumentation("int");
-            }
         }
 
         [TestMethod, Priority(0)]
@@ -6898,73 +6632,6 @@ abc = f(())
             using (var server = await CreateServerAsync()) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(text);
                 analysis.Should().HaveVariable("abc");
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task TypeAtEndOfMethod() {
-            var text = @"
-class Fob(object):
-    def oar(self, a):
-        pass
-
-
-    def fob(self): 
-        pass
-
-x = Fob()
-x.oar(100)
-";
-
-            using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(text);
-                var completion = await server.SendCompletion(uri, 5, 8);
-                completion.Should().HaveItem("a")
-                    .Which.Should().HaveDocumentation("int");
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task TypeAtEndOfIncompleteMethod() {
-            var text = @"
-class Fob(object):
-    def oar(self, a):
-
-
-
-
-
-x = Fob()
-x.oar(100)
-";
-
-            using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(text);
-                var completion = await server.SendCompletion(uri, 5, 8);
-                completion.Should().HaveItem("a")
-                    .Which.Should().HaveDocumentation("int");
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task TypeIntersectionUserDefinedTypes() {
-            var text = @"
-class C1(object):
-    def fob(self): pass
-
-class C2(object):
-    def oar(self): pass
-
-c = C1()
-c.fob()
-c = C2()
-c.
-";
-
-            using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(text);
-                var completion = await server.SendCompletion(uri, 10, 2);
-                completion.Should().NotContainLabels("fob", "oar");
             }
         }
 
@@ -7181,7 +6848,8 @@ def f(s: s = 123):
                 analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType)
                     .And.HaveFunction("f")
                     .Which.Should().HaveParameter("s").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType)
-                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType);
+                    // Function returns int, s (None) and type of the passed argument (Unknown/ParameterInfo)
+                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType, BuiltinTypeId.Unknown);
             }
         }
 
@@ -7197,7 +6865,8 @@ def f(s: lambda s: s > 0 = 123):
                 analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType)
                     .And.HaveFunction("f")
                     .Which.Should().HaveParameter("s").OfTypes(BuiltinTypeId.Int)
-                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int);
+                    // Function returns int and type of the passed argument (Unknown/ParameterInfo)
+                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Unknown);
             }
         }
 
@@ -7213,7 +6882,8 @@ def f(s = 123) -> s:
                 analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType)
                     .And.HaveFunction("f")
                     .Which.Should().HaveParameter("s").OfTypes(BuiltinTypeId.Int)
-                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int);
+                    // Function returns int, s (None) and also type of the passed argument (Unknown/ParameterInfo)
+                    .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType, BuiltinTypeId.Unknown);
             }
         }
 /*

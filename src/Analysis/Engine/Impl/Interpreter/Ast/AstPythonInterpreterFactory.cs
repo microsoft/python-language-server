@@ -56,9 +56,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             _useDefaultDatabase = useDefaultDatabase;
-            _log = new AnalysisLogWriter(Path.Combine(CreationOptions.DatabasePath, "AnalysisLog.txt"), false, LogToConsole, LogCacheSize);
-            _log.Rotate(LogRotationSize);
-            _log.MinimumLevel = CreationOptions.TraceLevel;
+            if (!string.IsNullOrEmpty(CreationOptions.DatabasePath) && CreationOptions.TraceLevel != TraceLevel.Off) {
+                _log = new AnalysisLogWriter(Path.Combine(CreationOptions.DatabasePath, "AnalysisLog.txt"), false, LogToConsole, LogCacheSize);
+                _log.Rotate(LogRotationSize);
+                _log.MinimumLevel = CreationOptions.TraceLevel;
+            }
 
             ModuleCache = new AstModuleCache(config, CreationOptions.DatabasePath, useDefaultDatabase, !CreationOptions.UseExistingCache, _log);
             ModuleResolution = new AstModuleResolution(ModuleCache, config, _log);

@@ -64,19 +64,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             // https://microsoft.github.io/language-server-protocol/specification#shutdown
             await _server.Shutdown();
             _shutdown = true;
-            _idleTimeTracker.Dispose();
+            _idleTimeTracker?.Dispose();
         }
 
         [JsonRpcMethod("exit")]
         public async Task Exit() {
             await _server.Exit();
             _sessionTokenSource.Cancel();
-            _idleTimeTracker.Dispose();
+            _idleTimeTracker?.Dispose();
             // Per https://microsoft.github.io/language-server-protocol/specification#exit
             Environment.Exit(_shutdown ? 0 : 1);
         }
 
-        private Task LoadDirectoryFiles() {
+        private async Task LoadDirectoryFiles() {
             string rootDir = null;
             if (_initParams.rootUri != null) {
                 rootDir = _initParams.rootUri.ToAbsolutePath();
@@ -85,8 +85,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             if (string.IsNullOrEmpty(rootDir)) {
-                return Task.CompletedTask;
+                return;
             }
+
+            // Stop analysis until all files are added.
+            _server.AnalysisQueue.Stop();
 
             var matcher = new Matcher();
             var included = _initParams.initializationOptions.includeFiles;
@@ -97,7 +100,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var matchResult = matcher.Execute(dib);
 
             _server.LogMessage(MessageType.Log, $"Loading files from {rootDir}");
-            return LoadFromDirectoryAsync(rootDir, matchResult);
+            await LoadFromDirectoryAsync(rootDir, matchResult);
+
+            _server.AnalysisQueue.Start();
+            _server.LogMessage(MessageType.Log, $"Code analysis started");
         }
 
         private async Task LoadFromDirectoryAsync(string rootDir, PatternMatchingResult matchResult) {

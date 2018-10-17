@@ -77,21 +77,23 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             if (_configuration.SearchPaths.Any()) {
                 return _configuration.SearchPaths;
             }
-            return Array.Empty<string>();
+            if (!File.Exists(_configuration.InterpreterPath)) {
+                return Array.Empty<string>();
+            }
 
-            //_log?.Log(TraceLevel.Info, "GetCurrentSearchPaths", _configuration.InterpreterPath, _searchPathCachePath);
-            //try {
-            //    var paths = await PythonLibraryPath.GetDatabaseSearchPathsAsync(_configuration, _searchPathCachePath).ConfigureAwait(false);
-            //    cancellationToken.ThrowIfCancellationRequested();
-            //    return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
-            //} catch (InvalidOperationException) {
-            //    return Array.Empty<string>();
-            //}
+            _log?.Log(TraceLevel.Info, "GetCurrentSearchPaths", _configuration.InterpreterPath, _moduleCache.SearchPathCachePath);
+            try {
+                var paths = await PythonLibraryPath.GetDatabaseSearchPathsAsync(_configuration, _moduleCache.SearchPathCachePath).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+                return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
+            } catch (InvalidOperationException) {
+                return Array.Empty<string>();
+            }
         }
 
         public async Task<IReadOnlyDictionary<string, string>> GetPackagesFromSearchPathsAsync(IReadOnlyList<string> searchPaths, CancellationToken cancellationToken) {
             if (searchPaths == null || searchPaths.Count == 0) {
-                return new Dictionary<string, string>();
+                return _emptyModuleSet;
             }
 
             _log?.Log(TraceLevel.Verbose, "GetImportableModulesAsync");

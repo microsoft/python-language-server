@@ -27,8 +27,6 @@ using Microsoft.PythonTools.Parsing;
 namespace Microsoft.PythonTools.Interpreter.Ast {
     internal sealed class AstModuleCache {
         private readonly InterpreterConfiguration _configuration;
-        private readonly string _searchPathCachePath;
-        private readonly string _databasePath;
         private readonly bool _skipCache;
         private readonly bool _useDefaultDatabase;
         private readonly AnalysisLogWriter _log;
@@ -37,25 +35,28 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public AstModuleCache(InterpreterConfiguration configuration, string databasePath, bool useDefaultDatabase, bool useExistingCache, AnalysisLogWriter log) {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
-            _databasePath = databasePath;
+            DatabasePath = databasePath;
             _useDefaultDatabase = useDefaultDatabase;
             _log = log;
 
             if (_useDefaultDatabase) {
                 var dbPath = Path.Combine("DefaultDB", $"v{_configuration.Version.Major}", "python.pyi");
                 if (InstallPath.TryGetFile(dbPath, out string biPath)) {
-                    _databasePath = _databasePath = Path.GetDirectoryName(biPath);
+                    DatabasePath = Path.GetDirectoryName(biPath);
                 } else {
                     _skipCache = true;
                 }
             } else {
-                _searchPathCachePath = Path.Combine(_databasePath, "database.path");
+                SearchPathCachePath = Path.Combine(DatabasePath, "database.path");
             }
             _skipCache = !useExistingCache;
         }
 
+        public string DatabasePath { get; }
+        public string SearchPathCachePath { get; }
+
         public IPythonModule ImportFromCache(string name, TryImportModuleContext context) {
-            if (string.IsNullOrEmpty(_databasePath)) {
+            if (string.IsNullOrEmpty(DatabasePath)) {
                 return null;
             }
 
@@ -74,17 +75,16 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public void Clear() {
-            if (File.Exists(_searchPathCachePath)) {
-                PathUtils.DeleteFile(_searchPathCachePath);
+            if (!string.IsNullOrEmpty(SearchPathCachePath) && File.Exists(SearchPathCachePath)) {
+                PathUtils.DeleteFile(SearchPathCachePath);
             }
         }
 
         public string GetCacheFilePath(string filePath) {
-            var dbPath = _databasePath;
-            if (!PathEqualityComparer.IsValidPath(dbPath)) {
+            if (!PathEqualityComparer.IsValidPath(DatabasePath)) {
                 if (!_loggedBadDbPath) {
                     _loggedBadDbPath = true;
-                    _log?.Log(TraceLevel.Warning, "InvalidDatabasePath", dbPath);
+                    _log?.Log(TraceLevel.Warning, "InvalidDatabasePath", DatabasePath);
                 }
                 return null;
             }
@@ -95,7 +95,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
             try {
-                var candidate = Path.ChangeExtension(Path.Combine(dbPath, name), ".pyi");
+                var candidate = Path.ChangeExtension(Path.Combine(DatabasePath, name), ".pyi");
                 if (File.Exists(candidate)) {
                     return candidate;
                 }
@@ -113,7 +113,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 .Replace('/', '_').Replace('+', '-');
 
             return Path.ChangeExtension(Path.Combine(
-                _databasePath,
+                DatabasePath,
                 Path.Combine(dirHash, name)
             ), ".pyi");
         }

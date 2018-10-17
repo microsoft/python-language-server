@@ -37,7 +37,15 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             if (whiteSpaceCount > 0) {
                 sb.Append(' ', whiteSpaceCount);
             }
-            
+
+            return sb;
+        }
+
+        public static StringBuilder AppendIf(this StringBuilder sb, bool condition, string value) {
+            if (condition) {
+                sb.Append(value);
+            }
+
             return sb;
         }
     }

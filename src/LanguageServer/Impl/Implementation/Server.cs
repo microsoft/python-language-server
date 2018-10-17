@@ -40,12 +40,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// Implements ability to execute module reload on the analyzer thread
         /// </summary>
         private sealed class ReloadModulesQueueItem : IAnalyzable {
-            private readonly PythonAnalyzer _analyzer;
+            private readonly Server _server;
             private TaskCompletionSource<bool> _tcs = new TaskCompletionSource<bool>();
             public Task Task => _tcs.Task;
 
-            public ReloadModulesQueueItem(PythonAnalyzer analyzer) {
-                _analyzer = analyzer;
+            public ReloadModulesQueueItem(Server server) {
+                _server = server;
             }
             public void Analyze(CancellationToken cancel) {
                 if (cancel.IsCancellationRequested) {
@@ -54,7 +54,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 var currentTcs = Interlocked.Exchange(ref _tcs, new TaskCompletionSource<bool>());
                 try {
-                    _analyzer.ReloadModulesAsync(cancel).WaitAndUnwrapExceptions();
+                    _server.Analyzer.ReloadModulesAsync(cancel).WaitAndUnwrapExceptions();
+                    foreach (var entry in _server.Analyzer.ModulesByFilename) {
+                        _server.AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
+                    }
                     currentTcs.TrySetResult(true);
                 } catch (OperationCanceledException oce) {
                     currentTcs.TrySetCanceled(oce.CancellationToken);
@@ -148,10 +151,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 workspaceSymbolProvider = true,
                 documentSymbolProvider = true,
                 renameProvider = true,
-                documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
-                    firstTriggerCharacter = "\n",
-                    moreTriggerCharacter = new[] { ";" }
-                },
+                //documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
+                //    firstTriggerCharacter = "\n",
+                //    moreTriggerCharacter = new[] { ";" }
+                //},
             }
         };
 
@@ -224,16 +227,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        public override async Task DidCloseTextDocument(DidCloseTextDocumentParams @params, CancellationToken token) {
+        public override Task DidCloseTextDocument(DidCloseTextDocumentParams @params, CancellationToken token) {
             _disposableBag.ThrowIfDisposed();
             _editorFiles.Close(@params.textDocument.uri);
 
             if (ProjectFiles.GetEntry(@params.textDocument.uri) is IDocument doc) {
                 // No need to keep in-memory buffers now
                 doc.ResetDocument(-1, null);
-                // Pick up any changes on disk that we didn't know about
-                await EnqueueItemAsync(doc, AnalysisPriority.Low);
             }
+            return Task.CompletedTask;
         }
 
         public override async Task DidChangeConfiguration(DidChangeConfigurationParams @params, CancellationToken cancellationToken) {
@@ -260,7 +262,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public async Task ReloadModulesAsync(CancellationToken token) {
-            LogMessage(MessageType._General, "Reloading modules...");
+            LogMessage(MessageType._General, Resources.ReloadingModules);
 
             // Make sure reload modules is executed on the analyzer thread.
             var task = _reloadModulesQueueItem.Task;
@@ -271,6 +273,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             foreach (var entry in Analyzer.ModulesByFilename) {
                 AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
             }
+            LogMessage(MessageType._General, Resources.Done);
         }
 
         public override Task<object> ExecuteCommand(ExecuteCommandParams @params, CancellationToken token) {
@@ -366,22 +369,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private async Task DoInitializeAsync(InitializeParams @params, CancellationToken token) {
             _disposableBag.ThrowIfDisposed();
+            Analyzer = await AnalysisQueue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
 
-            if (@params.rootUri != null) {
-                _rootDir = @params.rootUri.ToAbsolutePath();
-            } else if (!string.IsNullOrEmpty(@params.rootPath)) {
-                _rootDir = PathUtils.NormalizePath(@params.rootPath);
-            }
-
+            _disposableBag.ThrowIfDisposed();
             _clientCaps = @params.capabilities;
             _traceLogging = @params.initializationOptions.traceLogging;
             _analysisUpdates = @params.initializationOptions.analysisUpdates;
 
-             Analyzer = await AnalysisQueue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
-            _disposableBag.ThrowIfDisposed();
-
             Analyzer.EnableDiagnostics = _clientCaps?.python?.liveLinting ?? false;
-            _reloadModulesQueueItem = new ReloadModulesQueueItem(Analyzer);
+            _reloadModulesQueueItem = new ReloadModulesQueueItem(this);
 
             if (@params.initializationOptions.displayOptions != null) {
                 DisplayOptions = @params.initializationOptions.displayOptions;
@@ -390,10 +386,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             DisplayStartupInfo();
 
+            if (@params.rootUri != null) {
+                _rootDir = @params.rootUri.ToAbsolutePath();
+            } else if (!string.IsNullOrEmpty(@params.rootPath)) {
+                _rootDir = PathUtils.NormalizePath(@params.rootPath);
+            }
+
             SetSearchPaths(@params.initializationOptions.searchPaths);
             SetTypeStubSearchPaths(@params.initializationOptions.typeStubSearchPaths);
-
-            Analyzer.Interpreter.ModuleNamesChanged += Interpreter_ModuleNamesChanged;
         }
 
         private void DisplayStartupInfo() {
@@ -402,13 +402,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 string.IsNullOrEmpty(Analyzer.InterpreterFactory?.Configuration?.InterpreterPath)
                 ? Resources.InitializingForGenericInterpreter
                 : Resources.InitializingForPythonInterpreter.FormatInvariant(Analyzer.InterpreterFactory.Configuration.InterpreterPath));
-        }
-
-        private void Interpreter_ModuleNamesChanged(object sender, EventArgs e) {
-            Analyzer.Modules.Reload();
-            foreach (var entry in Analyzer.ModulesByFilename) {
-                AnalysisQueue.Enqueue(entry.Value.ProjectEntry, AnalysisPriority.Normal);
-            }
         }
 
         private T ActivateObject<T>(string assemblyName, string typeName, Dictionary<string, object> properties) {
@@ -437,17 +430,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private async Task<PythonAnalyzer> CreateAnalyzer(PythonInitializationOptions.Interpreter interpreter, CancellationToken token) {
-            var factory = ActivateObject<IPythonInterpreterFactory2>(interpreter.assembly, interpreter.typeName, interpreter.properties)
+            var factory = ActivateObject<IPythonInterpreterFactory>(interpreter.assembly, interpreter.typeName, interpreter.properties)
                 ?? new AstPythonInterpreterFactory(interpreter.properties);
 
-            var interp = factory.CreateInterpreter(_rootDir);
+            var interp = factory.CreateInterpreter();
             if (interp == null) {
                 throw new InvalidOperationException(Resources.Error_FailedToCreateInterpreter);
             }
 
             LogMessage(MessageType.Info, $"Created {interp.GetType().FullName} instance from {factory.GetType().FullName}");
 
-            var analyzer = await PythonAnalyzer.CreateAsync(factory, interp, _rootDir, token);
+            var analyzer = await PythonAnalyzer.CreateAsync(factory, interp, token);
             return analyzer;
         }
 
@@ -510,6 +503,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 aliases = new[] { Path.GetFileNameWithoutExtension(path) };
             }
 
+            var reanalyzeEntries = aliases.SelectMany(a => Analyzer.GetEntriesThatImportModule(a, true)).ToArray();
             var first = aliases.FirstOrDefault();
 
             var pyItem = Analyzer.AddModule(first, path, documentUri, cookie);
@@ -527,6 +521,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             if (item is IDocument doc) {
                 await EnqueueItemAsync(doc);
+            }
+
+            foreach (var entryRef in reanalyzeEntries) {
+                await EnqueueItemAsync(entryRef as IDocument, AnalysisPriority.Low, parse: false);
             }
 
             return item;
@@ -614,14 +612,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // It is called from DidChangeTextDocument which must fully finish
                 // since otherwise Complete() may come before the change is enqueued
                 // for processing and the completion list will be driven off the stale data.
-                return cookieTask.ContinueWith(t => {
+                return cookieTask.ContinueWith(async t => {
                     if (t.IsFaulted) {
                         // Happens when file got deleted before processing 
                         pending.Dispose();
                         LogMessage(MessageType.Error, t.Exception.Message);
                         return;
                     }
-                    OnDocumentChangeProcessingComplete(doc, t.Result as VersionCookie, enqueueForAnalysis, priority, pending);
+                    await OnDocumentChangeProcessingComplete(doc, t.Result as VersionCookie, enqueueForAnalysis, priority, pending);
                 });
             } catch {
                 pending?.Dispose();
@@ -629,7 +627,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private void OnDocumentChangeProcessingComplete(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
+        private async Task OnDocumentChangeProcessingComplete(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
             try {
                 _shutdownCts.Token.ThrowIfCancellationRequested();
                 if (vc != null) {
@@ -643,6 +641,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 if (doc is IAnalyzable analyzable && enqueueForAnalysis && !_shutdownCts.Token.IsCancellationRequested) {
                     AnalysisQueued(doc.DocumentUri);
                     AnalysisQueue.Enqueue(analyzable, priority);
+
+                    if (doc is ProjectEntry entry) {
+                        var reanalyzeEntries = Analyzer.GetAllModuleDependents(entry.ModuleName, false);
+                        foreach (var d in reanalyzeEntries.OfType<IAnalyzable>().OfType<IDocument>()) {
+                            _shutdownCts.Token.ThrowIfCancellationRequested();
+                            await EnqueueItemAsync(d, priority);
+                        }
+                    }
                 }
 
                 disposeWhenEnqueued?.Dispose();
@@ -681,6 +687,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             Settings = newSettings;
 
             _symbolHierarchyDepthLimit = Settings.analysis.symbolsHierarchyDepthLimit;
+            _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
 
             if (oldSettings == null) {
                 return true;
