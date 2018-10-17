@@ -14,17 +14,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Services;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     /// <summary>
@@ -126,7 +126,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         #region Workspace
         [JsonRpcMethod("workspace/didChangeConfiguration")]
-        public async Task DidChangeConfiguration(JToken token, CancellationToken cancellationToken) {
+        public Task DidChangeConfiguration(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
                 var settings = new LanguageServerSettings();
 
@@ -166,40 +166,41 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
                 _filesLoaded = true;
             }
-        }
+        });
 
         [JsonRpcMethod("workspace/didChangeWatchedFiles")]
-        public async Task DidChangeWatchedFiles(JToken token, CancellationToken cancellationToken) {
+        public Task DidChangeWatchedFiles(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             using (await _prioritizer.DocumentChangePriorityAsync()) {
                 await _server.DidChangeWatchedFiles(ToObject<DidChangeWatchedFilesParams>(token), cancellationToken);
             }
-        }
+        });
 
         [JsonRpcMethod("workspace/symbol")]
-        public async Task<SymbolInformation[]> WorkspaceSymbols(JToken token, CancellationToken cancellationToken) {
+        public Task<SymbolInformation[]> WorkspaceSymbols(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token), cancellationToken);
-        }
+        });
 
         #endregion
 
         #region Commands
         [JsonRpcMethod("workspace/executeCommand")]
-        public Task<object> ExecuteCommand(JToken token, CancellationToken cancellationToken)
-           => _server.ExecuteCommand(ToObject<ExecuteCommandParams>(token), cancellationToken);
+        public Task<object> ExecuteCommand(JToken token, CancellationToken cancellationToken) => LogOnException(() =>
+            _server.ExecuteCommand(ToObject<ExecuteCommandParams>(token), cancellationToken)
+        )
         #endregion
 
         #region TextDocument
         [JsonRpcMethod("textDocument/didOpen")]
-        public async Task DidOpenTextDocument(JToken token, CancellationToken cancellationToken) {
+        public Task DidOpenTextDocument(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync(cancellationToken)) {
                 await _server.DidOpenTextDocument(ToObject<DidOpenTextDocumentParams>(token), cancellationToken);
             }
-        }
+        })
 
         [JsonRpcMethod("textDocument/didChange")]
-        public async Task DidChangeTextDocument(JToken token, CancellationToken cancellationToken) {
+        public Task DidChangeTextDocument(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync()) {
                 var @params = ToObject<DidChangeTextDocumentParams>(token);
@@ -217,7 +218,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     await _server.DidChangeTextDocument(change, cancellationToken);
                 }
             }
-        }
+        });
 
         private static IEnumerable<DidChangeTextDocumentParams> SplitDidChangeTextDocumentParams(DidChangeTextDocumentParams @params, int version) {
             var changes = new Stack<DidChangeTextDocumentParams>();
@@ -255,132 +256,139 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             };
 
         [JsonRpcMethod("textDocument/willSave")]
-        public Task WillSaveTextDocument(JToken token, CancellationToken cancellationToken)
-           => _server.WillSaveTextDocument(ToObject<WillSaveTextDocumentParams>(token), cancellationToken);
+        public Task WillSaveTextDocument(JToken token, CancellationToken cancellationToken) => LogOnException(() =>
+            _server.WillSaveTextDocument(ToObject<WillSaveTextDocumentParams>(token), cancellationToken)
+        );
 
-        public Task<TextEdit[]> WillSaveWaitUntilTextDocument(JToken token, CancellationToken cancellationToken)
-           => _server.WillSaveWaitUntilTextDocument(ToObject<WillSaveTextDocumentParams>(token), cancellationToken);
+        [JsonRpcMethod("textDocument/willSaveWaitUntil")]
+        public Task<TextEdit[]> WillSaveWaitUntilTextDocument(JToken token, CancellationToken cancellationToken) => LogOnException(() =>
+            _server.WillSaveWaitUntilTextDocument(ToObject<WillSaveTextDocumentParams>(token), cancellationToken)
+        );
 
         [JsonRpcMethod("textDocument/didSave")]
-        public async Task DidSaveTextDocument(JToken token, CancellationToken cancellationToken) {
+        public Task DidSaveTextDocument(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync()) {
                 await _server.DidSaveTextDocument(ToObject<DidSaveTextDocumentParams>(token), cancellationToken);
             }
-        }
+        });
 
         [JsonRpcMethod("textDocument/didClose")]
-        public async Task DidCloseTextDocument(JToken token, CancellationToken cancellationToken) {
+        public Task DidCloseTextDocument(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync()) {
                 await _server.DidCloseTextDocument(ToObject<DidCloseTextDocumentParams>(token), cancellationToken);
             }
-        }
+        });
         #endregion
 
         #region Editor features
         [JsonRpcMethod("textDocument/completion")]
-        public async Task<CompletionList> Completion(JToken token, CancellationToken cancellationToken) {
+        public Task<CompletionList> Completion(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.Completion(ToObject<CompletionParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("completionItem/resolve")]
-        public Task<CompletionItem> CompletionItemResolve(JToken token, CancellationToken cancellationToken)
-           => _server.CompletionItemResolve(ToObject<CompletionItem>(token), cancellationToken);
+        public Task<CompletionItem> CompletionItemResolve(JToken token, CancellationToken cancellationToken) => LogOnException(() =>
+            _server.CompletionItemResolve(ToObject<CompletionItem>(token), cancellationToken);
+        );
 
         [JsonRpcMethod("textDocument/hover")]
-        public async Task<Hover> Hover(JToken token, CancellationToken cancellationToken) {
+        public Task<Hover> Hover(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.Hover(ToObject<TextDocumentPositionParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("textDocument/signatureHelp")]
-        public async Task<SignatureHelp> SignatureHelp(JToken token, CancellationToken cancellationToken) {
+        public Task<SignatureHelp> SignatureHelp(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.SignatureHelp(ToObject<TextDocumentPositionParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("textDocument/definition")]
-        public async Task<Reference[]> GotoDefinition(JToken token, CancellationToken cancellationToken) {
+        public Task<Reference[]> GotoDefinition(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.GotoDefinition(ToObject<TextDocumentPositionParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("textDocument/references")]
-        public async Task<Reference[]> FindReferences(JToken token, CancellationToken cancellationToken) {
+        public Task<Reference[]> FindReferences(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.FindReferences(ToObject<ReferencesParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("textDocument/documentHighlight")]
-        public async Task<DocumentHighlight[]> DocumentHighlight(JToken token, CancellationToken cancellationToken) {
+        public Task<DocumentHighlight[]> DocumentHighlight(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.DocumentHighlight(ToObject<TextDocumentPositionParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("textDocument/documentSymbol")]
-        public async Task<DocumentSymbol[]> DocumentSymbol(JToken token, CancellationToken cancellationToken) {
+        public Task<DocumentSymbol[]> DocumentSymbol(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             // This call is also used by VSC document outline and it needs correct information
             return await _server.HierarchicalDocumentSymbol(ToObject<DocumentSymbolParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("textDocument/codeAction")]
-        public async Task<Command[]> CodeAction(JToken token, CancellationToken cancellationToken) {
+        public Task<Command[]> CodeAction(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.CodeAction(ToObject<CodeActionParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("textDocument/codeLens")]
-        public async Task<CodeLens[]> CodeLens(JToken token, CancellationToken cancellationToken) {
+        public Task<CodeLens[]> CodeLens(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.CodeLens(ToObject<TextDocumentPositionParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("codeLens/resolve")]
-        public Task<CodeLens> CodeLensResolve(JToken token, CancellationToken cancellationToken)
-           => _server.CodeLensResolve(ToObject<CodeLens>(token), cancellationToken);
+        public Task<CodeLens> CodeLensResolve(JToken token, CancellationToken cancellationToken) => LogOnException(() =>
+            _server.CodeLensResolve(ToObject<CodeLens>(token), cancellationToken)
+        );
 
         [JsonRpcMethod("textDocument/documentLink")]
-        public async Task<DocumentLink[]> DocumentLink(JToken token, CancellationToken cancellationToken) {
+        public Task<DocumentLink[]> DocumentLink(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.DocumentLink(ToObject<DocumentLinkParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("documentLink/resolve")]
-        public Task<DocumentLink> DocumentLinkResolve(JToken token, CancellationToken cancellationToken)
-           => _server.DocumentLinkResolve(ToObject<DocumentLink>(token), cancellationToken);
+        public Task<DocumentLink> DocumentLinkResolve(JToken token, CancellationToken cancellationToken) => LogOnException(() =>
+            _server.DocumentLinkResolve(ToObject<DocumentLink>(token), cancellationToken)
+        );
 
         [JsonRpcMethod("textDocument/formatting")]
-        public async Task<TextEdit[]> DocumentFormatting(JToken token, CancellationToken cancellationToken) {
+        public Task<TextEdit[]> DocumentFormatting(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.DocumentFormatting(ToObject<DocumentFormattingParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("textDocument/rangeFormatting")]
-        public async Task<TextEdit[]> DocumentRangeFormatting(JToken token, CancellationToken cancellationToken) {
+        public Task<TextEdit[]> DocumentRangeFormatting(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.DocumentRangeFormatting(ToObject<DocumentRangeFormattingParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("textDocument/onTypeFormatting")]
-        public async Task<TextEdit[]> DocumentOnTypeFormatting(JToken token, CancellationToken cancellationToken) {
+        public Task<TextEdit[]> DocumentOnTypeFormatting(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.DocumentOnTypeFormatting(ToObject<DocumentOnTypeFormattingParams>(token), cancellationToken);
-        }
+        });
 
         [JsonRpcMethod("textDocument/rename")]
-        public async Task<WorkspaceEdit> Rename(JToken token, CancellationToken cancellationToken) {
+        public Task<WorkspaceEdit> Rename(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
             return await _server.Rename(ToObject<RenameParams>(token), cancellationToken);
-        }
+        });
         #endregion
 
         #region Extensions
         [JsonRpcMethod("python/loadExtension")]
-        public Task LoadExtension(JToken token, CancellationToken cancellationToken)
-            => _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken);
+        public Task LoadExtension(JToken token, CancellationToken cancellationToken) => LogOnException(() =>
+            _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken)
+        );
 
         #endregion
 
@@ -450,6 +458,24 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _watchSearchPaths = watchSearchPaths;
             _searchPaths = _initParams.initializationOptions.searchPaths;
+        }
+
+        private async Task LogOnException(Func<Task> func) {
+            try {
+                await func();
+            } catch (Exception e) {
+                _server.LogMessage(MessageType.Error, e.ToString());
+                throw;
+            }
+        }
+
+        private async Task<TResult> LogOnException<TResult>(Func<Task<TResult>> func) {
+            try {
+                return await func();
+            } catch (Exception e) {
+                _server.LogMessage(MessageType.Error, e.ToString());
+                throw;
+            }
         }
 
         private class Prioritizer : IDisposable {

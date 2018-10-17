@@ -34,7 +34,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private Action<Task, object> DisposeStateContinuation { get; } = (t, o) => ((IDisposable)o).Dispose();
 
         [JsonRpcMethod("initialize")]
-        public async Task<InitializeResult> Initialize(JToken token, CancellationToken cancellationToken) {
+        public Task<InitializeResult> Initialize(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             _initParams = token.ToObject<InitializeParams>();
             MonitorParentProcess(_initParams);
             var priorityToken = await _prioritizer.InitializePriorityAsync(cancellationToken);
@@ -50,31 +50,31 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             } finally {
                 priorityToken.Dispose();
             }
-        }
+        });
 
         [JsonRpcMethod("initialized")]
-        public async Task Initialized(JToken token, CancellationToken cancellationToken) {
+        public Task Initialized(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
             await _server.Initialized(ToObject<InitializedParams>(token), cancellationToken);
             _rpc.NotifyAsync("python/languageServerStarted").DoNotWait();
-        }
+        });
 
         [JsonRpcMethod("shutdown")]
-        public async Task Shutdown() {
+        public Task Shutdown() => LogOnException(async () => {
             // Shutdown, but do not exit.
             // https://microsoft.github.io/language-server-protocol/specification#shutdown
             await _server.Shutdown();
             _shutdown = true;
             _idleTimeTracker.Dispose();
-        }
+        });
 
         [JsonRpcMethod("exit")]
-        public async Task Exit() {
+        public Task Exit() => LogOnException(async () => {
             await _server.Exit();
             _sessionTokenSource.Cancel();
             _idleTimeTracker.Dispose();
             // Per https://microsoft.github.io/language-server-protocol/specification#exit
             Environment.Exit(_shutdown ? 0 : 1);
-        }
+        });
 
         private Task LoadDirectoryFiles() {
             string rootDir = null;
