@@ -464,7 +464,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             try {
                 await func();
             } catch (Exception e) {
-                _server.LogMessage(MessageType.Error, e.ToString());
+                if (!(e is TaskCanceledException)) {
+                    _server.LogMessage(MessageType.Error, e.ToString());
+                }
                 throw;
             }
         }
