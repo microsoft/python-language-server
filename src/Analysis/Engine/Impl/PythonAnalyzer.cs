@@ -103,7 +103,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// Creates a new analyzer that is not ready for use. You must call and
         /// wait for <see cref="ReloadModulesAsync"/> to complete before using.
         /// </summary>
-        public static PythonAnalyzer Create(IPythonInterpreterFactory factory, IPythonInterpreter interpreter = null) 
+        public static PythonAnalyzer Create(IPythonInterpreterFactory factory, IPythonInterpreter interpreter = null)
             => new PythonAnalyzer(factory, interpreter);
 
         internal PythonAnalyzer(IPythonInterpreterFactory factory, IPythonInterpreter pythonInterpreter) {
@@ -169,7 +169,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             try {
                 // Cancel outstanding analysis
-                Queue.Clear(); 
+                Queue.Clear();
                 // Tell factory to clear cached modules. This also clears the interpreter data.
                 InterpreterFactory.NotifyImportNamesChanged();
                 // Now initialize the interpreter
@@ -275,14 +275,13 @@ namespace Microsoft.PythonTools.Analysis {
         /// module. The sequence will be empty if the module is unknown.
         /// </summary>
         /// <param name="moduleName">
-        /// The absolute name of the module. This should never end with
-        /// '__init__'.
+        /// The absolute name of the module. This should never end with '__init__'.
         /// </param>
         public IEnumerable<IPythonProjectEntry> GetEntriesThatImportModule(string moduleName, bool includeUnresolved) {
-            ModuleReference modRef;
-            var entries = new List<IPythonProjectEntry>();
-            if (Modules.TryImport(moduleName, out modRef) && modRef.HasReferences) {
-                entries.AddRange(modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>());
+            HashSet<IPythonProjectEntry> entries = null;
+            if (Modules.TryImport(moduleName, out var modRef) && modRef.HasReferences) {
+                entries = new HashSet<IPythonProjectEntry>();
+                entries.UnionWith(modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>());
             }
 
             if (includeUnresolved) {
@@ -291,13 +290,43 @@ namespace Microsoft.PythonTools.Analysis {
                 lock (_modulesWithUnresolvedImportsLock) {
                     foreach (var module in _modulesWithUnresolvedImports) {
                         if (module.GetAllUnresolvedModules().Contains(moduleName)) {
+                            entries = entries ?? new HashSet<IPythonProjectEntry>();
                             entries.Add(module.ProjectEntry);
                         }
                     }
                 }
             }
+            return entries ?? Enumerable.Empty<IPythonProjectEntry>();
+        }
 
-            return entries;
+        /// <summary>
+        /// Returns a sequence of project entries that import the specified
+        /// module as well as entries that import modules in the first set,
+        /// and so on, recursively.
+        /// </summary>
+        /// <param name="moduleName">
+        /// The absolute name of the module. This should never end with '__init__'.
+        /// </param>
+        public IEnumerable<IPythonProjectEntry> GetAllModuleDependents(string moduleName, bool includeUnresolved) {
+            if (!Modules.TryImport(moduleName, out var modRef) || modRef?.Module?.ProjectEntry == null || !modRef.HasReferences) {
+                return Enumerable.Empty<IPythonProjectEntry>();
+            }
+            var set = AddModuleDependents(null, moduleName, includeUnresolved);
+            set?.Remove(modRef.Module.ProjectEntry);
+            return set ?? Enumerable.Empty<IPythonProjectEntry>();
+        }
+
+        private HashSet<IPythonProjectEntry> AddModuleDependents(HashSet<IPythonProjectEntry> set, string moduleName, bool includeUnresolved) {
+            var entries = GetEntriesThatImportModule(moduleName, includeUnresolved)
+                .Where(x => set != null ? !set.Contains(x) : true);
+            if (entries.Any()) {
+                set = set ?? new HashSet<IPythonProjectEntry>();
+                foreach (var e in entries.ToArray()) {
+                    set.Add(e);
+                    set = AddModuleDependents(set, e.ModuleName, includeUnresolved);
+                }
+            }
+            return set;
         }
 
         /// <summary>

@@ -623,14 +623,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // It is called from DidChangeTextDocument which must fully finish
                 // since otherwise Complete() may come before the change is enqueued
                 // for processing and the completion list will be driven off the stale data.
-                return cookieTask.ContinueWith(t => {
+                return cookieTask.ContinueWith(async t => {
                     if (t.IsFaulted) {
                         // Happens when file got deleted before processing 
                         pending.Dispose();
                         LogMessage(MessageType.Error, t.Exception.Message);
                         return;
                     }
-                    OnDocumentChangeProcessingComplete(doc, t.Result as VersionCookie, enqueueForAnalysis, priority, pending);
+                    await OnDocumentChangeProcessingCompleteAsync(doc, t.Result as VersionCookie, enqueueForAnalysis, priority, pending);
                 });
             } catch {
                 pending?.Dispose();
@@ -638,7 +638,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private void OnDocumentChangeProcessingComplete(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
+        private async Task OnDocumentChangeProcessingCompleteAsync(IDocument doc, VersionCookie vc, bool enqueueForAnalysis, AnalysisPriority priority, IDisposable disposeWhenEnqueued) {
             try {
                 _shutdownCts.Token.ThrowIfCancellationRequested();
                 if (vc != null) {
@@ -652,6 +652,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 if (doc is IAnalyzable analyzable && enqueueForAnalysis && !_shutdownCts.Token.IsCancellationRequested) {
                     AnalysisQueued(doc.DocumentUri);
                     AnalysisQueue.Enqueue(analyzable, priority);
+
+                    if (doc is ProjectEntry entry) {
+                        var reanalyzeEntries = Analyzer.GetAllModuleDependents(entry.ModuleName, false);
+                        foreach (var d in reanalyzeEntries.OfType<IAnalyzable>().OfType<IDocument>()) {
+                            _shutdownCts.Token.ThrowIfCancellationRequested();
+                            await EnqueueItemAsync(d, priority);
+                        }
+                    }
                 }
 
                 disposeWhenEnqueued?.Dispose();

@@ -75,7 +75,6 @@ class D(object):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/47")]
         public async Task MutatingReferences() {
             var text1 = @"
 import mod2
@@ -93,16 +92,15 @@ class D(object):
         self.value = value
         self.value.SomeMethod()
 ";
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri1 = TestData.GetNextModuleUri();
-                var uri2 = TestData.GetNextModuleUri();
+            using (var server = await CreateServerAsync()) {
+                Uri uri1;
+                var uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
                 using (server.AnalysisQueue.Pause()) {
-                    await server.SendDidOpenTextDocument(uri1, text1);
-                    await server.SendDidOpenTextDocument(uri2, text2);
+                    await server.LoadFileAsync(uri2);
+                    uri1 = await server.OpenDocumentAndGetUriAsync("mod1.py", text1);
                 }
 
                 var references = await server.SendFindReferences(uri1, 4, 9);
-
                 references.Should().OnlyHaveReferences(
                     (uri1, (4, 4, 5, 12), ReferenceKind.Value),
                     (uri1, (4, 8, 4, 18), ReferenceKind.Definition),

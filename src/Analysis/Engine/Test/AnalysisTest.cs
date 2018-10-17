@@ -5426,6 +5426,34 @@ def f(s = 123) -> s:
                     .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType, BuiltinTypeId.Unknown);
             }
         }
+
+        [TestMethod, Priority(0)]
+        public async Task AllModuleDependents() {
+            var codes = new[] {
+                "import mod2\n",
+                "import mod3\n",
+                "import mod1\nimport mod4\n",
+                "import mod3\n",
+                "import mod4\n"
+                };
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var uris = new Uri[codes.Length];
+                using (server.AnalysisQueue.Pause()) {
+                    for (var i = 0; i < codes.Length; i++) {
+                        uris[i] = await server.OpenDocumentAndGetUriAsync($"mod{i + 1}.py", codes[i]);
+                    }
+                }
+                var analysis = await server.GetAnalysisAsync(uris[2]);
+                var deps = server.Analyzer.GetAllModuleDependents(Path.GetFileNameWithoutExtension(uris[2].LocalPath), false);
+
+                deps.Should().Contain(new[] {
+                    server.GetProjectEntry(uris[0]),
+                    server.GetProjectEntry(uris[1]),
+                    server.GetProjectEntry(uris[3])
+                });
+            }
+        }
+
 /*
         [TestMethod, Priority(0)]
         public async Task Super() {
