@@ -187,7 +187,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("workspace/executeCommand")]
         public Task<object> ExecuteCommand(JToken token, CancellationToken cancellationToken) => LogOnException(() =>
             _server.ExecuteCommand(ToObject<ExecuteCommandParams>(token), cancellationToken)
-        )
+        );
         #endregion
 
         #region TextDocument
@@ -197,7 +197,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             using (await _prioritizer.DocumentChangePriorityAsync(cancellationToken)) {
                 await _server.DidOpenTextDocument(ToObject<DidOpenTextDocumentParams>(token), cancellationToken);
             }
-        })
+        });
 
         [JsonRpcMethod("textDocument/didChange")]
         public Task DidChangeTextDocument(JToken token, CancellationToken cancellationToken) => LogOnException(async () => {
@@ -291,7 +291,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         [JsonRpcMethod("completionItem/resolve")]
         public Task<CompletionItem> CompletionItemResolve(JToken token, CancellationToken cancellationToken) => LogOnException(() =>
-            _server.CompletionItemResolve(ToObject<CompletionItem>(token), cancellationToken);
+            _server.CompletionItemResolve(ToObject<CompletionItem>(token), cancellationToken)
         );
 
         [JsonRpcMethod("textDocument/hover")]
