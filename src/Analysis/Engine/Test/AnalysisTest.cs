@@ -1286,8 +1286,10 @@ b = next(a)
 
 
         [DataRow(PythonLanguageVersion.V27)]
-        [DataRow(PythonLanguageVersion.V33)]
+        [DataRow(PythonLanguageVersion.V35)]
         [DataRow(PythonLanguageVersion.V36)]
+        [DataRow(PythonLanguageVersion.V37)]
+        [DataRow(PythonLanguageVersion.V38)]
         [DataTestMethod, Priority(0)]
         public async Task LambdaInComprehension(PythonLanguageVersion version) {
             var text = "x = [(lambda a:[a**i for i in range(a+1)])(j) for j in range(5)]";
@@ -4026,7 +4028,7 @@ t.x, t. =
                 Assert.Inconclusive("Test requires Python installation");
             }
 
-            var files = Directory.GetFiles(Path.Combine(configuration.PrefixPath, "Lib"), "*.py", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(configuration.LibraryPath, "*.py", SearchOption.AllDirectories);
             Trace.TraceInformation($"Files count: {files}");
             var contentTasks = files.Take(50).Select(f => File.ReadAllTextAsync(f)).ToArray();
 
@@ -4113,16 +4115,15 @@ abc = 42
             }
         }
 
-        [DataRow("from .moduleY import spam", "spam")]
-        [DataRow("from .moduleY import spam as ham", "ham")]
-        [DataRow("from . import moduleY", "moduleY.spam")]
-        [DataRow("from ..subpackage1 import moduleY", "moduleY.spam")]
-        [DataRow("from ..subpackage2.moduleZ import eggs", "eggs")]
-        [DataRow("from ..moduleA import foo", "foo")]
-        [DataRow("from ...package import bar", "bar")]
+        [DataRow("from .moduleY import spam", "spam", null)]
+        [DataRow("from .moduleY import spam as ham", "ham", null)]
+        [DataRow("from . import moduleY", "moduleY", "spam")]
+        [DataRow("from ..subpackage1 import moduleY", "moduleY", "spam")]
+        [DataRow("from ..subpackage2.moduleZ import eggs", "eggs", null)]
+        [DataRow("from ..moduleA import foo", "foo", null)]
+        [DataRow("from ...package import bar", "bar", null)]
         [DataTestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/157")]
-        public async Task PackageRelativeImportPep328(string subpackageModuleXContent, string variable) {
+        public async Task PackageRelativeImportPep328(string subpackageModuleXContent, string variable, string member) {
             var initContent = "def bar():\n  pass\n";
             var moduleAContent = "def foo():\n  pass\n";
             var subpackageModuleYContent = "def spam():\n  pass\n";
@@ -4152,7 +4153,12 @@ abc = 42
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysisX = await server.GetAnalysisAsync(subpackageModuleXUri);
 
-                analysisX.Should().HaveVariable(variable).OfType(BuiltinTypeId.Function);
+                if (member != null) {
+                    analysisX.Should().HaveVariable(variable).WithValue<IModule>()
+                        .WithMemberOfType(member, PythonMemberType.Function);
+                } else {
+                    analysisX.Should().HaveVariable(variable).OfType(BuiltinTypeId.Function);
+                }
             }
         }
 

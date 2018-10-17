@@ -14,37 +14,26 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using static System.FormattableString;
 
 namespace Microsoft.PythonTools.Analysis {
     public static class PythonVersions {
-        public static readonly InterpreterConfiguration Python26 = GetCPythonVersion(PythonLanguageVersion.V26, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Python27 = GetCPythonVersion(PythonLanguageVersion.V27, InterpreterArchitecture.x86);
-        public static readonly InterpreterConfiguration Python31 = GetCPythonVersion(PythonLanguageVersion.V31, InterpreterArchitecture.x86);
-        public static readonly InterpreterConfiguration Python32 = GetCPythonVersion(PythonLanguageVersion.V32, InterpreterArchitecture.x86);
-        public static readonly InterpreterConfiguration Python33 = GetCPythonVersion(PythonLanguageVersion.V33, InterpreterArchitecture.x86);
-        public static readonly InterpreterConfiguration Python34 = GetCPythonVersion(PythonLanguageVersion.V34, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Python35 = GetCPythonVersion(PythonLanguageVersion.V35, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Python36 = GetCPythonVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Python37 = GetCPythonVersion(PythonLanguageVersion.V37, InterpreterArchitecture.x86);
+        public static readonly InterpreterConfiguration Python38 = GetCPythonVersion(PythonLanguageVersion.V38, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration IronPython27 = GetIronPythonVersion(false);
-        public static readonly InterpreterConfiguration Python26_x64 = GetCPythonVersion(PythonLanguageVersion.V26, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Python27_x64 = GetCPythonVersion(PythonLanguageVersion.V27, InterpreterArchitecture.x64);
-        public static readonly InterpreterConfiguration Python31_x64 = GetCPythonVersion(PythonLanguageVersion.V31, InterpreterArchitecture.x64);
-        public static readonly InterpreterConfiguration Python32_x64 = GetCPythonVersion(PythonLanguageVersion.V32, InterpreterArchitecture.x64);
-        public static readonly InterpreterConfiguration Python33_x64 = GetCPythonVersion(PythonLanguageVersion.V33, InterpreterArchitecture.x64);
-        public static readonly InterpreterConfiguration Python34_x64 = GetCPythonVersion(PythonLanguageVersion.V34, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Python35_x64 = GetCPythonVersion(PythonLanguageVersion.V35, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Python36_x64 = GetCPythonVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Python37_x64 = GetCPythonVersion(PythonLanguageVersion.V37, InterpreterArchitecture.x64);
+        public static readonly InterpreterConfiguration Python38_x64 = GetCPythonVersion(PythonLanguageVersion.V38, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Anaconda27 = GetAnacondaVersion(PythonLanguageVersion.V27, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Anaconda27_x64 = GetAnacondaVersion(PythonLanguageVersion.V27, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Anaconda36 = GetAnacondaVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x86);
@@ -59,101 +48,72 @@ namespace Microsoft.PythonTools.Analysis {
             Anaconda27_x64);
 
         public static IEnumerable<InterpreterConfiguration> Versions => GetVersions(
-            Python26,
-            Python26_x64,
             Python27,
             Python27_x64,
             IronPython27,
             IronPython27_x64,
-            Python31,
-            Python31_x64,
-            Python32,
-            Python32_x64,
-            Python33,
-            Python33_x64,
-            Python34,
-            Python34_x64,
             Python35,
             Python35_x64,
             Python36,
             Python36_x64,
             Python37,
             Python37_x64,
-            Jython27);
+            Python38,
+            Python38_x64, Jython27);
 
         public static InterpreterConfiguration Required_Python27X => Python27 ?? Python27_x64 ?? NotInstalled("v2.7");
-        public static InterpreterConfiguration Required_Python31X => Python31 ?? Python31_x64 ?? NotInstalled("v3.1");
-        public static InterpreterConfiguration Required_Python32X => Python32 ?? Python32_x64 ?? NotInstalled("v3.2");
-        public static InterpreterConfiguration Required_Python33X => Python33 ?? Python33_x64 ?? NotInstalled("v3.3");
-        public static InterpreterConfiguration Required_Python34X => Python34 ?? Python34_x64 ?? NotInstalled("v3.4");
         public static InterpreterConfiguration Required_Python35X => Python35 ?? Python35_x64 ?? NotInstalled("v3.5");
         public static InterpreterConfiguration Required_Python36X => Python36 ?? Python36_x64 ?? NotInstalled("v3.6");
+        public static InterpreterConfiguration Required_Python37X => Python37 ?? Python37_x64 ?? NotInstalled("v3.7");
+        public static InterpreterConfiguration Required_Python38X => Python38 ?? Python38_x64 ?? NotInstalled("v3.8");
 
         public static InterpreterConfiguration LatestAvailable => LatestAvailable3X ?? LatestAvailable2X;
 
         public static InterpreterConfiguration LatestAvailable3X => GetVersions(
+            Python38,
+            Python38_x64,
             Python37,
             Python37_x64,
             Python36,
             Python36_x64,
             Python35,
-            Python35_x64,
-            Python34,
-            Python34_x64,
-            Python33,
-            Python33_x64,
-            Python32,
-            Python32_x64,
-            Python31,
-            Python31_x64).FirstOrDefault() ?? NotInstalled("v3");
+            Python35_x64).FirstOrDefault() ?? NotInstalled("v3");
 
         public static InterpreterConfiguration LatestAvailable2X => GetVersions(
             Python27,
-            Python27_x64,
-            Python26,
-            Python26_x64).FirstOrDefault() ?? NotInstalled("v2");
+            Python27_x64).FirstOrDefault() ?? NotInstalled("v2");
 
         public static InterpreterConfiguration EarliestAvailable => EarliestAvailable2X ?? EarliestAvailable3X;
 
         public static InterpreterConfiguration EarliestAvailable3X => GetVersions(
-            Python31,
-            Python31_x64,
-            Python32,
-            Python32_x64,
-            Python33,
-            Python33_x64,
-            Python34,
-            Python34_x64,
             Python35,
             Python35_x64,
             Python36,
             Python36_x64,
             Python37,
-            Python37_x64).FirstOrDefault() ?? NotInstalled("v3");
+            Python37_x64,
+            Python38,
+            Python38_x64).FirstOrDefault() ?? NotInstalled("v3");
 
         public static InterpreterConfiguration EarliestAvailable2X => GetVersions(
-            Python26,
-            Python26_x64,
             Python27,
             Python27_x64).FirstOrDefault() ?? NotInstalled("v2");
 
-        public static InterpreterConfiguration GetRequiredCPythonConfiguration(PythonLanguageVersion version) 
+        public static InterpreterConfiguration GetRequiredCPythonConfiguration(PythonLanguageVersion version)
             => GetCPythonVersion(version, InterpreterArchitecture.x86) ?? GetCPythonVersion(version, InterpreterArchitecture.x64) ?? NotInstalled(version.ToString());
 
         private static IEnumerable<InterpreterConfiguration> GetVersions(params InterpreterConfiguration[] configurations) => configurations.Where(v => v != null);
 
-        private static InterpreterConfiguration GetCPythonVersion(PythonLanguageVersion version, InterpreterArchitecture arch) {            
-            return PythonInstallPathResolver.Instance.GetCorePythonConfiguration(arch, version.ToVersion());
-        }
-        
-        private static InterpreterConfiguration GetAnacondaVersion(PythonLanguageVersion version, InterpreterArchitecture arch) {
-            return PythonInstallPathResolver.Instance.GetCondaPythonConfiguration(arch, version.ToVersion());
-        }
-        
+        private static InterpreterConfiguration GetCPythonVersion(PythonLanguageVersion version, InterpreterArchitecture arch)
+            => PythonInstallPathResolver.Instance.GetCorePythonConfiguration(arch, version.ToVersion());
+
+        private static InterpreterConfiguration GetAnacondaVersion(PythonLanguageVersion version, InterpreterArchitecture arch)
+            => PythonInstallPathResolver.Instance.GetCondaPythonConfiguration(arch, version.ToVersion());
+
         private static InterpreterConfiguration GetIronPythonVersion(bool x64) {
             return PythonInstallPathResolver.Instance.GetIronPythonConfiguration(x64);
         }
-        
+
         private static InterpreterConfiguration GetJythonVersion(PythonLanguageVersion version) {
             var candidates = new List<DirectoryInfo>();
             var ver = version.ToVersion();
@@ -184,10 +144,9 @@ namespace Microsoft.PythonTools.Analysis {
                 }
 
                 return new InterpreterConfiguration(
-                    $"Global|Jython|{version.ToVersion()}",
-                    string.Format("Jython {0}", version.ToVersion()),
-                    dir.FullName,
-                    interpreter.FullName,
+                    id: $"Global|Jython|{version.ToVersion()}",
+                    description: string.Format("Jython {0}", version.ToVersion()),
+                    pythonExePath: interpreter.FullName,
                     version: version.ToVersion()
                 );
             }

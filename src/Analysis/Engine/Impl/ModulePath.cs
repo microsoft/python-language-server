@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.PythonTools.Analysis.Infrastructure;
@@ -339,22 +340,15 @@ namespace Microsoft.PythonTools.Analysis {
         /// modules.
         /// </remarks>
         public static IEnumerable<ModulePath> GetModulesInLib(
-            string prefixPath,
-            string libraryPath = null,
-            string sitePath = null,
+            string libraryPath,
+            string sitePath,
             bool requireInitPyFiles = true
         ) {
-            if (File.Exists(prefixPath)) {
-                prefixPath = Path.GetDirectoryName(prefixPath);
-            }
-            if (!Directory.Exists(libraryPath)) {
-                libraryPath = Path.Combine(prefixPath, "Lib");
-            }
-            if (string.IsNullOrEmpty(sitePath)) {
-                sitePath = Path.Combine(libraryPath, "site-packages");
-            }
-            var pthDirs = ExpandPathFiles(sitePath);
-            var excludedPthDirs = new HashSet<string>() {
+            libraryPath = libraryPath ?? string.Empty;
+            sitePath = sitePath ?? string.Empty;
+
+            var pathDirs = ExpandPathFiles(sitePath);
+            var excludedPathDirs = new HashSet<string>() {
                 sitePath,
                 libraryPath
             };
@@ -376,11 +370,12 @@ namespace Microsoft.PythonTools.Analysis {
             // Get modules in interpreter directory
             IEnumerable<ModulePath> modulesInExePath;
 
-            if (Directory.Exists(prefixPath)) {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                var prefixPath = Path.GetDirectoryName(libraryPath);
                 modulesInDllsPath = GetModulesInPath(Path.Combine(prefixPath, "DLLs"), true, false);
                 modulesInExePath = GetModulesInPath(prefixPath, true, false);
-                excludedPthDirs.Add(prefixPath);
-                excludedPthDirs.Add(Path.Combine(prefixPath, "DLLs"));
+                excludedPathDirs.Add(prefixPath);
+                excludedPathDirs.Add(Path.Combine(prefixPath, "DLLs"));
             } else {
                 modulesInDllsPath = Enumerable.Empty<ModulePath>();
                 modulesInExePath = Enumerable.Empty<ModulePath>();
@@ -388,7 +383,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             // Get directories referenced by pth files
             var modulesInPath = GetModulesInPath(
-                pthDirs.Except(excludedPthDirs, PathEqualityComparer.Instance),
+                pathDirs.Except(excludedPathDirs, PathEqualityComparer.Instance),
                 true,
                 true,
                 requireInitPy: requireInitPyFiles
@@ -403,14 +398,12 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         /// <summary>
-        /// Returns a sequence of ModulePaths for all modules importable by the
-        /// provided factory.
+        /// Returns a sequence of ModulePaths for all modules importable by the provided factory.
         /// </summary>
         public static IEnumerable<ModulePath> GetModulesInLib(InterpreterConfiguration config) {
             return GetModulesInLib(
-                config.PrefixPath,
-                null,   // default library path
-                null,   // default site-packages path
+                config.LibraryPath,
+                config.SitePackagesPath,
                 PythonVersionRequiresInitPyFiles(config.Version)
             );
         }
@@ -421,9 +414,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// Retuns false if an invalid string is provided. This function does
         /// not raise exceptions.
         /// </summary>
-        public static bool IsPythonFile(string path) {
-            return IsPythonFile(path, true, true, true);
-        }
+        public static bool IsPythonFile(string path) => IsPythonFile(path, true, true, true);
 
         /// <summary>
         /// Returns true if the provided path references an editable Python
@@ -436,9 +427,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// module. Use <see cref="IsPythonFile"/> and specify "strict" to
         /// ensure the module can be imported.
         /// </remarks>
-        public static bool IsPythonSourceFile(string path) {
-            return IsPythonFile(path, false, false, false);
-        }
+        public static bool IsPythonSourceFile(string path) => IsPythonFile(path, false, false, false);
 
         /// <summary>
         /// Returns true if the provided name can be imported in Python code.

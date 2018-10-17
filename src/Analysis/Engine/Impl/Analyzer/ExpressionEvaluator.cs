@@ -153,10 +153,6 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                         warn = true;
                     }
                 }
-            } else if (!res.Any() && !refs.IsAssigned) {
-                // Variable has no values, so if we also don't know about any
-                // definitions then warn.
-                warn = true;
             }
 
             if (addDependency && refs != null) {

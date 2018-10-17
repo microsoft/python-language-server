@@ -35,38 +35,8 @@ namespace AnalysisTests {
 
         [TestMethod, Priority(2)]
         [TestCategory("10s"), TestCategory("60s")]
-        public void TestMutateStdLibV26() {
-            TestMutateStdLib(PythonVersions.Python26_x64 ?? PythonVersions.Python26);
-        }
-
-        [TestMethod, Priority(2)]
-        [TestCategory("10s"), TestCategory("60s")]
         public void TestMutateStdLibV27() {
             TestMutateStdLib(PythonVersions.Python27_x64 ?? PythonVersions.Python27);
-        }
-
-        [TestMethod, Priority(2)]
-        [TestCategory("10s"), TestCategory("60s")]
-        public void TestMutateStdLibV31() {
-            TestMutateStdLib(PythonVersions.Python31_x64 ?? PythonVersions.Python31);
-        }
-
-        [TestMethod, Priority(2)]
-        [TestCategory("10s"), TestCategory("60s")]
-        public void TestMutateStdLibV32() {
-            TestMutateStdLib(PythonVersions.Python32_x64 ?? PythonVersions.Python32);
-        }
-
-        [TestMethod, Priority(2)]
-        [TestCategory("10s"), TestCategory("60s")]
-        public void TestMutateStdLibV33() {
-            TestMutateStdLib(PythonVersions.Python33_x64 ?? PythonVersions.Python33);
-        }
-
-        [TestMethod, Priority(2)]
-        [TestCategory("10s"), TestCategory("60s")]
-        public void TestMutateStdLibV34() {
-            TestMutateStdLib(PythonVersions.Python34_x64 ?? PythonVersions.Python34);
         }
 
         [TestMethod, Priority(2)]
@@ -81,6 +51,18 @@ namespace AnalysisTests {
             TestMutateStdLib(PythonVersions.Python36_x64 ?? PythonVersions.Python36);
         }
 
+        [TestMethod, Priority(2)]
+        [TestCategory("10s"), TestCategory("60s")]
+        public void TestMutateStdLibV37() {
+            TestMutateStdLib(PythonVersions.Python37_x64 ?? PythonVersions.Python37);
+        }
+
+        [TestMethod, Priority(2)]
+        [TestCategory("10s"), TestCategory("60s")]
+        public void TestMutateStdLibV38() {
+            TestMutateStdLib(PythonVersions.Python38_x64 ?? PythonVersions.Python38);
+        }
+
         private void TestMutateStdLib(InterpreterConfiguration configuration) {
             configuration.AssertInstalled();
 
@@ -90,11 +72,11 @@ namespace AnalysisTests {
                 Console.WriteLine("Seed == " + seed);
 
 
-                Console.WriteLine("Testing version {0} {1}", configuration.Version, Path.Combine(configuration.PrefixPath, "Lib"));
+                Console.WriteLine("Testing version {0} {1}", configuration.Version, configuration.LibraryPath);
                 int ran = 0, succeeded = 0;
                 string[] files;
                 try {
-                    files = Directory.GetFiles(Path.Combine(configuration.PrefixPath, "Lib"));
+                    files = Directory.GetFiles(configuration.LibraryPath);
                 } catch (DirectoryNotFoundException) {
                     continue;
                 }

@@ -486,10 +486,10 @@ class BankAccount(object):
         public async Task ScrapedTypeWithWrongModule() {
             var version = PythonVersions.Versions
                 .Concat(PythonVersions.AnacondaVersions)
-                .LastOrDefault(v => Directory.Exists(Path.Combine(v.PrefixPath, "Lib", "site-packages", "numpy")));
+                .LastOrDefault(v => Directory.Exists(Path.Combine(v.SitePackagesPath, "numpy")));
             version.AssertInstalled();
 
-            Console.WriteLine("Using {0}", version.PrefixPath);
+            Console.WriteLine("Using {0}", version.InterpreterPath);
             using (var server = await CreateServerAsync(version)) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync("import numpy.core.numeric as NP; ndarray = NP.ndarray");
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
@@ -524,22 +524,7 @@ class BankAccount(object):
         public void AstBuiltinScrapeV35() => AstBuiltinScrape(PythonVersions.Python35_x64 ?? PythonVersions.Python35);
 
         [TestMethod, Priority(0)]
-        public void AstBuiltinScrapeV34() => AstBuiltinScrape(PythonVersions.Python34_x64 ?? PythonVersions.Python34);
-
-        [TestMethod, Priority(0)]
-        public void AstBuiltinScrapeV33() => AstBuiltinScrape(PythonVersions.Python33_x64 ?? PythonVersions.Python33);
-
-        [TestMethod, Priority(0)]
-        public void AstBuiltinScrapeV32() => AstBuiltinScrape(PythonVersions.Python32_x64 ?? PythonVersions.Python32);
-
-        [TestMethod, Priority(0)]
-        public void AstBuiltinScrapeV31() => AstBuiltinScrape(PythonVersions.Python31_x64 ?? PythonVersions.Python31);
-
-        [TestMethod, Priority(0)]
         public void AstBuiltinScrapeV27() => AstBuiltinScrape(PythonVersions.Python27_x64 ?? PythonVersions.Python27);
-
-        [TestMethod, Priority(0)]
-        public void AstBuiltinScrapeV26() => AstBuiltinScrape(PythonVersions.Python26_x64 ?? PythonVersions.Python26);
 
         [TestMethod, Priority(0)]
         public void AstBuiltinScrapeIPy27() => AstBuiltinScrape(PythonVersions.IronPython27_x64 ?? PythonVersions.IronPython27);
@@ -600,6 +585,9 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
+        public void AstNativeBuiltinScrapeV38x64() => AstNativeBuiltinScrape(PythonVersions.Python38_x64);
+
+        [TestMethod, Priority(0)]
         public void AstNativeBuiltinScrapeV37x64() => AstNativeBuiltinScrape(PythonVersions.Python37_x64);
 
         [TestMethod, Priority(0)]
@@ -609,22 +597,10 @@ class BankAccount(object):
         public void AstNativeBuiltinScrapeV35x64() => AstNativeBuiltinScrape(PythonVersions.Python35_x64);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV34x64() => AstNativeBuiltinScrape(PythonVersions.Python34_x64);
-
-        [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV33x64() => AstNativeBuiltinScrape(PythonVersions.Python33_x64);
-
-        [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV32x64() => AstNativeBuiltinScrape(PythonVersions.Python32_x64);
-
-        [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV31x64() => AstNativeBuiltinScrape(PythonVersions.Python31_x64);
-
-        [TestMethod, Priority(0)]
         public void AstNativeBuiltinScrapeV27x64() => AstNativeBuiltinScrape(PythonVersions.Python27_x64);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV26x64() => AstNativeBuiltinScrape(PythonVersions.Python26_x64);
+        public void AstNativeBuiltinScrapeV38x86() => AstNativeBuiltinScrape(PythonVersions.Python38);
 
         [TestMethod, Priority(0)]
         public void AstNativeBuiltinScrapeV37x86() => AstNativeBuiltinScrape(PythonVersions.Python37);
@@ -635,24 +611,9 @@ class BankAccount(object):
         [TestMethod, Priority(0)]
         public void AstNativeBuiltinScrapeV35x86() => AstNativeBuiltinScrape(PythonVersions.Python35);
 
-        [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV34x86() => AstNativeBuiltinScrape(PythonVersions.Python34);
-
-        [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV33x86() => AstNativeBuiltinScrape(PythonVersions.Python33);
-
-        [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV32x86() => AstNativeBuiltinScrape(PythonVersions.Python32);
-
-        [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV31x86() => AstNativeBuiltinScrape(PythonVersions.Python31);
 
         [TestMethod, Priority(0)]
         public void AstNativeBuiltinScrapeV27x86() => AstNativeBuiltinScrape(PythonVersions.Python27);
-
-        [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV26x86() => AstNativeBuiltinScrape(PythonVersions.Python26);
-
 
         private void AstNativeBuiltinScrape(InterpreterConfiguration configuration) {
             configuration.AssertInstalled();
@@ -662,8 +623,8 @@ class BankAccount(object):
                 try {
                     var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
                     var ctxt = interpreter.CreateModuleContext();
-
-                    var dllsDir = PathUtils.GetAbsoluteDirectoryPath(factory.Configuration.PrefixPath, "DLLs");
+                    // TODO: this is Windows only
+                    var dllsDir = PathUtils.GetAbsoluteDirectoryPath(Path.GetDirectoryName(factory.Configuration.LibraryPath), "DLLs");
                     if (!Directory.Exists(dllsDir)) {
                         Assert.Inconclusive("Configuration does not have DLLs");
                     }
@@ -719,6 +680,12 @@ class BankAccount(object):
         }
 
         [TestMethod, TestCategory("60s"), Priority(0)]
+        public async Task FullStdLibV38() {
+            var v = PythonVersions.Python38 ?? PythonVersions.Python38_x64;
+            await FullStdLibTest(v);
+        }
+
+        [TestMethod, TestCategory("60s"), Priority(0)]
         public async Task FullStdLibV37() {
             var v = PythonVersions.Python37 ?? PythonVersions.Python37_x64;
             await FullStdLibTest(v);
@@ -739,38 +706,8 @@ class BankAccount(object):
         }
 
         [TestMethod, TestCategory("60s"), Priority(0)]
-        public async Task FullStdLibV34() {
-            var v = PythonVersions.Python34 ?? PythonVersions.Python34_x64;
-            await FullStdLibTest(v);
-        }
-
-        [TestMethod, TestCategory("60s"), Priority(0)]
-        public async Task FullStdLibV33() {
-            var v = PythonVersions.Python33 ?? PythonVersions.Python33_x64;
-            await FullStdLibTest(v);
-        }
-
-        [TestMethod, TestCategory("60s"), Priority(0)]
-        public async Task FullStdLibV32() {
-            var v = PythonVersions.Python31 ?? PythonVersions.Python32_x64;
-            await FullStdLibTest(v);
-        }
-
-        [TestMethod, TestCategory("60s"), Priority(0)]
-        public async Task FullStdLibV31() {
-            var v = PythonVersions.Python31 ?? PythonVersions.Python32_x64;
-            await FullStdLibTest(v);
-        }
-
-        [TestMethod, TestCategory("60s"), Priority(0)]
         public async Task FullStdLibV27() {
             var v = PythonVersions.Python27 ?? PythonVersions.Python27_x64;
-            await FullStdLibTest(v);
-        }
-
-        [TestMethod, TestCategory("60s"), Priority(0)]
-        public async Task FullStdLibV26() {
-            var v = PythonVersions.Python26 ?? PythonVersions.Python26_x64;
             await FullStdLibTest(v);
         }
 
@@ -811,16 +748,7 @@ class BankAccount(object):
                 UseExistingCache = false
             });
 
-            IEnumerable<ModulePath> modules;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                modules = ModulePath.GetModulesInLib(configuration.PrefixPath).ToList();
-            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-                var libPath = $"/Library/Frameworks/Python.framework/Versions/{configuration.Version}/lib/python{configuration.Version}";
-                modules = ModulePath.GetModulesInLib(configuration.PrefixPath, libPath).ToList();
-            } else {
-                var libPath = $"/usr/lib/python{configuration.Version}";
-                modules = ModulePath.GetModulesInLib(configuration.PrefixPath, libPath).ToList();
-            }
+            var modules = ModulePath.GetModulesInLib(configuration.LibraryPath, configuration.SitePackagesPath).ToList();
 
             var skip = new HashSet<string>(skipModules);
             skip.UnionWith(new[] {

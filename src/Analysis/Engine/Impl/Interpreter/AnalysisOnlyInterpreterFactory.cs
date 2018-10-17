@@ -47,9 +47,8 @@ namespace Microsoft.PythonTools.Interpreter {
             return new InterpreterConfiguration(
                 "AnalysisOnly|{0}|{1}".FormatInvariant(version, description),
                 description,
-                arch: InterpreterArchitecture.Unknown,
-                version: version,
-                uiMode: InterpreterUIMode.CannotBeDefault | InterpreterUIMode.CannotBeConfigured
+                architecture: InterpreterArchitecture.Unknown,
+                version: version
             );
         }
 
