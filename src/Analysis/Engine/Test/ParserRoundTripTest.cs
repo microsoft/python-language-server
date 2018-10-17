@@ -1585,22 +1585,7 @@ def f(): pass");
         }
 
         [TestMethod, Priority(0)]
-        public void RoundTripStdLib26() => RoundTripStdLibTest(PythonVersions.Python26 ?? PythonVersions.Python26_x64);
-
-        [TestMethod, Priority(0)]
         public void RoundTripStdLib27() => RoundTripStdLibTest(PythonVersions.Python27 ?? PythonVersions.Python27_x64);
-
-        [TestMethod, Priority(0)]
-        public void RoundTripStdLib31() => RoundTripStdLibTest(PythonVersions.Python31 ?? PythonVersions.Python31_x64);
-
-        [TestMethod, Priority(0)]
-        public void RoundTripStdLib32() => RoundTripStdLibTest(PythonVersions.Python32 ?? PythonVersions.Python32_x64);
-
-        [TestMethod, Priority(0)]
-        public void RoundTripStdLib33() => RoundTripStdLibTest(PythonVersions.Python33 ?? PythonVersions.Python33_x64);
-
-        [TestMethod, Priority(0)]
-        public void RoundTripStdLib34() => RoundTripStdLibTest(PythonVersions.Python34 ?? PythonVersions.Python34_x64);
 
         [TestMethod, Priority(0)]
         public void RoundTripStdLib35() => RoundTripStdLibTest(PythonVersions.Python35 ?? PythonVersions.Python35_x64);
