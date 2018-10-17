@@ -25,7 +25,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Analysis.Infrastructure.Extensions;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
@@ -281,9 +280,8 @@ namespace Microsoft.PythonTools.Analysis {
         public IEnumerable<IPythonProjectEntry> GetEntriesThatImportModule(string moduleName, bool includeUnresolved) {
             HashSet<IPythonProjectEntry> entries = null;
             if (Modules.TryImport(moduleName, out var modRef) && modRef.HasReferences) {
-                entries = new HashSet<IPythonProjectEntry> {
-                    modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>()
-                };
+                entries = new HashSet<IPythonProjectEntry>();
+                entries.UnionWith(modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>());
             }
 
             if (includeUnresolved) {
