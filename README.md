@@ -2,6 +2,7 @@
 
 
 # Microsoft Python Language Server
+
 [Português - Brasil](README.pt-br.md)
 
 Microsoft Python Language Server implements [Language Server Protocol](https://microsoft.github.io/language-server-protocol/specification).
