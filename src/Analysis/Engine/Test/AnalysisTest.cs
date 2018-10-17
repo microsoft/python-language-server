@@ -5424,617 +5424,645 @@ def f(s = 123) -> s:
                     .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType, BuiltinTypeId.Unknown);
             }
         }
-/*
-        [TestMethod, Priority(0)]
-        public async Task Super() {
-            var code = @"
-class Base1(object):
-    def base_func(self, x): pass
-    def base1_func(self): pass
-class Base2(object):
-    def base_func(self, x, y, z): pass
-    def base2_func(self): pass
-class Derived1(Base1, Base2):
-    def derived1_func(self):
-        print('derived1_func')
-class Derived2(Base2, Base1):
-    def derived2_func(self):
-        print('derived2_func')
-class Derived3(object):
-    def derived3_func(self):
-        cls = Derived1
-        cls = Derived2
-        print('derived3_func')
-";
-            var entry = ProcessText(code);
-
-            // super(Derived1)
-            {
-                // Member from derived class should not be present
-                entry.AssertNotHasAttr("super(Derived1)", code.IndexOf("print('derived1_func')"), "derived1_func");
-
-                // Members from both base classes with distinct names should be present, and should have all parameters including self
-                entry.AssertHasParameters("super(Derived1).base1_func", code.IndexOf("print('derived1_func')"), "self");
-                entry.AssertHasParameters("super(Derived1).base2_func", code.IndexOf("print('derived1_func')"), "self");
-
-                // Only one member with clashing names should be present, and it should be from Base1
-                entry.AssertHasParameters("super(Derived1).base_func", code.IndexOf("print('derived1_func')"), "self", "x");
-            }
-
-            // super(Derived2)
-            {
-                // Only one member with clashing names should be present, and it should be from Base2
-                entry.AssertHasParameters("super(Derived2).base_func", code.IndexOf("print('derived2_func')"), "self", "x", "y", "z");
-            }
-
-            // super(Derived1, self), or Py3k magic super() to the same effect
-            int i = code.IndexOf("print('derived1_func')");
-            entry.AssertNotHasAttr("super(Derived1, self)", i, "derived1_func");
-            entry.AssertHasParameters("super(Derived1, self).base1_func", i);
-            entry.AssertHasParameters("super(Derived1, self).base2_func", i);
-            entry.AssertHasParameters("super(Derived1, self).base_func", i, "x");
-
-            if (entry.Analyzer.LanguageVersion.Is3x()) {
-                entry.AssertNotHasAttr("super()", i, "derived1_func");
-                entry.AssertHasParameters("super().base1_func", i);
-                entry.AssertHasParameters("super().base2_func", i);
-                entry.AssertHasParameters("super().base_func", i, "x");
-            }
-
-            // super(Derived2, self), or Py3k magic super() to the same effect
-            i = code.IndexOf("print('derived2_func')");
-            entry.AssertHasParameters("super(Derived2, self).base_func", i, "x", "y", "z");
-            if (entry.Analyzer.LanguageVersion.Is3x()) {
-                entry.AssertHasParameters("super().base_func", i, "x", "y", "z");
-            }
-
-            // super(Derived1 union Derived1)
-            {
-                // Members with clashing names from both potential bases should be unioned
-                var sigs = entry.GetSignatures("super(cls).base_func", code.IndexOf("print('derived3_func')"));
-                Assert.AreEqual(2, sigs.Length);
-                Assert.IsTrue(sigs.Any(overload => overload.Parameters.Length == 2)); // (self, x)
-                Assert.IsTrue(sigs.Any(overload => overload.Parameters.Length == 4)); // (self, x, y, z)
-            }
-        }
 
         [TestMethod, Priority(0)]
-        public async Task FunctoolsPartial() {
-            var text = @"
-from _functools import partial
-
-def fob(a, b, c, d):
-    return a, b, c, d
-
-sanity = fob(123, 3.14, 'abc', [])
-
-fob_1 = partial(fob, 123, 3.14, 'abc', [])
-result_1 = fob_1()
-
-fob_2 = partial(fob, d = [], c = 'abc', b = 3.14, a = 123)
-result_2 = fob_2()
-
-fob_3 = partial(fob, 123, 3.14)
-result_3 = fob_3('abc', [])
-
-fob_4 = partial(fob, c = 'abc', d = [])
-result_4 = fob_4(123, 3.14)
-
-func_from_fob_1 = fob_1.func
-args_from_fob_1 = fob_1.args
-keywords_from_fob_2 = fob_2.keywords
-";
-            var entry = ProcessText(text);
-
-            foreach (var name in new[] {
-                "sanity",
-                "result_1",
-                "result_2",
-                "result_3",
-                "result_4",
-                "args_from_fob_1"
-            }) {
-                entry.AssertDescription(name, "tuple[int, float, str, list]");
-                var result = entry.GetValue<AnalysisValue>(name);
-                Console.WriteLine("{0} = {1}", name, result);
-                AssertTupleContains(result, BuiltinTypeId.Int, BuiltinTypeId.Float, entry.BuiltinTypeId_Str, BuiltinTypeId.List);
-            }
-
-            var fob = entry.GetValue<FunctionInfo>("fob");
-            var fob2 = entry.GetValue<FunctionInfo>("func_from_fob_1");
-            Assert.AreSame(fob, fob2);
-
-            entry.GetValue<DictionaryInfo>("keywords_from_fob_2");
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task FunctoolsWraps() {
-            var text = @"
-from functools import wraps, update_wrapper
-
-def decorator1(fn):
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        fn(*args, **kwargs)
-        return 'decorated'
-    return wrapper
-
-@decorator1
-def test1():
-    '''doc'''
-    return 'undecorated'
-
-def test2():
-    pass
-
-def test2a():
-    pass
-
-test2.test_attr = 123
-update_wrapper(test2a, test2, ('test_attr',))
-
-test1_result = test1()
-";
-
-            var state = CreateAnalyzer();
-            var textEntry = state.AddModule("fob", text);
-            state.WaitForAnalysis();
-
-            state.AssertConstantEquals("test1.__name__", "test1");
-            state.AssertConstantEquals("test1.__doc__", "doc");
-            var fi = state.GetValue<FunctionInfo>("test1");
-            Assert.AreEqual("doc", fi.Documentation);
-            state.GetValue<FunctionInfo>("test1.__wrapped__");
-            Assert.AreEqual(2, state.GetValue<FunctionInfo>("test1").Overloads.Count());
-            state.AssertConstantEquals("test1_result", "decorated");
-
-            // __name__ should not have been changed by update_wrapper
-            state.AssertConstantEquals("test2.__name__", "test2");
-            state.AssertConstantEquals("test2a.__name__", "test2a");
-
-            // test_attr should have been copied by update_wrapper
-            state.AssertIsInstance("test2.test_attr", BuiltinTypeId.Int);
-            state.AssertIsInstance("test2a.test_attr", BuiltinTypeId.Int);
-        }
-
-        private static void AssertTupleContains(AnalysisValue tuple, params BuiltinTypeId[] id) {
-            var indexTypes = (tuple as SequenceInfo)?.IndexTypes?.Select(v => v.TypesNoCopy).ToArray() ??
-                (tuple as ProtocolInfo)?.GetProtocols<TupleProtocol>()?.FirstOrDefault()?._values;
-            Assert.IsNotNull(indexTypes);
-
-            var expected = string.Join(", ", id);
-            var actual = string.Join(", ", indexTypes.Select(t => {
-                if (t.Count == 1) {
-                    return t.Single().TypeId.ToString();
-                } else {
-                    return "{" + string.Join(", ", t.Select(t2 => t2.TypeId).OrderBy(t2 => t2)) + "}";
-                }
-            }));
-            if (indexTypes
-                .Zip(id, (t1, id2) => t1.Count == 1 && t1.Single().TypeId == id2)
-                .Any(b => !b)) {
-                Assert.Fail(string.Format("Expected <{0}>. Actual <{1}>.", expected, actual));
-            }
-        }
-
-
-        [TestMethod, Priority(0)]
-        public void ValidatePotentialModuleNames() {
-            // Validating against the structure given in
-            // http://www.python.org/dev/peps/pep-0328/
-
-            var entry = new MockPythonProjectEntry {
-                ModuleName = "package.subpackage1.moduleX",
-                FilePath = "C:\\package\\subpackage1\\moduleX.py"
-            };
-
-            // Without absolute_import, we should see these two possibilities
-            // for a regular import.
-            AssertUtil.ArrayEquals(
-                ModuleResolver.ResolvePotentialModuleNames(entry, "moduleY", false).ToArray(),
-                new[] { "package.subpackage1.moduleY", "moduleY" }
-            );
-
-            // With absolute_import, we should see the two possibilities for a
-            // regular import, but in the opposite order.
-            AssertUtil.ArrayEquals(
-                ModuleResolver.ResolvePotentialModuleNames(entry, "moduleY", true).ToArray(),
-                new[] { "moduleY", "package.subpackage1.moduleY" }
-            );
-
-            // Regardless of absolute import, we should see these results for
-            // relative imports.
-            foreach (var absoluteImport in new[] { true, false }) {
-                Console.WriteLine("Testing with absoluteImport = {0}", absoluteImport);
-
-                AssertUtil.ContainsExactly(
-                    ModuleResolver.ResolvePotentialModuleNames(entry, ".moduleY", absoluteImport),
-                    "package.subpackage1.moduleY"
-                );
-                AssertUtil.ContainsExactly(
-                    ModuleResolver.ResolvePotentialModuleNames(entry, ".", absoluteImport),
-                    "package.subpackage1"
-                );
-                AssertUtil.ContainsExactly(
-                    ModuleResolver.ResolvePotentialModuleNames(entry, "..subpackage1", absoluteImport),
-                    "package.subpackage1"
-                );
-                AssertUtil.ContainsExactly(
-                    ModuleResolver.ResolvePotentialModuleNames(entry, "..subpackage2.moduleZ", absoluteImport),
-                    "package.subpackage2.moduleZ"
-                );
-                AssertUtil.ContainsExactly(
-                    ModuleResolver.ResolvePotentialModuleNames(entry, "..moduleA", absoluteImport),
-                    "package.moduleA"
-                );
-
-                // Despite what PEP 328 says, this relative import never succeeds.
-                AssertUtil.ContainsExactly(
-                    ModuleResolver.ResolvePotentialModuleNames(entry, "...package", absoluteImport),
-                    "package"
-                );
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task MultilineFunctionDescription() {
-            var code = @"class A:
-    def fn(self):
-        return lambda: 123
-";
-            var entry = ProcessText(code);
-
-            Assert.AreEqual(
-                "test-module.A.fn(self: A) -> lambda: 123 -> int\ndeclared in A",
-                entry.GetDescriptions("A.fn", 0).Single().Replace("\r\n", "\n")
-            );
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task SysModulesSetSpecialization() {
-            var code = @"import sys
-modules = sys.modules
-
-modules['name_in_modules'] = None
-";
-            code += string.Join(
-                Environment.NewLine,
-                Enumerable.Range(0, 100).Select(i => string.Format("sys.modules['name{0}'] = None", i))
-            );
-
-            var entry = ProcessTextV2(code);
-
-            var sys = entry.GetValue<SysModuleInfo>("sys");
-
-            var modules = entry.GetValue<SysModuleInfo.SysModulesDictionaryInfo>("modules");
-            Assert.IsInstanceOfType(modules, typeof(SysModuleInfo.SysModulesDictionaryInfo));
-
-            AssertUtil.ContainsExactly(
-                sys.Modules.Keys,
-                Enumerable.Range(0, 100).Select(i => string.Format("name{0}", i))
-                    .Concat(new[] { "name_in_modules" })
-            );
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task SysModulesGetSpecialization() {
-            var code = @"import sys
-modules = sys.modules
-
-modules['value_in_modules'] = 'abc'
-modules['value_in_modules'] = 123
-value_in_modules = modules['value_in_modules']
-builtins = modules['__builtin__']
-builtins2 = modules.get('__builtin__')
-builtins3 = modules.pop('__builtin__')
-";
-
-            var entry = ProcessTextV2(code);
-
-            entry.AssertIsInstance("value_in_modules", BuiltinTypeId.Int);
-
-            Assert.AreEqual("__builtin__", entry.GetValue<AnalysisValue>("builtins").Name);
-            Assert.AreEqual("__builtin__", entry.GetValue<AnalysisValue>("builtins2").Name);
-            Assert.AreEqual("__builtin__", entry.GetValue<AnalysisValue>("builtins3").Name);
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task ClassInstanceAttributes() {
-            var code = @"
-class A:
-    abc = 123
-
-p1 = A.abc
-p2 = A().abc
-a = A()
-a.abc = 3.1415
-p4 = A().abc
-p3 = a.abc
-";
-            var entry = ProcessText(code);
-
-            entry.AssertIsInstance("p1", BuiltinTypeId.Int);
-            entry.AssertIsInstance("p3", BuiltinTypeId.Int, BuiltinTypeId.Float);
-            entry.AssertIsInstance("p4", BuiltinTypeId.Int, BuiltinTypeId.Float);
-            entry.AssertIsInstance("p2", BuiltinTypeId.Int, BuiltinTypeId.Float);
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task RecursiveGetDescriptor() {
-            // see https://pytools.codeplex.com/workitem/2955
-            var entry = ProcessText(@"
-class WithGet:
-    __get__ = WithGet()
-
-class A:
-    wg = WithGet()
-
-x = A().wg");
-
-            Assert.IsNotNull(entry);
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task Coroutine() {
-            var code = @"
-async def g():
-    return 123
-
-async def f():
-    x = await g()
-    g2 = g()
-    y = await g2
-";
-            var entry = ProcessText(code, PythonLanguageVersion.V35);
-
-            entry.AssertIsInstance("x", code.IndexOf("x ="), BuiltinTypeId.Int);
-            entry.AssertIsInstance("y", code.IndexOf("x ="), BuiltinTypeId.Int);
-            entry.AssertIsInstance("g2", code.IndexOf("x ="), BuiltinTypeId.Generator);
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task AsyncWithStatement() {
-            var text = @"
-class X(object):
-    def x_method(self): pass
-    async def __aenter__(self): return self
-    async def __aexit__(self, exc_type, exc_value, traceback): return False
-
-class Y(object):
-    def y_method(self): pass
-    async def __aenter__(self): return 123
-    async def __aexit__(self, exc_type, exc_value, traceback): return False
-
-async def f():
-    async with X() as x:
-        pass #x
-
-    async with Y() as y:
-        pass #y
-";
-            var entry = ProcessText(text, PythonLanguageVersion.V35);
-            entry.AssertHasAttr("x", text.IndexOf("pass #x"), "x_method");
-            entry.AssertIsInstance("y", text.IndexOf("pass #y"), BuiltinTypeId.Int);
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task AsyncForIterator() {
-            var code = @"
-class X:
-    async def __aiter__(self): return self
-    async def __anext__(self): return 123
-
-class Y:
-    async def __aiter__(self): return X()
-
-async def f():
-    async for i in Y():
-        pass
-";
-            var entry = ProcessText(code, PythonLanguageVersion.V35);
-
-            entry.AssertIsInstance("i", code.IndexOf("pass"), BuiltinTypeId.Int);
-        }
-
-
-        [TestMethod, Priority(0)]
-        public async Task RecursiveDecorators() {
-            // See https://github.com/Microsoft/PTVS/issues/542
-            // Should not crash/OOM
-            var code = @"
-def f():
-    def d(fn):
-        @f()
-        def g(): pass
-
-    return d
-";
-
-            ProcessText(code);
-        }
-
-        [TestMethod, Priority(0)]
-        public void NullNamedArgument() {
-            CallDelegate callable = (node, unit, args, keywordArgNames) => {
-                bool anyNull = false;
-                Console.WriteLine("fn({0})", string.Join(", ", keywordArgNames.Select(n => {
-                    if (n == null) {
-                        anyNull = true;
-                        return "(null)";
-                    } else {
-                        return n.Name + "=(value)";
+        public async Task AllModuleDependents() {
+            var codes = new[] {
+                "import mod2\n",
+                "import mod3\n",
+                "import mod1\nimport mod4\n",
+                "import mod3\n",
+                "import mod4\n"
+                };
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var uris = new Uri[codes.Length];
+                using (server.AnalysisQueue.Pause()) {
+                    for (var i = 0; i < codes.Length; i++) {
+                        uris[i] = await server.OpenDocumentAndGetUriAsync($"mod{i + 1}.py", codes[i]);
                     }
-                })));
-                Assert.IsFalse(anyNull, "Some arguments were null");
-                return AnalysisSet.Empty;
-            };
+                }
+                var analysis = await server.GetAnalysisAsync(uris[2]);
+                var deps = server.Analyzer.GetAllModuleDependents(Path.GetFileNameWithoutExtension(uris[2].LocalPath), false);
 
-            using (var state = CreateAnalyzer(allowParseErrors: true)) {
-                state.Analyzer.SpecializeFunction("NullNamedArgument", "fn", callable);
-
-                var entry1 = state.AddModule("NullNamedArgument", "def fn(**kwargs): pass");
-                var entry2 = state.AddModule("test", "import NullNamedArgument; NullNamedArgument.fn(a=0, ]]])");
-                state.WaitForAnalysis();
+                deps.Should().Contain(new[] {
+                    server.GetProjectEntry(uris[0]),
+                    server.GetProjectEntry(uris[1]),
+                    server.GetProjectEntry(uris[3])
+                });
             }
         }
 
-        [TestMethod, Priority(0)]
-        public void ModuleNameWalker() {
-            foreach (var item in new[] {
-                new { Code="import abc", Index=7, Expected="abc", Base="" },
-                new { Code="import abc", Index=8, Expected="abc", Base="" },
-                new { Code="import abc", Index=9, Expected="abc", Base="" },
-                new { Code="import abc", Index=10, Expected="abc", Base="" },
-                new { Code="import deg, abc as A", Index=12, Expected="abc", Base="" },
-                new { Code="from abc import A", Index=6, Expected="abc", Base="" },
-                new { Code="from .deg import A", Index=9, Expected="deg", Base="abc" },
-                new { Code="from .hij import A", Index=9, Expected="abc.hij", Base="abc.deg" },
-                new { Code="from ..hij import A", Index=10, Expected="hij", Base="abc.deg" },
-                new { Code="from ..hij import A", Index=10, Expected="abc.hij", Base="abc.deg.HIJ" },
-            }) {
-                var entry = ProcessTextV3(item.Code);
-                var walker = new ImportedModuleNameWalker(item.Base, string.Empty, item.Index, null);
-                entry.Modules[entry.DefaultModule].Tree.Walk(walker);
+        /*
+                [TestMethod, Priority(0)]
+                public async Task Super() {
+                    var code = @"
+        class Base1(object):
+            def base_func(self, x): pass
+            def base1_func(self): pass
+        class Base2(object):
+            def base_func(self, x, y, z): pass
+            def base2_func(self): pass
+        class Derived1(Base1, Base2):
+            def derived1_func(self):
+                print('derived1_func')
+        class Derived2(Base2, Base1):
+            def derived2_func(self):
+                print('derived2_func')
+        class Derived3(object):
+            def derived3_func(self):
+                cls = Derived1
+                cls = Derived2
+                print('derived3_func')
+        ";
+                    var entry = ProcessText(code);
 
-                Assert.AreEqual(item.Expected, walker.ImportedModules.FirstOrDefault()?.Name);
-            }
-        }
+                    // super(Derived1)
+                    {
+                        // Member from derived class should not be present
+                        entry.AssertNotHasAttr("super(Derived1)", code.IndexOf("print('derived1_func')"), "derived1_func");
 
-        [TestMethod, Priority(0)]
-        public void CrossModuleFunctionCallMemLeak() {
-            var modA = @"from B import h
-def f(x): return h(x)
+                        // Members from both base classes with distinct names should be present, and should have all parameters including self
+                        entry.AssertHasParameters("super(Derived1).base1_func", code.IndexOf("print('derived1_func')"), "self");
+                        entry.AssertHasParameters("super(Derived1).base2_func", code.IndexOf("print('derived1_func')"), "self");
 
-f(1)";
-            var modB = @"def g(x): pass
-def h(x): return g(x)";
+                        // Only one member with clashing names should be present, and it should be from Base1
+                        entry.AssertHasParameters("super(Derived1).base_func", code.IndexOf("print('derived1_func')"), "self", "x");
+                    }
 
-            var analyzer = CreateAnalyzer();
-            var entryA = analyzer.AddModule("A", modA);
-            var entryB = analyzer.AddModule("B", modB);
-            analyzer.WaitForAnalysis(CancellationTokens.After5s);
-            for (int i = 100; i > 0; --i) {
-                entryA.Analyze(CancellationToken.None, true);
-                analyzer.WaitForAnalysis(CancellationTokens.After5s);
-            }
-            var g = analyzer.GetValue<FunctionInfo>(entryB, "g");
-            Assert.AreEqual(1, g.References.Count());
-        }
+                    // super(Derived2)
+                    {
+                        // Only one member with clashing names should be present, and it should be from Base2
+                        entry.AssertHasParameters("super(Derived2).base_func", code.IndexOf("print('derived2_func')"), "self", "x", "y", "z");
+                    }
 
-        [TestMethod, Priority(0)]
-        public void DefaultModuleAttributes() {
-            var entry3 = ProcessTextV3("x = 1");
-            AssertUtil.ContainsExactly(entry3.GetNamesNoBuiltins(), "__builtins__", "__file__", "__name__", "__package__", "__cached__", "__spec__", "x");
-            var package = entry3.AddModule("package", "", Path.Combine(TestData.GetTempPath("package"), "__init__.py"));
-            AssertUtil.ContainsExactly(entry3.GetNamesNoBuiltins(package), "__path__", "__builtins__", "__file__", "__name__", "__package__", "__cached__", "__spec__");
+                    // super(Derived1, self), or Py3k magic super() to the same effect
+                    int i = code.IndexOf("print('derived1_func')");
+                    entry.AssertNotHasAttr("super(Derived1, self)", i, "derived1_func");
+                    entry.AssertHasParameters("super(Derived1, self).base1_func", i);
+                    entry.AssertHasParameters("super(Derived1, self).base2_func", i);
+                    entry.AssertHasParameters("super(Derived1, self).base_func", i, "x");
 
-            entry3.AssertIsInstance("__file__", BuiltinTypeId.Unicode);
-            entry3.AssertIsInstance("__name__", BuiltinTypeId.Unicode);
-            entry3.AssertIsInstance("__package__", BuiltinTypeId.Unicode);
-            entry3.AssertIsInstance(package, "__path__", BuiltinTypeId.List);
+                    if (entry.Analyzer.LanguageVersion.Is3x()) {
+                        entry.AssertNotHasAttr("super()", i, "derived1_func");
+                        entry.AssertHasParameters("super().base1_func", i);
+                        entry.AssertHasParameters("super().base2_func", i);
+                        entry.AssertHasParameters("super().base_func", i, "x");
+                    }
 
-            var entry2 = ProcessTextV2("x = 1");
-            AssertUtil.ContainsExactly(entry2.GetNamesNoBuiltins(), "__builtins__", "__file__", "__name__", "__package__", "x");
+                    // super(Derived2, self), or Py3k magic super() to the same effect
+                    i = code.IndexOf("print('derived2_func')");
+                    entry.AssertHasParameters("super(Derived2, self).base_func", i, "x", "y", "z");
+                    if (entry.Analyzer.LanguageVersion.Is3x()) {
+                        entry.AssertHasParameters("super().base_func", i, "x", "y", "z");
+                    }
 
-            entry2.AssertIsInstance("__file__", BuiltinTypeId.Bytes);
-            entry2.AssertIsInstance("__name__", BuiltinTypeId.Bytes);
-            entry2.AssertIsInstance("__package__", BuiltinTypeId.Bytes);
-        }
+                    // super(Derived1 union Derived1)
+                    {
+                        // Members with clashing names from both potential bases should be unioned
+                        var sigs = entry.GetSignatures("super(cls).base_func", code.IndexOf("print('derived3_func')"));
+                        Assert.AreEqual(2, sigs.Length);
+                        Assert.IsTrue(sigs.Any(overload => overload.Parameters.Length == 2)); // (self, x)
+                        Assert.IsTrue(sigs.Any(overload => overload.Parameters.Length == 4)); // (self, x, y, z)
+                    }
+                }
 
-        [TestMethod, Priority(0)]
-        public void CrossModuleBaseClasses() {
-            var analyzer = CreateAnalyzer();
-            var entryA = analyzer.AddModule("A", @"class ClsA(object): pass");
-            var entryB = analyzer.AddModule("B", @"from A import ClsA
-class ClsB(ClsA): pass
+                [TestMethod, Priority(0)]
+                public async Task FunctoolsPartial() {
+                    var text = @"
+        from _functools import partial
 
-x = ClsB.x");
-            analyzer.WaitForAnalysis();
-            analyzer.AssertIsInstance(entryB, "x");
+        def fob(a, b, c, d):
+            return a, b, c, d
 
-            analyzer.UpdateModule(entryA, @"class ClsA(object): x = 123");
-            entryA.Analyze(CancellationToken.None, true);
-            analyzer.WaitForAnalysis();
-            analyzer.AssertIsInstance(entryB, "x", BuiltinTypeId.Int);
-        }
+        sanity = fob(123, 3.14, 'abc', [])
 
-        [TestMethod, Priority(0)]
-        public void UndefinedVariableDiagnostic() {
-            PythonAnalysis entry;
-            string code;
+        fob_1 = partial(fob, 123, 3.14, 'abc', [])
+        result_1 = fob_1()
+
+        fob_2 = partial(fob, d = [], c = 'abc', b = 3.14, a = 123)
+        result_2 = fob_2()
+
+        fob_3 = partial(fob, 123, 3.14)
+        result_3 = fob_3('abc', [])
+
+        fob_4 = partial(fob, c = 'abc', d = [])
+        result_4 = fob_4(123, 3.14)
+
+        func_from_fob_1 = fob_1.func
+        args_from_fob_1 = fob_1.args
+        keywords_from_fob_2 = fob_2.keywords
+        ";
+                    var entry = ProcessText(text);
+
+                    foreach (var name in new[] {
+                        "sanity",
+                        "result_1",
+                        "result_2",
+                        "result_3",
+                        "result_4",
+                        "args_from_fob_1"
+                    }) {
+                        entry.AssertDescription(name, "tuple[int, float, str, list]");
+                        var result = entry.GetValue<AnalysisValue>(name);
+                        Console.WriteLine("{0} = {1}", name, result);
+                        AssertTupleContains(result, BuiltinTypeId.Int, BuiltinTypeId.Float, entry.BuiltinTypeId_Str, BuiltinTypeId.List);
+                    }
+
+                    var fob = entry.GetValue<FunctionInfo>("fob");
+                    var fob2 = entry.GetValue<FunctionInfo>("func_from_fob_1");
+                    Assert.AreSame(fob, fob2);
+
+                    entry.GetValue<DictionaryInfo>("keywords_from_fob_2");
+                }
+
+                [TestMethod, Priority(0)]
+                public async Task FunctoolsWraps() {
+                    var text = @"
+        from functools import wraps, update_wrapper
+
+        def decorator1(fn):
+            @wraps(fn)
+            def wrapper(*args, **kwargs):
+                fn(*args, **kwargs)
+                return 'decorated'
+            return wrapper
+
+        @decorator1
+        def test1():
+            '''doc'''
+            return 'undecorated'
+
+        def test2():
+            pass
+
+        def test2a():
+            pass
+
+        test2.test_attr = 123
+        update_wrapper(test2a, test2, ('test_attr',))
+
+        test1_result = test1()
+        ";
+
+                    var state = CreateAnalyzer();
+                    var textEntry = state.AddModule("fob", text);
+                    state.WaitForAnalysis();
+
+                    state.AssertConstantEquals("test1.__name__", "test1");
+                    state.AssertConstantEquals("test1.__doc__", "doc");
+                    var fi = state.GetValue<FunctionInfo>("test1");
+                    Assert.AreEqual("doc", fi.Documentation);
+                    state.GetValue<FunctionInfo>("test1.__wrapped__");
+                    Assert.AreEqual(2, state.GetValue<FunctionInfo>("test1").Overloads.Count());
+                    state.AssertConstantEquals("test1_result", "decorated");
+
+                    // __name__ should not have been changed by update_wrapper
+                    state.AssertConstantEquals("test2.__name__", "test2");
+                    state.AssertConstantEquals("test2a.__name__", "test2a");
+
+                    // test_attr should have been copied by update_wrapper
+                    state.AssertIsInstance("test2.test_attr", BuiltinTypeId.Int);
+                    state.AssertIsInstance("test2a.test_attr", BuiltinTypeId.Int);
+                }
+
+                private static void AssertTupleContains(AnalysisValue tuple, params BuiltinTypeId[] id) {
+                    var indexTypes = (tuple as SequenceInfo)?.IndexTypes?.Select(v => v.TypesNoCopy).ToArray() ??
+                        (tuple as ProtocolInfo)?.GetProtocols<TupleProtocol>()?.FirstOrDefault()?._values;
+                    Assert.IsNotNull(indexTypes);
+
+                    var expected = string.Join(", ", id);
+                    var actual = string.Join(", ", indexTypes.Select(t => {
+                        if (t.Count == 1) {
+                            return t.Single().TypeId.ToString();
+                        } else {
+                            return "{" + string.Join(", ", t.Select(t2 => t2.TypeId).OrderBy(t2 => t2)) + "}";
+                        }
+                    }));
+                    if (indexTypes
+                        .Zip(id, (t1, id2) => t1.Count == 1 && t1.Single().TypeId == id2)
+                        .Any(b => !b)) {
+                        Assert.Fail(string.Format("Expected <{0}>. Actual <{1}>.", expected, actual));
+                    }
+                }
 
 
-            code = @"a = b + c
-class D(b): pass
-d()
-D()
-(e for e in e if e)
-{f for f in f if f}
-[g for g in g if g]
+                [TestMethod, Priority(0)]
+                public void ValidatePotentialModuleNames() {
+                    // Validating against the structure given in
+                    // http://www.python.org/dev/peps/pep-0328/
 
-def func(b, c):
-    b, c, d     # b, c are defined here
-b, c, d         # but they are undefined here
-";
-            entry = ProcessTextV3(code);
-            entry.AssertDiagnostics(
-                "used-before-assignment:unknown variable 'b':(1, 5) - (1, 6)",
-                "used-before-assignment:unknown variable 'c':(1, 9) - (1, 10)",
-                "used-before-assignment:unknown variable 'b':(2, 9) - (2, 10)",
-                "used-before-assignment:unknown variable 'd':(3, 1) - (3, 2)",
-                "used-before-assignment:unknown variable 'e':(5, 13) - (5, 14)",
-                "used-before-assignment:unknown variable 'f':(6, 13) - (6, 14)",
-                "used-before-assignment:unknown variable 'g':(7, 13) - (7, 14)",
-                "used-before-assignment:unknown variable 'd':(10, 11) - (10, 12)",
-                "used-before-assignment:unknown variable 'b':(11, 1) - (11, 2)",
-                "used-before-assignment:unknown variable 'c':(11, 4) - (11, 5)",
-                "used-before-assignment:unknown variable 'd':(11, 7) - (11, 8)"
-            );
+                    var entry = new MockPythonProjectEntry {
+                        ModuleName = "package.subpackage1.moduleX",
+                        FilePath = "C:\\package\\subpackage1\\moduleX.py"
+                    };
 
-            // Ensure all of these cases correctly generate no warning
-            code = @"
-for x in []:
-    (_ for _ in x)
-    [_ for _ in x]
-    {_ for _ in x}
-    {_ : _ for _ in x}
+                    // Without absolute_import, we should see these two possibilities
+                    // for a regular import.
+                    AssertUtil.ArrayEquals(
+                        ModuleResolver.ResolvePotentialModuleNames(entry, "moduleY", false).ToArray(),
+                        new[] { "package.subpackage1.moduleY", "moduleY" }
+                    );
 
-import sys
-from sys import not_a_real_name_but_no_warning_anyway
+                    // With absolute_import, we should see the two possibilities for a
+                    // regular import, but in the opposite order.
+                    AssertUtil.ArrayEquals(
+                        ModuleResolver.ResolvePotentialModuleNames(entry, "moduleY", true).ToArray(),
+                        new[] { "moduleY", "package.subpackage1.moduleY" }
+                    );
 
-def f(v = sys.version, u = not_a_real_name_but_no_warning_anyway):
-    pass
+                    // Regardless of absolute import, we should see these results for
+                    // relative imports.
+                    foreach (var absoluteImport in new[] { true, false }) {
+                        Console.WriteLine("Testing with absoluteImport = {0}", absoluteImport);
 
-with f() as v2:
-    pass
+                        AssertUtil.ContainsExactly(
+                            ModuleResolver.ResolvePotentialModuleNames(entry, ".moduleY", absoluteImport),
+                            "package.subpackage1.moduleY"
+                        );
+                        AssertUtil.ContainsExactly(
+                            ModuleResolver.ResolvePotentialModuleNames(entry, ".", absoluteImport),
+                            "package.subpackage1"
+                        );
+                        AssertUtil.ContainsExactly(
+                            ModuleResolver.ResolvePotentialModuleNames(entry, "..subpackage1", absoluteImport),
+                            "package.subpackage1"
+                        );
+                        AssertUtil.ContainsExactly(
+                            ModuleResolver.ResolvePotentialModuleNames(entry, "..subpackage2.moduleZ", absoluteImport),
+                            "package.subpackage2.moduleZ"
+                        );
+                        AssertUtil.ContainsExactly(
+                            ModuleResolver.ResolvePotentialModuleNames(entry, "..moduleA", absoluteImport),
+                            "package.moduleA"
+                        );
 
-";
-            entry = ProcessTextV3(code);
-            entry.AssertDiagnostics();
-        }
+                        // Despite what PEP 328 says, this relative import never succeeds.
+                        AssertUtil.ContainsExactly(
+                            ModuleResolver.ResolvePotentialModuleNames(entry, "...package", absoluteImport),
+                            "package"
+                        );
+                    }
+                }
 
-        [TestMethod, Priority(0)]
-        public void UncallableObjectDiagnostic() {
-            var code = @"class MyClass:
-    pass
+                [TestMethod, Priority(0)]
+                public async Task MultilineFunctionDescription() {
+                    var code = @"class A:
+            def fn(self):
+                return lambda: 123
+        ";
+                    var entry = ProcessText(code);
 
-class MyCallableClass:
-    def __call__(self): return 123
+                    Assert.AreEqual(
+                        "test-module.A.fn(self: A) -> lambda: 123 -> int\ndeclared in A",
+                        entry.GetDescriptions("A.fn", 0).Single().Replace("\r\n", "\n")
+                    );
+                }
 
-mc = MyClass()
-mcc = MyCallableClass()
+                [TestMethod, Priority(0)]
+                public async Task SysModulesSetSpecialization() {
+                    var code = @"import sys
+        modules = sys.modules
 
-x = mc()
-y = mcc()
-";
-            var entry = ProcessTextV3(code);
-            entry.AssertIsInstance("x");
-            entry.AssertIsInstance("y", BuiltinTypeId.Int);
-            entry.AssertDiagnostics(
-                "not-callable:'MyClass' may not be callable:(10, 5) - (10, 7)"
-            );
-        }
-*/
+        modules['name_in_modules'] = None
+        ";
+                    code += string.Join(
+                        Environment.NewLine,
+                        Enumerable.Range(0, 100).Select(i => string.Format("sys.modules['name{0}'] = None", i))
+                    );
+
+                    var entry = ProcessTextV2(code);
+
+                    var sys = entry.GetValue<SysModuleInfo>("sys");
+
+                    var modules = entry.GetValue<SysModuleInfo.SysModulesDictionaryInfo>("modules");
+                    Assert.IsInstanceOfType(modules, typeof(SysModuleInfo.SysModulesDictionaryInfo));
+
+                    AssertUtil.ContainsExactly(
+                        sys.Modules.Keys,
+                        Enumerable.Range(0, 100).Select(i => string.Format("name{0}", i))
+                            .Concat(new[] { "name_in_modules" })
+                    );
+                }
+
+                [TestMethod, Priority(0)]
+                public async Task SysModulesGetSpecialization() {
+                    var code = @"import sys
+        modules = sys.modules
+
+        modules['value_in_modules'] = 'abc'
+        modules['value_in_modules'] = 123
+        value_in_modules = modules['value_in_modules']
+        builtins = modules['__builtin__']
+        builtins2 = modules.get('__builtin__')
+        builtins3 = modules.pop('__builtin__')
+        ";
+
+                    var entry = ProcessTextV2(code);
+
+                    entry.AssertIsInstance("value_in_modules", BuiltinTypeId.Int);
+
+                    Assert.AreEqual("__builtin__", entry.GetValue<AnalysisValue>("builtins").Name);
+                    Assert.AreEqual("__builtin__", entry.GetValue<AnalysisValue>("builtins2").Name);
+                    Assert.AreEqual("__builtin__", entry.GetValue<AnalysisValue>("builtins3").Name);
+                }
+
+                [TestMethod, Priority(0)]
+                public async Task ClassInstanceAttributes() {
+                    var code = @"
+        class A:
+            abc = 123
+
+        p1 = A.abc
+        p2 = A().abc
+        a = A()
+        a.abc = 3.1415
+        p4 = A().abc
+        p3 = a.abc
+        ";
+                    var entry = ProcessText(code);
+
+                    entry.AssertIsInstance("p1", BuiltinTypeId.Int);
+                    entry.AssertIsInstance("p3", BuiltinTypeId.Int, BuiltinTypeId.Float);
+                    entry.AssertIsInstance("p4", BuiltinTypeId.Int, BuiltinTypeId.Float);
+                    entry.AssertIsInstance("p2", BuiltinTypeId.Int, BuiltinTypeId.Float);
+                }
+
+                [TestMethod, Priority(0)]
+                public async Task RecursiveGetDescriptor() {
+                    // see https://pytools.codeplex.com/workitem/2955
+                    var entry = ProcessText(@"
+        class WithGet:
+            __get__ = WithGet()
+
+        class A:
+            wg = WithGet()
+
+        x = A().wg");
+
+                    Assert.IsNotNull(entry);
+                }
+
+                [TestMethod, Priority(0)]
+                public async Task Coroutine() {
+                    var code = @"
+        async def g():
+            return 123
+
+        async def f():
+            x = await g()
+            g2 = g()
+            y = await g2
+        ";
+                    var entry = ProcessText(code, PythonLanguageVersion.V35);
+
+                    entry.AssertIsInstance("x", code.IndexOf("x ="), BuiltinTypeId.Int);
+                    entry.AssertIsInstance("y", code.IndexOf("x ="), BuiltinTypeId.Int);
+                    entry.AssertIsInstance("g2", code.IndexOf("x ="), BuiltinTypeId.Generator);
+                }
+
+                [TestMethod, Priority(0)]
+                public async Task AsyncWithStatement() {
+                    var text = @"
+        class X(object):
+            def x_method(self): pass
+            async def __aenter__(self): return self
+            async def __aexit__(self, exc_type, exc_value, traceback): return False
+
+        class Y(object):
+            def y_method(self): pass
+            async def __aenter__(self): return 123
+            async def __aexit__(self, exc_type, exc_value, traceback): return False
+
+        async def f():
+            async with X() as x:
+                pass #x
+
+            async with Y() as y:
+                pass #y
+        ";
+                    var entry = ProcessText(text, PythonLanguageVersion.V35);
+                    entry.AssertHasAttr("x", text.IndexOf("pass #x"), "x_method");
+                    entry.AssertIsInstance("y", text.IndexOf("pass #y"), BuiltinTypeId.Int);
+                }
+
+                [TestMethod, Priority(0)]
+                public async Task AsyncForIterator() {
+                    var code = @"
+        class X:
+            async def __aiter__(self): return self
+            async def __anext__(self): return 123
+
+        class Y:
+            async def __aiter__(self): return X()
+
+        async def f():
+            async for i in Y():
+                pass
+        ";
+                    var entry = ProcessText(code, PythonLanguageVersion.V35);
+
+                    entry.AssertIsInstance("i", code.IndexOf("pass"), BuiltinTypeId.Int);
+                }
+
+
+                [TestMethod, Priority(0)]
+                public async Task RecursiveDecorators() {
+                    // See https://github.com/Microsoft/PTVS/issues/542
+                    // Should not crash/OOM
+                    var code = @"
+        def f():
+            def d(fn):
+                @f()
+                def g(): pass
+
+            return d
+        ";
+
+                    ProcessText(code);
+                }
+
+                [TestMethod, Priority(0)]
+                public void NullNamedArgument() {
+                    CallDelegate callable = (node, unit, args, keywordArgNames) => {
+                        bool anyNull = false;
+                        Console.WriteLine("fn({0})", string.Join(", ", keywordArgNames.Select(n => {
+                            if (n == null) {
+                                anyNull = true;
+                                return "(null)";
+                            } else {
+                                return n.Name + "=(value)";
+                            }
+                        })));
+                        Assert.IsFalse(anyNull, "Some arguments were null");
+                        return AnalysisSet.Empty;
+                    };
+
+                    using (var state = CreateAnalyzer(allowParseErrors: true)) {
+                        state.Analyzer.SpecializeFunction("NullNamedArgument", "fn", callable);
+
+                        var entry1 = state.AddModule("NullNamedArgument", "def fn(**kwargs): pass");
+                        var entry2 = state.AddModule("test", "import NullNamedArgument; NullNamedArgument.fn(a=0, ]]])");
+                        state.WaitForAnalysis();
+                    }
+                }
+
+                [TestMethod, Priority(0)]
+                public void ModuleNameWalker() {
+                    foreach (var item in new[] {
+                        new { Code="import abc", Index=7, Expected="abc", Base="" },
+                        new { Code="import abc", Index=8, Expected="abc", Base="" },
+                        new { Code="import abc", Index=9, Expected="abc", Base="" },
+                        new { Code="import abc", Index=10, Expected="abc", Base="" },
+                        new { Code="import deg, abc as A", Index=12, Expected="abc", Base="" },
+                        new { Code="from abc import A", Index=6, Expected="abc", Base="" },
+                        new { Code="from .deg import A", Index=9, Expected="deg", Base="abc" },
+                        new { Code="from .hij import A", Index=9, Expected="abc.hij", Base="abc.deg" },
+                        new { Code="from ..hij import A", Index=10, Expected="hij", Base="abc.deg" },
+                        new { Code="from ..hij import A", Index=10, Expected="abc.hij", Base="abc.deg.HIJ" },
+                    }) {
+                        var entry = ProcessTextV3(item.Code);
+                        var walker = new ImportedModuleNameWalker(item.Base, string.Empty, item.Index, null);
+                        entry.Modules[entry.DefaultModule].Tree.Walk(walker);
+
+                        Assert.AreEqual(item.Expected, walker.ImportedModules.FirstOrDefault()?.Name);
+                    }
+                }
+
+                [TestMethod, Priority(0)]
+                public void CrossModuleFunctionCallMemLeak() {
+                    var modA = @"from B import h
+        def f(x): return h(x)
+
+        f(1)";
+                    var modB = @"def g(x): pass
+        def h(x): return g(x)";
+
+                    var analyzer = CreateAnalyzer();
+                    var entryA = analyzer.AddModule("A", modA);
+                    var entryB = analyzer.AddModule("B", modB);
+                    analyzer.WaitForAnalysis(CancellationTokens.After5s);
+                    for (int i = 100; i > 0; --i) {
+                        entryA.Analyze(CancellationToken.None, true);
+                        analyzer.WaitForAnalysis(CancellationTokens.After5s);
+                    }
+                    var g = analyzer.GetValue<FunctionInfo>(entryB, "g");
+                    Assert.AreEqual(1, g.References.Count());
+                }
+
+                [TestMethod, Priority(0)]
+                public void DefaultModuleAttributes() {
+                    var entry3 = ProcessTextV3("x = 1");
+                    AssertUtil.ContainsExactly(entry3.GetNamesNoBuiltins(), "__builtins__", "__file__", "__name__", "__package__", "__cached__", "__spec__", "x");
+                    var package = entry3.AddModule("package", "", Path.Combine(TestData.GetTempPath("package"), "__init__.py"));
+                    AssertUtil.ContainsExactly(entry3.GetNamesNoBuiltins(package), "__path__", "__builtins__", "__file__", "__name__", "__package__", "__cached__", "__spec__");
+
+                    entry3.AssertIsInstance("__file__", BuiltinTypeId.Unicode);
+                    entry3.AssertIsInstance("__name__", BuiltinTypeId.Unicode);
+                    entry3.AssertIsInstance("__package__", BuiltinTypeId.Unicode);
+                    entry3.AssertIsInstance(package, "__path__", BuiltinTypeId.List);
+
+                    var entry2 = ProcessTextV2("x = 1");
+                    AssertUtil.ContainsExactly(entry2.GetNamesNoBuiltins(), "__builtins__", "__file__", "__name__", "__package__", "x");
+
+                    entry2.AssertIsInstance("__file__", BuiltinTypeId.Bytes);
+                    entry2.AssertIsInstance("__name__", BuiltinTypeId.Bytes);
+                    entry2.AssertIsInstance("__package__", BuiltinTypeId.Bytes);
+                }
+
+                [TestMethod, Priority(0)]
+                public void CrossModuleBaseClasses() {
+                    var analyzer = CreateAnalyzer();
+                    var entryA = analyzer.AddModule("A", @"class ClsA(object): pass");
+                    var entryB = analyzer.AddModule("B", @"from A import ClsA
+        class ClsB(ClsA): pass
+
+        x = ClsB.x");
+                    analyzer.WaitForAnalysis();
+                    analyzer.AssertIsInstance(entryB, "x");
+
+                    analyzer.UpdateModule(entryA, @"class ClsA(object): x = 123");
+                    entryA.Analyze(CancellationToken.None, true);
+                    analyzer.WaitForAnalysis();
+                    analyzer.AssertIsInstance(entryB, "x", BuiltinTypeId.Int);
+                }
+
+                [TestMethod, Priority(0)]
+                public void UndefinedVariableDiagnostic() {
+                    PythonAnalysis entry;
+                    string code;
+
+
+                    code = @"a = b + c
+        class D(b): pass
+        d()
+        D()
+        (e for e in e if e)
+        {f for f in f if f}
+        [g for g in g if g]
+
+        def func(b, c):
+            b, c, d     # b, c are defined here
+        b, c, d         # but they are undefined here
+        ";
+                    entry = ProcessTextV3(code);
+                    entry.AssertDiagnostics(
+                        "used-before-assignment:unknown variable 'b':(1, 5) - (1, 6)",
+                        "used-before-assignment:unknown variable 'c':(1, 9) - (1, 10)",
+                        "used-before-assignment:unknown variable 'b':(2, 9) - (2, 10)",
+                        "used-before-assignment:unknown variable 'd':(3, 1) - (3, 2)",
+                        "used-before-assignment:unknown variable 'e':(5, 13) - (5, 14)",
+                        "used-before-assignment:unknown variable 'f':(6, 13) - (6, 14)",
+                        "used-before-assignment:unknown variable 'g':(7, 13) - (7, 14)",
+                        "used-before-assignment:unknown variable 'd':(10, 11) - (10, 12)",
+                        "used-before-assignment:unknown variable 'b':(11, 1) - (11, 2)",
+                        "used-before-assignment:unknown variable 'c':(11, 4) - (11, 5)",
+                        "used-before-assignment:unknown variable 'd':(11, 7) - (11, 8)"
+                    );
+
+                    // Ensure all of these cases correctly generate no warning
+                    code = @"
+        for x in []:
+            (_ for _ in x)
+            [_ for _ in x]
+            {_ for _ in x}
+            {_ : _ for _ in x}
+
+        import sys
+        from sys import not_a_real_name_but_no_warning_anyway
+
+        def f(v = sys.version, u = not_a_real_name_but_no_warning_anyway):
+            pass
+
+        with f() as v2:
+            pass
+
+        ";
+                    entry = ProcessTextV3(code);
+                    entry.AssertDiagnostics();
+                }
+
+                [TestMethod, Priority(0)]
+                public void UncallableObjectDiagnostic() {
+                    var code = @"class MyClass:
+            pass
+
+        class MyCallableClass:
+            def __call__(self): return 123
+
+        mc = MyClass()
+        mcc = MyCallableClass()
+
+        x = mc()
+        y = mcc()
+        ";
+                    var entry = ProcessTextV3(code);
+                    entry.AssertIsInstance("x");
+                    entry.AssertIsInstance("y", BuiltinTypeId.Int);
+                    entry.AssertDiagnostics(
+                        "not-callable:'MyClass' may not be callable:(10, 5) - (10, 7)"
+                    );
+                }
+        */
         [TestMethod, Priority(0)]
         public async Task OsPathMembers() {
             var code = @"import os.path as P
