@@ -4115,16 +4115,15 @@ abc = 42
             }
         }
 
-        [DataRow("from .moduleY import spam", "spam")]
-        [DataRow("from .moduleY import spam as ham", "ham")]
-        [DataRow("from . import moduleY", "moduleY.spam")]
-        [DataRow("from ..subpackage1 import moduleY", "moduleY.spam")]
-        [DataRow("from ..subpackage2.moduleZ import eggs", "eggs")]
-        [DataRow("from ..moduleA import foo", "foo")]
-        [DataRow("from ...package import bar", "bar")]
+        [DataRow("from .moduleY import spam", "spam", null)]
+        [DataRow("from .moduleY import spam as ham", "ham", null)]
+        [DataRow("from . import moduleY", "moduleY", "spam")]
+        [DataRow("from ..subpackage1 import moduleY", "moduleY", "spam")]
+        [DataRow("from ..subpackage2.moduleZ import eggs", "eggs", null)]
+        [DataRow("from ..moduleA import foo", "foo", null)]
+        [DataRow("from ...package import bar", "bar", null)]
         [DataTestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/157")]
-        public async Task PackageRelativeImportPep328(string subpackageModuleXContent, string variable) {
+        public async Task PackageRelativeImportPep328(string subpackageModuleXContent, string variable, string member) {
             var initContent = "def bar():\n  pass\n";
             var moduleAContent = "def foo():\n  pass\n";
             var subpackageModuleYContent = "def spam():\n  pass\n";
@@ -4154,7 +4153,12 @@ abc = 42
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var analysisX = await server.GetAnalysisAsync(subpackageModuleXUri);
 
-                analysisX.Should().HaveVariable(variable).OfType(BuiltinTypeId.Function);
+                if (member != null) {
+                    analysisX.Should().HaveVariable(variable).WithValue<IModule>()
+                        .WithMemberOfType(member, PythonMemberType.Function);
+                } else {
+                    analysisX.Should().HaveVariable(variable).OfType(BuiltinTypeId.Function);
+                }
             }
         }
 
