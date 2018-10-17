@@ -1286,8 +1286,10 @@ b = next(a)
 
 
         [DataRow(PythonLanguageVersion.V27)]
-        [DataRow(PythonLanguageVersion.V33)]
+        [DataRow(PythonLanguageVersion.V35)]
         [DataRow(PythonLanguageVersion.V36)]
+        [DataRow(PythonLanguageVersion.V37)]
+        [DataRow(PythonLanguageVersion.V38)]
         [DataTestMethod, Priority(0)]
         public async Task LambdaInComprehension(PythonLanguageVersion version) {
             var text = "x = [(lambda a:[a**i for i in range(a+1)])(j) for j in range(5)]";
