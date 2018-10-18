@@ -22,16 +22,14 @@ namespace Microsoft.PythonTools.Parsing.Ast {
     public class DottedName : Node {
         private readonly NameExpression[] _names;
 
-        public DottedName(NameExpression[] names) {
+        public DottedName(NameExpression[]/*!*/ names) {
             _names = names;
         }
 
-        public IList<NameExpression> Names {
-            get { return _names; }
-        }
+        public IList<NameExpression> Names => _names;
 
         public virtual string MakeString() {
-            if (_names.Length == 0) return String.Empty;
+            if (_names.Length == 0) return string.Empty;
 
             StringBuilder ret = new StringBuilder(_names[0].Name);
             for (int i = 1; i < _names.Length; i++) {

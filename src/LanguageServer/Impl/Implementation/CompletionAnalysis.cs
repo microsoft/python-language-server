@@ -24,6 +24,7 @@ using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Documentation;
 using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
@@ -261,27 +262,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IEnumerable<CompletionItem> GetModules(string[] names, bool includeMembers) {
             if (names.Any()) {
                 return Analysis.ProjectState
-                    .GetModuleMembers(Analysis.InterpreterContext, names.ToArray(), includeMembers)
+                    .GetModuleMembers(Analysis.InterpreterContext, names, includeMembers)
                     .Select(ToCompletionItem);
             }
 
-            return Analysis.ProjectState.GetModules().Select(ToCompletionItem);
+            return GetModules();
         }
 
-        private IEnumerable<CompletionItem> GetModulesFromNode(Node name, bool includeMembers = false) {
-            switch (name) {
-                case DottedName dn when dn.Names == null:
-                    return Empty;
-                case DottedName dn:
-                    var names = dn.Names.TakeWhile(n => Index > n.EndIndex).Select(n => n.Name).ToArray();
-                    return GetModules(names, includeMembers);
-                case NameExpression _:
-                case null:
-                    return Analysis.ProjectState.GetModules().Select(ToCompletionItem);
-                default:
-                    return Empty;
-            }
-        }
+        private IEnumerable<CompletionItem> GetModules() 
+            => Analysis.ProjectState.GetModules().Select(ToCompletionItem);
+
+        private IEnumerable<CompletionItem> GetModulesFromNode(DottedName name, bool includeMembers = false) => GetModules(GetNamesFromDottedName(name), includeMembers);
+
+        private string[] GetNamesFromDottedName(DottedName name) => name.Names.TakeWhile(n => Index > n.EndIndex).Select(n => n.Name).ToArray();
 
         private void SetApplicableSpanToLastToken(Node containingNode) {
             if (containingNode != null && Index >= containingNode.EndIndex) {
@@ -297,7 +290,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             // No names, so if we're at the end return modules
             if (import.Names.Count == 0 && Index > import.KeywordEndIndex) {
-                result = GetModulesFromNode(null);
+                result = GetModules();
                 return true;
             }
 
@@ -306,18 +299,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     return true;
                 }
 
-                if (name != null) {
+                if (name != null && Index >= name.StartIndex) {
                     if (Index > name.EndIndex && name.EndIndex > name.StartIndex) {
                         SetApplicableSpanToLastToken(import);
                         result = Once(AsKeywordCompletion);
-                        return true;
+                    } else {
+                        Node = name.Names.LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
+                        result = GetModulesFromNode(name);
                     }
 
-                    if (Index >= name.StartIndex) {
-                        Node = name.Names.MaybeEnumerate().LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
-                        result = GetModulesFromNode(name);
-                        return true;
-                    }
+                    return true;
                 }
             }
 
@@ -354,13 +345,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             if (fromImport.ImportIndex > fromImport.StartIndex) {
-                if (Index > fromImport.ImportIndex + 6) {
-                    if (fromImport.Root == null) {
-                        return true;
+                if (Index > fromImport.ImportIndex + 6 && Analysis.Scope.AnalysisValue is ModuleInfo moduleInfo) {
+                    var root = fromImport.Root;
+                    var rootName = root.MakeString();
+                    if (moduleInfo.TryGetModuleReference(rootName, out var moduleReference)) {
+                        var moduleMembers = PythonAnalyzer.GetModuleMembers(Analysis.InterpreterContext, GetNamesFromDottedName(root), true, moduleReference.Module);
+                        result = Once(StarCompletion).Concat(moduleMembers.Select(ToCompletionItem));
                     }
-
-                    var mods = GetModulesFromNode(fromImport.Root, true).ToArray();
-                    result = mods.Any() && fromImport.Names.Count <= 1 ? Once(StarCompletion).Concat(mods) : mods;
                     return true;
                 }
 
@@ -374,31 +365,29 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            if (fromImport.Root != null) {
-                if (Index > fromImport.Root.EndIndex && fromImport.Root.EndIndex > fromImport.Root.StartIndex) {
-                    if (Index > fromImport.EndIndex) {
-                        // Only end up here for "from ... imp", and "imp" is not counted
-                        // as part of our span
-                        var token = Tokens.LastOrDefault();
-                        if (token.Key.End >= Index) {
-                            ApplicableSpan = GetTokenSpan(token.Key);
-                        }
+            if (Index > fromImport.Root.EndIndex && fromImport.Root.EndIndex > fromImport.Root.StartIndex) {
+                if (Index > fromImport.EndIndex) {
+                    // Only end up here for "from ... imp", and "imp" is not counted
+                    // as part of our span
+                    var token = Tokens.LastOrDefault();
+                    if (token.Key.End >= Index) {
+                        ApplicableSpan = GetTokenSpan(token.Key);
                     }
-
-                    result = Once(ImportKeywordCompletion);
-                    return true;
                 }
 
-                if (Index >= fromImport.Root.StartIndex) {
-                    Node = fromImport.Root.Names.MaybeEnumerate()
-                        .LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
-                    result = GetModulesFromNode(fromImport.Root);
-                    return true;
-                }
+                result = Once(ImportKeywordCompletion);
+                return true;
+            }
+
+            if (Index >= fromImport.Root.StartIndex) {
+                Node = fromImport.Root.Names.MaybeEnumerate()
+                    .LastOrDefault(n => n.StartIndex <= Index && Index <= n.EndIndex);
+                result = GetModulesFromNode(fromImport.Root);
+                return true;
             }
 
             if (Index > fromImport.KeywordEndIndex) {
-                result = GetModulesFromNode(null);
+                result = GetModules();
                 return true;
             }
 

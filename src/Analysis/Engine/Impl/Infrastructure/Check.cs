@@ -17,7 +17,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
 
         [DebuggerStepThrough]
         public static void ArgumentOfType<T>(string argumentName, object argument, [CallerMemberName] string callerName = null) {
-            ArgumentNull(argumentName, argument);
+            ArgumentNotNull(argumentName, argument);
 
             if (!(argument is T)) {
                 throw new ArgumentException($"Argument {argumentName} of method {callerName} must be of type {typeof(T)}");
@@ -25,7 +25,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         }
 
         [DebuggerStepThrough]
-        public static void ArgumentNull(string argumentName, object argument) {
+        public static void ArgumentNotNull(string argumentName, object argument) {
             if (argument is null) {
                 throw new ArgumentNullException(argumentName);
             }
@@ -33,7 +33,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
 
         [DebuggerStepThrough]
         public static void ArgumentNotNullOrEmpty(string argumentName, string argument) {
-            ArgumentNull(argumentName, argument);
+            ArgumentNotNull(argumentName, argument);
 
             if (string.IsNullOrEmpty(argument)) {
                 throw new ArgumentException(argumentName);

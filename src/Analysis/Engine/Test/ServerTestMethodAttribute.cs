@@ -27,6 +27,7 @@ namespace AnalysisTests {
     public enum PythonLanguageMajorVersion { None, EarliestV2, EarliestV3, LatestV2, LatestV3 }
 
     public class ServerTestMethodAttribute : TestMethodAttribute {
+        public bool TestSpecificRootUri { get; set; }
         public bool LatestAvailable3X { get; set; }
         public bool LatestAvailable2X { get; set; }
         public int VersionArgumentIndex { get; set; } = -1;
@@ -44,7 +45,8 @@ namespace AnalysisTests {
 
             TestEnvironmentImpl.AddBeforeAfterTest(async () => {
                 var interpreterConfiguration = GetInterpreterConfiguration(arguments);
-                var server = await new Server().InitializeAsync(interpreterConfiguration);
+                var rootUri = TestSpecificRootUri ? TestData.GetTestSpecificRootUri() : null;
+                var server = await new Server().InitializeAsync(interpreterConfiguration, rootUri);
                 arguments[0] = server;
                 return server;
             });

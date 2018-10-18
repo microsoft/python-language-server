@@ -30,7 +30,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         /// <returns>The disposable object that runs the given action upon disposal.</returns>
         /// <exception cref="T:System.ArgumentNullException"><paramref name="dispose" /> is null.</exception>
         public static IDisposable Create(Action dispose) {
-            Check.ArgumentNull(nameof(dispose), dispose);
+            Check.ArgumentNotNull(nameof(dispose), dispose);
             return new AnonymousDisposable(dispose);
         }
 
@@ -41,7 +41,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         /// <returns>The disposable object that disposes wrapped object.</returns>
         /// <exception cref="T:System.ArgumentNullException"><paramref name="disposable" /> is null.</exception>
         public static IDisposable Create(IDisposable disposable) {
-            Check.ArgumentNull(nameof(disposable), disposable);
+            Check.ArgumentNotNull(nameof(disposable), disposable);
             return new DisposableWrapper(disposable);
         }
 

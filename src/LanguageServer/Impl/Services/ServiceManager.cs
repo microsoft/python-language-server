@@ -42,7 +42,7 @@ namespace Microsoft.PythonTools.LanguageServer.Services {
             _disposeToken.ThrowIfDisposed();
 
             type = type ?? service.GetType();
-            Check.ArgumentNull(nameof(service), service);
+            Check.ArgumentNotNull(nameof(service), service);
             Check.InvalidOperation(() => _s.GetOrAdd(type, service) == service, 
                 Invariant($"Another instance of service of type {type} already added"));
             return this;

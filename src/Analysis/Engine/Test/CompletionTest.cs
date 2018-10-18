@@ -15,6 +15,8 @@
 // permissions and limitations under the License.
 
 using System;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
@@ -431,6 +433,45 @@ class B(A):
 
             completion.Should().HaveItem("foo")
                 .Which.Should().HaveInsertText(expectedInsertText);
+        }
+        
+        [ServerTestMethod(TestSpecificRootUri = true), Priority(0)]
+        public async Task Completion_PackageRelativeImport(Server server) {
+            var appPath = "app.py";
+            var module1Path = "module1.py";
+            var packageInitPath = Path.Combine("package", "__init__.py");
+            var packageModule1Path = Path.Combine("package", "module1.py");
+            var subpackageInitPath = Path.Combine("package", "sub_package", "__init__.py");
+            var subpackageTestingPath = Path.Combine("package", "sub_package", "testing.py");
+
+            var appSrc = "import package.sub_package.testing";
+            var module1Src = "def wrong(): print('WRONG'); pass";
+            var packageInitSrc = string.Empty;
+            var packageModule1Src = "def right(): print('RIGHT'); pass";
+            var subpackageInitSrc = string.Empty;
+            var subpackageTestingSrc = "from ..module1 import ";
+
+            await TestData.CreateTestSpecificFileAsync(appPath, appSrc);
+            await TestData.CreateTestSpecificFileAsync(module1Path, module1Src);
+            await TestData.CreateTestSpecificFileAsync(packageInitPath, packageInitSrc);
+            await TestData.CreateTestSpecificFileAsync(packageModule1Path, packageModule1Src);
+            await TestData.CreateTestSpecificFileAsync(subpackageInitPath, subpackageInitSrc);
+            var uri = await TestData.CreateTestSpecificFileAsync(subpackageTestingPath, subpackageTestingSrc);
+
+            using (server.AnalysisQueue.Pause()) {
+                await server.OpenDocumentAndGetUriAsync(appPath, appSrc);
+                await server.OpenDocumentAndGetUriAsync(module1Path, module1Src);
+                await server.OpenDocumentAndGetUriAsync(packageInitPath, packageInitSrc);
+                await server.OpenDocumentAndGetUriAsync(packageModule1Path, packageModule1Src);
+                await server.OpenDocumentAndGetUriAsync(subpackageInitPath, subpackageInitSrc);
+                await server.OpenDocumentAndGetUriAsync(subpackageTestingPath, subpackageTestingSrc);
+            }
+
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            var completion = await server.SendCompletion(uri, 0, 22);
+
+            completion.Should().HaveItem("right")
+                .Which.Should().HaveInsertText("right");
         }
     }
 }
