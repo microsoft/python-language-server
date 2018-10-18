@@ -47,6 +47,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private ITelemetryService _telemetry;
 
         private JsonRpc _rpc;
+        private JsonSerializer _jsonSerializer;
         private bool _filesLoaded;
         private PathsWatcher _pathsWatcher;
         private IdleTimeTracker _idleTimeTracker;
@@ -59,6 +60,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _ui = services.GetService<IUIService>();
             _telemetry = services.GetService<ITelemetryService>();
             _rpc = rpc;
+            _jsonSerializer = services.GetService<JsonSerializer>();
 
             var progress = services.GetService<IProgressService>();
 
@@ -384,7 +386,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         #endregion
 
-        private T ToObject<T>(JToken token) => token.ToObject<T>(_rpc.JsonSerializer);
+        private T ToObject<T>(JToken token) => token.ToObject<T>(_jsonSerializer);
 
         private T GetSetting<T>(JToken section, string settingName, T defaultValue) {
             var value = section?[settingName];

@@ -29,16 +29,20 @@ namespace Microsoft.Python.LanguageServer.Server {
             using (CoreShell.Create()) {
                 var services = CoreShell.Current.ServiceManager;
 
+                var messageFormatter = new JsonMessageFormatter();
+                messageFormatter.JsonSerializer.Converters.Add(new UriConverter());
+
                 using (var cin = Console.OpenStandardInput())
                 using (var cout = Console.OpenStandardOutput())
                 using (var server = new Implementation.LanguageServer())
-                using (var rpc = new JsonRpc(cout, cin, server)) {
+                using (var rpc = new JsonRpc(new HeaderDelimitedMessageHandler(cout, cin, messageFormatter), server)) {
                     rpc.SynchronizationContext = new SingleThreadSynchronizationContext();
-                    rpc.JsonSerializer.Converters.Add(new UriConverter());
 
                     services.AddService(new UIService(rpc));
                     services.AddService(new ProgressService(rpc));
                     services.AddService(new TelemetryService(rpc));
+                    services.AddService(messageFormatter.JsonSerializer);
+
                     var token = server.Start(services, rpc);
                     rpc.StartListening();
 
