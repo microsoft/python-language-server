@@ -22,14 +22,11 @@ using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Extensions;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
-        private static CompletionList EmptyCompletion = new CompletionList();
-
         public override async Task<CompletionList> Completion(CompletionParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
 
@@ -40,7 +37,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var analysis = entry != null ? await entry.GetAnalysisAsync(50, cancellationToken) : null;
             if (analysis == null) {
                 TraceMessage($"No analysis found for {uri}");
-                return EmptyCompletion;
+                return new CompletionList();
             }
 
             var opts = GetOptions(@params.context);
@@ -52,7 +49,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             if (members == null) {
                 TraceMessage($"No completions at {@params.position} in {uri}");
-                return EmptyCompletion;
+                return new CompletionList();
             }
 
             if (!Settings.completion.showAdvancedMembers) {
