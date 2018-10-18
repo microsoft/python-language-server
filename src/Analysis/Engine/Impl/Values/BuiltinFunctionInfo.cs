@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -172,5 +173,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
             return base.UnionMergeTypes(ns, strength);
         }
+
+        public override bool Equals(object obj) {
+            if(obj is BuiltinFunctionInfo other && !other.Overloads.SetEquals(Overloads)) {
+                return false;
+            }
+            return base.Equals(obj);
+        }
+
+        public override int GetHashCode() => base.GetHashCode() ^ Overloads.GetHashCode();
     }
 }

@@ -136,6 +136,14 @@ namespace Microsoft.PythonTools.Analysis {
             var doc = string.IsNullOrEmpty(Documentation) ? "" : "'''{0}'''".FormatInvariant(Documentation);
             return "{0}({1}) -> {2}{3}".FormatInvariant(Name, parameters, returnType, doc);
         }
+
+        public override bool Equals(object obj) {
+            if(obj is OverloadResult other) {
+                return OverloadResultComparer.Instance.Equals(this, other);
+            }
+            return base.Equals(obj);
+        }
+        public override int GetHashCode() => OverloadResultComparer.Instance.GetHashCode(this);
     }
 
     class AccumulatedOverloadResult {

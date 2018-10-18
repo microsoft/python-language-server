@@ -474,7 +474,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             InterpreterScope funcScope;
             if (_unit.InterpreterScope.TryGetNodeScope(node, out funcScope)) {
                 var function = ((FunctionScope)funcScope).Function;
-                var analysisUnit = (FunctionAnalysisUnit)((FunctionScope)funcScope).Function.AnalysisUnit;
+                var analysisUnit = (FunctionAnalysisUnit)function.AnalysisUnit;
 
                 var curClass = Scope as ClassScope;
                 if (curClass != null) {
@@ -488,6 +488,10 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                         foreach (var overload in method.Function.Overloads) {
                             function.UpdateDefaultParameters(_unit, overload.GetParameters());
                         }
+                    }
+
+                    foreach (var @base in bases.OfType<FunctionInfo>()) {
+                        @base.AddDerived(function);
                     }
                 }
             }

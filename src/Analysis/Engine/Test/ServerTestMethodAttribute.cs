@@ -30,6 +30,7 @@ namespace AnalysisTests {
         public bool TestSpecificRootUri { get; set; }
         public bool LatestAvailable3X { get; set; }
         public bool LatestAvailable2X { get; set; }
+        public PythonLanguageVersion Version { get; set; } = PythonLanguageVersion.None;
         public int VersionArgumentIndex { get; set; } = -1;
 
         public override TestResult[] Execute(ITestMethod testMethod) {
@@ -56,11 +57,13 @@ namespace AnalysisTests {
 
         private InterpreterConfiguration GetInterpreterConfiguration(object[] arguments) => VersionArgumentIndex > 0 && VersionArgumentIndex < arguments.Length 
             ? PythonVersions.GetRequiredCPythonConfiguration((PythonLanguageVersion)arguments[VersionArgumentIndex])
-            : LatestAvailable2X 
-                ? PythonVersions.LatestAvailable2X 
-                : LatestAvailable3X 
-                    ? PythonVersions.LatestAvailable3X 
-                    : PythonVersions.LatestAvailable;
+            : Version != PythonLanguageVersion.None 
+                ? PythonVersions.GetRequiredCPythonConfiguration(Version)
+                : LatestAvailable2X
+                    ? PythonVersions.LatestAvailable2X 
+                    : LatestAvailable3X 
+                        ? PythonVersions.LatestAvailable3X 
+                        : PythonVersions.LatestAvailable;
 
         private object[] ExtendArguments(object[] arguments) {
             if (arguments == null || arguments.Length == 0) {
