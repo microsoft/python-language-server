@@ -268,6 +268,7 @@ namespace Microsoft.PythonTools.Analysis {
             MyScope.Scope.ClearNodeValues();
             MyScope.Scope.ClearLinkedVariables();
             MyScope.Scope.ClearVariables();
+            MyScope.ClearReferencedModules();
             MyScope.ClearUnresolvedModules();
             _unit.State.ClearDiagnostics(this);
 
@@ -366,10 +367,7 @@ namespace Microsoft.PythonTools.Analysis {
                     }
                 }
 
-                foreach (var moduleReference in MyScope.ModuleReferences.ToList()) {
-                    MyScope.RemoveModuleReference(moduleReference);
-                }
-
+                MyScope.ClearReferencedModules();
                 NewParseTree -= NewParseTree;
                 NewAnalysis -= NewAnalysis;
             }

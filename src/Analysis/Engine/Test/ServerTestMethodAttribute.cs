@@ -27,8 +27,10 @@ namespace AnalysisTests {
     public enum PythonLanguageMajorVersion { None, EarliestV2, EarliestV3, LatestV2, LatestV3 }
 
     public class ServerTestMethodAttribute : TestMethodAttribute {
+        public bool TestSpecificRootUri { get; set; }
         public bool LatestAvailable3X { get; set; }
         public bool LatestAvailable2X { get; set; }
+        public PythonLanguageVersion Version { get; set; } = PythonLanguageVersion.None;
         public int VersionArgumentIndex { get; set; } = -1;
 
         public override TestResult[] Execute(ITestMethod testMethod) {
@@ -44,7 +46,8 @@ namespace AnalysisTests {
 
             TestEnvironmentImpl.AddBeforeAfterTest(async () => {
                 var interpreterConfiguration = GetInterpreterConfiguration(arguments);
-                var server = await new Server().InitializeAsync(interpreterConfiguration);
+                var rootUri = TestSpecificRootUri ? TestData.GetTestSpecificRootUri() : null;
+                var server = await new Server().InitializeAsync(interpreterConfiguration, rootUri);
                 arguments[0] = server;
                 return server;
             });
@@ -54,11 +57,13 @@ namespace AnalysisTests {
 
         private InterpreterConfiguration GetInterpreterConfiguration(object[] arguments) => VersionArgumentIndex > 0 && VersionArgumentIndex < arguments.Length 
             ? PythonVersions.GetRequiredCPythonConfiguration((PythonLanguageVersion)arguments[VersionArgumentIndex])
-            : LatestAvailable2X 
-                ? PythonVersions.LatestAvailable2X 
-                : LatestAvailable3X 
-                    ? PythonVersions.LatestAvailable3X 
-                    : PythonVersions.LatestAvailable;
+            : Version != PythonLanguageVersion.None 
+                ? PythonVersions.GetRequiredCPythonConfiguration(Version)
+                : LatestAvailable2X
+                    ? PythonVersions.LatestAvailable2X 
+                    : LatestAvailable3X 
+                        ? PythonVersions.LatestAvailable3X 
+                        : PythonVersions.LatestAvailable;
 
         private object[] ExtendArguments(object[] arguments) {
             if (arguments == null || arguments.Length == 0) {

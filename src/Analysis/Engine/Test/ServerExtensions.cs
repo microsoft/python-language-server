@@ -62,7 +62,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public static Task<IModuleAnalysis> GetAnalysisAsync(this Server server, Uri uri, int waitingTimeout = -1, int failAfter = 30000)
-            => ((ProjectEntry)server.ProjectFiles.GetEntry(uri)).GetAnalysisAsync(waitingTimeout, new CancellationTokenSource(failAfter).Token);
+            => ((ProjectEntry)server.ProjectFiles.GetEntry(uri)).GetAnalysisAsync(waitingTimeout, GetCancellationToken(failAfter));
 
         public static Task EnqueueItemAsync(this Server server, Uri uri) 
             => server.EnqueueItemAsync((IDocument)server.ProjectFiles.GetEntry(uri));
@@ -158,7 +158,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public static async Task<IModuleAnalysis> OpenDefaultDocumentAndGetAnalysisAsync(this Server server, string content, int failAfter = 30000, string languageId = null) {
-            var cancellationToken = new CancellationTokenSource(failAfter).Token;
+            var cancellationToken = GetCancellationToken(failAfter);
             await server.SendDidOpenTextDocument(TestData.GetDefaultModuleUri(), content, languageId);
             cancellationToken.ThrowIfCancellationRequested();
             var projectEntry = (ProjectEntry) server.ProjectFiles.Single();
@@ -209,12 +209,12 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public static Task SendDidChangeConfiguration(this Server server, ServerSettings settings, int failAfter = 30000) 
-            => server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, new CancellationTokenSource(failAfter).Token);
+            => server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, GetCancellationToken(failAfter));
 
         public static async Task<IModuleAnalysis> ChangeDefaultDocumentAndGetAnalysisAsync(this Server server, string text, int failAfter = 30000) {
             var projectEntry = (ProjectEntry) server.ProjectFiles.Single();
             await server.SendDidChangeTextDocumentAsync(projectEntry.DocumentUri, text);
-            return await projectEntry.GetAnalysisAsync(cancellationToken: new CancellationTokenSource(failAfter).Token);
+            return await projectEntry.GetAnalysisAsync(cancellationToken: GetCancellationToken(failAfter));
         }
 
         public static string[] GetBuiltinTypeMemberNames(this Server server, BuiltinTypeId typeId) 
@@ -228,5 +228,8 @@ namespace Microsoft.PythonTools.Analysis {
                 case MessageType.Log: Trace.TraceInformation($"[{TestEnvironmentImpl.Elapsed()}] LOG: {e.message}"); break;
             }
         }
+
+        private static CancellationToken GetCancellationToken(int failAfter = 30000) 
+            => Debugger.IsAttached ? CancellationToken.None : new CancellationTokenSource(failAfter).Token;
     }
 }

@@ -25,7 +25,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
         private static readonly string[] _star = new[] { "*" };
         private PythonVariable[] _variables;
 
-        public FromImportStatement(ModuleName root, NameExpression/*!*/[] names, NameExpression[] asNames, bool fromFuture, bool forceAbsolute, int importIndex) {
+        public FromImportStatement(ModuleName/*!*/ root, NameExpression/*!*/[] names, NameExpression[] asNames, bool fromFuture, bool forceAbsolute, int importIndex) {
             Root = root;
             Names = names;
             AsNames = asNames;

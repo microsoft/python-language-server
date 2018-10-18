@@ -52,7 +52,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         };
 
         public static async Task<TextEdit[]> ProvideEdits(TextReader reader, Position position, FormattingOptions options) {
-            Check.ArgumentNull(nameof(reader), reader);
+            Check.ArgumentNotNull(nameof(reader), reader);
             Check.ArgumentOutOfRange(nameof(position), () => position.line < 0);
 
             if (position.line == 0) {
@@ -92,7 +92,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly IEnumerable<Regex> _previousBlockRegexps;
 
         private BlockFormatter(Regex blockRegexp, IEnumerable<Regex> previousBlockRegexps) {
-            Check.ArgumentNull(nameof(blockRegexp), blockRegexp);
+            Check.ArgumentNotNull(nameof(blockRegexp), blockRegexp);
             Check.Argument(nameof(previousBlockRegexps), () => !previousBlockRegexps.IsNullOrEmpty());
 
             _blockRegexp = blockRegexp;

@@ -4182,8 +4182,7 @@ abc = 42
                 analysisPackage.Should().HaveVariable("y").OfTypes(BuiltinTypeId.Module, BuiltinTypeId.Function);
             }
         }
-
-
+        
         [TestMethod, Priority(0)]
         public async Task Defaults() {
             var text = @"

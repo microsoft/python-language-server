@@ -160,15 +160,17 @@ namespace Microsoft.PythonTools.Analysis {
             return result;
         }
 
-        public override bool Equals(object obj) {
-            if (!(obj is MemberResult)) {
-                return false;
+        public bool Equals(MemberResult other) => string.Equals(Name, other.Name) && Equals(Scope, other.Scope);
+
+        public override bool Equals(object obj) => obj is MemberResult other && Equals(other);
+
+        public override int GetHashCode() {
+            unchecked {
+                return ((Name != null ? Name.GetHashCode() : 0) * 397) ^ (Scope != null ? Scope.GetHashCode() : 0);
             }
-            return Name == ((MemberResult)obj).Name;
         }
 
-        public static bool operator ==(MemberResult x, MemberResult y) => x.Name == y.Name;
-        public static bool operator !=(MemberResult x, MemberResult y) => x.Name != y.Name;
-        public override int GetHashCode() => Name.GetHashCode();
+        public static bool operator ==(MemberResult left, MemberResult right) => left.Equals(right);
+        public static bool operator !=(MemberResult left, MemberResult right) => !left.Equals(right);
     }
 }

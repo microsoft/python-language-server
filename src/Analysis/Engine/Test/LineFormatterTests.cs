@@ -453,8 +453,8 @@ limit { limit_num}; """"""", line: 5);
         /// <param name="languageVersion">Python language version to format.</param>
         /// <param name="editStart">Where the edit should begin (i.e. when whitespace or a multi-line string begins a line).</param>
         public static void AssertSingleLineFormat(string text, string expected, int line = 0, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37, int editStart = 0) {
-            Check.ArgumentNull(nameof(text), text);
-            Check.ArgumentNull(nameof(expected), expected);
+            Check.ArgumentNotNull(nameof(text), text);
+            Check.ArgumentNotNull(nameof(expected), expected);
 
             using (var reader = new StringReader(text)) {
                 var edits = new LineFormatter(reader, languageVersion).FormatLine(line);
@@ -463,7 +463,7 @@ limit { limit_num}; """"""", line: 5);
         }
 
         public static void AssertNoEdits(string text, int line = 0, PythonLanguageVersion languageVersion = PythonLanguageVersion.V37) {
-            Check.ArgumentNull(nameof(text), text);
+            Check.ArgumentNotNull(nameof(text), text);
 
             using (var reader = new StringReader(text)) {
                 var edits = new LineFormatter(reader, languageVersion).FormatLine(line);

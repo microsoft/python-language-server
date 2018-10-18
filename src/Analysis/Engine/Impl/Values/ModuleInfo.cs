@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -20,44 +20,39 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class ModuleInfo : AnalysisValue, IReferenceableContainer, IModuleInfo {
-        private readonly string _name;
         private readonly ProjectEntry _projectEntry;
-        private Dictionary<Node, IAnalysisSet> _sequences;  // sequences defined in the module
         private readonly Dictionary<Node, InterpreterScope> _scopes;    // scopes from Ast node to InterpreterScope
-        private readonly WeakReference _weakModule;
-        private readonly IModuleContext _context;
         private Dictionary<string, WeakReference> _packageModules;
         private Dictionary<string, Tuple<CallDelegate, bool>> _specialized;
-        private ModuleInfo _parentPackage;
-        private DependentData _definition = new DependentData();
-        private readonly HashSet<ModuleReference> _referencedModules;
-        private readonly HashSet<String> _unresolvedModules;
+        private readonly Dictionary<string, ModuleReference> _referencedModules;
+        private readonly HashSet<string> _unresolvedModules;
 
         public ModuleInfo(string moduleName, ProjectEntry projectEntry, IModuleContext moduleContext) {
-            _name = moduleName;
+            Name = moduleName;
             _projectEntry = projectEntry;
-            _sequences = new Dictionary<Node, IAnalysisSet>();
             Scope = new ModuleScope(this);
-            _weakModule = new WeakReference(this);
-            _context = moduleContext;
+            WeakModule = new WeakReference(this);
+            InterpreterContext = moduleContext;
             _scopes = new Dictionary<Node, InterpreterScope>();
-            _referencedModules = new HashSet<ModuleReference>();
+            _referencedModules = new Dictionary<string, ModuleReference>();
             _unresolvedModules = new HashSet<string>(StringComparer.Ordinal);
         }
 
         internal void Clear() {
-            _sequences.Clear();
-            Scope.ClearLinkedVariables();
-            Scope.ClearVariables();
-            Scope.ClearNodeScopes();
-            _referencedModules.Clear();
-            _unresolvedModules.Clear();
+            lock (_projectEntry) {
+                Scope.ClearLinkedVariables();
+                Scope.ClearVariables();
+                Scope.ClearNodeScopes();
+                _unresolvedModules.Clear();
+                ClearReferencedModules();
+            }
         }
 
         internal void EnsureModuleVariables(PythonAnalyzer state) {
@@ -87,17 +82,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return state.GetConstant(s);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Returns all the absolute module names that need to be resolved from
         /// this module.
-        /// 
         /// Note that a single import statement may add multiple names to this
         /// set, and so the Count property does not accurately reflect the 
         /// actual number of imports required.
         /// </summary>
-        public ISet<string> GetAllUnresolvedModules() {
-            return _unresolvedModules;
-        }
+        public ISet<string> GetAllUnresolvedModules() => _unresolvedModules;
 
         internal void AddUnresolvedModule(string relativeModuleName, bool absoluteImports) {
             _unresolvedModules.UnionWith(ModuleResolver.ResolvePotentialModuleNames(_projectEntry, relativeModuleName, absoluteImports));
@@ -115,6 +108,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 if (!options.ForEval()) {
                     kvp.Value.ClearOldValues();
                 }
+
                 if (kvp.Value._dependencies.Count > 0) {
                     var types = kvp.Value.Types;
                     if (types.Count > 0) {
@@ -125,12 +119,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return res;
         }
 
-        public IModuleContext InterpreterContext => _context;
+        public IModuleContext InterpreterContext { get; }
 
-        public ModuleInfo ParentPackage {
-            get { return _parentPackage; }
-            set { _parentPackage = value; }
-        }
+        public ModuleInfo ParentPackage { get; set; }
 
         public void AddChildPackage(ModuleInfo childPackage, AnalysisUnit curUnit, string realName = null) {
             realName = realName ?? childPackage.Name;
@@ -151,8 +142,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public IEnumerable<KeyValuePair<string, AnalysisValue>> GetChildrenPackages(IModuleContext moduleContext) {
             if (_packageModules != null) {
                 foreach (var keyValue in _packageModules) {
-                    var res = keyValue.Value.Target as IModule;
-                    if (res != null) {
+                    if (keyValue.Value.Target is IModule res) {
                         yield return new KeyValuePair<string, AnalysisValue>(keyValue.Key, (AnalysisValue)res);
                     }
                 }
@@ -160,8 +150,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public IModule GetChildPackage(IModuleContext moduleContext, string name) {
-            WeakReference weakMod;
-            if (_packageModules != null && _packageModules.TryGetValue(name, out weakMod)) {
+            if (_packageModules != null && _packageModules.TryGetValue(name, out var weakMod)) {
                 var res = weakMod.Target;
                 if (res != null) {
                     return (IModule)res;
@@ -172,22 +161,27 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return null;
         }
 
-        public void AddModuleReference(ModuleReference moduleRef) {
-            if (moduleRef == null) {
-                Debug.Fail("moduleRef should never be null");
-                throw new ArgumentNullException(nameof(moduleRef));
-            }
-            _referencedModules.Add(moduleRef);
-            moduleRef.AddReference(this);
-        }
-
-        public void RemoveModuleReference(ModuleReference moduleRef) {
-            if (_referencedModules.Remove(moduleRef)) {
-                moduleRef.RemoveReference(this);
+        public bool TryGetModuleReference(string moduleName, out ModuleReference moduleReference) {
+            lock (_projectEntry) {
+                return _referencedModules.TryGetValue(moduleName, out moduleReference);
             }
         }
 
-        public IEnumerable<ModuleReference> ModuleReferences => _referencedModules;
+        public void AddModuleReference(string moduleName, ModuleReference moduleReference) {
+            Check.ArgumentNotNull(nameof(moduleName), moduleName);
+            Check.ArgumentNotNull(nameof(moduleReference), moduleReference);
+
+            _referencedModules[moduleName] = moduleReference;
+            moduleReference.AddReference(this);
+        }
+
+        public void ClearReferencedModules() {
+            foreach (var moduleReference in _referencedModules.Values.Distinct()) {
+                moduleReference.RemoveReference(this);
+            }
+            _referencedModules.Clear();
+        }
+
         public void SpecializeFunction(string name, CallDelegate callable, bool mergeOriginalAnalysis) {
             lock (this) {
                 if (_specialized == null) {
@@ -209,19 +203,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         private void SpecializeOneFunction(string name, CallDelegate callable, bool mergeOriginalAnalysis) {
             int lastIndex;
-            VariableDef def;
-            if (Scope.TryGetVariable(name, out def)) {
+            if (Scope.TryGetVariable(name, out var def)) {
                 SpecializeVariableDef(def, callable, mergeOriginalAnalysis);
             } else if ((lastIndex = name.LastIndexOf('.')) != -1 &&
                 Scope.TryGetVariable(name.Substring(0, lastIndex), out def)) {
                 var methodName = name.Substring(lastIndex + 1, name.Length - (lastIndex + 1));
                 foreach (var v in def.Types) {
-                    var ci = v as ClassInfo;
-                    if (ci != null) {
-                        VariableDef methodDef;
-                        if (ci.Scope.TryGetVariable(methodName, out methodDef)) {
-                            SpecializeVariableDef(methodDef, callable, mergeOriginalAnalysis);
-                        }
+                    if (v is ClassInfo ci && ci.Scope.TryGetVariable(methodName, out var methodDef)) {
+                        SpecializeVariableDef(methodDef, callable, mergeOriginalAnalysis);
                     }
                 }
             }
@@ -247,12 +236,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) {
             if (unit.ForEval) {
-                VariableDef value;
-                return Scope.TryGetVariable(name, out value) ? value.Types : AnalysisSet.Empty;
-            } else {
-                ModuleDefinition.AddDependency(unit);
-                return Scope.CreateEphemeralVariable(node, unit, name).Types;
+                return Scope.TryGetVariable(name, out var value) ? value.Types : AnalysisSet.Empty;
             }
+
+            ModuleDefinition.AddDependency(unit);
+            return Scope.CreateEphemeralVariable(node, unit, name).Types;
         }
 
         public override void SetMember(Node node, AnalysisUnit unit, string name, IAnalysisSet value) {
@@ -267,14 +255,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
         /// <summary>
         /// Gets a weak reference to this module
         /// </summary>
-        public WeakReference WeakModule => _weakModule;
+        public WeakReference WeakModule { get; }
 
-        public DependentData ModuleDefinition => _definition;
+        public DependentData ModuleDefinition { get; } = new DependentData();
 
-        public ModuleScope Scope { get; private set; }
+        public ModuleScope Scope { get; }
         IScope IModule.Scope => Scope;
 
-        public override string Name => _name;
+        public override string Name { get; }
 
         public ProjectEntry ProjectEntry => _projectEntry;
         IPythonProjectEntry IModule.ProjectEntry => ProjectEntry;
@@ -297,14 +285,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override string Documentation {
-            get {
-                if (ProjectEntry.Tree != null && ProjectEntry.Tree.Body != null) {
-                    return ProjectEntry.Tree.Body.Documentation.TrimDocumentation() ?? String.Empty;
-                }
-                return String.Empty;
-            }
-        }
+        public override string Documentation => ProjectEntry.Tree?.Body?.Documentation.TrimDocumentation() ?? string.Empty;
 
         public override IEnumerable<ILocationInfo> Locations
              => new[] { new LocationInfo(ProjectEntry.FilePath, ProjectEntry.DocumentUri, 1, 1) };
@@ -317,8 +298,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         #region IVariableDefContainer Members
 
         public IEnumerable<IReferenceable> GetDefinitions(string name) {
-            VariableDef def;
-            if (Scope.TryGetVariable(name, out def)) {
+            if (Scope.TryGetVariable(name, out var def)) {
                 yield return def;
             }
         }
@@ -332,12 +312,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             var importedValue = Scope.CreateEphemeralVariable(node, unit, name, addRef);
             ModuleDefinition.AddDependency(unit);
 
-            if (linkedScope != null) {
-                linkedScope.AddLinkedVariable(linkedName ?? name, importedValue);
-            }
+            linkedScope?.AddLinkedVariable(linkedName ?? name, importedValue);
             return importedValue.GetTypesNoCopy(unit, DeclaringModule);
         }
-
 
         public IEnumerable<string> GetModuleMemberNames(IModuleContext context) {
             return Scope.AllVariables.Select(kv => kv.Key);

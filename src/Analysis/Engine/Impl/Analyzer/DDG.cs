@@ -441,14 +441,14 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 if (gotAllParents && ProjectState.Modules.TryImport(name, out modRef)) {
                     moduleRef = modRef;
                     (lastParent as BuiltinModule)?.AddChildModule(remainingParts[0], moduleRef.AnalysisModule);
-                    _unit.DeclaringModule.AddModuleReference(moduleRef);
+                    _unit.DeclaringModule.AddModuleReference(modName, moduleRef);
                     remainingParts = null;
                     return true;
                 }
             }
 
             if (moduleRef?.Module != null) {
-                _unit.DeclaringModule.AddModuleReference(moduleRef);
+                _unit.DeclaringModule.AddModuleReference(modName, moduleRef);
                 return true;
             }
             return false;
