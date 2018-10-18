@@ -1003,6 +1003,15 @@ class Simple(unittest.TestCase):
             }
         }
 
+        [TestMethod, Priority(0)]
+        public async Task WithWhitespaceAroundDot() {
+            using (var s = await CreateServerAsync()) {
+                var u = await s.OpenDefaultDocumentAndGetUriAsync("import sys\nsys  .  version\n");
+                await AssertCompletion(s, u, new[] { "argv" }, null, new SourceLocation(2, 7), 
+                    new CompletionContext { triggerCharacter = ".", triggerKind = CompletionTriggerKind.TriggerCharacter });
+            }
+        }
+
         private static async Task AssertCompletion(Server s, Uri uri, IReadOnlyCollection<string> contains, IReadOnlyCollection<string> excludes, Position? position = null, CompletionContext? context = null, Func<CompletionItem, string> cmpKey = null, string expr = null, Range? applicableSpan = null) {
             await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
             var res = await s.Completion(new CompletionParams {
