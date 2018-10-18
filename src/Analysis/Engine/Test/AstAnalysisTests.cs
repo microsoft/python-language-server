@@ -25,7 +25,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.Python.Tests.Utilities;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
