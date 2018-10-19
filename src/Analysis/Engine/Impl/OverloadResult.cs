@@ -435,8 +435,12 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public override bool Equals(OverloadResult x, OverloadResult y) {
-            if (x == null | y == null) {
-                return x == null & y == null;
+            if (x == null && y == null) {
+                return true;
+            }
+
+            if(x == null || y == null) {
+                return false;
             }
 
             if (x.Name != y.Name || (!_weak && x.Documentation != y.Documentation)) {
