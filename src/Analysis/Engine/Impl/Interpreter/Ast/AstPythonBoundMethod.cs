@@ -19,14 +19,25 @@ using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonBoundMethod : IPythonBoundFunction, ILocatedMember {
+        private readonly IPythonFunction _inner;
+
         public AstPythonBoundMethod(IPythonFunction function, IPythonType selfType) {
-            Function = function;
+            _inner = function;
             SelfType = selfType;
         }
 
-        public IPythonFunction Function { get; }
         public IPythonType SelfType { get; }
         public PythonMemberType MemberType => PythonMemberType.Method;
-        public IEnumerable<ILocationInfo> Locations => (Function as ILocatedMember)?.Locations;
+
+        public IEnumerable<ILocationInfo> Locations => (_inner as ILocatedMember)?.Locations;
+
+        public string Name => _inner.Name;
+        public string Documentation => _inner.Documentation;
+        public bool IsBuiltin => _inner.IsBuiltin;
+        public bool IsStatic => _inner.IsStatic;
+        public bool IsClassMethod => _inner.IsClassMethod;
+        public IReadOnlyList<IPythonFunctionOverload> Overloads => _inner.Overloads;
+        public IPythonType DeclaringType => _inner.DeclaringType;
+        public IPythonModule DeclaringModule => _inner.DeclaringModule;
     }
 }

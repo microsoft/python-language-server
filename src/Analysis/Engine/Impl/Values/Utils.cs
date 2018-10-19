@@ -47,6 +47,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         internal static IAnalysisSet GetReturnTypes(IPythonFunction func, PythonAnalyzer projectState) {
+            if(func is IPythonBoundFunction bf) {
+                return projectState.GetAnalysisSetFromObjects(bf.SelfType);
+            }
             return AnalysisSet.UnionAll(func.Overloads
                 .Where(fn => fn.ReturnType != null)
                 .Select(fn => projectState.GetAnalysisSetFromObjects(fn.ReturnType)));

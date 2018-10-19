@@ -174,11 +174,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                         } else if (n.Name == _module.Name) {
                             Scope.SetInScope(n.Name, _module);
                         } else {
-                            Scope.SetInScope(n.Name, new AstNestedPythonModule(
+                            var mod = new AstNestedPythonModule(
                                 _interpreter,
                                 n.Name,
                                 ModuleResolver.ResolvePotentialModuleNames(_module.Name, Scope.FilePath, node.Names[i].MakeString(), true).ToArray()
-                            ));
+                            );
+                            Scope.SetInScope(n.Name, mod);
                         }
                     }
                 }

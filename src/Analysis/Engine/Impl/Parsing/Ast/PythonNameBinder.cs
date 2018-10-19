@@ -346,14 +346,6 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             return false;
         }
 
-        public override bool Walk(ReturnStatement node) {
-            FunctionDefinition funcDef = _currentScope as FunctionDefinition;
-            if (funcDef != null) {
-                funcDef._hasReturn = true;
-            }
-            return base.Walk(node);
-        }
-
         // WithStatement
         public override bool Walk(WithStatement node) {
             _currentScope.ContainsExceptionHandling = true;
@@ -393,7 +385,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
         // FunctionDefinition
         public override bool Walk(FunctionDefinition node) {
-            node._nameVariable = _globalScope.EnsureGlobalVariable("__name__");
+            node.NameVariable = _globalScope.EnsureGlobalVariable("__name__");
 
             // Name is defined in the enclosing context
             if (!node.IsLambda) {

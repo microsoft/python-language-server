@@ -232,17 +232,27 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
+            IMember member = null;
             var e = GetValueFromExpression(expr.Target);
-            if (e is IMemberContainer mc) {
-                var m = mc.GetMember(Context, expr.Name);
-                if (m != null) {
-                    return m;
-                }
-                _log?.Log(TraceLevel.Verbose, "UnknownMember", expr.ToCodeString(Ast).Trim());
-            } else {
-                _log?.Log(TraceLevel.Verbose, "UnknownMemberContainer", expr.Target.ToCodeString(Ast).Trim());
+            switch (e) {
+                case IMemberContainer mc1:
+                    member = mc1.GetMember(Context, expr.Name);
+                    break;
+                case IPythonMultipleMembers mm:
+                    member = mm.Members.OfType<IMemberContainer>()
+                        .Select(x => x.GetMember(Context, expr.Name))
+                        .ExcludeDefault()
+                        .FirstOrDefault();
+                    break;
+                case IPythonFunction f:
+                    member = GetValueFromFunction(f, expr);
+                    break;
             }
-            return new AstPythonConstant(_unknownType, GetLoc(expr));
+            if (member == null) {
+                _log?.Log(TraceLevel.Verbose, "UnknownMember", expr.ToCodeString(Ast).Trim());
+                return new AstPythonConstant(_unknownType, GetLoc(expr));
+            }
+            return member;
         }
 
         private IMember GetValueFromUnaryOp(UnaryExpression expr, LookupOptions options) {
@@ -357,16 +367,24 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             if (m is IPythonFunction fn) {
-                // TODO: Select correct overload and handle multiple return types
-                if (fn.Overloads.Count > 0 && fn.Overloads[0].ReturnType.Count > 0) {
-                    return new AstPythonConstant(fn.Overloads[0].ReturnType[0]);
-                }
-                _log?.Log(TraceLevel.Verbose, "NoReturn", expr.Target.ToCodeString(Ast).Trim());
-                return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), GetLoc(expr));
+                return GetValueFromFunction(fn, expr);
             }
 
             _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
             return new AstPythonConstant(_unknownType, GetLoc(expr));
+        }
+
+        private IMember GetValueFromFunction(IPythonFunction fn, Expression expr) {
+            if(fn is IPythonBoundFunction bf) {
+                return bf.SelfType;
+            }
+            // TODO: Select correct overload and handle multiple return types
+            if (fn.Overloads.Count > 0 && fn.Overloads[0].ReturnType.Count > 0) {
+                return new AstPythonConstant(fn.Overloads[0].ReturnType[0]);
+            }
+            var codeExpression = expr is CallExpression ce ? ce.Target : expr;
+            _log?.Log(TraceLevel.Verbose, "NoReturn", codeExpression.ToCodeString(Ast).Trim());
+            return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), GetLoc(codeExpression));
         }
 
         public IPythonConstant GetConstantFromLiteral(Expression expr, LookupOptions options) {
@@ -429,7 +447,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             IPythonFunction f;
-            if ((f = value as IPythonFunction ?? (value as IPythonBoundFunction)?.Function) != null) {
+            if ((f = value as IPythonFunction) != null) {
                 if (f.IsStatic) {
                     return Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
                 } else if (f.IsClassMethod) {
