@@ -22,7 +22,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Extensions;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -49,7 +48,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 : ctxt.GetCompletionsFromString(@params._expr);
 
             if (members == null) {
-                TraceMessage($"Do not trigger at {@params.position} in {uri}");
+                TraceMessage($"No completions at {@params.position} in {uri}");
                 return new CompletionList();
             }
 
@@ -70,29 +69,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _allowSnippet = ctxt.ShouldAllowSnippets
             };
 
-            SourceLocation trigger = @params.position;
-            if (ctxt.ApplicableSpan.HasValue) {
-                res._applicableSpan = ctxt.ApplicableSpan;
-            } else if (ctxt.Node != null) {
-                var span = ctxt.Node.GetSpan(tree);
-                if (@params.context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
-                    if (span.End > trigger) {
-                        span = new SourceSpan(span.Start, trigger);
-                    }
-                }
-                if (span.End != span.Start) {
-                    res._applicableSpan = span;
-                }
-            } else if (@params.context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
-                var ch = @params.context?.triggerCharacter.FirstOrDefault() ?? '\0';
-                res._applicableSpan = new SourceSpan(
-                    trigger.Line,
-                    Tokenizer.IsIdentifierStartChar(ch) ? Math.Max(1, trigger.Column - 1) : trigger.Column,
-                    trigger.Line,
-                    trigger.Column
-                );
-            }
-
+            res._applicableSpan = GetApplicableSpan(ctxt, @params, tree);
             LogMessage(MessageType.Info, $"Found {res.items.Length} completions for {uri} at {@params.position} after filtering");
 
             if (HandleOldStyleCompletionExtension(analysis as ModuleAnalysis, tree, @params.position, res)) {
@@ -103,6 +80,39 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 => (ext as ICompletionExtension)?.HandleCompletionAsync(uri, analysis, tree, @params.position, res, cancellationToken), cancellationToken);
 
             return res;
+        }
+
+        private SourceSpan? GetApplicableSpan(CompletionAnalysis ca, CompletionParams @params, PythonAst tree) {
+            if (ca.ApplicableSpan.HasValue) {
+                return ca.ApplicableSpan;
+            }
+
+            SourceLocation trigger = @params.position;
+            if (ca.Node != null) {
+                var span = ca.Node.GetSpan(tree);
+                if (@params.context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
+                    if (span.End > trigger) {
+                        // Span start may be after the trigger if there is bunch of whitespace
+                        // between dot and next token such as in 'sys  .  version'
+                        span = new SourceSpan(new SourceLocation(span.Start.Line, Math.Min(span.Start.Column, trigger.Column)), span.End);
+                    }
+                }
+                if (span.End != span.Start) {
+                    return span;
+                }
+            }
+
+            if (@params.context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
+                var ch = @params.context?.triggerCharacter.FirstOrDefault() ?? '\0';
+                return new SourceSpan(
+                    trigger.Line,
+                    Tokenizer.IsIdentifierStartChar(ch) ? Math.Max(1, trigger.Column - 1) : trigger.Column,
+                    trigger.Line,
+                    trigger.Column
+                );
+            }
+
+            return null;
         }
 
         public override Task<CompletionItem> CompletionItemResolve(CompletionItem item, CancellationToken token) {
@@ -147,7 +157,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _oldServer.ProcessCompletionList(analysis as ModuleAnalysis, tree, location, cl);
 
             var newItems = cl.items.Where(x => !oldItems.Contains(x.label)).ToArray();
-            if(newItems.Length == 0) {
+            if (newItems.Length == 0) {
                 return false;
             }
 
