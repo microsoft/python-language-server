@@ -14,17 +14,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Services;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     /// <summary>
@@ -424,15 +424,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 if (_server.Settings.analysis.diagnostics) {
                     diagnostics = kvp.Value
-                    .Select(d => new Diagnostic {  // Copy the diagnostic so we aren't just modifying the severity for everyone who has access.
-                        range = d.range,
-                        severity = _server.Settings.analysis.GetEffectiveSeverity(d.code, d.severity),
-                        code = d.code,
-                        source = d.source,
-                        message = d.message,
-                    })
-                    .Where(d => d.severity != DiagnosticSeverity.Unspecified) // Don't send unspecified/disabled diagnostics.
-                    .ToArray();
+                        .Select(d => new Diagnostic {  // Copy the diagnostic so we aren't just modifying the severity for everyone who has access.
+                            range = d.range,
+                            severity = _server.Settings.analysis.GetEffectiveSeverity(d.code, d.severity),
+                            code = d.code,
+                            source = d.source,
+                            message = d.message,
+                        })
+                        .Where(d => d.severity != DiagnosticSeverity.Unspecified) // Don't send unspecified/disabled diagnostics.
+                        .ToArray();
                 } else {
                     // If diagnostics are disabled globally, don't send any diagnostics,
                     // except for the explicitly empty ones which are used to clear.
