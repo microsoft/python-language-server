@@ -27,6 +27,8 @@ namespace Microsoft.Python.LanguageServer {
             public int symbolsHierarchyDepthLimit = 10;
             public int symbolsHierarchyMaxSymbols = 1000;
 
+            public bool diagnostics;
+
             public string[] errors { get; private set; } = Array.Empty<string>();
             public string[] warnings { get; private set; } = Array.Empty<string>();
             public string[] information { get; private set; } = Array.Empty<string>();

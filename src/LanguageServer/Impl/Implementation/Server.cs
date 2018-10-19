@@ -250,6 +250,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var reanalyze = true;
             if (@params.settings != null) {
                 if (@params.settings is ServerSettings settings) {
+                    Analyzer.EnableDiagnostics = settings.analysis.diagnostics;
                     reanalyze = HandleConfigurationChanges(settings);
                 } else {
                     LogMessage(MessageType.Error, "change configuration notification sent unsupported settings");
@@ -700,7 +701,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 !newSettings.analysis.errors.SetEquals(oldSettings.analysis.errors) ||
                 !newSettings.analysis.warnings.SetEquals(oldSettings.analysis.warnings) ||
                 !newSettings.analysis.information.SetEquals(oldSettings.analysis.information) ||
-                !newSettings.analysis.disabled.SetEquals(oldSettings.analysis.disabled)) {
+                !newSettings.analysis.disabled.SetEquals(oldSettings.analysis.disabled) ||
+                newSettings.analysis.diagnostics != oldSettings.analysis.diagnostics) {
                 _editorFiles.UpdateDiagnostics();
             }
 

@@ -618,10 +618,6 @@ namespace Microsoft.PythonTools.Analysis {
         public bool EnableDiagnostics { get; set; }
 
         public void AddDiagnostic(Node node, AnalysisUnit unit, string message, DiagnosticSeverity severity, string code = null) {
-            if (!EnableDiagnostics) {
-                return;
-            }
-
             lock (_diagnostics) {
                 if (!_diagnostics.TryGetValue(unit.ProjectEntry, out var diags)) {
                     _diagnostics[unit.ProjectEntry] = diags = new Dictionary<Node, Diagnostic>();
@@ -656,10 +652,6 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public void ClearDiagnostic(Node node, AnalysisUnit unit, string code = null) {
-            if (!EnableDiagnostics) {
-                return;
-            }
-
             lock (_diagnostics) {
                 if (_diagnostics.TryGetValue(unit.ProjectEntry, out var diags) && diags.TryGetValue(node, out var d)) {
                     if (code == null || d.code == code) {

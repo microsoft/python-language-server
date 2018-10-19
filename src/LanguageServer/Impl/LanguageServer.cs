@@ -145,6 +145,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 settings.diagnosticPublishDelay = GetSetting(analysis, "diagnosticPublishDelay", 1000);
                 settings.symbolsHierarchyDepthLimit = GetSetting(analysis, "symbolsHierarchyDepthLimit", 10);
                 settings.symbolsHierarchyMaxSymbols = GetSetting(analysis, "symbolsHierarchyMaxSymbols", 1000);
+                settings.analysis.diagnostics = GetSetting(analysis, "diagnostics", false);
 
                 _ui.SetLogLevel(GetLogLevel(analysis));
 
@@ -419,7 +420,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             foreach (var kvp in list) {
-                var diagnostics = kvp.Value
+                var diagnostics = kvp.Value;
+
+                if (_server.Settings.analysis.diagnostics) {
+                    diagnostics = kvp.Value
                     .Select(d => new Diagnostic {  // Copy the diagnostic so we aren't just modifying the severity for everyone who has access.
                         range = d.range,
                         severity = _server.Settings.analysis.GetEffectiveSeverity(d.code, d.severity),
@@ -427,11 +431,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         source = d.source,
                         message = d.message,
                     })
-                    .Where(d => d.severity != DiagnosticSeverity.Unspecified);
+                    .Where(d => d.severity != DiagnosticSeverity.Unspecified) // Don't send unspecified/disabled diagnostics.
+                    .ToArray();
+                } else {
+                    // If diagnostics are disabled globally, don't send any diagnostics,
+                    // except for the explicitly empty ones which are used to clear.
+                    if (diagnostics.Length != 0) {
+                        continue;
+                    }
+                }
 
                 var parameters = new PublishDiagnosticsParams {
                     uri = kvp.Key,
-                    diagnostics = diagnostics.ToArray()
+                    diagnostics = diagnostics
                 };
                 _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
             }
