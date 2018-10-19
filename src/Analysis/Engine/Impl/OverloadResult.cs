@@ -36,7 +36,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public string Name { get; }
         public virtual IReadOnlyList<string> ReturnType => _returnType;
-        public virtual string Documentation { get; }
+        public virtual string Documentation { get; } = string.Empty;
         public virtual ParameterResult[] Parameters => _parameters;
 
         internal virtual OverloadResult WithNewParameters(ParameterResult[] newParameters)
@@ -156,7 +156,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public AccumulatedOverloadResult(string name, string documentation, int parameters) {
             _name = name;
-            _doc = documentation;
+            _doc = documentation ?? string.Empty;
             _pnames = new string[parameters];
             _ptypes = new string[parameters];
             _pdefaults = new string[parameters];
