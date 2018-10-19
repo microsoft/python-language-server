@@ -36,7 +36,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public string Name { get; }
         public virtual IReadOnlyList<string> ReturnType => _returnType;
-        public virtual string Documentation { get; }
+        public virtual string Documentation { get; } = string.Empty;
         public virtual ParameterResult[] Parameters => _parameters;
 
         internal virtual OverloadResult WithNewParameters(ParameterResult[] newParameters)
@@ -138,7 +138,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public override bool Equals(object obj) {
-            if(obj is OverloadResult other) {
+            if (obj is OverloadResult other) {
                 return OverloadResultComparer.Instance.Equals(this, other);
             }
             return base.Equals(obj);
@@ -156,7 +156,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public AccumulatedOverloadResult(string name, string documentation, int parameters) {
             _name = name;
-            _doc = documentation;
+            _doc = documentation ?? string.Empty;
             _pnames = new string[parameters];
             _ptypes = new string[parameters];
             _pdefaults = new string[parameters];
@@ -435,35 +435,25 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public override bool Equals(OverloadResult x, OverloadResult y) {
-            if (x == null | y == null) {
-                return x == null & y == null;
+            if (x == null || y == null) {
+                return x == null && y == null;
             }
 
             if (x.Name != y.Name || (!_weak && x.Documentation != y.Documentation)) {
                 return false;
             }
 
-            if (x.Parameters == null | y.Parameters == null) {
-                return x.Parameters == null & y.Parameters == null;
+            if (x.Parameters == null || y.Parameters == null) {
+                return x.Parameters == null && y.Parameters == null;
             }
 
             if (x.Parameters.Length != y.Parameters.Length) {
                 return false;
             }
 
-            for (var i = 0; i < x.Parameters.Length; ++i) {
-                if (_weak) {
-                    if (!x.Parameters[i].Name.Equals(y.Parameters[i].Name)) {
-                        return false;
-                    }
-                } else {
-                    if (!x.Parameters[i].Equals(y.Parameters[i])) {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            return _weak 
+                ? x.Parameters.Select(p => p.Name).SequenceEqual(y.Parameters.Select(p => p.Name))
+                : x.Parameters.SequenceEqual(y.Parameters);
         }
 
         public override int GetHashCode(OverloadResult obj) {
