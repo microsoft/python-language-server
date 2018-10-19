@@ -138,7 +138,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public override bool Equals(object obj) {
-            if(obj is OverloadResult other) {
+            if (obj is OverloadResult other) {
                 return OverloadResultComparer.Instance.Equals(this, other);
             }
             return base.Equals(obj);
@@ -435,12 +435,8 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public override bool Equals(OverloadResult x, OverloadResult y) {
-            if (x == null && y == null) {
-                return true;
-            }
-
-            if(x == null || y == null) {
-                return false;
+            if (x == null || y == null) {
+                return x == null && y == null;
             }
 
             if (x.Name != y.Name || (!_weak && x.Documentation != y.Documentation)) {
@@ -455,19 +451,9 @@ namespace Microsoft.PythonTools.Analysis {
                 return false;
             }
 
-            for (var i = 0; i < x.Parameters.Length; ++i) {
-                if (_weak) {
-                    if (!x.Parameters[i].Name.Equals(y.Parameters[i].Name)) {
-                        return false;
-                    }
-                } else {
-                    if (!x.Parameters[i].Equals(y.Parameters[i])) {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            return _weak 
+                ? x.Parameters.Select(p => p.Name).SequenceEqual(y.Parameters.Select(p => p.Name))
+                : x.Parameters.SequenceEqual(y.Parameters);
         }
 
         public override int GetHashCode(OverloadResult obj) {
