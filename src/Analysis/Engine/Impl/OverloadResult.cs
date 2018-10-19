@@ -447,8 +447,8 @@ namespace Microsoft.PythonTools.Analysis {
                 return false;
             }
 
-            if (x.Parameters == null | y.Parameters == null) {
-                return x.Parameters == null & y.Parameters == null;
+            if (x.Parameters == null || y.Parameters == null) {
+                return x.Parameters == null && y.Parameters == null;
             }
 
             if (x.Parameters.Length != y.Parameters.Length) {
