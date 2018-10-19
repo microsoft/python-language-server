@@ -419,9 +419,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             foreach (var kvp in list) {
+                var diagnostics = kvp.Value
+                    .Select(d => new Diagnostic {  // Copy the diagnostic so we aren't just modifying the severity for everyone who has access.
+                        range = d.range,
+                        severity = _server.Settings.analysis.GetEffectiveSeverity(d.code, d.severity),
+                        code = d.code,
+                        source = d.source,
+                        message = d.message,
+                    })
+                    .Where(d => d.severity != DiagnosticSeverity.Unspecified);
+
                 var parameters = new PublishDiagnosticsParams {
                     uri = kvp.Key,
-                    diagnostics = kvp.Value
+                    diagnostics = diagnostics.ToArray()
                 };
                 _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
             }

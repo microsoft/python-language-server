@@ -696,12 +696,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return true;
             }
 
-            if (newSettings.analysis.openFilesOnly != oldSettings.analysis.openFilesOnly) {
-                _editorFiles.UpdateDiagnostics();
-                return false;
-            }
-
-            if (!newSettings.analysis.errors.SetEquals(oldSettings.analysis.errors) ||
+            if (newSettings.analysis.openFilesOnly != oldSettings.analysis.openFilesOnly ||
+                !newSettings.analysis.errors.SetEquals(oldSettings.analysis.errors) ||
                 !newSettings.analysis.warnings.SetEquals(oldSettings.analysis.warnings) ||
                 !newSettings.analysis.information.SetEquals(oldSettings.analysis.information) ||
                 !newSettings.analysis.disabled.SetEquals(oldSettings.analysis.disabled)) {

@@ -176,36 +176,30 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public void UpdateAnalysisDiagnostics(IProjectEntry projectEntry, int version) {
             lock (_lock) {
-                var diags = _server.Analyzer.GetDiagnostics(projectEntry);
-                var settings = _server.Settings;
+                IEnumerable<Diagnostic> diags = _server.Analyzer.GetDiagnostics(projectEntry);
 
-                for (var i = 0; i < diags.Count; i++) {
-                    diags[i].severity = settings.analysis.GetEffectiveSeverity(diags[i].code, diags[i].severity);
-                }
-
-                var severity = settings.analysis.GetEffectiveSeverity(ErrorMessages.UnresolvedImportCode, DiagnosticSeverity.Warning);
                 var pythonProjectEntry = projectEntry as IPythonProjectEntry;
                 var parse = pythonProjectEntry?.GetCurrentParse();
 
                 // TODO: move this to the normal analysis process
-                if (parse != null && severity != DiagnosticSeverity.Unspecified) {
-                    var walker = new ImportStatementWalker(parse.Tree, pythonProjectEntry, _server.Analyzer, severity);
+                if (parse != null) {
+                    var walker = new ImportStatementWalker(parse.Tree, pythonProjectEntry, _server.Analyzer, DiagnosticSeverity.Warning);
                     parse.Tree.Walk(walker);
-                    diags = diags.Concat(walker.Diagnostics).ToArray();
+                    diags = diags.Concat(walker.Diagnostics);
                 }
 
                 if (pythonProjectEntry is IDocument doc) {
                     if (_lastReportedParseDiagnostics != null) {
-                        diags = diags.Concat(_lastReportedParseDiagnostics.SelectMany(d => d.diagnostics)).ToArray();
+                        diags = diags.Concat(_lastReportedParseDiagnostics.SelectMany(d => d.diagnostics));
                     }
                 }
 
                 var lastPublishedVersion = _lastReportedAnalysisDiagnostics?.FirstOrDefault()?._version;
-                version = version >= 0 ? version : (lastPublishedVersion.HasValue ? lastPublishedVersion.Value : 0);
+                version = version >= 0 ? version : (lastPublishedVersion ?? 0);
 
                 _lastReportedAnalysisDiagnostics = new[] { new PublishDiagnosticsEventArgs {
                     uri = pythonProjectEntry.DocumentUri,
-                    diagnostics = diags,
+                    diagnostics = diags.ToArray(),
                     _version = version
                 }};
 
