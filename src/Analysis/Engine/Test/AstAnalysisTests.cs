@@ -20,7 +20,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -209,6 +208,17 @@ namespace AnalysisTests {
                     .And.HaveVariable("XY").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Str)
                     .And.HaveVariable("XYZ").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Str, BuiltinTypeId.Bytes)
                     .And.HaveVariable("D").OfTypes(BuiltinTypeId.List, BuiltinTypeId.Tuple, BuiltinTypeId.Dict, BuiltinTypeId.Set);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstProperties() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from Properties import *
+x = B().getA().methodA()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
             }
         }
 
@@ -833,6 +843,7 @@ class BankAccount(object):
         }
 
         #endregion
+
         #region Type Annotation tests
         [TestMethod, Priority(0)]
         public async Task AstTypeAnnotationConversion() {
@@ -1031,6 +1042,5 @@ if sys.version_info >= (2, 7):
             }
         }
         #endregion
-
     }
 }
