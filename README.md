@@ -6,7 +6,7 @@ Primary clients are [Python Extension to VS Code](https://github.com/Microsoft/v
 
 Feel free to file issues or ask questions on our [issue tracker](https://github.com/Microsoft/python-language-server/issues), and we welcome code contributions.
 
-#The Microsoft Python Language Server can be used with Sublime Text!!
+#<b>The Microsoft Python Language Server can be used with Sublime Text!!</b>
  
 Basic Prerequisites are
 	* A build of MPLS
