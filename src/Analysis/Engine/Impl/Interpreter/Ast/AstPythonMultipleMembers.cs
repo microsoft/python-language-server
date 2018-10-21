@@ -21,7 +21,7 @@ using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonMultipleMembers : IPythonMultipleMembers, ILocatedMember {
+    class AstPythonMultipleMembers : IMultipleMembers, ILocatedMember {
         private readonly IMember[] _members;
         private IReadOnlyList<IMember> _resolvedMembers;
 
@@ -122,7 +122,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             if (member is T t) {
                 return t;
             }
-            var members = (member as IPythonMultipleMembers)?.Members;
+            var members = (member as IMultipleMembers)?.Members;
             if (members != null) {
                 member = Create(members.Where(m => m is T));
                 if (member is T t2) {
@@ -141,6 +141,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
         }
 
+        public virtual string Name => string.Empty;
         public virtual PythonMemberType MemberType => PythonMemberType.Multiple;
         public IEnumerable<ILocationInfo> Locations => Members.OfType<ILocatedMember>().SelectMany(m => m.Locations.MaybeEnumerate());
 
@@ -153,14 +154,19 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             // TODO: Combine distinct documentation
             return docs.FirstOrDefault(d => !string.IsNullOrEmpty(d));
         }
+        protected static string ChooseDescription(IEnumerable<string> desc) {
+            // TODO: Combine distinct descriptions
+            return desc.FirstOrDefault(d => !string.IsNullOrEmpty(d));
+        }
 
         class MultipleFunctionMembers : AstPythonMultipleMembers, IPythonFunction {
             public MultipleFunctionMembers(IMember[] members) : base(members) { }
 
             private IEnumerable<IPythonFunction> Functions => Members.OfType<IPythonFunction>();
 
-            public string Name => ChooseName(Functions.Select(f => f.Name)) ?? "<function>";
+            public override string Name => ChooseName(Functions.Select(f => f.Name)) ?? "<function>";
             public string Documentation => ChooseDocumentation(Functions.Select(f => f.Documentation));
+            public string Description => ChooseDescription(Functions.Select(f => f.Description));
             public bool IsBuiltin => Functions.Any(f => f.IsBuiltin);
             public bool IsStatic => Functions.Any(f => f.IsStatic);
             public bool IsClassMethod => Functions.Any(f => f.IsClassMethod);
@@ -185,7 +191,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             private IEnumerable<IPythonModule> Modules => Members.OfType<IPythonModule>();
 
-            public string Name => ChooseName(Modules.Select(m => m.Name)) ?? "<module>";
+            public override string Name => ChooseName(Modules.Select(m => m.Name)) ?? "<module>";
             public string Documentation => ChooseDocumentation(Modules.Select(m => m.Documentation));
             public IEnumerable<string> GetChildrenModules() => Modules.SelectMany(m => m.GetChildrenModules());
             public IMember GetMember(IModuleContext context, string name) => Create(Modules.Select(m => m.GetMember(context, name)));
@@ -213,7 +219,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             private IEnumerable<IPythonType> Types => Members.OfType<IPythonType>();
 
-            public string Name => ChooseName(Types.Select(t => t.Name)) ?? "<type>";
+            public override string Name => ChooseName(Types.Select(t => t.Name)) ?? "<type>";
             public string Documentation => ChooseDocumentation(Types.Select(t => t.Documentation));
             public BuiltinTypeId TypeId => Types.GroupBy(t => t.TypeId).OrderByDescending(g => g.Count()).FirstOrDefault()?.Key ?? BuiltinTypeId.Unknown;
             public IPythonModule DeclaringModule => CreateAs<IPythonModule>(Types.Select(t => t.DeclaringModule));

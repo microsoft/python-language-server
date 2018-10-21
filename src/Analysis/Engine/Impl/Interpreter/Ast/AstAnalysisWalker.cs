@@ -112,7 +112,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private IPythonType CurrentClass => Scope.GetInScope("__class__") as IPythonType;
 
         private IMember Clone(IMember member) =>
-            member is IPythonMultipleMembers mm ? AstPythonMultipleMembers.Create(mm.Members) :
+            member is IMultipleMembers mm ? AstPythonMultipleMembers.Create(mm.Members) :
             member;
 
         public override bool Walk(AssignmentStatement node) {
@@ -365,7 +365,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var existing = Scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
 
             if (existing == null) {
-                existing = new AstPythonProperty(_ast, node, GetLoc(node));
+                existing = new AstPythonProperty(_ast, node.Name, node.Documentation, GetLoc(node));
                 Scope.SetInScope(node.Name, existing);
             }
 
@@ -431,7 +431,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public override bool Walk(ClassDefinition node) {
             var member = Scope.GetInScope(node.Name);
             AstPythonType t = member as AstPythonType ??
-                (member as IPythonMultipleMembers)?.Members.OfType<AstPythonType>().FirstOrDefault(pt => pt.StartIndex == node.StartIndex);
+                (member as IMultipleMembers)?.Members.OfType<AstPythonType>().FirstOrDefault(pt => pt.StartIndex == node.StartIndex);
             if (t == null) {
                 t = CreateType(node);
                 Scope.SetInScope(node.Name, t);

@@ -38,7 +38,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return t;
             }
 
-            if (m is IPythonMultipleMembers mm) {
+            if (m is IMultipleMembers mm) {
                 return AstPythonMultipleMembers.CreateAs<IPythonType>(mm.Members);
             }
 
@@ -75,7 +75,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public override IPythonType LookupName(string name) {
             var m = _scope.LookupNameInScopes(name, NameLookupContext.LookupOptions.Global | NameLookupContext.LookupOptions.Builtins);
-            if (m is IPythonMultipleMembers mm) {
+            if (m is IMultipleMembers mm) {
                 m = (IMember)AstPythonMultipleMembers.CreateAs<IPythonType>(mm.Members) ??
                     AstPythonMultipleMembers.CreateAs<IPythonModule>(mm.Members);
             }
@@ -99,7 +99,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType unionType) {
             return (unionType as UnionType)?.Types ??
-                   (unionType as IPythonMultipleMembers)?.Members.OfType<IPythonType>().ToArray();
+                   (unionType as IMultipleMembers)?.Members.OfType<IPythonType>().ToArray();
         }
 
         public override IPythonType MakeGeneric(IPythonType baseType, IReadOnlyList<IPythonType> args) {
@@ -215,7 +215,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => DeclaringModule.GetMemberNames(moduleContext);
         }
 
-        private class UnionType : IPythonMultipleMembers, IPythonType {
+        private class UnionType : IMultipleMembers, IPythonType {
             public UnionType(IReadOnlyList<IPythonType> types) {
                 Types = types;
             }

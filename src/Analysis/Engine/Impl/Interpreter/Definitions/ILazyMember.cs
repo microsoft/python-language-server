@@ -21,7 +21,6 @@ namespace Microsoft.PythonTools.Interpreter {
     /// but should appear as Unknown if used directly.
     /// </summary>
     public interface ILazyMember : IMember {
-        string Name { get; }
         IMember Get();
     }
 }

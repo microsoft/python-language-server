@@ -22,6 +22,6 @@ namespace Microsoft.PythonTools.Interpreter {
     /// </summary>
     public interface IMemberContainer {
         IMember GetMember(IModuleContext context, string name);
-        IEnumerable<string> GetMemberNames(IModuleContext moduleContext);
+        IEnumerable<string> GetMemberNames(IModuleContext context);
     }
 }

@@ -74,8 +74,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public IPythonType DeclaringType {get;}
         public string Name { get; }
         public string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
+        public string Description => Documentation;
         public bool IsBuiltin => true;
-
         public bool IsClassMethod { get; }
         public bool IsStatic { get; }
 

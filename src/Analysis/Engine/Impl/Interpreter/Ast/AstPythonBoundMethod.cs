@@ -33,6 +33,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public string Name => _inner.Name;
         public string Documentation => _inner.Documentation;
+        public string Description => _inner.Description;
         public bool IsBuiltin => _inner.IsBuiltin;
         public bool IsStatic => _inner.IsStatic;
         public bool IsClassMethod => _inner.IsClassMethod;

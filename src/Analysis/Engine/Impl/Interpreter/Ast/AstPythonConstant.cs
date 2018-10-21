@@ -20,7 +20,7 @@ using System.Linq;
 using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonConstant : IPythonConstant, IMemberContainer, ILocatedMember {
+    class AstPythonConstant : IPythonConstant {
         private readonly Dictionary<string, IMember> _cachedMembers = new Dictionary<string, IMember>();
 
         public AstPythonConstant(IPythonType type, params ILocationInfo[] locations) {
@@ -28,8 +28,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             Locations = locations.ToArray();
         }
 
+        public string Name => Type?.Name ?? string.Empty;
         public IEnumerable<ILocationInfo> Locations { get; }
-
         public PythonMemberType MemberType => PythonMemberType.Constant;
         public IPythonType Type { get; }
 
@@ -53,8 +53,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return m;
         }
 
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
-            return Type?.GetMemberNames(moduleContext);
-        }
+        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext)
+            => Type?.GetMemberNames(moduleContext);
     }
 }

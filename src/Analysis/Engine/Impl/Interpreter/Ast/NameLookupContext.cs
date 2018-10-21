@@ -174,7 +174,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             var m = ann.GetValue(new AstTypeAnnotationConverter(this));
-            if (m is IPythonMultipleMembers mm) {
+            if (m is IMultipleMembers mm) {
                 return mm.Members.OfType<IPythonType>();
             } else if (m is IPythonType type) {
                 return Enumerable.Repeat(type, 1);
@@ -238,7 +238,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 case IMemberContainer mc1:
                     member = mc1.GetMember(Context, expr.Name);
                     break;
-                case IPythonMultipleMembers mm:
+                case IMultipleMembers mm:
                     member = mm.Members.OfType<IMemberContainer>()
                         .Select(x => x.GetMember(Context, expr.Name))
                         .ExcludeDefault()
@@ -246,6 +246,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     break;
                 case IPythonFunction f:
                     member = GetValueFromFunction(f, expr);
+                    break;
+                case IBuiltinProperty p:
+                    member = p.Type;
                     break;
             }
             if (member == null) {
@@ -405,7 +408,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public IEnumerable<IPythonType> GetTypesFromValue(IMember value) {
-            if (value is IPythonMultipleMembers mm) {
+            if (value is IMultipleMembers mm) {
                 return mm.Members.Select(GetTypeFromValue).Distinct();
             } else {
                 var t = GetTypeFromValue(value);
@@ -466,7 +469,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.BuiltinMethodDescriptor);
             }
 
-            if (value is IPythonMultipleMembers mm) {
+            if (value is IMultipleMembers mm) {
                 return AstPythonMultipleMembers.CreateAs<IPythonType>(mm.Members);
             }
 

@@ -10,27 +10,26 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public AstPythonProperty(
             PythonAst ast,
-            FunctionDefinition getter,
+            string name,
+            string documentation,
             ILocationInfo location
         ) {
-            Documentation = getter.Documentation;
+            Documentation = documentation;
             IsReadOnly = true;
             Locations = new[] { location };
+            Name = name;
         }
 
-        public void AddOverload(IPythonFunctionOverload overload) {
-            if (_getter == null) {
-                _getter = overload;
-            }
-        }
+        public void AddOverload(IPythonFunctionOverload overload)
+            => _getter = _getter ?? overload;
 
-        public void MakeSettable() {
-            IsReadOnly = false;
-        }
+        public void MakeSettable() => IsReadOnly = false;
 
+        public string Name { get; }
         public IPythonType Type => _getter?.ReturnType.FirstOrDefault();
 
         public bool IsStatic => false;
+        public bool IsClassMethod  => false;
 
         public string Documentation { get; }
 

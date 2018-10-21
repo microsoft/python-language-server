@@ -32,7 +32,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         protected readonly Dictionary<string, IMember> _members;
 
-        public AstPythonType(string name): this(name, new Dictionary<string, IMember>(), Array.Empty<ILocationInfo>()) { }
+        public AstPythonType(string name) : this(name, new Dictionary<string, IMember>(), Array.Empty<ILocationInfo>()) { }
 
         public AstPythonType(
             PythonAst ast,
@@ -163,8 +163,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public string Name {
             get {
                 lock (_members) {
-                    IMember nameMember;
-                    if (_members.TryGetValue("__name__", out nameMember) && nameMember is AstPythonStringLiteral lit) {
+                    if (_members.TryGetValue("__name__", out var nameMember) && nameMember is AstPythonStringLiteral lit) {
                         return lit.Value;
                     }
                 }

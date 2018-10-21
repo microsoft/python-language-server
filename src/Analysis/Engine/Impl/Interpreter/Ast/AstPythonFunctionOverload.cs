@@ -45,5 +45,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public IParameterInfo[] GetParameters() => _parameters.ToArray();
         public IReadOnlyList<IPythonType> ReturnType => ReturnTypes.Where(v => v.TypeId != BuiltinTypeId.Unknown).ToArray();
         public IEnumerable<ILocationInfo> Locations { get; }
+        public PythonMemberType MemberType => PythonMemberType.Function;
+        public string Name => string.Empty;
     }
 }
