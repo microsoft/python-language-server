@@ -145,7 +145,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 settings.diagnosticPublishDelay = GetSetting(analysis, "diagnosticPublishDelay", 1000);
                 settings.symbolsHierarchyDepthLimit = GetSetting(analysis, "symbolsHierarchyDepthLimit", 10);
                 settings.symbolsHierarchyMaxSymbols = GetSetting(analysis, "symbolsHierarchyMaxSymbols", 1000);
-                settings.analysis.diagnostics = GetSetting(analysis, "diagnostics", false);
+                settings.analysis.diagnostics = GetSetting(analysis, "diagnostics", true);
 
                 _ui.SetLogLevel(GetLogLevel(analysis));
 
