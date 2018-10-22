@@ -20,24 +20,16 @@ namespace Microsoft.PythonTools.Interpreter {
     public interface IPythonType : IMemberContainer, IMember {
         IPythonFunction GetConstructors();
 
-        string Documentation {
-            get;
-        }
+        string Name { get; }
 
-        BuiltinTypeId TypeId {
-            get;
-        }
+        string Documentation { get; }
 
-        IPythonModule DeclaringModule {
-            get;
-        }
+        BuiltinTypeId TypeId { get; }
 
-        IReadOnlyList<IPythonType> Mro {
-            get;
-        }
+        IPythonModule DeclaringModule { get; }
 
-        bool IsBuiltin {
-            get;
-        }
+        IReadOnlyList<IPythonType> Mro { get; }
+
+        bool IsBuiltin { get; }
     }
 }

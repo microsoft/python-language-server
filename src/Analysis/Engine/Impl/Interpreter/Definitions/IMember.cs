@@ -21,6 +21,5 @@ namespace Microsoft.PythonTools.Interpreter {
     /// </summary>
     public interface IMember {
         PythonMemberType MemberType { get; }
-        string Name { get; }
     }
 }
