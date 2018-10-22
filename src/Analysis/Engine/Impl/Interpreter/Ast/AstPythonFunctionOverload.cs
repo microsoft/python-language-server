@@ -25,7 +25,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private readonly string _name;
         private readonly NameLookupContext _scope;
         private readonly IReadOnlyList<IParameterInfo> _parameters;
-        private List<IMember> _lazyReturnTypes = new List<IMember>();
+        private readonly List<IMember> _lazyReturnTypes = new List<IMember>();
         private IPythonType[] _returnTypes;
 
         public AstPythonFunctionOverload(
@@ -48,27 +48,22 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         internal void AddReturnTypes(IEnumerable<IMember> types) {
-            Debug.Assert(_lazyReturnTypes != null, "Unable to add return types when they have been resolved");
-            _lazyReturnTypes?.AddRange(types);
+            Debug.Assert(_returnTypes == null);
+            _lazyReturnTypes.AddRange(types);
         }
+
         internal void AddReturnType(IMember type) {
-            Debug.Assert(_lazyReturnTypes != null, "Unable to add return types when they have been resolved");
-            _lazyReturnTypes?.Add(type);
-        }
+            Debug.Assert(_returnTypes == null);
+            _lazyReturnTypes.Add(type);
+         }
 
         public string Documentation { get; private set; }
         public string ReturnDocumentation { get; }
         public IParameterInfo[] GetParameters() => _parameters.ToArray();
 
-        public IReadOnlyList<IPythonType> ReturnType {
-            get {
-                if (_returnTypes == null) {
-                    _returnTypes = _lazyReturnTypes.SelectMany(t => _scope.GetTypesFromValue(t.ResolveType())).ToArray();
-                    _lazyReturnTypes = null;
-                }
-                return _returnTypes;
-            }
-        }
+        public IReadOnlyList<IPythonType> ReturnType
+            => _returnTypes = _returnTypes ?? 
+                (_returnTypes = _lazyReturnTypes.SelectMany(t => _scope.GetTypesFromValue(t.ResolveType())).ToArray());
 
         public IEnumerable<ILocationInfo> Locations { get; }
         public PythonMemberType MemberType => PythonMemberType.Function;

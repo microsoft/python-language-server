@@ -555,17 +555,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            IMember obj;
-            if ((scope ?? _scopes.Peek()).TryGetValue(name, out obj)) {
+            if ((scope ?? _scopes.Peek()).TryGetValue(name, out var obj)) {
                 return obj;
             }
             return null;
         }
 
-        private static bool IsUnknown(IMember value) {
-            return (value as IPythonType)?.TypeId == BuiltinTypeId.Unknown ||
-                (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;
-        }
+        private static bool IsUnknown(IMember value) 
+            => (value as IPythonType)?.TypeId == BuiltinTypeId.Unknown || (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;
 
         public void SetInScope(string name, IMember value, bool mergeWithExisting = true, Dictionary<string, IMember> scope = null) {
             Debug.Assert(_scopes.Count > 0);
@@ -598,13 +595,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             Normal = Local | Nonlocal | Global | Builtins
         }
 
-        public IMember LookupNameInScopes(string name) {
-            return LookupNameInScopes(name, DefaultLookupOptions);
-        }
+        public IMember LookupNameInScopes(string name) => LookupNameInScopes(name, DefaultLookupOptions);
 
         public IMember LookupNameInScopes(string name, LookupOptions options) {
-            IMember value;
-
             var scopes = _scopes.ToList();
             if (scopes.Count == 1) {
                 if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
@@ -624,15 +617,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 }
             }
 
-            if (scopes != null) {
-                foreach (var scope in scopes) {
-                    if (scope.TryGetValue(name, out value) && value != null) {
-                        if (value is ILazyMember lm) {
-                            value = lm.Get();
-                            scope[name] = value;
-                        }
-                        return value;
-                    }
+            foreach (var scope in scopes.MaybeEnumerate()) {
+                if (scope.TryGetValue(name, out var value) && value != null) {
+                    scope[name] = value;
+                    return value;
                 }
             }
 
