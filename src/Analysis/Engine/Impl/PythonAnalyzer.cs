@@ -792,7 +792,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return GetConstant(attr).First();
             } else if (attr is IMemberContainer mc) {
                 return GetCached(attr, () => new ReflectedNamespace(mc, this));
-            } else if (attr is IMultipleMembers mm) {
+            } else if (attr is IPythonMultipleMembers mm) {
                 var members = mm.Members;
                 return GetCached(attr, () =>
                     MultipleMemberInfo.Create(members.Select(GetAnalysisValueFromObjects)).FirstOrDefault() ??

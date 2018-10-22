@@ -20,7 +20,7 @@ namespace Microsoft.PythonTools.Interpreter {
     /// <summary>
     /// Represents a collection of multiple members which can appear under a single name.
     /// </summary>
-    public interface IMultipleMembers : IMember {
+    public interface IPythonMultipleMembers : IMember {
         IReadOnlyList<IMember> Members { get; }
     }
 }

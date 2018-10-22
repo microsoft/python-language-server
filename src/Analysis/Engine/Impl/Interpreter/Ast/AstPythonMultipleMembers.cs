@@ -21,7 +21,7 @@ using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonMultipleMembers : IMultipleMembers, ILocatedMember {
+    class AstPythonMultipleMembers : IPythonMultipleMembers, ILocatedMember {
         private readonly IMember[] _members;
         private IReadOnlyList<IMember> _resolvedMembers;
 
@@ -122,7 +122,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             if (member is T t) {
                 return t;
             }
-            var members = (member as IMultipleMembers)?.Members;
+            var members = (member as IPythonMultipleMembers)?.Members;
             if (members != null) {
                 member = Create(members.Where(m => m is T));
                 if (member is T t2) {

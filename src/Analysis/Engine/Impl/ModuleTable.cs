@@ -464,7 +464,7 @@ namespace Microsoft.PythonTools.Analysis {
                     return false;
                 }
 
-                var multiMem = mem as IMultipleMembers;
+                var multiMem = mem as IPythonMultipleMembers;
                 if (multiMem != null) {
                     foreach (var innerMem in multiMem.Members) {
                         if (IsExcludedBuiltin(interpModule, innerMem)) {
