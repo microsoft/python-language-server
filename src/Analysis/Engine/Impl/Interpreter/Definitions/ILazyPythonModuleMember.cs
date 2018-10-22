@@ -14,23 +14,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Diagnostics;
+using Microsoft.PythonTools.Analysis;
 
-namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstLazyMember : ILazyMember {
-        private readonly Func<IMember> _getter;
-        private IMember _value;
-
-        [DebuggerStepThrough]
-        public AstLazyMember(Func<IMember> getter) {
-            _getter = getter;
-        }
-        public PythonMemberType MemberType => PythonMemberType.Lazy;
-
-        public string Name => "lazy";
-
-        [DebuggerStepThrough]
-        public IMember Get() => _value ?? (_value = _getter());
+namespace Microsoft.PythonTools.Interpreter {
+    /// <summary>
+    /// Represents delay-loaded member of a Python module.
+    /// </summary>
+    public interface ILazyPythonModuleMember: ILazyMember {
+        string Name { get; }
+        ILocationInfo ImportLocation { get; }
     }
 }

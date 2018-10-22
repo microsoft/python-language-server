@@ -101,6 +101,12 @@ namespace Microsoft.PythonTools.Interpreter {
         /// <summary>
         /// The member represents a named argument
         /// </summary>
-        NamedArgument
+        NamedArgument,
+
+        /// <summary>
+        /// Type is not known until it is resolved.
+        /// <seealso cref="ILazyMember"/>
+        /// </summary>
+        Lazy
     }
 }

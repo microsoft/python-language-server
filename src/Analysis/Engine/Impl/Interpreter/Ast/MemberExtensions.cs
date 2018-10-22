@@ -20,6 +20,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
     public static class MemberExtensions {
         [DebuggerStepThrough]
         public static IMember ResolveType(this IMember m) {
+            if (m is ILazyPythonModuleMember) {
+                return m;
+            }
             while (m is ILazyMember lm) {
                 m = lm.Get();
             }

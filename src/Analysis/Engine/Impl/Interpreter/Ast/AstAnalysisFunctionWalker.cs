@@ -64,7 +64,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var self = GetSelf();
             _selfType = (self as AstPythonConstant)?.Type as AstPythonType;
 
-            _overload.AddReturnTypes(_scope.GetTypesFromAnnotation(_target.ReturnAnnotation).ExcludeDefault().OfType<IMember>());
+            _overload.AddReturnTypes(_scope.GetTypesFromAnnotation(_target.ReturnAnnotation).OfType<IMember>());
 
             _scope.PushScope();
             if (self != null) {

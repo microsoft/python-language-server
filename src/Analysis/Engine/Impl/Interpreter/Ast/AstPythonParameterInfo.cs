@@ -22,6 +22,8 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonParameterInfo : IParameterInfo {
+        private readonly IPythonType[] _lazyParameterTypes;
+
         public AstPythonParameterInfo(PythonAst ast, Parameter p, IEnumerable<IPythonType> types) {
             Name = p?.Name ?? throw new ArgumentNullException(nameof(p));
             Documentation = "";
@@ -31,7 +33,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
             IsParamArray = p.Kind == ParameterKind.List;
             IsKeywordDict = p.Kind == ParameterKind.Dictionary;
-            ParameterTypes = types.MaybeEnumerate().Where(t => t.TypeId != BuiltinTypeId.Unknown).ToArray();
+            _lazyParameterTypes = types.MaybeEnumerate().ToArray();
         }
 
         public string Name { get; }
@@ -39,6 +41,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public string DefaultValue { get; }
         public bool IsParamArray { get; }
         public bool IsKeywordDict { get; }
-        public IList<IPythonType> ParameterTypes { get; }
+        public IList<IPythonType> ParameterTypes
+            => _lazyParameterTypes.Select(p => p.ResolveType()).OfType<IPythonType>().ToList();
     }
 }

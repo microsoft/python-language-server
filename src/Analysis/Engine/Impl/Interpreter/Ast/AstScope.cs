@@ -102,7 +102,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public void ResolveLazyTypes() {
             foreach (var s in _allScopes) {
                 foreach (var name in s.Keys.ToArray()) {
-                    s[name] = s[name].ResolveType();
+                    if (s[name] is ILazyMember lm) {
+                        s[name] = lm.ResolveType();
+                    }
                 }
             }
         }
@@ -377,20 +379,20 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             return new AstLazyMember(() => {
                 var m = GetValueFromExpression(expr.Target).ResolveType();
-                if (m is IPythonType type) {
-                    if (type.TypeId == BuiltinTypeId.Type && type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1) {
-                        var aType = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression).ResolveType());
-                        if (aType != null) {
-                            return aType;
+                switch (m) {
+                    case IPythonType type:
+                        if (type.TypeId == BuiltinTypeId.Type && type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1) {
+                            var aType = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression).ResolveType());
+                            if (aType != null) {
+                                return aType;
+                            }
                         }
-                    }
-                    return new AstPythonConstant(type, GetLoc(expr));
+                        return new AstPythonConstant(type, GetLoc(expr));
+                    case IPythonFunction fn:
+                        return GetValueFromFunction(fn, expr);
+                    case IBuiltinProperty p:
+                        return p.Type;
                 }
-
-                if (m is IPythonFunction fn) {
-                    return GetValueFromFunction(fn, expr);
-                }
-
                 _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
                 return new AstPythonConstant(_unknownType, GetLoc(expr));
             });
@@ -568,7 +570,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return null;
         }
 
-        private static bool IsUnknown(IMember value) 
+        private static bool IsUnknown(IMember value)
             => (value as IPythonType)?.TypeId == BuiltinTypeId.Unknown || (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;
 
         public void SetInScope(string name, IMember value, bool mergeWithExisting = true, Dictionary<string, IMember> scope = null) {
@@ -628,7 +630,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 if (scope.TryGetValue(name, out var value) && value != null) {
                     // Keep value lazy or you may end up with stack overflow
                     // since type resolution can cycle back into the scope lookup.
-                    scope[name] = value; 
+                    scope[name] = value;
                     return value;
                 }
             }

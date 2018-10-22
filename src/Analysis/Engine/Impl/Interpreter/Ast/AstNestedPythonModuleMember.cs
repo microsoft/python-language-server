@@ -15,12 +15,11 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Linq;
 using System.Threading;
 using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstNestedPythonModuleMember : ILazyMember {
+    class AstNestedPythonModuleMember : ILazyPythonModuleMember {
         private volatile IMember _realMember;
         private readonly IModuleContext _context;
 
@@ -38,7 +37,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public string Name { get; }
         public AstNestedPythonModule Module { get; }
-        public LocationInfo ImportLocation { get; }
+        public ILocationInfo ImportLocation { get; }
 
         public PythonMemberType MemberType => PythonMemberType.Unknown;
 
