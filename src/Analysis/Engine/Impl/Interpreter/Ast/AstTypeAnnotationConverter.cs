@@ -23,9 +23,9 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstTypeAnnotationConverter : TypeAnnotationConverter<IPythonType> {
-        private readonly NameLookupContext _scope;
+        private readonly AstScope _scope;
 
-        public AstTypeAnnotationConverter(NameLookupContext scope) {
+        public AstTypeAnnotationConverter(AstScope scope) {
             _scope = scope ?? throw new ArgumentNullException(nameof(scope));
         }
 
@@ -74,7 +74,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public override IPythonType LookupName(string name) {
-            var m = _scope.LookupNameInScopes(name, NameLookupContext.LookupOptions.Global | NameLookupContext.LookupOptions.Builtins);
+            var m = _scope.LookupNameInScopes(name, AstScope.LookupOptions.Global | AstScope.LookupOptions.Builtins);
             if (m is IPythonMultipleMembers mm) {
                 m = (IMember)AstPythonMultipleMembers.CreateAs<IPythonType>(mm.Members) ??
                     AstPythonMultipleMembers.CreateAs<IPythonModule>(mm.Members);

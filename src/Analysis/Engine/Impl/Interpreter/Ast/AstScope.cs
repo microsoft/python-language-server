@@ -25,14 +25,15 @@ using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    sealed class NameLookupContext {
+    sealed class AstScope {
         private readonly Stack<Dictionary<string, IMember>> _scopes = new Stack<Dictionary<string, IMember>>();
+        private readonly List<Dictionary<string, IMember>> _allScopes = new List<Dictionary<string, IMember>>();
         private readonly Lazy<IPythonModule> _builtinModule;
         private readonly AnalysisLogWriter _log;
 
         internal readonly IPythonType _unknownType;
 
-        public NameLookupContext(
+        public AstScope(
             IPythonInterpreter interpreter,
             IModuleContext context,
             PythonAst ast,
@@ -71,8 +72,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public LookupOptions DefaultLookupOptions { get; set; }
         public bool SuppressBuiltinLookup { get; set; }
 
-        public NameLookupContext Clone(bool copyScopeContents = false) {
-            var ctxt = new NameLookupContext(
+        public AstScope Clone(bool copyScopeContents = false) {
+            var ctxt = new AstScope(
                 Interpreter,
                 Context,
                 Ast,
@@ -82,10 +83,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 IncludeLocationInfo,
                 _builtinModule.IsValueCreated ? _builtinModule.Value : null,
                 _log
-            );
-
-            ctxt.DefaultLookupOptions = DefaultLookupOptions;
-            ctxt.SuppressBuiltinLookup = SuppressBuiltinLookup;
+            ) {
+                DefaultLookupOptions = DefaultLookupOptions,
+                SuppressBuiltinLookup = SuppressBuiltinLookup
+            };
 
             foreach (var scope in _scopes.Reverse()) {
                 if (copyScopeContents) {
@@ -98,6 +99,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return ctxt;
         }
 
+        public void ResolveLazyTypes() {
+            foreach (var s in _allScopes) {
+                foreach (var name in s.Keys.ToArray()) {
+                    s[name] = s[name].ResolveType();
+                }
+            }
+        }
+
         private IPythonModule ImportBuiltinModule() {
             var modname = BuiltinTypeId.Unknown.GetModuleName(Ast.LanguageVersion);
             var mod = Interpreter.ImportModule(modname);
@@ -106,15 +115,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return mod;
         }
 
-        public Dictionary<string, IMember> PushScope(Dictionary<string, IMember> scope = null) {
+        public IReadOnlyDictionary<string, IMember> PushScope(Dictionary<string, IMember> scope = null) {
             scope = scope ?? new Dictionary<string, IMember>();
             _scopes.Push(scope);
+            _allScopes.Add(scope);
             return scope;
         }
 
-        public Dictionary<string, IMember> PopScope() {
-            return _scopes.Pop();
-        }
+        public IReadOnlyDictionary<string, IMember> PopScope() => _scopes.Pop();
 
         internal LocationInfo GetLoc(Node node) {
             if (!IncludeLocationInfo) {
@@ -266,7 +274,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             if (expr == null || expr.Expression == null) {
                 return null;
             }
-
             // Assume that the type after the op is the same as before
             return GetValueFromExpression(expr.Expression);
         }
@@ -619,7 +626,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             foreach (var scope in scopes.MaybeEnumerate()) {
                 if (scope.TryGetValue(name, out var value) && value != null) {
-                    scope[name] = value;
+                    // Keep value lazy or you may end up with stack overflow
+                    // since type resolution can cycle back into the scope lookup.
+                    scope[name] = value; 
                     return value;
                 }
             }

@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
@@ -25,7 +24,7 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinFunctionInfo : BuiltinNamespace<IPythonType>, IHasRichDescription, IHasQualifiedName {
         private string _doc;
-        private ReadOnlyCollection<OverloadResult> _overloads;
+        private OverloadResult[] _overloads;
         private readonly Lazy<IAnalysisSet> _returnTypes;
         private BuiltinMethodInfo _method;
 
@@ -43,7 +42,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.BuiltinFunction]);
         }
 
-        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) 
+        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames)
             => _returnTypes.Value;
 
         public override IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) {
@@ -121,27 +120,13 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IEnumerable<OverloadResult> Overloads {
-            get {
-                if (_overloads == null) {
-                    var overloads = Function.Overloads;
-                    var result = new OverloadResult[overloads.Count];
-                    for (int i = 0; i < result.Length; i++) {
-                        result[i] = new BuiltinFunctionOverloadResult(ProjectState, Function.Name, overloads[i], 0, () => Description);
-                    }
-                    _overloads = new ReadOnlyCollection<OverloadResult>(result);
-                }
-                return _overloads;
-            }
-        }
+        public override IEnumerable<OverloadResult> Overloads
+            => _overloads ?? (_overloads =
+                Function.Overloads
+                    .Select(o => new BuiltinFunctionOverloadResult(ProjectState, Function.Name, o, 0, () => Description))
+                    .ToArray());
 
-        public override string Documentation {
-            get {
-                _doc = _doc ?? Utils.StripDocumentation(Function.Documentation);
-                return _doc;
-            }
-        }
-
+        public override string Documentation => _doc = _doc ?? (_doc = Utils.StripDocumentation(Function.Documentation));
         public override PythonMemberType MemberType => Function.MemberType;
 
         public string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
@@ -175,7 +160,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override bool Equals(object obj) {
-            if(obj is BuiltinFunctionInfo other && !other.Overloads.SetEquals(Overloads)) {
+            if (obj is BuiltinFunctionInfo other && !other.Overloads.SetEquals(Overloads)) {
                 return false;
             }
             return base.Equals(obj);

@@ -16,20 +16,21 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
         private readonly string _name;
-        private readonly NameLookupContext _scope;
+        private readonly AstScope _scope;
         private readonly IReadOnlyList<IParameterInfo> _parameters;
         private readonly List<IMember> _lazyReturnTypes = new List<IMember>();
+        private readonly object _lock = new object();
         private IPythonType[] _returnTypes;
+        private bool _changed = true;
 
         public AstPythonFunctionOverload(
-            NameLookupContext scope,
+            AstScope scope,
             string name,
             IEnumerable<IParameterInfo> parameters,
             ILocationInfo loc
@@ -48,22 +49,34 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         internal void AddReturnTypes(IEnumerable<IMember> types) {
-            Debug.Assert(_returnTypes == null);
-            _lazyReturnTypes.AddRange(types);
+            lock (_lock) {
+                _changed = true;
+                _lazyReturnTypes.AddRange(types);
+            }
         }
 
         internal void AddReturnType(IMember type) {
-            Debug.Assert(_returnTypes == null);
-            _lazyReturnTypes.Add(type);
+            lock (_lock) {
+                _changed = true;
+                _lazyReturnTypes.Add(type);
+            }
          }
 
         public string Documentation { get; private set; }
         public string ReturnDocumentation { get; }
         public IParameterInfo[] GetParameters() => _parameters.ToArray();
 
-        public IReadOnlyList<IPythonType> ReturnType
-            => _returnTypes = _returnTypes ?? 
-                (_returnTypes = _lazyReturnTypes.SelectMany(t => _scope.GetTypesFromValue(t.ResolveType())).ToArray());
+        public IReadOnlyList<IPythonType> ReturnType {
+            get {
+                lock (_lock) {
+                    if (_changed) {
+                        _returnTypes = _lazyReturnTypes.SelectMany(t => _scope.GetTypesFromValue(t.ResolveType())).ToArray();
+                        _changed = false;
+                    }
+                    return _returnTypes;
+                }
+            }
+        }
 
         public IEnumerable<ILocationInfo> Locations { get; }
         public PythonMemberType MemberType => PythonMemberType.Function;

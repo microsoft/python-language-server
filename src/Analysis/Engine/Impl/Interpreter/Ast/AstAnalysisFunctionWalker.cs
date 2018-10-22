@@ -23,12 +23,12 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstAnalysisFunctionWalker : PythonWalker {
         private readonly FunctionDefinition _target;
-        private readonly NameLookupContext _scope;
+        private readonly AstScope _scope;
         private readonly AstPythonFunctionOverload _overload;
         private AstPythonType _selfType;
 
         public AstAnalysisFunctionWalker(
-            NameLookupContext scope,
+            AstScope scope,
             FunctionDefinition targetFunction,
             AstPythonFunctionOverload overload
         ) {
@@ -170,7 +170,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private IMember GetSelf() {
             bool classmethod, staticmethod;
             GetMethodType(_target, out classmethod, out staticmethod);
-            var self = _scope.LookupNameInScopes("__class__", NameLookupContext.LookupOptions.Local);
+            var self = _scope.LookupNameInScopes("__class__", AstScope.LookupOptions.Local);
             if (!staticmethod && !classmethod) {
                 var cls = self as IPythonType;
                 if (cls == null) {
