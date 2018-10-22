@@ -28,6 +28,7 @@ using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
@@ -338,6 +339,28 @@ def f(a = 2, b): pass
                 "Warning;unknown variable 'x';Python (analysis);1;0;1",
                 "Error;unexpected token 'x';Python (parser);1;2;3"
             );
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DiagnosticsSettingChange() {
+            var diags = new Dictionary<Uri, PublishDiagnosticsEventArgs>();
+
+            using (var s = await CreateServer((Uri)null, null, diags)) {
+                var u = await s.OpenDefaultDocumentAndGetUriAsync("import foo\nx = y");
+
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                GetDiagnostics(diags, u).Should().OnlyContain(
+                    "Warning;Unable to resolve 'foo'. IntelliSense may be missing for this module.;Python (analysis);0;7;10",
+                    "Warning;unknown variable 'y';Python (analysis);1;4;5"
+                );
+
+                var newSettings = new ServerSettings();
+                newSettings.analysis.SetErrorSeverityOptions(Array.Empty<string>(), Array.Empty<string>(), Array.Empty<string>(), new[] { ErrorMessages.UsedBeforeAssignmentCode, ErrorMessages.UnresolvedImportCode });
+                await s.SendDidChangeConfiguration(newSettings);
+
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                GetDiagnostics(diags, u).Where(st => !st.StartsWith($"{DiagnosticSeverity.Unspecified}")).Should().BeEmpty();
+            }
         }
 
         [TestMethod, Priority(0)]
