@@ -4039,11 +4039,12 @@ t.x, t. =
             var analysisCompleteTask = Task.CompletedTask;
             try {
                 server = await CreateServerAsync(configuration);
-                for (var i = 0; i < contentTasks.Length && server.AnalysisQueue.Count < 50; i++) {
-                    await server.SendDidOpenTextDocument(new Uri(files[i]), contentTasks[i].Result);
-                }
-
-                server.AnalysisQueue.Count.Should().NotBe(0);
+                //using (server.AnalysisQueue.Pause()) {
+                    for (var i = 0; i < contentTasks.Length && server.AnalysisQueue.Count < 50; i++) {
+                        await server.SendDidOpenTextDocument(new Uri(files[i]), contentTasks[i].Result);
+                    }
+                    server.AnalysisQueue.Count.Should().NotBe(0);
+                //}
             } finally {
                 if (server != null) {
                     analysisCompleteTask = EventTaskSources.AnalysisQueue.AnalysisComplete.Create(server.AnalysisQueue, new CancellationTokenSource(10000).Token);
