@@ -27,7 +27,6 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Interpreter.Ast {
     sealed class AstScope {
         private readonly Stack<Dictionary<string, IMember>> _scopes = new Stack<Dictionary<string, IMember>>();
-        private readonly List<Dictionary<string, IMember>> _allScopes = new List<Dictionary<string, IMember>>();
         private readonly Lazy<IPythonModule> _builtinModule;
         private readonly AnalysisLogWriter _log;
 
@@ -99,16 +98,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return ctxt;
         }
 
-        public void ResolveLazyTypes() {
-            foreach (var s in _allScopes) {
-                foreach (var name in s.Keys.ToArray()) {
-                    if (s[name] is ILazyMember lm) {
-                        s[name] = lm.ResolveType();
-                    }
-                }
-            }
-        }
-
         private IPythonModule ImportBuiltinModule() {
             var modname = BuiltinTypeId.Unknown.GetModuleName(Ast.LanguageVersion);
             var mod = Interpreter.ImportModule(modname);
@@ -120,7 +109,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public IReadOnlyDictionary<string, IMember> PushScope(Dictionary<string, IMember> scope = null) {
             scope = scope ?? new Dictionary<string, IMember>();
             _scopes.Push(scope);
-            _allScopes.Add(scope);
             return scope;
         }
 
@@ -204,20 +192,38 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            var m = GetValueFromName(expr as NameExpression, options) ??
-                    GetValueFromMember(expr as MemberExpression, options) ??
-                    GetValueFromCallable(expr as CallExpression, options) ??
-                    GetValueFromUnaryOp(expr as UnaryExpression, options) ??
-                    GetValueFromBinaryOp(expr, options) ??
-                    GetValueFromIndex(expr as IndexExpression, options) ??
-                    GetValueFromConditional(expr as ConditionalExpression, options) ??
-                    GetConstantFromLiteral(expr, options);
-            if (m != null) {
-                return m;
+            IMember m = null;
+            switch (expr) {
+                case NameExpression nex:
+                    m = GetValueFromName(nex, options);
+                    break;
+                case MemberExpression mex:
+                    m = GetValueFromMember(mex, options);
+                    break;
+                case CallExpression cex:
+                    m = GetValueFromCallable(cex, options);
+                    break;
+                case UnaryExpression uex:
+                    m = GetValueFromUnaryOp(uex, options);
+                    break;
+                case IndexExpression iex:
+                    m = GetValueFromIndex(iex, options);
+                    break;
+                case ConditionalExpression condex:
+                    m = GetValueFromConditional(condex, options);
+                    break;
+                default:
+                    m = GetValueFromBinaryOp(expr, options);
+                    if (m == null) {
+                        m = GetConstantFromLiteral(expr, options);
+                    }
+                    break;
             }
 
-            _log?.Log(TraceLevel.Verbose, "UnknownExpression", expr.ToCodeString(Ast).Trim());
-            return null;
+            if (m == null) {
+                _log?.Log(TraceLevel.Verbose, "UnknownExpression", expr.ToCodeString(Ast).Trim());
+            }
+            return m;
         }
 
         private IMember GetValueFromName(NameExpression expr, LookupOptions options) {

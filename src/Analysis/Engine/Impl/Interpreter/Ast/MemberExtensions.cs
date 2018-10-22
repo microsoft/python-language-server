@@ -19,8 +19,8 @@ using System.Diagnostics;
 namespace Microsoft.PythonTools.Interpreter.Ast {
     public static class MemberExtensions {
         [DebuggerStepThrough]
-        public static IMember ResolveType(this IMember m) {
-            if (m is ILazyPythonModuleMember) {
+        public static IMember ResolveType(this IMember m, bool resolveModules = false) {
+            if (m is ILazyPythonModuleMember && !resolveModules) {
                 return m;
             }
             while (m is ILazyMember lm) {

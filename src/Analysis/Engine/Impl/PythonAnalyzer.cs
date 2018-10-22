@@ -27,6 +27,7 @@ using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
+using Microsoft.PythonTools.Interpreter.Ast;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -765,6 +766,10 @@ namespace Microsoft.PythonTools.Analysis {
                 return _noneInst;
             }
 
+            if (attr is ILazyMember lm) {
+                attr = lm.ResolveType(resolveModules: true);
+            }
+
             var attrType = attr.GetType();
             if (attr is IPythonType pt) {
                 return GetBuiltinType(pt);
@@ -871,6 +876,10 @@ namespace Microsoft.PythonTools.Analysis {
         internal IPythonType GetTypeFromObject(object value) {
             if (value == null) {
                 return Types[BuiltinTypeId.NoneType];
+            }
+
+            if(value is ILazyMember lm) {
+                value = lm.ResolveType(resolveModules: true);
             }
 
             var astConst = value as IPythonConstant;
