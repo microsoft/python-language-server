@@ -128,8 +128,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void LogMessage(MessageType type, string message) 
             => OnLogMessage?.Invoke(this, new LogMessageEventArgs { type = type, message = message });
 
-
+        [Obsolete]
         public event EventHandler<TelemetryEventArgs> OnTelemetry;
+        [Obsolete]
         public void Telemetry(TelemetryEventArgs e) => OnTelemetry?.Invoke(this, e);
 
         public event EventHandler<CommandEventArgs> OnCommand;

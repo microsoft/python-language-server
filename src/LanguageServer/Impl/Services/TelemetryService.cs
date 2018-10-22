@@ -24,6 +24,7 @@ namespace Microsoft.Python.LanguageServer.Services {
         public TelemetryService(JsonRpc rpc) {
             _rpc = rpc;
         }
-        public Task SendTelemetry(object o) => _rpc.NotifyWithParameterObjectAsync("telemetry/event", o);
+        public Task SendTelemetry(TelemetryEvent telemetryEvent) 
+            => _rpc.NotifyWithParameterObjectAsync("telemetry/event", telemetryEvent);
     }
 }
