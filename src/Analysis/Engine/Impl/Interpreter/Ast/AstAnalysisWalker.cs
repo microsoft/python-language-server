@@ -89,7 +89,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 walker.Walk();
             }
 
-            Scope.ResolveLazyTypes();
+            //Scope.ResolveLazyTypes();
 
             if (_module.Name != "typing" && Scope.FilePath.EndsWithOrdinal(".pyi", ignoreCase: true)) {
                 // Do not expose members directly imported from typing

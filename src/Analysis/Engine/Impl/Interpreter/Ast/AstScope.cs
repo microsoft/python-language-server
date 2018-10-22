@@ -244,16 +244,16 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             // Use lazy type since expression may not be correctly resolved
             // until all walks are complete.
-            return new AstLazyMember(() => {
+            return new AstLazyMember<AstScope>((scope) => {
                 IMember member = null;
-                var e = GetValueFromExpression(expr.Target).ResolveType();
+                var e = scope.GetValueFromExpression(expr.Target).ResolveType();
                 switch (e) {
                     case IMemberContainer mc1:
-                        member = mc1.GetMember(Context, expr.Name);
+                        member = mc1.GetMember(scope.Context, expr.Name);
                         break;
                     case IPythonMultipleMembers mm:
                         member = mm.Members.OfType<IMemberContainer>()
-                            .Select(x => x.GetMember(Context, expr.Name))
+                            .Select(x => x.GetMember(scope.Context, expr.Name))
                             .ExcludeDefault()
                             .FirstOrDefault();
                         break;
@@ -269,7 +269,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     return new AstPythonConstant(_unknownType, GetLoc(expr));
                 }
                 return member;
-            });
+            }, Clone());
         }
 
         private IMember GetValueFromUnaryOp(UnaryExpression expr, LookupOptions options) {
@@ -307,11 +307,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                         return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Bool), GetLoc(expr));
                 }
 
-                return new AstLazyMember(() => {
+                return new AstLazyMember<AstScope>((scope) => {
                     // Try LHS, then, if unknown, try RHS. Example: y = 1 when y is not declared by the walker yet.
-                    var value = GetValueFromExpression(binop.Left).ResolveType();
-                    return IsUnknown(value) ? GetValueFromExpression(binop.Right).ResolveType() : value;
-                });
+                    var value = scope.GetValueFromExpression(binop.Left).ResolveType();
+                    return IsUnknown(value) ? scope.GetValueFromExpression(binop.Right).ResolveType() : value;
+                }, Clone());
             }
 
             return null;
@@ -327,8 +327,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return GetValueFromExpression(expr.Target);
             }
 
-            return new AstLazyMember(() => {
-                var type = GetTypeFromValue(GetValueFromExpression(expr.Target).ResolveType());
+            return new AstLazyMember<AstScope>((scope) => {
+                var type = scope.GetTypeFromValue(scope.GetValueFromExpression(expr.Target).ResolveType());
                 if (type != null && type != _unknownType) {
                     if (AstTypingModule.IsTypingType(type)) {
                         return type;
@@ -356,7 +356,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     _log?.Log(TraceLevel.Verbose, "UnknownIndex", expr.ToCodeString(Ast, CodeFormattingOptions.Traditional).Trim());
                 }
                 return new AstPythonConstant(_unknownType, GetLoc(expr));
-            });
+            }, Clone());
         }
 
         private IMember GetValueFromConditional(ConditionalExpression expr, LookupOptions options) {
@@ -364,12 +364,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            return new AstLazyMember(() => {
+            return new AstLazyMember<AstScope>((scope) => {
                 return AstPythonMultipleMembers.Combine(
-                    GetValueFromExpression(expr.TrueExpression).ResolveType(),
-                    GetValueFromExpression(expr.FalseExpression).ResolveType()
+                    scope.GetValueFromExpression(expr.TrueExpression).ResolveType(),
+                    scope.GetValueFromExpression(expr.FalseExpression).ResolveType()
                 );
-            });
+            }, Clone());
         }
 
         private IMember GetValueFromCallable(CallExpression expr, LookupOptions options) {
@@ -377,25 +377,25 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            return new AstLazyMember(() => {
-                var m = GetValueFromExpression(expr.Target).ResolveType();
+            return new AstLazyMember<AstScope>((scope) => {
+                var m = scope.GetValueFromExpression(expr.Target).ResolveType();
                 switch (m) {
                     case IPythonType type:
                         if (type.TypeId == BuiltinTypeId.Type && type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1) {
-                            var aType = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression).ResolveType());
+                            var aType = scope.GetTypeFromValue(scope.GetValueFromExpression(expr.Args[0].Expression).ResolveType());
                             if (aType != null) {
                                 return aType;
                             }
                         }
                         return new AstPythonConstant(type, GetLoc(expr));
                     case IPythonFunction fn:
-                        return GetValueFromFunction(fn, expr);
+                        return scope.GetValueFromFunction(fn, expr);
                     case IBuiltinProperty p:
                         return p.Type;
                 }
                 _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
                 return new AstPythonConstant(_unknownType, GetLoc(expr));
-            });
+            }, Clone());
         }
 
         private IMember GetValueFromFunction(IPythonFunction fn, Expression expr) {
@@ -426,6 +426,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public IEnumerable<IPythonType> GetTypesFromValue(IMember value) {
+            value = value.ResolveType();
             if (value is IPythonMultipleMembers mm) {
                 return mm.Members.Select(GetTypeFromValue).Distinct();
             } else {
@@ -442,6 +443,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
+            value = value.ResolveType();
             var type = (value as IPythonConstant)?.Type;
             if (type != null) {
                 return type;

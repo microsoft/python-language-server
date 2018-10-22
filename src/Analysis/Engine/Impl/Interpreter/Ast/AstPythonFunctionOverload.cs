@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
@@ -70,7 +71,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             get {
                 lock (_lock) {
                     if (_changed) {
-                        _returnTypes = _lazyReturnTypes.SelectMany(t => _scope.GetTypesFromValue(t.ResolveType())).ToArray();
+                        _returnTypes = _lazyReturnTypes.SelectMany(t => _scope.GetTypesFromValue(t)).ExcludeDefault().ToArray();
                         _changed = false;
                     }
                     return _returnTypes;

@@ -32,7 +32,8 @@ namespace Microsoft.PythonTools.Interpreter {
     /// but uses Python 3.x semantics where the first argument of Function is
     /// assumed to be filled with an instance of SelfType.
     /// </summary>
-    public interface IPythonBoundFunction : IPythonFunction {
+    public interface IPythonBoundFunction : IMember {
         IPythonType SelfType { get; }
+        IPythonFunction Function { get; }
     }
 }

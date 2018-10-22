@@ -18,19 +18,21 @@ using System;
 using System.Diagnostics;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstLazyMember : ILazyMember {
-        private readonly Func<IMember> _getter;
+    class AstLazyMember<T> : ILazyMember {
+        private readonly Func<T, IMember> _getter;
+        private T _parameter;
         private IMember _value;
 
         [DebuggerStepThrough]
-        public AstLazyMember(Func<IMember> getter) {
+        public AstLazyMember(Func<T, IMember> getter, T parameter = default(T)) {
             _getter = getter;
+            _parameter = parameter;
         }
         public PythonMemberType MemberType => PythonMemberType.Lazy;
 
         public string Name => "lazy";
 
         [DebuggerStepThrough]
-        public IMember Get() => _value ?? (_value = _getter());
+        public IMember Get() => _value ?? (_value = _getter(_parameter));
     }
 }
