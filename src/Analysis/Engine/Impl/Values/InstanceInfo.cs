@@ -17,6 +17,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
@@ -93,9 +94,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public IReadOnlyDictionary<string, VariableDef> InstanceAttributes 
-            => _instanceAttrs.ToDictionary(k => k.Key, v => v.Value);
+            => _instanceAttrs.MaybeEnumerate().ToDictionary(k => k.Key, v => v.Value);
         IReadOnlyDictionary<string, IVariableDefinition> IInstanceInfo.InstanceAttributes
-            => InstanceAttributes.ToDictionary(kvp => kvp.Key, kvp => kvp.Value as IVariableDefinition);
+            => _instanceAttrs.MaybeEnumerate().ToDictionary(kvp => kvp.Key, kvp => kvp.Value as IVariableDefinition);
 
         public PythonAnalyzer ProjectState => ClassInfo.AnalysisUnit.State;
 
