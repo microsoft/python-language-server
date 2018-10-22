@@ -385,7 +385,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 parameters.Add(new AstPythonParameterInfo(_ast, p, annType));
             }
 
-            var overload = new AstPythonFunctionOverload(parameters, funcScope.GetLocOfName(node, node.NameExpression));
+            var overload = new AstPythonFunctionOverload(funcScope, node.NameExpression.Name, parameters, funcScope.GetLocOfName(node, node.NameExpression));
 
             var funcWalk = new AstAnalysisFunctionWalker(funcScope, node, overload);
             _postWalkers.Add(funcWalk);

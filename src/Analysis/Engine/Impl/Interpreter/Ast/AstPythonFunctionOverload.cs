@@ -16,18 +16,27 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
+        private readonly string _name;
+        private readonly NameLookupContext _scope;
         private readonly IReadOnlyList<IParameterInfo> _parameters;
+        private List<IMember> _lazyReturnTypes = new List<IMember>();
+        private IPythonType[] _returnTypes;
 
         public AstPythonFunctionOverload(
+            NameLookupContext scope,
+            string name,
             IEnumerable<IParameterInfo> parameters,
             ILocationInfo loc
         ) {
-            _parameters = parameters?.ToArray() ?? throw new ArgumentNullException(nameof(parameters));
+            _name = name;
+            _scope = scope ?? throw new ArgumentNullException(nameof(scope));
+            _parameters = parameters?.ToArray() ?? Array.Empty<IParameterInfo>();
             Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
         }
 
@@ -38,12 +47,29 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             Documentation = doc;
         }
 
-        internal List<IPythonType> ReturnTypes { get; } = new List<IPythonType>();
+        internal void AddReturnTypes(IEnumerable<IMember> types) {
+            Debug.Assert(_lazyReturnTypes != null, "Unable to add return types when they have been resolved");
+            _lazyReturnTypes?.AddRange(types);
+        }
+        internal void AddReturnType(IMember type) {
+            Debug.Assert(_lazyReturnTypes != null, "Unable to add return types when they have been resolved");
+            _lazyReturnTypes?.Add(type);
+        }
 
         public string Documentation { get; private set; }
         public string ReturnDocumentation { get; }
         public IParameterInfo[] GetParameters() => _parameters.ToArray();
-        public IReadOnlyList<IPythonType> ReturnType => ReturnTypes.Where(v => v.TypeId != BuiltinTypeId.Unknown).ToArray();
+
+        public IReadOnlyList<IPythonType> ReturnType {
+            get {
+                if (_returnTypes == null) {
+                    _returnTypes = _lazyReturnTypes.SelectMany(t => _scope.GetTypesFromValue(t.ResolveType())).ToArray();
+                    _lazyReturnTypes = null;
+                }
+                return _returnTypes;
+            }
+        }
+
         public IEnumerable<ILocationInfo> Locations { get; }
         public PythonMemberType MemberType => PythonMemberType.Function;
         public string Name => string.Empty;

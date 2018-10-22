@@ -37,7 +37,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             _overload = overload ?? throw new ArgumentNullException(nameof(overload));
         }
 
-        public IList<IPythonType> ReturnTypes => _overload.ReturnTypes;
         public IPythonFunctionOverload Overload => _overload;
 
         private void GetMethodType(FunctionDefinition node, out bool classmethod, out bool staticmethod) {
@@ -52,7 +51,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var classmethodObj = _scope.Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
             var staticmethodObj = _scope.Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
             foreach (var d in (_target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
-                var m = _scope.GetValueFromExpression(d);
+                var m = _scope.GetValueFromExpression(d).ResolveType();
                 if (m == classmethodObj) {
                     classmethod = true;
                 } else if (m == staticmethodObj) {
@@ -65,7 +64,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var self = GetSelf();
             _selfType = (self as AstPythonConstant)?.Type as AstPythonType;
 
-            _overload.ReturnTypes.AddRange(_scope.GetTypesFromAnnotation(_target.ReturnAnnotation).ExcludeDefault());
+            _overload.AddReturnTypes(_scope.GetTypesFromAnnotation(_target.ReturnAnnotation).ExcludeDefault().OfType<IMember>());
 
             _scope.PushScope();
             if (self != null) {
@@ -163,9 +162,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public override bool Walk(ReturnStatement node) {
-            foreach (var type in _scope.GetTypesFromValue(_scope.GetValueFromExpression(node.Expression)).ExcludeDefault()) {
-                _overload.ReturnTypes.Add(type);
-            }
+            // Must use lazy type since actual type may not be known until all classes and methods are walked.
+            _overload.AddReturnType(_scope.Clone().GetValueFromExpression(node.Expression));
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
 

@@ -215,7 +215,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            IMember existing = LookupNameInScopes(expr.Name, options);
+            var existing = LookupNameInScopes(expr.Name, options);
             if (existing != null) {
                 return existing;
             }
@@ -232,30 +232,34 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            IMember member = null;
-            var e = GetValueFromExpression(expr.Target);
-            switch (e) {
-                case IMemberContainer mc1:
-                    member = mc1.GetMember(Context, expr.Name);
-                    break;
-                case IMultipleMembers mm:
-                    member = mm.Members.OfType<IMemberContainer>()
-                        .Select(x => x.GetMember(Context, expr.Name))
-                        .ExcludeDefault()
-                        .FirstOrDefault();
-                    break;
-                case IPythonFunction f:
-                    member = GetValueFromFunction(f, expr);
-                    break;
-                case IBuiltinProperty p:
-                    member = p.Type;
-                    break;
-            }
-            if (member == null) {
-                _log?.Log(TraceLevel.Verbose, "UnknownMember", expr.ToCodeString(Ast).Trim());
-                return new AstPythonConstant(_unknownType, GetLoc(expr));
-            }
-            return member;
+            // Use lazy type since expression may not be correctly resolved
+            // until all walks are complete.
+            return new AstLazyMember(() => {
+                IMember member = null;
+                var e = GetValueFromExpression(expr.Target).ResolveType();
+                switch (e) {
+                    case IMemberContainer mc1:
+                        member = mc1.GetMember(Context, expr.Name);
+                        break;
+                    case IMultipleMembers mm:
+                        member = mm.Members.OfType<IMemberContainer>()
+                            .Select(x => x.GetMember(Context, expr.Name))
+                            .ExcludeDefault()
+                            .FirstOrDefault();
+                        break;
+                    case IPythonFunction f:
+                        member = GetValueFromFunction(f, expr);
+                        break;
+                    case IBuiltinProperty p:
+                        member = p.Type;
+                        break;
+                }
+                if (member == null) {
+                    _log?.Log(TraceLevel.Verbose, "UnknownMember", expr.ToCodeString(Ast).Trim());
+                    return new AstPythonConstant(_unknownType, GetLoc(expr));
+                }
+                return member;
+            });
         }
 
         private IMember GetValueFromUnaryOp(UnaryExpression expr, LookupOptions options) {
@@ -294,9 +298,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                         return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Bool), GetLoc(expr));
                 }
 
-                // Try LHS, then, if unknown, try RHS. Example: y = 1 when y is not declared by the walker yet.
-                var value = GetValueFromExpression(binop.Left);
-                return IsUnknown(value) ? GetValueFromExpression(binop.Right) : value;
+                return new AstLazyMember(() => {
+                    // Try LHS, then, if unknown, try RHS. Example: y = 1 when y is not declared by the walker yet.
+                    var value = GetValueFromExpression(binop.Left).ResolveType();
+                    return IsUnknown(value) ? GetValueFromExpression(binop.Right).ResolveType() : value;
+                });
             }
 
             return null;
@@ -312,34 +318,36 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return GetValueFromExpression(expr.Target);
             }
 
-            var type = GetTypeFromValue(GetValueFromExpression(expr.Target));
-            if (type != null && type != _unknownType) {
-                if (AstTypingModule.IsTypingType(type)) {
-                    return type;
-                }
+            return new AstLazyMember(() => {
+                var type = GetTypeFromValue(GetValueFromExpression(expr.Target).ResolveType());
+                if (type != null && type != _unknownType) {
+                    if (AstTypingModule.IsTypingType(type)) {
+                        return type;
+                    }
 
-                switch (type.TypeId) {
-                    case BuiltinTypeId.Bytes:
-                        if (Ast.LanguageVersion.Is3x()) {
-                            return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Int), GetLoc(expr));
-                        } else {
-                            return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Bytes), GetLoc(expr));
-                        }
-                    case BuiltinTypeId.Unicode:
-                        return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Unicode), GetLoc(expr));
-                }
+                    switch (type.TypeId) {
+                        case BuiltinTypeId.Bytes:
+                            if (Ast.LanguageVersion.Is3x()) {
+                                return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Int), GetLoc(expr));
+                            } else {
+                                return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Bytes), GetLoc(expr));
+                            }
+                        case BuiltinTypeId.Unicode:
+                            return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Unicode), GetLoc(expr));
+                    }
 
-                if (type.MemberType == PythonMemberType.Class) {
-                    // When indexing into a type, assume result is the type
-                    // TODO: Proper generic handling
-                    return type;
-                }
+                    if (type.MemberType == PythonMemberType.Class) {
+                        // When indexing into a type, assume result is the type
+                        // TODO: Proper generic handling
+                        return type;
+                    }
 
-                _log?.Log(TraceLevel.Verbose, "UnknownIndex", type.TypeId, expr.ToCodeString(Ast, CodeFormattingOptions.Traditional).Trim());
-            } else {
-                _log?.Log(TraceLevel.Verbose, "UnknownIndex", expr.ToCodeString(Ast, CodeFormattingOptions.Traditional).Trim());
-            }
-            return new AstPythonConstant(_unknownType, GetLoc(expr));
+                    _log?.Log(TraceLevel.Verbose, "UnknownIndex", type.TypeId, expr.ToCodeString(Ast, CodeFormattingOptions.Traditional).Trim());
+                } else {
+                    _log?.Log(TraceLevel.Verbose, "UnknownIndex", expr.ToCodeString(Ast, CodeFormattingOptions.Traditional).Trim());
+                }
+                return new AstPythonConstant(_unknownType, GetLoc(expr));
+            });
         }
 
         private IMember GetValueFromConditional(ConditionalExpression expr, LookupOptions options) {
@@ -347,10 +355,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            return AstPythonMultipleMembers.Combine(
-                GetValueFromExpression(expr.TrueExpression),
-                GetValueFromExpression(expr.FalseExpression)
-            );
+            return new AstLazyMember(() => {
+                return AstPythonMultipleMembers.Combine(
+                    GetValueFromExpression(expr.TrueExpression).ResolveType(),
+                    GetValueFromExpression(expr.FalseExpression).ResolveType()
+                );
+            });
         }
 
         private IMember GetValueFromCallable(CallExpression expr, LookupOptions options) {
@@ -358,29 +368,28 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            var m = GetValueFromExpression(expr.Target);
-            if (m is IPythonType type) {
-                if (type.TypeId == BuiltinTypeId.Type && type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1) {
-                    var aType = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression));
-                    if (aType != null) {
-                        return aType;
+            return new AstLazyMember(() => {
+                var m = GetValueFromExpression(expr.Target).ResolveType();
+                if (m is IPythonType type) {
+                    if (type.TypeId == BuiltinTypeId.Type && type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1) {
+                        var aType = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression).ResolveType());
+                        if (aType != null) {
+                            return aType;
+                        }
                     }
+                    return new AstPythonConstant(type, GetLoc(expr));
                 }
-                return new AstPythonConstant(type, GetLoc(expr));
-            }
 
-            if (m is IPythonFunction fn) {
-                return GetValueFromFunction(fn, expr);
-            }
+                if (m is IPythonFunction fn) {
+                    return GetValueFromFunction(fn, expr);
+                }
 
-            _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
-            return new AstPythonConstant(_unknownType, GetLoc(expr));
+                _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
+                return new AstPythonConstant(_unknownType, GetLoc(expr));
+            });
         }
 
         private IMember GetValueFromFunction(IPythonFunction fn, Expression expr) {
-            if(fn is IPythonBoundFunction bf) {
-                return bf.SelfType;
-            }
             // TODO: Select correct overload and handle multiple return types
             if (fn.Overloads.Count > 0 && fn.Overloads[0].ReturnType.Count > 0) {
                 return new AstPythonConstant(fn.Overloads[0].ReturnType[0]);
