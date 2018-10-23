@@ -421,7 +421,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             foreach (var kvp in list) {
                 var parameters = new PublishDiagnosticsParams {
                     uri = kvp.Key,
-                    diagnostics = kvp.Value
+                    diagnostics = kvp.Value.Where(d => d.severity != DiagnosticSeverity.Unspecified).ToArray()
                 };
                 _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
             }

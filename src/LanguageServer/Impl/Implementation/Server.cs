@@ -378,7 +378,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _traceLogging = @params.initializationOptions.traceLogging;
             _analysisUpdates = @params.initializationOptions.analysisUpdates;
 
-            Analyzer.EnableDiagnostics = _clientCaps?.python?.liveLinting ?? false;
+            Analyzer.EnableDiagnostics = _clientCaps?.python?.liveLinting ?? true;
             _reloadModulesQueueItem = new ReloadModulesQueueItem(this);
 
             if (@params.initializationOptions.displayOptions != null) {
