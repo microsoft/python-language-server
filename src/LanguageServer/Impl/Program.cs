@@ -16,11 +16,16 @@
 
 // #define WAIT_FOR_DEBUGGER
 
-using System;
 using Microsoft.Python.LanguageServer.Services;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Newtonsoft.Json;
 using StreamJsonRpc;
+using StreamJsonRpc.Protocol;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace Microsoft.Python.LanguageServer.Server {
     internal static class Program {
@@ -30,12 +35,15 @@ namespace Microsoft.Python.LanguageServer.Server {
                 var services = CoreShell.Current.ServiceManager;
 
                 var messageFormatter = new JsonMessageFormatter();
+                // StreamJsonRpc v1.4 serializer defaults
+                messageFormatter.JsonSerializer.NullValueHandling = NullValueHandling.Ignore;
+                messageFormatter.JsonSerializer.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
                 messageFormatter.JsonSerializer.Converters.Add(new UriConverter());
 
                 using (var cin = Console.OpenStandardInput())
                 using (var cout = Console.OpenStandardOutput())
                 using (var server = new Implementation.LanguageServer())
-                using (var rpc = new JsonRpc(new HeaderDelimitedMessageHandler(cout, cin, messageFormatter), server)) {
+                using (var rpc = new StackTraceErrorJsonRpc(new HeaderDelimitedMessageHandler(cout, cin, messageFormatter), server)) {
                     rpc.SynchronizationContext = new SingleThreadSynchronizationContext();
 
                     services.AddService(new UIService(rpc));
@@ -63,10 +71,29 @@ namespace Microsoft.Python.LanguageServer.Server {
             }
 #endif
         }
+
+        private class StackTraceErrorJsonRpc : JsonRpc {
+            public StackTraceErrorJsonRpc(IJsonRpcMessageHandler messageHandler) : base(messageHandler) { }
+
+            public StackTraceErrorJsonRpc(IJsonRpcMessageHandler messageHandler, object target) : base(messageHandler, target) { }
+
+            public StackTraceErrorJsonRpc(Stream sendingStream, Stream receivingStream, object target = null) : base(sendingStream, receivingStream, target) { }
+
+            protected override JsonRpcError.ErrorDetail CreateErrorDetails(JsonRpcRequest request, Exception exception) {
+                var localRpcEx = exception as LocalRpcException;
+
+                return new JsonRpcError.ErrorDetail {
+                    Code = (JsonRpcErrorCode?)localRpcEx?.ErrorCode ?? JsonRpcErrorCode.InvocationError,
+                    Message = exception.Message,
+                    Data = exception.StackTrace,
+                };
+            }
+        }
     }
 
     sealed class UriConverter : JsonConverter {
         public override bool CanConvert(Type objectType) => objectType == typeof(Uri);
+
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
             if (reader.TokenType == JsonToken.String) {
                 var str = (string)reader.Value;

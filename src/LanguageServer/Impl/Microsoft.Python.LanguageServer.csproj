@@ -23,7 +23,7 @@
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="2.1.0" />
         <PackageReference Include="NewtonSoft.Json" Version="11.0.2" />
-        <PackageReference Include="StreamJsonRpc" Version="2.0.94-beta" />
+        <PackageReference Include="StreamJsonRpc" Version="2.0.102-beta" />
     </ItemGroup>
     <ItemGroup Condition="$(AnalysisReference) == ''">
         <ProjectReference Include="../../Analysis/Engine/Impl/Microsoft.Python.Analysis.Engine.csproj" />
