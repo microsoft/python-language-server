@@ -27,10 +27,10 @@ namespace Microsoft.Python.LanguageServer {
             public int symbolsHierarchyDepthLimit = 10;
             public int symbolsHierarchyMaxSymbols = 1000;
 
-            public string[] errors { get; } = Array.Empty<string>();
-            public string[] warnings { get; } = Array.Empty<string>();
-            public string[] information { get; } = Array.Empty<string>();
-            public string[] disabled { get; } = Array.Empty<string>();
+            public string[] errors { get; private set; } = Array.Empty<string>();
+            public string[] warnings { get; private set; } = Array.Empty<string>();
+            public string[] information { get; private set; } = Array.Empty<string>();
+            public string[] disabled { get; private set; } = Array.Empty<string>();
 
             public DiagnosticSeverity GetEffectiveSeverity(string code, DiagnosticSeverity defaultSeverity)
                 => _map.TryGetValue(code, out var severity) ? severity : defaultSeverity;
@@ -50,6 +50,11 @@ namespace Microsoft.Python.LanguageServer {
                 foreach (var x in disabled) {
                     _map[x] = DiagnosticSeverity.Unspecified;
                 }
+
+                this.errors = errors;
+                this.warnings = warnings;
+                this.information = information;
+                this.disabled = disabled;
             }
         }
         public readonly PythonAnalysisOptions analysis = new PythonAnalysisOptions();
