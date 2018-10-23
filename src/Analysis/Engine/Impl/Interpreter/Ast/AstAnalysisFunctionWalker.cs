@@ -51,7 +51,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var classmethodObj = _scope.Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
             var staticmethodObj = _scope.Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
             foreach (var d in (_target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
-                var m = _scope.GetValueFromExpression(d).ResolveType();
+                var m = _scope.GetValueFromExpressionNonLazy(d, _scope.DefaultLookupOptions);
                 if (m == classmethodObj) {
                     classmethod = true;
                 } else if (m == staticmethodObj) {

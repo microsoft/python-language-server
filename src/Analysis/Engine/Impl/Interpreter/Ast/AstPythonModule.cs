@@ -145,8 +145,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             lock (_members) {
                 _members.TryGetValue(name, out member);
             }
-            if (member is ILazyMember lm) {
-                member = lm.ResolveType();
+            if (member is ILazyPythonModuleMember lm) {
+                member = lm.ResolveModuleMemberType();
                 lock (_members) {
                     _members[name] = member;
                 }

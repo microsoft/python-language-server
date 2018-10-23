@@ -20,11 +20,9 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonBuiltinType : AstPythonType {
-        private BuiltinTypeId _typeId;
-
         public AstPythonBuiltinType(string name, BuiltinTypeId typeId)
             : base(name) {
-            _typeId = typeId;
+            TypeId = typeId;
         }
 
         public AstPythonBuiltinType(
@@ -34,19 +32,18 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             string doc,
             LocationInfo loc
         ) : base(ast, declModule, def, doc, loc) {
-            _typeId = BuiltinTypeId.Unknown;
+            TypeId = BuiltinTypeId.Unknown;
         }
 
         public bool TrySetTypeId(BuiltinTypeId typeId) {
-            if (_typeId != BuiltinTypeId.Unknown) {
+            if (TypeId != BuiltinTypeId.Unknown) {
                 return false;
             }
-            _typeId = typeId;
+            TypeId = typeId;
             return true;
         }
 
         public override bool IsBuiltin => true;
-        public override BuiltinTypeId TypeId => _typeId;
 
         public bool IsHidden {
             get {

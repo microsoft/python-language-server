@@ -767,7 +767,9 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             if (attr is ILazyMember lm) {
-                attr = lm.ResolveType(resolveModules: true);
+                attr = lm.ResolveType();
+            } else if (attr is ILazyPythonModuleMember lmp) {
+                attr = lmp.ResolveModuleMemberType();
             }
 
             var attrType = attr.GetType();
@@ -879,7 +881,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             if(value is ILazyMember lm) {
-                value = lm.ResolveType(resolveModules: true);
+                value = lm.ResolveModuleMemberType();
             }
 
             var astConst = value as IPythonConstant;

@@ -175,7 +175,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public IReadOnlyList<IPythonType> Bases { get; private set; }
         public virtual bool IsBuiltin => false;
         public PythonMemberType MemberType => PythonMemberType.Class;
-        public virtual BuiltinTypeId TypeId => BuiltinTypeId.Type;
+        public BuiltinTypeId TypeId { get; protected set; } = BuiltinTypeId.Type;
 
         /// <summary>
         /// The start index of this class. Used to disambiguate multiple

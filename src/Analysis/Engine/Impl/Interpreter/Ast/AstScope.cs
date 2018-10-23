@@ -192,7 +192,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return m;
         }
 
-        private IMember GetValueFromExpressionNonLazy(Expression expr, LookupOptions options) {
+        internal IMember GetValueFromExpressionNonLazy(Expression expr, LookupOptions options) {
             if (expr == null) {
                 return null;
             }
@@ -271,7 +271,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     member = GetValueFromFunction(f, expr);
                     break;
                 case IBuiltinProperty p:
-                    member = p.Type;
+                    member = new AstPythonConstant(p.Type, GetLoc(expr));
                     break;
             }
             if (member == null) {
@@ -328,8 +328,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
                 return new AstLazyMember<AstScope>((scope) => {
                     // Try LHS, then, if unknown, try RHS. Example: y = 1 when y is not declared by the walker yet.
-                    var v = scope.GetValueFromExpression(binop.Left, DefaultLookupOptions).ResolveType();
-                    return IsUnknown(v) ? scope.GetValueFromExpression(binop.Right, DefaultLookupOptions).ResolveType() : v;
+                    var v = scope.GetValueFromExpressionNonLazy(binop.Left, DefaultLookupOptions);
+                    return IsUnknown(v) ? scope.GetValueFromExpressionNonLazy(binop.Right, DefaultLookupOptions) : v;
                 }, Clone());
             }
 
@@ -396,7 +396,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             switch (m) {
                 case IPythonType type:
                     if (type.TypeId == BuiltinTypeId.Type && type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1) {
-                        var aType = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression).ResolveType());
+                        var aType = GetTypeFromValue(GetValueFromExpressionNonLazy(expr.Args[0].Expression, options));
                         if (aType != null) {
                             return aType;
                         }
@@ -407,7 +407,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 case IPythonFunction fn:
                     return GetValueFromFunction(fn, expr);
                 case IBuiltinProperty p:
-                    return p.Type;
+                    return new AstPythonConstant(p.Type, GetLoc(expr));
             }
             _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
             return new AstPythonConstant(_unknownType, GetLoc(expr));
@@ -416,7 +416,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private IMember GetValueFromFunction(IPythonFunction fn, Expression expr) {
             // TODO: Select correct overload and handle multiple return types
             if (fn.Overloads.Count > 0 && fn.Overloads[0].ReturnType.Count > 0) {
-                return new AstPythonConstant(fn.Overloads[0].ReturnType[0]);
+                return new AstPythonConstant(fn.Overloads[0].ReturnType[0], GetLoc(expr));
             }
             var codeExpression = expr is CallExpression ce ? ce.Target : expr;
             _log?.Log(TraceLevel.Verbose, "NoReturn", codeExpression.ToCodeString(Ast).Trim());
@@ -441,7 +441,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public IEnumerable<IPythonType> GetTypesFromValue(IMember value) {
-            value = value.ResolveType();
             if (value is IPythonMultipleMembers mm) {
                 return mm.Members.Select(GetTypeFromValue).Distinct();
             } else {
@@ -458,7 +457,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            value = value.ResolveType();
             var type = (value as IPythonConstant)?.Type;
             if (type != null) {
                 return type;
@@ -495,7 +493,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             if (value is IBuiltinProperty prop) {
-                return prop.Type ?? Interpreter.GetBuiltinType(BuiltinTypeId.Property);
+                return Interpreter.GetBuiltinType(BuiltinTypeId.Property);
             } else if (value.MemberType == PythonMemberType.Property) {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Property);
             }

@@ -29,6 +29,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private readonly object _lock = new object();
         private IPythonType[] _returnTypes;
         private bool _changed = true;
+        private int _resolving;
 
         public AstPythonFunctionOverload(
             AstScope scope,
@@ -71,7 +72,21 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             get {
                 lock (_lock) {
                     if (_changed) {
-                        _returnTypes = _lazyReturnTypes.SelectMany(t => _scope.GetTypesFromValue(t)).ExcludeDefault().ToArray();
+                        if(_resolving > 0) {
+                            return _lazyReturnTypes
+                                .Where(t => !(t is ILazyMember))
+                                .SelectMany(t => _scope.GetTypesFromValue(t))
+                                .ExcludeDefault().ToArray();
+                        }
+
+                        try {
+                            _resolving++;
+                            _returnTypes = _lazyReturnTypes
+                                .SelectMany(t => _scope.GetTypesFromValue(t.ResolveType()))
+                                .ExcludeDefault().ToArray();
+                        } finally {
+                            _resolving--;
+                        }
                         _changed = false;
                     }
                     return _returnTypes;

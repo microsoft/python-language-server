@@ -19,12 +19,19 @@ using System.Diagnostics;
 namespace Microsoft.PythonTools.Interpreter.Ast {
     public static class MemberExtensions {
         [DebuggerStepThrough]
-        public static IMember ResolveType(this IMember m, bool resolveModules = false) {
-            if (m is ILazyPythonModuleMember && !resolveModules) {
+        public static IMember ResolveType(this IMember m) {
+            if (m is ILazyPythonModuleMember) {
                 return m;
             }
             while (m is ILazyMember lm) {
                 m = lm.Get();
+            }
+            return m;
+        }
+
+        public static IMember ResolveModuleMemberType(this IMember m) {
+            if (m is ILazyPythonModuleMember lpm) {
+                return lpm.Get();
             }
             return m;
         }
