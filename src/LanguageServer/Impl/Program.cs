@@ -43,7 +43,7 @@ namespace Microsoft.Python.LanguageServer.Server {
                 using (var cin = Console.OpenStandardInput())
                 using (var cout = Console.OpenStandardOutput())
                 using (var server = new Implementation.LanguageServer())
-                using (var rpc = new StackTraceErrorJsonRpc(new HeaderDelimitedMessageHandler(cout, cin, messageFormatter), server)) {
+                using (var rpc = new LanguageServerJsonRpc(cout, cin, messageFormatter, server)) {
                     rpc.SynchronizationContext = new SingleThreadSynchronizationContext();
 
                     services.AddService(new UIService(rpc));
@@ -72,12 +72,9 @@ namespace Microsoft.Python.LanguageServer.Server {
 #endif
         }
 
-        private class StackTraceErrorJsonRpc : JsonRpc {
-            public StackTraceErrorJsonRpc(IJsonRpcMessageHandler messageHandler) : base(messageHandler) { }
-
-            public StackTraceErrorJsonRpc(IJsonRpcMessageHandler messageHandler, object target) : base(messageHandler, target) { }
-
-            public StackTraceErrorJsonRpc(Stream sendingStream, Stream receivingStream, object target = null) : base(sendingStream, receivingStream, target) { }
+        private class LanguageServerJsonRpc : JsonRpc {
+            public LanguageServerJsonRpc(Stream sendingStream, Stream receivingStream, IJsonRpcMessageFormatter formatter, object target)
+                : base(new HeaderDelimitedMessageHandler(sendingStream, receivingStream, formatter), target) { }
 
             protected override JsonRpcError.ErrorDetail CreateErrorDetails(JsonRpcRequest request, Exception exception) {
                 var localRpcEx = exception as LocalRpcException;
@@ -106,6 +103,7 @@ namespace Microsoft.Python.LanguageServer.Server {
 
             throw new InvalidOperationException($"UriConverter: unsupported token type {reader.TokenType}");
         }
+
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
             if (null == value) {
                 writer.WriteNull();
