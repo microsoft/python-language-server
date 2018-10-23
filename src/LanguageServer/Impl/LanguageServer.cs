@@ -464,9 +464,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             try {
                 await func();
             } catch (Exception e) {
-                if (!(e is TaskCanceledException)) {
-                    _server.LogMessage(MessageType.Error, e.ToString());
-                }
+                LogUnexpectedException(e);
                 throw;
             }
         }
@@ -475,9 +473,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             try {
                 return await func();
             } catch (Exception e) {
-                _server.LogMessage(MessageType.Error, e.ToString());
+                LogUnexpectedException(e);
                 throw;
             }
+        }
+
+        private void LogUnexpectedException(Exception e) {
+            switch (e) {
+                case TaskCanceledException _:
+                case OperationCanceledException _:
+                    return;
+            }
+
+            _server.LogMessage(MessageType.Error, e.ToString());
         }
 
         private class Prioritizer : IDisposable {
