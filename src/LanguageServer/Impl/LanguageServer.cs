@@ -97,8 +97,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         #region Events
-        [Obsolete]
-        private void OnTelemetry(object sender, TelemetryEventArgs e) { }
         private void OnShowMessage(object sender, ShowMessageEventArgs e) => _ui.ShowMessage(e.message, e.type);
         private void OnLogMessage(object sender, LogMessageEventArgs e) => _ui.LogMessage(e.message, e.type);
 
