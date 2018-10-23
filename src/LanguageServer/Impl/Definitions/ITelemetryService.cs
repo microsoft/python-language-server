@@ -14,10 +14,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.LanguageServer {
     public interface ITelemetryService {
-        Task SendTelemetry(object o);
+        Task SendTelemetry(TelemetryEvent telemetryEvent);
+    }
+
+    public sealed class TelemetryEvent {
+        public string EventName { get; set; }
+        public Dictionary<string, string> Properties { get; } = new Dictionary<string, string>();
+        public Dictionary<string, double> Measurements { get; } = new Dictionary<string, double>();
     }
 }

@@ -64,7 +64,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _server.OnLogMessage += OnLogMessage;
             _server.OnShowMessage += OnShowMessage;
-            _server.OnTelemetry += OnTelemetry;
             _server.OnPublishDiagnostics += OnPublishDiagnostics;
             _server.OnApplyWorkspaceEdit += OnApplyWorkspaceEdit;
             _server.OnRegisterCapability += OnRegisterCapability;
@@ -73,7 +72,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposables
                 .Add(() => _server.OnLogMessage -= OnLogMessage)
                 .Add(() => _server.OnShowMessage -= OnShowMessage)
-                .Add(() => _server.OnTelemetry -= OnTelemetry)
                 .Add(() => _server.OnPublishDiagnostics -= OnPublishDiagnostics)
                 .Add(() => _server.OnApplyWorkspaceEdit -= OnApplyWorkspaceEdit)
                 .Add(() => _server.OnRegisterCapability -= OnRegisterCapability)
@@ -99,7 +97,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         #region Events
-        private void OnTelemetry(object sender, TelemetryEventArgs e) => _telemetry.SendTelemetry(e.value);
         private void OnShowMessage(object sender, ShowMessageEventArgs e) => _ui.ShowMessage(e.message, e.type);
         private void OnLogMessage(object sender, LogMessageEventArgs e) => _ui.LogMessage(e.message, e.type);
 
