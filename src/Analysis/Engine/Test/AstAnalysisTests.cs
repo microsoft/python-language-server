@@ -213,6 +213,39 @@ namespace AnalysisTests {
         }
 
         [TestMethod, Priority(0)]
+        public async Task AstForwardRefProperty1() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefProp1 import *
+x = B().getA().methodA()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstForwardRefFunction1() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefFunc1 import *
+x = B().getA().methodA()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstForwardRefFunction2() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefFunc2 import *
+x = B().getA().methodA()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void AstImports() {
             var mod = Parse("Imports.py", PythonLanguageVersion.V35);
             mod.GetMemberNames(null).Should().OnlyContain("version_info", "a_made_up_module");

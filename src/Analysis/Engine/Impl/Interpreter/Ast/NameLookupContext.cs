@@ -29,7 +29,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private readonly Stack<Dictionary<string, IMember>> _scopes = new Stack<Dictionary<string, IMember>>();
         private readonly Lazy<IPythonModule> _builtinModule;
         private readonly AnalysisLogWriter _log;
-
+        private readonly List<AstAnalysisFunctionWalker> _functionWalkers;
         internal readonly IPythonType _unknownType;
 
         public NameLookupContext(
@@ -40,6 +40,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             string filePath,
             Uri documentUri,
             bool includeLocationInfo,
+            List<AstAnalysisFunctionWalker> functionWalkers,
             IPythonModule builtinModule = null,
             AnalysisLogWriter log = null
         ) {
@@ -50,6 +51,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             FilePath = filePath;
             DocumentUri = documentUri;
             IncludeLocationInfo = includeLocationInfo;
+            _functionWalkers = functionWalkers;
 
             DefaultLookupOptions = LookupOptions.Normal;
 
@@ -80,6 +82,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 FilePath,
                 DocumentUri,
                 IncludeLocationInfo,
+                _functionWalkers,
                 _builtinModule.IsValueCreated ? _builtinModule.Value : null,
                 _log
             );

@@ -27,7 +27,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstAnalysisWalker : PythonWalker {
         private readonly IPythonModule _module;
         private readonly Dictionary<string, IMember> _members;
-        private readonly List<AstAnalysisFunctionWalker> _postWalkers = new List<AstAnalysisFunctionWalker>();
+        private readonly List<AstAnalysisFunctionWalker> _functionWalkers = new List<AstAnalysisFunctionWalker>();
         private readonly AnalysisLogWriter _log;
         private readonly Dictionary<string, IMember> _typingScope;
 
@@ -57,6 +57,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 filePath,
                 documentUri,
                 includeLocationInfo,
+                _functionWalkers,
                 log: warnAboutUndefinedValues ? _log : null
             );
             _typingScope = new Dictionary<string, IMember>();
@@ -85,7 +86,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public void Complete() {
-            foreach (var walker in _postWalkers) {
+            // Do not use foreach since walker list is dynamically
+            // modified and walkers are removed as they are done.
+            while (_functionWalkers.Count > 0) {
+                var walker = _functionWalkers[0];
+                _functionWalkers.RemoveAt(0);
                 walker.Walk();
             }
 
@@ -387,7 +392,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var overload = new AstPythonFunctionOverload(parameters, funcScope.GetLocOfName(node, node.NameExpression));
 
             var funcWalk = new AstAnalysisFunctionWalker(funcScope, node, overload);
-            _postWalkers.Add(funcWalk);
+            _functionWalkers.Add(funcWalk);
 
             return overload;
         }
