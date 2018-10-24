@@ -19,6 +19,12 @@ using System.Linq;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
+    /// <summary>
+    /// Represents set of function body walkers. Functions are walked after
+    /// all classes are collected. If function or property return type is unknown,
+    /// it can be walked, and so on recursively, until return type is determined
+    /// or there is nothing left to walk.
+    /// </summary>
     class AstAnalysisFunctionWalkerSet {
         private readonly Dictionary<FunctionDefinition, AstAnalysisFunctionWalker> _functionWalkers
             = new Dictionary<FunctionDefinition, AstAnalysisFunctionWalker>();
