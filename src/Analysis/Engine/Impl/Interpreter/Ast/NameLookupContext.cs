@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -27,9 +27,10 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Interpreter.Ast {
     sealed class NameLookupContext {
         private readonly Stack<Dictionary<string, IMember>> _scopes = new Stack<Dictionary<string, IMember>>();
+        private readonly AstAnalysisFunctionWalkerSet _functionWalkers;
         private readonly Lazy<IPythonModule> _builtinModule;
         private readonly AnalysisLogWriter _log;
-        private readonly List<AstAnalysisFunctionWalker> _functionWalkers;
+
         internal readonly IPythonType _unknownType;
 
         public NameLookupContext(
@@ -40,7 +41,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             string filePath,
             Uri documentUri,
             bool includeLocationInfo,
-            List<AstAnalysisFunctionWalker> functionWalkers,
+            AstAnalysisFunctionWalkerSet functionWalkers,
             IPythonModule builtinModule = null,
             AnalysisLogWriter log = null
         ) {
@@ -51,8 +52,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             FilePath = filePath;
             DocumentUri = documentUri;
             IncludeLocationInfo = includeLocationInfo;
-            _functionWalkers = functionWalkers;
 
+            _functionWalkers = functionWalkers;
             DefaultLookupOptions = LookupOptions.Normal;
 
             _unknownType = Interpreter.GetBuiltinType(BuiltinTypeId.Unknown) ??
@@ -85,10 +86,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 _functionWalkers,
                 _builtinModule.IsValueCreated ? _builtinModule.Value : null,
                 _log
-            );
-
-            ctxt.DefaultLookupOptions = DefaultLookupOptions;
-            ctxt.SuppressBuiltinLookup = SuppressBuiltinLookup;
+            ) {
+                DefaultLookupOptions = DefaultLookupOptions,
+                SuppressBuiltinLookup = SuppressBuiltinLookup
+            };
 
             foreach (var scope in _scopes.Reverse()) {
                 if (copyScopeContents) {
@@ -115,11 +116,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return scope;
         }
 
-        public Dictionary<string, IMember> PopScope() {
-            return _scopes.Pop();
-        }
+        public Dictionary<string, IMember> PopScope() => _scopes.Pop();
 
-        internal LocationInfo GetLoc(Node node) {
+        public LocationInfo GetLoc(Node node) {
             if (!IncludeLocationInfo) {
                 return null;
             }
@@ -132,7 +131,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return new LocationInfo(FilePath, DocumentUri, start.Line, start.Column, end.Line, end.Column);
         }
 
-        internal LocationInfo GetLocOfName(Node node, NameExpression header) {
+        public LocationInfo GetLocOfName(Node node, NameExpression header) {
             var loc = GetLoc(node);
             if (loc == null || header == null) {
                 return null;
@@ -148,26 +147,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             return loc;
-        }
-
-        private string GetNameFromExpressionWorker(Expression expr) {
-            if (expr is NameExpression ne) {
-                return ne.Name;
-            }
-
-            if (expr is MemberExpression me) {
-                return "{0}.{1}".FormatInvariant(GetNameFromExpressionWorker(me.Target), me.Name);
-            }
-
-            throw new FormatException();
-        }
-
-        public string GetNameFromExpression(Expression expr) {
-            try {
-                return GetNameFromExpressionWorker(expr);
-            } catch (FormatException) {
-                return null;
-            }
         }
 
         public IEnumerable<IPythonType> GetTypesFromAnnotation(Expression expr) {
@@ -197,28 +176,42 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            var m = GetValueFromName(expr as NameExpression, options) ??
-                    GetValueFromMember(expr as MemberExpression, options) ??
-                    GetValueFromCallable(expr as CallExpression, options) ??
-                    GetValueFromUnaryOp(expr as UnaryExpression, options) ??
-                    GetValueFromBinaryOp(expr, options) ??
-                    GetValueFromIndex(expr as IndexExpression, options) ??
-                    GetValueFromConditional(expr as ConditionalExpression, options) ??
-                    GetConstantFromLiteral(expr, options);
-            if (m != null) {
-                return m;
+            IMember m;
+            switch (expr) {
+                case NameExpression nex:
+                    m = GetValueFromName(nex, options);
+                    break;
+                case MemberExpression mex:
+                    m = GetValueFromMember(mex, options);
+                    break;
+                case CallExpression cex:
+                    m = GetValueFromCallable(cex, options);
+                    break;
+                case UnaryExpression uex:
+                    m = GetValueFromUnaryOp(uex, options);
+                    break;
+                case IndexExpression iex:
+                    m = GetValueFromIndex(iex, options);
+                    break;
+                case ConditionalExpression coex:
+                    m = GetValueFromConditional(coex, options);
+                    break;
+                default:
+                    m = GetValueFromBinaryOp(expr, options) ?? GetConstantFromLiteral(expr, options);
+                    break;
             }
-
-            _log?.Log(TraceLevel.Verbose, "UnknownExpression", expr.ToCodeString(Ast).Trim());
-            return null;
+            if (m == null) {
+                _log?.Log(TraceLevel.Verbose, "UnknownExpression", expr.ToCodeString(Ast).Trim());
+            }
+            return m;
         }
 
         private IMember GetValueFromName(NameExpression expr, LookupOptions options) {
-            if (expr == null || string.IsNullOrEmpty(expr.Name)) {
+            if (string.IsNullOrEmpty(expr?.Name)) {
                 return null;
             }
 
-            IMember existing = LookupNameInScopes(expr.Name, options);
+            var existing = LookupNameInScopes(expr.Name, options);
             if (existing != null) {
                 return existing;
             }
@@ -231,28 +224,40 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         private IMember GetValueFromMember(MemberExpression expr, LookupOptions options) {
-            if (expr == null || expr.Target == null || string.IsNullOrEmpty(expr.Name)) {
+            if (expr?.Target == null || string.IsNullOrEmpty(expr?.Name)) {
                 return null;
             }
 
             var e = GetValueFromExpression(expr.Target);
-            if (e is IMemberContainer mc) {
-                var m = mc.GetMember(Context, expr.Name);
-                if (m != null) {
-                    return m;
-                }
-                _log?.Log(TraceLevel.Verbose, "UnknownMember", expr.ToCodeString(Ast).Trim());
-            } else {
-                _log?.Log(TraceLevel.Verbose, "UnknownMemberContainer", expr.Target.ToCodeString(Ast).Trim());
+            IMember value = null;
+            switch (e) {
+                case IMemberContainer mc:
+                    value = mc.GetMember(Context, expr.Name);
+                    break;
+                case IPythonMultipleMembers mm:
+                    value = mm.Members.OfType<IMemberContainer>()
+                        .Select(x => x.GetMember(Context, expr.Name))
+                        .ExcludeDefault()
+                        .FirstOrDefault();
+                    break;
+                default:
+                    value = GetValueFromPropertyOrFunction(e, expr);
+                    break;
             }
-            return new AstPythonConstant(_unknownType, GetLoc(expr));
+            if(value is IBuiltinProperty2 p) {
+                value = GetPropertyReturnType(p, expr);
+            }
+            if (value == null) {
+                _log?.Log(TraceLevel.Verbose, "UnknownMember", expr.ToCodeString(Ast).Trim());
+                return new AstPythonConstant(_unknownType, GetLoc(expr));
+            }
+            return value;
         }
 
         private IMember GetValueFromUnaryOp(UnaryExpression expr, LookupOptions options) {
             if (expr == null || expr.Expression == null) {
                 return null;
             }
-
             // Assume that the type after the op is the same as before
             return GetValueFromExpression(expr.Expression);
         }
@@ -349,27 +354,61 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             var m = GetValueFromExpression(expr.Target);
-            if (m is IPythonType type) {
-                if (type.TypeId == BuiltinTypeId.Type && type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1) {
-                    var aType = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression));
-                    if (aType != null) {
-                        return aType;
+            IMember value = null;
+            switch (m) {
+                case IPythonType type:
+                    if (type.TypeId == BuiltinTypeId.Type && type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1) {
+                        value = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression, options));
+                    } else {
+                        value = new AstPythonConstant(type, GetLoc(expr));
                     }
-                }
-                return new AstPythonConstant(type, GetLoc(expr));
+                    break;
+                default:
+                    value = GetValueFromPropertyOrFunction(m, expr);
+                    break;
             }
-
-            if (m is IPythonFunction fn) {
-                // TODO: Select correct overload and handle multiple return types
-                if (fn.Overloads.Count > 0 && fn.Overloads[0].ReturnType.Count > 0) {
-                    return new AstPythonConstant(fn.Overloads[0].ReturnType[0]);
-                }
-                _log?.Log(TraceLevel.Verbose, "NoReturn", expr.Target.ToCodeString(Ast).Trim());
-                return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), GetLoc(expr));
+            if (value == null) {
+                _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
+                return new AstPythonConstant(_unknownType, GetLoc(expr));
             }
+            return value;
+        }
 
-            _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
-            return new AstPythonConstant(_unknownType, GetLoc(expr));
+        private IMember GetValueFromPropertyOrFunction(IMember fn, Expression expr) {
+            switch (fn) {
+                case IPythonBoundFunction bf:
+                    return GetValueFromFunction(bf.Function as IPythonFunction2, expr);
+                case IPythonFunction2 f:
+                    return GetValueFromFunction(f, expr);
+                case IBuiltinProperty2 p:
+                    return GetPropertyReturnType(p, expr);
+            }
+            return null;
+        }
+
+        private IMember GetValueFromFunction(IPythonFunction2 fn, Expression expr) {
+            var returnType = _unknownType;
+            if (fn != null) {
+                returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
+                if (IsUnknown(returnType)) {
+                    // Function may not have been walked yet. Do it now.
+                    _functionWalkers.ProcessFunction(fn.FunctionDefinition);
+                    returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
+                }
+            }
+            return new AstPythonConstant(returnType, GetLoc(expr));
+        }
+
+        private IPythonType GetFunctionReturnType(IPythonFunctionOverload o)
+            => o != null && o.ReturnType.Count > 0 ? o.ReturnType[0] : _unknownType;
+
+        private IMember GetPropertyReturnType(IBuiltinProperty2 p, Expression expr) {
+            var returnType = p.Type;
+            if (IsUnknown(p.Type)) {
+                // Function may not have been walked yet. Do it now.
+                _functionWalkers.ProcessFunction(p.FunctionDefinition);
+            }
+            return new AstPythonConstant(p.Type ?? _unknownType, GetLoc(expr));
         }
 
         public IPythonConstant GetConstantFromLiteral(Expression expr, LookupOptions options) {
@@ -528,17 +567,16 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            IMember obj;
-            if ((scope ?? _scopes.Peek()).TryGetValue(name, out obj)) {
+            if ((scope ?? _scopes.Peek()).TryGetValue(name, out var obj)) {
                 return obj;
             }
             return null;
         }
 
-        private static bool IsUnknown(IMember value) {
-            return (value as IPythonType)?.TypeId == BuiltinTypeId.Unknown ||
-                (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;
-        }
+        private static bool IsUnknown(IMember value) =>
+            value == null ||
+            (value as IPythonType)?.TypeId == BuiltinTypeId.Unknown ||
+            (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;
 
         public void SetInScope(string name, IMember value, bool mergeWithExisting = true, Dictionary<string, IMember> scope = null) {
             Debug.Assert(_scopes.Count > 0);

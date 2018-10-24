@@ -22,7 +22,6 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstAnalysisFunctionWalker : PythonWalker {
-        private readonly FunctionDefinition _target;
         private readonly NameLookupContext _scope;
         private readonly AstPythonFunctionOverload _overload;
         private AstPythonType _selfType;
@@ -33,12 +32,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             AstPythonFunctionOverload overload
         ) {
             _scope = scope ?? throw new ArgumentNullException(nameof(scope));
-            _target = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
+            Target = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
             _overload = overload ?? throw new ArgumentNullException(nameof(overload));
         }
 
-        public IList<IPythonType> ReturnTypes => _overload.ReturnTypes;
-        public IPythonFunctionOverload Overload => _overload;
+        public FunctionDefinition Target { get; } 
 
         private void GetMethodType(FunctionDefinition node, out bool classmethod, out bool staticmethod) {
             classmethod = false;
@@ -51,7 +49,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             var classmethodObj = _scope.Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
             var staticmethodObj = _scope.Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
-            foreach (var d in (_target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
+            foreach (var d in (Target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
                 var m = _scope.GetValueFromExpression(d);
                 if (m == classmethodObj) {
                     classmethod = true;
@@ -65,21 +63,21 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var self = GetSelf();
             _selfType = (self as AstPythonConstant)?.Type as AstPythonType;
 
-            _overload.ReturnTypes.AddRange(_scope.GetTypesFromAnnotation(_target.ReturnAnnotation).ExcludeDefault());
+            _overload.ReturnTypes.AddRange(_scope.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault());
 
             _scope.PushScope();
             if (self != null) {
-                var p0 = _target.Parameters.FirstOrDefault();
+                var p0 = Target.Parameters.FirstOrDefault();
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
                     _scope.SetInScope(p0.Name, self);
                 }
             }
-            _target.Walk(this);
+            Target.Walk(this);
             _scope.PopScope();
         }
 
         public override bool Walk(FunctionDefinition node) {
-            if (node != _target) {
+            if (node != Target) {
                 // Do not walk nested functions (yet)
                 return false;
             }
@@ -171,7 +169,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private IMember GetSelf() {
             bool classmethod, staticmethod;
-            GetMethodType(_target, out classmethod, out staticmethod);
+            GetMethodType(Target, out classmethod, out staticmethod);
             var self = _scope.LookupNameInScopes("__class__", NameLookupContext.LookupOptions.Local);
             if (!staticmethod && !classmethod) {
                 var cls = self as IPythonType;

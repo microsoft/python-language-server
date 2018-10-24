@@ -27,9 +27,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstAnalysisWalker : PythonWalker {
         private readonly IPythonModule _module;
         private readonly Dictionary<string, IMember> _members;
-        private readonly List<AstAnalysisFunctionWalker> _functionWalkers = new List<AstAnalysisFunctionWalker>();
         private readonly AnalysisLogWriter _log;
         private readonly Dictionary<string, IMember> _typingScope;
+        private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
 
         private IPythonInterpreter _interpreter => Scope.Interpreter;
         private PythonAst _ast => Scope.Ast;
@@ -86,13 +86,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public void Complete() {
-            // Do not use foreach since walker list is dynamically
-            // modified and walkers are removed as they are done.
-            while (_functionWalkers.Count > 0) {
-                var walker = _functionWalkers[0];
-                _functionWalkers.RemoveAt(0);
-                walker.Walk();
-            }
+            _functionWalkers.ProcessSet();
 
             if (_module.Name != "typing" && Scope.FilePath.EndsWithOrdinal(".pyi", ignoreCase: true)) {
                 // Do not expose members directly imported from typing
