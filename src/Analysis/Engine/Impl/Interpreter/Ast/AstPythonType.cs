@@ -72,14 +72,16 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         internal void SetBases(IPythonInterpreter interpreter, IEnumerable<IPythonType> bases) {
-            if (Bases != null) {
-                throw new InvalidOperationException("cannot set Bases multiple times");
-            }
-            Bases = bases.MaybeEnumerate().ToArray();
             lock (_members) {
+                if (Bases != null) {
+                    return; // Already set
+                }
+
+                Bases = bases.MaybeEnumerate().ToArray();
                 if (Bases.Count > 0) {
                     _members["__base__"] = Bases[0];
                 }
+
                 _members["__bases__"] = new AstPythonSequence(
                     interpreter?.GetBuiltinType(BuiltinTypeId.Tuple),
                     DeclaringModule,
@@ -239,6 +241,19 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             return names;
+        }
+
+        class PythonTypeComparer : IEqualityComparer<IPythonType> {
+            public bool Equals(IPythonType x, IPythonType y) {
+                if(x == null || y == null) {
+                    return x == null && y == null;
+                }
+                return x.Name == y.Name && 
+                       x.TypeId == y.TypeId && 
+                       x.MemberType == y.MemberType && 
+                       x.DeclaringModule?.Name == y.DeclaringModule?.Name;
+            }
+            public int GetHashCode(IPythonType obj) => 0;
         }
     }
 }
