@@ -12,10 +12,10 @@
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-      <CodeAnalysisRuleSet>Microsoft.Python.LanguageServer.ruleset</CodeAnalysisRuleSet>
+      <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-      <CodeAnalysisRuleSet>Microsoft.Python.LanguageServer.ruleset</CodeAnalysisRuleSet>
+      <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
     <ItemGroup>
       <Compile Remove="obj\**" />
