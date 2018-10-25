@@ -83,5 +83,33 @@ Baze().foo(42)
             analysis.Should().HaveClass("Derived").WithFunction("foo")
                 .WithParameter("x").OfType(BuiltinTypeId.Int);
         }
+
+        [TestMethod]
+        public async Task ParameterTypesPropagateToBaseFunctions() {
+            var code = @"
+class Baze:
+  def foo(self, x):
+    pass
+
+class Derived(Baze):
+  def foo(self, x):
+    pass
+
+Derived().foo(42)
+";
+
+            using (var server = await new Server().InitializeAsync(PythonVersions.Required_Python36X)) {
+                server.Analyzer.Limits.PropagateParameterTypeToBaseMethods = true;
+
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                // the class, for which we know parameter type initially
+                analysis.Should().HaveClass("Derived").WithFunction("foo")
+                    .WithParameter("x").OfType(BuiltinTypeId.Int);
+                // its base class
+                analysis.Should().HaveClass("Baze").WithFunction("foo")
+                    .WithParameter("x").OfType(BuiltinTypeId.Int);
+            }
+        }
     }
 }
