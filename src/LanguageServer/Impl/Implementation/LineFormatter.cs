@@ -99,6 +99,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// <param name="line">One-indexed line number.</param>
         /// <returns>A list of TextEdits needed to format the line.</returns>
         public TextEdit[] FormatLine(int line) {
+            throw new Exception("This is a test.");
+
             if (line < 0) {
                 return NoEdits;
             }

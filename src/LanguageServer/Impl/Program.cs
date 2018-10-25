@@ -22,6 +22,7 @@ using Newtonsoft.Json;
 using StreamJsonRpc;
 using StreamJsonRpc.Protocol;
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace Microsoft.Python.LanguageServer.Server {
@@ -41,6 +42,7 @@ namespace Microsoft.Python.LanguageServer.Server {
                 using (var cout = Console.OpenStandardOutput())
                 using (var server = new Implementation.LanguageServer())
                 using (var rpc = new LanguageServerJsonRpc(cout, cin, messageFormatter, server)) {
+                    rpc.TraceSource.Switch.Level = SourceLevels.Error;
                     rpc.SynchronizationContext = new SingleThreadSynchronizationContext();
 
                     services.AddService(new UIService(rpc));
@@ -74,13 +76,9 @@ namespace Microsoft.Python.LanguageServer.Server {
                 : base(new HeaderDelimitedMessageHandler(sendingStream, receivingStream, formatter), target) { }
 
             protected override JsonRpcError.ErrorDetail CreateErrorDetails(JsonRpcRequest request, Exception exception) {
-                var localRpcEx = exception as LocalRpcException;
-
-                return new JsonRpcError.ErrorDetail {
-                    Code = (JsonRpcErrorCode?)localRpcEx?.ErrorCode ?? JsonRpcErrorCode.InvocationError,
-                    Message = exception.Message,
-                    Data = exception.StackTrace,
-                };
+                var ed = base.CreateErrorDetails(request, exception);
+                ed.Data = exception.StackTrace;
+                return ed;
             }
         }
     }

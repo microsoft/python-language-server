@@ -14,17 +14,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Services;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     /// <summary>
@@ -44,7 +44,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private IServiceContainer _services;
         private IUIService _ui;
-        private ITelemetryService _telemetry;
+        private ITelemetryService2 _telemetry;
 
         private JsonRpc _rpc;
         private JsonSerializer _jsonSerializer;
@@ -58,11 +58,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public CancellationToken Start(IServiceContainer services, JsonRpc rpc) {
             _services = services;
             _ui = services.GetService<IUIService>();
-            _telemetry = services.GetService<ITelemetryService>();
+            _telemetry = services.GetService<ITelemetryService2>();
             _rpc = rpc;
             _jsonSerializer = services.GetService<JsonSerializer>();
 
             var progress = services.GetService<IProgressService>();
+
+            _rpc.TraceSource.Listeners.Add(new TelemetryTraceListener(_telemetry));
 
             _server.OnLogMessage += OnLogMessage;
             _server.OnShowMessage += OnShowMessage;
