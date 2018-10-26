@@ -84,7 +84,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         // WriteLine (implemented as noops above). To prevent that extra
         // work, the below methods override the base class to do nothing.
         #region TraceListener noop overrides
-
         public override void Fail(string message) { }
 
         public override void Fail(string message, string detailMessage) { }
