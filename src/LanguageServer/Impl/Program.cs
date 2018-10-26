@@ -76,9 +76,13 @@ namespace Microsoft.Python.LanguageServer.Server {
                 : base(new HeaderDelimitedMessageHandler(sendingStream, receivingStream, formatter), target) { }
 
             protected override JsonRpcError.ErrorDetail CreateErrorDetails(JsonRpcRequest request, Exception exception) {
-                var ed = base.CreateErrorDetails(request, exception);
-                ed.Data = exception.StackTrace;
-                return ed;
+                var localRpcEx = exception as LocalRpcException;
+
+                return new JsonRpcError.ErrorDetail {
+                    Code = (JsonRpcErrorCode?)localRpcEx?.ErrorCode ?? JsonRpcErrorCode.InvocationError,
+                    Message = exception.Message,
+                    Data = exception.StackTrace,
+                };
             }
         }
     }
