@@ -21,10 +21,10 @@ using System.Diagnostics;
 using System.Reflection;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
-    internal class TelemetryTraceListener : TraceListener {
+    internal class TelemetryRpcTraceListener : TraceListener {
         private readonly ITelemetryService2 _telemetryService;
 
-        public TelemetryTraceListener(ITelemetryService2 telemetryService) {
+        public TelemetryRpcTraceListener(ITelemetryService2 telemetryService) {
             _telemetryService = telemetryService;
         }
 
@@ -67,8 +67,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 EventName = "python_language_server/rpc.exception", // TODO: Create EventName with a standardized format elsewhere.
             };
             e.Properties["method"] = method;
-            e.Properties["exception-name"] = exception.GetType().Name;
-            e.Properties["exception-call-stack"] = exception.StackTrace;
+            e.Properties["name"] = exception.GetType().Name;
+            e.Properties["stackTrace"] = exception.StackTrace;
 
             _telemetryService.SendTelemetry(e).DoNotWait();
         }
