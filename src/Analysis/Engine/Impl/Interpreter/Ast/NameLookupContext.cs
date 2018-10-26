@@ -244,10 +244,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     value = GetValueFromPropertyOrFunction(e, expr);
                     break;
             }
-            if(value is IBuiltinProperty2 p) {
+
+            if (value is IBuiltinProperty2 p) {
                 value = GetPropertyReturnType(p, expr);
-            }
-            if (value == null) {
+            } else if (value == null) {
                 _log?.Log(TraceLevel.Verbose, "UnknownMember", expr.ToCodeString(Ast).Trim());
                 return new AstPythonConstant(_unknownType, GetLoc(expr));
             }
@@ -308,7 +308,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             var type = GetTypeFromValue(GetValueFromExpression(expr.Target));
-            if (type != null && type != _unknownType) {
+            if (!IsUnknown(type)) {
                 if (AstTypingModule.IsTypingType(type)) {
                     return type;
                 }
@@ -334,7 +334,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             } else {
                 _log?.Log(TraceLevel.Verbose, "UnknownIndex", expr.ToCodeString(Ast, CodeFormattingOptions.Traditional).Trim());
             }
-            return new AstPythonConstant(_unknownType, GetLoc(expr));
+            return type;
         }
 
         private IMember GetValueFromConditional(ConditionalExpression expr, LookupOptions options) {
@@ -356,28 +356,27 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var m = GetValueFromExpression(expr.Target);
             IMember value = null;
             switch (m) {
+                case IPythonType type when type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1:
+                    value = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression, options));
+                    break;
                 case IPythonType type:
-                    if (type.TypeId == BuiltinTypeId.Type && type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1) {
-                        value = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression, options));
-                    } else {
-                        value = new AstPythonConstant(type, GetLoc(expr));
-                    }
+                    value = new AstPythonConstant(type, GetLoc(expr));
                     break;
                 default:
                     value = GetValueFromPropertyOrFunction(m, expr);
                     break;
             }
+
             if (value == null) {
                 _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
-                return new AstPythonConstant(_unknownType, GetLoc(expr));
             }
             return value;
         }
 
         private IMember GetValueFromPropertyOrFunction(IMember fn, Expression expr) {
             switch (fn) {
-                case IPythonBoundFunction bf:
-                    return GetValueFromFunction(bf.Function as IPythonFunction2, expr);
+                case IPythonBoundFunction bf when bf.Function is IPythonFunction2 f:
+                    return GetValueFromFunction(f, expr);
                 case IPythonFunction2 f:
                     return GetValueFromFunction(f, expr);
                 case IBuiltinProperty2 p:
@@ -387,28 +386,24 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         private IMember GetValueFromFunction(IPythonFunction2 fn, Expression expr) {
-            var returnType = _unknownType;
-            if (fn != null) {
+            var returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
+            if (IsUnknown(returnType)) {
+                // Function may not have been walked yet. Do it now.
+                _functionWalkers.ProcessFunction(fn.FunctionDefinition);
                 returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
-                if (IsUnknown(returnType)) {
-                    // Function may not have been walked yet. Do it now.
-                    _functionWalkers.ProcessFunction(fn.FunctionDefinition);
-                    returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
-                }
             }
-            return new AstPythonConstant(returnType, GetLoc(expr));
+            return !IsUnknown(returnType) ? new AstPythonConstant(returnType, GetLoc(expr)) : null;
         }
 
         private IPythonType GetFunctionReturnType(IPythonFunctionOverload o)
             => o != null && o.ReturnType.Count > 0 ? o.ReturnType[0] : _unknownType;
 
         private IMember GetPropertyReturnType(IBuiltinProperty2 p, Expression expr) {
-            var returnType = p.Type;
             if (IsUnknown(p.Type)) {
                 // Function may not have been walked yet. Do it now.
                 _functionWalkers.ProcessFunction(p.FunctionDefinition);
             }
-            return new AstPythonConstant(p.Type ?? _unknownType, GetLoc(expr));
+            return !IsUnknown(p.Type) ? new AstPythonConstant(p.Type, GetLoc(expr)) : null;
         }
 
         public IPythonConstant GetConstantFromLiteral(Expression expr, LookupOptions options) {
@@ -420,12 +415,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 }
             }
 
-            var type = GetTypeFromLiteral(expr);
-            if (type != null) {
-                return new AstPythonConstant(type, GetLoc(expr));
-            }
-
-            return null;
+           var type = GetTypeFromLiteral(expr);
+           return type != null ? new AstPythonConstant(type, GetLoc(expr)) : null;
         }
 
         public IEnumerable<IPythonType> GetTypesFromValue(IMember value) {
@@ -614,8 +605,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public IMember LookupNameInScopes(string name, LookupOptions options) {
-            IMember value;
-
             var scopes = _scopes.ToList();
             if (scopes.Count == 1) {
                 if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
@@ -637,7 +626,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             if (scopes != null) {
                 foreach (var scope in scopes) {
-                    if (scope.TryGetValue(name, out value) && value != null) {
+                    if (scope.TryGetValue(name, out var value) && value != null) {
                         if (value is ILazyMember lm) {
                             value = lm.Get();
                             scope[name] = value;
@@ -650,7 +639,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             if (!SuppressBuiltinLookup && options.HasFlag(LookupOptions.Builtins)) {
                 return _builtinModule.Value.GetMember(Context, name);
             }
-
             return null;
         }
     }
