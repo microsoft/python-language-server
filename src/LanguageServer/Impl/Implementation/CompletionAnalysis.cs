@@ -804,7 +804,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 label = m.Name,
                 insertText = completion,
                 documentation = string.IsNullOrWhiteSpace(doc) ? null : new MarkupContent {
-                    kind = _textBuilder.DisplayOptions.preferredFormat ?? MarkupKind.PlainText,
+                    kind = _textBuilder.DisplayOptions.preferredFormat,
                     value = doc
                 },
                 // Place regular items first, advanced entries last

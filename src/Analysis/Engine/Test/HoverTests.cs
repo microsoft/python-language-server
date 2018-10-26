@@ -25,6 +25,7 @@ using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.Documentation;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -140,6 +141,21 @@ class Derived(Base):
                 var uri = await s.OpenDefaultDocumentAndGetUriAsync(text);
                 await AssertHover(s, uri, new SourceLocation(3, 19), "class module.Base(object)", null, new SourceSpan(2, 7, 2, 11));
                 await AssertHover(s, uri, new SourceLocation(8, 8), "class module.Derived(Base)", null, new SourceSpan(6, 7, 6, 14));
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MarkupKindValid() {
+            using (var s = await CreateServerAsync()) {
+                var u = await s.OpenDefaultDocumentAndGetUriAsync("123");
+
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                var hover = await s.Hover(new TextDocumentPositionParams {
+                    textDocument = new TextDocumentIdentifier { uri = u },
+                    position = new SourceLocation(1, 1),
+                }, CancellationToken.None);
+
+                hover.contents.kind.Should().BeOneOf(MarkupKind.PlainText, MarkupKind.Markdown);
             }
         }
 
