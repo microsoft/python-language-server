@@ -50,7 +50,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            if (type == _scope._unknownType) {
+            if (type == _scope.UnknownType) {
                 return null;
             }
 
@@ -86,21 +86,17 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return m as IPythonType;
         }
 
-        public override IPythonType GetTypeMember(IPythonType baseType, string member) {
-            return AsIPythonType(baseType.GetMember(_scope.Context, member));
-        }
+        public override IPythonType GetTypeMember(IPythonType baseType, string member)
+            => AsIPythonType(baseType.GetMember(_scope.Context, member));
 
         public override IPythonType MakeNameType(string name) => new NameType(name);
         public override string GetName(IPythonType type) => (type as NameType)?.Name;
 
-        public override IPythonType MakeUnion(IReadOnlyList<IPythonType> types) {
-            return new UnionType(types);
-        }
+        public override IPythonType MakeUnion(IReadOnlyList<IPythonType> types) => new UnionType(types);
 
-        public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType unionType) {
-            return (unionType as UnionType)?.Types ??
-                   (unionType as IPythonMultipleMembers)?.Members.OfType<IPythonType>().ToArray();
-        }
+        public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType unionType) => 
+            (unionType as UnionType)?.Types ??
+            (unionType as IPythonMultipleMembers)?.Members.OfType<IPythonType>().ToArray();
 
         public override IPythonType MakeGeneric(IPythonType baseType, IReadOnlyList<IPythonType> args) {
             if (args == null || args.Count == 0 || baseType == null) {
@@ -127,7 +123,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 case "Mapping":
                     return MakeLookupType(BuiltinTypeId.Dict, args);
                 case "Optional":
-                    return Finalize(args.FirstOrDefault()) ?? _scope._unknownType;
+                    return Finalize(args.FirstOrDefault()) ?? _scope.UnknownType;
                 case "Union":
                     return MakeUnion(args);
                 case "ByteString":

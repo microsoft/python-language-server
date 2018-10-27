@@ -224,6 +224,17 @@ x = B().getA().methodA()
         }
 
         [TestMethod, Priority(0)]
+        public async Task AstForwardRefGlobalFunction() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefGlobalFunc import *
+x = func1()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task AstForwardRefFunction1() {
             using (var server = await CreateServerAsync()) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
@@ -810,7 +821,7 @@ class BankAccount(object):
                     foreach (var r in modules
                         .Where(m => !skip.Contains(m.ModuleName))
                         .GroupBy(m => {
-                            int i = m.FullName.IndexOf('.');
+                            var i = m.FullName.IndexOf('.');
                             return i <= 0 ? m.FullName : m.FullName.Remove(i);
                         })
                         .AsParallel()

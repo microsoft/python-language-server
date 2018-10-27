@@ -16,6 +16,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
@@ -33,8 +34,18 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             => _functionWalkers[walker.Target] = walker;
 
         public void ProcessSet() {
-            // Do not use foreach since walker list is dynamically
-            // modified and walkers are removed as they are done.
+            // Do not use foreach since walker list is dynamically modified and walkers are removed
+            // after processing. Handle __init__ and __new__ first so class variables are initialized.
+            var constructors = _functionWalkers
+                .Where(kvp => kvp.Key.Name == "__init__" || kvp.Key.Name == "__new__")
+                .Select(c => c.Value)
+                .ExcludeDefault()
+                .ToArray();
+
+            foreach (var ctor in constructors) {
+                ProcessWalker(ctor);
+            }
+
             while (_functionWalkers.Count > 0) {
                 var walker = _functionWalkers.First().Value;
                 ProcessWalker(walker);
@@ -50,6 +61,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private void ProcessWalker(AstAnalysisFunctionWalker walker) {
             // Remove walker before processing as to prevent reentrancy.
             _functionWalkers.Remove(walker.Target);
+            var z = walker.Target.Name == "day";
             walker.Walk();
         }
     }

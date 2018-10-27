@@ -16,11 +16,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
+    [DebuggerDisplay("{Target.Name}")]
     class AstAnalysisFunctionWalker : PythonWalker {
         private readonly NameLookupContext _scope;
         private readonly AstPythonFunctionOverload _overload;
@@ -64,14 +66,24 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             _selfType = (self as AstPythonConstant)?.Type as AstPythonType;
 
             _overload.ReturnTypes.AddRange(_scope.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault());
-
             _scope.PushScope();
+
+            // Declare self, if any
+            var skip = 0;
             if (self != null) {
                 var p0 = Target.Parameters.FirstOrDefault();
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
                     _scope.SetInScope(p0.Name, self);
+                    skip++;
                 }
             }
+
+            // Declare parameters in scope
+            foreach(var p in Target.Parameters.Skip(skip).Where(p => !string.IsNullOrEmpty(p.Name))) {
+                 var value = _scope.GetValueFromExpression(p.DefaultValue);
+                _scope.SetInScope(p.Name, value ?? _scope.UnknownType);
+            }
+
             Target.Walk(this);
             _scope.PopScope();
         }
@@ -161,19 +173,28 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public override bool Walk(ReturnStatement node) {
-            foreach (var type in _scope.GetTypesFromValue(_scope.GetValueFromExpression(node.Expression)).ExcludeDefault()) {
+            var types = _scope.GetTypesFromValue(_scope.GetValueFromExpression(node.Expression)).ExcludeDefault();
+            foreach (var type in types) {
                 _overload.ReturnTypes.Add(type);
+            }
+            
+            // Clean up: if there are None or Unknown types along with real ones, remove them.
+            var realTypes = _overload.ReturnTypes
+                .Where(t => t.TypeId != BuiltinTypeId.Unknown && t.TypeId != BuiltinTypeId.NoneType)
+                .ToList();
+
+            if (realTypes.Count > 0) {
+                _overload.ReturnTypes.Clear();
+                _overload.ReturnTypes.AddRange(realTypes);
             }
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
 
         private IMember GetSelf() {
-            bool classmethod, staticmethod;
-            GetMethodType(Target, out classmethod, out staticmethod);
+            GetMethodType(Target, out var classmethod, out var staticmethod);
             var self = _scope.LookupNameInScopes("__class__", NameLookupContext.LookupOptions.Local);
             if (!staticmethod && !classmethod) {
-                var cls = self as IPythonType;
-                if (cls == null) {
+                if (!(self is IPythonType cls)) {
                     self = null;
                 } else {
                     self = new AstPythonConstant(cls, ((cls as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
