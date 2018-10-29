@@ -242,18 +242,5 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             return names;
         }
-
-        class PythonTypeComparer : IEqualityComparer<IPythonType> {
-            public bool Equals(IPythonType x, IPythonType y) {
-                if(x == null || y == null) {
-                    return x == null && y == null;
-                }
-                return x.Name == y.Name && 
-                       x.TypeId == y.TypeId && 
-                       x.MemberType == y.MemberType && 
-                       x.DeclaringModule?.Name == y.DeclaringModule?.Name;
-            }
-            public int GetHashCode(IPythonType obj) => 0;
-        }
     }
 }
