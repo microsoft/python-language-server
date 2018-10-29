@@ -441,11 +441,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 .SelectMany(a => Scope.GetTypesFromAnnotation(a.Expression))
                 .ToArray();
 
-            try {
-                t.SetBases(_interpreter, bases);
-            } catch (InvalidOperationException) {
-                // Bases were set while we were working
-            }
+            t.SetBases(_interpreter, bases);
 
             Scope.PushScope();
             Scope.SetInScope("__class__", t);
