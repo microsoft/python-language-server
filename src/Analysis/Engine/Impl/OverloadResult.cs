@@ -304,11 +304,6 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        public override string ToString() {
-            _docTask?.Wait();
-            return base.ToString();
-        }
-
         private void DocCalculator() {
             var doc = new StringBuilder();
             if (!string.IsNullOrEmpty(_overload.Documentation)) {
