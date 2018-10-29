@@ -1029,6 +1029,71 @@ class Simple(unittest.TestCase):
             }
         }
 
+        [TestMethod, Priority(0)]
+        public async Task NewType() {
+            var code = @"
+from typing import NewType
+
+Foo = NewType('Foo', dict)
+foo: Foo = Foo({ })
+foo.
+";
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+                await server.GetAnalysisAsync(uri);
+
+                var completions = await server.SendCompletion(uri, 5, 4);
+                completions.Should().HaveLabels("clear", "copy", "items", "keys", "update", "values");
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericListBase() {
+            var code = @"
+from typing import List
+
+def func(a: List[str]):
+    a.
+    a[0].
+    pass
+";
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+                await server.GetAnalysisAsync(uri);
+
+                var completions = await server.SendCompletion(uri, 4, 6);
+                completions.Should().HaveLabels("clear", "copy", "count", "index", "remove", "reverse");
+
+                completions = await server.SendCompletion(uri, 5, 9);
+                completions.Should().HaveLabels("capitalize");
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericDictBase() {
+            var code = @"
+from typing import Dict
+
+def func(a: Dict[int, str]):
+    a.
+    a.keys[0].
+    a.values[0].
+    pass
+";
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+                await server.GetAnalysisAsync(uri);
+
+                var completions = await server.SendCompletion(uri, 4, 6);
+                completions.Should().HaveLabels("keys", "values");
+
+                completions = await server.SendCompletion(uri, 5, 14);
+                completions.Should().HaveLabels("bit_length");
+
+                completions = await server.SendCompletion(uri, 6, 17);
+                completions.Should().HaveLabels("capitalize");
+            }
+        }
         private static async Task AssertCompletion(Server s, Uri uri, IReadOnlyCollection<string> contains, IReadOnlyCollection<string> excludes, Position? position = null, CompletionContext? context = null, Func<CompletionItem, string> cmpKey = null, string expr = null, Range? applicableSpan = null) {
             await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
             var res = await s.Completion(new CompletionParams {
