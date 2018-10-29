@@ -444,7 +444,7 @@ class B(A):
         [TestMethod, Priority(0)]
         public async Task TopLevelCompletions() {
             using (var s = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri = GetDocument(@"TestData\AstAnalysis\TopLevelCompletions.py");
+                var uri = GetDocument(Path.Combine("TestData", "AstAnalysis", "TopLevelCompletions.py"));
                 await s.LoadFileAsync(uri);
 
                 await AssertCompletion(
