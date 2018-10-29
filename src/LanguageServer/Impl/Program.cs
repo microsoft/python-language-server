@@ -16,14 +16,14 @@
 
 // #define WAIT_FOR_DEBUGGER
 
+using System;
+using System.Diagnostics;
+using System.IO;
 using Microsoft.Python.LanguageServer.Services;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Newtonsoft.Json;
 using StreamJsonRpc;
 using StreamJsonRpc.Protocol;
-using System;
-using System.Diagnostics;
-using System.IO;
 
 namespace Microsoft.Python.LanguageServer.Server {
     internal static class Program {

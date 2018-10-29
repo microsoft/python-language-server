@@ -14,11 +14,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.PythonTools.Analysis.Infrastructure;
-using StreamJsonRpc;
 using System;
 using System.Diagnostics;
 using System.Reflection;
+using Microsoft.PythonTools.Analysis.Infrastructure;
+using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     internal class TelemetryRpcTraceListener : TraceListener {
