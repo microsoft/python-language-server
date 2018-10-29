@@ -52,7 +52,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             // Exceptions we expect to throw and pass back over RPC, and therefore should not record.
             switch (exception) {
-                case InvalidOperationException _:
+                case EditorOperationException _:
                 case NotImplementedException _:
                     return;
             }
