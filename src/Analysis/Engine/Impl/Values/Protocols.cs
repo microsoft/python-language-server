@@ -744,8 +744,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None)
             => _actualType.GetAllMembers(moduleContext, options);
-        public override IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) => _actualType.GetMember(node, unit, name);
-        public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) => _actualType.GetTypeMember(node, unit, name);
     }
 
     /// <summary>
@@ -761,8 +759,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None)
             => _actualType.GetAllMembers(moduleContext, options);
-        public override IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) => _actualType.GetMember(node, unit, name);
-        public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) => _actualType.GetTypeMember(node, unit, name);
     }
 
     /// <summary>
