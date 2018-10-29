@@ -255,6 +255,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 }
 
                 var pi = new ProtocolInfo(DeclaringModule, ProjectState);
+                var actualType = unit.State.GetAnalysisValueFromObjects(ClassInfo.TypeId);
                 pi.AddProtocol(new IterableProtocol(pi, union));
                 if (ClassInfo.TypeId == BuiltinTypeId.Tuple) {
                     newTypes = VariableDef.Generator.Take(IndexTypes.Length).ToArray();

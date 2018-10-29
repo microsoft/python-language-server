@@ -1076,8 +1076,7 @@ from typing import Dict
 
 def func(a: Dict[int, str]):
     a.
-    a.keys[0].
-    a.values[0].
+    a[0].
     pass
 ";
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
@@ -1087,10 +1086,7 @@ def func(a: Dict[int, str]):
                 var completions = await server.SendCompletion(uri, 4, 6);
                 completions.Should().HaveLabels("keys", "values");
 
-                completions = await server.SendCompletion(uri, 5, 14);
-                completions.Should().HaveLabels("bit_length");
-
-                completions = await server.SendCompletion(uri, 6, 17);
+                completions = await server.SendCompletion(uri, 5, 9);
                 completions.Should().HaveLabels("capitalize");
             }
         }

@@ -341,10 +341,13 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     if (GetSequenceTypes(name, args, out realType, out keyTypes, out valueTypes)) {
                         var p = new ProtocolInfo(Entry, State);
                         p.AddReference(_node, _unit);
+
                         np = realType == null ? new NameProtocol(p, name) : new NameProtocol(p, realType);
                         np.ExtendDescription(valueTypes.GetRichDescriptions(unionPrefix: "[", unionSuffix: "]", alwaysUsePrefixSuffix: true));
                         p.AddProtocol(np);
-                        p.AddProtocol(new IterableProtocol(p, valueTypes));
+
+                        var actualType = State.GetAnalysisValueFromObjects(realType);
+                        p.AddProtocol(new ListProtocol(p, actualType, valueTypes));
                         if (keyTypes != null) {
                             p.AddProtocol(new GetItemProtocol(p, keyTypes, valueTypes));
                         }
@@ -359,6 +362,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     if (GetSequenceTypes(name, args, out realType, out keyTypes, out valueTypes)) {
                         var p = new ProtocolInfo(Entry, State);
                         p.AddReference(_node, _unit);
+
                         np = realType == null ? new NameProtocol(p, name) : new NameProtocol(p, realType);
                         np.ExtendDescription(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "["));
                         np.ExtendDescription(keyTypes.GetRichDescriptions(unionPrefix: "[", unionSuffix: "]", defaultIfEmpty: "Any"));
@@ -366,7 +370,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
                         np.ExtendDescription(valueTypes.GetRichDescriptions(unionPrefix: "[", unionSuffix: "]", defaultIfEmpty: "Any"));
                         np.ExtendDescription(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "]"));
                         p.AddProtocol(np);
-                        p.AddProtocol(new MappingProtocol(p, keyTypes, valueTypes, MakeTuple(keyTypes, valueTypes)));
+
+                        var actualType = State.GetAnalysisValueFromObjects(realType);
+                        p.AddProtocol(new DictProtocol(p, actualType, keyTypes, valueTypes, MakeTuple(keyTypes, valueTypes)));
                         return p;
                     }
                     break;

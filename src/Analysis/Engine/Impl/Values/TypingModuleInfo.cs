@@ -70,7 +70,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 // Add base delegate so we can see actual type members
                 var baseType = baseTypeSet.FirstOrDefault();
                 if (baseType != null) {
-                    var bt = new GenericProtocol(instPi, baseType);
+                    var bt = new TypeDelegateProtocol(instPi, baseType);
                     instPi.AddProtocol(bt);
                 }
 
