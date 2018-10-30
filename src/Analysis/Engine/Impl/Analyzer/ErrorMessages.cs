@@ -20,13 +20,13 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
     static class ErrorMessages {
         public static string NotCallableCode { get; } = "not-callable";
         public static string NotCallable(string target) => string.IsNullOrEmpty(target) ?
-            Resources.DiagnosticNotCallableEmpty :
-            Resources.DiagnosticNotCallable.FormatUI(target);
+            Resources.ErrorNotCallableEmpty :
+            Resources.ErrorNotCallable.FormatUI(target);
 
         public static string UseBeforeDefCode { get; } = "use-before-def";
-        public static string UseBeforeDef(string name) => Resources.DiagnosticUseBeforeDef.FormatUI(name);
+        public static string UseBeforeDef(string name) => Resources.ErrorUseBeforeDef.FormatUI(name);
 
         public static string UnresolvedImportCode { get; } = "unresolved-import";
-        public static string UnresolvedImport(string name) => Resources.DiagnosticUnresolvedImport.FormatUI(name);
+        public static string UnresolvedImport(string name) => Resources.ErrorUnresolvedImport.FormatUI(name);
     }
 }
