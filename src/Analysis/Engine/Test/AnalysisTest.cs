@@ -4194,9 +4194,8 @@ def func(a: List[str]):
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
-                analysis.Scope.Children
-                    .OfType<IFunctionScope>()
-                    .First()
+                analysis
+                    .Should().HaveFunction("func").Which
                     .Should().HaveVariable("a")
                     .OfTypes(BuiltinTypeId.List, BuiltinTypeId.Unknown); // list and 'function argument'
             }
@@ -4213,9 +4212,8 @@ def func(a: Dict[int, str]):
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
-                analysis.Scope.Children
-                    .OfType<IFunctionScope>()
-                    .First()
+                analysis
+                    .Should().HaveFunction("func").Which
                     .Should().HaveVariable("a")
                     .OfTypes(BuiltinTypeId.Dict, BuiltinTypeId.Unknown); // dict and 'function argument'
             }
@@ -4237,6 +4235,28 @@ foo: Foo = Foo({ })
                     .OfType(BuiltinTypeId.Type).WithDescription("Foo")
                     .And.HaveVariable("foo")
                     .OfType(BuiltinTypeId.Type).WithDescription("Foo");
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeVar() {
+            var code = @"
+from typing import Sequence, TypeVar
+
+T = TypeVar('T') # Declare type variable
+
+def first(l: Sequence[T]) -> T: # Generic function
+    return l[0]
+
+arr = [1, 2, 3]
+x = first(arr)  # should be int
+";
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis
+                    .Should().HaveVariable("x")
+                    .OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Type); // int and T
             }
         }
 
