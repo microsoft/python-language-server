@@ -348,8 +348,8 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             if (_references == null) {
                 _references = new Dictionary<string, List<PythonReference>>(StringComparer.Ordinal);
             }
-            List<PythonReference> references;
-            if (!_references.TryGetValue(name, out references)) {
+
+            if (!_references.TryGetValue(name, out var references)) {
                 _references[name] = references = new List<PythonReference>();
             }
             var reference = new PythonReference(name);

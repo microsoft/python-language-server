@@ -151,11 +151,116 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             return s?.EndsWith(suffix, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? false;
         }
 
+        public static bool EndsWithAnyOrdinal(this string s, params string[] values)
+            => s.EndsWithAnyOrdinal(values, false);
+        
+        public static bool EndsWithAnyOrdinalIgnoreCase(this string s, params string[] values)
+            => s.EndsWithAnyOrdinal(values, true);
+
+        public static bool EndsWithAnyOrdinal(this string s, string[] values, bool ignoreCase) {
+            if (s == null) {
+                return false;
+            }
+
+            foreach (var value in values) {
+                if (s.EndsWith(value, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool CharsAreLatin1LetterOrDigitOrUnderscore(this string s, int startIndex, int length) {
+            if (s == null) {
+                return false;
+            }
+
+            for (var i = startIndex; i < startIndex + length; i++) {
+                if (!s[i].IsLatin1LetterOrDigitOrUnderscore()) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public static int IndexOfOrdinal(this string s, string value, int startIndex = 0, bool ignoreCase = false) {
             return s?.IndexOf(value, startIndex, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? -1;
         }
 
         public static bool EqualsIgnoreCase(this string s, string other)
             => string.Equals(s, other, StringComparison.OrdinalIgnoreCase);
+
+        public static bool EqualsOrdinal(this string s, string other)
+            => string.Equals(s, other, StringComparison.Ordinal);
+
+        public static bool EqualsOrdinal(this string s, int index, string other, int otherIndex, int length, bool ignoreCase = false)
+            => string.Compare(s, index, other, otherIndex, length, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) == 0;
+
+        public static string[] Split(this string s, char separator, int startIndex, int length) {
+            var count = 0;
+            var endIndex = startIndex + length;
+            var previousIndex = startIndex;
+            var index = s.IndexOf(separator, startIndex);
+            while (index != -1 && index < endIndex) {
+                if (index > previousIndex) {
+                    count++;
+                }
+                previousIndex = index + 1;
+                index = s.IndexOf(separator, previousIndex);
+            }
+
+            if (endIndex > previousIndex) {
+                count++;
+            }
+
+            if (count == 0) {
+                return Array.Empty<string>();
+            }
+
+            var result = new string[count];
+
+            count = 0;
+            previousIndex = startIndex;
+            index = s.IndexOf(separator, startIndex);
+            while (index != -1 && index < endIndex) {
+                if (index > previousIndex) {
+                    result[count] = s.Substring(previousIndex, index - previousIndex);
+                    count++;
+                }
+                previousIndex = index + 1;
+                index = s.IndexOf(separator, previousIndex);
+            }
+
+            if (count < result.Length) {
+                result[count] = s.Substring(previousIndex, endIndex - previousIndex);
+            }
+
+            return result;
+        }
+
+        public static bool TryGetNextNonEmptySpan(this string s, char separator, ref (int start, int length) span)
+            => s.TryGetNextNonEmptySpan(separator, s.Length, ref span);
+
+        public static bool TryGetNextNonEmptySpan(this string s, char separator, int substringLength, ref (int start, int length) span) {
+            var start = span.start + span.length;
+            if (start < 0) {
+                return false;
+            }
+
+            while (start < substringLength && s[start] == separator) {
+                start++;
+            }
+
+            if (start == substringLength) {
+                span = (-1, 0);
+                return false;
+            }
+
+            var nextSeparatorIndex = s.IndexOf(separator, start);
+            span = (start, nextSeparatorIndex == -1 || nextSeparatorIndex >= substringLength ? substringLength - start : nextSeparatorIndex - start);
+            return true;
+        }
     }
 }

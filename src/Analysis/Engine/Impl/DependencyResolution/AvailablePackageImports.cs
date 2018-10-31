@@ -1,4 +1,4 @@
-// Visual Studio Shared Project
+﻿// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -14,14 +14,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    internal static class CancellationTokenUtilities {
-        public static void UnregisterOnCompletion(this CancellationTokenRegistration registration, Task task) 
-            => task.ContinueWith(UnregisterCancellationToken, registration, default(CancellationToken), TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+namespace Microsoft.PythonTools.Analysis.DependencyResolution {
+    internal class AvailablePackageImports : IAvailableImports {
+        public string Name { get; }
+        public IReadOnlyDictionary<string, string> Modules { get; }
+        public string[] Packages { get; }
 
-        private static void UnregisterCancellationToken(Task task, object state) => ((CancellationTokenRegistration)state).Dispose();
+        public AvailablePackageImports(string name, IReadOnlyDictionary<string, string> modules, string[] packages) {
+            Name = name;
+            Modules = modules;
+            Packages = packages;
+        }
     }
 }

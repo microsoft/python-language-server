@@ -1,4 +1,4 @@
-// Python Tools for Visual Studio
+﻿// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -9,31 +9,21 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.PythonTools.Parsing.Ast {
+using System.Collections.Generic;
+
+namespace Microsoft.PythonTools.Analysis.Infrastructure {
     /// <summary>
-    /// Represents a reference to a name.  A PythonReference is created for each location
-    /// where a name is referred to in a scope (global, class, or function).  
+    /// Tuple support for KeyValuePair. Remove when project is updated to .net standard 2.1
     /// </summary>
-    public class PythonReference {
-        private readonly string/*!*/ _name;
-        private PythonVariable _variable;
-
-        public PythonReference(string/*!*/ name) {
-            _name = name;
-        }
-
-        public string/*!*/ Name {
-            get { return _name; }
-        }
-
-        public PythonVariable Variable {
-            get { return _variable; }
-            set { _variable = value; }
+    internal static class KeyValuePairExtension {
+        public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> source, out TKey Key, out TValue Value) {
+            Key = source.Key;
+            Value = source.Value;
         }
     }
 }

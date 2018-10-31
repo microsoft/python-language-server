@@ -333,7 +333,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        public void SetSearchPaths(IEnumerable<string> searchPaths) => Analyzer.SetSearchPaths(searchPaths.MaybeEnumerate());
+        public void SetSearchPaths(IEnumerable<string> searchPaths) => Analyzer.SetSearchPaths(new [] { _rootDir }.Union(searchPaths.MaybeEnumerate()));
         public void SetTypeStubSearchPaths(IEnumerable<string> typeStubSearchPaths) => Analyzer.SetTypeStubPaths(typeStubSearchPaths.MaybeEnumerate());
 
         #endregion
@@ -472,7 +472,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             if (document.Scheme == "python") {
                 var path = Path.Combine(document.Host, document.AbsolutePath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar).Trim(Path.DirectorySeparatorChar));
-                if (ModulePath.FromBasePathAndFile_NoThrow("", path, p => true, out var mp, out _, out _)) {
+                if (ModulePath.FromBasePathAndFile_NoThrow("", path, true, out var mp, out _, out _)) {
                     yield return mp;
                 }
             }

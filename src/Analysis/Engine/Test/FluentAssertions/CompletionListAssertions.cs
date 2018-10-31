@@ -36,10 +36,13 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public AndConstraint<CompletionListAssertions> OnlyHaveLabels(params string[] labels)
             => OnlyHaveLabels(labels, string.Empty);
 
+        public AndConstraint<CompletionListAssertions> HaveNoCompletion(string because = "", params object[] reasonArgs) 
+            => OnlyHaveLabels(Array.Empty<string>(), because, reasonArgs);
+
         public AndConstraint<CompletionListAssertions> OnlyHaveLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            var actual = Subject.items?.Select(i => i.label).ToArray() ?? new string[0];
+            var actual = Subject.items?.Select(i => i.label).ToArray() ?? Array.Empty<string>();
             var expected = labels.ToArray();
 
             var errorMessage = GetAssertCollectionOnlyContainsMessage(actual, expected, GetName(), "label", "labels");

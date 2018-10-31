@@ -24,6 +24,7 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.DependencyResolution;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
@@ -39,6 +40,7 @@ namespace Microsoft.PythonTools.Analysis {
         private static object _nullKey = new object();
 
         private readonly bool _disposeInterpreter;
+        private readonly PathResolver _pathResolver;
         private readonly HashSet<ModuleInfo> _modulesWithUnresolvedImports = new HashSet<ModuleInfo>();
         private readonly object _modulesWithUnresolvedImportsLock = new object();
         private readonly Dictionary<object, AnalysisValue> _itemCache = new Dictionary<object, AnalysisValue>();
@@ -109,6 +111,7 @@ namespace Microsoft.PythonTools.Analysis {
         internal PythonAnalyzer(IPythonInterpreterFactory factory, IPythonInterpreter pythonInterpreter) {
             InterpreterFactory = factory;
             LanguageVersion = factory.GetLanguageVersion();
+            _pathResolver = new PathResolver(LanguageVersion);
             _disposeInterpreter = pythonInterpreter == null;
             Interpreter = pythonInterpreter ?? factory.CreateInterpreter();
 
@@ -202,6 +205,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="cookie">An application-specific identifier for the module</param>
         /// <returns>The project entry for the new module.</returns>
         public IPythonProjectEntry AddModule(string moduleName, string filePath, Uri documentUri = null, IAnalysisCookie cookie = null) {
+            _pathResolver.AddModulePath(filePath);
             var entry = new ProjectEntry(this, moduleName, filePath, documentUri, cookie);
 
             if (moduleName != null) {
@@ -718,6 +722,8 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal BuiltinModule BuiltinModule => _builtinModule;
 
+        internal PathResolverSnapshot CurrentPathResolver => _pathResolver.CurrentSnapshot;
+
         internal BuiltinInstanceInfo GetInstance(IPythonType type) {
             return GetBuiltinType(type).Instance;
         }
@@ -948,6 +954,7 @@ namespace Microsoft.PythonTools.Analysis {
             lock (_searchPaths) {
                 _searchPaths.Clear();
                 _searchPaths.AddRange(paths.MaybeEnumerate());
+                _pathResolver.UpdateRoots(_searchPaths);
             }
             SearchPathsChanged?.Invoke(this, EventArgs.Empty);
         }
