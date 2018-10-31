@@ -63,6 +63,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var progress = services.GetService<IProgressService>();
 
+            var rpcTraceListener = new TelemetryRpcTraceListener(services.GetService<ITelemetryService2>());
+            _rpc.TraceSource.Listeners.Add(rpcTraceListener);
+
             _server.OnLogMessage += OnLogMessage;
             _server.OnShowMessage += OnShowMessage;
             _server.OnPublishDiagnostics += OnPublishDiagnostics;
@@ -79,7 +82,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(() => _server.OnUnregisterCapability -= OnUnregisterCapability)
                 .Add(() => _shutdownCts.Cancel())
                 .Add(_prioritizer)
-                .Add(() => _pathsWatcher?.Dispose());
+                .Add(() => _pathsWatcher?.Dispose())
+                .Add(() => _rpc.TraceSource.Listeners.Remove(rpcTraceListener));
 
             return _sessionTokenSource.Token;
         }

@@ -30,7 +30,7 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     class ParseQueue: IDisposable {
-        public const string PythonParserSource = "Python (parser)";
+        public const string PythonParserSource = "Python";
         private const string TaskCommentSource = "Task comment";
 
         private readonly ConcurrentDictionary<Uri, ParseTask> _parsing;

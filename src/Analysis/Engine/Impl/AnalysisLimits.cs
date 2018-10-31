@@ -181,6 +181,12 @@ namespace Microsoft.PythonTools.Analysis {
         public bool ProcessCustomDecorators { get; set; }
 
         /// <summary>
+        /// <c>True</c> to propagate parameter types to base methods.
+        /// Parameter types always propagate to derived methods.
+        /// </summary>
+        public bool PropagateParameterTypeToBaseMethods { get; set; }
+
+        /// <summary>
         /// True to read information from type stub packages.
         /// </summary>
         public bool UseTypeStubPackages { get; set; }
