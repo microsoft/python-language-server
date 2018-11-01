@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -27,13 +27,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstAnalysisWalker : PythonWalker {
         private readonly IPythonModule _module;
         private readonly Dictionary<string, IMember> _members;
-        private readonly List<AstAnalysisFunctionWalker> _postWalkers = new List<AstAnalysisFunctionWalker>();
         private readonly AnalysisLogWriter _log;
-        private readonly Dictionary<string, IMember> _typingScope;
-
-        private IPythonInterpreter _interpreter => Scope.Interpreter;
-        private PythonAst _ast => Scope.Ast;
-        private IPythonType _unknownType => Scope._unknownType;
+        private readonly Dictionary<string, IMember> _typingScope = new Dictionary<string, IMember>();
+        private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
+        private readonly NameLookupContext _scope;
+        private readonly PythonAst _ast;
+        private readonly IPythonInterpreter _interpreter;
 
         public AstAnalysisWalker(
             IPythonInterpreter interpreter,
@@ -44,12 +43,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             Dictionary<string, IMember> members,
             bool includeLocationInfo,
             bool warnAboutUndefinedValues,
+            bool suppressBuiltinLookup,
             AnalysisLogWriter log = null
         ) {
             _log = log ?? (interpreter as AstPythonInterpreter)?.Log;
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _members = members ?? throw new ArgumentNullException(nameof(members));
-            Scope = new NameLookupContext(
+            _scope = new NameLookupContext(
                 interpreter ?? throw new ArgumentNullException(nameof(interpreter)),
                 interpreter.CreateModuleContext(),
                 ast ?? throw new ArgumentNullException(nameof(ast)),
@@ -57,46 +57,46 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 filePath,
                 documentUri,
                 includeLocationInfo,
+                _functionWalkers,
                 log: warnAboutUndefinedValues ? _log : null
             );
-            _typingScope = new Dictionary<string, IMember>();
-            Scope.PushScope(_typingScope);
+            _ast = ast;
+            _interpreter = interpreter;
+            _scope.SuppressBuiltinLookup = suppressBuiltinLookup;
+            _scope.PushScope(_typingScope);
             WarnAboutUndefinedValues = warnAboutUndefinedValues;
         }
 
         public bool CreateBuiltinTypes { get; set; }
         public bool WarnAboutUndefinedValues { get; }
-        public NameLookupContext Scope { get; }
 
         public override bool Walk(PythonAst node) {
             if (_ast != node) {
                 throw new InvalidOperationException("walking wrong AST");
             }
 
-            FirstPassCollectClasses();
-            Scope.PushScope(_members);
+            CollectTopLevelDefinitions();
+            _scope.PushScope(_members);
 
             return base.Walk(node);
         }
 
         public override void PostWalk(PythonAst node) {
-            Scope.PopScope();
+            _scope.PopScope();
             base.PostWalk(node);
         }
 
         public void Complete() {
-            foreach (var walker in _postWalkers) {
-                walker.Walk();
-            }
+            _functionWalkers.ProcessSet();
 
-            if (_module.Name != "typing" && Scope.FilePath.EndsWithOrdinal(".pyi", ignoreCase: true)) {
+            if (_module.Name != "typing" && _scope.FilePath.EndsWithOrdinal(".pyi", ignoreCase: true)) {
                 // Do not expose members directly imported from typing
                 _typingScope.Clear();
             }
         }
 
         internal LocationInfo GetLoc(ClassDefinition node) {
-            if (!Scope.IncludeLocationInfo) {
+            if (!_scope.IncludeLocationInfo) {
                 return null;
             }
             if (node == null || node.StartIndex >= node.EndIndex) {
@@ -105,34 +105,33 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             var start = node.NameExpression?.GetStart(_ast) ?? node.GetStart(_ast);
             var end = node.GetEnd(_ast);
-            return new LocationInfo(Scope.FilePath, Scope.DocumentUri, start.Line, start.Column, end.Line, end.Column);
+            return new LocationInfo(_scope.FilePath, _scope.DocumentUri, start.Line, start.Column, end.Line, end.Column);
         }
 
-        internal LocationInfo GetLoc(Node node) => Scope.GetLoc(node);
-        private IPythonType CurrentClass => Scope.GetInScope("__class__") as IPythonType;
+        private LocationInfo GetLoc(Node node) => _scope.GetLoc(node);
 
         private IMember Clone(IMember member) =>
             member is IPythonMultipleMembers mm ? AstPythonMultipleMembers.Create(mm.Members) :
             member;
 
         public override bool Walk(AssignmentStatement node) {
-            var value = Scope.GetValueFromExpression(node.Right);
+            var value = _scope.GetValueFromExpression(node.Right);
             if ((value == null || value.MemberType == PythonMemberType.Unknown) && WarnAboutUndefinedValues) {
                 _log?.Log(TraceLevel.Warning, "UndefinedValue", node.Right.ToCodeString(_ast).Trim());
             }
             if ((value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Ellipsis) {
-                value = _unknownType;
+                value = _scope.UnknownType;
             }
 
             foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                 AssignFromAnnotation(expr);
-                if (value != _unknownType && expr.Expression is NameExpression ne) {
-                    Scope.SetInScope(ne.Name, Clone(value));
+                if (value != _scope.UnknownType && expr.Expression is NameExpression ne) {
+                    _scope.SetInScope(ne.Name, Clone(value));
                 }
             }
 
             foreach (var ne in node.Left.OfType<NameExpression>()) {
-                Scope.SetInScope(ne.Name, Clone(value));
+                _scope.SetInScope(ne.Name, Clone(value));
             }
 
             return base.Walk(node);
@@ -149,13 +148,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             if (expr.Expression is NameExpression ne) {
-                bool any = false;
-                foreach (var annType in Scope.GetTypesFromAnnotation(expr.Annotation)) {
-                    Scope.SetInScope(ne.Name, new AstPythonConstant(annType, GetLoc(expr.Expression)));
+                var any = false;
+                foreach (var annType in _scope.GetTypesFromAnnotation(expr.Annotation)) {
+                    _scope.SetInScope(ne.Name, new AstPythonConstant(annType, GetLoc(expr.Expression)));
                     any = true;
                 }
                 if (!any) {
-                    Scope.SetInScope(ne.Name, _unknownType);
+                    _scope.SetInScope(ne.Name, _scope.UnknownType);
                 }
             }
         }
@@ -166,18 +165,18 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             try {
-                for (int i = 0; i < node.Names.Count; ++i) {
+                for (var i = 0; i < node.Names.Count; ++i) {
                     var n = node.AsNames?[i] ?? node.Names[i].Names[0];
                     if (n != null) {
                         if (n.Name == "typing") {
-                            Scope.SetInScope(n.Name, new AstTypingModule(), scope: _typingScope);
+                            _scope.SetInScope(n.Name, new AstTypingModule(), scope: _typingScope);
                         } else if (n.Name == _module.Name) {
-                            Scope.SetInScope(n.Name, _module);
+                            _scope.SetInScope(n.Name, _module);
                         } else {
-                            Scope.SetInScope(n.Name, new AstNestedPythonModule(
+                            _scope.SetInScope(n.Name, new AstNestedPythonModule(
                                 _interpreter,
                                 n.Name,
-                                ModuleResolver.ResolvePotentialModuleNames(_module.Name, Scope.FilePath, node.Names[i].MakeString(), true).ToArray()
+                                ModuleResolver.ResolvePotentialModuleNames(_module.Name, _scope.FilePath, node.Names[i].MakeString(), true).ToArray()
                             ));
                         }
                     }
@@ -213,7 +212,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             IPythonModule mod = null;
             Dictionary<string, IMember> scope = null;
 
-            bool isTyping = modName == "typing";
+            var isTyping = modName == "typing";
             var warnAboutUnknownValues = WarnAboutUndefinedValues;
             if (isTyping) {
                 mod = new AstTypingModule();
@@ -226,44 +225,44 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             mod = mod ?? new AstNestedPythonModule(
                 _interpreter,
                 modName,
-                ModuleResolver.ResolvePotentialModuleNames(_module.Name, Scope.FilePath, modName, true).ToArray()
+                ModuleResolver.ResolvePotentialModuleNames(_module.Name, _scope.FilePath, modName, true).ToArray()
             );
 
             foreach (var name in GetImportNames(node.Names, node.AsNames)) {
                 if (name.Key == "*") {
-                    mod.Imported(Scope.Context);
+                    mod.Imported(_scope.Context);
                     // Ensure child modules have been loaded
                     mod.GetChildrenModules();
-                    foreach (var member in mod.GetMemberNames(Scope.Context)) {
-                        var mem = mod.GetMember(Scope.Context, member);
+                    foreach (var member in mod.GetMemberNames(_scope.Context)) {
+                        var mem = mod.GetMember(_scope.Context, member);
                         if (mem == null) {
                             if (WarnAboutUndefinedValues) {
                                 _log?.Log(TraceLevel.Warning, "UndefinedImport", modName, member);
                             }
-                            mem = new AstPythonConstant(_unknownType, ((mod as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
+                            mem = new AstPythonConstant(_scope.UnknownType, ((mod as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
                         } else if (mem.MemberType == PythonMemberType.Unknown && warnAboutUnknownValues) {
                             _log?.Log(TraceLevel.Warning, "UnknownImport", modName, member);
                         }
-                        Scope.SetInScope(member, mem, scope: scope);
-                        (mem as IPythonModule)?.Imported(Scope.Context);
+                        _scope.SetInScope(member, mem, scope: scope);
+                        (mem as IPythonModule)?.Imported(_scope.Context);
                     }
                 } else {
                     IMember mem;
                     if (mod is AstNestedPythonModule m && !m.IsLoaded) {
-                        mem = new AstNestedPythonModuleMember(name.Key, m, Scope.Context, GetLoc(name.Value));
+                        mem = new AstNestedPythonModuleMember(name.Key, m, _scope.Context, GetLoc(name.Value));
                     } else {
-                        mem = mod.GetMember(Scope.Context, name.Key);
+                        mem = mod.GetMember(_scope.Context, name.Key);
                         if (mem == null) {
                             if (WarnAboutUndefinedValues) {
                                 _log?.Log(TraceLevel.Warning, "UndefinedImport", modName, name);
                             }
-                            mem = new AstPythonConstant(_unknownType, GetLoc(name.Value));
+                            mem = new AstPythonConstant(_scope.UnknownType, GetLoc(name.Value));
                         } else if (mem.MemberType == PythonMemberType.Unknown && warnAboutUnknownValues) {
                             _log?.Log(TraceLevel.Warning, "UnknownImport", modName, name);
                         }
-                        (mem as IPythonModule)?.Imported(Scope.Context);
+                        (mem as IPythonModule)?.Imported(_scope.Context);
                     }
-                    Scope.SetInScope(name.Value.Name, mem, scope: scope);
+                    _scope.SetInScope(name.Value.Name, mem, scope: scope);
                 }
             }
 
@@ -271,7 +270,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public override bool Walk(IfStatement node) {
-            bool allValidComparisons = true;
+            var allValidComparisons = true;
             foreach (var test in node.TestsInternal) {
                 if (test.Test is BinaryExpression cmp &&
                     cmp.Left is MemberExpression me && (me.Target as NameExpression)?.Name == "sys" && me.Name == "version_info" &&
@@ -287,7 +286,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                         return true;
                     }
 
-                    bool shouldWalk = false;
+                    var shouldWalk = false;
                     switch (cmp.Operator) {
                         case PythonOperator.LessThan:
                             shouldWalk = _ast.LanguageVersion.ToVersion() < v;
@@ -321,7 +320,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault();
             foreach (var d in dec) {
-                var obj = Scope.GetValueFromExpression(d);
+                var obj = _scope.GetValueFromExpression(d);
                 if (obj == _interpreter.GetBuiltinType(BuiltinTypeId.Property)) {
                     AddProperty(node);
                     return false;
@@ -335,7 +334,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
             foreach (var setter in dec.OfType<MemberExpression>().Where(n => n.Name == "setter")) {
                 if (setter.Target is NameExpression src) {
-                    var existingProp = Scope.LookupNameInScopes(src.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
+                    var existingProp = _scope.LookupNameInScopes(src.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
                     if (existingProp != null) {
                         // Setter for an existing property, so don't create a function
                         existingProp.MakeSettable();
@@ -344,50 +343,33 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 }
             }
 
-            var existing = Scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonFunction;
-            if (existing == null) {
-                existing = new AstPythonFunction(_ast, _module, CurrentClass, node, GetLoc(node));
-                Scope.SetInScope(node.Name, existing);
-            }
-
-            var funcScope = Scope.Clone();
-            if (CreateBuiltinTypes) {
-                funcScope.SuppressBuiltinLookup = true;
-            }
-            existing.AddOverload(CreateFunctionOverload(funcScope, node));
-
+            ProcessFunctionDefinition(node);
             // Do not recurse into functions
             return false;
         }
 
         private void AddProperty(FunctionDefinition node) {
-            var existing = Scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
-
+            var existing = _scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
             if (existing == null) {
                 existing = new AstPythonProperty(_ast, node, GetLoc(node));
-                Scope.SetInScope(node.Name, existing);
+                _scope.SetInScope(node.Name, existing);
             }
 
             // Treat the rest of the property as a function. "AddOverload" takes the return type
             // and sets it as the property type.
-            var funcScope = Scope.Clone();
-            if (CreateBuiltinTypes) {
-                funcScope.SuppressBuiltinLookup = true;
-            }
+            var funcScope = _scope.Clone();
+            funcScope.SuppressBuiltinLookup = CreateBuiltinTypes;
+
             existing.AddOverload(CreateFunctionOverload(funcScope, node));
         }
 
         private IPythonFunctionOverload CreateFunctionOverload(NameLookupContext funcScope, FunctionDefinition node) {
-            var parameters = new List<AstPythonParameterInfo>();
-            foreach (var p in node.Parameters) {
-                var annType = Scope.GetTypesFromAnnotation(p.Annotation);
-                parameters.Add(new AstPythonParameterInfo(_ast, p, annType));
-            }
+            var parameters = node.Parameters
+                .Select(p => new AstPythonParameterInfo(_ast, p, _scope.GetTypesFromAnnotation(p.Annotation)))
+                .ToArray();
 
             var overload = new AstPythonFunctionOverload(parameters, funcScope.GetLocOfName(node, node.NameExpression));
-
-            var funcWalk = new AstAnalysisFunctionWalker(funcScope, node, overload);
-            _postWalkers.Add(funcWalk);
+            _functionWalkers.Add(new AstAnalysisFunctionWalker(funcScope, node, overload));
 
             return overload;
         }
@@ -402,23 +384,23 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             if (node == null) {
                 throw new ArgumentNullException(nameof(node));
             }
-            if (CreateBuiltinTypes) {
-                return new AstPythonBuiltinType(_ast, _module, node, GetDoc(node.Body as SuiteStatement), GetLoc(node));
+            return CreateBuiltinTypes
+                ? new AstPythonBuiltinType(_ast, _module, node, GetDoc(node.Body as SuiteStatement), GetLoc(node))
+                : new AstPythonType(_ast, _module, node, GetDoc(node.Body as SuiteStatement), GetLoc(node));
+        }
+        private void CollectTopLevelDefinitions() {
+            var s = (_ast.Body as SuiteStatement).Statements.ToArray();
+
+            foreach (var node in s.OfType<FunctionDefinition>()) {
+                ProcessFunctionDefinition(node);
             }
 
-            return new AstPythonType(_ast, _module, node, GetDoc(node.Body as SuiteStatement), GetLoc(node));
-        }
-
-        public void FirstPassCollectClasses() {
-            foreach (var node in (_ast.Body as SuiteStatement).Statements.OfType<ClassDefinition>()) {
+            foreach (var node in s.OfType<ClassDefinition>()) {
                 _members[node.Name] = CreateType(node);
             }
-            foreach (var node in (_ast.Body as SuiteStatement).Statements.OfType<AssignmentStatement>()) {
-                var rhs = node.Right as NameExpression;
-                if (rhs == null) {
-                    continue;
-                }
 
+            foreach (var node in s.OfType<AssignmentStatement>().Where(n => n.Right is NameExpression)) {
+                var rhs = (NameExpression)node.Right;
                 if (_members.TryGetValue(rhs.Name, out var member)) {
                     foreach (var lhs in node.Left.OfType<NameExpression>()) {
                         _members[lhs.Name] = member;
@@ -428,34 +410,48 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public override bool Walk(ClassDefinition node) {
-            var member = Scope.GetInScope(node.Name);
-            AstPythonType t = member as AstPythonType ??
+            var member = _scope.GetInScope(node.Name);
+            var t = member as AstPythonType ??
                 (member as IPythonMultipleMembers)?.Members.OfType<AstPythonType>().FirstOrDefault(pt => pt.StartIndex == node.StartIndex);
             if (t == null) {
                 t = CreateType(node);
-                Scope.SetInScope(node.Name, t);
+                _scope.SetInScope(node.Name, t);
             }
 
             var bases = node.Bases.Where(a => string.IsNullOrEmpty(a.Name))
                 // We cheat slightly and treat base classes as annotations.
-                .SelectMany(a => Scope.GetTypesFromAnnotation(a.Expression))
+                .SelectMany(a => _scope.GetTypesFromAnnotation(a.Expression))
                 .ToArray();
 
             t.SetBases(_interpreter, bases);
 
-            Scope.PushScope();
-            Scope.SetInScope("__class__", t);
+            _scope.PushScope();
+            _scope.SetInScope("__class__", t);
 
             return true;
         }
 
         public override void PostWalk(ClassDefinition node) {
-            var cls = CurrentClass as AstPythonType;
-            var m = Scope.PopScope();
+            var cls = _scope.GetInScope("__class__") as AstPythonType; // Store before popping the scope
+            var m = _scope.PopScope();
             if (cls != null && m != null) {
                 cls.AddMembers(m, true);
             }
             base.PostWalk(node);
+        }
+
+        public void ProcessFunctionDefinition(FunctionDefinition node) {
+            var existing = _scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonFunction;
+            if (existing == null) {
+                var cls = _scope.GetInScope("__class__") as IPythonType;
+                existing = new AstPythonFunction(_ast, _module, cls, node, GetLoc(node));
+                _scope.SetInScope(node.Name, existing);
+            }
+
+            var funcScope = _scope.Clone();
+            funcScope.SuppressBuiltinLookup = CreateBuiltinTypes;
+
+            existing.AddOverload(CreateFunctionOverload(funcScope, node));
         }
     }
 }

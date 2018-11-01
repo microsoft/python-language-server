@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -209,6 +209,50 @@ namespace AnalysisTests {
                     .And.HaveVariable("XY").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Str)
                     .And.HaveVariable("XYZ").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Str, BuiltinTypeId.Bytes)
                     .And.HaveVariable("D").OfTypes(BuiltinTypeId.List, BuiltinTypeId.Tuple, BuiltinTypeId.Dict, BuiltinTypeId.Set);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstForwardRefProperty1() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefProp1 import *
+x = B().getA().methodA()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstForwardRefGlobalFunction() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefGlobalFunc import *
+x = func1()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstForwardRefFunction1() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefFunc1 import *
+x = B().getA().methodA()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstForwardRefFunction2() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefFunc2 import *
+x = B().getA().methodA()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
             }
         }
 
@@ -777,7 +821,7 @@ class BankAccount(object):
                     foreach (var r in modules
                         .Where(m => !skip.Contains(m.ModuleName))
                         .GroupBy(m => {
-                            int i = m.FullName.IndexOf('.');
+                            var i = m.FullName.IndexOf('.');
                             return i <= 0 ? m.FullName : m.FullName.Remove(i);
                         })
                         .AsParallel()
@@ -934,13 +978,20 @@ e1, e2, e3 = sys.exc_info()";
 scanner = _json.make_scanner()";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
-                analysis.Should().HaveVariable("scanner").WithValue<IBuiltinInstanceInfo>()
-                    .Which.Should().HaveSingleOverload()
+                var v0 = analysis.Should().HaveVariable("scanner").WithValueAt<IBuiltinInstanceInfo>(0);
+                var v1 = analysis.Should().HaveVariable("scanner").WithValueAt<IBuiltinInstanceInfo>(1);
+
+                  v0.Which.Should().HaveSingleOverload()
                     .Which.Should().HaveName("__call__")
                     .And.HaveParameters("string", "index")
                     .And.HaveParameterAt(0).WithName("string").WithType("str").WithNoDefaultValue()
                     .And.HaveParameterAt(1).WithName("index").WithType("int").WithNoDefaultValue()
                     .And.HaveSingleReturnType("tuple[None, int]");
+
+                v1.Which.Should().HaveSingleOverload()
+                  .Which.Should().HaveName("__call__")
+                  .And.HaveParameters("*args", "**kwargs")
+                  .And.HaveSingleReturnType("type");
             }
         }
 

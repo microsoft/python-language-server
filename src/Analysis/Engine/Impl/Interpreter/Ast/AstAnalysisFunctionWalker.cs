@@ -9,20 +9,21 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
+    [DebuggerDisplay("{Target.Name}")]
     class AstAnalysisFunctionWalker : PythonWalker {
-        private readonly FunctionDefinition _target;
         private readonly NameLookupContext _scope;
         private readonly AstPythonFunctionOverload _overload;
         private AstPythonType _selfType;
@@ -33,12 +34,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             AstPythonFunctionOverload overload
         ) {
             _scope = scope ?? throw new ArgumentNullException(nameof(scope));
-            _target = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
+            Target = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
             _overload = overload ?? throw new ArgumentNullException(nameof(overload));
         }
 
-        public IList<IPythonType> ReturnTypes => _overload.ReturnTypes;
-        public IPythonFunctionOverload Overload => _overload;
+        public FunctionDefinition Target { get; } 
 
         private void GetMethodType(FunctionDefinition node, out bool classmethod, out bool staticmethod) {
             classmethod = false;
@@ -51,7 +51,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             var classmethodObj = _scope.Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
             var staticmethodObj = _scope.Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
-            foreach (var d in (_target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
+            foreach (var d in (Target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
                 var m = _scope.GetValueFromExpression(d);
                 if (m == classmethodObj) {
                     classmethod = true;
@@ -65,21 +65,31 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var self = GetSelf();
             _selfType = (self as AstPythonConstant)?.Type as AstPythonType;
 
-            _overload.ReturnTypes.AddRange(_scope.GetTypesFromAnnotation(_target.ReturnAnnotation).ExcludeDefault());
-
+            _overload.ReturnTypes.AddRange(_scope.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault());
             _scope.PushScope();
+
+            // Declare self, if any
+            var skip = 0;
             if (self != null) {
-                var p0 = _target.Parameters.FirstOrDefault();
+                var p0 = Target.Parameters.FirstOrDefault();
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
                     _scope.SetInScope(p0.Name, self);
+                    skip++;
                 }
             }
-            _target.Walk(this);
+
+            // Declare parameters in scope
+            foreach(var p in Target.Parameters.Skip(skip).Where(p => !string.IsNullOrEmpty(p.Name))) {
+                 var value = _scope.GetValueFromExpression(p.DefaultValue);
+                _scope.SetInScope(p.Name, value ?? _scope.UnknownType);
+            }
+
+            Target.Walk(this);
             _scope.PopScope();
         }
 
         public override bool Walk(FunctionDefinition node) {
-            if (node != _target) {
+            if (node != Target) {
                 // Do not walk nested functions (yet)
                 return false;
             }
@@ -163,19 +173,28 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public override bool Walk(ReturnStatement node) {
-            foreach (var type in _scope.GetTypesFromValue(_scope.GetValueFromExpression(node.Expression)).ExcludeDefault()) {
+            var types = _scope.GetTypesFromValue(_scope.GetValueFromExpression(node.Expression)).ExcludeDefault();
+            foreach (var type in types) {
                 _overload.ReturnTypes.Add(type);
+            }
+            
+            // Clean up: if there are None or Unknown types along with real ones, remove them.
+            var realTypes = _overload.ReturnTypes
+                .Where(t => t.TypeId != BuiltinTypeId.Unknown && t.TypeId != BuiltinTypeId.NoneType)
+                .ToList();
+
+            if (realTypes.Count > 0) {
+                _overload.ReturnTypes.Clear();
+                _overload.ReturnTypes.AddRange(realTypes);
             }
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
 
         private IMember GetSelf() {
-            bool classmethod, staticmethod;
-            GetMethodType(_target, out classmethod, out staticmethod);
+            GetMethodType(Target, out var classmethod, out var staticmethod);
             var self = _scope.LookupNameInScopes("__class__", NameLookupContext.LookupOptions.Local);
             if (!staticmethod && !classmethod) {
-                var cls = self as IPythonType;
-                if (cls == null) {
+                if (!(self is IPythonType cls)) {
                     self = null;
                 } else {
                     self = new AstPythonConstant(cls, ((cls as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());

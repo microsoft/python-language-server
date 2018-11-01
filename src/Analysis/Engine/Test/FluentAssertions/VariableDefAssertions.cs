@@ -211,7 +211,19 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var testInfo = new AnalysisValueTestInfo<TValue>((TValue)value, GetScopeDescription(), _scope);
             return new AndWhichConstraint<VariableDefAssertions, AnalysisValueTestInfo<TValue>>(this, testInfo);
         }
-        
+
+        public AndWhichConstraint<VariableDefAssertions, AnalysisValueTestInfo<TValue>> HaveValueAt<TValue>(int index, string because = "", params object[] reasonArgs)
+            where TValue : IAnalysisValue {
+            var value = FlattenAnalysisValues(Subject.Types).ToArray()[index];
+
+            Execute.Assertion.ForCondition(value is TValue)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {_moduleName}.{_name} to have value of type {typeof(TValue)}{{reason}}, but its value has type {value.GetType()}.");
+
+            var testInfo = new AnalysisValueTestInfo<TValue>((TValue)value, GetScopeDescription(), _scope);
+            return new AndWhichConstraint<VariableDefAssertions, AnalysisValueTestInfo<TValue>>(this, testInfo);
+        }
+
         private IAnalysisValue AssertSingle(string because, object[] reasonArgs, IAnalysisValue[] values) {
             Execute.Assertion.ForCondition(values.Length == 1)
                 .BecauseOf(because, reasonArgs)
@@ -220,6 +232,16 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                     : $"Expected variable '{_moduleName}.{_name}' to have single value{{reason}}, but found {values.Length}: {GetQuotedNames(values)}");
 
             return values[0];
+        }
+
+        private IAnalysisValue[] AssertCount(int count, string because, object[] reasonArgs, IAnalysisValue[] values) {
+            Execute.Assertion.ForCondition(values.Length != count)
+                .BecauseOf(because, reasonArgs)
+                .FailWith(values.Length == count
+                    ? $"Expected variable '{_moduleName}.{_name}' to have {count} values{{reason}}, but found none."
+                    : $"Expected variable '{_moduleName}.{_name}' to have {count} values{{reason}}, but found {values.Length}: {GetQuotedNames(values)}");
+
+            return values;
         }
 
         private string GetScopeDescription() {
