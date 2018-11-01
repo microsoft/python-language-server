@@ -46,7 +46,7 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly HashSet<AggregateProjectEntry> _aggregates = new HashSet<AggregateProjectEntry>();
 
         private TaskCompletionSource<IModuleAnalysis> _analysisTcs = new TaskCompletionSource<IModuleAnalysis>();
-        private AnalysisUnit _unit;
+        internal AnalysisUnit _unit;
         private readonly ManualResetEventSlim _pendingParse = new ManualResetEventSlim(true);
         private long _expectedParseVersion;
         private long _expectedAnalysisVersion;

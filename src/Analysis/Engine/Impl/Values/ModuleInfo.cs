@@ -123,6 +123,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public ModuleInfo ParentPackage { get; set; }
 
+        public override AnalysisUnit AnalysisUnit => _projectEntry._unit;
+
         public void AddChildPackage(ModuleInfo childPackage, AnalysisUnit curUnit, string realName = null) {
             realName = realName ?? childPackage.Name;
             int lastDot;

@@ -342,6 +342,17 @@ namespace Microsoft.PythonTools.Analysis {
         internal virtual ILocationResolver AlternateResolver => null;
 
         ILocationResolver ILocationResolver.GetAlternateResolver() => AlternateResolver;
+
+        protected internal virtual AnalysisUnit GetExternalAnnotationAnalysisUnit() {
+            if (Ast != Tree)
+                return null;
+
+            string analysisModuleName = ProjectEntry.ModuleName + PythonAnalyzer.AnnotationsModuleSuffix;
+            if (!ProjectEntry.ProjectState.Modules.TryImport(analysisModuleName, out var analysisModuleReference))
+                return null;
+
+            return analysisModuleReference.AnalysisModule?.AnalysisUnit;
+        }
     }
 
     class ClassAnalysisUnit : AnalysisUnit {
@@ -461,6 +472,19 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             return bases;
+        }
+
+        protected internal override AnalysisUnit GetExternalAnnotationAnalysisUnit() {
+            var parentAnnotation = _outerUnit.GetExternalAnnotationAnalysisUnit();
+            if (parentAnnotation == null)
+                return null;
+            if (!parentAnnotation.Scope.TryGetVariable(Ast.Name, out var annotationVariable))
+                return null;
+            if (annotationVariable.Types is ClassInfo classAnnotation)
+                return classAnnotation.AnalysisUnit;
+            if (annotationVariable.Types.OnlyOneOrDefault() is ClassInfo nestedAnnotation)
+                return nestedAnnotation.AnalysisUnit;
+            return null;
         }
     }
 

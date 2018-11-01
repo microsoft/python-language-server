@@ -113,10 +113,22 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             if (!ProjectState.Modules.TryImport(_unit.DeclaringModule.Name, out existingRef)) {
                 // publish our module ref now so that we don't collect dependencies as we'll be fully processed
                 if (existingRef == null) {
-                    ProjectState.Modules[_unit.DeclaringModule.Name] = new ModuleReference(_unit.DeclaringModule, _unit.DeclaringModule.Name);
+                    ProjectState.Modules[_unit.DeclaringModule.Name] = existingRef = new ModuleReference(_unit.DeclaringModule, _unit.DeclaringModule.Name);
                 } else {
                     existingRef.Module = _unit.DeclaringModule;
                 }
+            }
+
+            string annotationModuleName = _unit.DeclaringModule.Name + PythonAnalyzer.AnnotationsModuleSuffix;
+            if (ProjectState.Modules.TryGetImportedModule(annotationModuleName, out var _)
+                && TryImportModule(annotationModuleName, true, out var annotationsReference, out var _)) {
+                annotationsReference.Module.Imported(_unit);
+
+                if (ProjectState.Modules.TryGetImportedModule(annotationModuleName, out annotationsReference)) {
+                    FinishImportModuleOrMember(annotationsReference, attribute: null, name: "__pyi__",
+                        addRef: true, node: node, nameReference: new NameExpression("__pyi__"));
+                } else
+                    Debug.Fail($"Failed to get module {annotationModuleName} we just imported");
             }
 
             return base.Walk(node);
@@ -345,19 +357,23 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         /// True to add <paramref name="node"/> as a reference of the
         /// imported value.
         /// </param>
-        private void FinishImportModuleOrMember(ModuleReference module, IReadOnlyList<string> attribute, string name, bool addRef, Node node, NameExpression nameReference) {
-            if (AssignImportedModuleOrMember(
+        private bool FinishImportModuleOrMember(ModuleReference module, IReadOnlyList<string> attribute, string name, bool addRef, Node node, NameExpression nameReference) {
+            bool imported = AssignImportedModuleOrMember(
                 name,
                 GetImportedModuleOrMember(module, attribute, addRef, node, nameReference, attribute?.Count == 1 ? name : null),
                 addRef,
                 node,
                 nameReference
-            )) {
+            );
+
+            if (imported) {
                 // Imports into our global scope need to enqueue modules that have imported us
                 if (Scope == GlobalScope.Scope) {
                     GlobalScope.ModuleDefinition.EnqueueDependents();
                 }
             }
+
+            return imported;
         }
 
         public override bool Walk(FromImportStatement node) {

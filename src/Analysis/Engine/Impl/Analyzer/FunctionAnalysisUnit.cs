@@ -72,6 +72,19 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return base.GetDeclaringModule() ?? _declUnit.DeclaringModule;
         }
 
+        protected internal override AnalysisUnit GetExternalAnnotationAnalysisUnit() {
+            var parentAnnotation = _declUnit.GetExternalAnnotationAnalysisUnit();
+            if (parentAnnotation == null)
+                return null;
+            if (!parentAnnotation.Scope.TryGetVariable(Ast.Name, out var annotationVariable))
+                return null;
+            if (annotationVariable.Types is FunctionInfo functionAnnotation)
+                return functionAnnotation.AnalysisUnit;
+            if (annotationVariable.Types.OnlyOneOrDefault() is FunctionInfo nestedAnnotation)
+                return nestedAnnotation.AnalysisUnit;
+            return null;
+        }
+
         internal override void AnalyzeWorker(DDG ddg, CancellationToken cancel) {
             // Resolve default parameters and decorators in the outer scope but
             // continue to associate changes with this unit.
@@ -184,16 +197,30 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         internal void AnalyzeDefaultParameters(DDG ddg) {
             IVariableDefinition param;
             var scope = (FunctionScope)Scope;
+            var annotationAnalysis = GetExternalAnnotationAnalysisUnit() as FunctionAnalysisUnit;
+            var functionAnnotation = annotationAnalysis?.Function.FunctionDefinition;
+            if (functionAnnotation?.Parameters.Length != Ast.Parameters.Length)
+                functionAnnotation = null;
             for (var i = 0; i < Ast.Parameters.Length; ++i) {
                 var p = Ast.Parameters[i];
-                if (p.Annotation != null) {
-                    var val = ddg._eval.EvaluateAnnotation(p.Annotation);
-                    if (val?.Any() == true && Scope.TryGetVariable(p.Name, out param)) {
-                        param.AddTypes(this, val, false);
-                        var vd = scope.GetParameter(p.Name);
-                        if (vd != null && vd != param) {
-                            vd.AddTypes(this, val, false);
-                        }
+                var annotation = p.Annotation;
+                IAnalysisSet annotationValue = null;
+                if (annotation != null) {
+                    annotationValue = ddg._eval.EvaluateAnnotation(annotation);
+                } else if (functionAnnotation?.Parameters[i].Annotation != null) {
+                    try {
+                        ddg.SetCurrentUnit(annotationAnalysis);
+                        annotationValue = ddg._eval.EvaluateAnnotation(functionAnnotation.Parameters[i].Annotation);
+                    } finally {
+                        ddg.SetCurrentUnit(this);
+                    }
+                }
+
+                if (annotationValue?.Any() == true && Scope.TryGetVariable(p.Name, out param)) {
+                    param.AddTypes(this, annotationValue, false);
+                    var vd = scope.GetParameter(p.Name);
+                    if (vd != null && vd != param) {
+                        vd.AddTypes(this, annotationValue, false);
                     }
                 }
 

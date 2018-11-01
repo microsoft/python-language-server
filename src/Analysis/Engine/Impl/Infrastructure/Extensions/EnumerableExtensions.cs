@@ -60,6 +60,22 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         public static IEnumerable<T> Keys<T, U>(this IEnumerable<KeyValuePair<T, U>> source) => source.Select(GetKey);
         public static IEnumerable<T> ExcludeDefault<T>(this IEnumerable<T> source) => source.Where(i => !Equals(i, default(T)));
 
+        /// <summary>
+        /// Returns the only element of sequence, or the default value of <typeparamref name="T"/>, if sequence has &lt;&gt; 1 elements.
+        /// </summary>
+        public static T OnlyOneOrDefault<T>(this IEnumerable<T> source) {
+            using (var enumerator = source.GetEnumerator()) {
+                if (!enumerator.MoveNext())
+                    return default(T);
+
+                T result = enumerator.Current;
+
+                if (enumerator.MoveNext())
+                    return default(T);
+
+                return result;
+            }
+        }
 
         public static IEnumerable<T> TraverseBreadthFirst<T>(this T root, Func<T, IEnumerable<T>> selectChildren) {
             var items = new Queue<T>();
