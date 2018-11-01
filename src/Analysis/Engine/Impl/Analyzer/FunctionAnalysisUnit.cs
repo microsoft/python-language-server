@@ -236,8 +236,20 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                     }
                 }
             }
+
+            IAnalysisSet ann = null;
             if (Ast.ReturnAnnotation != null) {
-                var ann = ddg._eval.EvaluateAnnotation(Ast.ReturnAnnotation);
+                ann = ddg._eval.EvaluateAnnotation(Ast.ReturnAnnotation);
+            } else if (functionAnnotation?.ReturnAnnotation != null) {
+                try {
+                    ddg.SetCurrentUnit(annotationAnalysis);
+                    ann = ddg._eval.EvaluateAnnotation(functionAnnotation.ReturnAnnotation);
+                } finally {
+                    ddg.SetCurrentUnit(this);
+                }
+            }
+
+            if (ann != null) {
                 var resType = ann;
                 if (Ast.IsGenerator) {
                     if (ann.Split<ProtocolInfo>(out var gens, out resType)) {
