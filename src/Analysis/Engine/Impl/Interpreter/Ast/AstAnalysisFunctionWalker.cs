@@ -65,6 +65,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var self = GetSelf();
             _selfType = (self as AstPythonConstant)?.Type as AstPythonType;
 
+            var index = Target.Name == "namedtuple";
             _overload.ReturnTypes.AddRange(_scope.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault());
             _scope.PushScope();
 

@@ -94,7 +94,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public override IPythonType MakeUnion(IReadOnlyList<IPythonType> types) => new UnionType(types);
 
-        public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType unionType) => 
+        public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType unionType) =>
             (unionType as UnionType)?.Types ??
             (unionType as IPythonMultipleMembers)?.Members.OfType<IPythonType>().ToArray();
 
@@ -129,7 +129,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 case "ByteString":
                     return _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
                 case "Type":
-                    return _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type);
+                    return args.Count > 0 ? MakeGenericClassType(args[0]) : _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type);
                 case "Any":
                     return baseType;
                 // TODO: Other types
@@ -191,6 +191,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
             return res;
         }
+
+        private IPythonType MakeGenericClassType(IPythonType typeArg)
+            => typeArg.IsBuiltin
+                ? new AstPythonBuiltinType(typeArg.Name, _scope.Ast, _scope.Module, 0, typeArg.Documentation, null, typeArg.TypeId, isClass: true)
+                : new AstPythonType(typeArg.Name, _scope.Ast, _scope.Module, 0, typeArg.Documentation, null, isClass: true);
 
         private class ModuleType : IPythonType {
             public ModuleType(IPythonModule module) {

@@ -27,13 +27,16 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public AstPythonBuiltinType(
+            string name,
             PythonAst ast,
             IPythonModule declModule,
-            ClassDefinition def,
+            int startIndex,
             string doc,
-            LocationInfo loc
-        ) : base(ast, declModule, def, doc, loc) {
-            _typeId = BuiltinTypeId.Unknown;
+            LocationInfo loc,
+            BuiltinTypeId typeId = BuiltinTypeId.Unknown,
+            bool isClass = false
+        ) : base(name, ast, declModule, startIndex, doc, loc, isClass) {
+            _typeId = typeId;
         }
 
         public bool TrySetTypeId(BuiltinTypeId typeId) {
@@ -49,8 +52,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public bool IsHidden {
             get {
-                lock (_members) {
-                    return _members.ContainsKey("__hidden__");
+                lock (Members) {
+                    return Members.ContainsKey("__hidden__");
                 }
             }
         }

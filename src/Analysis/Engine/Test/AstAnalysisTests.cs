@@ -324,30 +324,6 @@ class BankAccount(object):
             }
         }
 
-
-        [TestMethod, Priority(0)]
-        public async Task AstNamedTuple() {
-            using (var server = await CreateServerAsync()) {
-                var code = @"
-from typing import List
-
-def ls() -> List[tuple]:
-    pass
-
-x = ls()[0]
-";
-
-                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
-
-                analysis
-                    .Should().HaveVariable("ls").Which
-                    .Should().HaveShortDescriptions("module.ls() -> list[tuple]");
-
-                analysis
-                    .Should().HaveVariable("x").Which
-                    .Should().HaveType(BuiltinTypeId.Tuple);
-            }
-        }
         [TestMethod, Priority(0)]
         public async Task AstSearchPathsThroughFactory() {
             using (var factory = CreateInterpreterFactory())
@@ -480,23 +456,6 @@ x = ls()[0]
                     .Which.Should().HaveMembers("typed_method_2")
                     .And.NotHaveMembers("untyped_method", "inferred_method", "typed_method");
             }
-        }
-
-        private async Task<IModuleAnalysis> GetStubBasedAnalysis(
-            Server server,
-            string code,
-            AnalysisLimits limits,
-            IEnumerable<string> searchPaths,
-            IEnumerable<string> stubPaths) {
-
-            if (limits != null) {
-                server.Analyzer.Limits = limits;
-            }
-            server.Analyzer.SetSearchPaths(searchPaths);
-            server.Analyzer.SetTypeStubPaths(stubPaths);
-
-            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
-            return await server.GetAnalysisAsync(uri);
         }
 
         [TestMethod, Priority(0)]
@@ -1039,38 +998,55 @@ i_5 = sys.getwindowsversion().platform_version[0]
         }
 
         [TestMethod, Priority(0)]
-        public async Task TypeShedNamedTuple() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
-                var code = "from collections import namedtuple\n";
+        public async Task AstReturnAnnotationList() {
+            using (var server = await CreateServerAsync()) {
+                var code = @"
+from typing import List
+
+def ls() -> List[tuple]:
+    pass
+
+x = ls()[0]
+";
 
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
                 analysis
-                    .Should().HaveFunction("namedtuple").Which
-                    .Should().HaveResolvedReturnTypes(BuiltinTypeId.Tuple);
+                    .Should().HaveVariable("ls").Which
+                    .Should().HaveShortDescriptions("module.ls() -> list[tuple]");
+
+                analysis
+                    .Should().HaveVariable("x").Which
+                    .Should().HaveType(BuiltinTypeId.Tuple);
             }
         }
 
         [TestMethod, Priority(0)]
-        public async Task NamedTupleAnnotation() {
+        public async Task AstNamedTupleReturnAnnotation() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
-                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = false };
-
-                var code = @"
-from typing import Union, Iterable, Type
-
-def namedtuple(typename: str, field_names: Union[str, Iterable[str]]) -> Type[tuple]: ...
-
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ReturnAnnotation import *
 nt = namedtuple('Point', ['x', 'y'])
 pt = nt(1, 2)
-";
-                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
-
+");
                 analysis.Should().HaveVariable("pt").OfTypes(BuiltinTypeId.Tuple);
             }
         }
 
+        [TestMethod, Priority(0)]
+        public async Task TypeShedNamedTuple() {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = true };
+                var code = "from collections import namedtuple\n";
+
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis
+                    .Should().HaveBuiltInFunctionInfo("namedtuple").Which
+                    .Should().HaveOverloadAt(1).Which
+                    .Should().HaveSingleReturnType("tuple");
+            }
+        }
 
         [TestMethod, Priority(0)]
         public void TypeStubConditionalDefine() {

@@ -385,8 +385,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 throw new ArgumentNullException(nameof(node));
             }
             return CreateBuiltinTypes
-                ? new AstPythonBuiltinType(_ast, _module, node, GetDoc(node.Body as SuiteStatement), GetLoc(node))
-                : new AstPythonType(_ast, _module, node, GetDoc(node.Body as SuiteStatement), GetLoc(node));
+                ? new AstPythonBuiltinType(node.Name, _ast, _module, node.StartIndex, GetDoc(node.Body as SuiteStatement), GetLoc(node))
+                : new AstPythonType(node.Name, _ast, _module, node.StartIndex, GetDoc(node.Body as SuiteStatement), GetLoc(node));
         }
         private void CollectTopLevelDefinitions() {
             var s = (_ast.Body as SuiteStatement).Statements.ToArray();
