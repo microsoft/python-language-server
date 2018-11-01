@@ -470,7 +470,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             return false;
         }
 
-        internal List<AnalysisValue> LookupBaseMethods(string name, IEnumerable<IAnalysisSet> mro, Node node, AnalysisUnit unit) {
+        internal static List<AnalysisValue> LookupBaseMethods(string name, IEnumerable<IAnalysisSet> mro, Node node, AnalysisUnit unit) {
             var result = new List<AnalysisValue>();
             foreach (var @class in mro.Skip(1)) {
                 foreach (var curType in @class) {

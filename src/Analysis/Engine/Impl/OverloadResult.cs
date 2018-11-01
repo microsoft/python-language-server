@@ -246,7 +246,7 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly int _removedParams;
         private readonly PythonAnalyzer _projectState;
         private readonly Func<string> _fallbackDoc;
-        private string _doc;
+        private string _doc = Resources.CalculatingDocumentation;
         private IReadOnlyList<string> _returnTypes;
 
         // Used by ToString to ensure docs have completed
@@ -261,7 +261,8 @@ namespace Microsoft.PythonTools.Analysis {
             _projectState = state;
             _returnTypes = GetInstanceDescriptions(state, overload.ReturnType).OrderBy(n => n).Distinct().ToArray();
 
-            Calculate();
+            // initially fill in w/ a string saying we don't yet have the documentation
+            _docTask = Task.Run(() => DocCalculator());
         }
 
         internal BuiltinFunctionOverloadResult(PythonAnalyzer state, string name, IPythonFunctionOverload overload, int removedParams, params ParameterResult[] extraParams)
@@ -293,28 +294,14 @@ namespace Microsoft.PythonTools.Analysis {
             );
         }
 
-        internal override OverloadResult WithoutLeadingParameters(int skipCount = 1) {
-            return new BuiltinFunctionOverloadResult(_projectState, Name, _overload, skipCount, _fallbackDoc);
-        }
+        internal override OverloadResult WithoutLeadingParameters(int skipCount = 1)
+            => new BuiltinFunctionOverloadResult(_projectState, Name, _overload, skipCount, _fallbackDoc);
 
         public override string Documentation {
             get {
-                if (_docTask != null) {
-                    _docTask.Wait(200);
-                }
+                _docTask?.Wait(200);
                 return _doc;
             }
-        }
-
-        private void Calculate() {
-            // initially fill in w/ a string saying we don't yet have the documentation
-            _doc = Resources.CalculatingDocumentation;
-            _docTask = Task.Factory.StartNew(DocCalculator);
-        }
-
-        public override string ToString() {
-            _docTask?.Wait();
-            return base.ToString();
         }
 
         private void DocCalculator() {
@@ -344,7 +331,6 @@ namespace Microsoft.PythonTools.Analysis {
             } else {
                 _doc = doc.ToString();
             }
-            _docTask = null;
         }
 
         public override ParameterResult[] Parameters {
@@ -451,7 +437,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return false;
             }
 
-            return _weak 
+            return _weak
                 ? x.Parameters.Select(p => p.Name).SequenceEqual(y.Parameters.Select(p => p.Name))
                 : x.Parameters.SequenceEqual(y.Parameters);
         }

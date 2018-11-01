@@ -19,7 +19,7 @@ namespace Microsoft.PythonTools.Analysis {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -84,6 +84,42 @@ namespace Microsoft.PythonTools.Analysis {
         internal static string CalculatingDocumentation {
             get {
                 return ResourceManager.GetString("CalculatingDocumentation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; may not be callable.
+        /// </summary>
+        internal static string ErrorNotCallable {
+            get {
+                return ResourceManager.GetString("ErrorNotCallable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to object may not be callable.
+        /// </summary>
+        internal static string ErrorNotCallableEmpty {
+            get {
+                return ResourceManager.GetString("ErrorNotCallableEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to unresolved import &apos;{0}&apos;.
+        /// </summary>
+        internal static string ErrorUnresolvedImport {
+            get {
+                return ResourceManager.GetString("ErrorUnresolvedImport", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; used before definition.
+        /// </summary>
+        internal static string ErrorUseBeforeDef {
+            get {
+                return ResourceManager.GetString("ErrorUseBeforeDef", resourceCulture);
             }
         }
         

@@ -303,4 +303,16 @@
   <data name="CalculatingDocumentation" xml:space="preserve">
     <value>Documentation is still being calculated, please try again soon.</value>
   </data>
+  <data name="ErrorNotCallable" xml:space="preserve">
+    <value>'{0}' may not be callable</value>
+  </data>
+  <data name="ErrorNotCallableEmpty" xml:space="preserve">
+    <value>object may not be callable</value>
+  </data>
+  <data name="ErrorUnresolvedImport" xml:space="preserve">
+    <value>unresolved import '{0}'</value>
+  </data>
+  <data name="ErrorUseBeforeDef" xml:space="preserve">
+    <value>'{0}' used before definition</value>
+  </data>
 </root>

@@ -38,6 +38,7 @@ namespace Microsoft.PythonTools.Analysis.Documentation {
 
         public static DocumentationBuilder Create(InformationDisplayOptions displayOptions) {
             displayOptions = displayOptions ?? DefaultDisplayOptions;
+            displayOptions.preferredFormat = displayOptions.preferredFormat ?? MarkupKind.PlainText; // MarkupKind should never be null.
 
             if (displayOptions.preferredFormat == MarkupKind.Markdown) {
                 return new MarkdownDocumentationBuilder(displayOptions);

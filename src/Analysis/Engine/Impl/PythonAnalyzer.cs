@@ -35,7 +35,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// Performs analysis of multiple Python code files and enables interrogation of the resulting analysis.
     /// </summary>
     public partial class PythonAnalyzer : IPythonAnalyzer, IDisposable {
-        public const string PythonAnalysisSource = "Python (analysis)";
+        public const string PythonAnalysisSource = "Python";
         internal const string AnnotationsModuleSuffix = "__pyi__";
         private static object _nullKey = new object();
 

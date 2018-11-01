@@ -27,6 +27,7 @@ using Microsoft.Python.LanguageServer.Extensions;
 using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.Documentation;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
@@ -443,7 +444,7 @@ class B(A):
         [TestMethod, Priority(0)]
         public async Task TopLevelCompletions() {
             using (var s = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri = GetDocument(@"TestData\AstAnalysis\TopLevelCompletions.py");
+                var uri = GetDocument(Path.Combine("TestData", "AstAnalysis", "TopLevelCompletions.py"));
                 await s.LoadFileAsync(uri);
 
                 await AssertCompletion(
@@ -1009,6 +1010,22 @@ class Simple(unittest.TestCase):
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("import sys\nsys  .  version\n");
                 await AssertCompletion(s, u, new[] { "argv" }, null, new SourceLocation(2, 7), 
                     new CompletionContext { triggerCharacter = ".", triggerKind = CompletionTriggerKind.TriggerCharacter });
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MarkupKindValid() {
+            using (var s = await CreateServerAsync()) {
+                var u = await s.OpenDefaultDocumentAndGetUriAsync("import sys\nsys.\n");
+
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                var res = await s.Completion(new CompletionParams {
+                    textDocument = new TextDocumentIdentifier { uri = u },
+                    position = new SourceLocation(2, 5),
+                    context = new CompletionContext { triggerCharacter = ".", triggerKind = CompletionTriggerKind.TriggerCharacter },
+                }, CancellationToken.None);
+
+                res.items?.Select(i => i.documentation.kind).Should().NotBeEmpty().And.BeSubsetOf(new[] { MarkupKind.PlainText, MarkupKind.Markdown });
             }
         }
 
