@@ -345,6 +345,30 @@ class BankAccount(object):
             }
         }
 
+
+        [TestMethod, Priority(0)]
+        public async Task AstNamedTuple() {
+            using (var server = await CreateServerAsync()) {
+                var code = @"
+from typing import List
+
+def ls() -> List[tuple]:
+    pass
+
+x = ls()[0]
+";
+
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                analysis
+                    .Should().HaveVariable("ls").Which
+                    .Should().HaveShortDescriptions("module.ls() -> list[tuple]");
+
+                analysis
+                    .Should().HaveVariable("x").Which
+                    .Should().HaveType(BuiltinTypeId.Tuple);
+            }
+        }
         [TestMethod, Priority(0)]
         public async Task AstSearchPathsThroughFactory() {
             using (var factory = CreateInterpreterFactory())
@@ -896,7 +920,8 @@ y = g()";
         }
         #endregion
 
-        #region Type Shed tests
+        #region Typeshed tests
+
         [TestMethod, Priority(0)]
         public async Task TypeShedElementTree() {
             using (var server = await CreateServerAsync()) {
@@ -1035,6 +1060,40 @@ i_5 = sys.getwindowsversion().platform_version[0]
         }
 
         [TestMethod, Priority(0)]
+        public async Task TypeShedNamedTuple() {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                var code = "from collections import namedtuple\n";
+
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis
+                    .Should().HaveFunction("namedtuple").Which
+                    .Should().HaveResolvedReturnTypes(BuiltinTypeId.Tuple);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NamedTupleAnnotation() {
+            using (var server = await CreateServerAsync()) {
+                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = true };
+
+                var code = @"
+from typing import Union, Iterable, Type
+
+def namedtuple(typename: str, field_names: Union[str, Iterable[str]]) -> Type[tuple]: ...
+
+nt = namedtuple('Point', ['x', 'y'])
+pt = nt(1, 2)
+";
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                analysis.Should().HaveVariable("pt").OfTypes(BuiltinTypeId.Tuple);
+            }
+        }
+
+
+        [TestMethod, Priority(0)]
         public void TypeStubConditionalDefine() {
             var seen = new HashSet<Version>();
 
@@ -1082,6 +1141,5 @@ if sys.version_info >= (2, 7):
             }
         }
         #endregion
-
     }
 }
