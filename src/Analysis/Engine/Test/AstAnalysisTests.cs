@@ -20,7 +20,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,7 +40,7 @@ using Ast = Microsoft.PythonTools.Parsing.Ast;
 
 namespace AnalysisTests {
     [TestClass]
-    public class AstAnalysisTests {
+    public class AstAnalysisTests: ServerBasedTest {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -89,26 +88,6 @@ namespace AnalysisTests {
                 searchPaths: new[] { searchPath ?? TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
 
         private static AstPythonInterpreterFactory CreateInterpreterFactory() => CreateInterpreterFactory(PythonVersions.LatestAvailable);
-
-        private static readonly Lazy<string> _typeShedPath = new Lazy<string>(FindTypeShedForTest);
-        private static string TypeShedPath => _typeShedPath.Value;
-        private static string FindTypeShedForTest() {
-            var candidate = Path.Combine(PathUtils.GetParent(typeof(AstPythonInterpreterFactory).Assembly.Location), "Typeshed");
-            if (Directory.Exists(candidate) && Directory.Exists(Path.Combine(candidate, "stdlib", "2and3"))) {
-                return candidate;
-            }
-
-            var root = TestData.GetPath();
-
-            for (string previousRoot = null; root != previousRoot; previousRoot = root, root = PathUtils.GetParent(root)) {
-                candidate = Path.Combine(root, "typeshed");
-                if (Directory.Exists(Path.Combine(candidate, "stdlib", "2and3"))) {
-                    return candidate;
-                }
-            }
-
-            return null;
-        }
 
 
         #region Test cases
@@ -963,7 +942,7 @@ l = iterfind()";
             }
 
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"import urllib");
 
                 var secondMembers = server.Analyzer.GetModuleMembers(analysis.InterpreterContext, new[] { "urllib" })
@@ -977,7 +956,7 @@ l = iterfind()";
         [TestMethod, Priority(0)]
         public async Task TypeShedSysExcInfo() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
                 var code = @"import sys
 
 e1, e2, e3 = sys.exc_info()";
@@ -997,7 +976,7 @@ e1, e2, e3 = sys.exc_info()";
         [TestMethod, Priority(0)]
         public async Task TypeShedJsonMakeScanner() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
                 var code = @"import _json
 
 scanner = _json.make_scanner()";
@@ -1023,7 +1002,7 @@ scanner = _json.make_scanner()";
         [TestMethod, Priority(0)]
         public async Task TypeShedSysInfo() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
                 server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = true };
 
                 var code = @"import sys
@@ -1062,7 +1041,7 @@ i_5 = sys.getwindowsversion().platform_version[0]
         [TestMethod, Priority(0)]
         public async Task TypeShedNamedTuple() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
                 var code = "from collections import namedtuple\n";
 
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
@@ -1075,8 +1054,8 @@ i_5 = sys.getwindowsversion().platform_version[0]
         [TestMethod, Priority(0)]
         public async Task NamedTupleAnnotation() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
-                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = true };
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = false };
 
                 var code = @"
 from typing import Union, Iterable, Type

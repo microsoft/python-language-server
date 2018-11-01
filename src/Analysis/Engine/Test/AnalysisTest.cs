@@ -3124,9 +3124,10 @@ x = ls()[0]
 from collections import namedtuple
 nt = namedtuple('Point', ['x', 'y'])
 pt = nt(1, 2)
-pt.
 ";
 
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = false };
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
                 analysis
