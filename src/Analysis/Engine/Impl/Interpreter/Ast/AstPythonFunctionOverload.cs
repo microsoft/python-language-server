@@ -25,10 +25,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public AstPythonFunctionOverload(
             IEnumerable<IParameterInfo> parameters,
-            ILocationInfo loc
+            ILocationInfo loc,
+            string returnDocumentation = null
         ) {
             _parameters = parameters?.ToArray() ?? throw new ArgumentNullException(nameof(parameters));
             Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
+            ReturnDocumentation = returnDocumentation;
         }
 
         internal void SetDocumentation(string doc) {

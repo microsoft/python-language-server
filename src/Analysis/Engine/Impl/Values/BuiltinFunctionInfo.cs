@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
@@ -25,15 +24,13 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinFunctionInfo : BuiltinNamespace<IPythonType>, IHasRichDescription, IHasQualifiedName {
         private string _doc;
-        private ReadOnlyCollection<OverloadResult> _overloads;
-        private readonly Lazy<IAnalysisSet> _returnTypes;
+        private OverloadResult[] _overloads;
         private BuiltinMethodInfo _method;
 
         public BuiltinFunctionInfo(IPythonFunction function, PythonAnalyzer projectState)
             : base(projectState.Types[BuiltinTypeId.BuiltinFunction], projectState) {
 
             Function = function;
-            _returnTypes = new Lazy<IAnalysisSet>(() => Utils.GetReturnTypes(function, projectState).GetInstanceType());
         }
 
         public override IPythonType PythonType => _type;
@@ -43,8 +40,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.BuiltinFunction]);
         }
 
-        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) 
-            => _returnTypes.Value;
+        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames)
+            => AnalysisSet.UnionAll(Overloads
+                .Where(o => o.ReturnType != null)
+                .Select(o => ProjectState.GetAnalysisSetFromObjects(o.ReturnType)));
 
         public override IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) {
             if (Function.IsClassMethod) {
@@ -124,12 +123,19 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IEnumerable<OverloadResult> Overloads {
             get {
                 if (_overloads == null) {
-                    var overloads = Function.Overloads;
-                    var result = new OverloadResult[overloads.Count];
-                    for (int i = 0; i < result.Length; i++) {
-                        result[i] = new BuiltinFunctionOverloadResult(ProjectState, Function.Name, overloads[i], 0, () => Description);
+                    var overloads = Function.Overloads.ToArray();
+                    // If some of the overloads have return type annotations, drop others.
+                    // This helps when function has multiple overloads with some definitions
+                    // comings from the library code and some from the Typeshed. Library code 
+                    // has documentation but often lacks return types.
+                    overloads = overloads.Any(o => !string.IsNullOrEmpty(o.ReturnDocumentation))
+                        ? overloads.Where(o => !string.IsNullOrEmpty(o.ReturnDocumentation)).ToArray()
+                        : overloads;
+
+                    _overloads = new OverloadResult[overloads.Length];
+                    for (var i = 0; i < _overloads.Length; i++) {
+                        _overloads[i] = new BuiltinFunctionOverloadResult(ProjectState, Function.Name, overloads[i], 0, () => Description);
                     }
-                    _overloads = new ReadOnlyCollection<OverloadResult>(result);
                 }
                 return _overloads;
             }

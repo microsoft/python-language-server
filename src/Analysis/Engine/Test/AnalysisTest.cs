@@ -3120,9 +3120,6 @@ x = ls()[0]
         [TestMethod, Priority(0)]
         public async Task NamedTupleReturnAnnotation() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
-                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = false };
-
                 var code = @"
 from typing import Union, Iterable, Type
 def namedtuple(typename: str, field_names: Union[str, Iterable[str]]) -> Type[tuple]: ...

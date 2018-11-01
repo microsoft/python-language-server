@@ -34,14 +34,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
             var function = method.Function;
             _memberType = method.MemberType;
             _function = function;
-            _returnTypes = Utils.GetReturnTypes(function, projectState);
+            _returnTypes = GetReturnTypes(function, projectState);
         }
 
         public BuiltinMethodInfo(IPythonFunction function, PythonMemberType memType, PythonAnalyzer projectState)
             : base(projectState.Types[BuiltinTypeId.BuiltinMethodDescriptor], projectState) {
             _memberType = memType;
             _function = function;
-            _returnTypes = Utils.GetReturnTypes(function, projectState);
+            _returnTypes = GetReturnTypes(function, projectState);
             _fromFunction = true;
         }
 
@@ -105,5 +105,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override int GetHashCode() => new { hc1 = base.GetHashCode(), hc2 = _function.GetHashCode() }.GetHashCode();
         public override bool Equals(object obj) => base.Equals(obj) && obj is BuiltinMethodInfo bmi && _function.Equals(bmi._function);
+
+        private IAnalysisSet GetReturnTypes(IPythonFunction func, PythonAnalyzer projectState) {
+            return AnalysisSet.UnionAll(func.Overloads
+                .Where(fn => fn.ReturnType != null)
+                .Select(fn => projectState.GetAnalysisSetFromObjects(fn.ReturnType)));
+        }
     }
 }

@@ -1043,7 +1043,7 @@ pt = nt(1, 2)
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
                 analysis
                     .Should().HaveBuiltInFunctionInfo("namedtuple").Which
-                    .Should().HaveOverloadAt(1).Which
+                    .Should().HaveSingleOverload().Which
                     .Should().HaveSingleReturnType("tuple");
             }
         }
