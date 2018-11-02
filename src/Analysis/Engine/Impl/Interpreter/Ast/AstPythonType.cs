@@ -246,7 +246,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         protected bool ContainsMember(string name) {
-            lock (_members) {
+            lock (_lock) {
                 return Members.ContainsKey(name);
             }
         }
