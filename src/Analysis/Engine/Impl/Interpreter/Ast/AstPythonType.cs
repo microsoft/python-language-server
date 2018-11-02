@@ -20,14 +20,15 @@ using System.Linq;
 using System.Threading;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonType : IPythonType2, IMemberContainer, ILocatedMember, IHasQualifiedName {
         private static readonly IPythonModule NoDeclModule = new AstPythonModule();
 
-        private Dictionary<string, IMember> _members;
         private readonly string _name;
+        private readonly object _lock = new object();
+
+        private Dictionary<string, IMember> _members;
         private IReadOnlyList<IPythonType> _mro;
         private AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
 
@@ -38,7 +39,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public AstPythonType(
             string name,
-            PythonAst ast,
             IPythonModule declModule,
             int startIndex,
             string doc,
@@ -62,7 +62,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
-            lock (Members) {
+            lock (_lock) {
                 foreach (var kv in members) {
                     if (!overwrite) {
                         if (Members.TryGetValue(kv.Key, out var existing)) {
@@ -75,7 +75,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         internal void SetBases(IPythonInterpreter interpreter, IEnumerable<IPythonType> bases) {
-            lock (Members) {
+            lock (_lock) {
                 if (Bases != null) {
                     return; // Already set
                 }
@@ -96,7 +96,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IReadOnlyList<IPythonType> Mro {
             get {
-                lock (Members) {
+                lock (_lock) {
                     if (_mro != null) {
                         return _mro;
                     }
@@ -167,9 +167,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public string Name {
             get {
-                lock (Members) {
-                    IMember nameMember;
-                    if (Members.TryGetValue("__name__", out nameMember) && nameMember is AstPythonStringLiteral lit) {
+                lock (_lock) {
+                    if (Members.TryGetValue("__name__", out var nameMember) && nameMember is AstPythonStringLiteral lit) {
                         return lit.Value;
                     }
                 }
@@ -197,7 +196,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IMember GetMember(IModuleContext context, string name) {
             IMember member;
-            lock (Members) {
+            lock (_lock) {
                 if (Members.TryGetValue(name, out member)) {
                     return member;
                 }
@@ -236,15 +235,20 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
             var names = new HashSet<string>();
-            lock (Members) {
+            lock (_lock) {
                 names.UnionWith(Members.Keys);
             }
 
             foreach (var m in Mro.Skip(1)) {
                 names.UnionWith(m.GetMemberNames(moduleContext));
             }
-
             return names;
+        }
+
+        protected bool ContainsMember(string name) {
+            lock (_members) {
+                return Members.ContainsKey(name);
+            }
         }
     }
 }

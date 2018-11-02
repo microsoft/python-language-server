@@ -94,9 +94,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public override IPythonType MakeUnion(IReadOnlyList<IPythonType> types) => new UnionType(types);
 
-        public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType unionType) =>
-            (unionType as UnionType)?.Types ??
-            (unionType as IPythonMultipleMembers)?.Members.OfType<IPythonType>().ToArray();
+        public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType type) =>
+            type is UnionType unionType
+                ? unionType.Types
+                : type is IPythonMultipleMembers multipleMembers
+                    ? multipleMembers.Members.OfType<IPythonType>().ToArray()
+                    : null;
 
         public override IPythonType MakeGeneric(IPythonType baseType, IReadOnlyList<IPythonType> args) {
             if (args == null || args.Count == 0 || baseType == null) {
@@ -192,10 +195,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return res;
         }
 
-        private IPythonType MakeGenericClassType(IPythonType typeArg)
-            => typeArg.IsBuiltin
-                ? new AstPythonBuiltinType(typeArg.Name, _scope.Ast, _scope.Module, 0, typeArg.Documentation, null, typeArg.TypeId, isClass: true)
-                : new AstPythonType(typeArg.Name, _scope.Ast, _scope.Module, 0, typeArg.Documentation, null, isClass: true);
+        private IPythonType MakeGenericClassType(IPythonType typeArg) {
+            if (typeArg.IsBuiltin) {
+                var builtinType = _scope.Interpreter.GetBuiltinType(typeArg.TypeId) as AstPythonBuiltinType;
+                return builtinType.AsClass();
+            }
+            return new AstPythonType(typeArg.Name, _scope.Module, 0, typeArg.Documentation, null, isClass: true);
+        }
 
         private class ModuleType : IPythonType {
             public ModuleType(IPythonModule module) {

@@ -125,7 +125,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IEnumerable<OverloadResult> Overloads
             => GetFunctionOverloads().Select(o => new BuiltinFunctionOverloadResult(ProjectState, Function.Name, o, 0, () => Description));
 
-        public override string Documentation => _doc = _doc ?? (_doc = Utils.StripDocumentation(Function.Documentation));
+        public override string Documentation => _doc ?? (_doc = Utils.StripDocumentation(Function.Documentation));
 
         public override PythonMemberType MemberType => Function.MemberType;
 

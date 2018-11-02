@@ -14,8 +14,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonBuiltinType : AstPythonType {
@@ -28,14 +28,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public AstPythonBuiltinType(
             string name,
-            PythonAst ast,
             IPythonModule declModule,
             int startIndex,
             string doc,
             LocationInfo loc,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown,
             bool isClass = false
-        ) : base(name, ast, declModule, startIndex, doc, loc, isClass) {
+        ) : base(name, declModule, startIndex, doc, loc, isClass) {
             _typeId = typeId == BuiltinTypeId.Unknown && isClass ? BuiltinTypeId.Type : typeId;
         }
 
@@ -50,12 +49,19 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public override bool IsBuiltin => true;
         public override BuiltinTypeId TypeId => _typeId;
 
-        public bool IsHidden {
-            get {
-                lock (Members) {
-                    return Members.ContainsKey("__hidden__");
-                }
-            }
+        public bool IsHidden => ContainsMember("__hidden__");
+
+        /// <summary>
+        /// Clones builtin type as class. Typically used in scenarios where method
+        /// returns an object that acts like a class constructor, such as namedtuple.
+        /// </summary>
+        /// <returns></returns>
+        public AstPythonBuiltinType AsClass() {
+            var clone = new AstPythonBuiltinType(Name, DeclaringModule, StartIndex, Documentation, 
+                Locations.OfType<LocationInfo>().FirstOrDefault(), 
+                TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId, true);
+            clone.AddMembers(Members, true);
+            return clone;
         }
     }
 }

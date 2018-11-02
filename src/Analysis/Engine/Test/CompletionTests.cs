@@ -962,6 +962,26 @@ class Simple(unittest.TestCase):
         }
 
         [TestMethod, Priority(0)]
+        public async Task CollectionsNamedTuple() {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var code = @"
+from collections import namedtuple
+nt = namedtuple('Point', ['x', 'y'])
+pt = nt(1, 2)
+pt.
+";
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = false };
+
+                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                var completion = await server.SendCompletion(uri, 4, 3);
+
+                completion.Should().HaveLabels("count", "index");
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Hook() {
             using (var s = await CreateServerAsync()) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("x = 123\nx.");
