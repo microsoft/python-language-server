@@ -36,7 +36,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             BuiltinTypeId typeId = BuiltinTypeId.Unknown,
             bool isClass = false
         ) : base(name, ast, declModule, startIndex, doc, loc, isClass) {
-            _typeId = typeId;
+            _typeId = typeId == BuiltinTypeId.Unknown && isClass ? BuiltinTypeId.Type : typeId;
         }
 
         public bool TrySetTypeId(BuiltinTypeId typeId) {

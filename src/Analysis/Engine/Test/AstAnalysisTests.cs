@@ -921,6 +921,7 @@ l = iterfind()";
 e1, e2, e3 = sys.exc_info()";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
+                // sys.exc_info() -> (exception_type, exception_value, traceback)
                 analysis.Should().HaveVariable("e1").OfTypes(BuiltinTypeId.Type)
                     .And.HaveVariable("e2").OfTypes("BaseException")
                     .And.HaveVariable("e3").OfTypes(BuiltinTypeId.NoneType)

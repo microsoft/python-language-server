@@ -14,7 +14,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Infrastructure;
@@ -24,24 +23,21 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinFunctionInfo : BuiltinNamespace<IPythonType>, IHasRichDescription, IHasQualifiedName {
         private string _doc;
-        private OverloadResult[] _overloads;
+        private IPythonFunctionOverload[] _overloads;
         private BuiltinMethodInfo _method;
 
         public BuiltinFunctionInfo(IPythonFunction function, PythonAnalyzer projectState)
             : base(projectState.Types[BuiltinTypeId.BuiltinFunction], projectState) {
-
             Function = function;
         }
 
         public override IPythonType PythonType => _type;
 
-        public override bool IsOfType(IAnalysisSet klass) {
-            return klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]) ||
-                klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.BuiltinFunction]);
-        }
+        public override bool IsOfType(IAnalysisSet klass) 
+            => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]) || klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.BuiltinFunction]);
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames)
-            => AnalysisSet.UnionAll(Overloads
+            => AnalysisSet.UnionAll(GetFunctionOverloads()
                 .Where(o => o.ReturnType != null)
                 .Select(o => ProjectState.GetAnalysisSetFromObjects(o.ReturnType)));
 
@@ -120,33 +116,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IEnumerable<OverloadResult> Overloads {
-            get {
-                if (_overloads == null) {
-                    var overloads = Function.Overloads.ToArray();
-                    // If some of the overloads have return type annotations, drop others.
-                    // This helps when function has multiple overloads with some definitions
-                    // comings from the library code and some from the Typeshed. Library code 
-                    // has documentation but often lacks return types.
-                    overloads = overloads.Any(o => !string.IsNullOrEmpty(o.ReturnDocumentation))
-                        ? overloads.Where(o => !string.IsNullOrEmpty(o.ReturnDocumentation)).ToArray()
-                        : overloads;
+        public override IEnumerable<OverloadResult> Overloads
+            => GetFunctionOverloads().Select(o => new BuiltinFunctionOverloadResult(ProjectState, Function.Name, o, 0, () => Description));
 
-                    _overloads = new OverloadResult[overloads.Length];
-                    for (var i = 0; i < _overloads.Length; i++) {
-                        _overloads[i] = new BuiltinFunctionOverloadResult(ProjectState, Function.Name, overloads[i], 0, () => Description);
-                    }
-                }
-                return _overloads;
-            }
-        }
-
-        public override string Documentation {
-            get {
-                _doc = _doc ?? Utils.StripDocumentation(Function.Documentation);
-                return _doc;
-            }
-        }
+        public override string Documentation => _doc = _doc ?? (_doc = Utils.StripDocumentation(Function.Documentation));
 
         public override PythonMemberType MemberType => Function.MemberType;
 
@@ -181,12 +154,26 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override bool Equals(object obj) {
-            if(obj is BuiltinFunctionInfo other && !other.Overloads.SetEquals(Overloads)) {
+            if (obj is BuiltinFunctionInfo other && !other.Overloads.SetEquals(Overloads)) {
                 return false;
             }
             return base.Equals(obj);
         }
 
         public override int GetHashCode() => base.GetHashCode() ^ Overloads.GetHashCode();
+
+        private IPythonFunctionOverload[] GetFunctionOverloads() {
+            if (_overloads == null) {
+                var overloads = Function.Overloads.ToArray();
+                // If some of the overloads have return type annotations, drop others.
+                // This helps when function has multiple overloads with some definitions
+                // comings from the library code and some from the Typeshed. Library code 
+                // has documentation but often lacks return types.
+                _overloads = overloads.Any(o => !string.IsNullOrEmpty(o.ReturnDocumentation))
+                    ? overloads.Where(o => !string.IsNullOrEmpty(o.ReturnDocumentation)).ToArray()
+                    : overloads;
+            }
+            return _overloads;
+        }
     }
 }
