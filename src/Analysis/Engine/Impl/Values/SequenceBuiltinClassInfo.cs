@@ -76,6 +76,13 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return base.Call(node, unit, args, keywordArgNames);
         }
 
+        public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) {
+            var indices = index.Select(x => x.GetConstantValue()).OfType<int>().ToArray();
+            var a = IndexTypes.ToArray();
+            var values = indices.Where(i => i >= 0 && i < a.Length).Select(i => a[i]);
+            return AnalysisSet.UnionAll(values);
+        }
+
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, _type.Name);
             if (_indexTypes == null || _indexTypes.Length == 0) {

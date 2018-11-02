@@ -159,13 +159,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) {
-            var indices = index.Select(x => x.GetConstantValue()).OfType<int>().ToArray();
-            if (this is IBuiltinSequenceClassInfo bseqt) {
-                var a = bseqt.IndexTypes.ToArray();
-                var values = indices.Where(i => i >= 0 && i < a.Length).Select(i => a[i]);
-                return AnalysisSet.UnionAll(values);
-            }
-
             var clrType = _type as IAdvancedPythonType;
             if (clrType == null || !clrType.IsGenericTypeDefinition) {
                 return AnalysisSet.Empty;
