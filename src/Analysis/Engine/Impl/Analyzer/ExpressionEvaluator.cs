@@ -150,7 +150,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                         res = refs.Types;
                     } else {
                         // ... warn the user
-                        warn = true;
+                        warn = !(node is ConstantExpression); // Don't warn when None.
                     }
                 }
             }
@@ -160,9 +160,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             }
 
             if (warn) {
-                ProjectState.AddDiagnostic(node, _unit, ErrorMessages.UsedBeforeAssignment(name), DiagnosticSeverity.Warning, ErrorMessages.UsedBeforeAssignmentCode);
+                ProjectState.AddDiagnostic(node, _unit, ErrorMessages.UseBeforeDef(name), DiagnosticSeverity.Warning, ErrorMessages.UseBeforeDefCode);
             } else {
-                ProjectState.ClearDiagnostic(node, _unit, ErrorMessages.UsedBeforeAssignmentCode);
+                ProjectState.ClearDiagnostic(node, _unit, ErrorMessages.UseBeforeDefCode);
             }
 
             return res;

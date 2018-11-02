@@ -16,13 +16,14 @@
 
 // #define WAIT_FOR_DEBUGGER
 
+using System;
+using System.Diagnostics;
+using System.IO;
 using Microsoft.Python.LanguageServer.Services;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Newtonsoft.Json;
 using StreamJsonRpc;
 using StreamJsonRpc.Protocol;
-using System;
-using System.IO;
 
 namespace Microsoft.Python.LanguageServer.Server {
     internal static class Program {
@@ -41,6 +42,7 @@ namespace Microsoft.Python.LanguageServer.Server {
                 using (var cout = Console.OpenStandardOutput())
                 using (var server = new Implementation.LanguageServer())
                 using (var rpc = new LanguageServerJsonRpc(cout, cin, messageFormatter, server)) {
+                    rpc.TraceSource.Switch.Level = SourceLevels.Error;
                     rpc.SynchronizationContext = new SingleThreadSynchronizationContext();
 
                     services.AddService(new UIService(rpc));
