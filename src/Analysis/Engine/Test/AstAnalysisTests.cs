@@ -927,9 +927,8 @@ e1, e2, e3 = sys.exc_info()";
                     .And.HaveVariable("e3").OfTypes(BuiltinTypeId.NoneType)
                     .And.HaveVariable("sys").WithValue<BuiltinModule>()
                     .Which.Should().HaveMember<BuiltinFunctionInfo>("exc_info")
-                    .Which.Should().HaveOverloadCount(2)
-                    .And.HaveOverloadAt(0).WithSingleReturnType("tuple")
-                    .And.HaveOverloadAt(1).WithSingleReturnType("tuple[type, BaseException, None]");
+                    .Which.Should().HaveSingleOverload()
+                    .WithSingleReturnType("tuple[type BaseException, BaseException, None]");
             }
         }
 
