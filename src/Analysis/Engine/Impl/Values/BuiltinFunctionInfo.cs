@@ -36,10 +36,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override bool IsOfType(IAnalysisSet klass) 
             => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]) || klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.BuiltinFunction]);
 
-        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames)
-            => AnalysisSet.UnionAll(GetFunctionOverloads()
-                .Where(o => o.ReturnType != null)
-                .Select(o => ProjectState.GetAnalysisSetFromObjects(o.ReturnType)));
+        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
+            var returnTypes = GetFunctionOverloads().Where(o => o.ReturnType != null).SelectMany(o => o.ReturnType);
+            var types = returnTypes.Select(t => {
+                var av = ProjectState.GetAnalysisValueFromObjects(t);
+                return t is IPythonType2 pt2 && pt2.IsClass
+                    ? AnalysisSet.Create(av)
+                    : ProjectState.GetAnalysisValueFromObjects(t).GetInstanceType();
+            });
+            return AnalysisSet.UnionAll(types);
+        }
 
         public override IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) {
             if (Function.IsClassMethod) {
