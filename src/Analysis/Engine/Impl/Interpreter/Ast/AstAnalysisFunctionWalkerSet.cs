@@ -61,7 +61,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private void ProcessWalker(AstAnalysisFunctionWalker walker) {
             // Remove walker before processing as to prevent reentrancy.
             _functionWalkers.Remove(walker.Target);
-            var z = walker.Target.Name == "day";
             walker.Walk();
         }
     }
