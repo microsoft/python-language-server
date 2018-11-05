@@ -146,6 +146,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     filterText = x.filterText,
                     preselect = x.preselect,
                     insertText = x.insertText,
+                    insertTextFormat = (PythonTools.Analysis.LanguageServer.InsertTextFormat)x.insertTextFormat,
                 }).ToArray()
             };
 
@@ -169,6 +170,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 filterText = x.filterText,
                 preselect = x.preselect,
                 insertText = x.insertText,
+                insertTextFormat = (InsertTextFormat)x.insertTextFormat,
                 textEdit = x.textEdit.HasValue
                     ? new TextEdit {
                         range = new Range {

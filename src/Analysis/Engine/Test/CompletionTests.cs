@@ -243,7 +243,8 @@ class oar(list):
             var completions = await server.SendCompletion(uri, 2, 8);
 
             completions.Should().HaveItem("append")
-                .Which.Should().HaveInsertText($"append(self, value):{Environment.NewLine}    return super(oar, self).append(value)");
+                .Which.Should().HaveInsertText($"append(self, value):{Environment.NewLine}    return super(oar, self).append(value)")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [DataRow(PythonLanguageVersion.V36, "value")]
@@ -259,7 +260,8 @@ class oar(list):
             var completions = await server.SendCompletion(uri, 2, 8);
 
             completions.Should().HaveItem("append")
-                .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super().append({parameterName})");
+                .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super().append({parameterName})")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [ServerTestMethod(LatestAvailable2X = true), Priority(0)]
@@ -417,7 +419,8 @@ Class1().
             var completion = await server.SendCompletion(uri, row, character);
 
             completion.Should().HaveItem(expectedLabel)
-                .Which.Should().HaveInsertText(expectedInsertText);
+                .Which.Should().HaveInsertText(expectedInsertText)
+                .And.HaveInsertTextFormat(InsertTextFormat.Snippet);
         }
 
         [DataRow(PythonLanguageMajorVersion.LatestV2, "foo(self):{0}    return super(B, self).foo()")]
@@ -438,7 +441,8 @@ class B(A):
             var completion = await server.SendCompletion(uri, 6, 9);
 
             completion.Should().HaveItem("foo")
-                .Which.Should().HaveInsertText(expectedInsertText);
+                .Which.Should().HaveInsertText(expectedInsertText)
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [TestMethod, Priority(0)]
@@ -499,7 +503,8 @@ class B(A):
             var completion = await server.SendCompletion(uri, 0, 22);
 
             completion.Should().HaveItem("right")
-                .Which.Should().HaveInsertText("right");
+                .Which.Should().HaveInsertText("right")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [DataRow(true)]
@@ -1008,7 +1013,7 @@ class Simple(unittest.TestCase):
         public async Task WithWhitespaceAroundDot() {
             using (var s = await CreateServerAsync()) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("import sys\nsys  .  version\n");
-                await AssertCompletion(s, u, new[] { "argv" }, null, new SourceLocation(2, 7), 
+                await AssertCompletion(s, u, new[] { "argv" }, null, new SourceLocation(2, 7),
                     new CompletionContext { triggerCharacter = ".", triggerKind = CompletionTriggerKind.TriggerCharacter });
             }
         }
