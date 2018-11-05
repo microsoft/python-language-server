@@ -61,27 +61,10 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 return index == -1 ? default : _children[index];
             }
 
-            public int GetChildIndex(string childName) {
-                for (var index = 0; index < _children.Length; index++) {
-                    var child = _children[index];
-                    if (child.Name.EqualsOrdinal(childName)) {
-                        return index;
-                    }
-                }
+            public int GetChildIndex(string childName) => _children.IndexOf(childName, NameEquals);
 
-                return -1;
-            }
-
-            public int GetChildIndex(string modulePath, (int start, int length) nameSpan) {
-                for (var index = 0; index < _children.Length; index++) {
-                    var child = _children[index];
-                    if (child.Name.EqualsOrdinal(0, modulePath, nameSpan.start, nameSpan.length)) {
-                        return index;
-                    }
-                }
-
-                return -1;
-            }
+            public int GetChildIndex(string modulePath, (int start, int length) nameSpan) 
+                => _children.IndexOf((modulePath, nameSpan.start, nameSpan.length), NameEquals);
 
             public string[] GetChildPackageNames() => _children.Where(c => !c.IsModule).Select(c => c.Name).ToArray();
             public IReadOnlyDictionary<string, string> GetChildModules() => _children.Where(c => c.IsModule).ToDictionary(c => c.Name, c => c.ModulePath);
@@ -100,6 +83,11 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                     child.GetDebuggerDisplay(sb, offset + 2);
                 }
             }
+
+            private static bool NameEquals(Node n, string name) => n.Name.EqualsOrdinal(name);
+
+            private static bool NameEquals(Node n, (string str, int start, int length) span) 
+                    => n.Name.EqualsOrdinal(0, span.str, span.start, span.length);
         }
     }
 }

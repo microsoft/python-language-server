@@ -535,7 +535,7 @@ y2 = f(y)
         [TestMethod, Priority(0)]
         public async Task RecursiveDictionaryKeyValues() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test-module.py");
+                var uri = TestData.GetTestSpecificUri("test-module.py");
                 var code = @"x = {'abc': 42, 'oar': 'baz'}
 x['abc'] = x
 x[x] = 'abc'
@@ -701,8 +701,8 @@ z = mod1.f(42)
 ";
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri1 = TestData.GetTempPathUri("mod1.py");
-                var uri2 = TestData.GetTempPathUri("mod2.py");
+                var uri1 = TestData.GetTestSpecificUri("mod1.py");
+                var uri2 = TestData.GetTestSpecificUri("mod2.py");
                 using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uri1, text1);
                     await server.SendDidOpenTextDocument(uri2, text2);
@@ -811,7 +811,7 @@ class D(C):
 
         [TestMethod, Priority(0)]
         public async Task Mro() {
-            var uri = TestData.GetTempPathUri("test-module.py");
+            var uri = TestData.GetTestSpecificUri("test-module.py");
             string code;
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 // Successful: MRO is A B C D E F object
@@ -956,7 +956,7 @@ class Test_test2(Test_test1):
 
         [TestMethod, Priority(0)]
         public async Task Iterator_Python27() {
-            var uri = TestData.GetTempPathUri("test-module.py");
+            var uri = TestData.GetTestSpecificUri("test-module.py");
             using (var server = await CreateServerAsync(PythonVersions.Required_Python27X)) {
                 await server.SendDidOpenTextDocument(uri, @"
 A = [1, 2, 3]
@@ -1026,7 +1026,7 @@ c = next(iC)
 
         [TestMethod, Priority(0)]
         public async Task Iterator_Python3X() {
-            var uri = TestData.GetTempPathUri("test-module.py");
+            var uri = TestData.GetTestSpecificUri("test-module.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 await server.SendDidOpenTextDocument(uri, @"
 A = [1, 2, 3]
@@ -4038,7 +4038,7 @@ t.x, t. =
             var serverDisposeTask = Task.CompletedTask;
             var analysisCompleteTask = Task.CompletedTask;
             try {
-                server = await CreateServerAsync(configuration);
+                server = await CreateServerAsync(configuration, new Uri(configuration.LibraryPath));
                 for (var i = 0; i < contentTasks.Length && server.AnalysisQueue.Count < 50; i++) {
                     await server.SendDidOpenTextDocument(new Uri(files[i]), contentTasks[i].Result);
                 }
@@ -4069,7 +4069,7 @@ import fob.y as y
 abc = 42
 ";
 
-            using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
+            using (var server = await CreateServerAsync()) {
                 var initX = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "__init__.py"), string.Empty);
                 var modX = TestData.GetTestSpecificUri(Path.Combine("fob", "x.py"));
                 var modY = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), srcY);
@@ -4095,7 +4095,7 @@ abc = 42
             var src2 = "from .y import abc";
             var src3 = "abc = 42";
 
-            using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
+            using (var server = await CreateServerAsync()) {
                 var uriSrc1 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "__init__.py"), src1);
                 var uriSrc2 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "x.py"), src2);
                 var uriSrc3 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), src3);
@@ -4129,7 +4129,7 @@ abc = 42
             var subpackageModuleYContent = "def spam():\n  pass\n";
             var subpackage2ModuleZContent = "def eggs():\n  pass\n";
 
-            using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
+            using (var server = await CreateServerAsync()) {
                 var initUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "__init__.py"), initContent);
                 var moduleAUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "moduleA.py"), moduleAContent);
 
@@ -4169,7 +4169,7 @@ abc = 42
             var src1 = "from .y import y";
             var src2 = "def y(): pass";
 
-            using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
+            using (var server = await CreateServerAsync()) {
                 var uriSrc1 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "__init__.py"), src1);
                 var uriSrc2 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), src2);
 

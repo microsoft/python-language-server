@@ -21,6 +21,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 
@@ -32,7 +33,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// up various elements we need to keep track of such as thread safety and lazy loading of built-in
     /// modules.
     /// </summary>
-    class ModuleTable : IEnumerable<KeyValuePair<string, ModuleLoadState>> {
+    class ModuleTable {
         private readonly IPythonInterpreter _interpreter;
         private readonly PythonAnalyzer _analyzer;
         private readonly ConcurrentDictionary<IPythonModule, BuiltinModule> _builtinModuleTable = new ConcurrentDictionary<IPythonModule, BuiltinModule>();
@@ -41,22 +42,14 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly ConcurrentDictionary<string, Func<BuiltinModule, BuiltinModule>> _builtinModuleType = new ConcurrentDictionary<string, Func<BuiltinModule, BuiltinModule>>();
 
         public ModuleTable(PythonAnalyzer analyzer, IPythonInterpreter interpreter) {
+            Check.ArgumentNotNull(nameof(analyzer), analyzer);
             _analyzer = analyzer;
             _interpreter = interpreter;
-        }
 
-        public bool Contains(string name) {
-            return _modules.ContainsKey(name);
         }
-
+        
         public void AddBuiltinModuleWrapper(string moduleName, Func<BuiltinModule, BuiltinModule> moduleWrapper) {
-            if (_modules.TryGetValue(moduleName, out var modRef) &&
-                modRef.Module is IPythonModule pm &&
-                _builtinModuleTable.TryGetValue(pm, out var existing)) {
-                _builtinModuleTable[pm] = moduleWrapper(existing);
-            } else {
-                _builtinModuleType[moduleName] = moduleWrapper;
-            }
+            _builtinModuleType[moduleName] = moduleWrapper;
         }
 
         /// <summary>
@@ -78,14 +71,14 @@ namespace Microsoft.PythonTools.Analysis {
         internal bool TryGetImportedModule(string name, out ModuleReference res) {
             return _modules.TryGetValue(name, out res);
         }
-        
+
         /// <summary>
         /// Gets a reference to a module.
         /// </summary>
         /// <param name="name">The full import name of the module.</param>
-        /// <param name="res">The module reference object.</param>
+        /// <param name="token"></param>
         /// <returns>
-        /// True if the module is available. This means that <c>res.Module</c>
+        /// True if the module is available. This means that <c>moduleReference.Module</c>
         /// is not null. If this function returns false, <paramref name="res"/>
         /// may be valid and should not be replaced, but it is an unresolved
         /// reference.
@@ -93,75 +86,66 @@ namespace Microsoft.PythonTools.Analysis {
         public async Task<ModuleReference> TryImportAsync(string name, CancellationToken token) {
             var firstImport = false;
 
-            if (!_modules.TryGetValue(name, out var res) || res == null) {
-                var mod = await ImportModuleAsync(name, token).ConfigureAwait(false);
-                _modules[name] = res = new ModuleReference(GetBuiltinModule(mod), name);
+            if (!_modules.TryGetValue(name, out var moduleReference) || moduleReference == null) {
+                var pythonModule = await ImportModuleAsync(name, token).ConfigureAwait(false);
+                moduleReference = SetModule(name, GetBuiltinModule(pythonModule));
                 firstImport = true;
             }
 
-            if (res != null && res.Module == null) {
-                var mod = await ImportModuleAsync(name, token).ConfigureAwait(false);
-                res.Module = GetBuiltinModule(mod);
+            if (moduleReference.Module == null) {
+                var pythonModule = await ImportModuleAsync(name, token).ConfigureAwait(false);
+                moduleReference.Module = GetBuiltinModule(pythonModule);
             }
-            if (firstImport && res != null && res.Module != null && _analyzer != null) {
-                await Task.Run(() => _analyzer.DoDelayedSpecialization(name)).ConfigureAwait(false);
+
+            if (firstImport && moduleReference.Module != null) {
+                _analyzer.DoDelayedSpecialization(name);
             }
-            if (res != null && res.Module == null) {
-                return null;
-            }
-            return res;
+
+            return moduleReference.Module == null ? null : moduleReference;
         }
 
-        private async Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token) {
-            var interpreter2 = _interpreter as IPythonInterpreter2;
-            IPythonModule mod;
-            if (interpreter2 != null) {
-                mod = await interpreter2.ImportModuleAsync(name, token).ConfigureAwait(false);
-            } else {
-                mod = await Task.Run(() => _interpreter.ImportModule(name)).ConfigureAwait(false);
-            }
-            return mod;
+        private Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token) {
+            return _interpreter is IPythonInterpreter2 interpreter2
+                ? interpreter2.ImportModuleAsync(name, token)
+                : Task.Run(() => _interpreter.ImportModule(name), token);
         }
 
         /// <summary>
         /// Gets a reference to a module.
         /// </summary>
         /// <param name="name">The full import name of the module.</param>
-        /// <param name="res">The module reference object.</param>
+        /// <param name="moduleReference">The module reference object.</param>
         /// <returns>
-        /// True if the module is available. This means that <c>res.Module</c>
-        /// is not null. If this function returns false, <paramref name="res"/>
+        /// True if the module is available. This means that <c>moduleReference.Module</c>
+        /// is not null. If this function returns false, <paramref name="moduleReference"/>
         /// may be valid and should not be replaced, but it is an unresolved
         /// reference.
         /// </returns>
-        public bool TryImport(string name, out ModuleReference res) {
+        public bool TryImport(string name, out ModuleReference moduleReference) {
             var firstImport = false;
-            if (!_modules.TryGetValue(name, out res) || res == null) {
-                _modules[name] = res = new ModuleReference(GetBuiltinModule(_interpreter.ImportModule(name)), name);
+
+            if (!_modules.TryGetValue(name, out moduleReference) || moduleReference == null) {
+                var pythonModule = _interpreter.ImportModule(name);
+                moduleReference = SetModule(name, GetBuiltinModule(pythonModule));
                 firstImport = true;
             }
-            if (res != null && res.Module == null) {
-                res.Module = GetBuiltinModule(_interpreter.ImportModule(name));
+
+            if (moduleReference.Module == null) {
+                moduleReference.Module = GetBuiltinModule(_interpreter.ImportModule(name));
             }
-            if (firstImport && res != null && res.Module != null && _analyzer != null) {
+
+            if (firstImport && moduleReference.Module != null) {
                 _analyzer.DoDelayedSpecialization(name);
             }
-            return res != null && res.Module != null;
-        }
-        public bool TryRemove(string name, out ModuleReference res) => _modules.TryRemove(name, out res);
 
-        public ModuleReference this[string name] {
-            get {
-                ModuleReference res;
-                if (!TryImport(name, out res)) {
-                    throw new KeyNotFoundException(name);
-                }
-                return res;
-            }
-            set {
-                _modules[name] = value;
-            }
+            return moduleReference.Module != null;
         }
+
+        public bool TryRemove(string name, out ModuleReference res) => _modules.TryRemove(name, out res);
+        public ModuleReference SetModule(string name, IModule module) => _modules.AddOrUpdate(name, new ModuleReference(module, name), (_, reference) => {
+                reference.Module = module;
+                return reference;
+            });
 
         public ModuleReference GetOrAdd(string name) {
             return _modules.GetOrAdd(name, _ => new ModuleReference(name: name));
@@ -179,8 +163,7 @@ namespace Microsoft.PythonTools.Analysis {
                 var name = keyValue.Key;
                 var moduleRef = keyValue.Value;
 
-                var builtinModule = moduleRef.Module as BuiltinModule;
-                if (builtinModule != null) {
+                if (moduleRef.Module is BuiltinModule builtinModule) {
                     IPythonModule newModule = null;
                     if (newNames.Contains(name)) {
                         newModule = _interpreter.ImportModule(name);
@@ -189,17 +172,15 @@ namespace Microsoft.PythonTools.Analysis {
                     if (newModule == null) {
                         // this module was unloaded
                         ModuleReference dummy;
-                        _modules.TryRemove(name, out dummy);
+                        TryRemove(name, out dummy);
 
-                        BuiltinModule removedModule;
-                        _builtinModuleTable.TryRemove(builtinModule.InterpreterModule, out removedModule);
+                        _builtinModuleTable.TryRemove(builtinModule.InterpreterModule, out _);
                         foreach (var child in builtinModule.InterpreterModule.GetChildrenModules()) {
-                            _modules.TryRemove(builtinModule.Name + "." + child, out dummy);
+                            TryRemove(builtinModule.Name + "." + child, out dummy);
                         }
                     } else if (builtinModule.InterpreterModule != newModule) {
                         // this module was replaced with a new module
-                        BuiltinModule removedModule;
-                        _builtinModuleTable.TryRemove(builtinModule.InterpreterModule, out removedModule);
+                        _builtinModuleTable.TryRemove(builtinModule.InterpreterModule, out _);
                         moduleRef.Module = GetBuiltinModule(newModule);
                         ImportChildren(newModule);
                     }
@@ -211,40 +192,36 @@ namespace Microsoft.PythonTools.Analysis {
             if (attr == null) {
                 return null;
             }
-            BuiltinModule res;
-            if (!_builtinModuleTable.TryGetValue(attr, out res)) {
-                Func<BuiltinModule, BuiltinModule> wrap;
+
+            if (!_builtinModuleTable.TryGetValue(attr, out var res)) {
                 res = new BuiltinModule(attr, _analyzer);
-                if (_builtinModuleType.TryGetValue(attr.Name, out wrap) && wrap != null) {
+                if (_builtinModuleType.TryGetValue(attr.Name, out var wrap) && wrap != null) {
                     res = wrap(res);
                 }
                 _builtinModuleTable[attr] = res;
             }
+
             return res;
         }
 
         internal void ImportChildren(IPythonModule interpreterModule) {
-            BuiltinModule module = null;
+            BuiltinModule builtinModule = null;
             foreach (var child in interpreterModule.GetChildrenModules()) {
-                module = module ?? GetBuiltinModule(interpreterModule);
-                ModuleReference modRef;
-                var fullname = module.Name + "." + child;
-                if (!_modules.TryGetValue(fullname, out modRef) || modRef == null || modRef.Module == null)  {
-                    IAnalysisSet value;
-                    if (module.TryGetMember(child, out value)) {
-                        var mod = value as IModule;
-                        if (mod != null) {
-                            _modules[fullname] = new ModuleReference(mod, fullname);
-                            _analyzer?.DoDelayedSpecialization(fullname);
-                        }
+                builtinModule = builtinModule ?? GetBuiltinModule(interpreterModule);
+                var fullname = builtinModule.Name + "." + child;
+
+                if (!_modules.TryGetValue(fullname, out var modRef) || modRef?.Module == null) {
+                    if (builtinModule.TryGetMember(child, out var value) && value is IModule module) {
+                        SetModule(fullname, module);
+                        _analyzer?.DoDelayedSpecialization(fullname);
                     }
                 }
             }
         }
 
-        #region IEnumerable<KeyValuePair<string,ModuleReference>> Members
+        #region IEnumerable<KeyValuePair<string, ModuleLoadState>> GetModuleStates
 
-        public IEnumerator<KeyValuePair<string, ModuleLoadState>> GetEnumerator() {
+        public IEnumerable<KeyValuePair<string, ModuleLoadState>> GetModuleStates() {
             var unloadedNames = new HashSet<string>(_interpreter.GetModuleNames(), StringComparer.Ordinal);
             var unresolvedNames = _analyzer?.GetAllUnresolvedModuleNames();
 
@@ -270,7 +247,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        class UnresolvedModuleLoadState : ModuleLoadState {
+        private class UnresolvedModuleLoadState : ModuleLoadState {
             public override AnalysisValue Module {
                 get { return null; }
             }
@@ -300,8 +277,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-
-        class UninitializedModuleLoadState : ModuleLoadState {
+        private class UninitializedModuleLoadState : ModuleLoadState {
             private readonly ModuleTable _moduleTable;
             private readonly string _name;
             private PythonMemberType? _type;
@@ -375,7 +351,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         }
 
-        class InitializedModuleLoadState : ModuleLoadState {
+        private class InitializedModuleLoadState : ModuleLoadState {
             private readonly ModuleReference _reference;
 
             public InitializedModuleLoadState(ModuleReference reference) {
@@ -456,60 +432,46 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        private static bool BuiltinModuleContainsMember(IModuleContext context, string name, IPythonModule interpModule) {
-            var mem = interpModule.GetMember(context, name);
-            if (mem != null) {
-                if (IsExcludedBuiltin(interpModule, mem)) {
-                    // if a module imports a builtin and exposes it don't report it for purposes of adding imports
-                    return false;
-                }
+        private static bool BuiltinModuleContainsMember(IModuleContext context, string name, IPythonModule module) {
+            var member = module.GetMember(context, name);
+            if (member == null) {
+                return false;
+            }
 
-                var multiMem = mem as IPythonMultipleMembers;
-                if (multiMem != null) {
-                    foreach (var innerMem in multiMem.Members) {
-                        if (IsExcludedBuiltin(interpModule, innerMem)) {
-                            // if something non-excludable aliased w/ something excluable we probably
-                            // only care about the excluable (for example a module and None - timeit.py
-                            // does this in the std lib)
-                            return false;
-                        }
+            if (IsExcludedBuiltin(module, member)) {
+                // if a module imports a builtin and exposes it don't report it for purposes of adding imports
+                return false;
+            }
+
+            // if something non-excludable aliased w/ something excludable we probably only care about the excludable
+            // (for example a module and None - timeit.py does this in the std lib)
+            if (member is IPythonMultipleMembers multipleMembers) {
+                foreach (var innerMember in multipleMembers.Members) {
+                    if (IsExcludedBuiltin(module, innerMember)) {
+                        return false;
                     }
                 }
-
-                return true;
             }
-            return false;
+
+            return true;
         }
 
-        private static bool IsExcludedBuiltin(IPythonModule builtin, IMember mem) {
-            IPythonFunction func;
-            IPythonType type;
-            IPythonConstant constant;
-            if (mem is IPythonModule || // modules are handled specially
-                ((func = mem as IPythonFunction) != null && func.DeclaringModule != builtin) ||   // function imported into another module
-                ((type = mem as IPythonType) != null && type.DeclaringModule != builtin) ||   // type imported into another module
-                ((constant = mem as IPythonConstant) != null && constant.Type.TypeId == BuiltinTypeId.Object)) {    // constant which we have no real type info for.
-                return true;
-            }
-
-            if (constant != null) {
-                if (constant.Type.DeclaringModule.Name == "__future__" &&
-                    constant.Type.Name == "_Feature" &&
-                    builtin.Name != "__future__") {
+        private static bool IsExcludedBuiltin(IPythonModule builtin, IMember member) {
+            switch (member) {
+                case IPythonModule _: // modules are handled specially
+                case IPythonFunction func when func.DeclaringModule != builtin: // function imported into another module
+                case IPythonFunction type when type.DeclaringModule != builtin: // type imported into another module
+                case IPythonConstant objConstant when objConstant.Type.TypeId == BuiltinTypeId.Object: // constant which we have no real type info for.
+                case IPythonConstant constant when constant.Type.DeclaringModule.Name == "__future__" &&
+                                                   constant.Type.Name == "_Feature" &&
+                                                   builtin.Name != "__future__":
                     // someone has done a from __future__ import blah, don't include import in another
                     // module in the list of places where you can import this from.
                     return true;
-                }
+                default:
+                    return false;
             }
-            return false;
-        }
 
-        #endregion
-
-        #region IEnumerable Members
-
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
-            return GetEnumerator();
         }
 
         #endregion

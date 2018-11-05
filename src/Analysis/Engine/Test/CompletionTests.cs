@@ -60,7 +60,7 @@ namespace AnalysisTests {
 
         [ServerTestMethod(LatestAvailable2X = true), Priority(0)]
         public async Task PrivateMembers(Server server) {
-            var uri = TestData.GetTempPathUri("test-module.py");
+            var uri = TestData.GetTestSpecificUri("test-module.py");
 
             string code = @"
 class C:
@@ -443,8 +443,8 @@ class B(A):
 
         [TestMethod, Priority(0)]
         public async Task TopLevelCompletions() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri = GetDocument(@"TestData\AstAnalysis\TopLevelCompletions.py");
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X, new Uri(TestData.GetPath("TestData", "AstAnalysis")))) {
+                var uri = GetDocument(Path.Combine("TestData", "AstAnalysis", "TopLevelCompletions.py"));
                 await server.LoadFileAsync(uri);
 
                 await AssertCompletion(
@@ -463,7 +463,7 @@ class B(A):
             }
         }
 
-        [ServerTestMethod(TestSpecificRootUri = true), Priority(0)]
+        [ServerTestMethod, Priority(0)]
         public async Task Completion_PackageRelativeImport(Server server) {
             var appPath = "app.py";
             var module1Path = "module1.py";

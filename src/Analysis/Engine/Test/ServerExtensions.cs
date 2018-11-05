@@ -40,7 +40,7 @@ namespace Microsoft.PythonTools.Analysis {
             configuration.WriteToDictionary(properties);
 
             await server.Initialize(new InitializeParams {
-                rootUri = rootUri,
+                rootUri = rootUri ?? TestData.GetTestSpecificRootUri(),
                 initializationOptions = new PythonInitializationOptions {
                     interpreter = new PythonInitializationOptions.Interpreter {
                         assembly = typeof(AstPythonInterpreterFactory).Assembly.Location,

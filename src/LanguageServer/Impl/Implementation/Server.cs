@@ -519,9 +519,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var pyItem = Analyzer.AddModule(first, path, documentUri, cookie);
             item = pyItem;
-            foreach (var a in aliases.Skip(1)) {
-                Analyzer.AddModuleAlias(first, a);
-            }
 
             var actualItem = ProjectFiles.GetOrAddEntry(documentUri, item);
             if (actualItem != item) {

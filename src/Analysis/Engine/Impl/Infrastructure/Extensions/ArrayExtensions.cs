@@ -18,6 +18,26 @@ using System;
 
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
     internal static class ArrayExtensions {
+        public static int IndexOf<T>(this T[] array, Func<T, bool> predicate) {
+            for (var i = 0; i < array.Length; i++) {
+                if (predicate(array[i])) {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        public static int IndexOf<T, TValue>(this T[] array, TValue value, Func<T, TValue, bool> predicate) {
+            for (var i = 0; i < array.Length; i++) {
+                if (predicate(array[i], value)) {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         public static T[] ImmutableAdd<T>(this T[] array, in T item) {
             if (array.Length == 0) {
                 return new[] {item};

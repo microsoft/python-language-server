@@ -24,16 +24,13 @@ using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
     internal partial struct PathResolverSnapshot {
-        private static readonly bool IgnoreCase = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly bool IgnoreCaseInPaths = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         private readonly PythonLanguageVersion _pythonLanguageVersion;
         private readonly Node[] _roots;
         public int Version { get; }
 
-        public PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion) {
-            _pythonLanguageVersion = pythonLanguageVersion;
-            _roots = Array.Empty<Node>();
-            Version = 0;
-        }
+        public PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion) 
+            : this(pythonLanguageVersion, Array.Empty<Node>(), default) { }
 
         private PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion, Node[] roots, int version) {
             _pythonLanguageVersion = pythonLanguageVersion;
@@ -42,44 +39,44 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
         }
 
         public IAvailableImports GetAvailableImportsFromAbsolutePath(in string modulePath, in IEnumerable<string> path) {
-            if (!TryFindModule(modulePath, out var lastArc, out _, out _)) {
+            if (!TryFindModule(modulePath, out var lastEdge, out _, out _)) {
                 return default;
             }
 
-            //TODO: handle implicit relative path for 2X, use TryAppendPackages(ref lastArc, path)
-            var firstArc = lastArc.GetFirstArc();
-            if (!TryAppendPackages(firstArc, path, out lastArc)) {
+            //TODO: handle implicit relative path for 2X, use TryAppendPackages(ref lastEdge, path)
+            var firstEdge = lastEdge.GetFirstEdge();
+            if (!TryAppendPackages(firstEdge, path, out lastEdge)) {
                 return default;
             }
 
-            return GetAvailableImports(lastArc);
+            return GetAvailableImports(lastEdge);
         }
 
         public IAvailableImports GetAvailableImportsFromRelativePath(in string modulePath, in int parentCount, in IEnumerable<string> relativePath) {
-            if (!TryFindModule(modulePath, out var lastArc, out _, out _)) {
+            if (!TryFindModule(modulePath, out var lastEdge, out _, out _)) {
                 // Module wasn't found in current snapshot
                 return default;
             }
 
-            if (parentCount > lastArc.PathLength - 1) {
+            if (parentCount > lastEdge.PathLength - 1) {
                 // Can't get outside of the root
                 return default;
             }
 
-            var relativeParentArc = lastArc.GetPrevious(parentCount);
-            if (!TryAppendPackages(relativeParentArc, relativePath, out lastArc)) {
+            var relativeParentArc = lastEdge.GetPrevious(parentCount);
+            if (!TryAppendPackages(relativeParentArc, relativePath, out lastEdge)) {
                 return default;
             }
             
-            return GetAvailableImports(lastArc);
+            return GetAvailableImports(lastEdge);
         }
 
-        private IAvailableImports GetAvailableImports(in Arc lastArc, in bool requireInitPy = true) {
-            if (lastArc.End.IsModule) {
-                return new AvailableModuleImports(lastArc.End.Name, lastArc.End.ModulePath);
+        private IAvailableImports GetAvailableImports(in Edge lastEdge) {
+            if (lastEdge.End.IsModule) {
+                return new AvailableModuleImports(lastEdge.End.Name, lastEdge.End.ModulePath);
             }
 
-            var packageNode = lastArc.End;
+            var packageNode = lastEdge.End;
             var initPy = packageNode.GetChild("__init__");
             if (initPy != default && initPy.IsModule) {
                 // Ordinal package, return direct children
@@ -90,21 +87,21 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 return default;
             }
 
-            return GetAvailableNamespaceImports(lastArc);
+            return GetAvailableNamespaceImports(lastEdge);
         }
 
-        private IAvailableImports GetAvailableNamespaceImports(in Arc lastArc) {
+        private IAvailableImports GetAvailableNamespaceImports(in Edge lastEdge) {
             for (var i = 0; i < _roots.Length; i++) {
-                if (TryMatchPath(lastArc, i, out var matchedLastArc)) {
-                    if (matchedLastArc.End.IsModule) {
-                        return new AvailableModuleImports(lastArc.End.Name, lastArc.End.ModulePath);
+                if (TryMatchPath(lastEdge, i, out var matchedLastEdge)) {
+                    if (matchedLastEdge.End.IsModule) {
+                        return new AvailableModuleImports(lastEdge.End.Name, lastEdge.End.ModulePath);
                     }
 
                     // TODO: add support for multiple matching paths. Handle cases:
                     // - Submodule with the same name is presented in several paths
                     // - One of the paths is module and another one is package
                     // - One of the packages contains __init__.py
-                    return new AvailablePackageImports(lastArc.End.Name, lastArc.End.GetChildModules(), lastArc.End.GetChildPackageNames());
+                    return new AvailablePackageImports(lastEdge.End.Name, lastEdge.End.GetChildModules(), lastEdge.End.GetChildPackageNames());
                 }
             }
 
@@ -117,7 +114,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
         }
 
         public PathResolverSnapshot AddModulePath(in string modulePath) {
-            var isFound = TryFindModule(modulePath, out var lastArc, out var normalizedPath, out var unmatchedPathSpan);
+            var isFound = TryFindModule(modulePath, out var lastEdge, out var normalizedPath, out var unmatchedPathSpan);
             if (normalizedPath == default) {
                 // Not a module
                 return this;
@@ -128,80 +125,80 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 return this;
             }
 
-            var newChildNode = CreateNewNodes(normalizedPath, unmatchedPathSpan, unmatchedPathSpan.length == 0 ? lastArc.End : default);
+            var newChildNode = CreateNewNodes(normalizedPath, unmatchedPathSpan, unmatchedPathSpan.length == 0 ? lastEdge.End : default);
             if (unmatchedPathSpan.length == 0) {
-                lastArc = lastArc.Previous;
+                lastEdge = lastEdge.Previous;
             }
 
-            var newEnd = lastArc.End.AddChild(newChildNode);
-            var newRoot = UpdateNodesFromEnd(lastArc, newEnd);
-            return ImmutableReplaceRoot(newRoot, lastArc.GetFirstArc().EndIndex);
+            var newEnd = lastEdge.End.AddChild(newChildNode);
+            var newRoot = UpdateNodesFromEnd(lastEdge, newEnd);
+            return ImmutableReplaceRoot(newRoot, lastEdge.GetFirstEdge().EndIndex);
         }
 
         public PathResolverSnapshot RemoveModulePath(in string modulePath) {
-            if (!TryFindModule(modulePath, out var lastArc, out _, out _)) {
+            if (!TryFindModule(modulePath, out var lastEdge, out _, out _)) {
                 // Module not found or found package in place of a module
                 return this;
             }
 
-            var moduleNode = lastArc.End;
-            var moduleParent = lastArc.Start;
-            var moduleIndex = lastArc.EndIndex;
+            var moduleNode = lastEdge.End;
+            var moduleParent = lastEdge.Start;
+            var moduleIndex = lastEdge.EndIndex;
 
             var newParent = moduleNode.ChildrenCount > 0 
                 ? moduleParent.ReplaceChildAt(moduleNode.ToPackage(), moduleIndex) // preserve node as package
                 : moduleParent.RemoveChildAt(moduleIndex);
 
-            lastArc = lastArc.Previous;
-            var newRoot = UpdateNodesFromEnd(lastArc, newParent);
-            return ImmutableReplaceRoot(newRoot, lastArc.GetFirstArc().EndIndex);
+            lastEdge = lastEdge.Previous;
+            var newRoot = UpdateNodesFromEnd(lastEdge, newParent);
+            return ImmutableReplaceRoot(newRoot, lastEdge.GetFirstEdge().EndIndex);
         }
 
-        private Arc MatchNodePath(in string normalizedModulePath, in int rootIndex, out (int start, int length) unmatchedPathSpan) {
+        private Edge MatchNodePath(in string normalizedModulePath, in int rootIndex, out (int start, int length) unmatchedPathSpan) {
             var root = _roots[rootIndex];
             var nameSpan = (start: 0, length: root.Name.Length);
             var modulePathLength = normalizedModulePath.LastIndexOf('.'); // exclude extension
-            var lastArc = new Arc(rootIndex, root);
+            var lastEdge = new Edge(rootIndex, root);
             
             while (normalizedModulePath.TryGetNextNonEmptySpan(Path.DirectorySeparatorChar, modulePathLength, ref nameSpan)) {
-                var childIndex = lastArc.End.GetChildIndex(normalizedModulePath, nameSpan);
+                var childIndex = lastEdge.End.GetChildIndex(normalizedModulePath, nameSpan);
                 if (childIndex == -1) {
                     break;
                 }
-                lastArc = lastArc.Append(childIndex);
+                lastEdge = lastEdge.Append(childIndex);
             }
 
             unmatchedPathSpan = nameSpan.start != -1 ? (nameSpan.start, modulePathLength - nameSpan.start) : (-1, 0);
-            return lastArc;
+            return lastEdge;
         }
 
-        private static bool TryAppendPackages(in Arc arc, in IEnumerable<string> packageNames, out Arc lastArc) {
-            lastArc = arc;
+        private static bool TryAppendPackages(in Edge edge, in IEnumerable<string> packageNames, out Edge lastEdge) {
+            lastEdge = edge;
             foreach (var name in packageNames) {
-                if (lastArc.End.IsModule) {
+                if (lastEdge.End.IsModule) {
                     return false;
                 }
-                var index = lastArc.End.GetChildIndex(name);
+                var index = lastEdge.End.GetChildIndex(name);
                 if (index == -1) {
                     return false;
                 }
-                lastArc = lastArc.Append(index);
+                lastEdge = lastEdge.Append(index);
             }
 
             return true;
         }
 
-        private bool TryMatchPath(in Arc lastArc, in int rootIndex, out Arc matchedLastArc) {
-            var sourceArc = lastArc.GetFirstArc();
-            matchedLastArc = new Arc(rootIndex, _roots[rootIndex]);
+        private bool TryMatchPath(in Edge lastEdge, in int rootIndex, out Edge matchedLastEdge) {
+            var sourceNext = lastEdge.GetFirstEdge();
+            matchedLastEdge = new Edge(rootIndex, _roots[rootIndex]);
 
-            while (sourceArc != lastArc) {
-                sourceArc = sourceArc.Next;
-                var childIndex = matchedLastArc.End.GetChildIndex(sourceArc.End.Name);
+            while (sourceNext != lastEdge) {
+                sourceNext = sourceNext.Next;
+                var childIndex = matchedLastEdge.End.GetChildIndex(sourceNext.End.Name);
                 if (childIndex == -1) {
                     return false;
                 }
-                matchedLastArc = matchedLastArc.Append(childIndex);
+                matchedLastEdge = matchedLastEdge.Append(childIndex);
             }
 
             return true;
@@ -228,44 +225,44 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             return newNode;
         }
 
-        private static Node UpdateNodesFromEnd(Arc lastArc, Node newEnd) {
-            while (lastArc.Start != default) {
-                var newStart = lastArc.Start.ReplaceChildAt(newEnd, lastArc.EndIndex);
-                lastArc = lastArc.Previous;
+        private static Node UpdateNodesFromEnd(Edge lastEdge, Node newEnd) {
+            while (lastEdge.Start != default) {
+                var newStart = lastEdge.Start.ReplaceChildAt(newEnd, lastEdge.EndIndex);
+                lastEdge = lastEdge.Previous;
                 newEnd = newStart;
             }
 
             return newEnd;
         }
 
-        private bool TryFindModule(string modulePath, out Arc lastArc, out string normalizedPath, out (int start, int length) unmatchedPathSpan) {
+        private bool TryFindModule(string modulePath, out Edge lastEdge, out string normalizedPath, out (int start, int length) unmatchedPathSpan) {
             if (!Path.IsPathRooted(modulePath)) {
                 throw new InvalidOperationException("Module path should be rooted");
             }
 
             normalizedPath = PathUtils.NormalizePath(modulePath);
             var rootIndex = 0;
-            while (rootIndex < _roots.Length && !normalizedPath.StartsWithOrdinal(_roots[rootIndex].Name)) {
+            while (rootIndex < _roots.Length && !normalizedPath.StartsWithOrdinal(_roots[rootIndex].Name, IgnoreCaseInPaths)) {
                 rootIndex++;
             }
 
             if (rootIndex == _roots.Length) {
-                throw new InvalidOperationException("File doesn't belong to any known search path");
+                throw new InvalidOperationException($"File '{modulePath}' doesn't belong to any known search path");
             }
 
             if (!IsRootedPathEndsWithPythonFile(normalizedPath)) {
-                lastArc = default;
+                lastEdge = default;
                 normalizedPath = default;
                 unmatchedPathSpan = (-1, 0);
                 return false;
             }
 
-            lastArc = MatchNodePath(normalizedPath, rootIndex, out unmatchedPathSpan);
-            return unmatchedPathSpan.length == 0 && lastArc.End.IsModule;
+            lastEdge = MatchNodePath(normalizedPath, rootIndex, out unmatchedPathSpan);
+            return unmatchedPathSpan.length == 0 && lastEdge.End.IsModule;
         }
 
         private static bool IsRootedPathEndsWithPythonFile(string rootedPath) {
-            if (!rootedPath.EndsWithAnyOrdinal(new[] { ".py", ".pyi", ".pyw" }, IgnoreCase)) {
+            if (!rootedPath.EndsWithAnyOrdinal(new[] { ".py", ".pyi", ".pyw" }, IgnoreCaseInPaths)) {
                 return false;
             }
 

@@ -177,7 +177,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             var overloads = Subject.Overloads.ToArray();
             Execute.Assertion.ForCondition(overloads.Length == count)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {GetName()} to have single overload{{reason}}, but it {GetOverloadsString(overloads.Length)}.");
+                .FailWith($"Expected {GetName()} to have {GetOverloadsString(count)}{{reason}}, but it {GetOverloadsString(overloads.Length)}.");
 
             return new AndConstraint<TAssertions>((TAssertions)this);
         }

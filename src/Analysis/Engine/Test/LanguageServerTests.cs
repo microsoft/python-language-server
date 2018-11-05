@@ -69,7 +69,7 @@ namespace AnalysisTests {
         protected virtual BuiltinTypeId BuiltinTypeId_Str => BuiltinTypeId.Unicode;
 
         public Task<Server> CreateServer() {
-            return CreateServer((Uri)null, Default);
+            return CreateServer(TestData.GetTestSpecificRootUri(), Default);
         }
 
         public Task<Server> CreateServer(string rootPath, InterpreterConfiguration configuration = null, Dictionary<Uri, PublishDiagnosticsEventArgs> diagnosticEvents = null) {
@@ -276,7 +276,7 @@ def f(a = 2, b): pass
         [TestMethod, Priority(0)]
         public async Task ParseErrorDiagnostics() {
             var diags = new Dictionary<Uri, PublishDiagnosticsEventArgs>();
-            var s = await CreateServer((string)null, null, diags);
+            var s = await CreateServer(TestData.GetTestSpecificRootUri(), null, diags);
             var u = await AddModule(s, "def f(/)\n    error text\n");
 
             GetDiagnostics(diags, u).Should().OnlyContain(
@@ -292,7 +292,7 @@ def f(a = 2, b): pass
         [TestMethod, Priority(0)]
         public async Task ParseIndentationDiagnostics() {
             var diags = new Dictionary<Uri, PublishDiagnosticsEventArgs>();
-            var s = await CreateServer((string)null, null, diags);
+            var s = await CreateServer(TestData.GetTestSpecificRootUri(), null, diags);
 
             foreach (var tc in new[] {
                 DiagnosticSeverity.Error,
@@ -330,7 +330,7 @@ def f(a = 2, b): pass
         [TestMethod, Priority(0)]
         public async Task ParseAndAnalysisDiagnostics() {
             var diags = new Dictionary<Uri, PublishDiagnosticsEventArgs>();
-            var s = await CreateServer((Uri)null, null, diags);
+            var s = await CreateServer(TestData.GetTestSpecificRootUri(), null, diags);
 
             var u = await AddModule(s, "y\nx x");
 
@@ -345,7 +345,7 @@ def f(a = 2, b): pass
         public async Task DiagnosticsSettingChange() {
             var diags = new Dictionary<Uri, PublishDiagnosticsEventArgs>();
 
-            using (var s = await CreateServer((Uri)null, null, diags)) {
+            using (var s = await CreateServer(TestData.GetTestSpecificRootUri(), null, diags)) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("import foo\nx = y");
 
                 await s.WaitForCompleteAnalysisAsync(CancellationToken.None);

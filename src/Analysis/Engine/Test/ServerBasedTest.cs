@@ -99,7 +99,7 @@ namespace AnalysisTests {
             if (limits != null) {
                 server.Analyzer.Limits = limits;
             }
-            server.Analyzer.SetSearchPaths(searchPaths);
+            server.SetSearchPaths(searchPaths);
             server.Analyzer.SetTypeStubPaths(stubPaths);
 
             var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);

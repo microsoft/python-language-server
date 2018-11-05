@@ -254,8 +254,7 @@ namespace Microsoft.PythonTools.Analysis {
                     parentFilename = Path.Combine(Path.GetDirectoryName(FilePath), "__init__.py");
                 }
 
-                ModuleInfo parentPackage;
-                if (ProjectState.ModulesByFilename.TryGetValue(parentFilename, out parentPackage)) {
+                if (ProjectState.ModulesByFilename.TryGetValue(parentFilename, out var parentPackage)) {
                     parentPackage.AddChildPackage(MyScope, _unit);
                 }
             }

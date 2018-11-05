@@ -46,11 +46,6 @@ namespace Microsoft.PythonTools.Analysis {
         IPythonProjectEntry AddModule(string moduleName, string filePath, Uri documentUri = null, IAnalysisCookie cookie = null);
 
         /// <summary>
-        /// Associates an existing module with a new name.
-        /// </summary>
-        void AddModuleAlias(string moduleName, string moduleAlias);
-
-        /// <summary>
         /// Removes the specified project entry from the current analysis.
         /// 
         /// This method is thread safe.

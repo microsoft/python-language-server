@@ -161,13 +161,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             if (modules != null) {
                 // Return any existing module
                 if (modules.TryGetValue(name, out module) && module != null) {
-                    if (module is SentinelModule smod) {
+                    if (module is SentinelModule sentinelModule) {
                         // If we are importing this module on another thread, allow
                         // time for it to complete. This does not block if we are
                         // importing on the current thread or the module is not
                         // really being imported.
                         try {
-                            module = await smod.WaitForImportAsync(cancellationToken);
+                            module = await sentinelModule.WaitForImportAsync(cancellationToken);
                         } catch (OperationCanceledException) {
                             _log?.Log(TraceLevel.Warning, "ImportTimeout", name);
                             return TryImportModuleResult.Timeout;

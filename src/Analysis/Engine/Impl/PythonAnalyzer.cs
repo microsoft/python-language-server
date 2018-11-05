@@ -138,7 +138,7 @@ namespace Microsoft.PythonTools.Analysis {
                 _builtinModule = (BuiltinModule)moduleRef.Module;
             } else {
                 _builtinModule = new BuiltinModule(fallback, this);
-                Modules[_builtinName] = new ModuleReference(_builtinModule, _builtinName);
+                Modules.SetModule(_builtinName, BuiltinModule);
             }
             _builtinModule.InterpreterModule.Imported(_defaultContext);
 
@@ -165,7 +165,7 @@ namespace Microsoft.PythonTools.Analysis {
             if (!_reloadLock.Wait(0)) {
                 // If we don't lock immediately, wait for the current reload to
                 // complete and then return.
-                await _reloadLock.WaitAsync().ConfigureAwait(false);
+                await _reloadLock.WaitAsync(token).ConfigureAwait(false);
                 _reloadLock.Release();
                 return;
             }
@@ -205,30 +205,20 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="cookie">An application-specific identifier for the module</param>
         /// <returns>The project entry for the new module.</returns>
         public IPythonProjectEntry AddModule(string moduleName, string filePath, Uri documentUri = null, IAnalysisCookie cookie = null) {
-            _pathResolver.AddModulePath(filePath);
+            if (documentUri == null || documentUri.Scheme != "python") {
+                _pathResolver.AddModulePath(filePath);
+            }
+
             var entry = new ProjectEntry(this, moduleName, filePath, documentUri, cookie);
 
             if (moduleName != null) {
-                var moduleRef = Modules.GetOrAdd(moduleName);
-                moduleRef.Module = entry.MyScope;
-
+                Modules.SetModule(moduleName, entry.MyScope);
                 DoDelayedSpecialization(moduleName);
             }
             if (filePath != null) {
                 ModulesByFilename[filePath] = entry.MyScope;
             }
             return entry;
-        }
-
-        /// <summary>
-        /// Associates an existing module with a new name.
-        /// </summary>
-        /// <remarks>New in 2.1</remarks>
-        public void AddModuleAlias(string moduleName, string moduleAlias) {
-            ModuleReference modRef;
-            if (Modules.TryImport(moduleName, out modRef)) {
-                Modules[moduleAlias] = modRef;
-            }
         }
 
         public void RemoveModule(IProjectEntry entry) => RemoveModule(entry, null);
@@ -360,7 +350,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// <returns></returns>
         public IMemberResult[] GetModules() {
             var d = new Dictionary<string, List<ModuleLoadState>>();
-            foreach (var keyValue in Modules) {
+            foreach (var keyValue in Modules.GetModuleStates()) {
                 var modName = keyValue.Key;
                 var moduleRef = keyValue.Value;
 
@@ -470,7 +460,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             // provide module names first
-            foreach (var keyValue in Modules) {
+            foreach (var keyValue in Modules.GetModuleStates()) {
                 var modName = keyValue.Key;
                 var moduleRef = keyValue.Value;
 
@@ -493,7 +483,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             // then include imported module members
-            foreach (var keyValue in Modules) {
+            foreach (var keyValue in Modules.GetModuleStates()) {
                 var modName = keyValue.Key;
                 var moduleRef = keyValue.Value;
 
