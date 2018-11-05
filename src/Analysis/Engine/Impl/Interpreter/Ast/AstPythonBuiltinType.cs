@@ -9,14 +9,13 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using System.Linq;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonBuiltinType : AstPythonType {
@@ -28,13 +27,15 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public AstPythonBuiltinType(
-            PythonAst ast,
+            string name,
             IPythonModule declModule,
-            ClassDefinition def,
+            int startIndex,
             string doc,
-            LocationInfo loc
-        ) : base(ast, declModule, def, doc, loc) {
-            _typeId = BuiltinTypeId.Unknown;
+            LocationInfo loc,
+            BuiltinTypeId typeId = BuiltinTypeId.Unknown,
+            bool isClass = false
+        ) : base(name, declModule, startIndex, doc, loc, isClass) {
+            _typeId = typeId == BuiltinTypeId.Unknown && isClass ? BuiltinTypeId.Type : typeId;
         }
 
         public bool TrySetTypeId(BuiltinTypeId typeId) {
@@ -48,12 +49,19 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public override bool IsBuiltin => true;
         public override BuiltinTypeId TypeId => _typeId;
 
-        public bool IsHidden {
-            get {
-                lock (_members) {
-                    return _members.ContainsKey("__hidden__");
-                }
-            }
+        public bool IsHidden => ContainsMember("__hidden__");
+
+        /// <summary>
+        /// Clones builtin type as class. Typically used in scenarios where method
+        /// returns an object that acts like a class constructor, such as namedtuple.
+        /// </summary>
+        /// <returns></returns>
+        public AstPythonBuiltinType AsClass() {
+            var clone = new AstPythonBuiltinType(Name, DeclaringModule, StartIndex, Documentation, 
+                Locations.OfType<LocationInfo>().FirstOrDefault(), 
+                TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId, true);
+            clone.AddMembers(Members, true);
+            return clone;
         }
     }
 }

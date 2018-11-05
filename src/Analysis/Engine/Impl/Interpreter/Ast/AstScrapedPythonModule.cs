@@ -127,7 +127,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             const Uri uri = null;
             const bool includeLocations = false;
 #endif
-            return new AstAnalysisWalker(interpreter, ast, this, filePath, uri, _members, includeLocations, true);
+            return new AstAnalysisWalker(
+                interpreter, ast, this, filePath, uri, _members,
+                includeLocations,
+                warnAboutUndefinedValues: true,
+                suppressBuiltinLookup: false
+            );
         }
 
         protected virtual void PostWalk(PythonWalker walker) {

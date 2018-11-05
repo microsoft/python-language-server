@@ -25,7 +25,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// <summary>
     /// Specialized ClassInfo for sequence types.
     /// </summary>
-    abstract class SequenceBuiltinClassInfo : BuiltinClassInfo {
+    abstract class SequenceBuiltinClassInfo : BuiltinClassInfo, IBuiltinSequenceClassInfo {
         protected readonly IAnalysisSet[] _indexTypes;
 
         public SequenceBuiltinClassInfo(IPythonType classObj, PythonAnalyzer projectState)
@@ -38,7 +38,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        internal IReadOnlyList<IAnalysisSet> IndexTypes => _indexTypes;
+        public IReadOnlyList<IAnalysisSet> IndexTypes => _indexTypes;
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             if (args.Length == 1) {
@@ -74,6 +74,13 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
 
             return base.Call(node, unit, args, keywordArgNames);
+        }
+
+        public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) {
+            var indices = index.Select(x => x.GetConstantValue()).OfType<int>().ToArray();
+            var a = IndexTypes.ToArray();
+            var values = indices.Where(i => i >= 0 && i < a.Length).Select(i => a[i]);
+            return AnalysisSet.UnionAll(values);
         }
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {

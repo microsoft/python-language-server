@@ -3094,6 +3094,49 @@ abc.Cmeth(['fob'], 'oar')
         }
 
         [TestMethod, Priority(0)]
+        public async Task TypingListOfTuples() {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var code = @"
+from typing import List
+
+def ls() -> List[tuple]:
+    pass
+
+x = ls()[0]
+";
+
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                analysis
+                    .Should().HaveVariable("ls").Which
+                    .Should().HaveShortDescriptions("module.ls() -> list[tuple]");
+
+                analysis
+                    .Should().HaveVariable("x").Which
+                    .Should().HaveType(BuiltinTypeId.Tuple);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task CollectionsNamedTuple() {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var code = @"
+from collections import namedtuple
+nt = namedtuple('Point', ['x', 'y'])
+pt = nt(1, 2)
+";
+
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = false };
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                analysis
+                    .Should().HaveVariable("pt").Which
+                    .Should().HaveType(BuiltinTypeId.Tuple);
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task FunctionOverloads() {
             var code = @"
 def f(a, b, c=0):

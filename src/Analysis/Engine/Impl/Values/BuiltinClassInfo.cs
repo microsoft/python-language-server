@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -158,7 +159,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) {
-            // TODO: Needs to actually do indexing on type
             var clrType = _type as IAdvancedPythonType;
             if (clrType == null || !clrType.IsGenericTypeDefinition) {
                 return AnalysisSet.Empty;

@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -20,7 +20,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,7 +40,7 @@ using Ast = Microsoft.PythonTools.Parsing.Ast;
 
 namespace AnalysisTests {
     [TestClass]
-    public class AstAnalysisTests {
+    public class AstAnalysisTests: ServerBasedTest {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -89,26 +88,6 @@ namespace AnalysisTests {
                 searchPaths: new[] { searchPath ?? TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
 
         private static AstPythonInterpreterFactory CreateInterpreterFactory() => CreateInterpreterFactory(PythonVersions.LatestAvailable);
-
-        private static readonly Lazy<string> _typeShedPath = new Lazy<string>(FindTypeShedForTest);
-        private static string TypeShedPath => _typeShedPath.Value;
-        private static string FindTypeShedForTest() {
-            var candidate = Path.Combine(PathUtils.GetParent(typeof(AstPythonInterpreterFactory).Assembly.Location), "Typeshed");
-            if (Directory.Exists(candidate) && Directory.Exists(Path.Combine(candidate, "stdlib", "2and3"))) {
-                return candidate;
-            }
-
-            var root = TestData.GetPath();
-
-            for (string previousRoot = null; root != previousRoot; previousRoot = root, root = PathUtils.GetParent(root)) {
-                candidate = Path.Combine(root, "typeshed");
-                if (Directory.Exists(Path.Combine(candidate, "stdlib", "2and3"))) {
-                    return candidate;
-                }
-            }
-
-            return null;
-        }
 
 
         #region Test cases
@@ -209,6 +188,50 @@ namespace AnalysisTests {
                     .And.HaveVariable("XY").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Str)
                     .And.HaveVariable("XYZ").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Str, BuiltinTypeId.Bytes)
                     .And.HaveVariable("D").OfTypes(BuiltinTypeId.List, BuiltinTypeId.Tuple, BuiltinTypeId.Dict, BuiltinTypeId.Set);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstForwardRefProperty1() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefProp1 import *
+x = B().getA().methodA()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstForwardRefGlobalFunction() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefGlobalFunc import *
+x = func1()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstForwardRefFunction1() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefFunc1 import *
+x = B().getA().methodA()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstForwardRefFunction2() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ForwardRefFunc2 import *
+x = B().getA().methodA()
+");
+                analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Str);
             }
         }
 
@@ -433,23 +456,6 @@ class BankAccount(object):
                     .Which.Should().HaveMembers("typed_method_2")
                     .And.NotHaveMembers("untyped_method", "inferred_method", "typed_method");
             }
-        }
-
-        private async Task<IModuleAnalysis> GetStubBasedAnalysis(
-            Server server,
-            string code,
-            AnalysisLimits limits,
-            IEnumerable<string> searchPaths,
-            IEnumerable<string> stubPaths) {
-
-            if (limits != null) {
-                server.Analyzer.Limits = limits;
-            }
-            server.Analyzer.SetSearchPaths(searchPaths);
-            server.Analyzer.SetTypeStubPaths(stubPaths);
-
-            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
-            return await server.GetAnalysisAsync(uri);
         }
 
         [TestMethod, Priority(0)]
@@ -777,7 +783,7 @@ class BankAccount(object):
                     foreach (var r in modules
                         .Where(m => !skip.Contains(m.ModuleName))
                         .GroupBy(m => {
-                            int i = m.FullName.IndexOf('.');
+                            var i = m.FullName.IndexOf('.');
                             return i <= 0 ? m.FullName : m.FullName.Remove(i);
                         })
                         .AsParallel()
@@ -852,7 +858,8 @@ y = g()";
         }
         #endregion
 
-        #region Type Shed tests
+        #region Typeshed tests
+
         [TestMethod, Priority(0)]
         public async Task TypeShedElementTree() {
             using (var server = await CreateServerAsync()) {
@@ -894,7 +901,7 @@ l = iterfind()";
             }
 
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"import urllib");
 
                 var secondMembers = server.Analyzer.GetModuleMembers(analysis.InterpreterContext, new[] { "urllib" })
@@ -908,46 +915,53 @@ l = iterfind()";
         [TestMethod, Priority(0)]
         public async Task TypeShedSysExcInfo() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
                 var code = @"import sys
 
 e1, e2, e3 = sys.exc_info()";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
+                // sys.exc_info() -> (exception_type, exception_value, traceback)
                 analysis.Should().HaveVariable("e1").OfTypes(BuiltinTypeId.Type)
                     .And.HaveVariable("e2").OfTypes("BaseException")
                     .And.HaveVariable("e3").OfTypes(BuiltinTypeId.NoneType)
                     .And.HaveVariable("sys").WithValue<BuiltinModule>()
                     .Which.Should().HaveMember<BuiltinFunctionInfo>("exc_info")
-                    .Which.Should().HaveOverloadCount(2)
-                    .And.HaveOverloadAt(0).WithSingleReturnType("tuple")
-                    .And.HaveOverloadAt(1).WithSingleReturnType("tuple[type, BaseException, None]");
+                    .Which.Should().HaveSingleOverload()
+                    .WithSingleReturnType("tuple[type, BaseException, None]");
             }
         }
 
         [TestMethod, Priority(0)]
         public async Task TypeShedJsonMakeScanner() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
                 var code = @"import _json
 
 scanner = _json.make_scanner()";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
-                analysis.Should().HaveVariable("scanner").WithValue<IBuiltinInstanceInfo>()
-                    .Which.Should().HaveSingleOverload()
+                var v0 = analysis.Should().HaveVariable("scanner").WithValueAt<IBuiltinInstanceInfo>(0);
+                var v1 = analysis.Should().HaveVariable("scanner").WithValueAt<IBuiltinInstanceInfo>(1);
+
+                  v0.Which.Should().HaveSingleOverload()
                     .Which.Should().HaveName("__call__")
                     .And.HaveParameters("string", "index")
                     .And.HaveParameterAt(0).WithName("string").WithType("str").WithNoDefaultValue()
                     .And.HaveParameterAt(1).WithName("index").WithType("int").WithNoDefaultValue()
                     .And.HaveSingleReturnType("tuple[None, int]");
+
+                v1.Which.Should().HaveSingleOverload()
+                  .Which.Should().HaveName("__call__")
+                  .And.HaveParameters("*args", "**kwargs")
+                  .And.HaveSingleReturnType("type");
             }
         }
 
         [TestMethod, Priority(0)]
         public async Task TypeShedSysInfo() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { TypeShedPath });
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
                 server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = true };
 
                 var code = @"import sys
@@ -980,6 +994,57 @@ i_5 = sys.getwindowsversion().platform_version[0]
                     .And.HaveVariable("i_3").OfTypes(BuiltinTypeId.Int)
                     .And.HaveVariable("i_4").OfTypes(BuiltinTypeId.Int)
                     .And.HaveVariable("i_5").OfTypes(BuiltinTypeId.Int);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstReturnAnnotationList() {
+            using (var server = await CreateServerAsync()) {
+                var code = @"
+from typing import List
+
+def ls() -> List[tuple]:
+    pass
+
+x = ls()[0]
+";
+
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+
+                analysis
+                    .Should().HaveVariable("ls").Which
+                    .Should().HaveShortDescriptions("module.ls() -> list[tuple]");
+
+                analysis
+                    .Should().HaveVariable("x").Which
+                    .Should().HaveType(BuiltinTypeId.Tuple);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AstNamedTupleReturnAnnotation() {
+            using (var server = await CreateServerAsync()) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"
+from ReturnAnnotation import *
+nt = namedtuple('Point', ['x', 'y'])
+pt = nt(1, 2)
+");
+                analysis.Should().HaveVariable("pt").OfTypes(BuiltinTypeId.Tuple);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeShedNamedTuple() {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = true };
+                var code = "from collections import namedtuple\n";
+
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis
+                    .Should().HaveBuiltInFunctionInfo("namedtuple").Which
+                    .Should().HaveSingleOverload().Which
+                    .Should().HaveSingleReturnType("tuple");
             }
         }
 
@@ -1031,6 +1096,5 @@ if sys.version_info >= (2, 7):
             }
         }
         #endregion
-
     }
 }
