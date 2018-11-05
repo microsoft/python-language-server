@@ -50,7 +50,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return null;
             }
 
-            if (type == _scope._unknownType) {
+            if (type == _scope.UnknownType) {
                 return null;
             }
 
@@ -86,21 +86,20 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return m as IPythonType;
         }
 
-        public override IPythonType GetTypeMember(IPythonType baseType, string member) {
-            return AsIPythonType(baseType.GetMember(_scope.Context, member));
-        }
+        public override IPythonType GetTypeMember(IPythonType baseType, string member)
+            => AsIPythonType(baseType.GetMember(_scope.Context, member));
 
         public override IPythonType MakeNameType(string name) => new NameType(name);
         public override string GetName(IPythonType type) => (type as NameType)?.Name;
 
-        public override IPythonType MakeUnion(IReadOnlyList<IPythonType> types) {
-            return new UnionType(types);
-        }
+        public override IPythonType MakeUnion(IReadOnlyList<IPythonType> types) => new UnionType(types);
 
-        public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType unionType) {
-            return (unionType as UnionType)?.Types ??
-                   (unionType as IPythonMultipleMembers)?.Members.OfType<IPythonType>().ToArray();
-        }
+        public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType type) =>
+            type is UnionType unionType
+                ? unionType.Types
+                : type is IPythonMultipleMembers multipleMembers
+                    ? multipleMembers.Members.OfType<IPythonType>().ToArray()
+                    : null;
 
         public override IPythonType MakeGeneric(IPythonType baseType, IReadOnlyList<IPythonType> args) {
             if (args == null || args.Count == 0 || baseType == null) {
@@ -127,13 +126,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 case "Mapping":
                     return MakeLookupType(BuiltinTypeId.Dict, args);
                 case "Optional":
-                    return Finalize(args.FirstOrDefault()) ?? _scope._unknownType;
+                    return Finalize(args.FirstOrDefault()) ?? _scope.UnknownType;
                 case "Union":
                     return MakeUnion(args);
                 case "ByteString":
                     return _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
                 case "Type":
-                    return _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type);
+                    return args.Count > 0 ? MakeGenericClassType(args[0]) : _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type);
                 case "Any":
                     return baseType;
                 // TODO: Other types
@@ -194,6 +193,16 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 );
             }
             return res;
+        }
+
+        private IPythonType MakeGenericClassType(IPythonType typeArg) {
+            if (typeArg.IsBuiltin) {
+                var builtinType = _scope.Interpreter.GetBuiltinType(typeArg.TypeId) as AstPythonBuiltinType;
+                return builtinType.TypeId == BuiltinTypeId.Unknown
+                    ? _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type)
+                    : builtinType.AsClass();
+            }
+            return new AstPythonType(typeArg.Name, _scope.Module, 0, typeArg.Documentation, null, isClass: true);
         }
 
         private class ModuleType : IPythonType {

@@ -14,9 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
@@ -25,26 +23,29 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinFunctionInfo : BuiltinNamespace<IPythonType>, IHasRichDescription, IHasQualifiedName {
         private string _doc;
-        private ReadOnlyCollection<OverloadResult> _overloads;
-        private readonly Lazy<IAnalysisSet> _returnTypes;
+        private IPythonFunctionOverload[] _overloads;
         private BuiltinMethodInfo _method;
 
         public BuiltinFunctionInfo(IPythonFunction function, PythonAnalyzer projectState)
             : base(projectState.Types[BuiltinTypeId.BuiltinFunction], projectState) {
-
             Function = function;
-            _returnTypes = new Lazy<IAnalysisSet>(() => Utils.GetReturnTypes(function, projectState).GetInstanceType());
         }
 
         public override IPythonType PythonType => _type;
 
-        public override bool IsOfType(IAnalysisSet klass) {
-            return klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]) ||
-                klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.BuiltinFunction]);
-        }
+        public override bool IsOfType(IAnalysisSet klass) 
+            => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]) || klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.BuiltinFunction]);
 
-        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) 
-            => _returnTypes.Value;
+        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
+            var returnTypes = GetFunctionOverloads().Where(o => o.ReturnType != null).SelectMany(o => o.ReturnType);
+            var types = returnTypes.Select(t => {
+                var av = ProjectState.GetAnalysisValueFromObjects(t);
+                return t is IPythonType2 pt2 && pt2.IsClass
+                    ? AnalysisSet.Create(av)
+                    : ProjectState.GetAnalysisValueFromObjects(t).GetInstanceType();
+            });
+            return AnalysisSet.UnionAll(types);
+        }
 
         public override IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) {
             if (Function.IsClassMethod) {
@@ -121,26 +122,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IEnumerable<OverloadResult> Overloads {
-            get {
-                if (_overloads == null) {
-                    var overloads = Function.Overloads;
-                    var result = new OverloadResult[overloads.Count];
-                    for (int i = 0; i < result.Length; i++) {
-                        result[i] = new BuiltinFunctionOverloadResult(ProjectState, Function.Name, overloads[i], 0, () => Description);
-                    }
-                    _overloads = new ReadOnlyCollection<OverloadResult>(result);
-                }
-                return _overloads;
-            }
-        }
+        public override IEnumerable<OverloadResult> Overloads
+            => GetFunctionOverloads().Select(o => new BuiltinFunctionOverloadResult(ProjectState, Function.Name, o, 0, () => Description));
 
-        public override string Documentation {
-            get {
-                _doc = _doc ?? Utils.StripDocumentation(Function.Documentation);
-                return _doc;
-            }
-        }
+        public override string Documentation => _doc ?? (_doc = Utils.StripDocumentation(Function.Documentation));
 
         public override PythonMemberType MemberType => Function.MemberType;
 
@@ -175,12 +160,26 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override bool Equals(object obj) {
-            if(obj is BuiltinFunctionInfo other && !other.Overloads.SetEquals(Overloads)) {
+            if (obj is BuiltinFunctionInfo other && !other.Overloads.SetEquals(Overloads)) {
                 return false;
             }
             return base.Equals(obj);
         }
 
         public override int GetHashCode() => base.GetHashCode() ^ Overloads.GetHashCode();
+
+        private IPythonFunctionOverload[] GetFunctionOverloads() {
+            if (_overloads == null) {
+                var overloads = Function.Overloads.ToArray();
+                // If some of the overloads have return type annotations, drop others.
+                // This helps when function has multiple overloads with some definitions
+                // comings from the library code and some from the Typeshed. Library code 
+                // has documentation but often lacks return types.
+                _overloads = overloads.Any(o => !string.IsNullOrEmpty(o.ReturnDocumentation))
+                    ? overloads.Where(o => !string.IsNullOrEmpty(o.ReturnDocumentation)).ToArray()
+                    : overloads;
+            }
+            return _overloads;
+        }
     }
 }

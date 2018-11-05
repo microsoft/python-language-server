@@ -46,12 +46,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return result.ToString();
         }
 
-        internal static IAnalysisSet GetReturnTypes(IPythonFunction func, PythonAnalyzer projectState) {
-            return AnalysisSet.UnionAll(func.Overloads
-                .Where(fn => fn.ReturnType != null)
-                .Select(fn => projectState.GetAnalysisSetFromObjects(fn.ReturnType)));
-        }
-
         internal static T First<T>(IEnumerable<T> sequence) where T : class {
             if (sequence == null) {
                 return null;

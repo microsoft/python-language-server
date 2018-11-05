@@ -80,6 +80,12 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return new AndWhichConstraint<ModuleAnalysisAssertions, AnalysisValueTestInfo<IFunctionInfo>>(this, constraint.Which);
         }
 
+        public AndWhichConstraint<ModuleAnalysisAssertions, AnalysisValueTestInfo<BuiltinFunctionInfo>> HaveBuiltInFunctionInfo(string name, string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+            var constraint = _scopeAssertions.HaveBuiltInFunctionInfo(name, because, reasonArgs);
+            return new AndWhichConstraint<ModuleAnalysisAssertions, AnalysisValueTestInfo<BuiltinFunctionInfo>>(this, constraint.Which);
+        }
+
         public AndWhichConstraint<ModuleAnalysisAssertions, IFunctionScope> HaveFunction(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
             var constraint = _scopeAssertions.HaveFunction(name, because, reasonArgs);

@@ -78,10 +78,8 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var ns in self) {
                 var call = ns.Call(node, unit, args, keywordArgNames);
                 Debug.Assert(call != null);
-
                 res = res.Union(call);
             }
-
             return res;
         }
 
@@ -95,7 +93,6 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var ns in self) {
                 res = res.Union(ns.GetIterator(node, unit));
             }
-
             return res;
         }
 
@@ -109,7 +106,6 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var ns in self) {
                 res = res.Union(ns.GetAsyncIterator(node, unit));
             }
-
             return res;
         }
 
@@ -122,7 +118,6 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var ns in self) {
                 res = res.Union(ns.GetIndex(node, unit, index));
             }
-
             return res;
         }
 
@@ -140,8 +135,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// Performs a delete index operation propagating the index types into
         /// the provided object.
         /// </summary>
-        public static void DeleteIndex(this IAnalysisSet self, Node node, AnalysisUnit unit, IAnalysisSet index) {
-        }
+        public static void DeleteIndex(this IAnalysisSet self, Node node, AnalysisUnit unit, IAnalysisSet index) { }
 
         /// <summary>
         /// Performs an augmented assignment propagating the value into the
@@ -163,7 +157,6 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var ns in self) {
                 res = res.Union(ns.GetEnumeratorTypes(node, unit));
             }
-
             return res;
         }
         /// <summary>
@@ -176,7 +169,6 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var ns in self) {
                 res = res.Union(ns.GetAsyncEnumeratorTypes(node, unit));
             }
-
             return res;
         }
 
@@ -188,7 +180,6 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var ns in self) {
                 res = res.Union(ns.GetDescriptor(node, instance, context, unit));
             }
-
             return res;
         }
 
@@ -200,7 +191,6 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var ns in self) {
                 res = res.Union(ns.BinaryOperation(node, unit, operation, rhs));
             }
-
             return res;
         }
 
@@ -212,7 +202,6 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var ns in self) {
                 res = res.Union(ns.UnaryOperation(node, unit, operation));
             }
-
             return res;
         }
 
@@ -228,9 +217,8 @@ namespace Microsoft.PythonTools.Analysis {
         /// <summary>
         /// Gets instance representations of all members of the set.
         /// </summary>
-        public static IAnalysisSet GetInstanceType(this IAnalysisSet types) {
-            return AnalysisSet.Create(types.SelectMany(ns => ns.GetInstanceType()));
-        }
+        public static IAnalysisSet GetInstanceType(this IAnalysisSet types)
+            => AnalysisSet.Create(types.SelectMany(ns => (ns.PythonType as IPythonType2)?.IsClass == true ? ns : ns.GetInstanceType()));
 
         public static bool IsUnknown(this IAnalysisSet res) {
             return res == null ||
@@ -241,17 +229,15 @@ namespace Microsoft.PythonTools.Analysis {
         /// <summary>
         /// Returns true if the set contains no or only the object or unknown types
         /// </summary>
-        public static bool IsObjectOrUnknown(this IAnalysisSet res) {
-            return res.IsUnknown() || res.All(v => v.TypeId == BuiltinTypeId.Object);
-        }
+        public static bool IsObjectOrUnknown(this IAnalysisSet res)
+            => res.IsUnknown() || res.All(v => v.TypeId == BuiltinTypeId.Object);
 
         /// <summary>
         /// Returns true if the set contains no types, only the object or unknown
         /// types, or None.
         /// </summary>
-        public static bool IsObjectOrUnknownOrNone(this IAnalysisSet res) {
-            return res.IsObjectOrUnknown() || res.All(v => v.TypeId == BuiltinTypeId.NoneType);
-        }
+        public static bool IsObjectOrUnknownOrNone(this IAnalysisSet res)
+            => res.IsObjectOrUnknown() || res.All(v => v.TypeId == BuiltinTypeId.NoneType);
 
         /// <summary>
         /// Returns a sequence of all recognized string values in the set.

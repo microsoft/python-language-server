@@ -41,6 +41,15 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         }
 
         [CustomAssertion]
+        public AndConstraint<CompletionItemAssertions> HaveInsertTextFormat(InsertTextFormat insertTextFormat, string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(Subject.insertTextFormat == insertTextFormat)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected '{Subject.label}' completion to have insert text format '{insertTextFormat}'{{reason}}, but it has '{Subject.insertTextFormat}'");
+
+            return new AndConstraint<CompletionItemAssertions>(this);
+        }
+
+        [CustomAssertion]
         public AndConstraint<CompletionItemAssertions> HaveDocumentation(string documentation, string because = "", params object[] reasonArgs) {
             Execute.Assertion.BecauseOf(because, reasonArgs)
                 .AssertIsNotNull(Subject.documentation, $"'{Subject.label}' completion", "documentation", "\'CompletionItem.documentation\'")

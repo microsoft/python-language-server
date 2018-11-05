@@ -29,7 +29,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public IEnumerable<ILocationInfo> Locations { get; }
-
         public PythonMemberType MemberType => PythonMemberType.Constant;
         public IPythonType Type { get; }
 
@@ -42,19 +41,16 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             m = Type?.GetMember(context, name);
-
             if (m is IPythonFunction f && !f.IsStatic) {
                 m = new AstPythonBoundMethod(f, Type);
                 lock (_cachedMembers) {
                     _cachedMembers[name] = m;
                 }
             }
-
             return m;
         }
 
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
-            return Type?.GetMemberNames(moduleContext);
-        }
+        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) 
+            => Type?.GetMemberNames(moduleContext);
     }
 }

@@ -35,7 +35,7 @@ namespace Microsoft.PythonTools.Analysis {
     /// Performs analysis of multiple Python code files and enables interrogation of the resulting analysis.
     /// </summary>
     public partial class PythonAnalyzer : IPythonAnalyzer, IDisposable {
-        public const string PythonAnalysisSource = "Python (analysis)";
+        public const string PythonAnalysisSource = "Python";
         private static object _nullKey = new object();
 
         private readonly bool _disposeInterpreter;
@@ -221,8 +221,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         /// <remarks>New in 2.1</remarks>
         public void AddModuleAlias(string moduleName, string moduleAlias) {
-            ModuleReference modRef;
-            if (Modules.TryImport(moduleName, out modRef)) {
+            if (Modules.TryImport(moduleName, out var modRef)) {
                 Modules[moduleAlias] = modRef;
             }
         }
@@ -279,9 +278,8 @@ namespace Microsoft.PythonTools.Analysis {
         /// '__init__'.
         /// </param>
         public IEnumerable<IPythonProjectEntry> GetEntriesThatImportModule(string moduleName, bool includeUnresolved) {
-            ModuleReference modRef;
             var entries = new List<IPythonProjectEntry>();
-            if (Modules.TryImport(moduleName, out modRef) && modRef.HasReferences) {
+            if (Modules.TryImport(moduleName, out var modRef) && modRef.HasReferences) {
                 entries.AddRange(modRef.References.Select(m => m.ProjectEntry).OfType<IPythonProjectEntry>());
             }
 
@@ -365,8 +363,7 @@ namespace Microsoft.PythonTools.Analysis {
                 }
 
                 if (moduleRef.IsValid) {
-                    List<ModuleLoadState> l;
-                    if (!d.TryGetValue(modName, out l)) {
+                    if (!d.TryGetValue(modName, out var l)) {
                         d[modName] = l = new List<ModuleLoadState>();
                     }
                     if (moduleRef.HasModule) {
@@ -381,7 +378,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         private static IMemberResult[] ModuleDictToMemberResult(Dictionary<string, List<ModuleLoadState>> d) {
             var result = new IMemberResult[d.Count];
-            int pos = 0;
+            var pos = 0;
             foreach (var kvp in d) {
                 var lazyEnumerator = new LazyModuleEnumerator(kvp.Value);
                 result[pos++] = new MemberResult(
@@ -437,7 +434,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             if (Interpreter is ICanFindModuleMembers finder) {
                 foreach (var modName in finder.GetModulesNamed(name)) {
-                    int dot = modName.LastIndexOf('.');
+                    var dot = modName.LastIndexOf('.');
                     if (dot < 0) {
                         yield return new ExportedMemberInfo(null, modName);
                     } else {
@@ -500,7 +497,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private static bool GetPackageNameIfMatch(string name, string fullName, out string packageName) {
-            int lastDot = fullName.LastIndexOf('.');
+            var lastDot = fullName.LastIndexOf('.');
             if (lastDot < 0) {
                 packageName = null;
                 return false;
@@ -529,10 +526,8 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         /// <returns></returns>
         public IMemberResult[] GetModuleMembers(IModuleContext moduleContext, string[] names, bool includeMembers = false) {
-            ModuleReference moduleRef;
-            if (Modules.TryImport(names[0], out moduleRef)) {
-                var module = moduleRef.Module as IModule;
-                if (module != null) {
+            if (Modules.TryImport(names[0], out var moduleRef)) {
+                if (moduleRef.Module is IModule module) {
                     return GetModuleMembers(moduleContext, names, includeMembers, module);
                 }
 
@@ -542,7 +537,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         internal static IMemberResult[] GetModuleMembers(IModuleContext moduleContext, string[] names, bool includeMembers, IModule module) {
-            for (int i = 1; i < names.Length && module != null; i++) {
+            for (var i = 1; i < names.Length && module != null; i++) {
                 module = module.GetChildPackage(moduleContext, names[i]);
             }
 
@@ -564,7 +559,7 @@ namespace Microsoft.PythonTools.Analysis {
                         results.Add(child.Value);
                     }
                     foreach (var keyValue in module.GetAllMembers(moduleContext)) {
-                        bool anyModules = false;
+                        var anyModules = false;
                         foreach (var ns in keyValue.Value.OfType<MultipleMemberInfo>()) {
                             if (ns.Members.OfType<IModule>().Any(mod => !(mod is MultipleMemberInfo))) {
                                 anyModules = true;
@@ -584,10 +579,8 @@ namespace Microsoft.PythonTools.Analysis {
             return new IMemberResult[0];
         }
 
-        private static IMemberResult[] MemberDictToMemberResult(Dictionary<string, List<IAnalysisSet>> results) {
-            return results.Select(r => new MemberResult(r.Key, r.Value.SelectMany()) as IMemberResult).ToArray();
-        }
-
+        private static IMemberResult[] MemberDictToMemberResult(Dictionary<string, List<IAnalysisSet>> results) 
+            => results.Select(r => new MemberResult(r.Key, r.Value.SelectMany()) as IMemberResult).ToArray();
 
         /// <summary>
         /// Gets the list of directories which should be analyzed.
@@ -602,7 +595,7 @@ namespace Microsoft.PythonTools.Analysis {
         public IEnumerable<string> TypeStubDirectories => _typeStubPaths.AsLockedEnumerable().ToArray();
 
         public AnalysisLimits Limits {
-            get { return _limits; }
+            get => _limits;
             set {
                 value = value ?? AnalysisLimits.GetDefaultLimits();
                 var limits = _limits;
@@ -707,8 +700,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="maker">Function to create the value.</param>
         /// <returns>The cached value or <c>null</c>.</returns>
         internal AnalysisValue GetCached(object key, Func<AnalysisValue> maker) {
-            AnalysisValue result;
-            if (!_itemCache.TryGetValue(key, out result)) {
+            if (!_itemCache.TryGetValue(key, out var result)) {
                 // Set the key to prevent recursion
                 _itemCache[key] = null;
                 _itemCache[key] = result = maker();
@@ -718,15 +710,12 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal BuiltinModule BuiltinModule => _builtinModule;
 
-        internal BuiltinInstanceInfo GetInstance(IPythonType type) {
-            return GetBuiltinType(type).Instance;
-        }
+        internal BuiltinInstanceInfo GetInstance(IPythonType type) => GetBuiltinType(type).Instance;
 
-        internal BuiltinClassInfo GetBuiltinType(IPythonType type) {
-            return (BuiltinClassInfo)GetCached(type,
+        internal BuiltinClassInfo GetBuiltinType(IPythonType type) => 
+            (BuiltinClassInfo)GetCached(type,
                 () => MakeBuiltinType(type)
             ) ?? ClassInfos[BuiltinTypeId.Object];
-        }
 
         private BuiltinClassInfo MakeBuiltinType(IPythonType type) {
             switch (type.TypeId) {
@@ -739,8 +728,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         internal IAnalysisSet GetAnalysisSetFromObjects(object objects) {
-            var typeList = objects as IEnumerable<object>;
-            if (typeList == null) {
+            if (!(objects is IEnumerable<object> typeList)) {
                 return AnalysisSet.Empty;
             }
             return AnalysisSet.UnionAll(typeList.Select(GetAnalysisValueFromObjects));
@@ -814,8 +802,7 @@ namespace Microsoft.PythonTools.Analysis {
             var children = (container as IModule)?.GetChildrenPackages(moduleContext);
             if (children?.Any() ?? false) {
                 foreach (var child in children) {
-                    IAnalysisSet existing;
-                    if (result.TryGetValue(child.Key, out existing)) {
+                    if (result.TryGetValue(child.Key, out var existing)) {
                         result[child.Key] = existing.Add(child.Value);
                     } else {
                         result[child.Key] = child.Value;
@@ -831,8 +818,7 @@ namespace Microsoft.PythonTools.Analysis {
         internal ConcurrentDictionary<string, ModuleInfo> ModulesByFilename { get; }
 
         public bool TryGetProjectEntryByPath(string path, out IProjectEntry projEntry) {
-            ModuleInfo modInfo;
-            if (ModulesByFilename.TryGetValue(path, out modInfo)) {
+            if (ModulesByFilename.TryGetValue(path, out var modInfo)) {
                 projEntry = modInfo.ProjectEntry;
                 return true;
             }
@@ -842,7 +828,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         internal IAnalysisSet GetConstant(object value) {
-            object key = value ?? _nullKey;
+            var key = value ?? _nullKey;
             return GetCached(key, () => {
                 var constant = value as IPythonConstant;
                 var constantType = constant?.Type;
@@ -1012,14 +998,13 @@ namespace Microsoft.PythonTools.Analysis {
             return GetAggregateWorker(aggregating);
         }
 
-        private static void SortAggregates(IProjectEntry[] aggregating) {
-            Array.Sort(aggregating, (x, y) => x.GetHashCode() - y.GetHashCode());
-        }
+        private static void SortAggregates(IProjectEntry[] aggregating) 
+            => Array.Sort(aggregating, (x, y) => x.GetHashCode() - y.GetHashCode());
 
         internal AggregateProjectEntry GetAggregate(HashSet<IProjectEntry> from, IProjectEntry with) {
             Debug.Assert(!from.Contains(with));
 
-            IProjectEntry[] all = new IProjectEntry[from.Count + 1];
+            var all = new IProjectEntry[from.Count + 1];
             from.CopyTo(all);
             all[from.Count] = with;
 
@@ -1036,13 +1021,11 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private AggregateProjectEntry GetAggregateWorker(IProjectEntry[] all) {
-            AggregateProjectEntry agg;
-            if (!_aggregates.TryGetValue(all, out agg)) {
+            if (!_aggregates.TryGetValue(all, out var agg)) {
                 _aggregates[all] = agg = new AggregateProjectEntry(new HashSet<IProjectEntry>(all));
 
                 foreach (var proj in all) {
-                    IAggregateableProjectEntry aggretable = proj as IAggregateableProjectEntry;
-                    if (aggretable != null) {
+                    if (proj is IAggregateableProjectEntry aggretable) {
                         aggretable.AggregatedInto(agg);
                     }
                 }
@@ -1058,7 +1041,7 @@ namespace Microsoft.PythonTools.Analysis {
                 if (x.Length != y.Length) {
                     return false;
                 }
-                for (int i = 0; i < x.Length; i++) {
+                for (var i = 0; i < x.Length; i++) {
                     if (x[i] != y[i]) {
                         return false;
                     }
@@ -1067,8 +1050,8 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             public int GetHashCode(IProjectEntry[] obj) {
-                int res = 0;
-                for (int i = 0; i < obj.Length; i++) {
+                var res = 0;
+                for (var i = 0; i < obj.Length; i++) {
                     res ^= obj[i].GetHashCode();
                 }
                 return res;

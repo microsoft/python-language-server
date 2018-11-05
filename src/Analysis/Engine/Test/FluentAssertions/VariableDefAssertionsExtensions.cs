@@ -122,10 +122,22 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
                 return new AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TValue>>(andWhichConstraint.And, testInfo);
         }
 
+        public static AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TValue>>
+            WithValueAt<TAssertion, TValue>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, int index, string because = "", params object[] reasonArgs)
+            where TValue : IAnalysisValue {
+            var testInfo = andWhichConstraint.Which.Should().HaveValueAt<TValue>(index, because, reasonArgs).Which;
+            return new AndWhichConstraint<TAssertion, AnalysisValueTestInfo<TValue>>(andWhichConstraint.And, testInfo);
+        }
+
         public static AndWhichConstraint<ModuleAnalysisAssertions, AnalysisValueTestInfo<TValue>>
             WithValue<TValue>(this AndWhichConstraint<ModuleAnalysisAssertions, VariableDefTestInfo> constraint, string because = "", params object[] reasonArgs)
                 where TValue : IAnalysisValue
             => constraint.WithValue<ModuleAnalysisAssertions, TValue>(because, reasonArgs);
+
+        public static AndWhichConstraint<ModuleAnalysisAssertions, AnalysisValueTestInfo<TValue>>
+            WithValueAt<TValue>(this AndWhichConstraint<ModuleAnalysisAssertions, VariableDefTestInfo> constraint, int index, string because = "", params object[] reasonArgs)
+                where TValue : IAnalysisValue
+            => constraint.WithValueAt<ModuleAnalysisAssertions, TValue>(index, because, reasonArgs);
 
         public static AndWhichConstraint<ScopeAssertions, AnalysisValueTestInfo<TValue>>
             WithValue<TValue>(this AndWhichConstraint<ScopeAssertions, VariableDefTestInfo> constraint, string because = "", params object[] reasonArgs)

@@ -28,7 +28,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public override async Task<WorkspaceEdit> Rename(RenameParams @params, CancellationToken cancellationToken) {
             ProjectFiles.GetEntry(@params.textDocument, @params._version, out var entry, out var tree);
             if (entry == null || tree == null) {
-                throw new InvalidOperationException(Resources.RenameVariable_UnableGetExpressionAnalysis);
+                throw new EditorOperationException(Resources.RenameVariable_UnableGetExpressionAnalysis);
             }
 
             var references = await FindReferences(new ReferencesParams {
@@ -38,22 +38,22 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }, cancellationToken);
 
             if (references.Any(x => x._isModule)) {
-                throw new InvalidOperationException(Resources.RenameVariable_CannotRenameModuleName);
+                throw new EditorOperationException(Resources.RenameVariable_CannotRenameModuleName);
             }
 
             var definition = references.FirstOrDefault(r => r._kind == ReferenceKind.Definition);
             if (definition == null) {
-                throw new InvalidOperationException(Resources.RenameVariable_CannotRename);
+                throw new EditorOperationException(Resources.RenameVariable_CannotRename);
             }
 
             var definitionSpan = definition.range.ToLinearSpan(tree);
             var reader = new DocumentReader(entry as IDocument, ProjectFiles.GetPart(definition.uri));
             var originalName = reader.Read(definitionSpan.Start, definitionSpan.Length);
             if (originalName == null) {
-                throw new InvalidOperationException(Resources.RenameVariable_SelectSymbol);
+                throw new EditorOperationException(Resources.RenameVariable_SelectSymbol);
             }
             if (!references.Any(r => r._kind == ReferenceKind.Definition || r._kind == ReferenceKind.Reference)) {
-                throw new InvalidOperationException(Resources.RenameVariable_NoInformationAvailableForVariable.FormatUI(originalName));
+                throw new EditorOperationException(Resources.RenameVariable_NoInformationAvailableForVariable.FormatUI(originalName));
             }
 
             // See https://en.wikipedia.org/wiki/Name_mangling, Python section.
@@ -97,7 +97,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     : new DocumentReader(ent as IDocument, ProjectFiles.GetPart(kvp.Key));
 
                 if (ast == null || reader == null) {
-                    throw new InvalidOperationException(Resources.RenameVariable_NoInformationAvailableForVariable.FormatUI(originalName));
+                    throw new EditorOperationException(Resources.RenameVariable_NoInformationAvailableForVariable.FormatUI(originalName));
                 }
 
                 var fullName = $"{privatePrefix}{originalName}";

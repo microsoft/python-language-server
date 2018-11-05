@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -20,34 +20,37 @@ using System.Linq;
 using System.Threading;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonType : IPythonType, IMemberContainer, ILocatedMember, IHasQualifiedName {
+    class AstPythonType : IPythonType2, IMemberContainer, ILocatedMember, IHasQualifiedName {
         private static readonly IPythonModule NoDeclModule = new AstPythonModule();
 
         private readonly string _name;
+        private readonly object _lock = new object();
+
+        private Dictionary<string, IMember> _members;
         private IReadOnlyList<IPythonType> _mro;
         private AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
 
-        protected readonly Dictionary<string, IMember> _members;
+        protected Dictionary<string, IMember> Members =>
+            _members ?? (_members = new Dictionary<string, IMember>());
 
         public AstPythonType(string name): this(name, new Dictionary<string, IMember>(), Array.Empty<ILocationInfo>()) { }
 
         public AstPythonType(
-            PythonAst ast,
+            string name,
             IPythonModule declModule,
-            ClassDefinition def,
+            int startIndex,
             string doc,
-            ILocationInfo loc
+            ILocationInfo loc,
+            bool isClass = false
         ) {
-            _members = new Dictionary<string, IMember>();
-
-            _name = def?.Name ?? throw new ArgumentNullException(nameof(def));
+            _name = name ?? throw new ArgumentNullException(nameof(name));
             Documentation = doc;
             DeclaringModule = declModule ?? throw new ArgumentNullException(nameof(declModule));
             Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
-            StartIndex = def?.StartIndex ?? 0;
+            StartIndex = startIndex;
+            IsClass = isClass;
         }
 
         private AstPythonType(string name, Dictionary<string, IMember> members, IEnumerable<ILocationInfo> locations) {
@@ -59,30 +62,30 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
-            lock (_members) {
+            lock (_lock) {
                 foreach (var kv in members) {
                     if (!overwrite) {
-                        if (_members.TryGetValue(kv.Key, out var existing)) {
+                        if (Members.TryGetValue(kv.Key, out var existing)) {
                             continue;
                         }
                     }
-                    _members[kv.Key] = kv.Value;
+                    Members[kv.Key] = kv.Value;
                 }
             }
         }
 
         internal void SetBases(IPythonInterpreter interpreter, IEnumerable<IPythonType> bases) {
-            lock (_members) {
+            lock (_lock) {
                 if (Bases != null) {
                     return; // Already set
                 }
 
                 Bases = bases.MaybeEnumerate().ToArray();
                 if (Bases.Count > 0) {
-                    _members["__base__"] = Bases[0];
+                    Members["__base__"] = Bases[0];
                 }
 
-                _members["__bases__"] = new AstPythonSequence(
+                Members["__bases__"] = new AstPythonSequence(
                     interpreter?.GetBuiltinType(BuiltinTypeId.Tuple),
                     DeclaringModule,
                     Bases,
@@ -93,7 +96,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IReadOnlyList<IPythonType> Mro {
             get {
-                lock (_members) {
+                lock (_lock) {
                     if (_mro != null) {
                         return _mro;
                     }
@@ -164,9 +167,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public string Name {
             get {
-                lock (_members) {
-                    IMember nameMember;
-                    if (_members.TryGetValue("__name__", out nameMember) && nameMember is AstPythonStringLiteral lit) {
+                lock (_lock) {
+                    if (Members.TryGetValue("__name__", out var nameMember) && nameMember is AstPythonStringLiteral lit) {
                         return lit.Value;
                     }
                 }
@@ -179,6 +181,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public virtual bool IsBuiltin => false;
         public PythonMemberType MemberType => PythonMemberType.Class;
         public virtual BuiltinTypeId TypeId => BuiltinTypeId.Type;
+        public virtual bool IsClass { get; }
 
         /// <summary>
         /// The start index of this class. Used to disambiguate multiple
@@ -193,15 +196,15 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IMember GetMember(IModuleContext context, string name) {
             IMember member;
-            lock (_members) {
-                if (_members.TryGetValue(name, out member)) {
+            lock (_lock) {
+                if (Members.TryGetValue(name, out member)) {
                     return member;
                 }
 
-                // Special case names that we want to add to our own _members dict
+                // Special case names that we want to add to our own Members dict
                 switch (name) {
                     case "__mro__":
-                        member = _members[name] = new AstPythonSequence(
+                        member = Members[name] = new AstPythonSequence(
                             (context as IPythonInterpreter)?.GetBuiltinType(BuiltinTypeId.Tuple),
                             DeclaringModule,
                             Mro,
@@ -232,15 +235,20 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
             var names = new HashSet<string>();
-            lock (_members) {
-                names.UnionWith(_members.Keys);
+            lock (_lock) {
+                names.UnionWith(Members.Keys);
             }
 
             foreach (var m in Mro.Skip(1)) {
                 names.UnionWith(m.GetMemberNames(moduleContext));
             }
-
             return names;
+        }
+
+        protected bool ContainsMember(string name) {
+            lock (_lock) {
+                return Members.ContainsKey(name);
+            }
         }
     }
 }

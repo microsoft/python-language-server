@@ -5,34 +5,31 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonProperty : IBuiltinProperty, ILocatedMember {
+    class AstPythonProperty : IBuiltinProperty2, ILocatedMember {
         private IPythonFunctionOverload _getter;
 
         public AstPythonProperty(
             PythonAst ast,
-            FunctionDefinition getter,
+            FunctionDefinition definition,
             ILocationInfo location
         ) {
-            Documentation = getter.Documentation;
             IsReadOnly = true;
             Locations = new[] { location };
+            FunctionDefinition = definition;
         }
 
-        public void AddOverload(IPythonFunctionOverload overload) {
-            if (_getter == null) {
-                _getter = overload;
-            }
-        }
+        public FunctionDefinition FunctionDefinition { get; }
 
-        public void MakeSettable() {
-            IsReadOnly = false;
-        }
+        public void AddOverload(IPythonFunctionOverload overload)
+            => _getter = _getter ?? overload;
+
+        public void MakeSettable() => IsReadOnly = false;
 
         public IPythonType Type => _getter?.ReturnType.FirstOrDefault();
 
         public bool IsStatic => false;
 
-        public string Documentation { get; }
+        public string Documentation => FunctionDefinition.Documentation;
 
         public string Description => Type == null ? "property of unknown type" : "property of type {0}".FormatUI(Type.Name);
 

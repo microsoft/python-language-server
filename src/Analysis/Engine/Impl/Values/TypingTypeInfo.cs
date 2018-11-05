@@ -23,30 +23,36 @@ using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
+    /// <summary>
+    /// Represents better view on an existing type, typically generic.
+    /// </summary>
     class TypingTypeInfo : AnalysisValue, IHasRichDescription {
         private readonly AnalysisValue _innerValue;
-        private readonly string _baseName;
-        private readonly IReadOnlyList<IAnalysisSet> _args;
+        private readonly string _typeName;
+        private readonly IReadOnlyList<IAnalysisSet> _typeArgs;
 
-        public TypingTypeInfo(string baseName, AnalysisValue innerValue) : this(baseName, innerValue, Array.Empty<IAnalysisSet>()) { }
+        public TypingTypeInfo(string typeName, AnalysisValue innerValue) 
+            : this(typeName, innerValue, Array.Empty<IAnalysisSet>()) { }
 
-        private TypingTypeInfo(string baseName, AnalysisValue innerValue, IReadOnlyList<IAnalysisSet> args) {
-            _baseName = baseName;
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="typeName">Name of the generic type such as List</param>
+        /// <param name="innerValue">Analysis value from the real typing module</param>
+        /// <param name="typeArgs">Actual type arguments to the generic type.</param>
+        private TypingTypeInfo(string typeName, AnalysisValue innerValue, IReadOnlyList<IAnalysisSet> typeArgs) {
+            _typeName = typeName;
             _innerValue = innerValue;
-            _args = args;
+            _typeArgs = typeArgs ?? Array.Empty<IAnalysisSet>();
         }
 
-        public TypingTypeInfo MakeGeneric(IReadOnlyList<IAnalysisSet> args) {
-            if (_args != null) {
-                return new TypingTypeInfo(_baseName, _innerValue, args);
-            }
-            return this;
-        }
+        public TypingTypeInfo MakeGeneric(IReadOnlyList<IAnalysisSet> args)
+            => args.Count > 0 ? new TypingTypeInfo(_typeName, _innerValue, args) : this;
 
         public override IAnalysisSet GetInstanceType() => this;
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
-            if ((_args == null || !_args.Any()) && node is CallExpression ce) {
+            if ((_typeArgs == null || !_typeArgs.Any()) && node is CallExpression ce) {
                 return unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.TypeAnnotation, n => {
                     // Use annotation converter and reparse the arguments
                     var newArgs = new List<IAnalysisSet>();
@@ -59,12 +65,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     foreach (var type in ce.Args.MaybeEnumerate().Where(e => e?.Expression != null).Select(e => new TypeAnnotation(unit.State.LanguageVersion, e.Expression))) {
                         newArgs.Add(type.GetValue(eval) ?? AnalysisSet.Empty);
                     }
-                    return new TypingTypeInfo(_baseName, _innerValue, newArgs);
+                    return new TypingTypeInfo(_typeName, _innerValue, newArgs);
                 });
             }
             return this;
         }
 
+        /// <summary>
+        /// Creates type wrapper for a generic, such as List[str]
+        /// </summary>
+        /// <returns></returns>
         public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) {
             if (node is IndexExpression ie) {
                 return unit.InterpreterScope.GetOrMakeNodeValue(node, NodeValueKind.TypeAnnotation, n => {
@@ -85,7 +95,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     foreach (var type in exprs.Select(e => new TypeAnnotation(unit.State.LanguageVersion, e))) {
                         newArgs.Add(type.GetValue(eval) ?? AnalysisSet.Empty);
                     }
-                    return new TypingTypeInfo(_baseName, _innerValue, newArgs);
+                    return new TypingTypeInfo(_typeName, _innerValue, newArgs);
                 });
             }
             return this;
@@ -95,8 +105,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (Push()) {
                 try {
                     var finalizer = new TypingTypeInfoFinalizer(eval, node, unit);
-                    return finalizer.Finalize(_baseName, _args)
-                        ?? finalizer.Finalize(_baseName)
+                    return finalizer.Finalize(_typeName, _typeArgs)
+                        ?? finalizer.Finalize(_typeName)
                         ?? AnalysisSet.Empty;
                 } finally {
                     Pop();
@@ -106,15 +116,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override string ToString() {
-            if (_args != null) {
-                return $"<Typing:{_baseName}[{string.Join(", ", _args)}]>";
+            if (_typeArgs != null) {
+                return $"<Typing:{_typeName}[{string.Join(", ", _typeArgs)}]>";
             }
-            return $"<Typing:{_baseName}>";
+            return $"<Typing:{_typeName}>";
         }
 
         public IReadOnlyList<IAnalysisSet> ToTypeList() {
-            if (_baseName == " List") {
-                return _args;
+            if (_typeName == " List") {
+                return _typeArgs;
             }
             return null;
         }
@@ -127,19 +137,19 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
-            if (_baseName != " List") {
+            if (_typeName != " List") {
                 if (_innerValue == null) {
-                    yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Name, _baseName);
+                    yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Name, _typeName);
                 } else {
                     foreach (var kv in _innerValue.GetRichDescriptions()) {
                         yield return kv;
                     }
                 }
             }
-            if (_args != null && _args.Any()) {
+            if (_typeArgs != null && _typeArgs.Any()) {
                 yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[");
                 bool addComma = false;
-                foreach (var arg in _args) {
+                foreach (var arg in _typeArgs) {
                     if (addComma) {
                         yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", ");
                     }
@@ -157,32 +167,32 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override bool Equals(object obj) {
             if (obj is TypingTypeInfo other) {
-                if (_baseName != other._baseName) {
+                if (_typeName != other._typeName) {
                     return false;
                 }
-                if ((_args == null) != (other._args == null)) {
+                if ((_typeArgs == null) != (other._typeArgs == null)) {
                     return false;
                 }
-                if (_args == null || other._args == null) {
+                if (_typeArgs == null || other._typeArgs == null) {
                     return true;
                 }
-                return _args.Zip(other._args, (x, y) => ObjectComparer.Instance.Equals(x, y)).All(b => b);
+                return _typeArgs.Zip(other._typeArgs, (x, y) => ObjectComparer.Instance.Equals(x, y)).All(b => b);
             }
             return false;
         }
 
         public override int GetHashCode() {
-            if (_args != null) {
-                return _args.Aggregate(_baseName.GetHashCode(), (h, s) => h + 37 * ObjectComparer.Instance.GetHashCode(s));
+            if (_typeArgs != null) {
+                return _typeArgs.Aggregate(_typeName.GetHashCode(), (h, s) => h + 37 * ObjectComparer.Instance.GetHashCode(s));
             }
-            return _baseName.GetHashCode();
+            return _typeName.GetHashCode();
         }
 
         internal override bool UnionEquals(AnalysisValue av, int strength) {
             if (strength == 0) {
                 return Equals(av);
             } else {
-                return _baseName == (av as TypingTypeInfo)?._baseName;
+                return _typeName == (av as TypingTypeInfo)?._typeName;
             }
         }
 
@@ -190,15 +200,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (strength == 0) {
                 return GetHashCode();
             } else {
-                return _baseName.GetHashCode();
+                return _typeName.GetHashCode();
             }
         }
 
         internal override AnalysisValue UnionMergeTypes(AnalysisValue av, int strength) {
-            if (strength == 0 || (_args != null && _args.Count == 0)) {
+            if (strength == 0 || (_typeArgs != null && _typeArgs.Count == 0)) {
                 return this;
             } else {
-                return new TypingTypeInfo(_baseName, _innerValue, Array.Empty<IAnalysisSet>());
+                return new TypingTypeInfo(_typeName, _innerValue, Array.Empty<IAnalysisSet>());
             }
         }
     }
@@ -307,6 +317,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
 
+        /// <summary>
+        /// Given type name and type arguments provides value 
+        /// based on the actual type to use in analysis.
+        /// </summary>
         public IAnalysisSet Finalize(string name, IReadOnlyList<IAnalysisSet> args) {
             if (string.IsNullOrEmpty(name) || args == null || args.Count == 0) {
                 return null;
@@ -439,6 +453,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
                 case "NamedTuple":
                     return CreateNamedTuple(_node, _unit, args.ElementAtOrDefault(0), args.ElementAtOrDefault(1));
+
+                case "Type":
+                    // Return class rather than instance
+                    return args.Count > 0 ? Finalize(args[0]) : AnalysisSet.Empty;
+
                 case " List":
                     return AnalysisSet.UnionAll(args.Select(ToInstance));
             }
@@ -500,6 +519,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return res;
         }
 
+        /// <summary>
+        /// Turns type name into actual type to use in analysis.
+        /// </summary>
         public IAnalysisSet Finalize(string name) {
             if (string.IsNullOrEmpty(name)) {
                 return null;
@@ -532,6 +554,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 case "FrozenSet": return ClassInfo[BuiltinTypeId.FrozenSet];
                 case "NamedTuple": return ClassInfo[BuiltinTypeId.Tuple];
                 case "Generator": return ClassInfo[BuiltinTypeId.Generator];
+                case "Type": return ClassInfo[BuiltinTypeId.Type];
                 case "NoReturn": return AnalysisSet.Empty;
                 case " List": return null;
             }

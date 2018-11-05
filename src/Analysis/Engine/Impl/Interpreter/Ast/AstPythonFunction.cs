@@ -22,7 +22,7 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonFunction : IPythonFunction, ILocatedMember, IHasQualifiedName {
+    class AstPythonFunction : IPythonFunction2, ILocatedMember, IHasQualifiedName {
         private readonly List<IPythonFunctionOverload> _overloads;
         private readonly string _doc;
 
@@ -35,13 +35,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         ) {
             DeclaringModule = declModule ?? throw new ArgumentNullException(nameof(declModule));
             DeclaringType = declType;
+            FunctionDefinition = def;
 
-            Name = def.Name;
+            Name = FunctionDefinition.Name;
             if (Name == "__init__") {
                 _doc = declType?.Documentation;
             }
 
-            foreach (var dec in (def.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().OfType<NameExpression>()) {
+            foreach (var dec in (FunctionDefinition.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().OfType<NameExpression>()) {
                 if (dec.Name == "classmethod") {
                     IsClassMethod = true;
                 } else if (dec.Name == "staticmethod") {
@@ -54,21 +55,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
         }
 
-        internal AstPythonFunction(IPythonFunction original) {
-            DeclaringModule = original.DeclaringModule;
-            DeclaringType = original.DeclaringType;
-            Name = original.Name;
-            // Copy the null if _doc isn't set in the original; otherwise calculate the docs
-            _doc = (original is AstPythonFunction apf) ? apf._doc : original.Documentation;
-            IsClassMethod = original.IsClassMethod;
-            IsStatic = original.IsStatic;
-            _overloads = original.Overloads.ToList();
-            Locations = (original as ILocatedMember)?.Locations ?? Array.Empty<ILocationInfo>();
-        }
+        public FunctionDefinition FunctionDefinition { get; }
 
-        internal void AddOverload(IPythonFunctionOverload overload) {
-            _overloads.Add(overload);
-        }
+        internal void AddOverload(IPythonFunctionOverload overload) => _overloads.Add(overload);
 
         public IPythonModule DeclaringModule {get;}
         public IPythonType DeclaringType {get;}

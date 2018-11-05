@@ -44,7 +44,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private IServiceContainer _services;
         private IUIService _ui;
-        private ITelemetryService _telemetry;
+        private ITelemetryService2 _telemetry;
 
         private JsonRpc _rpc;
         private JsonSerializer _jsonSerializer;
@@ -58,11 +58,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public CancellationToken Start(IServiceContainer services, JsonRpc rpc) {
             _services = services;
             _ui = services.GetService<IUIService>();
-            _telemetry = services.GetService<ITelemetryService>();
+            _telemetry = services.GetService<ITelemetryService2>();
             _rpc = rpc;
             _jsonSerializer = services.GetService<JsonSerializer>();
 
             var progress = services.GetService<IProgressService>();
+
+            var rpcTraceListener = new TelemetryRpcTraceListener(_telemetry);
+            _rpc.TraceSource.Listeners.Add(rpcTraceListener);
 
             _server.OnLogMessage += OnLogMessage;
             _server.OnShowMessage += OnShowMessage;
@@ -80,7 +83,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(() => _server.OnUnregisterCapability -= OnUnregisterCapability)
                 .Add(() => _shutdownCts.Cancel())
                 .Add(_prioritizer)
-                .Add(() => _pathsWatcher?.Dispose());
+                .Add(() => _pathsWatcher?.Dispose())
+                .Add(() => _rpc.TraceSource.Listeners.Remove(rpcTraceListener));
 
             return _sessionTokenSource.Token;
         }

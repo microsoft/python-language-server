@@ -280,12 +280,12 @@ def f(a = 2, b): pass
             var u = await AddModule(s, "def f(/)\n    error text\n");
 
             GetDiagnostics(diags, u).Should().OnlyContain(
-                "Error;unexpected token '/';Python (parser);0;6;7",
-                "Error;invalid parameter;Python (parser);0;6;7",
-                "Error;unexpected token '<newline>';Python (parser);0;8;4",
-                "Error;unexpected indent;Python (parser);1;4;9",
-                "Error;unexpected token 'text';Python (parser);1;10;14",
-                "Error;unexpected token '<dedent>';Python (parser);1;14;0"
+                "Error;unexpected token '/';Python;0;6;7",
+                "Error;invalid parameter;Python;0;6;7",
+                "Error;unexpected token '<newline>';Python;0;8;4",
+                "Error;unexpected indent;Python;1;4;9",
+                "Error;unexpected token 'text';Python;1;10;14",
+                "Error;unexpected token '<dedent>';Python;1;14;0"
             );
         }
 
@@ -320,7 +320,7 @@ def f(a = 2, b): pass
                 if (tc == DiagnosticSeverity.Unspecified) {
                     messages.Should().BeEmpty();
                 } else {
-                    messages.Should().OnlyContain($"{tc};inconsistent whitespace;Python (parser);2;0;1");
+                    messages.Should().OnlyContain($"{tc};inconsistent whitespace;Python;2;0;1");
                 }
 
                 await s.UnloadFileAsync(mod);
@@ -335,9 +335,9 @@ def f(a = 2, b): pass
             var u = await AddModule(s, "y\nx x");
 
             GetDiagnostics(diags, u).Should().OnlyContain(
-                "Warning;unknown variable 'y';Python (analysis);0;0;1",
-                "Warning;unknown variable 'x';Python (analysis);1;0;1",
-                "Error;unexpected token 'x';Python (parser);1;2;3"
+                "Warning;'y' used before definition;Python;0;0;1",
+                "Warning;'x' used before definition;Python;1;0;1",
+                "Error;unexpected token 'x';Python;1;2;3"
             );
         }
 
@@ -350,16 +350,37 @@ def f(a = 2, b): pass
 
                 await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 GetDiagnostics(diags, u).Should().OnlyContain(
-                    "Warning;Unable to resolve 'foo'. IntelliSense may be missing for this module.;Python (analysis);0;7;10",
-                    "Warning;unknown variable 'y';Python (analysis);1;4;5"
+                    "Warning;unresolved import 'foo';Python;0;7;10",
+                    "Warning;'y' used before definition;Python;1;4;5"
                 );
 
                 var newSettings = new ServerSettings();
-                newSettings.analysis.SetErrorSeverityOptions(Array.Empty<string>(), Array.Empty<string>(), Array.Empty<string>(), new[] { ErrorMessages.UsedBeforeAssignmentCode, ErrorMessages.UnresolvedImportCode });
+                newSettings.analysis.SetErrorSeverityOptions(Array.Empty<string>(), Array.Empty<string>(), Array.Empty<string>(), new[] { ErrorMessages.UseBeforeDefCode, ErrorMessages.UnresolvedImportCode });
                 await s.SendDidChangeConfiguration(newSettings);
 
                 await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 GetDiagnostics(diags, u).Where(st => !st.StartsWith($"{DiagnosticSeverity.Unspecified}")).Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeHintNoneDiagnostic() {
+            if (this is LanguageServerTests_V2) {
+                // No type hints in Python 2.
+                return;
+            }
+
+            var code = @"
+def f(b: None) -> None:
+    b: None
+";
+
+            var diags = new Dictionary<Uri, PublishDiagnosticsEventArgs>();
+            using (var s = await CreateServer((Uri)null, null, diags)) {
+                var u = await s.OpenDefaultDocumentAndGetUriAsync(code);
+
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                GetDiagnostics(diags, u).Should().BeEmpty();
             }
         }
 
