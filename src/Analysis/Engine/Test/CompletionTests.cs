@@ -1051,7 +1051,7 @@ class Simple(unittest.TestCase):
                 items.Select(i => i.Item1).Should().Contain(contains);
 
                 if (allFormat != null) {
-                    items.Select(i => i.Item2).Should().AllBeEquivalentTo(allFormat);
+                    items.Where(i => contains.Contains(i.Item1)).Select(i => i.Item2).Should().AllBeEquivalentTo(allFormat);
                 }
             }
 
