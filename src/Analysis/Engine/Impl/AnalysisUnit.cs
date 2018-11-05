@@ -59,8 +59,9 @@ namespace Microsoft.PythonTools.Analysis {
         internal AnalysisUnit(Node ast, PythonAst tree, IScope scope, bool forEval) {
             Ast = ast;
             Tree = tree;
-            if (ast == tree)
+            if (ast == tree) {
                 _externalAnnotationAnalysisUnit = new Lazy<AnalysisUnit>(GetExternalAnalysisUnitImpl);
+            }
             _scope = scope;
             ForEval = forEval;
         }
@@ -346,14 +347,9 @@ namespace Microsoft.PythonTools.Analysis {
         ILocationResolver ILocationResolver.GetAlternateResolver() => AlternateResolver;
 
         readonly Lazy<AnalysisUnit> _externalAnnotationAnalysisUnit;
-        protected internal virtual AnalysisUnit GetExternalAnnotationAnalysisUnit() {
-            if (Ast != Tree)
-                return null;
+        protected internal virtual AnalysisUnit GetExternalAnnotationAnalysisUnit() => _externalAnnotationAnalysisUnit?.Value;
 
-            return _externalAnnotationAnalysisUnit.Value;
-        }
-
-        AnalysisUnit GetExternalAnalysisUnitImpl() {
+        private AnalysisUnit GetExternalAnalysisUnitImpl() {
             string analysisModuleName = ProjectEntry.ModuleName + PythonAnalyzer.AnnotationsModuleSuffix;
             if (!ProjectEntry.ProjectState.Modules.TryImport(analysisModuleName, out var analysisModuleReference))
                 return null;
