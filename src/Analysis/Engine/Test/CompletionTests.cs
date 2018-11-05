@@ -1034,7 +1034,7 @@ class Simple(unittest.TestCase):
             }
         }
 
-        private static async Task AssertCompletion(Server s, Uri uri, IReadOnlyCollection<string> contains, IReadOnlyCollection<string> excludes, Position? position = null, CompletionContext? context = null, Func<CompletionItem, string> cmpKey = null, string expr = null, Range? applicableSpan = null) {
+        private static async Task AssertCompletion(Server s, Uri uri, IReadOnlyCollection<string> contains, IReadOnlyCollection<string> excludes, Position? position = null, CompletionContext? context = null, Func<CompletionItem, string> cmpKey = null, string expr = null, Range? applicableSpan = null, InsertTextFormat? allFormat = InsertTextFormat.PlainText) {
             await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
             var res = await s.Completion(new CompletionParams {
                 textDocument = new TextDocumentIdentifier { uri = uri },
@@ -1045,10 +1045,14 @@ class Simple(unittest.TestCase):
             DumpDetails(res);
 
             cmpKey = cmpKey ?? (c => c.insertText);
-            var items = res.items?.Select(cmpKey).ToList() ?? new List<string>();
+            var items = res.items?.Select(i => (cmpKey(i), i.insertTextFormat)).ToList() ?? new List<(string, InsertTextFormat)>();
 
             if (contains != null && contains.Any()) {
-                items.Should().Contain(contains);
+                items.Select(i => i.Item1).Should().Contain(contains);
+
+                if (allFormat != null) {
+                    items.Select(i => i.Item2).Should().AllBeEquivalentTo(allFormat);
+                }
             }
 
             if (excludes != null && excludes.Any()) {
