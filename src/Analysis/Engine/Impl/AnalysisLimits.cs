@@ -42,7 +42,7 @@ namespace Microsoft.PythonTools.Analysis {
             limits.DictKeyTypes = 5;
             limits.DictValueTypes = 10;
             limits.IndexTypes = 5;
-            limits.AssignedTypes = 20;
+            limits.AssignedTypes = 5;
             limits.UnifyCallsToNew = true;
             limits.ProcessCustomDecorators = true;
             return limits;
@@ -67,7 +67,7 @@ namespace Microsoft.PythonTools.Analysis {
             DictKeyTypes = 5;
             DictValueTypes = 10;
             IndexTypes = 6;
-            AssignedTypes = 30;
+            AssignedTypes = 5;
             UnifyCallsToNew = true;
             ProcessCustomDecorators = true;
             UseTypeStubPackages = true;

@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
@@ -30,8 +31,11 @@ namespace Microsoft.PythonTools.Analysis {
     /// analysis values include top-level code, classes, and functions.
     /// </summary>
     public class AnalysisValue : IAnalysisValueOperations {
+        public const int MaxShortDescriptionLength = 128;
+
         [ThreadStatic]
         private static HashSet<AnalysisValue> _processing;
+        private string _shortDescription;
 
         protected AnalysisValue() { }
 
@@ -67,23 +71,25 @@ namespace Microsoft.PythonTools.Analysis {
 
         public virtual IEnumerable<OverloadResult> Overloads => Enumerable.Empty<OverloadResult>();
 
-        public virtual string Description {
-            get {
-                var hrd = this as IHasRichDescription;
-                if (hrd != null) {
-                    return string.Join("", hrd.GetRichDescription().Select(kv => kv.Value));
-                }
-                return null;
-            }
-        }
+        public virtual string Description
+            => this is IHasRichDescription hrd
+                ? string.Join("", hrd.GetRichDescription().Select(kv => kv.Value))
+                : string.Empty;
 
         public virtual string ShortDescription {
             get {
-                var hrd = this as IHasRichDescription;
-                if (hrd != null) {
-                    return string.Join("", hrd.GetRichDescription().TakeWhile(kv => kv.Key != WellKnownRichDescriptionKinds.EndOfDeclaration).Select(kv => kv.Value));
+                if (string.IsNullOrEmpty(_shortDescription) && this is IHasRichDescription hrd) {
+                    var sb = new StringBuilder();
+                    foreach (var item in hrd.GetRichDescription().TakeWhile(kv => kv.Key != WellKnownRichDescriptionKinds.EndOfDeclaration).Select(kv => kv.Value)) {
+                        if (sb.Length >= MaxShortDescriptionLength) {
+                            sb.Append("...");
+                            break;
+                        }
+                        sb.Append(item);
+                    }
+                    _shortDescription = sb.ToString();
                 }
-                return Description;
+                return _shortDescription ?? string.Empty;
             }
         }
 
