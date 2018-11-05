@@ -1115,7 +1115,17 @@ def func(a: Dict[int, str]):
                 completions.Should().HaveLabels("capitalize");
             }
         }
-        private static async Task AssertCompletion(Server s, Uri uri, IReadOnlyCollection<string> contains, IReadOnlyCollection<string> excludes, Position? position = null, CompletionContext? context = null, Func<CompletionItem, string> cmpKey = null, string expr = null, Range? applicableSpan = null) {
+        private static async Task AssertCompletion(
+            Server s, 
+            Uri uri, 
+            IReadOnlyCollection<string> contains, 
+            IReadOnlyCollection<string> excludes, 
+            Position? position = null, 
+            CompletionContext? context = null, 
+            Func<CompletionItem, string> cmpKey = null, 
+            string expr = null, 
+            Range? applicableSpan = null,
+            InsertTextFormat? allFormat = InsertTextFormat.PlainText) {
             await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
             var res = await s.Completion(new CompletionParams {
                 textDocument = new TextDocumentIdentifier { uri = uri },
