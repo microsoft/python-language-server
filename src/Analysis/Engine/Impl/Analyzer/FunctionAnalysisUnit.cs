@@ -74,15 +74,19 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         protected internal override AnalysisUnit GetExternalAnnotationAnalysisUnit() {
             var parentAnnotation = _declUnit.GetExternalAnnotationAnalysisUnit();
-            if (parentAnnotation == null)
+            if (parentAnnotation == null) {
                 return null;
-            if (!parentAnnotation.Scope.TryGetVariable(Ast.Name, out var annotationVariable))
+            }
+
+            if (!parentAnnotation.Scope.TryGetVariable(Ast.Name, out var annotationVariable)) {
                 return null;
-            if (annotationVariable.Types is FunctionInfo functionAnnotation)
+            }
+
+            if (annotationVariable.Types is FunctionInfo functionAnnotation) {
                 return functionAnnotation.AnalysisUnit;
-            if (annotationVariable.Types.OnlyOneOrDefault() is FunctionInfo nestedAnnotation)
-                return nestedAnnotation.AnalysisUnit;
-            return null;
+            }
+
+            return (annotationVariable.Types.OnlyOneOrDefault() as FunctionInfo)?.AnalysisUnit;
         }
 
         internal override void AnalyzeWorker(DDG ddg, CancellationToken cancel) {
@@ -199,8 +203,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             var scope = (FunctionScope)Scope;
             var annotationAnalysis = GetExternalAnnotationAnalysisUnit() as FunctionAnalysisUnit;
             var functionAnnotation = annotationAnalysis?.Function.FunctionDefinition;
-            if (functionAnnotation?.Parameters.Length != Ast.Parameters.Length)
+            if (functionAnnotation?.Parameters.Length != Ast.Parameters.Length) {
                 functionAnnotation = null;
+            }
             for (var i = 0; i < Ast.Parameters.Length; ++i) {
                 var p = Ast.Parameters[i];
                 var annotation = p.Annotation;

@@ -65,13 +65,15 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         /// </summary>
         public static T OnlyOneOrDefault<T>(this IEnumerable<T> source) {
             using (var enumerator = source.GetEnumerator()) {
-                if (!enumerator.MoveNext())
+                if (!enumerator.MoveNext()) {
                     return default(T);
+                }
 
                 T result = enumerator.Current;
 
-                if (enumerator.MoveNext())
+                if (enumerator.MoveNext()) {
                     return default(T);
+                }
 
                 return result;
             }

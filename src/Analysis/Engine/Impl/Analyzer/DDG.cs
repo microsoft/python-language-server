@@ -127,8 +127,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 if (ProjectState.Modules.TryGetImportedModule(annotationModuleName, out annotationsReference)) {
                     FinishImportModuleOrMember(annotationsReference, attribute: null, name: "__pyi__",
                         addRef: true, node: node, nameReference: new NameExpression("__pyi__"));
-                } else
+                } else {
                     Debug.Fail($"Failed to get module {annotationModuleName} we just imported");
+                }
             }
 
             return base.Walk(node);

@@ -227,8 +227,9 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="cookie">An application-specific identifier for the module</param>
         /// <returns>The project entry for the new module.</returns>
         public IPythonProjectEntry AddModuleAnnotations(string moduleName, string filePath, Uri documentUri = null, IAnalysisCookie cookie = null) {
-            if (moduleName == null)
+            if (moduleName == null) {
                 throw new ArgumentNullException(nameof(moduleName));
+            }
 
             moduleName += AnnotationsModuleSuffix;
             var entry = new ProjectEntry(this, moduleName, filePath, documentUri, cookie);
