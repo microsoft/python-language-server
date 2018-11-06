@@ -657,7 +657,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 if (vc != null) {
                     _editorFiles.GetDocument(doc.DocumentUri).UpdateParseDiagnostics(vc, doc.DocumentUri);
                 }
-            } catch (BadSourceException) {
             } catch (OperationCanceledException ex) {
                 LogMessage(MessageType.Warning, $"Parsing {doc.DocumentUri} cancelled");
                 TraceMessage($"{ex}");

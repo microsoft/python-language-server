@@ -5058,7 +5058,7 @@ namespace Microsoft.PythonTools.Parsing {
                     );
                     encoding = Encoding.UTF8;
                 } else if (isUtf8) {
-                    return new StreamReader(new PartiallyReadStream(readBytes, stream), UTF8Throwing);
+                    return new StreamReader(new PartiallyReadStream(readBytes, stream), Encoding.UTF8);
                 } else if (encoding == null) {
                     if (gotEncoding == null) {
                         // get line number information for the bytes we've read...
@@ -5106,17 +5106,6 @@ namespace Microsoft.PythonTools.Parsing {
             return lineNos;
         }
 
-        private static Encoding UTF8Throwing {
-            get {
-                if (_utf8throwing == null) {
-                    var tmp = (Encoding)Encoding.UTF8.Clone();
-                    tmp.DecoderFallback = new SourceNonStrictDecoderFallback();
-                    _utf8throwing = tmp;
-                }
-                return _utf8throwing;
-            }
-        }
-
         /// <summary>
         /// Attempts to get the encoding from a # coding: line.  
         /// 
@@ -5149,7 +5138,6 @@ namespace Microsoft.PythonTools.Parsing {
 
             // and we have the magic ending as well...
             if (TryGetEncoding(encName, out enc)) {
-                enc.DecoderFallback = new SourceNonStrictDecoderFallback();
                 return true;
             }
             return null;
