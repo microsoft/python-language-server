@@ -333,7 +333,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        public void SetSearchPaths(IEnumerable<string> searchPaths) => Analyzer.SetSearchPaths(new [] { _rootDir }.Union(searchPaths.MaybeEnumerate()));
+        public void SetSearchPaths(IEnumerable<string> searchPaths) => Analyzer.SetSearchPaths(searchPaths.MaybeEnumerate());
         public void SetTypeStubSearchPaths(IEnumerable<string> typeStubSearchPaths) => Analyzer.SetTypeStubPaths(typeStubSearchPaths.MaybeEnumerate());
 
         #endregion
@@ -394,6 +394,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _rootDir = PathUtils.NormalizePath(@params.rootPath);
             }
 
+            Analyzer.SetRoot(_rootDir);
             SetSearchPaths(@params.initializationOptions.searchPaths);
             SetTypeStubSearchPaths(@params.initializationOptions.typeStubSearchPaths);
 

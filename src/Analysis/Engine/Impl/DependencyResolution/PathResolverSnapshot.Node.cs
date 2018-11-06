@@ -37,8 +37,8 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 ModulePath = modulePath;
             }
 
-            public static Node CreateRoot(string path) =>
-                new Node(PathUtils.NormalizePath(path), Array.Empty<Node>(), null);
+            public static Node CreateRoot(string path) 
+                => new Node(PathUtils.NormalizePath(path), Array.Empty<Node>(), null);
 
             public static Node CreateModule(string name, string modulePath)
                 => new Node(name, Array.Empty<Node>(), modulePath);

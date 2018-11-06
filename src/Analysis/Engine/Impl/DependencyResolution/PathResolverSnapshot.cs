@@ -24,13 +24,14 @@ using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
     internal partial struct PathResolverSnapshot {
+        private static readonly Node NullRoot = Node.CreateRoot("$");
         private static readonly bool IgnoreCaseInPaths = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         private readonly PythonLanguageVersion _pythonLanguageVersion;
         private readonly Node[] _roots;
         public int Version { get; }
 
         public PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion) 
-            : this(pythonLanguageVersion, Array.Empty<Node>(), default) { }
+            : this(pythonLanguageVersion, new [] { NullRoot }, default) { }
 
         private PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion, Node[] roots, int version) {
             _pythonLanguageVersion = pythonLanguageVersion;
@@ -108,9 +109,15 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             return default;
         }
 
-        public PathResolverSnapshot NewRoots(in IEnumerable<string> newRoots) {
-            var newRootNodes = newRoots.Where(Path.IsPathRooted).Select(Node.CreateRoot).ToArray();
-            return new PathResolverSnapshot(_pythonLanguageVersion, newRootNodes, Version + 1);
+        public PathResolverSnapshot SetRoot(string root) {
+            var newDefaultRoot = !string.IsNullOrEmpty(root) && Path.IsPathRooted(root) ? Node.CreateRoot(root) : NullRoot;
+            var newRoots = _roots.ImmutableReplaceAt(newDefaultRoot, 0);
+            return new PathResolverSnapshot(_pythonLanguageVersion, newRoots, Version + 1);
+        }
+
+        public PathResolverSnapshot SetSearchPaths(in IEnumerable<string> searchPaths) {
+            var rootNodes = searchPaths.Where(Path.IsPathRooted).Select(Node.CreateRoot).Prepend(_roots[0]).ToArray();
+            return new PathResolverSnapshot(_pythonLanguageVersion, rootNodes, Version + 1);
         }
 
         public PathResolverSnapshot AddModulePath(in string modulePath) {
@@ -154,12 +161,29 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             return ImmutableReplaceRoot(newRoot, lastEdge.GetFirstEdge().EndIndex);
         }
 
-        private Edge MatchNodePath(in string normalizedModulePath, in int rootIndex, out (int start, int length) unmatchedPathSpan) {
+        private bool MatchNodePathInNullRoot(string normalizedPath, out Edge lastEdge, out (int start, int length) unmatchedPathSpan) {
+            var root = _roots[0];
+            var moduleNameStart = GetModuleNameStart(normalizedPath);
+            var nameSpan = (moduleNameStart, GetModuleNameEnd(normalizedPath) - moduleNameStart);
+            var nodeIndex = root.GetChildIndex(normalizedPath, nameSpan);
+
+            lastEdge = new Edge(0, root);
+            if (nodeIndex == -1) {
+                unmatchedPathSpan = nameSpan;
+                return false;
+            }
+
+            lastEdge = lastEdge.Append(nodeIndex);
+            unmatchedPathSpan = (-1, 0);
+            return true;
+        }
+
+        private bool MatchNodePath(in string normalizedModulePath, in int rootIndex, out Edge lastEdge, out (int start, int length) unmatchedPathSpan) {
             var root = _roots[rootIndex];
             var nameSpan = (start: 0, length: root.Name.Length);
-            var modulePathLength = normalizedModulePath.LastIndexOf('.'); // exclude extension
-            var lastEdge = new Edge(rootIndex, root);
-            
+            var modulePathLength = GetModuleNameEnd(normalizedModulePath); // exclude extension
+
+            lastEdge = new Edge(rootIndex, root);
             while (normalizedModulePath.TryGetNextNonEmptySpan(Path.DirectorySeparatorChar, modulePathLength, ref nameSpan)) {
                 var childIndex = lastEdge.End.GetChildIndex(normalizedModulePath, nameSpan);
                 if (childIndex == -1) {
@@ -169,7 +193,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             }
 
             unmatchedPathSpan = nameSpan.start != -1 ? (nameSpan.start, modulePathLength - nameSpan.start) : (-1, 0);
-            return lastEdge;
+            return unmatchedPathSpan.length == 0 && lastEdge.End.IsModule;
         }
 
         private static bool TryAppendPackages(in Edge edge, in IEnumerable<string> packageNames, out Edge lastEdge) {
@@ -210,7 +234,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 return packageNode.ToModule(modulePath);
             }
 
-            if (unmatchedPathSpan.start == modulePath.LastIndexOf(Path.DirectorySeparatorChar) + 1) {
+            if (unmatchedPathSpan.start == GetModuleNameStart(modulePath)) {
                 // Module is added to existing package
                 return Node.CreateModule(modulePath.Substring(unmatchedPathSpan.start, unmatchedPathSpan.length), modulePath);
             }
@@ -241,12 +265,18 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             }
 
             normalizedPath = PathUtils.NormalizePath(modulePath);
+
             var rootIndex = 0;
             while (rootIndex < _roots.Length && !normalizedPath.StartsWithOrdinal(_roots[rootIndex].Name, IgnoreCaseInPaths)) {
                 rootIndex++;
             }
 
             if (rootIndex == _roots.Length) {
+                // Special case when default root isn't specified. Any module path that doesn't fit into 
+                if (_roots[0].Name == NullRoot.Name && IsRootedPathEndsWithPythonFile(normalizedPath)) {
+                    return MatchNodePathInNullRoot(normalizedPath, out lastEdge, out unmatchedPathSpan);
+                }
+
                 throw new InvalidOperationException($"File '{modulePath}' doesn't belong to any known search path");
             }
 
@@ -257,8 +287,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 return false;
             }
 
-            lastEdge = MatchNodePath(normalizedPath, rootIndex, out unmatchedPathSpan);
-            return unmatchedPathSpan.length == 0 && lastEdge.End.IsModule;
+            return MatchNodePath(normalizedPath, rootIndex, out lastEdge, out unmatchedPathSpan);
         }
 
         private static bool IsRootedPathEndsWithPythonFile(string rootedPath) {
@@ -266,10 +295,16 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 return false;
             }
 
-            var fileStartIndex = rootedPath.LastIndexOf(Path.DirectorySeparatorChar) + 1;
-            return rootedPath[fileStartIndex].IsLatin1LetterOrUnderscore()
-                   && rootedPath.CharsAreLatin1LetterOrDigitOrUnderscore(fileStartIndex + 1, rootedPath.LastIndexOf('.') - fileStartIndex - 1);
+            var moduleNameStart = GetModuleNameStart(rootedPath);
+            return rootedPath[moduleNameStart].IsLatin1LetterOrUnderscore()
+                   && rootedPath.CharsAreLatin1LetterOrDigitOrUnderscore(moduleNameStart + 1, GetModuleNameEnd(rootedPath) - moduleNameStart - 1);
         }
+
+        private static int GetModuleNameStart(string rootedModulePath) 
+            => rootedModulePath.LastIndexOf(Path.DirectorySeparatorChar) + 1;
+
+        private static int GetModuleNameEnd(string rootedModulePath) 
+            => rootedModulePath.LastIndexOf('.');
 
         private PathResolverSnapshot ImmutableReplaceRoot(Node root, int index) 
             => new PathResolverSnapshot(_pythonLanguageVersion, _roots.ImmutableReplaceAt(root, index), Version + 1);

@@ -535,7 +535,7 @@ y2 = f(y)
         [TestMethod, Priority(0)]
         public async Task RecursiveDictionaryKeyValues() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTestSpecificUri("test-module.py");
+                var uri = TestData.GetTestSpecificUri("test_module.py");
                 var code = @"x = {'abc': 42, 'oar': 'baz'}
 x['abc'] = x
 x[x] = 'abc'
@@ -811,7 +811,7 @@ class D(C):
 
         [TestMethod, Priority(0)]
         public async Task Mro() {
-            var uri = TestData.GetTestSpecificUri("test-module.py");
+            var uri = TestData.GetTestSpecificUri("test_module.py");
             string code;
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 // Successful: MRO is A B C D E F object
@@ -956,7 +956,7 @@ class Test_test2(Test_test1):
 
         [TestMethod, Priority(0)]
         public async Task Iterator_Python27() {
-            var uri = TestData.GetTestSpecificUri("test-module.py");
+            var uri = TestData.GetTestSpecificUri("test_module.py");
             using (var server = await CreateServerAsync(PythonVersions.Required_Python27X)) {
                 await server.SendDidOpenTextDocument(uri, @"
 A = [1, 2, 3]
@@ -1026,7 +1026,7 @@ c = next(iC)
 
         [TestMethod, Priority(0)]
         public async Task Iterator_Python3X() {
-            var uri = TestData.GetTestSpecificUri("test-module.py");
+            var uri = TestData.GetTestSpecificUri("test_module.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 await server.SendDidOpenTextDocument(uri, @"
 A = [1, 2, 3]
@@ -4112,7 +4112,7 @@ import fob.y as y
 abc = 42
 ";
 
-            using (var server = await CreateServerAsync()) {
+            using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
                 var initX = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "__init__.py"), string.Empty);
                 var modX = TestData.GetTestSpecificUri(Path.Combine("fob", "x.py"));
                 var modY = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), srcY);
@@ -4138,7 +4138,7 @@ abc = 42
             var src2 = "from .y import abc";
             var src3 = "abc = 42";
 
-            using (var server = await CreateServerAsync()) {
+            using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
                 var uriSrc1 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "__init__.py"), src1);
                 var uriSrc2 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "x.py"), src2);
                 var uriSrc3 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), src3);
@@ -4172,7 +4172,7 @@ abc = 42
             var subpackageModuleYContent = "def spam():\n  pass\n";
             var subpackage2ModuleZContent = "def eggs():\n  pass\n";
 
-            using (var server = await CreateServerAsync()) {
+            using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
                 var initUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "__init__.py"), initContent);
                 var moduleAUri = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "moduleA.py"), moduleAContent);
 
@@ -4212,7 +4212,7 @@ abc = 42
             var src1 = "from .y import y";
             var src2 = "def y(): pass";
 
-            using (var server = await CreateServerAsync()) {
+            using (var server = await CreateServerAsync(rootUri: TestData.GetTestSpecificRootUri())) {
                 var uriSrc1 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "__init__.py"), src1);
                 var uriSrc2 = await TestData.CreateTestSpecificFileAsync(Path.Combine("fob", "y.py"), src2);
 
@@ -5733,7 +5733,7 @@ test1_result = test1()
             var entry = ProcessText(code);
 
             Assert.AreEqual(
-                "test-module.A.fn(self: A) -> lambda: 123 -> int\ndeclared in A",
+                "test_module.A.fn(self: A) -> lambda: 123 -> int\ndeclared in A",
                 entry.GetDescriptions("A.fn", 0).Single().Replace("\r\n", "\n")
             );
         }

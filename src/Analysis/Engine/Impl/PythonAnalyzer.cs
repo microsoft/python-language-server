@@ -923,6 +923,8 @@ namespace Microsoft.PythonTools.Analysis {
 
         public IReadOnlyList<string> GetSearchPaths() => _searchPaths.AsLockedEnumerable().ToArray();
 
+        internal void SetRoot(string rootDir) => _pathResolver.SetRoot(rootDir);
+
         /// <summary>
         /// Sets the search paths for this analyzer, invoking callbacks for any
         /// path added or removed.
@@ -931,7 +933,7 @@ namespace Microsoft.PythonTools.Analysis {
             lock (_searchPaths) {
                 _searchPaths.Clear();
                 _searchPaths.AddRange(paths.MaybeEnumerate());
-                _pathResolver.UpdateRoots(_searchPaths);
+                _pathResolver.SetSearchPaths(_searchPaths);
             }
             SearchPathsChanged?.Invoke(this, EventArgs.Empty);
         }

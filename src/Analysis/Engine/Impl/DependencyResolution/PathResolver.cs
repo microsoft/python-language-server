@@ -25,7 +25,8 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             _currentSnapshot = new PathResolverSnapshot(pythonLanguageVersion);
         }
 
-        public void UpdateRoots(IEnumerable<string> roots) => _currentSnapshot = _currentSnapshot.NewRoots(roots);
+        public void SetRoot(string root) => _currentSnapshot = _currentSnapshot.SetRoot(root);
+        public void SetSearchPaths(IEnumerable<string> searchPaths) => _currentSnapshot = _currentSnapshot.SetSearchPaths(searchPaths);
         public void AddModulePath(string path) => _currentSnapshot = _currentSnapshot.AddModulePath(path);
         public PathResolverSnapshot CurrentSnapshot => _currentSnapshot;
     }

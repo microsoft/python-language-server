@@ -32,7 +32,7 @@ namespace AnalysisTests {
     public class ServerBasedTest {
         private Server _server;
 
-        protected virtual async Task<Server> CreateServerAsync(InterpreterConfiguration configuration = null, Uri rootUri = null) {
+        protected async Task<Server> CreateServerAsync(InterpreterConfiguration configuration = null, Uri rootUri = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable2X ?? PythonVersions.LatestAvailable3X;
             configuration.AssertInstalled();
 
@@ -99,7 +99,7 @@ namespace AnalysisTests {
             if (limits != null) {
                 server.Analyzer.Limits = limits;
             }
-            server.SetSearchPaths(searchPaths);
+            server.Analyzer.SetSearchPaths(searchPaths);
             server.Analyzer.SetTypeStubPaths(stubPaths);
 
             var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
