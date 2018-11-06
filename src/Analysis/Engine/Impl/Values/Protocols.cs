@@ -770,8 +770,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
         protected readonly AnalysisValue _actualType;
 
         /// <summary>
-        /// Creates protocol that delegates to base type, such as generic list
-        /// provides methods from the plain list.
+        /// Creates protocol that delegates to real type, such as TypeVar or NewType
+        /// to the actual underlying type.
         /// </summary>
         /// <param name="self">Protocol info</param>
         /// <param name="baseType">Base type to delegate to, such as 'list'.</param>
