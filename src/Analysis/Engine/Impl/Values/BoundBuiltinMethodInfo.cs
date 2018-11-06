@@ -40,14 +40,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override string Documentation => _method.Documentation;
 
-        public override string Description {
-            get {
-                if (_method.Function.IsBuiltin) {
-                    return "bound built-in method " + _method.Name;
-                }
-                return "bound method " + _method.Name;
-            }
-        }
+        public override string Description => $"bound method {_method.Name}";
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             // Check if method returns self

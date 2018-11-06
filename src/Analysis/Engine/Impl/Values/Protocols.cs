@@ -423,6 +423,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 }
                 sb.AppendIf(i > 0, ", ");
                 var text = sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription;
+                text = string.IsNullOrEmpty(text) ? "Any" : text;
                 sb.Append(text);
             }
             sb.AppendIf(sets.Length > 1, "]");
@@ -454,23 +455,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override string Name { get; }
         public override BuiltinTypeId TypeId => BuiltinTypeId.Tuple;
-
-        public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
-            if (_values.Any()) {
-                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[");
-                bool needComma = false;
-                foreach (var v in _values) {
-                    if (needComma) {
-                        yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", ");
-                    }
-                    needComma = true;
-                    foreach (var kv in v.GetRichDescriptions()) {
-                        yield return kv;
-                    }
-                }
-                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "]");
-            }
-        }
 
         protected override bool Equals(Protocol other) =>
             other is TupleProtocol tp &&
