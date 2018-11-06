@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -34,9 +33,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public static BuiltinModule Wrap(BuiltinModule inner) => new TypingModuleInfo(inner);
 
-        private IAnalysisSet GetBuiltin(BuiltinTypeId typeId) {
-            return ProjectState.ClassInfos[typeId];
-        }
+        private IAnalysisSet GetBuiltin(BuiltinTypeId typeId) => ProjectState.ClassInfos[typeId];
 
         private IAnalysisSet GetFunction(Node node, AnalysisUnit unit, string name, CallDelegate callable) {
             lock (_callables) {
@@ -119,6 +116,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 case "NamedTuple":
                 case "Generator":
                 case "ClassVar":
+                case "Type":
                     res = new TypingTypeInfo(name, _inner.GetMember(node, unit, name)?.FirstOrDefault());
                     break;
 
@@ -142,7 +140,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 case "Counter": res = Import("collections", "Counter", node, unit); break;
                 case "Deque": res = Import("collections", "deque", node, unit); break;
                 case "DefaultDict": res = Import("collections", "defaultdict", node, unit); break;
-                case "Type": res = GetBuiltin(BuiltinTypeId.Type); break;
                 case "ByteString": res = GetBuiltin(BuiltinTypeId.Bytes); break;
                 case "AnyStr": res = GetBuiltin(BuiltinTypeId.Unicode).Union(GetBuiltin(BuiltinTypeId.Bytes), canMutate: false); break;
                 case "Text": res = GetBuiltin(BuiltinTypeId.Str); break;

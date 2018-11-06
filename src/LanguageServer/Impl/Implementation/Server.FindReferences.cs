@@ -42,31 +42,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             tree = GetParseTree(entry, uri, cancellationToken, out var version);
-            var extras = new List<Reference>();
-
-            if (@params.context?.includeDeclaration ?? false) {
-                var index = tree.LocationToIndex(@params.position);
-                var w = new ImportedModuleNameWalker(entry, index, tree);
-                tree.Walk(w);
-
-                if (w.ImportedType != null) {
-                    @params._expr = w.ImportedType.Name;
-                } else {
-                    foreach (var n in w.ImportedModules) {
-                        if (Analyzer.Modules.TryGetImportedModule(n.Name, out var modRef) && modRef.AnalysisModule != null) {
-                            // Return a module reference
-                            extras.AddRange(modRef.AnalysisModule.Locations
-                                .Select(l => new Reference {
-                                    uri = l.DocumentUri,
-                                    range = l.Span,
-                                    _version = version?.Version,
-                                    _kind = ReferenceKind.Definition
-                                })
-                                .ToArray());
-                        }
-                    }
-                }
-            }
+            var modRefs = GetModuleReferences(entry, tree, version, @params);
 
             IEnumerable<IAnalysisVariable> result;
             if (!string.IsNullOrEmpty(@params._expr)) {
@@ -97,12 +73,53 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _kind = ToReferenceKind(v.Type),
                 _version = version?.Version
             })
-                .Concat(extras)
+                .Concat(modRefs)
                 .GroupBy(r => r, ReferenceComparer.Instance)
                 .Select(g => g.OrderByDescending(r => (SourceLocation)r.range.end).ThenBy(r => (int?)r._kind ?? int.MaxValue).First())
                 .ToArray();
 
             return res;
+        }
+
+        private IEnumerable<Reference> GetModuleReferences(IPythonProjectEntry entry, PythonAst tree, BufferVersion version, ReferencesParams @params) {
+            if (!@params.context?.includeDeclaration == true) {
+                return Enumerable.Empty<Reference>();
+            }
+
+            var index = tree.LocationToIndex(@params.position);
+            var w = new ImportedModuleNameWalker(entry, index, tree);
+            tree.Walk(w);
+
+            if (w.ImportedType != null) {
+                @params._expr = w.ImportedType.Name;
+                return Enumerable.Empty<Reference>();
+            }
+
+            var modulesNamesInRange = w.ImportedModules.Where(m => {
+                var start = tree.LocationToIndex(m.SourceSpan.Start);
+                var end = tree.LocationToIndex(m.SourceSpan.End);
+                return start <= index && index < end;
+            }).ToArray();
+
+            if (modulesNamesInRange.Length == 0) {
+                return Enumerable.Empty<Reference>();
+            }
+
+            var refs = new List<Reference>();
+            foreach (var n in modulesNamesInRange) {
+                if (Analyzer.Modules.TryGetImportedModule(n.Name, out var modRef) && modRef.AnalysisModule != null) {
+                    // Return a module reference
+                    refs.AddRange(modRef.AnalysisModule.Locations
+                        .Select(l => new Reference {
+                            uri = l.DocumentUri,
+                            range = l.Span,
+                            _version = version?.Version,
+                            _kind = ReferenceKind.Definition
+                        })
+                        .ToArray());
+                }
+            }
+            return refs;
         }
 
         private static ReferenceKind ToReferenceKind(VariableType type) {

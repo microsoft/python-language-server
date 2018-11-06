@@ -364,6 +364,27 @@ def f(a = 2, b): pass
         }
 
         [TestMethod, Priority(0)]
+        public async Task TypeHintNoneDiagnostic() {
+            if (this is LanguageServerTests_V2) {
+                // No type hints in Python 2.
+                return;
+            }
+
+            var code = @"
+def f(b: None) -> None:
+    b: None
+";
+
+            var diags = new Dictionary<Uri, PublishDiagnosticsEventArgs>();
+            using (var s = await CreateServer(TestData.GetTestSpecificRootUri(), null, diags)) {
+                var u = await s.OpenDefaultDocumentAndGetUriAsync(code);
+
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                GetDiagnostics(diags, u).Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task OnTypeFormattingLine() {
             using (var s = await CreateServer()) {
                 var uri = await AddModule(s, "def foo  ( ) :\n    x = a + b\n    x+= 1");

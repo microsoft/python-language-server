@@ -95,6 +95,13 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return new AndWhichConstraint<TScopeAssertions, AnalysisValueTestInfo<IFunctionInfo>>((TScopeAssertions)this, assertion.Which);
         }
 
+        public AndWhichConstraint<TScopeAssertions, AnalysisValueTestInfo<BuiltinFunctionInfo>> HaveBuiltInFunctionInfo(string name, string because = "", params object[] reasonArgs) {
+            var assertion = HaveVariable(name, because, reasonArgs)
+                .Which.Should().HaveValue<BuiltinFunctionInfo>();
+
+            return new AndWhichConstraint<TScopeAssertions, AnalysisValueTestInfo<BuiltinFunctionInfo>>((TScopeAssertions)this, assertion.Which);
+        }
+
         public AndWhichConstraint<TScopeAssertions, IFunctionScope> HaveFunction(string name, string because = "", params object[] reasonArgs) {
             var assertion = HaveVariable(name, because, reasonArgs)
                 .Which.Should().HaveValue<IFunctionInfo>()

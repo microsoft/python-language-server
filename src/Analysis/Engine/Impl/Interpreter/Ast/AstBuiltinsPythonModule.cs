@@ -89,9 +89,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             const bool includeLocations = false;
 #endif
 
-            var walker = new AstAnalysisWalker(interpreter, ast, this, filePath, null, _members, includeLocations, true);
+            var walker = new AstAnalysisWalker(
+                interpreter, ast, this, filePath, null, _members, 
+                includeLocations, 
+                warnAboutUndefinedValues: true, 
+                suppressBuiltinLookup: true
+            );
             walker.CreateBuiltinTypes = true;
-            walker.Scope.SuppressBuiltinLookup = true;
             return walker;
         }
 

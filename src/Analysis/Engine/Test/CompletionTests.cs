@@ -243,7 +243,8 @@ class oar(list):
             var completions = await server.SendCompletion(uri, 2, 8);
 
             completions.Should().HaveItem("append")
-                .Which.Should().HaveInsertText($"append(self, value):{Environment.NewLine}    return super(oar, self).append(value)");
+                .Which.Should().HaveInsertText($"append(self, value):{Environment.NewLine}    return super(oar, self).append(value)")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [DataRow(PythonLanguageVersion.V36, "value")]
@@ -259,7 +260,8 @@ class oar(list):
             var completions = await server.SendCompletion(uri, 2, 8);
 
             completions.Should().HaveItem("append")
-                .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super().append({parameterName})");
+                .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super().append({parameterName})")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [ServerTestMethod(LatestAvailable2X = true), Priority(0)]
@@ -417,7 +419,8 @@ Class1().
             var completion = await server.SendCompletion(uri, row, character);
 
             completion.Should().HaveItem(expectedLabel)
-                .Which.Should().HaveInsertText(expectedInsertText);
+                .Which.Should().HaveInsertText(expectedInsertText)
+                .And.HaveInsertTextFormat(InsertTextFormat.Snippet);
         }
 
         [DataRow(PythonLanguageMajorVersion.LatestV2, "foo(self):{0}    return super(B, self).foo()")]
@@ -438,7 +441,8 @@ class B(A):
             var completion = await server.SendCompletion(uri, 6, 9);
 
             completion.Should().HaveItem("foo")
-                .Which.Should().HaveInsertText(expectedInsertText);
+                .Which.Should().HaveInsertText(expectedInsertText)
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [TestMethod, Priority(0)]
@@ -499,7 +503,8 @@ class B(A):
             var completion = await server.SendCompletion(uri, 0, 22);
 
             completion.Should().HaveItem("right")
-                .Which.Should().HaveInsertText("right");
+                .Which.Should().HaveInsertText("right")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
         [DataRow(true)]
@@ -957,6 +962,26 @@ class Simple(unittest.TestCase):
         }
 
         [TestMethod, Priority(0)]
+        public async Task CollectionsNamedTuple() {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var code = @"
+from collections import namedtuple
+nt = namedtuple('Point', ['x', 'y'])
+pt = nt(1, 2)
+pt.
+";
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = false };
+
+                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                var completion = await server.SendCompletion(uri, 4, 3);
+
+                completion.Should().HaveLabels("count", "index");
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Hook() {
             using (var server = await CreateServerAsync()) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync("x = 123\nx.");
@@ -1003,7 +1028,7 @@ class Simple(unittest.TestCase):
         public async Task WithWhitespaceAroundDot() {
             using (var s = await CreateServerAsync()) {
                 var u = await s.OpenDefaultDocumentAndGetUriAsync("import sys\nsys  .  version\n");
-                await AssertCompletion(s, u, new[] { "argv" }, null, new SourceLocation(2, 7), 
+                await AssertCompletion(s, u, new[] { "argv" }, null, new SourceLocation(2, 7),
                     new CompletionContext { triggerCharacter = ".", triggerKind = CompletionTriggerKind.TriggerCharacter });
             }
         }
@@ -1024,7 +1049,7 @@ class Simple(unittest.TestCase):
             }
         }
 
-        private static async Task AssertCompletion(Server s, Uri uri, IReadOnlyCollection<string> contains, IReadOnlyCollection<string> excludes, Position? position = null, CompletionContext? context = null, Func<CompletionItem, string> cmpKey = null, string expr = null, Range? applicableSpan = null) {
+        private static async Task AssertCompletion(Server s, Uri uri, IReadOnlyCollection<string> contains, IReadOnlyCollection<string> excludes, Position? position = null, CompletionContext? context = null, Func<CompletionItem, string> cmpKey = null, string expr = null, Range? applicableSpan = null, InsertTextFormat? allFormat = InsertTextFormat.PlainText) {
             await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
             var res = await s.Completion(new CompletionParams {
                 textDocument = new TextDocumentIdentifier { uri = uri },
@@ -1035,10 +1060,14 @@ class Simple(unittest.TestCase):
             DumpDetails(res);
 
             cmpKey = cmpKey ?? (c => c.insertText);
-            var items = res.items?.Select(cmpKey).ToList() ?? new List<string>();
+            var items = res.items?.Select(i => (cmpKey(i), i.insertTextFormat)).ToList() ?? new List<(string, InsertTextFormat)>();
 
             if (contains != null && contains.Any()) {
-                items.Should().Contain(contains);
+                items.Select(i => i.Item1).Should().Contain(contains);
+
+                if (allFormat != null) {
+                    items.Where(i => contains.Contains(i.Item1)).Select(i => i.Item2).Should().AllBeEquivalentTo(allFormat);
+                }
             }
 
             if (excludes != null && excludes.Any()) {

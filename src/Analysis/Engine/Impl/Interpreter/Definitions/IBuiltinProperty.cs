@@ -9,11 +9,12 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter {
     /// <summary>
@@ -23,29 +24,25 @@ namespace Microsoft.PythonTools.Interpreter {
         /// <summary>
         /// The type of the value the property gets/sets.
         /// </summary>
-        IPythonType Type {
-            get;
-        }
+        IPythonType Type { get; }
 
         /// <summary>
         /// True if the property is static (declared on the class) not the instance.
         /// </summary>
-        bool IsStatic {
-            get;
-        }
+        bool IsStatic { get; }
 
         /// <summary>
         /// Documentation for the property.
         /// </summary>
-        string Documentation {
-            get;
-        }
+        string Documentation { get; }
 
         /// <summary>
         /// A user readable description of the property.
         /// </summary>
-        string Description {
-            get;
-        }
+        string Description { get; }
+    }
+
+    public interface IBuiltinProperty2: IBuiltinProperty {
+        FunctionDefinition FunctionDefinition { get; }
     }
 }

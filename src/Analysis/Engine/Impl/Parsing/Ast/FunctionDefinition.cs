@@ -15,53 +15,38 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Parsing.Ast {
-
+    [DebuggerDisplay("{Name}")]
     public class FunctionDefinition : ScopeStatement, IMaybeAsyncStatement {
-        protected Statement _body;
-        private readonly NameExpression/*!*/ _name;
-        private readonly Parameter[] _parameters;
-        private Expression _returnAnnotation;
-        private DecoratorStatement _decorators;
-        private bool _generator;                        // The function is a generator
-        private bool _coroutine;
-        private bool _isLambda;
-
-        private PythonVariable _variable;               // The variable corresponding to the function name or null for lambdas
-        internal PythonVariable _nameVariable;          // the variable that refers to the global __name__
-        internal bool _hasReturn;
-        private int _headerIndex;
-        private int _defIndex;
-        private int? _keywordEndIndex;
-
         internal static readonly object WhitespaceAfterAsync = new object();
 
+        private readonly Parameter[] _parameters;
+        private int? _keywordEndIndex;
+
+        protected Statement _body;
+
         public FunctionDefinition(NameExpression name, Parameter[] parameters)
-            : this(name, parameters, (Statement)null) {            
+            : this(name, parameters, (Statement)null) {
         }
-        
+
         public FunctionDefinition(NameExpression name, Parameter[] parameters, Statement body, DecoratorStatement decorators = null) {
             if (name == null) {
-                _name = new NameExpression("<lambda>");
-                _isLambda = true;
+                NameExpression = new NameExpression("<lambda>");
+                IsLambda = true;
             } else {
-                _name = name;
+                NameExpression = name;
             }
 
             _parameters = parameters;
             _body = body;
-            _decorators = decorators;
+            Decorators = decorators;
         }
 
-        public bool IsLambda {
-            get {
-                return _isLambda;
-            }
-        }
+        public bool IsLambda { get; }
 
         public Parameter[] Parameters => _parameters ?? Array.Empty<Parameter>();
 
@@ -71,41 +56,21 @@ namespace Microsoft.PythonTools.Parsing.Ast {
         public override int KeywordEndIndex => _keywordEndIndex ?? (DefIndex + (IsCoroutine ? 9 : 3));
         public override int KeywordLength => KeywordEndIndex - StartIndex;
 
-        public Expression ReturnAnnotation {
-            get { return _returnAnnotation; }
-            set { _returnAnnotation = value; }
-        }
+        public Expression ReturnAnnotation { get; set; }
 
-        public override Statement Body {
-            get { return _body; }
-        }
+        public override Statement Body => _body;
 
-        internal void SetBody(Statement body) {
-            _body = body;
-        }
+        internal void SetBody(Statement body) => _body = body;
 
-        public int HeaderIndex {
-            get { return _headerIndex; }
-            set { _headerIndex = value; }
-        }
+        public int HeaderIndex { get; set; }
 
-        public int DefIndex {
-            get { return _defIndex; }
-            set { _defIndex = value; }
-        }
+        public int DefIndex { get; set; }
 
-        public override string/*!*/ Name {
-            get { return _name.Name ?? ""; }
-        }
+        public override string/*!*/ Name => NameExpression.Name ?? "";
 
-        public NameExpression NameExpression {
-            get { return _name; }
-        }
+        public NameExpression NameExpression { get; }
 
-        public DecoratorStatement Decorators {
-            get { return _decorators; }
-            internal set { _decorators = value; }
-        }
+        public DecoratorStatement Decorators { get; internal set; }
 
         internal LambdaExpression LambdaExpression { get; set; }
 
@@ -114,29 +79,20 @@ namespace Microsoft.PythonTools.Parsing.Ast {
         /// expression and instead of returning a value when called they return a generator
         /// object which implements the iterator protocol.
         /// </summary>
-        public bool IsGenerator {
-            get { return _generator; }
-            set { _generator = value; }
-        }
+        public bool IsGenerator { get; set; }
 
         /// <summary>
         /// True if the function is a coroutine. Coroutines are defined using
         /// 'async def'.
         /// </summary>
-        public bool IsCoroutine {
-            get { return _coroutine; }
-            set { _coroutine = value; }
-        }
+        public bool IsCoroutine { get; set; }
 
         bool IMaybeAsyncStatement.IsAsync => IsCoroutine;
 
         /// <summary>
         /// Gets the variable that this function is assigned to.
         /// </summary>
-        public PythonVariable Variable {
-            get { return _variable; }
-            set { _variable = value; }
-        }
+        public PythonVariable Variable { get; set; }
 
         /// <summary>
         /// Gets the variable reference for the specific assignment to the variable for this function definition.
@@ -146,7 +102,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
         }
 
         internal override bool ExposesLocalVariable(PythonVariable variable) {
-            return NeedsLocalsDictionary; 
+            return NeedsLocalsDictionary;
         }
 
         internal override bool TryBindOuter(ScopeStatement from, string name, bool allowGlobals, out PythonVariable variable) {
@@ -163,7 +119,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                     }
 
                     AddCellVariable(variable);
-                } else if(allowGlobals) {
+                } else if (allowGlobals) {
                     from.AddReferencedGlobal(name);
                 }
                 return true;
@@ -197,7 +153,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             base.Bind(binder);
             Verify(binder);
         }
-        
+
         private void Verify(PythonNameBinder binder) {
             if (ContainsImportStar && IsClosure) {
                 binder.ReportSyntaxError(
@@ -235,27 +191,19 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                _name?.Walk(walker);
-                if (_parameters != null) {
-                    foreach (Parameter p in _parameters) {
-                        p.Walk(walker);
-                    }
+                NameExpression?.Walk(walker);
+                foreach (var p in _parameters.MaybeEnumerate()) {
+                    p.Walk(walker);
                 }
-                if (_decorators != null) {
-                    _decorators.Walk(walker);
-                }
-                if (_body != null) {
-                    _body.Walk(walker);
-                }
-                if (_returnAnnotation != null) {
-                    _returnAnnotation.Walk(walker);
-                }
+                Decorators?.Walk(walker);
+                _body?.Walk(walker);
+                ReturnAnnotation?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
         public SourceLocation Header {
-            get { return GlobalParent.IndexToLocation(_headerIndex); }
+            get { return GlobalParent.IndexToLocation(HeaderIndex); }
         }
 
         public override string GetLeadingWhiteSpace(PythonAst ast) {
@@ -290,10 +238,10 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                 res.Append(name);
                 if (!this.IsIncompleteNode(ast)) {
                     format.Append(
-                        res, 
-                        format.SpaceBeforeFunctionDeclarationParen, 
-                        " ", 
-                        "", 
+                        res,
+                        format.SpaceBeforeFunctionDeclarationParen,
+                        " ",
+                        "",
                         this.GetThirdWhiteSpaceDefaultNull(ast)
                     );
 
@@ -317,13 +265,13 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
                     format.Append(
                         res,
-                        Parameters.Length != 0 ? 
+                        Parameters.Length != 0 ?
                             format.SpaceWithinFunctionDeclarationParens :
                             format.SpaceWithinEmptyParameterList,
                         " ",
                         "",
                         this.GetFourthWhiteSpaceDefaultNull(ast)
-                    ); 
+                    );
 
                     if (!this.IsMissingCloseGrouping(ast)) {
                         res.Append(')');
@@ -336,11 +284,11 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                             " ",
                             "",
                             this.GetFifthWhiteSpace(ast)
-                        ); 
+                        );
                         res.Append("->");
-                        _returnAnnotation.AppendCodeString(
-                            res, 
-                            ast, 
+                        ReturnAnnotation.AppendCodeString(
+                            res,
+                            ast,
                             format,
                             format.SpaceAroundAnnotationArrow != null ?
                                 format.SpaceAroundAnnotationArrow.Value ? " " : "" :

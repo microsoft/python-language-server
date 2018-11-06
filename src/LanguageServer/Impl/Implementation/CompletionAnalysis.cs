@@ -200,8 +200,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         return null;
                     }
 
-                    return addMetadataArg 
-                        ? GetCompletionsFromTopLevel().Append(MetadataArgCompletion) 
+                    return addMetadataArg
+                        ? GetCompletionsFromTopLevel().Append(MetadataArgCompletion)
                         : GetCompletionsFromTopLevel();
 
                 case ForStatement forStatement when TryGetCompletionsInForStatement(forStatement, out var result):
@@ -269,7 +269,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return GetModules();
         }
 
-        private IEnumerable<CompletionItem> GetModules() 
+        private IEnumerable<CompletionItem> GetModules()
             => Analysis.ProjectState.GetModules().Select(ToCompletionItem);
 
         private IEnumerable<CompletionItem> GetModulesFromNode(DottedName name, bool includeMembers = false) => GetModules(GetNamesFromDottedName(name), includeMembers);
@@ -410,6 +410,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return new CompletionItem {
                 label = o.Name,
                 insertText = MakeOverrideCompletionString(indent, o, cd.Name),
+                insertTextFormat = InsertTextFormat.PlainText,
                 kind = CompletionItemKind.Method
             };
         }
@@ -799,10 +800,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var doc = _textBuilder.GetDocumentation(m.Values, string.Empty);
             var kind = ToCompletionItemKind(m.MemberType);
-            
+
             var res = new CompletionItem {
                 label = m.Name,
                 insertText = completion,
+                insertTextFormat = InsertTextFormat.PlainText,
                 documentation = string.IsNullOrWhiteSpace(doc) ? null : new MarkupContent {
                     kind = _textBuilder.DisplayOptions.preferredFormat,
                     value = doc
@@ -825,6 +827,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return new CompletionItem {
                 label = label ?? text,
                 insertText = text,
+                insertTextFormat = InsertTextFormat.PlainText,
                 // Place regular items first, advanced entries last
                 sortText = char.IsLetter(text, 0) ? "1" : "2",
                 kind = ToCompletionItemKind(type),

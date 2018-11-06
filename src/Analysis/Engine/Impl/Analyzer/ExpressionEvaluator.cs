@@ -150,7 +150,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                         res = refs.Types;
                     } else {
                         // ... warn the user
-                        warn = true;
+                        warn = !(node is ConstantExpression); // Don't warn when None.
                     }
                 }
             }
@@ -530,7 +530,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 // list/tuple
                 var l = (SequenceExpression)left;
                 var valuesArr = values.ToArray();
-                for (int i = 0; i < l.Items.Count; i++) {
+                for (var i = 0; i < l.Items.Count; i++) {
                     if (valuesArr.Length > 0) {
                         foreach (var value in valuesArr) {
                             AssignTo(assignStmt, l.Items[i], value.GetIndex(assignStmt, _unit, ProjectState.GetConstant(i)));
