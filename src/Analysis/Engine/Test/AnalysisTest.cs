@@ -2615,7 +2615,7 @@ y_xor_x_0 = next(iter(y_xor_x))
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"x = {42:'abc'}");
                 analysis.Should().HaveVariable("x").WithValue<DictionaryInfo>()
                     .Which.Should().HaveMember<SpecializedCallable>("get")
-                    .Which.Should().HaveDescription("bound built-in method get");
+                    .Which.Should().HaveDescription("bound method get");
             }
         }
 

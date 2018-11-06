@@ -386,47 +386,91 @@ namespace Microsoft.PythonTools.Analysis.Values {
     }
 
     class TupleProtocol : IterableProtocol {
+        private const string Ellipsis = "...";
+        private const string CommaSeparator = ", ";
         private const int MaxNameLength = 96;
         private readonly IAnalysisSet[] _values;
 
         public TupleProtocol(ProtocolInfo self, IEnumerable<IAnalysisSet> values) : base(self, AnalysisSet.UnionAll(values)) {
             _values = values.Select(s => s.AsUnion(1)).ToArray();
-            Name = GetNameFromValues();
         }
 
-        private string GetNameFromValues() {
-            // Enumerate manually since SelectMany drops empty/unknown values
-            var sb = new StringBuilder("tuple[");
+        public override string Name => "tuple";
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Tuple;
+
+        public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) {
+            var constants = index.OfType<ConstantInfo>().Select(ci => ci.Value).OfType<int>().ToArray();
+            if (constants.Length == 0) {
+                return AnalysisSet.UnionAll(_values);
+            }
+
+            return AnalysisSet.UnionAll(constants.Select(GetItem));
+        }
+
+        public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
+            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[");
+
+            var totalLength = 0;
+            var lastValueWasEllipsis = false;
+            var sb = new StringBuilder();
             for (var i = 0; i < _values.Length; i++) {
-                if (sb.Length >= MaxNameLength) {
-                    sb.AppendIf(sb[sb.Length - 1] != '.', "...");
+                if (totalLength >= MaxNameLength) {
+                    if (!lastValueWasEllipsis) {
+                        yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, Ellipsis);
+                    }
                     break;
                 }
-                sb.AppendIf(i > 0, ", ");
-                AppendParameterString(sb, _values[i].ToArray());
+
+                if (i > 0) {
+                    yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, CommaSeparator);
+                    totalLength += CommaSeparator.Length;
+                }
+
+                foreach (var p in GetParameterDescriptions(_values[i].ToArray(), totalLength)) {
+                    lastValueWasEllipsis = p.Value == Ellipsis;
+                    totalLength += p.Value.Length;
+                    if (totalLength >= MaxNameLength) {
+                        break;
+                    }
+                    yield return p;
+                }
             }
-            sb.Append(']');
-            return sb.ToString();
+
+            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "]");
         }
 
-        private void AppendParameterString(StringBuilder sb, AnalysisValue[] sets) {
+        private IEnumerable<KeyValuePair<string, string>> GetParameterDescriptions(AnalysisValue[] sets, int totalLength) {
             if (sets.Length == 0) {
-                sb.Append('?');
-                return;
+                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "?");
+                totalLength++;
             }
 
-            sb.AppendIf(sets.Length > 1, "[");
+            if (sets.Length > 1) {
+                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[");
+                totalLength++;
+            }
+
             for (var i = 0; i < sets.Length; i++) {
-                if (sb.Length >= MaxNameLength) {
-                    sb.Append("...");
+                if (totalLength >= MaxNameLength) {
+                    yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, Ellipsis);
+                    totalLength += Ellipsis.Length;
                     break;
                 }
-                sb.AppendIf(i > 0, ", ");
+
+                if (i > 0) {
+                    yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, CommaSeparator);
+                    totalLength += 2;
+                }
+
                 var text = sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription;
                 text = string.IsNullOrEmpty(text) ? "Any" : text;
-                sb.Append(text);
+                totalLength += text.Length;
+                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, text);
             }
-            sb.AppendIf(sets.Length > 1, "]");
+
+            if(sets.Length > 1) {
+                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "]");
+            }
         }
 
         protected override void EnsureMembers(IDictionary<string, IAnalysisSet> members) {
@@ -443,18 +487,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
             return AnalysisSet.Empty;
         }
-
-        public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) {
-            var constants = index.OfType<ConstantInfo>().Select(ci => ci.Value).OfType<int>().ToArray();
-            if (constants.Length == 0) {
-                return AnalysisSet.UnionAll(_values);
-            }
-
-            return AnalysisSet.UnionAll(constants.Select(GetItem));
-        }
-
-        public override string Name { get; }
-        public override BuiltinTypeId TypeId => BuiltinTypeId.Tuple;
 
         protected override bool Equals(Protocol other) =>
             other is TupleProtocol tp &&

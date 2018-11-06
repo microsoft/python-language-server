@@ -329,8 +329,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             var res = new List<KeyValuePair<string, string>>();
             var namespaces = _protocols.OfType<NamespaceProtocol>().ToArray();
-            var tuples = _protocols.OfType<TupleProtocol>().ToArray();
-            var other = _protocols.OfType<Protocol>().Except(names).Except(namespaces).Except(tuples).ToArray();
+            var other = _protocols.OfType<Protocol>().Except(names).Except(namespaces).ToArray();
 
             var fallbackName = other.Select(p => p.Name).FirstOrDefault(n => !string.IsNullOrEmpty(n)) ?? "<unknown>";
             if (!string.IsNullOrEmpty(fallbackName)) {
