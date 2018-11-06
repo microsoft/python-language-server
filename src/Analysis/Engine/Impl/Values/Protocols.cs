@@ -386,7 +386,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     }
 
     class TupleProtocol : IterableProtocol {
-        private const int MaxNameLength = 96;
+        private const int MaxDescriptionLength = 96;
         private readonly IAnalysisSet[] _values;
 
         public TupleProtocol(ProtocolInfo self, IEnumerable<IAnalysisSet> values) : base(self, AnalysisSet.UnionAll(values)) {
@@ -398,7 +398,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             // Enumerate manually since SelectMany drops empty/unknown values
             var sb = new StringBuilder("tuple[");
             for (var i = 0; i < _values.Length; i++) {
-                if (sb.Length >= MaxNameLength) {
+                if (sb.Length >= MaxDescriptionLength) {
                     sb.AppendIf(sb[sb.Length - 1] != '.', "...");
                     break;
                 }
@@ -417,7 +417,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             sb.AppendIf(sets.Length > 1, "[");
             for (var i = 0; i < sets.Length; i++) {
-                if (sb.Length >= MaxNameLength) {
+                if (sb.Length >= MaxDescriptionLength) {
                     sb.Append("...");
                     break;
                 }
