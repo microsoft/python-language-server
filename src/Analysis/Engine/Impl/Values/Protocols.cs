@@ -386,6 +386,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     }
 
     class TupleProtocol : IterableProtocol {
+        private const int MaxDescriptionLength = 96;
         private readonly IAnalysisSet[] _values;
 
         public TupleProtocol(ProtocolInfo self, IEnumerable<IAnalysisSet> values) : base(self, AnalysisSet.UnionAll(values)) {
@@ -397,8 +398,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
             // Enumerate manually since SelectMany drops empty/unknown values
             var sb = new StringBuilder("tuple[");
             for (var i = 0; i < _values.Length; i++) {
-               sb.AppendIf(i > 0, ", ");
-               AppendParameterString(sb, _values[i].ToArray());
+                if (sb.Length >= MaxDescriptionLength) {
+                    sb.AppendIf(sb[sb.Length - 1] != '.', "...");
+                    break;
+                }
+                sb.AppendIf(i > 0, ", ");
+                AppendParameterString(sb, _values[i].ToArray());
             }
             sb.Append(']');
             return sb.ToString();
@@ -412,8 +417,13 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             sb.AppendIf(sets.Length > 1, "[");
             for (var i = 0; i < sets.Length; i++) {
+                if (sb.Length >= MaxDescriptionLength) {
+                    sb.Append("...");
+                    break;
+                }
                 sb.AppendIf(i > 0, ", ");
-                sb.Append(sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription);
+                var text = sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription;
+                sb.Append(text);
             }
             sb.AppendIf(sets.Length > 1, "]");
         }
@@ -603,7 +613,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override string Name => "generator";
         public override BuiltinTypeId TypeId => BuiltinTypeId.Generator;
-        
+
         public IAnalysisSet Yielded => _yielded;
         public IAnalysisSet Sent { get; }
         public IAnalysisSet Returned { get; }
@@ -752,7 +762,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     class DictProtocol : MappingProtocol {
         protected readonly AnalysisValue _actualType;
 
-        public DictProtocol(ProtocolInfo self, AnalysisValue actualType, IAnalysisSet keyTypes, IAnalysisSet valueTypes, IAnalysisSet items) 
+        public DictProtocol(ProtocolInfo self, AnalysisValue actualType, IAnalysisSet keyTypes, IAnalysisSet valueTypes, IAnalysisSet items)
             : base(self, keyTypes, valueTypes, items) {
             _actualType = actualType;
         }

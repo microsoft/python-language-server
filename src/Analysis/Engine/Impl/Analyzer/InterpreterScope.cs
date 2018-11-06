@@ -160,7 +160,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         protected static bool AssignVariableWorker(Node location, AnalysisUnit unit, IAnalysisSet values, VariableDef vars) {
             vars.AddAssignment(location, unit);
             vars.MakeUnionStrongerIfMoreThan(unit.State.Limits.AssignedTypes, values);
-            return vars.AddTypes(unit, values);
+            return vars.Types.Count < unit.State.Limits.AssignedTypes
+                    ? vars.AddTypes(unit, values)
+                    : false;
         }
 
         public VariableDef AddLocatedVariable(string name, Node location, AnalysisUnit unit) {

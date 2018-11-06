@@ -568,7 +568,7 @@ s = y['x']['y']['value']
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/50")]
+
         public async Task RecursiveTuples() {
             var code = @"class A(object):
     def __init__(self):
