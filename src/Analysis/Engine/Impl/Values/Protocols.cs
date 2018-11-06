@@ -731,4 +731,113 @@ namespace Microsoft.PythonTools.Analysis.Values {
         internal override int UnionHashCode(int strength) => GetHashCode();
         protected override Protocol UnionMergeTypes(Protocol p) => this;
     }
+
+    /// <summary>
+    /// List protocol that delegates work to its inner class: List[T] has list methods.
+    /// </summary>
+    class ListProtocol : IterableProtocol {
+        protected readonly AnalysisValue _actualType;
+
+        public ListProtocol(ProtocolInfo self, AnalysisValue actualType, IAnalysisSet valueTypes) : base(self, valueTypes) {
+            _actualType = actualType;
+        }
+
+        public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None)
+            => _actualType.GetAllMembers(moduleContext, options);
+    }
+
+    /// <summary>
+    /// Dict protocol that delegates work to its inner class: Dict[T1, T2] has dict methods.
+    /// </summary>
+    class DictProtocol : MappingProtocol {
+        protected readonly AnalysisValue _actualType;
+
+        public DictProtocol(ProtocolInfo self, AnalysisValue actualType, IAnalysisSet keyTypes, IAnalysisSet valueTypes, IAnalysisSet items) 
+            : base(self, keyTypes, valueTypes, items) {
+            _actualType = actualType;
+        }
+
+        public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None)
+            => _actualType.GetAllMembers(moduleContext, options);
+    }
+
+    /// <summary>
+    /// Generic protocol that delegates work to its inner class.
+    /// Typically used in NewType and TypeVar scenarios delegating 
+    /// calls to the actual class serving as new type.
+    /// </summary>
+    class TypeDelegateProtocol : Protocol {
+        protected readonly AnalysisValue _actualType;
+
+        /// <summary>
+        /// Creates protocol that delegates to real type, such as TypeVar or NewType
+        /// to the actual underlying type.
+        /// </summary>
+        /// <param name="self">Protocol info</param>
+        /// <param name="baseType">Base type to delegate to, such as 'list'.</param>
+        public TypeDelegateProtocol(ProtocolInfo self, AnalysisValue actualType) : base(self) {
+            _actualType = actualType;
+        }
+
+        protected override bool Equals(Protocol other) => _actualType.Equals((other as TypeDelegateProtocol)._actualType);
+
+        public override string Name => _actualType.Name;
+        public override string Documentation => _actualType.Documentation;
+        public override string Description => _actualType.Description;
+        public override string ShortDescription => _actualType.ShortDescription;
+        public override BuiltinTypeId TypeId => _actualType.TypeId;
+        public override PythonMemberType MemberType => _actualType.MemberType;
+        public override IEnumerable<KeyValuePair<string, string>> GetRichDescription()
+            => _actualType is IHasRichDescription rd
+                ? rd.GetRichDescription()
+                : Enumerable.Empty<KeyValuePair<string, string>>();
+
+        public override IPythonProjectEntry DeclaringModule => _actualType.DeclaringModule;
+        public override int DeclaringVersion => _actualType.DeclaringVersion;
+        public override IPythonType PythonType => _actualType.PythonType;
+        public override bool IsOfType(IAnalysisSet klass) => _actualType.IsOfType(klass);
+        public override bool IsAlive => _actualType.IsAlive;
+
+        public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None)
+            => _actualType.GetAllMembers(moduleContext, options);
+        public override IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) => _actualType.GetMember(node, unit, name);
+        public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) => _actualType.GetTypeMember(node, unit, name);
+        public override IAnalysisSet GetInstanceType() => _actualType.GetInstanceType();
+
+        public override AnalysisUnit AnalysisUnit => _actualType.AnalysisUnit;
+        internal override void AddReference(Node node, AnalysisUnit analysisUnit) => _actualType.AddReference(node, analysisUnit);
+        public override void AugmentAssign(AugmentedAssignStatement node, AnalysisUnit unit, IAnalysisSet value)
+            => _actualType.AugmentAssign(node, unit, value);
+        public override IAnalysisSet Await(Node node, AnalysisUnit unit) => _actualType.Await(node, unit);
+        public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs)
+            => _actualType.BinaryOperation(node, unit, operation, rhs);
+        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames)
+            => _actualType.Call(node, unit, args, keywordArgNames);
+        public override void DeleteMember(Node node, AnalysisUnit unit, string name) => _actualType.DeleteMember(node, unit, name);
+        public override IAnalysisSet GetAsyncEnumeratorTypes(Node node, AnalysisUnit unit) => _actualType.GetAsyncEnumeratorTypes(node, unit);
+        public override IAnalysisSet GetAsyncIterator(Node node, AnalysisUnit unit) => _actualType.GetAsyncIterator(node, unit);
+        public override object GetConstantValue() => _actualType.GetConstantValue();
+        public override IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit)
+            => _actualType.GetDescriptor(node, instance, context, unit);
+
+        public override IAnalysisSet GetDescriptor(PythonAnalyzer projectState, AnalysisValue instance, AnalysisValue context)
+            => _actualType.GetDescriptor(projectState, instance, context);
+        public override IAnalysisSet GetEnumeratorTypes(Node node, AnalysisUnit unit) => _actualType.GetEnumeratorTypes(node, unit);
+        public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) => _actualType.GetIndex(node, unit, index);
+        public override IEnumerable<KeyValuePair<IAnalysisSet, IAnalysisSet>> GetItems() => _actualType.GetItems();
+        public override IAnalysisSet GetIterator(Node node, AnalysisUnit unit) => _actualType.GetIterator(node, unit);
+        public override IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) => _actualType.GetReturnForYieldFrom(node, unit);
+        public override IEnumerable<ILocationInfo> Locations => _actualType.Locations;
+        public override IMro Mro => _actualType.Mro;
+        public override IEnumerable<OverloadResult> Overloads => _actualType.Overloads;
+        public override int? GetLength() => _actualType.GetLength();
+        internal override IAnalysisSet Resolve(AnalysisUnit unit, ResolutionContext context) => _actualType.Resolve(unit, context);
+        internal override IEnumerable<ILocationInfo> References => _actualType.References;
+        public override IAnalysisSet ReverseBinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs)
+            => _actualType.ReverseBinaryOperation(node, unit, operation, rhs);
+
+        public override void SetIndex(Node node, AnalysisUnit unit, IAnalysisSet index, IAnalysisSet value) => _actualType.SetIndex(node, unit, index, value);
+        public override IAnalysisSet UnaryOperation(Node node, AnalysisUnit unit, PythonOperator operation) => _actualType.UnaryOperation(node, unit, operation);
+        public override void SetMember(Node node, AnalysisUnit unit, string name, IAnalysisSet value) => _actualType.SetMember(node, unit, name, value);
+    }
 }

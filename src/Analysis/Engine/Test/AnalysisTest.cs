@@ -4225,7 +4225,84 @@ abc = 42
                 analysisPackage.Should().HaveVariable("y").OfTypes(BuiltinTypeId.Module, BuiltinTypeId.Function);
             }
         }
-        
+
+        [TestMethod, Priority(0)]
+        public async Task GenericListBase() {
+            var code = @"
+from typing import List
+
+def func(a: List[str]):
+    pass
+";
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis
+                    .Should().HaveFunction("func").Which
+                    .Should().HaveVariable("a")
+                    .OfTypes(BuiltinTypeId.List, BuiltinTypeId.Unknown); // list and 'function argument'
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericDictBase() {
+            var code = @"
+from typing import Dict
+
+def func(a: Dict[int, str]):
+    pass
+";
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis
+                    .Should().HaveFunction("func").Which
+                    .Should().HaveVariable("a")
+                    .OfTypes(BuiltinTypeId.Dict, BuiltinTypeId.Unknown); // dict and 'function argument'
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NewType() {
+            var code = @"
+from typing import NewType
+
+Foo = NewType('Foo', dict)
+foo: Foo = Foo({ })
+";
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis
+                    .Should().HaveVariable("Foo")
+                    .OfType(BuiltinTypeId.Type).WithDescription("Foo")
+                    .And.HaveVariable("foo")
+                    .OfType(BuiltinTypeId.Type).WithDescription("Foo");
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeVar() {
+            var code = @"
+from typing import Sequence, TypeVar
+
+T = TypeVar('T') # Declare type variable
+
+def first(l: Sequence[T]) -> T: # Generic function
+    return l[0]
+
+arr = [1, 2, 3]
+x = first(arr)  # should be int
+";
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis
+                    .Should().HaveVariable("x")
+                    .OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Type); // int and T
+            }
+        }
+
         [TestMethod, Priority(0)]
         public async Task Defaults() {
             var text = @"

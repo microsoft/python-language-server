@@ -54,18 +54,25 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private IAnalysisSet NewType_Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             return unit.InterpreterScope.GetOrMakeNodeValue(node, Analyzer.NodeValueKind.TypeAnnotation, n => {
                 var name = PythonAnalyzer.GetArg(args, keywordArgNames, null, 0).GetConstantValueAsString().FirstOrDefault(x => !string.IsNullOrEmpty(x));
-                var baseType = PythonAnalyzer.GetArg(args, keywordArgNames, null, 1) ?? unit.State.ClassInfos[BuiltinTypeId.Object].Instance;
+                var baseTypeSet = PythonAnalyzer.GetArg(args, keywordArgNames, null, 1) ?? unit.State.ClassInfos[BuiltinTypeId.Object].Instance;
                 if (string.IsNullOrEmpty(name)) {
-                    return baseType;
+                    return baseTypeSet;
                 }
                 var instPi = new ProtocolInfo(unit.ProjectEntry, unit.State);
-                var np = new NameProtocol(instPi, name, memberType: PythonMemberType.Instance);
-                var cls = new NamespaceProtocol(instPi, "__class__");
+                var np = new NameProtocol(instPi, name, memberType: PythonMemberType.Instance, typeId: BuiltinTypeId.Type);
+                var cls = new NamespaceProtocol(instPi, "__class__"); // Declares class type
                 instPi.AddProtocol(np);
                 instPi.AddProtocol(cls);
 
+                // Add base delegate so we can see actual type members
+                var baseType = baseTypeSet.FirstOrDefault();
+                if (baseType != null) {
+                    var bt = new TypeDelegateProtocol(instPi, baseType);
+                    instPi.AddProtocol(bt);
+                }
+
                 var pi = new ProtocolInfo(unit.ProjectEntry, unit.State);
-                pi.AddProtocol(new NameProtocol(pi, name));
+                pi.AddProtocol(new NameProtocol(pi, name, memberType: PythonMemberType.Instance, typeId: BuiltinTypeId.Type));
                 pi.AddProtocol(new InstanceProtocol(pi, Array.Empty<IAnalysisSet>(), instPi));
                 pi.AddReference(n, unit);
 
