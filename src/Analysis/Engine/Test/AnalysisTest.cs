@@ -616,6 +616,9 @@ a.original()
                     .And.HaveVariable("_").OfResolvedTypes(BuiltinTypeId.Tuple, BuiltinTypeId.NoneType)
                     .And.HaveParameter("self").WithValue<IInstanceInfo>()
                     .Which.Should().HaveMemberOfTypes("top", BuiltinTypeId.Tuple, BuiltinTypeId.NoneType);
+
+                var varDef = analysis.Scope.GetVariable("_1");
+                varDef.Types.Last().Description.Should().Be("");
             }
         }
 

@@ -388,7 +388,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     class TupleProtocol : IterableProtocol {
         private const string Ellipsis = "...";
         private const string CommaSeparator = ", ";
-        private const int MaxNameLength = 96;
+        private const int MaxDescriptionLength = 96;
         private readonly IAnalysisSet[] _values;
 
         public TupleProtocol(ProtocolInfo self, IEnumerable<IAnalysisSet> values) : base(self, AnalysisSet.UnionAll(values)) {
@@ -408,69 +408,67 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
-            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[");
+            var list = new List<KeyValuePair<string, string>>() {
+                new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Name, Name),
+                new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[")
+            };
 
             var totalLength = 0;
-            var lastValueWasEllipsis = false;
-            var sb = new StringBuilder();
-            for (var i = 0; i < _values.Length; i++) {
-                if (totalLength >= MaxNameLength) {
-                    if (!lastValueWasEllipsis) {
-                        yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, Ellipsis);
-                    }
-                    break;
-                }
+            for (var i = 0; i < _values.Length && totalLength <= MaxDescriptionLength; i++) {
+                var parameters = GetParameterDescriptions(_values[i].ToArray(), ref totalLength);
 
-                if (i > 0) {
-                    yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, CommaSeparator);
-                    totalLength += CommaSeparator.Length;
-                }
-
-                foreach (var p in GetParameterDescriptions(_values[i].ToArray(), totalLength)) {
-                    lastValueWasEllipsis = p.Value == Ellipsis;
+                foreach (var p in parameters) {
                     totalLength += p.Value.Length;
-                    if (totalLength >= MaxNameLength) {
+
+                    if (i > 0) {
+                        list.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, CommaSeparator));
+                    }
+
+                    list.Add(totalLength <= MaxDescriptionLength 
+                        ? p 
+                        : new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, Ellipsis)
+                    );
+
+                    if (totalLength > MaxDescriptionLength) {
                         break;
                     }
-                    yield return p;
                 }
             }
 
-            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "]");
+            list.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "]"));
+            return list;
         }
 
-        private IEnumerable<KeyValuePair<string, string>> GetParameterDescriptions(AnalysisValue[] sets, int totalLength) {
+        private List<KeyValuePair<string, string>> GetParameterDescriptions(AnalysisValue[] sets, ref int totalLength) {
+            var list = new List<KeyValuePair<string, string>>();
             if (sets.Length == 0) {
-                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "?");
+                list.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "?"));
                 totalLength++;
+                return list;
             }
 
             if (sets.Length > 1) {
-                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[");
+                list.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "["));
                 totalLength++;
             }
 
-            for (var i = 0; i < sets.Length; i++) {
-                if (totalLength >= MaxNameLength) {
-                    yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, Ellipsis);
-                    totalLength += Ellipsis.Length;
-                    break;
-                }
-
+            for (var i = 0; i < sets.Length && totalLength < MaxDescriptionLength; i++) {
                 if (i > 0) {
-                    yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, CommaSeparator);
-                    totalLength += 2;
+                    list.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, CommaSeparator));
+                    totalLength += CommaSeparator.Length;
                 }
 
-                var text = sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription;
-                text = string.IsNullOrEmpty(text) ? "Any" : text;
-                totalLength += text.Length;
-                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, text);
+                var description = sets[i] is IHasQualifiedName qn ? qn.FullyQualifiedName : sets[i].ShortDescription;
+                description = string.IsNullOrEmpty(description) ? "Any" : description;
+
+                list.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, description));
+                totalLength += description.Length;
             }
 
-            if(sets.Length > 1) {
-                yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "]");
+            if (sets.Length > 1) {
+                list.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "]"));
             }
+            return list;
         }
 
         protected override void EnsureMembers(IDictionary<string, IAnalysisSet> members) {

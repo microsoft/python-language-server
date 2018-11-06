@@ -329,15 +329,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             var res = new List<KeyValuePair<string, string>>();
             var namespaces = _protocols.OfType<NamespaceProtocol>().ToArray();
+            var tuples = _protocols.OfType<TupleProtocol>().ToArray();
             var other = _protocols.OfType<Protocol>().Except(names).Except(namespaces).ToArray();
 
-            var fallbackName = other.Select(p => p.Name).FirstOrDefault(n => !string.IsNullOrEmpty(n)) ?? "<unknown>";
-            if (!string.IsNullOrEmpty(fallbackName)) {
-                res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, fallbackName));
-            }
-
             if (namespaces.Any()) {
-                bool addComma = false;
+                var addComma = false;
                 res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "("));
                 foreach (var p in namespaces) {
                     if (addComma) {
@@ -353,7 +349,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 res.AddRange(p.GetRichDescription().ToArray());
             }
 
-            res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.EndOfDeclaration, ""));
+            res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.EndOfDeclaration, string.Empty));
 
             return res;
         }
