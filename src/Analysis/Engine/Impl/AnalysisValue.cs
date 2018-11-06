@@ -89,7 +89,7 @@ namespace Microsoft.PythonTools.Analysis {
                     }
                     _shortDescription = sb.ToString();
                 }
-                return _shortDescription ?? string.Empty;
+                return _shortDescription ?? Description;
             }
         }
 
