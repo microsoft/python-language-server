@@ -20,30 +20,22 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Microsoft.PythonTools.Parsing.Ast {
-
     public class ImportStatement : Statement {
         private readonly ModuleName[] _names;
         private readonly NameExpression[] _asNames;
-        private readonly bool _forceAbsolute;
-
         private PythonVariable[] _variables;
 
         public ImportStatement(ModuleName[] names, NameExpression[] asNames, bool forceAbsolute) {
             _names = names;
             _asNames = asNames;
-            _forceAbsolute = forceAbsolute;
+            ForceAbsolute = forceAbsolute;
         }
 
-        public bool ForceAbsolute {
-            get {
-                return _forceAbsolute;
-            }
-        }
+        public bool ForceAbsolute { get; }
 
         public override int KeywordLength => 6;
 
-        [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays",
-            Justification = "breaking change")]
+        [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays", Justification = "breaking change")]
         public PythonVariable[] Variables {
             get { return _variables; }
             set { _variables = value; }
@@ -53,13 +45,8 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             return GetVariableReferences(this, ast);
         }
 
-        public IList<DottedName> Names {
-            get { return _names; }
-        }
-
-        public IList<NameExpression> AsNames {
-            get { return _asNames; }
-        }
+        public IList<DottedName> Names => _names;
+        public IList<NameExpression> AsNames => _asNames;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -124,7 +111,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                 }
             }
 
-            var res = new ImportStatement(names, asNames, _forceAbsolute);
+            var res = new ImportStatement(names, asNames, ForceAbsolute);
             ast.CopyAttributes(this, res);
             ast.SetAttribute(res, NodeAttributes.NamesWhiteSpace, newAsNameWhiteSpace.ToArray());
             ast.SetAttribute(res, NodeAttributes.ListWhiteSpace, newListWhiteSpace.ToArray());

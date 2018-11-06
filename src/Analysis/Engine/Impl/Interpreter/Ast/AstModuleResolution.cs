@@ -141,11 +141,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             _searchPathPackages = null;
         }
 
-        public async Task<TryImportModuleResult> TryImportModuleAsync(
-            string name,
-            TryImportModuleContext context,
-            CancellationToken cancellationToken
-        ) {
+        public async Task<TryImportModuleResult> TryImportModuleAsync(string name, TryImportModuleContext context, CancellationToken cancellationToken) {
             IPythonModule module = null;
             if (string.IsNullOrEmpty(name)) {
                 return TryImportModuleResult.ModuleNotFound;
@@ -160,18 +156,18 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             var modules = context?.ModuleCache;
-            SentinelModule sentinalValue = null;
+            SentinelModule sentinelValue = null;
 
             if (modules != null) {
                 // Return any existing module
                 if (modules.TryGetValue(name, out module) && module != null) {
-                    if (module is SentinelModule smod) {
+                    if (module is SentinelModule sentinelModule) {
                         // If we are importing this module on another thread, allow
                         // time for it to complete. This does not block if we are
                         // importing on the current thread or the module is not
                         // really being imported.
                         try {
-                            module = await smod.WaitForImportAsync(cancellationToken);
+                            module = await sentinelModule.WaitForImportAsync(cancellationToken);
                         } catch (OperationCanceledException) {
                             _log?.Log(TraceLevel.Warning, "ImportTimeout", name);
                             return TryImportModuleResult.Timeout;
@@ -185,8 +181,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 }
 
                 // Set up a sentinel so we can detect recursive imports
-                sentinalValue = new SentinelModule(name, true);
-                if (!modules.TryAdd(name, sentinalValue)) {
+                sentinelValue = new SentinelModule(name, true);
+                if (!modules.TryAdd(name, sentinelValue)) {
                     // Try to get the new module, in case we raced with a .Clear()
                     if (modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
                         return new TryImportModuleResult(module);
@@ -228,15 +224,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             if (modules != null) {
-                if (sentinalValue == null) {
-                    _log?.Log(TraceLevel.Error, "RetryImport", name, "sentinalValue==null");
-                    Debug.Fail("Sentinal module was never created");
-                    return TryImportModuleResult.NeedRetry;
-                }
-
                 // Replace our sentinel, or if we raced, get the current
                 // value and abandon the one we just created.
-                if (!modules.TryUpdate(name, module, sentinalValue)) {
+                if (!modules.TryUpdate(name, module, sentinelValue)) {
                     // Try to get the new module, in case we raced
                     if (modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
                         return new TryImportModuleResult(module);
@@ -246,7 +236,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     _log?.Log(TraceLevel.Warning, "RetryImport", name);
                     return TryImportModuleResult.NeedRetry;
                 }
-                sentinalValue.Complete(module);
+                sentinelValue.Complete(module);
             }
 
             return new TryImportModuleResult(module);

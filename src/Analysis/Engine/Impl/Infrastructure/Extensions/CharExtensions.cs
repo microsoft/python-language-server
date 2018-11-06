@@ -1,4 +1,4 @@
-// Visual Studio Shared Project
+﻿// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -14,14 +14,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    internal static class CancellationTokenUtilities {
-        public static void UnregisterOnCompletion(this CancellationTokenRegistration registration, Task task) 
-            => task.ContinueWith(UnregisterCancellationToken, registration, default(CancellationToken), TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-
-        private static void UnregisterCancellationToken(Task task, object state) => ((CancellationTokenRegistration)state).Dispose();
+    internal static class CharExtensions {
+        public static bool IsLatin1(this char ch) => ch <= 'ÿ';
+        public static bool IsLatin1Letter(this char ch) => ch.IsLatin1() && char.IsLetter(ch);
+        public static bool IsLatin1LetterOrUnderscore(this char ch) => ch == '_' || ch.IsLatin1() && char.IsLetter(ch);
+        public static bool IsLatin1LetterOrDigit(this char ch) => ch.IsLatin1() && char.IsLetterOrDigit(ch);
+        public static bool IsLatin1LetterOrDigitOrUnderscore(this char ch) => ch == '_' || ch.IsLatin1() && char.IsLetterOrDigit(ch);
     }
 }

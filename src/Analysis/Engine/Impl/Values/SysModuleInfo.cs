@@ -102,29 +102,31 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     }
 
                     var modules = value.OfType<ModuleInfo>().ToArray();
-
                     var modRef = unit.State.Modules.GetOrAdd(name);
 
-                    MultipleMemberInfo mmi;
-                    ModuleInfo mi;
-                    if ((mmi = modRef.Module as MultipleMemberInfo) != null) {
-                        if (modules.Except(mmi.Members.OfType<ModuleInfo>()).Any()) {
-                            modules = modules.Concat(mmi.Members.OfType<ModuleInfo>()).Distinct().ToArray();
-                        }
-                    } else if ((mi = modRef.Module as ModuleInfo) != null) {
-                        if (!modules.Contains(mi)) {
-                            modules = modules.Concat(Enumerable.Repeat(mi, 1)).ToArray();
-                        }
+                    switch (modRef.Module) {
+                        case MultipleMemberInfo mmi:
+                            if (modules.Except(mmi.Members.OfType<ModuleInfo>()).Any()) {
+                                modules = modules.Concat(mmi.Members.OfType<ModuleInfo>()).Distinct().ToArray();
+                            }
+
+                            break;
+                        case ModuleInfo mi:
+                            if (!modules.Contains(mi)) {
+                                modules = modules.Concat(Enumerable.Repeat(mi, 1)).ToArray();
+                            }
+
+                            break;
                     }
+
                     modRef.Module = MultipleMemberInfo.Create(modules) as IModule;
 
                     foreach (var module in modules) {
                         int lastDot = name.LastIndexOf('.');
                         if (lastDot > 0) {
                             var parentName = name.Remove(lastDot);
-                            ModuleReference parent;
-                            if (ProjectState.Modules.TryImport(parentName, out parent)) {
-                                if ((mi = parent.AnalysisModule as ModuleInfo) != null) {
+                            if (ProjectState.Modules.TryImport(parentName, out var parent)) {
+                                if (parent.AnalysisModule is ModuleInfo mi) {
                                     mi.AddChildPackage(module, unit, name.Substring(lastDot + 1));
                                 }
                             }

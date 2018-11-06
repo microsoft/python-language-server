@@ -535,7 +535,7 @@ y2 = f(y)
         [TestMethod, Priority(0)]
         public async Task RecursiveDictionaryKeyValues() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var uri = TestData.GetTempPathUri("test-module.py");
+                var uri = TestData.GetTestSpecificUri("test_module.py");
                 var code = @"x = {'abc': 42, 'oar': 'baz'}
 x['abc'] = x
 x[x] = 'abc'
@@ -701,8 +701,8 @@ z = mod1.f(42)
 ";
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri1 = TestData.GetTempPathUri("mod1.py");
-                var uri2 = TestData.GetTempPathUri("mod2.py");
+                var uri1 = TestData.GetTestSpecificUri("mod1.py");
+                var uri2 = TestData.GetTestSpecificUri("mod2.py");
                 using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uri1, text1);
                     await server.SendDidOpenTextDocument(uri2, text2);
@@ -811,7 +811,7 @@ class D(C):
 
         [TestMethod, Priority(0)]
         public async Task Mro() {
-            var uri = TestData.GetTempPathUri("test-module.py");
+            var uri = TestData.GetTestSpecificUri("test_module.py");
             string code;
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 // Successful: MRO is A B C D E F object
@@ -956,7 +956,7 @@ class Test_test2(Test_test1):
 
         [TestMethod, Priority(0)]
         public async Task Iterator_Python27() {
-            var uri = TestData.GetTempPathUri("test-module.py");
+            var uri = TestData.GetTestSpecificUri("test_module.py");
             using (var server = await CreateServerAsync(PythonVersions.Required_Python27X)) {
                 await server.SendDidOpenTextDocument(uri, @"
 A = [1, 2, 3]
@@ -1026,7 +1026,7 @@ c = next(iC)
 
         [TestMethod, Priority(0)]
         public async Task Iterator_Python3X() {
-            var uri = TestData.GetTempPathUri("test-module.py");
+            var uri = TestData.GetTestSpecificUri("test_module.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 await server.SendDidOpenTextDocument(uri, @"
 A = [1, 2, 3]
@@ -4081,7 +4081,7 @@ t.x, t. =
             var serverDisposeTask = Task.CompletedTask;
             var analysisCompleteTask = Task.CompletedTask;
             try {
-                server = await CreateServerAsync(configuration);
+                server = await CreateServerAsync(configuration, new Uri(configuration.LibraryPath));
                 for (var i = 0; i < contentTasks.Length && server.AnalysisQueue.Count < 50; i++) {
                     await server.SendDidOpenTextDocument(new Uri(files[i]), contentTasks[i].Result);
                 }
@@ -5810,7 +5810,7 @@ test1_result = test1()
             var entry = ProcessText(code);
 
             Assert.AreEqual(
-                "test-module.A.fn(self: A) -> lambda: 123 -> int\ndeclared in A",
+                "test_module.A.fn(self: A) -> lambda: 123 -> int\ndeclared in A",
                 entry.GetDescriptions("A.fn", 0).Single().Replace("\r\n", "\n")
             );
         }

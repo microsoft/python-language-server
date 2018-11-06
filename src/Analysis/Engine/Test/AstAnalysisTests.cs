@@ -521,22 +521,22 @@ class BankAccount(object):
         // "Do we crash?"
 
         [TestMethod, Priority(0)]
-        public void AstBuiltinScrapeV37() => AstBuiltinScrape(PythonVersions.Python37_x64 ?? PythonVersions.Python37);
+        public async Task AstBuiltinScrapeV37() => await AstBuiltinScrape(PythonVersions.Python37_x64 ?? PythonVersions.Python37);
 
         [TestMethod, Priority(0)]
-        public void AstBuiltinScrapeV36() => AstBuiltinScrape(PythonVersions.Python36_x64 ?? PythonVersions.Python36);
+        public async Task AstBuiltinScrapeV36() => await AstBuiltinScrape(PythonVersions.Python36_x64 ?? PythonVersions.Python36);
 
         [TestMethod, Priority(0)]
-        public void AstBuiltinScrapeV35() => AstBuiltinScrape(PythonVersions.Python35_x64 ?? PythonVersions.Python35);
+        public async Task AstBuiltinScrapeV35() => await AstBuiltinScrape(PythonVersions.Python35_x64 ?? PythonVersions.Python35);
 
         [TestMethod, Priority(0)]
-        public void AstBuiltinScrapeV27() => AstBuiltinScrape(PythonVersions.Python27_x64 ?? PythonVersions.Python27);
+        public async Task AstBuiltinScrapeV27() => await AstBuiltinScrape(PythonVersions.Python27_x64 ?? PythonVersions.Python27);
 
         [TestMethod, Priority(0)]
-        public void AstBuiltinScrapeIPy27() => AstBuiltinScrape(PythonVersions.IronPython27_x64 ?? PythonVersions.IronPython27);
+        public async Task AstBuiltinScrapeIPy27() => await AstBuiltinScrape(PythonVersions.IronPython27_x64 ?? PythonVersions.IronPython27);
 
 
-        private void AstBuiltinScrape(InterpreterConfiguration configuration) {
+        private async Task AstBuiltinScrape(InterpreterConfiguration configuration) {
             AstScrapedPythonModule.KeepAst = true;
             configuration.AssertInstalled();
             using (var factory = CreateInterpreterFactory(configuration))
@@ -545,7 +545,7 @@ class BankAccount(object):
                     var interp = (AstPythonInterpreter)analyzer.Interpreter;
                     var ctxt = interp.CreateModuleContext();
 
-                    var mod = interp.ImportModule(interp.BuiltinModuleName);
+                    var mod = await interp.ImportModuleAsync(interp.BuiltinModuleName, new CancellationTokenSource(5000).Token);
                     Assert.IsInstanceOfType(mod, typeof(AstBuiltinsPythonModule));
                     mod.Imported(ctxt);
 

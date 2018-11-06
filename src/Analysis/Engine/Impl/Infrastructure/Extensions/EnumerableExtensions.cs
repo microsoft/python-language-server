@@ -20,7 +20,7 @@ using System.Linq;
 
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
     static class EnumerableExtensions {
-        public static bool IsNullOrEmpty<T>(this IEnumerable<T> source) 
+        public static bool IsNullOrEmpty<T>(this IEnumerable<T> source)
             => source == null || !source.Any();
 
         public static T[] MaybeEnumerate<T>(this T[] source) {
@@ -49,7 +49,8 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             return source.Where(NotNull);
         }
 
-        public static bool SetEquals<T>(this IEnumerable<T> source, IEnumerable<T> other, IEqualityComparer<T> comparer = null) where T : class {
+        public static bool SetEquals<T>(this IEnumerable<T> source, IEnumerable<T> other,
+            IEqualityComparer<T> comparer = null) where T : class {
             var set1 = new HashSet<T>(source, comparer);
             var set2 = new HashSet<T>(other, comparer);
             return set1.SetEquals(set2);
@@ -58,8 +59,46 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         private static T GetKey<T, U>(KeyValuePair<T, U> keyValue) => keyValue.Key;
 
         public static IEnumerable<T> Keys<T, U>(this IEnumerable<KeyValuePair<T, U>> source) => source.Select(GetKey);
-        public static IEnumerable<T> ExcludeDefault<T>(this IEnumerable<T> source) => source.Where(i => !Equals(i, default(T)));
 
+        public static IEnumerable<T> ExcludeDefault<T>(this IEnumerable<T> source) =>
+            source.Where(i => !Equals(i, default(T)));
+
+        public static int IndexOf<T>(this IEnumerable<T> source, Func<T, bool> predicate) {
+            var i = 0;
+            foreach (var item in source) {
+                if (predicate(item)) {
+                    return i;
+                }
+
+                i++;
+            }
+
+            return -1;
+        }
+
+        public static int IndexOf<T, TValue>(this IEnumerable<T> source, TValue value, Func<T, TValue, bool> predicate) {
+            var i = 0;
+            foreach (var item in source) {
+                if (predicate(item, value)) {
+                    return i;
+                }
+
+                i++;
+            }
+
+            return -1;
+        }
+
+        public static IEnumerable<int> IndexWhere<T>(this IEnumerable<T> source, Func<T, bool> predicate) {
+            var i = 0;
+            foreach (var item in source) {
+                if (predicate(item)) {
+                    yield return i;
+                }
+
+                i++;
+            }
+        }
 
         public static IEnumerable<T> TraverseBreadthFirst<T>(this T root, Func<T, IEnumerable<T>> selectChildren) {
             var items = new Queue<T>();
@@ -68,12 +107,12 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
                 var item = items.Dequeue();
                 yield return item;
 
-                var childen = selectChildren(item);
-                if (childen == null) {
+                var children = selectChildren(item);
+                if (children == null) {
                     continue;
                 }
 
-                foreach (var child in childen) {
+                foreach (var child in children) {
                     items.Enqueue(child);
                 }
             }

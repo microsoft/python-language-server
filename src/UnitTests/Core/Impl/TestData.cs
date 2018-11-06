@@ -83,7 +83,7 @@ namespace TestUtilities {
         public static string GetDefaultModulePath() => TestRunScopeAsyncLocal.Value.GetDefaultModulePath();
         public static string GetNextModulePath() => TestRunScopeAsyncLocal.Value.GetNextModulePath();
         public static string GetAstAnalysisCachePath(Version version, bool testSpecific = false) 
-            => testSpecific ? TestRunScopeAsyncLocal.Value.GetTestSpecificPath($"AstAnalysisCache{version}") : GetTempPath($"AstAnalysisCache{version}");
+            => testSpecific ? TestRunScopeAsyncLocal.Value.GetTestSpecificPath($"AstAnalysisCache{version}") : GetTestOutputRootPath($"AstAnalysisCache{version}");
 
         public static Uri CreateTestSpecificFile(string relativePath) {
             var path = GetTestSpecificPath(relativePath);
@@ -130,31 +130,17 @@ namespace TestUtilities {
         private static readonly Lazy<string> TestOutputRootLazy = new Lazy<string>(CalculateTestOutputRoot);
 
         /// <summary>
-        /// Returns the full path to a temporary directory. This is within the
-        /// deployment to ensure that test files are easily cleaned up.
+        /// Returns the full path to a temporary directory in the test output root.
+        /// This is within the deployment to ensure that test files are easily cleaned up.
         /// </summary>
-        /// <param name="subPath">
-        /// Name of the subdirectory within the temporary directory. If omitted,
-        /// a randomly generated name will be used.
-        /// </param>
-        public static string GetTempPath(string subPath = null) {
-            var path = TestOutputRootLazy.Value;
-            if (string.IsNullOrEmpty(subPath)) {
-                subPath = Path.GetRandomFileName();
-                while (Directory.Exists(Path.Combine(path, subPath))) {
-                    subPath = Path.GetRandomFileName();
-                }
-            }
-            path = PathUtils.GetAbsoluteDirectoryPath(path, subPath);
+        private static string GetTestOutputRootPath(string subPath = null) {
+            var path = PathUtils.GetAbsoluteDirectoryPath(TestOutputRootLazy.Value, subPath);
             if (!Directory.Exists(path)) {
                 Directory.CreateDirectory(path);
             }
             Console.WriteLine($"Creating temp directory for test at {path}");
             return path;
         }
-
-        public static Uri GetTempPathUri(string fileName)
-            => new Uri(Path.Combine(GetTempPath(), fileName));
 
         internal static void SetTestRunScope(string testFullName) {
             var testDirectoryName = testFullName ?? Path.GetRandomFileName();

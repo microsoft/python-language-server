@@ -669,18 +669,11 @@ namespace Microsoft.PythonTools.Analysis {
             throw new ArgumentException("Unknown error finding module");
         }
 
-        internal static bool FromBasePathAndName_NoThrow(
-            string basePath,
-            string moduleName,
-            bool requireInitPy,
-            out ModulePath modulePath
-        ) => FromBasePathAndName_NoThrow(basePath, moduleName, null, null, requireInitPy, out modulePath, out _, out _, out _);
-
         public static bool FromBasePathAndFile_NoThrow(
             string basePath,
             string sourceFile,
             out ModulePath modulePath
-        ) => FromBasePathAndFile_NoThrow(basePath, sourceFile, null, out modulePath, out _, out _);
+        ) => FromBasePathAndFile_NoThrow(basePath, sourceFile, false, out modulePath, out _, out _);
 
         private static bool IsModuleNameMatch(Regex regex, string path, string mod) {
             var m = regex.Match(PathUtils.GetFileName(path));
@@ -793,7 +786,7 @@ namespace Microsoft.PythonTools.Analysis {
         internal static bool FromBasePathAndFile_NoThrow(
             string basePath,
             string sourceFile,
-            Func<string, bool> isPackage,
+            bool isPackage,
             out ModulePath modulePath,
             out bool isInvalid,
             out bool isMissing
@@ -806,10 +799,6 @@ namespace Microsoft.PythonTools.Analysis {
                 return false;
             }
 
-            if (isPackage == null) {
-                isPackage = f => !string.IsNullOrEmpty(GetPackageInitPy(f));
-            }
-
             var nameMatch = PythonFileRegex.Match(PathUtils.GetFileName(sourceFile));
             if (!nameMatch.Success) {
                 isInvalid = true;
@@ -818,13 +807,14 @@ namespace Microsoft.PythonTools.Analysis {
             var bits = new List<string> { nameMatch.Groups["name"].Value };
 
             var path = PathUtils.TrimEndSeparator(PathUtils.GetParent(sourceFile));
-            bool lastWasStubs = false;
+            var lastWasStubs = false;
 
             while (PathEqualityComparer.Instance.StartsWith(path, basePath, allowFullMatch: false)) {
-                if (!isPackage(path)) {
+                if (!isPackage && string.IsNullOrEmpty(GetPackageInitPy(path))) {
                     isMissing = true;
                     return false;
                 }
+
                 if (lastWasStubs) {
                     isInvalid = true;
                     return false;

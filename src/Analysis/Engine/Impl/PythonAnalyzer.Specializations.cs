@@ -65,20 +65,17 @@ namespace Microsoft.PythonTools.Analysis {
         /// function is called as well.
         /// </summary>
         private void SpecializeFunction(string moduleName, string name, CallDelegate callable, bool mergeOriginalAnalysis, bool save) {
-
             int lastDot;
             string realModName = null;
             if (Modules.TryGetImportedModule(moduleName, out var module)) {
-                IModule mod = module.Module as IModule;
-                if (mod != null) {
+                if (module.Module is IModule mod) {
                     mod.SpecializeFunction(name, callable, mergeOriginalAnalysis);
                     return;
                 }
             } else if ((lastDot = moduleName.LastIndexOf('.')) != -1 &&
                 Modules.TryGetImportedModule(realModName = moduleName.Substring(0, lastDot), out module)) {
 
-                IModule mod = module.Module as IModule;
-                if (mod != null) {
+                if (module.Module is IModule mod) {
                     mod.SpecializeFunction(moduleName.Substring(lastDot + 1, moduleName.Length - (lastDot + 1)) + "." + name, callable, mergeOriginalAnalysis);
                     return;
                 }

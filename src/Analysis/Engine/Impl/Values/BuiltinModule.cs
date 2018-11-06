@@ -26,15 +26,14 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinModule : BuiltinNamespace<IPythonModule>, IReferenceableContainer, IModule {
         private readonly MemberReferences _references = new MemberReferences();
-        private readonly IPythonModule _interpreterModule;
         private Dictionary<string, IAnalysisSet> _childModules;
 
         public BuiltinModule(IPythonModule module, PythonAnalyzer projectState)
             : base(module, projectState) {
-            _interpreterModule = module;
+            InterpreterModule = module;
         }
 
-        public IPythonModule InterpreterModule => _interpreterModule;
+        public IPythonModule InterpreterModule { get; }
 
         public void AddChildModule(string memberName, AnalysisValue module) {
             if (_childModules == null) {
@@ -60,7 +59,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None) {
-            var res = ProjectState.GetAllMembers(_interpreterModule, moduleContext);
+            var res = ProjectState.GetAllMembers(InterpreterModule, moduleContext);
             foreach (var value in _specializedValues.MaybeEnumerate().Concat(_childModules.MaybeEnumerate())) {
                 if (!res.TryGetValue(value.Key, out var existing)) {
                     res[value.Key] = value.Value;
@@ -72,10 +71,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override string Documentation => _type.Documentation;
-        public override string Description => _interpreterModule.Name;
-        public override string Name => _interpreterModule.Name;
+        public override string Description => InterpreterModule.Name;
+        public override string Name => InterpreterModule.Name;
         public override IPythonType PythonType => ProjectState.Types[BuiltinTypeId.Module];
-        public override PythonMemberType MemberType => _interpreterModule.MemberType;
+        public override PythonMemberType MemberType => InterpreterModule.MemberType;
         public IPythonProjectEntry ProjectEntry => null;
         public IScope Scope => null;
 
@@ -84,7 +83,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         #region IReferenceableContainer Members
 
         public IEnumerable<IReferenceable> GetDefinitions(string name) {
-            return _references.GetDefinitions(name, _interpreterModule, ProjectState._defaultContext);
+            return _references.GetDefinitions(name, InterpreterModule, ProjectState._defaultContext);
         }
 
         #endregion
@@ -160,7 +159,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override ILocatedMember GetLocatedMember() {
-            return _interpreterModule as ILocatedMember;
+            return InterpreterModule as ILocatedMember;
         }
 
 
