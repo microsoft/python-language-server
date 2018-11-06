@@ -5057,6 +5057,8 @@ namespace Microsoft.PythonTools.Parsing {
                         Severity.FatalError
                     );
                     encoding = Encoding.UTF8;
+                } else if (isUtf8) {
+                    return new StreamReader(new PartiallyReadStream(readBytes, stream), Encoding.UTF8);
                 } else if (encoding == null) {
                     if (gotEncoding == null) {
                         // get line number information for the bytes we've read...
