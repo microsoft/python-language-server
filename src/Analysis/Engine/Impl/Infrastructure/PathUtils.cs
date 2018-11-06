@@ -395,9 +395,9 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
 
             var root = EnsureEndSeparator(Path.GetPathRoot(path));
             var parts = path.Substring(root.Length).Split(DirectorySeparators);
-            bool isDir = string.IsNullOrWhiteSpace(parts[parts.Length - 1]);
+            var isDir = string.IsNullOrWhiteSpace(parts[parts.Length - 1]);
 
-            for (int i = 0; i < parts.Length; ++i) {
+            for (var i = 0; i < parts.Length; ++i) {
                 if (string.IsNullOrEmpty(parts[i])) {
                     if (i > 0) {
                         parts[i] = null;

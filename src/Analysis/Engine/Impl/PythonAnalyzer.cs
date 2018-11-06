@@ -24,6 +24,7 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.DependencyResolution;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
@@ -39,6 +40,7 @@ namespace Microsoft.PythonTools.Analysis {
         private static object _nullKey = new object();
 
         private readonly bool _disposeInterpreter;
+        private readonly PathResolver _pathResolver;
         private readonly HashSet<ModuleInfo> _modulesWithUnresolvedImports = new HashSet<ModuleInfo>();
         private readonly object _modulesWithUnresolvedImportsLock = new object();
         private readonly Dictionary<object, AnalysisValue> _itemCache = new Dictionary<object, AnalysisValue>();
@@ -109,6 +111,7 @@ namespace Microsoft.PythonTools.Analysis {
         internal PythonAnalyzer(IPythonInterpreterFactory factory, IPythonInterpreter pythonInterpreter) {
             InterpreterFactory = factory;
             LanguageVersion = factory.GetLanguageVersion();
+            _pathResolver = new PathResolver(LanguageVersion);
             _disposeInterpreter = pythonInterpreter == null;
             Interpreter = pythonInterpreter ?? factory.CreateInterpreter();
 
@@ -135,7 +138,7 @@ namespace Microsoft.PythonTools.Analysis {
                 _builtinModule = (BuiltinModule)moduleRef.Module;
             } else {
                 _builtinModule = new BuiltinModule(fallback, this);
-                Modules[_builtinName] = new ModuleReference(_builtinModule, _builtinName);
+                Modules.SetModule(_builtinName, BuiltinModule);
             }
             _builtinModule.InterpreterModule.Imported(_defaultContext);
 
@@ -162,7 +165,7 @@ namespace Microsoft.PythonTools.Analysis {
             if (!_reloadLock.Wait(0)) {
                 // If we don't lock immediately, wait for the current reload to
                 // complete and then return.
-                await _reloadLock.WaitAsync().ConfigureAwait(false);
+                await _reloadLock.WaitAsync(token).ConfigureAwait(false);
                 _reloadLock.Release();
                 return;
             }
@@ -202,28 +205,20 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="cookie">An application-specific identifier for the module</param>
         /// <returns>The project entry for the new module.</returns>
         public IPythonProjectEntry AddModule(string moduleName, string filePath, Uri documentUri = null, IAnalysisCookie cookie = null) {
+            if (documentUri == null || documentUri.Scheme != "python") {
+                _pathResolver.AddModulePath(filePath);
+            }
+
             var entry = new ProjectEntry(this, moduleName, filePath, documentUri, cookie);
 
             if (moduleName != null) {
-                var moduleRef = Modules.GetOrAdd(moduleName);
-                moduleRef.Module = entry.MyScope;
-
+                Modules.SetModule(moduleName, entry.MyScope);
                 DoDelayedSpecialization(moduleName);
             }
             if (filePath != null) {
                 ModulesByFilename[filePath] = entry.MyScope;
             }
             return entry;
-        }
-
-        /// <summary>
-        /// Associates an existing module with a new name.
-        /// </summary>
-        /// <remarks>New in 2.1</remarks>
-        public void AddModuleAlias(string moduleName, string moduleAlias) {
-            if (Modules.TryImport(moduleName, out var modRef)) {
-                Modules[moduleAlias] = modRef;
-            }
         }
 
         public void RemoveModule(IProjectEntry entry) => RemoveModule(entry, null);
@@ -354,7 +349,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// <returns></returns>
         public IMemberResult[] GetModules() {
             var d = new Dictionary<string, List<ModuleLoadState>>();
-            foreach (var keyValue in Modules) {
+            foreach (var keyValue in Modules.GetModuleStates()) {
                 var modName = keyValue.Key;
                 var moduleRef = keyValue.Value;
 
@@ -463,7 +458,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             // provide module names first
-            foreach (var keyValue in Modules) {
+            foreach (var keyValue in Modules.GetModuleStates()) {
                 var modName = keyValue.Key;
                 var moduleRef = keyValue.Value;
 
@@ -486,7 +481,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             // then include imported module members
-            foreach (var keyValue in Modules) {
+            foreach (var keyValue in Modules.GetModuleStates()) {
                 var modName = keyValue.Key;
                 var moduleRef = keyValue.Value;
 
@@ -710,6 +705,8 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal BuiltinModule BuiltinModule => _builtinModule;
 
+        internal PathResolverSnapshot CurrentPathResolver => _pathResolver.CurrentSnapshot;
+
         internal BuiltinInstanceInfo GetInstance(IPythonType type) => GetBuiltinType(type).Instance;
 
         internal BuiltinClassInfo GetBuiltinType(IPythonType type) => 
@@ -926,6 +923,8 @@ namespace Microsoft.PythonTools.Analysis {
 
         public IReadOnlyList<string> GetSearchPaths() => _searchPaths.AsLockedEnumerable().ToArray();
 
+        internal void SetRoot(string rootDir) => _pathResolver.SetRoot(rootDir);
+
         /// <summary>
         /// Sets the search paths for this analyzer, invoking callbacks for any
         /// path added or removed.
@@ -934,6 +933,7 @@ namespace Microsoft.PythonTools.Analysis {
             lock (_searchPaths) {
                 _searchPaths.Clear();
                 _searchPaths.AddRange(paths.MaybeEnumerate());
+                _pathResolver.SetSearchPaths(_searchPaths);
             }
             SearchPathsChanged?.Invoke(this, EventArgs.Empty);
         }

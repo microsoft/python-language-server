@@ -146,7 +146,7 @@ namespace AnalysisTests {
         }
 
         private static async Task<Uri> AddModule(Server s, string content, string moduleName = null, Uri uri = null, string language = null) {
-            uri = uri ?? new Uri($"python://test/{moduleName ?? "test-module"}.py");
+            uri = uri ?? new Uri($"python://test/{moduleName ?? "test_module"}.py");
             await s.DidOpenTextDocument(new DidOpenTextDocumentParams {
                 textDocument = new TextDocumentItem {
                     uri = uri,

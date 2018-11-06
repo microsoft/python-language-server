@@ -58,8 +58,8 @@ class D(object):
 ";
 
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri1 = TestData.GetTempPathUri("mod1.py");
-                var uri2 = TestData.GetTempPathUri("mod2.py");
+                var uri1 = TestData.GetTestSpecificUri("mod1.py");
+                var uri2 = TestData.GetTestSpecificUri("mod2.py");
                 using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(uri1, text1);
                     await server.SendDidOpenTextDocument(uri2, text2);
@@ -847,8 +847,8 @@ from oar import abc
 abc()
 ";
             var oarText = "class abc(object): pass";
-            var fobUri = TestData.GetTempPathUri("fob.py");
-            var oarUri = TestData.GetTempPathUri("oar.py");
+            var fobUri = TestData.GetTestSpecificUri("fob.py");
+            var oarUri = TestData.GetTestSpecificUri("oar.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(fobUri, fobText);
@@ -881,8 +881,8 @@ class bcd(abc):
         self.x = 123
 ";
 
-            var fobUri = TestData.GetTempPathUri("fob.py");
-            var oarUri = TestData.GetTempPathUri("oar.py");
+            var fobUri = TestData.GetTestSpecificUri("fob.py");
+            var oarUri = TestData.GetTestSpecificUri("oar.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(fobUri, fobText);
@@ -909,10 +909,10 @@ abc()
             var oarBazText = @"from oar import abc1 as abc
 from baz import abc2 as abc";
 
-            var fobUri = TestData.GetTempPathUri("fob.py");
-            var oarUri = TestData.GetTempPathUri("oar.py");
-            var bazUri = TestData.GetTempPathUri("baz.py");
-            var oarBazUri = TestData.GetTempPathUri("oarbaz.py");
+            var fobUri = TestData.GetTestSpecificUri("fob.py");
+            var oarUri = TestData.GetTestSpecificUri("oar.py");
+            var bazUri = TestData.GetTestSpecificUri("baz.py");
+            var oarBazUri = TestData.GetTestSpecificUri("oarbaz.py");
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
                 using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(fobUri, fobText);
@@ -965,8 +965,8 @@ def fn(): pass";
 x = CONSTANT
 c = Class()
 f = fn()";
-            var fobUri = TestData.GetTempPathUri("fob.py");
-            var oarUri = TestData.GetTempPathUri("oar.py");
+            var fobUri = TestData.GetTestSpecificUri("fob.py");
+            var oarUri = TestData.GetTestSpecificUri("oar.py");
             using (var server = await CreateServerAsync()) {
                 using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(fobUri, fobText);
@@ -1010,8 +1010,8 @@ x = CO
 c = Cl()
 g = f()";
 
-            var fobUri = TestData.GetTempPathUri("fob.py");
-            var oarUri = TestData.GetTempPathUri("oar.py");
+            var fobUri = TestData.GetTestSpecificUri("fob.py");
+            var oarUri = TestData.GetTestSpecificUri("oar.py");
             using (var server = await CreateServerAsync()) {
                 using (server.AnalysisQueue.Pause()) {
                     await server.SendDidOpenTextDocument(fobUri, fobText);

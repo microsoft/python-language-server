@@ -394,6 +394,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _rootDir = PathUtils.NormalizePath(@params.rootPath);
             }
 
+            Analyzer.SetRoot(_rootDir);
             SetSearchPaths(@params.initializationOptions.searchPaths);
             SetTypeStubSearchPaths(@params.initializationOptions.typeStubSearchPaths);
 
@@ -472,7 +473,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             if (document.Scheme == "python") {
                 var path = Path.Combine(document.Host, document.AbsolutePath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar).Trim(Path.DirectorySeparatorChar));
-                if (ModulePath.FromBasePathAndFile_NoThrow("", path, p => true, out var mp, out _, out _)) {
+                if (ModulePath.FromBasePathAndFile_NoThrow("", path, true, out var mp, out _, out _)) {
                     yield return mp;
                 }
             }
@@ -519,9 +520,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var pyItem = Analyzer.AddModule(first, path, documentUri, cookie);
             item = pyItem;
-            foreach (var a in aliases.Skip(1)) {
-                Analyzer.AddModuleAlias(first, a);
-            }
 
             var actualItem = ProjectFiles.GetOrAddEntry(documentUri, item);
             if (actualItem != item) {

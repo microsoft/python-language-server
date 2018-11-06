@@ -107,13 +107,12 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         public PythonAnalyzer ProjectState => _unit.State;
 
         public override bool Walk(PythonAst node) {
-            ModuleReference existingRef;
             Debug.Assert(node == _unit.Ast);
 
-            if (!ProjectState.Modules.TryImport(_unit.DeclaringModule.Name, out existingRef)) {
+            if (!ProjectState.Modules.TryImport(_unit.DeclaringModule.Name, out var existingRef)) {
                 // publish our module ref now so that we don't collect dependencies as we'll be fully processed
                 if (existingRef == null) {
-                    ProjectState.Modules[_unit.DeclaringModule.Name] = new ModuleReference(_unit.DeclaringModule, _unit.DeclaringModule.Name);
+                    ProjectState.Modules.SetModule(_unit.DeclaringModule.Name, _unit.DeclaringModule);
                 } else {
                     existingRef.Module = _unit.DeclaringModule;
                 }

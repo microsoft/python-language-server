@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,7 +45,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private IServiceContainer _services;
         private IUIService _ui;
-        private ITelemetryService2 _telemetry;
 
         private JsonRpc _rpc;
         private JsonSerializer _jsonSerializer;
@@ -58,13 +58,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public CancellationToken Start(IServiceContainer services, JsonRpc rpc) {
             _services = services;
             _ui = services.GetService<IUIService>();
-            _telemetry = services.GetService<ITelemetryService2>();
             _rpc = rpc;
             _jsonSerializer = services.GetService<JsonSerializer>();
 
             var progress = services.GetService<IProgressService>();
 
-            var rpcTraceListener = new TelemetryRpcTraceListener(_telemetry);
+            var rpcTraceListener = new TelemetryRpcTraceListener(services.GetService<ITelemetryService2>());
             _rpc.TraceSource.Listeners.Add(rpcTraceListener);
 
             _server.OnLogMessage += OnLogMessage;
@@ -267,7 +266,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("textDocument/didSave")]
         public async Task DidSaveTextDocument(JToken token, CancellationToken cancellationToken) {
             _idleTimeTracker?.NotifyUserActivity();
-            using (await _prioritizer.DocumentChangePriorityAsync()) {
+            using (await _prioritizer.DocumentChangePriorityAsync(cancellationToken)) {
                 await _server.DidSaveTextDocument(ToObject<DidSaveTextDocumentParams>(token), cancellationToken);
             }
         }
@@ -275,7 +274,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("textDocument/didClose")]
         public async Task DidCloseTextDocument(JToken token, CancellationToken cancellationToken) {
             _idleTimeTracker?.NotifyUserActivity();
-            using (await _prioritizer.DocumentChangePriorityAsync()) {
+            using (await _prioritizer.DocumentChangePriorityAsync(cancellationToken)) {
                 await _server.DidCloseTextDocument(ToObject<DidCloseTextDocumentParams>(token), cancellationToken);
             }
         }

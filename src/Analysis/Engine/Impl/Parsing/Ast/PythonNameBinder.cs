@@ -44,7 +44,7 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
  */
 
 namespace Microsoft.PythonTools.Parsing.Ast {
-    class DefineBinder : PythonWalkerNonRecursive {
+    internal class DefineBinder : PythonWalkerNonRecursive {
         private PythonNameBinder _binder;
         public DefineBinder(PythonNameBinder binder) {
             _binder = binder;
@@ -66,18 +66,18 @@ namespace Microsoft.PythonTools.Parsing.Ast {
         }
     }
 
-    class ParameterBinder : PythonWalkerNonRecursive {
-        private PythonNameBinder _binder;
+    internal class ParameterBinder : PythonWalkerNonRecursive {
+        private readonly PythonNameBinder _binder;
         public ParameterBinder(PythonNameBinder binder) {
             _binder = binder;
         }
 
         public override bool Walk(Parameter node) {
-            node.AddVariable(_binder._globalScope, _binder._bindRefs, _binder.DefineParameter(node.Name));
+            node.AddVariable(_binder.GlobalScope, _binder.BindReferences, _binder.DefineParameter(node.Name));
             return false;
         }
         public override bool Walk(SublistParameter node) {
-            node.AddVariable(_binder._globalScope, _binder._bindRefs, _binder.DefineParameter(node.Name));
+            node.AddVariable(_binder.GlobalScope, _binder.BindReferences, _binder.DefineParameter(node.Name));
             // we walk the node by hand to avoid walking the default values.
             WalkTuple(node.Tuple);
             return false;
@@ -88,7 +88,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                 NameExpression name = innerNode as NameExpression;
                 if (name != null) {
                     _binder.DefineName(name.Name);
-                    name.AddVariableReference(_binder._globalScope, _binder._bindRefs, _binder.Reference(name.Name));
+                    name.AddVariableReference(_binder.GlobalScope, _binder.BindReferences, _binder.Reference(name.Name));
                 } else if (innerNode is TupleExpression) {
                     WalkTuple((TupleExpression)innerNode);
                 }
@@ -111,13 +111,12 @@ namespace Microsoft.PythonTools.Parsing.Ast {
     }
 
     class PythonNameBinder : PythonWalker {
-        internal PythonAst _globalScope;
-        internal ScopeStatement _currentScope;
+        private ScopeStatement _currentScope;
         private readonly PythonAst _ast;
-        private readonly PythonLanguageVersion _langVersion;
-        private List<ScopeStatement> _scopes = new List<ScopeStatement>();
-        private List<int> _finallyCount = new List<int>();
-        internal readonly bool _bindRefs;
+        private readonly List<ScopeStatement> _scopes = new List<ScopeStatement>();
+        private readonly List<int> _finallyCount = new List<int>();
+        public bool BindReferences { get; }
+        public PythonAst GlobalScope { get; private set; }
 
         #region Recursive binders
 
@@ -135,8 +134,8 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             _delete = new DeleteBinder(this);
             _parameter = new ParameterBinder(this);
             _errorSink = context;
-            _langVersion = langVersion;
-            _bindRefs = bindReferences;
+            BindReferences = bindReferences;
+            LanguageVersion = langVersion;
         }
 
         #region Public surface
@@ -148,14 +147,10 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
         #endregion
 
-        public PythonLanguageVersion LanguageVersion {
-            get {
-                return _langVersion;
-            }
-        }
+        public PythonLanguageVersion LanguageVersion { get; }
 
         private void Bind(PythonAst unboundAst) {
-            _currentScope = _globalScope = unboundAst;
+            _currentScope = GlobalScope = unboundAst;
             _finallyCount.Add(0);
 
             // Find all scopes and variables
@@ -190,20 +185,14 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             _finallyCount.RemoveAt(_finallyCount.Count - 1);
         }
 
-        internal PythonReference Reference(string/*!*/ name) {
-            return _currentScope.Reference(name);
-        }
+        internal PythonReference Reference(string/*!*/ name) => _currentScope.Reference(name);
 
-        internal PythonVariable DefineName(string/*!*/ name) {
-            return _currentScope.EnsureVariable(name);
-        }
+        internal PythonVariable DefineName(string/*!*/ name) => _currentScope.EnsureVariable(name);
 
-        internal PythonVariable DefineParameter(string/*!*/ name) {
-            return _currentScope.DefineParameter(name);
-        }
+        internal PythonVariable DefineParameter(string/*!*/ name) => _currentScope.DefineParameter(name);
 
         internal PythonVariable DefineDeleted(string/*!*/ name) {
-            PythonVariable variable = _currentScope.EnsureVariable(name);
+            var variable = _currentScope.EnsureVariable(name);
             variable.Deleted = true;
             return variable;
         }
@@ -241,7 +230,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
         public override bool Walk(ClassDefinition node) {
             if (node.Name != null) {
                 node.Variable = DefineName(node.Name);
-                node.AddVariableReference(_globalScope, _bindRefs, Reference(node.Name));
+                node.AddVariableReference(GlobalScope, BindReferences, Reference(node.Name));
             }
 
             // Base references are in the outer context
@@ -255,14 +244,14 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             }
 
             PushScope(node);
-            node.ModuleNameVariable = _globalScope.EnsureGlobalVariable("__name__");
+            node.ModuleNameVariable = GlobalScope.EnsureGlobalVariable("__name__");
 
             // define the __doc__ and the __module__
             if (node.Body.Documentation != null) {
                 node.DocVariable = DefineName("__doc__");
             }
             node.ModVariable = DefineName("__module__");
-            if (_langVersion.Is3x()) {
+            if (LanguageVersion.Is3x()) {
                 node.ClassVariable = DefineName("__class__");
             }
 
@@ -331,17 +320,9 @@ namespace Microsoft.PythonTools.Parsing.Ast {
         public override bool Walk(WhileStatement node) {
             // we only push the loop for the body of the loop
             // so we need to walk the while statement ourselves
-            if (node.Test != null) {
-                node.Test.Walk(this);
-            }
-
-            if (node.Body != null) {
-                node.Body.Walk(this);
-            }
-
-            if (node.ElseStatement != null) {
-                node.ElseStatement.Walk(this);
-            }
+            node.Test?.Walk(this);
+            node.Body?.Walk(this);
+            node.ElseStatement?.Walk(this);
 
             return false;
         }
@@ -363,7 +344,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
             if (node.Names.Count != 1 || node.Names[0].Name != "*") {
                 PythonVariable[] variables = new PythonVariable[node.Names.Count];
                 PythonReference[] references = null;
-                if (_bindRefs) {
+                if (BindReferences) {
                     references = new PythonReference[node.Names.Count];
                 }
                 for (int i = 0; i < node.Names.Count; i++) {
@@ -373,7 +354,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                     }
                 }
                 node.Variables = variables;
-                node.AddVariableReference(_ast, _bindRefs, references);
+                node.AddVariableReference(_ast, BindReferences, references);
             } else {
                 Debug.Assert(_currentScope != null);
                 _currentScope.ContainsImportStar = true;
@@ -385,12 +366,12 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
         // FunctionDefinition
         public override bool Walk(FunctionDefinition node) {
-            _globalScope.EnsureGlobalVariable("__name__");
+            GlobalScope.EnsureGlobalVariable("__name__");
 
             // Name is defined in the enclosing context
             if (!node.IsLambda) {
                 node.Variable = DefineName(node.Name);
-                node.AddVariableReference(_globalScope, _bindRefs, Reference(node.Name));
+                node.AddVariableReference(GlobalScope, BindReferences, Reference(node.Name));
             }
 
             // process the default arg values and annotations in the outer
@@ -462,7 +443,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
 
                 // Create the variable in the global context and mark it as global
-                PythonVariable variable = _globalScope.EnsureGlobalVariable(n);
+                PythonVariable variable = GlobalScope.EnsureGlobalVariable(n);
                 variable.Kind = VariableKind.Global;
 
                 if (conflict == null) {
@@ -470,7 +451,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                     _currentScope.AddVariable(variable);
                 }
 
-                nameNode.AddVariableReference(_globalScope, _bindRefs, Reference(n));
+                nameNode.AddVariableReference(GlobalScope, BindReferences, Reference(n));
             }
             return true;
         }
@@ -519,13 +500,13 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                     _currentScope.CreateVariable(n, VariableKind.Nonlocal);
                 }
                 _currentScope.AddNonLocalVariable(nameNode);
-                nameNode.AddVariableReference(_globalScope, _bindRefs, Reference(n));
+                nameNode.AddVariableReference(GlobalScope, BindReferences, Reference(n));
             }
             return true;
         }
 
         public override bool Walk(NameExpression node) {
-            node.AddVariableReference(_globalScope, _bindRefs, Reference(node.Name));
+            node.AddVariableReference(GlobalScope, BindReferences, Reference(node.Name));
             return true;
         }
 
@@ -557,13 +538,14 @@ namespace Microsoft.PythonTools.Parsing.Ast {
 
         // ImportStatement
         public override bool Walk(ImportStatement node) {
-            PythonVariable[] variables = new PythonVariable[node.Names.Count];
+            var variables = new PythonVariable[node.Names.Count];
             PythonReference[] references = null;
-            if (_bindRefs) {
+            if (BindReferences) {
                 references = new PythonReference[variables.Length];
             }
-            for (int i = 0; i < node.Names.Count; i++) {
+            for (var i = 0; i < node.Names.Count; i++) {
                 string name;
+
                 if (node.AsNames[i] != null) {
                     name = node.AsNames[i].Name;
                 } else if (node.Names[i].Names.Count > 0) {
@@ -571,6 +553,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                 } else {
                     name = null;
                 }
+
                 if (name != null) {
                     variables[i] = DefineName(name);
                     if (references != null) {
@@ -579,7 +562,7 @@ namespace Microsoft.PythonTools.Parsing.Ast {
                 }
             }
             node.Variables = variables;
-            node.AddVariableReference(_ast, _bindRefs, references);
+            node.AddVariableReference(_ast, BindReferences, references);
             return true;
         }
 

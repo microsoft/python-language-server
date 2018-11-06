@@ -120,9 +120,10 @@ mc = MyClass()
 mc.fn([])
 ";
 
+            state.SetSearchPaths(new [] {TestData.GetTestSpecificRootUri().ToAbsolutePath()}); 
             var entries = Enumerable.Range(0, 100)
                 .Select(i => {
-                    var entry = (ProjectEntry)state.AddModule(string.Format("mod{0:000}", i), string.Format("mod{0:000}.py", i));
+                    var entry = (ProjectEntry)state.AddModule(string.Format("mod{0:000}", i), TestData.GetTestSpecificPath(string.Format("mod{0:000}.py", i)));
                     var parser = Parser.CreateParser(new StringReader(testCode.FormatInvariant(i + 1, PythonTypes[i % PythonTypes.Count])), PythonLanguageVersion.V34);
                     using (var p = entry.BeginParse()) {
                         p.Tree = parser.ParseFile();
