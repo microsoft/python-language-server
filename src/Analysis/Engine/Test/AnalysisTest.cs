@@ -4304,6 +4304,19 @@ x = first(arr)  # should be int
         }
 
         [TestMethod, Priority(0)]
+        public async Task TypeVarIncomplete() {
+            var code = @"
+from typing import TypeVar
+
+_ = TypeVar()
+";
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis.Should().HaveVariable("_").WithNoTypes();
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Defaults() {
             var text = @"
 def f(x = 42):
