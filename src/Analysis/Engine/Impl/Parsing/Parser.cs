@@ -60,7 +60,6 @@ namespace Microsoft.PythonTools.Parsing {
         private bool _alwaysAllowContextDependentSyntax;
         private bool _stubFile;
 
-        private static Encoding _utf8throwing;
         private static Regex _codingRegex;
 
         #region Construction
