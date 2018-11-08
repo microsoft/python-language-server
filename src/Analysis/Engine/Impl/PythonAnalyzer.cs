@@ -206,7 +206,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// <returns>The project entry for the new module.</returns>
         public IPythonProjectEntry AddModule(string moduleName, string filePath, Uri documentUri = null, IAnalysisCookie cookie = null) {
             if (documentUri == null || documentUri.Scheme != "python") {
-                _pathResolver.AddModulePath(filePath);
+                // _pathResolver.AddModulePath(filePath);
             }
 
             var entry = new ProjectEntry(this, moduleName, filePath, documentUri, cookie);
