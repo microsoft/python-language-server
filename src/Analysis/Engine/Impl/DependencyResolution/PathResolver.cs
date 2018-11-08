@@ -26,8 +26,13 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
         }
 
         public void SetRoot(string root) => _currentSnapshot = _currentSnapshot.SetRoot(root);
-        public void SetSearchPaths(IEnumerable<string> searchPaths) => _currentSnapshot = _currentSnapshot.SetSearchPaths(searchPaths);
-        public void AddModulePath(string path) => _currentSnapshot = _currentSnapshot.AddModulePath(path);
+        public void SetUserSearchPaths(IEnumerable<string> searchPaths) => _currentSnapshot = _currentSnapshot.SetUserSearchPaths(searchPaths);
+        public void SetInterpreterSearchPaths(IEnumerable<string> searchPaths) => _currentSnapshot = _currentSnapshot.SetInterpreterPaths(searchPaths);
+        public bool TryAddModulePath(string path, out string fullModuleName) {
+            _currentSnapshot = _currentSnapshot.AddModulePath(path, out fullModuleName);
+            return fullModuleName != null;
+        }
+
         public PathResolverSnapshot CurrentSnapshot => _currentSnapshot;
     }
 }

@@ -28,32 +28,39 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             private readonly Node[] _children;
             public readonly string Name;
             public readonly string ModulePath;
+            public readonly string FullModuleName;
+            public bool IsNullRoot => Name == "$";
             public bool IsModule => ModulePath != null;
             public int ChildrenCount => _children.Length;
 
-            private Node(string name, Node[] children, string modulePath) {
+            private Node(string name, Node[] children, string modulePath, string fullModuleName) {
                 Name = name;
                 _children = children;
                 ModulePath = modulePath;
+                FullModuleName = fullModuleName;
             }
 
-            public static Node CreateRoot(string path) 
-                => new Node(PathUtils.NormalizePath(path), Array.Empty<Node>(), null);
+            public static Node CreateNullRoot()
+                => new Node("$", Array.Empty<Node>(), null, null);
 
-            public static Node CreateModule(string name, string modulePath)
-                => new Node(name, Array.Empty<Node>(), modulePath);
+            public static Node CreateRoot(string path) 
+                => new Node(PathUtils.NormalizePath(path), Array.Empty<Node>(), null, null);
+
+            public static Node CreateModule(string name, string modulePath, string fullModuleName)
+                => new Node(name, Array.Empty<Node>(), modulePath, fullModuleName);
 
             public Node(string name, Node child) {
                 Name = name;
                 _children = new[] {child};
                 ModulePath = null;
+                FullModuleName = null;
             }
 
-            public Node ToModule(string modulePath) => new Node(Name, _children, modulePath);
-            public Node ToPackage() => new Node(Name, _children, null);
-            public Node AddChild(Node child) => new Node(Name, _children.ImmutableAdd(child), ModulePath);
-            public Node ReplaceChildAt(Node child, int index) => new Node(Name, _children.ImmutableReplaceAt(child, index), ModulePath);
-            public Node RemoveChildAt(int index) => new Node(Name, _children.ImmutableRemoveAt(index), ModulePath);
+            public Node ToModule(string modulePath, string fullModuleName) => new Node(Name, _children, modulePath, fullModuleName);
+            public Node ToPackage() => new Node(Name, _children, null, null);
+            public Node AddChild(Node child) => new Node(Name, _children.ImmutableAdd(child), ModulePath, FullModuleName);
+            public Node ReplaceChildAt(Node child, int index) => new Node(Name, _children.ImmutableReplaceAt(child, index), ModulePath, FullModuleName);
+            public Node RemoveChildAt(int index) => new Node(Name, _children.ImmutableRemoveAt(index), ModulePath, FullModuleName);
 
             public Node GetChildAt(int index) => _children[index];
             public Node GetChild(string childName) {
@@ -65,9 +72,6 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
 
             public int GetChildIndex(string modulePath, (int start, int length) nameSpan) 
                 => _children.IndexOf((modulePath, nameSpan.start, nameSpan.length), NameEquals);
-
-            public string[] GetChildPackageNames() => _children.Where(c => !c.IsModule).Select(c => c.Name).ToArray();
-            public IReadOnlyDictionary<string, string> GetChildModules() => _children.Where(c => c.IsModule).ToDictionary(c => c.Name, c => c.ModulePath);
 
             private string DebuggerDisplay {
                 get {

@@ -17,10 +17,14 @@
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
     internal class AvailableModuleImports : IAvailableImports {
         public string Name { get; }
+        public string FullName { get; }
+        public string RootPath { get; }
         public string ModulePath { get; }
 
-        public AvailableModuleImports(string name, string modulePath) {
+        public AvailableModuleImports(string name, string fullName, string rootPath, string modulePath) {
             Name = name;
+            FullName = fullName;
+            RootPath = rootPath;
             ModulePath = modulePath;
         }
     }

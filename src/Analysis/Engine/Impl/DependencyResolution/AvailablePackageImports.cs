@@ -20,11 +20,13 @@ using System.Collections.Generic;
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
     internal class AvailablePackageImports : IAvailableImports {
         public string Name { get; }
-        public IReadOnlyDictionary<string, string> Modules { get; }
+        public string RootPath { get; }
+        public AvailableModuleImports[] Modules { get; }
         public string[] Packages { get; }
 
-        public AvailablePackageImports(string name, IReadOnlyDictionary<string, string> modules, string[] packages) {
+        public AvailablePackageImports(string name, string rootPath, AvailableModuleImports[] modules, string[] packages) {
             Name = name;
+            RootPath = rootPath;
             Modules = modules;
             Packages = packages;
         }

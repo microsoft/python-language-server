@@ -126,6 +126,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return ussp;
         }
 
+        private Task<ModulePath?> FindModulePath(string name, CancellationToken cancellationToken) {
+            var moduleImport = _analyzer.CurrentPathResolver.GetModuleImportsFromModuleName(name);
+            return moduleImport != null 
+                ? Task.FromResult<ModulePath?>(new ModulePath(moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath))
+                : Task.FromResult<ModulePath?>(null);
+        }
+
         private async Task<ModulePath?> FindModuleInUserSearchPathAsync(string name, CancellationToken cancellationToken) {
             var searchPaths = _userSearchPaths;
             if (searchPaths == null || searchPaths.Count == 0) {
@@ -209,7 +216,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 Interpreter = this,
                 ModuleCache = _modules,
                 BuiltinModule = _builtinModule,
-                FindModuleInUserSearchPathAsync = FindModuleInUserSearchPathAsync,
+                FindModuleInUserSearchPathAsync = FindModulePath,
                 TypeStubPaths = _analyzer.Limits.UseTypeStubPackages ? _analyzer.GetTypeStubPaths() : null,
                 MergeTypeStubPackages = !_analyzer.Limits.UseTypeStubPackagesExclusively
             };
@@ -304,11 +311,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             IEnumerable<string> res;
             if (usp == null) {
-                if (ssp == null) {
-                    res = Enumerable.Empty<string>();
-                } else {
-                    res = ssp.Keys;
-                }
+                res = ssp == null ? Enumerable.Empty<string>() : ssp.Keys;
             } else if (ssp == null) {
                 res = usp.Keys;
             } else {

@@ -43,13 +43,13 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             private readonly int _index;
             private readonly int _lastIndex;
 
-            public Node Start => IsFirst ? null : _vertices[_index - 1].node;
-            public int EndIndex => _vertices[_index].index;
-            public Node End => _vertices[_index].node;
+            public Node Start => IsFirst ? null : _vertices?[_index - 1].node;
+            public int EndIndex => _vertices?[_index].index ?? -1;
+            public Node End => _vertices?[_index].node;
             public Edge Previous => IsFirst ? default : new Edge(_vertices, _index - 1, _lastIndex);
             public Edge Next => IsLast ? default : new Edge(_vertices, _index + 1, _lastIndex);
             public int PathLength => _index;
-            private bool IsFirst => _index == 0;
+            public bool IsFirst => _index == 0;
             private bool IsLast => _index == _lastIndex;
 
             public Edge(int startIndex, Node start) {
@@ -104,6 +104,10 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
 
             private string DebuggerDisplay {
                 get {
+                    if (_vertices == null) {
+                        return "Null";
+                    }
+
                     var start = _index > 0 ? _vertices[_index - 1].node.Name : "*";
                     var endIndex = _vertices[_index].index.ToString();
                     var end = _vertices[_index].node.Name;

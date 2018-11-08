@@ -48,5 +48,22 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
 
             return sb;
         }
+
+        public static StringBuilder Append(this StringBuilder sb, string separator, string[] values) 
+            => sb.Append(separator, values, 0, values.Length);
+
+        public static StringBuilder Append(this StringBuilder sb, string separator, string[] values, int start, int length) {
+            if (length <= 0 || values.Length < start + length) {
+                return sb;
+            }
+
+            sb.Append(values[start]);
+
+            for (var i = start + 1; i < start + length; i++) {
+                sb.Append(separator).Append(values[i]);
+            }
+
+            return sb;
+        }
     }
 }

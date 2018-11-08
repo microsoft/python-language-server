@@ -205,8 +205,10 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="cookie">An application-specific identifier for the module</param>
         /// <returns>The project entry for the new module.</returns>
         public IPythonProjectEntry AddModule(string moduleName, string filePath, Uri documentUri = null, IAnalysisCookie cookie = null) {
-            if (documentUri == null || documentUri.Scheme != "python") {
-                _pathResolver.AddModulePath(filePath);
+            if (filePath == null || documentUri == null || documentUri.Scheme != "python") {
+                if (_pathResolver.TryAddModulePath(filePath, out var fullModuleName)) {
+                    moduleName = fullModuleName;
+                }
             }
 
             var entry = new ProjectEntry(this, moduleName, filePath, documentUri, cookie);
@@ -933,7 +935,7 @@ namespace Microsoft.PythonTools.Analysis {
             lock (_searchPaths) {
                 _searchPaths.Clear();
                 _searchPaths.AddRange(paths.MaybeEnumerate());
-                _pathResolver.SetSearchPaths(_searchPaths);
+                _pathResolver.SetUserSearchPaths(_searchPaths);
             }
             SearchPathsChanged?.Invoke(this, EventArgs.Empty);
         }

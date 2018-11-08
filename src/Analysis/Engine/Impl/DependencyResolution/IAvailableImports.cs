@@ -17,5 +17,6 @@
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
     internal interface IAvailableImports {
         string Name { get; }
+        string RootPath { get; }
     }
 }
