@@ -594,12 +594,6 @@ s = y['x']['y']['value']
 
 a=A()
 a.fn(1, 2)
-a.fn(3, 4)
-a.fn(5, 6)
-a.fn(7, 8)
-a.fn(9, 10)
-a.fn(11, 12)
-a.fn(13, 14)
 x1, y1, _1 = a.top
 a.original()
 ";
@@ -616,9 +610,6 @@ a.original()
                     .And.HaveVariable("_").OfResolvedTypes(BuiltinTypeId.Tuple, BuiltinTypeId.NoneType)
                     .And.HaveParameter("self").WithValue<IInstanceInfo>()
                     .Which.Should().HaveMemberOfTypes("top", BuiltinTypeId.Tuple, BuiltinTypeId.NoneType);
-
-                var varDef = analysis.Scope.GetVariable("_1");
-                varDef.Types.Last().Description.Should().Be("");
             }
         }
 
