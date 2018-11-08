@@ -54,6 +54,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             switch (exception) {
                 case EditorOperationException _:
                 case NotImplementedException _:
+                case LanguageServerException _:
                     return;
             }
 
