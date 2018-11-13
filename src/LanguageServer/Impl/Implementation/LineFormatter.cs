@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
@@ -73,7 +72,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         /// next line to the first non-ignored token so that the formatter
         /// can look ahead.
         /// </summary>
-        /// <param name="line">One-indexed line number.</param>
+        /// <param name="line">Zero-indexed line number.</param>
         /// <param name="includeToken">A function which returns true if the token should be added to the final list. If null, all tokens will be added.</param>
         /// <returns>A non-null list of tokens on that line.</returns>
         private List<TokenExt> TokenizeLine(int line, Func<TokenExt, bool> includeToken = null) {
@@ -94,9 +93,24 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         /// <summary>
+        /// Returns a human-readable message describing the first unmatched
+        /// bracket found by the tokenizer at the time this function is called.
+        /// </summary>
+        /// <param name="line">Zero-indexed line number.</param>
+        /// <returns>A string representation of the unmatched token and its zero-indexed line number, or null if none exists or hasn't been scanned yet.</returns>
+        public (string token, int line)? UnmatchedToken(int line) {
+            var unmatched = _tokenizer.Unmatched;
+            if (unmatched == null || unmatched.Line > line) {
+                return null;
+            }
+
+            return (unmatched.ToString(), unmatched.Line);
+        }
+
+        /// <summary>
         /// Formats a single line and returns TextEdits to replace the old text.
         /// </summary>
-        /// <param name="line">One-indexed line number.</param>
+        /// <param name="line">Zero-indexed line number.</param>
         /// <returns>A list of TextEdits needed to format the line.</returns>
         public TextEdit[] FormatLine(int line) {
             if (line < 0) {
@@ -122,7 +136,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 startIdx = 1;
                 builder.Append(' ');
             }
-            
+
             for (var i = startIdx; i < tokens.Count; i++) {
                 var token = tokens[i];
                 var prev = tokens.ElementAtOrDefault(i - 1);
@@ -239,7 +253,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                             // Check unpacking case
                         } else if (token.Kind == TokenKind.Multiply && (actualPrev == null || actualPrev.Kind != TokenKind.Name && actualPrev.Kind != TokenKind.Constant && !actualPrev.IsClose)) {
                             builder.Append(token);
-                        } else { 
+                        } else {
                             AppendTokenEnsureWhiteSpacesAround(builder, token);
                         }
                         break;
@@ -360,8 +374,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var edit = new TextEdit {
                 range = new Range {
-                    start = new Position{ line = line, character = startIndex - lineStartIndex },
-                    end = new Position{ line = line, character = endIndex - lineStartIndex }
+                    start = new Position { line = line, character = startIndex - lineStartIndex },
+                    end = new Position { line = line, character = endIndex - lineStartIndex }
                 },
                 newText = newText
             };
@@ -369,7 +383,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return new[] { edit };
         }
 
-        private static void AppendTokenEnsureWhiteSpacesAround(StringBuilder builder, TokenExt token) 
+        private static void AppendTokenEnsureWhiteSpacesAround(StringBuilder builder, TokenExt token)
             => builder.EnsureEndsWithWhiteSpace()
             .Append(token)
             .EnsureEndsWithWhiteSpace();
@@ -430,7 +444,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             public bool IsKeyword => (Kind >= TokenKind.FirstKeyword && Kind <= TokenKind.LastKeyword) || Kind == TokenKind.KeywordAsync || Kind == TokenKind.KeywordAwait;
 
             public bool IsString => Kind == TokenKind.Constant && Token != Tokens.NoneToken && (Token.Value is string || Token.Value is AsciiString);
-            
+
             public bool IsSimpleSliceToLeft {
                 get {
                     if (Kind != TokenKind.Colon) {
@@ -535,6 +549,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             private readonly Tokenizer _tokenizer;
             private readonly Stack<TokenExt> _insides = new Stack<TokenExt>();
             public TokenExt Current { get; private set; }
+            public TokenExt Unmatched { get; private set; }
 
             public TokenizerWrapper(Tokenizer tokenizer) {
                 _tokenizer = tokenizer;
@@ -570,10 +585,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 );
 
                 if (tokenExt.IsClose) {
-                    if (_insides.Count == 0 || !_insides.Peek().MatchesClose(tokenExt)) {
-                        throw new Exception($"Close bracket ({token.Kind}) has no matching open");
+                    if (_insides.Count > 0 && _insides.Peek().MatchesClose(tokenExt)) {
+                        _insides.Pop();
+                    } else {
+                        // This close doesn't match, so assume that the token is just a stray
+                        // and do nothing to the _insides stack.
+
+                        // Keep track of the first unmatched token to present back to the user.
+                        if (Unmatched == null) {
+                            Unmatched = tokenExt;
+                        }
                     }
-                    _insides.Pop();
                 } else if (tokenExt.Kind == TokenKind.Colon && _insides.Count != 0 && _insides.Peek().Kind == TokenKind.KeywordLambda) {
                     _insides.Pop();
                 }
