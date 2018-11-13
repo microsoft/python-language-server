@@ -47,17 +47,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
     internal class TelemetryRpcTraceListener : TraceListener {
         private readonly ITelemetryService2 _telemetryService;
-        private readonly string _version;
 
         public TelemetryRpcTraceListener(ITelemetryService2 telemetryService) {
             _telemetryService = telemetryService;
-
-            // This file is a part of the LanguageServer assembly, so this is the correct version.
-            _version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
-#if DEBUG
-            _version += "-debug";  // Add a suffix so we can more easily ignore non-release versions.
-#endif
         }
 
         // See JsonRpc.CreateError.
