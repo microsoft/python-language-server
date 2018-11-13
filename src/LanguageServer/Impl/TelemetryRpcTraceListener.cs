@@ -23,9 +23,17 @@ using StreamJsonRpc;
 namespace Microsoft.Python.LanguageServer.Implementation {
     internal class TelemetryRpcTraceListener : TraceListener {
         private readonly ITelemetryService2 _telemetryService;
+        private readonly string _version;
 
         public TelemetryRpcTraceListener(ITelemetryService2 telemetryService) {
             _telemetryService = telemetryService;
+
+            // This file is a part of the LanguageServer assembly, so this is the correct version.
+            _version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
+#if DEBUG
+            _version += "-debug";  // Add a suffix so we can more easily ignore non-release versions.
+#endif
         }
 
         // See JsonRpc.CreateError.
@@ -70,6 +78,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             e.Properties["method"] = method;
             e.Properties["name"] = exception.GetType().Name;
             e.Properties["stackTrace"] = exception.StackTrace;
+
+            // TODO: Move this into a shared function, similarly to EventName.
+            e.Properties["version"] = _version;
 
             _telemetryService.SendTelemetry(e).DoNotWait();
         }
