@@ -21,6 +21,30 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
+    internal class Telemetry {
+        private const string EventPrefix = "python_language_server/";
+        private static readonly string PLSVersion = GetPLSVersion();
+
+        public static TelemetryEvent CreateEvent(string eventName) {
+            var e = new TelemetryEvent {
+                EventName = EventPrefix + eventName,
+            };
+            e.Properties["plsVersion"] = PLSVersion;
+
+            return e;
+        }
+
+        private static string GetPLSVersion() {
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
+#if DEBUG
+            version += "-debug";  // Add a suffix so we can more easily ignore non-release versions.
+#endif
+
+            return version;
+        }
+    }
+
     internal class TelemetryRpcTraceListener : TraceListener {
         private readonly ITelemetryService2 _telemetryService;
         private readonly string _version;
@@ -72,15 +96,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return;
             }
 
-            var e = new TelemetryEvent {
-                EventName = "python_language_server/rpc.exception", // TODO: Create EventName with a standardized format elsewhere.
-            };
+            var e = Telemetry.CreateEvent("rpc.exception");
             e.Properties["method"] = method;
             e.Properties["name"] = exception.GetType().Name;
             e.Properties["stackTrace"] = exception.StackTrace;
-
-            // TODO: Move this into a shared function, similarly to EventName.
-            e.Properties["version"] = _version;
 
             _telemetryService.SendTelemetry(e).DoNotWait();
         }
