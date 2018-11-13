@@ -23,26 +23,10 @@ using StreamJsonRpc;
 namespace Microsoft.Python.LanguageServer.Implementation {
     internal class Telemetry {
         private const string EventPrefix = "python_language_server/";
-        private static readonly string PLSVersion = GetPLSVersion();
 
-        public static TelemetryEvent CreateEvent(string eventName) {
-            var e = new TelemetryEvent {
-                EventName = EventPrefix + eventName,
-            };
-            e.Properties["plsVersion"] = PLSVersion;
-
-            return e;
-        }
-
-        private static string GetPLSVersion() {
-            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
-#if DEBUG
-            version += "-debug";  // Add a suffix so we can more easily ignore non-release versions.
-#endif
-
-            return version;
-        }
+        public static TelemetryEvent CreateEvent(string eventName) => new TelemetryEvent {
+            EventName = EventPrefix + eventName,
+        };
     }
 
     internal class TelemetryRpcTraceListener : TraceListener {

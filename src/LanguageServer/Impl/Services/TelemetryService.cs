@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using StreamJsonRpc;
 
@@ -23,14 +24,23 @@ namespace Microsoft.Python.LanguageServer.Services {
     public sealed class TelemetryService : ITelemetryService, ITelemetryService2 {
 #pragma warning restore CS0612 // Type or member is obsolete
         private readonly JsonRpc _rpc;
+        private readonly string _plsVersion;
+
         public TelemetryService(JsonRpc rpc) {
             _rpc = rpc;
+
+            _plsVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+#if DEBUG
+            _plsVersion += "-debug";  // Add a suffix so we can more easily ignore non-release versions.
+#endif
         }
 
         [Obsolete]
         public Task SendTelemetry(object o) => Task.CompletedTask;
 
-        public Task SendTelemetry(TelemetryEvent telemetryEvent) 
-            => _rpc.NotifyWithParameterObjectAsync("telemetry/event", telemetryEvent);
+        public Task SendTelemetry(TelemetryEvent telemetryEvent) {
+            telemetryEvent.Properties["plsVersion"] = _plsVersion;
+            return _rpc.NotifyWithParameterObjectAsync("telemetry/event", telemetryEvent);
+        }
     }
 }
