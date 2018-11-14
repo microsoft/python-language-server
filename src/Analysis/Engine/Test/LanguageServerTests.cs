@@ -384,6 +384,21 @@ def f(b: None) -> None:
             }
         }
 
+        [DataRow("mylist = [1, 2, 3, 4]\nx = [[a for a in range(item)] for item in mylist]")]
+        [DataRow("mydict = {1: 2, 3: 4}\nx = [[a for a in range(v)] for k, v in mydict.items()]")]
+        [DataRow("myset = set([1, 2, 3, 4])\nx = [[a for a in range(item)] for item in myset]")]
+        [DataRow("mydict = {1: 2, 3: 4}\nx = {k: [a for a in range(v)] for k, v in mydict.items()}")]
+        [DataTestMethod, Priority(0)]
+        public async Task NestedComprehensionDiagnostic(string code) {
+            var diags = new Dictionary<Uri, PublishDiagnosticsEventArgs>();
+            using (var s = await CreateServer((Uri)null, null, diags)) {
+                var u = await s.OpenDefaultDocumentAndGetUriAsync(code);
+
+                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
+                GetDiagnostics(diags, u).Should().BeEmpty();
+            }
+        }
+
         [TestMethod, Priority(0)]
         public async Task OnTypeFormattingLine() {
             using (var s = await CreateServer()) {
