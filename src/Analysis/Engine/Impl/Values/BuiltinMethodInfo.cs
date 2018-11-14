@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -29,8 +29,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private readonly IAnalysisSet _returnTypes;
         private BoundBuiltinMethodInfo _boundMethod;
 
-        public BuiltinMethodInfo(IPythonMethodDescriptor method, PythonAnalyzer projectState)
-            : base(projectState.Types[BuiltinTypeId.MethodDescriptor], projectState) {
+        public BuiltinMethodInfo(IPythonMethod method, PythonAnalyzer projectState)
+            : base(projectState.Types[BuiltinTypeId.Method], projectState) {
             var function = method.Function;
             _memberType = method.MemberType;
             _function = function;
@@ -38,18 +38,17 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public BuiltinMethodInfo(IPythonFunction function, PythonMemberType memType, PythonAnalyzer projectState)
-            : base(projectState.Types[BuiltinTypeId.MethodDescriptor], projectState) {
+            : base(projectState.Types[BuiltinTypeId.Function], projectState) {
             _memberType = memType;
             _function = function;
             _returnTypes = GetReturnTypes(function, projectState);
             _fromFunction = true;
         }
 
-        public override IPythonType PythonType => _type;
+        public override IPythonType PythonType => Type;
 
-        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
-            return _returnTypes.GetInstanceType();
-        }
+        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames)
+            => _returnTypes.GetInstanceType();
 
         public override IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) {
             if (instance == ProjectState._noneInst) {
@@ -71,7 +70,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IEnumerable<OverloadResult> Overloads {
             get {
-                return Function.Overloads.Select(overload => 
+                return Function.Overloads.Select(overload =>
                     new BuiltinFunctionOverloadResult(
                         ProjectState,
                         _function.Name,

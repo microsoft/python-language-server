@@ -83,7 +83,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
-            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, _type.Name);
+            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, Type.Name);
             if (_indexTypes == null || _indexTypes.Length == 0) {
                 yield break;
             }

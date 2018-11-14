@@ -758,7 +758,7 @@ namespace Microsoft.PythonTools.Analysis {
                 return GetCached(attr, () => new BoundBuiltinMethodInfo(pf, this)) ?? _noneInst;
             }
 
-            if (attr is IPythonMethodDescriptor md) {
+            if (attr is IPythonMethod md) {
                 return GetCached(attr, () => {
                     if (md.IsBound) {
                         return new BuiltinFunctionInfo(md.Function, this);

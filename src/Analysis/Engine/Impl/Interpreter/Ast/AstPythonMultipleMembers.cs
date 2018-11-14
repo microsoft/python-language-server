@@ -104,7 +104,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         #region IMemberContainer
         public IReadOnlyList<IMember> GetMembers() {
             lock (_lock) {
-                if (_resolvedMembers == null) {
+                if (_resolvedMembers != null) {
                     return _resolvedMembers;
                 }
 
@@ -178,7 +178,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     return DeclaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function;
                 }
             }
-            public bool IsClassFactory => false;
+            public bool IsTypeFactory => false;
             #endregion
 
             #region IPythonFunction
@@ -193,10 +193,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             #endregion
         }
 
-        class MultipleMethodMembers : AstPythonMultipleMembers, IPythonMethodDescriptor {
+        class MultipleMethodMembers : AstPythonMultipleMembers, IPythonMethod {
             public MultipleMethodMembers(IMember[] members) : base(members) { }
 
-            private IEnumerable<IPythonMethodDescriptor> Methods => GetMembers().OfType<IPythonMethodDescriptor>();
+            private IEnumerable<IPythonMethod> Methods => GetMembers().OfType<IPythonMethod>();
 
             public IPythonFunction Function => CreateAs<IPythonFunction>(Methods.Select(m => m.Function));
             public bool IsBound => Methods.Any(m => m.IsBound);
@@ -241,7 +241,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public BuiltinTypeId TypeId => Types.GroupBy(t => t.TypeId).OrderByDescending(g => g.Count()).FirstOrDefault()?.Key ?? BuiltinTypeId.Unknown;
             public IPythonModule DeclaringModule => CreateAs<IPythonModule>(Types.Select(t => t.DeclaringModule));
             public bool IsBuiltIn => Types.All(t => t.IsBuiltIn);
-            public bool IsClassFactory => Types.All(t => t.IsClassFactory);
+            public bool IsTypeFactory => Types.All(t => t.IsTypeFactory);
             public IPythonFunction GetConstructors() => CreateAs<IPythonFunction>(Types.Select(t => t.GetConstructors()));
             public IMember GetMember(IModuleContext context, string name) => Create(Types.Select(t => t.GetMember(context, name)));
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Types.SelectMany(t => t.GetMemberNames(moduleContext)).Distinct();

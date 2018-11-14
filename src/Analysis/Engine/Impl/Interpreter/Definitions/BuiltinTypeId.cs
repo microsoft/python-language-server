@@ -84,7 +84,6 @@ namespace Microsoft.PythonTools.Interpreter {
         Module,
         Function,
         Method,
-        MethodDescriptor,
         Generator,
 
         Property,
@@ -180,9 +179,11 @@ namespace Microsoft.PythonTools.Interpreter {
                 case BuiltinTypeId.CallableIterator: name = "callable_iterator"; break;
 
                 case BuiltinTypeId.Property: name = "property"; break;
+                case BuiltinTypeId.Method: name = "method"; break;
                 case BuiltinTypeId.ClassMethod: name = "classmethod"; break;
                 case BuiltinTypeId.StaticMethod: name = "staticmethod"; break;
                 case BuiltinTypeId.FrozenSet: name = "frozenset"; break;
+                case BuiltinTypeId.Class: name = "class"; break;
 
                 case BuiltinTypeId.Unknown:
                 default:
@@ -229,8 +230,10 @@ namespace Microsoft.PythonTools.Interpreter {
                 case "callable_iterator": return BuiltinTypeId.CallableIterator;
 
                 case "property": return BuiltinTypeId.Property;
+                case "method": return BuiltinTypeId.Method;
                 case "classmethod": return BuiltinTypeId.ClassMethod;
                 case "staticmethod": return BuiltinTypeId.StaticMethod;
+                case "class": return BuiltinTypeId.Class;
             }
             return BuiltinTypeId.Unknown;
         }

@@ -30,8 +30,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
     internal class AstPythonInterpreter : IPythonInterpreter2, IModuleContext, ICanFindModuleMembers {
         private readonly ConcurrentDictionary<string, IPythonModule> _modules = new ConcurrentDictionary<string, IPythonModule>();
         private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>() {
-            { BuiltinTypeId.NoneType, new AstPythonBuiltinType("NoneType", BuiltinTypeId.NoneType) },
-            { BuiltinTypeId.Unknown, new AstPythonBuiltinType("Unknown", BuiltinTypeId.Unknown) }
+            { BuiltinTypeId.NoneType, new AstPythonType("NoneType", BuiltinTypeId.NoneType) },
+            { BuiltinTypeId.Unknown, new AstPythonType("Unknown", BuiltinTypeId.Unknown) }
         };
         private readonly string _workspaceRoot;
         private readonly AstPythonInterpreterFactory _factory;
@@ -88,10 +88,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                         if (string.IsNullOrEmpty(name)) {
                             Debug.Assert(id == BuiltinTypeId.Unknown, $"no name for {id}");
                             if (!_builtinTypes.TryGetValue(BuiltinTypeId.Unknown, out res)) {
-                                _builtinTypes[BuiltinTypeId.Unknown] = res = new AstPythonType("<unknown>");
+                                _builtinTypes[BuiltinTypeId.Unknown] = res = new AstPythonType("<unknown>", BuiltinTypeId.Unknown);
                             }
                         } else {
-                            res = new AstPythonType(name);
+                            res = new AstPythonType(name, id);
                         }
                     }
                     _builtinTypes[id] = res;

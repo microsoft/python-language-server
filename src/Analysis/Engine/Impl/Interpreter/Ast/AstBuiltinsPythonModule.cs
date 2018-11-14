@@ -103,11 +103,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             IPythonType boolType = null;
 
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
-                IMember m;
-                AstPythonBuiltinType biType;
-                if (_members.TryGetValue("__{0}__".FormatInvariant(typeId), out m) && (biType = m as AstPythonBuiltinType) != null) {
-                    if (typeId != BuiltinTypeId.Str &&
-                        typeId != BuiltinTypeId.StrIterator) {
+                if (_members.TryGetValue("__{0}__".FormatInvariant(typeId), out var m) && m is AstPythonType biType) {
+                    if (typeId != BuiltinTypeId.Str && typeId != BuiltinTypeId.StrIterator) {
                         biType.TrySetTypeId(typeId);
                     }
 

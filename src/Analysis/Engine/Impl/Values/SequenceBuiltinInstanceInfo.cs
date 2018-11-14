@@ -113,7 +113,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (UnionType == this) {
                 return new[] {
-                    new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, _type.Name)
+                    new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, Type.Name)
                 };
             }
             return base.GetRichDescription();

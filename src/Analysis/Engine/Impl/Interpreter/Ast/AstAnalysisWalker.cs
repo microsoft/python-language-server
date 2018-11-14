@@ -373,8 +373,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 .ToArray();
 
             var overload = new AstPythonFunctionOverload(
-                parameters, 
-                funcScope.GetLocOfName(node, node.NameExpression), 
+                parameters,
+                funcScope.GetLocOfName(node, node.NameExpression),
                 node.ReturnAnnotation?.ToCodeString(_ast));
             _functionWalkers.Add(new AstAnalysisFunctionWalker(funcScope, node, overload));
 
@@ -388,8 +388,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         private AstPythonClass CreateClass(ClassDefinition node) {
-            node = node ??throw new ArgumentNullException(nameof(node));
-            return new AstPythonClass(node,  _module, GetDoc(node.Body as SuiteStatement), GetLoc(node), CreateBuiltinTypes);
+            node = node ?? throw new ArgumentNullException(nameof(node));
+            return new AstPythonClass(node, _module, 
+                GetDoc(node.Body as SuiteStatement), GetLoc(node), 
+                BuiltinTypeId.Unknown, CreateBuiltinTypes);
         }
 
         private void CollectTopLevelDefinitions() {

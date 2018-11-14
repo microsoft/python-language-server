@@ -38,16 +38,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _doc = null;
         }
 
-        public override IPythonType PythonType => _type;
+        public override IPythonType PythonType => Type;
         public override bool IsOfType(IAnalysisSet klass) {
             return klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Type]);
         }
 
-        public override BuiltinTypeId TypeId => _type.TypeId;
+        public override BuiltinTypeId TypeId => Type.TypeId;
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             // TODO: More Type propagation
-            IAdvancedPythonType advType = _type as IAdvancedPythonType;
+            IAdvancedPythonType advType = Type as IAdvancedPythonType;
             if (advType != null) {
                 var types = advType.GetTypesPropagatedOnCall();
                 if (types != null) {
@@ -64,14 +64,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return Instance.SelfSet;
         }
 
-        public override string Name => _type.Name;
+        public override string Name => Type?.Name;
         public string InstanceDescription {
             get {
                 switch (TypeId) {
                     case BuiltinTypeId.NoneType:
                         return "None";
                 }
-                return _type?.Name ?? "<unknown>";
+                return Type?.Name ?? "<unknown>";
             }
         }
 
@@ -79,11 +79,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public string FullyQualifiedName {
             get {
-                if (_type != null) {
-                    if (_type.IsBuiltIn) {
-                        return _type.Name;
+                if (Type != null) {
+                    if (Type.IsBuiltIn) {
+                        return Type.Name;
                     }
-                    return _type.DeclaringModule.Name + "." + _type.Name;
+                    return Type.DeclaringModule.Name + "." + Type.Name;
                 }
                 return null;
             }
@@ -91,8 +91,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public KeyValuePair<string, string> FullyQualifiedNamePair {
             get {
-                if (_type != null) {
-                    return new KeyValuePair<string, string>(_type.DeclaringModule.Name, _type.Name);
+                if (Type != null) {
+                    return new KeyValuePair<string, string>(Type.DeclaringModule.Name, Type.Name);
                 }
                 throw new NotSupportedException();
             }
@@ -100,7 +100,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IMro Mro {
             get {
-                var mro = (_type as IPythonClass)?.Mro;
+                var mro = (Type as IPythonClass)?.Mro;
                 if (mro != null) {
                     return new Mro(mro.Where(t => t != null).Select(t => ProjectState.GetBuiltinType(t)));
                 }
@@ -113,11 +113,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IAnalysisSet GetInstanceType() => Instance;
 
         protected virtual BuiltinInstanceInfo MakeInstance() {
-            if (_type.TypeId == BuiltinTypeId.Int || _type.TypeId == BuiltinTypeId.Long || _type.TypeId == BuiltinTypeId.Float || _type.TypeId == BuiltinTypeId.Complex) {
+            if (Type.TypeId == BuiltinTypeId.Int || Type.TypeId == BuiltinTypeId.Long || Type.TypeId == BuiltinTypeId.Float || Type.TypeId == BuiltinTypeId.Complex) {
                 return new NumericInstanceInfo(this);
-            } else if (_type.TypeId == BuiltinTypeId.Str || _type.TypeId == BuiltinTypeId.Unicode || _type.TypeId == BuiltinTypeId.Bytes) {
+            } else if (Type.TypeId == BuiltinTypeId.Str || Type.TypeId == BuiltinTypeId.Unicode || Type.TypeId == BuiltinTypeId.Bytes) {
                 return new SequenceBuiltinInstanceInfo(this, true, true);
-            } else if (_type.TypeId == BuiltinTypeId.Tuple || _type.TypeId == BuiltinTypeId.List) {
+            } else if (Type.TypeId == BuiltinTypeId.Tuple || Type.TypeId == BuiltinTypeId.List) {
                 Debug.Fail("Overloads should have been called here");
                 // But we fall back to the old type anyway
                 return new SequenceBuiltinInstanceInfo(this, false, false);
@@ -133,10 +133,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
             get {
                 // TODO: sometimes might have a specialized __init__.
                 // This just covers typical .NET types
-                var ctors = _type.GetConstructors();
+                var ctors = Type.GetConstructors();
 
                 if (ctors != null) {
-                    return ctors.Overloads.Select(ctor => new BuiltinFunctionOverloadResult(ProjectState, _type.Name, ctor, 1, () => Documentation));
+                    return ctors.Overloads.Select(ctor => new BuiltinFunctionOverloadResult(ProjectState, Type.Name, ctor, 1, () => Documentation));
                 }
                 return new OverloadResult[0];
             }
@@ -158,7 +158,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) {
-            var clrType = _type as IAdvancedPythonType;
+            var clrType = Type as IAdvancedPythonType;
             if (clrType == null || !clrType.IsGenericTypeDefinition) {
                 return AnalysisSet.Empty;
             }
@@ -240,16 +240,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public virtual IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
-            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, _type.IsBuiltIn ? "type " : "class ");
+            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, Type.IsBuiltIn ? "type " : "class ");
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Name, FullName);
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.EndOfDeclaration, string.Empty);
         }
 
         private string FullName {
             get {
-                var name = _type.Name;
-                if (!_type.IsBuiltIn && !string.IsNullOrEmpty(_type.DeclaringModule?.Name)) {
-                    name = _type.DeclaringModule.Name + "." + name;
+                var name = Type.Name;
+                if (!Type.IsBuiltIn && !string.IsNullOrEmpty(Type.DeclaringModule?.Name)) {
+                    name = Type.DeclaringModule.Name + "." + name;
                 }
                 return name;
             }
@@ -259,7 +259,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             get {
                 if (_doc == null) {
                     try {
-                        var doc = _type.Documentation ?? string.Empty;
+                        var doc = Type.Documentation ?? string.Empty;
                         _doc = Utils.StripDocumentation(doc.ToString());
                     } catch {
                         _doc = String.Empty;
@@ -269,8 +269,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override PythonMemberType MemberType => _type.MemberType;
-        public override string ToString() => "Class " + _type.Name;
+        public override PythonMemberType MemberType => Type.MemberType;
+        public override string ToString() => "Class " + Type.Name;
 
         internal override AnalysisValue UnionMergeTypes(AnalysisValue ns, int strength) {
             if (strength >= MergeStrength.ToObject) {
@@ -334,6 +334,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         internal override IEnumerable<ILocationInfo> References => _references?.AllReferences ?? new LocationInfo[0];
-        public override ILocatedMember GetLocatedMember() => _type as ILocatedMember;
+        public override ILocatedMember GetLocatedMember() => Type as ILocatedMember;
     }
 }

@@ -163,7 +163,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     return "None";
                 }
 
-                return _type.Name;
+                return Type.Name;
                 //return PythonOps.Repr(ProjectState.CodeContext, _value);
             }
         }
@@ -171,7 +171,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override string Documentation {
             get {
                 if (_doc == null) {
-                    object docObj = _type.Documentation;
+                    object docObj = Type.Documentation;
                     _doc = docObj == null ? "" : Utils.StripDocumentation(docObj.ToString());
                 }
                 return _doc;

@@ -26,7 +26,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private readonly BuiltinClassInfo _klass;
 
         public BuiltinInstanceInfo(BuiltinClassInfo klass)
-            : base(klass?._type, klass?.ProjectState) {
+            : base(klass?.Type, klass?.ProjectState) {
             _klass = klass;
         }
 
@@ -34,7 +34,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public BuiltinClassInfo ClassInfo => _klass;
 
         public override string Name => _klass.Name;
-        public override IPythonType PythonType => _type;
+        public override IPythonType PythonType => Type;
 
         public override IAnalysisSet GetInstanceType() {
             if (_klass.TypeId == BuiltinTypeId.Type) {

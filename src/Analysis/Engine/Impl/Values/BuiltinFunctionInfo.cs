@@ -32,7 +32,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             Function = function;
         }
 
-        public override IPythonType PythonType => _type;
+        public override IPythonType PythonType => Type;
 
         public override bool IsOfType(IAnalysisSet klass)
             => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]);
@@ -41,7 +41,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             var returnTypes = GetFunctionOverloads().Where(o => o.ReturnType != null).SelectMany(o => o.ReturnType);
             var types = returnTypes.Select(t => {
                 var av = ProjectState.GetAnalysisValueFromObjects(t);
-                return t.IsClassFactory
+                return t.IsTypeFactory
                     ? AnalysisSet.Create(av)
                     : ProjectState.GetAnalysisValueFromObjects(t).GetInstanceType();
             });

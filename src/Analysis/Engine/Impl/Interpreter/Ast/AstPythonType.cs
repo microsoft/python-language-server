@@ -25,9 +25,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         protected static readonly IPythonModule NoDeclaringModule = new AstPythonModule();
 
         private readonly string _name;
+        private readonly object _lock = new object();
         private Dictionary<string, IMember> _members;
-        private AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
-        private object _lock = new object();
+        private BuiltinTypeId _typeId;
 
         protected IReadOnlyDictionary<string, IMember> Members => WritableMembers;
 
@@ -39,17 +39,24 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             IPythonModule declaringModule,
             string doc,
             ILocationInfo loc,
-            bool isClassFactory = false
-        ) : this(name) {
+            BuiltinTypeId typeId = BuiltinTypeId.Unknown,
+            bool isBuiltIn = false,
+            bool isTypeFactory = false
+        ) : this(name, typeId, isBuiltIn, isTypeFactory) {
             Documentation = doc;
             DeclaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
             Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
-            IsClassFactory = isClassFactory;
+            IsTypeFactory = isTypeFactory;
         }
 
-        public AstPythonType(string name) {
+        public AstPythonType(string name, BuiltinTypeId typeId, bool isBuiltIn, bool isTypeFactory = false) {
             _name = name ?? throw new ArgumentNullException(nameof(name));
+            _typeId = typeId;
+            _typeId = typeId == BuiltinTypeId.Unknown && isTypeFactory ? BuiltinTypeId.Type : typeId;
+            IsBuiltIn = isBuiltIn;
         }
+
+        public AstPythonType(string name, BuiltinTypeId typeId): this(name, typeId, true) { }
 
         #region IPythonType
         public virtual string Name {
@@ -63,10 +70,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public virtual string Documentation { get; }
         public IPythonModule DeclaringModule { get; } = NoDeclaringModule;
         public virtual PythonMemberType MemberType => PythonMemberType.Unknown;
-        public virtual BuiltinTypeId TypeId => BuiltinTypeId.Type;
-        public virtual bool IsBuiltIn => false;
+        public virtual BuiltinTypeId TypeId => _typeId;
+        public virtual bool IsBuiltIn { get; }
         public virtual IPythonFunction GetConstructors() => null;
-        public bool IsClassFactory { get; }
+        public bool IsTypeFactory { get; }
 
         #endregion
 
@@ -84,6 +91,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public virtual IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Members.Keys;
         #endregion
 
+        internal bool TrySetTypeId(BuiltinTypeId typeId) {
+            if (_typeId != BuiltinTypeId.Unknown) {
+                return false;
+            }
+            _typeId = typeId;
+            return true;
+        }
+
         internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
             lock (_lock) {
                 foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
@@ -99,6 +114,23 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 }
                 return member;
             }
+        }
+
+        internal bool IsHidden => ContainsMember("__hidden__");
+
+        /// <summary>
+        /// Provides type factory. Similar to __metaclass__ but does not expose full
+        /// metaclass functionality. Used in cases when function has to return a class
+        /// rather than the class instance. Example: function annotated as '-> Type[T]'
+        /// can be called as a T constructor so func() constructs class instance rather than invoking
+        /// call on an existing instance. See also collections/namedtuple typing in the Typeshed.
+        /// </summary>
+        internal AstPythonType GetTypeFactory() {
+            var clone = new AstPythonType(Name, DeclaringModule, Documentation,
+               Locations.OfType<LocationInfo>().FirstOrDefault(),
+               TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId);
+            clone.AddMembers(Members, true);
+            return clone;
         }
 
         protected bool ContainsMember(string name) => Members.ContainsKey(name);

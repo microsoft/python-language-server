@@ -197,12 +197,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private IPythonType MakeGenericClassType(IPythonType typeArg) {
             if (typeArg.IsBuiltIn) {
-                var builtinType = _scope.Interpreter.GetBuiltinType(typeArg.TypeId) as AstPythonBuiltinType;
-                return builtinType.TypeId == BuiltinTypeId.Unknown
+                var type = _scope.Interpreter.GetBuiltinType(typeArg.TypeId) as AstPythonType;
+                return type.TypeId == BuiltinTypeId.Unknown
                     ? _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type)
-                    : builtinType.GetClassFactory();
+                    : type.GetTypeFactory();
             }
-            return new AstPythonType(typeArg.Name, _scope.Module, typeArg.Documentation, null, isClassFactory: true);
+            return new AstPythonType(typeArg.Name, _scope.Module, typeArg.Documentation, null, BuiltinTypeId.Type, isTypeFactory: true);
         }
 
         private class ModuleType : AstPythonType {
@@ -237,9 +237,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         private class NameType : AstPythonType {
-            public NameType(string name): base(name) {
-            }
-            public override bool IsBuiltIn => true;
+            public NameType(string name): base(name, BuiltinTypeId.Unknown) { }
          }
     }
 }

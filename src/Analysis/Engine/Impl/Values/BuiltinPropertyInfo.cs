@@ -28,9 +28,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _doc = null;
         }
 
-        public override IPythonType PythonType {
-            get { return _type; }
-        }
+        public override IPythonType PythonType => Type;
 
         public override IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) {
             if (instance == ProjectState._noneInst) {

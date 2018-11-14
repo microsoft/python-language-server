@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -20,39 +20,31 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     class BoundBuiltinMethodInfo : BuiltinNamespace<IPythonType> {
-        private readonly BuiltinMethodInfo _method;
         private OverloadResult[] _overloads;
 
         public BoundBuiltinMethodInfo(BuiltinMethodInfo method)
             : base(method.PythonType, method.ProjectState) {
-            _method = method;
+            Method = method;
         }
 
         public BoundBuiltinMethodInfo(IPythonFunction function, PythonAnalyzer projectState)
             : this(new BuiltinMethodInfo(function, PythonMemberType.Method, projectState)) {
         }
 
-        public override PythonMemberType MemberType => _method.MemberType;
+        public override PythonMemberType MemberType => Method.MemberType;
 
-        public override IPythonType PythonType => base._type;
+        public override IPythonType PythonType => Type;
 
-        public BuiltinMethodInfo Method => _method;
+        public BuiltinMethodInfo Method { get; }
 
-        public override string Documentation => _method.Documentation;
+        public override string Documentation => Method.Documentation;
 
-        public override string Description {
-            get {
-                if (_method.Function.IsBuiltIn) {
-                    return "bound built-in method " + _method.Name;
-                }
-                return "bound method " + _method.Name;
-            }
-        }
+        public override string Description => "bound method " + Method.Name;
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             // Check if method returns self
-            var returnType = _method.ReturnTypes.GetInstanceType();
-            if (args.Length > 0 && returnType.Split(v => v is BuiltinInstanceInfo biif && biif.PythonType == _method.Function?.DeclaringType, out _, out _)) {
+            var returnType = Method.ReturnTypes.GetInstanceType();
+            if (args.Length > 0 && returnType.Split(v => v is BuiltinInstanceInfo biif && biif.PythonType == Method.Function?.DeclaringType, out _, out _)) {
                 return args[0]; //  Return actual self (i.e. derived class)
             }
             return returnType;
@@ -61,10 +53,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IEnumerable<OverloadResult> Overloads {
             get {
                 if (_overloads == null) {
-                    var overloads = _method.Function.Overloads;
+                    var overloads = Method.Function.Overloads;
                     var result = new OverloadResult[overloads.Count];
-                    for (int i = 0; i < result.Length; i++) {
-                        result[i] = new BuiltinFunctionOverloadResult(_method.ProjectState, _method.Name, overloads[i], _method._fromFunction ? 1 : 0);
+                    for (var i = 0; i < result.Length; i++) {
+                        result[i] = new BuiltinFunctionOverloadResult(Method.ProjectState, Method.Name, overloads[i], Method._fromFunction ? 1 : 0);
                     }
                     _overloads = result;
                 }

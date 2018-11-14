@@ -47,7 +47,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         protected abstract void EnsureUnionType();
-        protected virtual string TypeName => _type?.Name ?? "iterable";
+        protected virtual string TypeName => Type?.Name ?? "iterable";
         protected abstract IAnalysisSet MakeIteratorInfo(Node n, AnalysisUnit unit);
 
         public override IAnalysisSet GetEnumeratorTypes(Node node, AnalysisUnit unit) {

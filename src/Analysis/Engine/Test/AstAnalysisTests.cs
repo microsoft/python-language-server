@@ -101,24 +101,24 @@ namespace AnalysisTests {
                 "f"
             );
 
-            mod.GetMember(null, "C1").Should().BeOfType<AstPythonType>()
+            mod.GetMember(null, "C1").Should().BeOfType<AstPythonClass>()
                 .Which.Documentation.Should().Be("C1");
-            mod.GetMember(null, "C2").Should().BeOfType<AstPythonType>();
-            mod.GetMember(null, "C3").Should().BeOfType<AstPythonType>();
-            mod.GetMember(null, "C4").Should().BeOfType<AstPythonType>();
-            mod.GetMember(null, "C5").Should().BeOfType<AstPythonType>()
+            mod.GetMember(null, "C2").Should().BeOfType<AstPythonClass>();
+            mod.GetMember(null, "C3").Should().BeOfType<AstPythonClass>();
+            mod.GetMember(null, "C4").Should().BeOfType<AstPythonClass>();
+            mod.GetMember(null, "C5").Should().BeOfType<AstPythonClass>()
                 .Which.Documentation.Should().Be("C1");
-            mod.GetMember(null, "D").Should().BeOfType<AstPythonType>();
-            mod.GetMember(null, "E").Should().BeOfType<AstPythonType>();
+            mod.GetMember(null, "D").Should().BeOfType<AstPythonClass>();
+            mod.GetMember(null, "E").Should().BeOfType<AstPythonClass>();
             mod.GetMember(null, "f").Should().BeOfType<AstPythonFunction>();
 
-            var f1 = mod.GetMember(null, "F1").Should().BeOfType<AstPythonType>().Which;
+            var f1 = mod.GetMember(null, "F1").Should().BeOfType<AstPythonClass>().Which;
             f1.GetMemberNames(null).Should().OnlyContain("F2", "F3", "F6", "__class__", "__bases__");
-            f1.GetMember(null, "F6").Should().BeOfType<AstPythonType>()
+            f1.GetMember(null, "F6").Should().BeOfType<AstPythonClass>()
                 .Which.Documentation.Should().Be("C1");
-            f1.GetMember(null, "F2").Should().BeOfType<AstPythonType>();
-            f1.GetMember(null, "F3").Should().BeOfType<AstPythonType>();
-            f1.GetMember(null, "__class__").Should().BeOfType<AstPythonType>();
+            f1.GetMember(null, "F2").Should().BeOfType<AstPythonClass>();
+            f1.GetMember(null, "F3").Should().BeOfType<AstPythonClass>();
+            f1.GetMember(null, "__class__").Should().BeOfType<AstPythonClass>();
             f1.GetMember(null, "__bases__").Should().BeOfType<AstPythonSequence>();
         }
 
@@ -136,17 +136,17 @@ namespace AnalysisTests {
             mod.GetMember(null, "g").Should().BeOfType<AstPythonFunction>();
             mod.GetMember(null, "h").Should().BeOfType<AstPythonFunction>();
 
-            var c = mod.GetMember(null, "C").Should().BeOfType<AstPythonType>().Which;
+            var c = mod.GetMember(null, "C").Should().BeOfType<AstPythonClass>().Which;
             c.GetMemberNames(null).Should().OnlyContain("i", "j", "C2", "__class__", "__bases__");
             c.GetMember(null, "i").Should().BeOfType<AstPythonFunction>();
             c.GetMember(null, "j").Should().BeOfType<AstPythonFunction>();
-            c.GetMember(null, "__class__").Should().BeOfType<AstPythonType>();
+            c.GetMember(null, "__class__").Should().BeOfType<AstPythonClass>();
             c.GetMember(null, "__bases__").Should().BeOfType<AstPythonSequence>();
 
-            var c2 = c.GetMember(null, "C2").Should().BeOfType<AstPythonType>().Which;
+            var c2 = c.GetMember(null, "C2").Should().BeOfType<AstPythonClass>().Which;
             c2.GetMemberNames(null).Should().OnlyContain("k", "__class__", "__bases__");
             c2.GetMember(null, "k").Should().BeOfType<AstPythonFunction>();
-            c2.GetMember(null, "__class__").Should().BeOfType<AstPythonType>();
+            c2.GetMember(null, "__class__").Should().BeOfType<AstPythonClass>();
             c2.GetMember(null, "__bases__").Should().BeOfType<AstPythonSequence>();
         }
 
@@ -267,8 +267,9 @@ R_A3 = R_A1.r_A()";
             using (var server = await CreateServerAsync()) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync("from InstanceMethod import f1, f2");
 
-                analysis.Should().HaveVariable("f1").OfType(BuiltinTypeId.Function).WithValue<BuiltinFunctionInfo>()
-                    .And.HaveVariable("f2").OfType(BuiltinTypeId.MethodDescriptor).WithValue<BoundBuiltinMethodInfo>();
+                analysis.Should()
+                    .HaveVariable("f1").OfType(BuiltinTypeId.Function).WithValue<BoundBuiltinMethodInfo>().And
+                    .HaveVariable("f2").OfType(BuiltinTypeId.Method).WithValue<BoundBuiltinMethodInfo>();
             }
         }
 
@@ -279,7 +280,7 @@ R_A3 = R_A1.r_A()";
 
                 foreach (var fnName in new[] { "seed", "randrange", "gauss" }) {
                     analysis.Should().HaveVariable(fnName)
-                        .OfType(BuiltinTypeId.MethodDescriptor)
+                        .OfType(BuiltinTypeId.Method)
                         .WithValue<BoundBuiltinMethodInfo>()
                         .Which.Should().HaveOverloadWithParametersAt(0);
                 }
@@ -574,7 +575,8 @@ class BankAccount(object):
                     // Ensure we can get all the builtin types
                     foreach (BuiltinTypeId v in Enum.GetValues(typeof(BuiltinTypeId))) {
                         var type = interp.GetBuiltinType(v);
-                        type.Should().NotBeNull().And.BeOfType<AstPythonBuiltinType>($"Did not find {v}");
+                        type.Should().NotBeNull().And.BeOfType<AstPythonType>($"Did not find {v}");
+                        type.IsBuiltIn.Should().BeTrue();
                     }
 
                     // Ensure we cannot see or get builtin types directly
@@ -987,8 +989,8 @@ i_5 = sys.getwindowsversion().platform_version[0]
                     .And.HaveVariable("s_1").OfTypes(BuiltinTypeId.Str)
                     .And.HaveVariable("s_2").OfTypes(BuiltinTypeId.Str)
                     .And.HaveVariable("s_3").OfTypes(BuiltinTypeId.Str)
-                    .And.HaveVariable("f_1").OfTypes(BuiltinTypeId.MethodDescriptor)
-                    .And.HaveVariable("f_2").OfTypes(BuiltinTypeId.MethodDescriptor)
+                    .And.HaveVariable("f_1").OfTypes(BuiltinTypeId.Method)
+                    .And.HaveVariable("f_2").OfTypes(BuiltinTypeId.Method)
                     .And.HaveVariable("i_1").OfTypes(BuiltinTypeId.Int)
                     .And.HaveVariable("i_2").OfTypes(BuiltinTypeId.Int)
                     .And.HaveVariable("i_3").OfTypes(BuiltinTypeId.Int)

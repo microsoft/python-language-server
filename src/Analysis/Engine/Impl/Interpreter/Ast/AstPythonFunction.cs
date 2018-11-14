@@ -31,7 +31,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             IPythonModule declaringModule,
             IPythonType declaringType,
             ILocationInfo loc
-        ) : base(fd.Name, declaringModule, fd.Documentation, loc) {
+        ) : base(fd.Name, declaringModule, fd.Documentation, loc,
+            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, true) {
+
             FunctionDefinition = fd;
             DeclaringType = declaringType;
 
@@ -52,7 +54,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public FunctionDefinition FunctionDefinition { get; }
         public IPythonType DeclaringType { get; }
         public override string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
-        public override bool IsBuiltIn => true;
         public virtual bool IsClassMethod { get; }
         public virtual bool IsStatic { get; }
 

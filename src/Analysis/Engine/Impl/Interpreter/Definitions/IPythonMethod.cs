@@ -19,7 +19,7 @@ namespace Microsoft.PythonTools.Interpreter {
     /// <summary>
     /// Represents a method descriptor for an instance of a function.
     /// </summary>
-    public interface IPythonMethodDescriptor : IMember {
+    public interface IPythonMethod : IMember {
         /// <summary>
         /// The built-in function that the method descriptor wraps.
         /// </summary>

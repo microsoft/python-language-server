@@ -451,7 +451,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 case PythonMemberType.Function:
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Function);
                 case PythonMemberType.Method:
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.MethodDescriptor);
+                    return Interpreter.GetBuiltinType(BuiltinTypeId.Method);
                 case PythonMemberType.Enum:
                 case PythonMemberType.EnumInstance:
                     break;
@@ -480,8 +480,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Property);
             }
 
-            if (value is IPythonMethodDescriptor) {
-                return Interpreter.GetBuiltinType(BuiltinTypeId.MethodDescriptor);
+            if (value is IPythonMethod) {
+                return Interpreter.GetBuiltinType(BuiltinTypeId.Method);
             }
 
             if (value is IPythonMultipleMembers mm) {

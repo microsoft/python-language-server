@@ -52,6 +52,6 @@ namespace Microsoft.PythonTools.Interpreter {
         /// <summary>
         /// Type is a type class factory.
         /// </summary>
-        bool IsClassFactory { get; }
+        bool IsTypeFactory { get; }
     }
 }
