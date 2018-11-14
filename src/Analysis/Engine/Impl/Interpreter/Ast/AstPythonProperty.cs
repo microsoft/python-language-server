@@ -5,38 +5,31 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonProperty : IBuiltinProperty2, ILocatedMember {
+    class AstPythonProperty : AstPythonFunction, IPythonProperty {
         private IPythonFunctionOverload _getter;
 
-        public AstPythonProperty(
-            PythonAst ast,
-            FunctionDefinition definition,
-            ILocationInfo location
-        ) {
-            IsReadOnly = true;
-            Locations = new[] { location };
-            FunctionDefinition = definition;
+        public AstPythonProperty(FunctionDefinition fd, IPythonModule declaringModule, IPythonType declaringType, ILocationInfo location)
+            : base(fd, declaringModule, declaringType, location) {
         }
 
-        public FunctionDefinition FunctionDefinition { get; }
+        #region IMember
+        public override PythonMemberType MemberType => PythonMemberType.Property;
+        #endregion
 
-        public void AddOverload(IPythonFunctionOverload overload)
-            => _getter = _getter ?? overload;
+        #region IPythonFunction
+        public override bool IsStatic => false;
+        #endregion
+
+        #region IPythonProperty
+        public string Description => Type == null ? Resources.PropertyOfUnknownType : Resources.PropertyOfType.FormatUI(Type.Name);
+        #endregion
+
+        internal override void AddOverload(IPythonFunctionOverload overload) => _getter = _getter ?? overload;
 
         public void MakeSettable() => IsReadOnly = false;
 
         public IPythonType Type => _getter?.ReturnType.FirstOrDefault();
 
-        public bool IsStatic => false;
-
-        public string Documentation => FunctionDefinition.Documentation;
-
-        public string Description => Type == null ? "property of unknown type" : "property of type {0}".FormatUI(Type.Name);
-
-        public PythonMemberType MemberType => PythonMemberType.Property;
-        
-        public bool IsReadOnly { get; private set; }
-
-        public IEnumerable<ILocationInfo> Locations { get; }
+        public bool IsReadOnly { get; private set; } = true;
     }
 }

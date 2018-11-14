@@ -446,7 +446,7 @@ namespace Microsoft.PythonTools.Analysis {
             // if something non-excludable aliased w/ something excludable we probably only care about the excludable
             // (for example a module and None - timeit.py does this in the std lib)
             if (member is IPythonMultipleMembers multipleMembers) {
-                foreach (var innerMember in multipleMembers.Members) {
+                foreach (var innerMember in multipleMembers.GetMembers()) {
                     if (IsExcludedBuiltin(module, innerMember)) {
                         return false;
                     }

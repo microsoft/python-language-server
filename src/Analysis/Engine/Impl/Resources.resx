@@ -315,4 +315,10 @@
   <data name="ErrorUseBeforeDef" xml:space="preserve">
     <value>'{0}' used before definition</value>
   </data>
+  <data name="PropertyOfType" xml:space="preserve">
+    <value>property of type {0}</value>
+  </data>
+  <data name="PropertyOfUnknownType" xml:space="preserve">
+    <value>property of unknown type</value>
+  </data>
 </root>

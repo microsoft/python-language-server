@@ -30,8 +30,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public SequenceBuiltinClassInfo(IPythonType classObj, PythonAnalyzer projectState)
             : base(classObj, projectState) {
-            var seqType = classObj as IPythonSequenceType;
-            if (seqType != null && seqType.IndexTypes != null) {
+            if (classObj is IPythonSequenceType seqType && seqType.IndexTypes != null) {
                 _indexTypes = seqType.IndexTypes.Select(projectState.GetAnalysisValueFromObjects).Select(AnalysisValueSetExtensions.GetInstanceType).ToArray();
             } else {
                 _indexTypes = Array.Empty<IAnalysisSet>();

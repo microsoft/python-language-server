@@ -35,7 +35,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             if (type is IPythonMultipleMembers mm) {
-                return mm.Members.Any(IsTypingType);
+                return mm.GetMembers().Any(IsTypingType);
             }
 
             return false;

@@ -30,7 +30,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private BoundBuiltinMethodInfo _boundMethod;
 
         public BuiltinMethodInfo(IPythonMethodDescriptor method, PythonAnalyzer projectState)
-            : base(projectState.Types[BuiltinTypeId.BuiltinMethodDescriptor], projectState) {
+            : base(projectState.Types[BuiltinTypeId.MethodDescriptor], projectState) {
             var function = method.Function;
             _memberType = method.MemberType;
             _function = function;
@@ -38,7 +38,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public BuiltinMethodInfo(IPythonFunction function, PythonMemberType memType, PythonAnalyzer projectState)
-            : base(projectState.Types[BuiltinTypeId.BuiltinMethodDescriptor], projectState) {
+            : base(projectState.Types[BuiltinTypeId.MethodDescriptor], projectState) {
             _memberType = memType;
             _function = function;
             _returnTypes = GetReturnTypes(function, projectState);
@@ -98,7 +98,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return _doc;
             }
         }
-        public override BuiltinTypeId TypeId => BuiltinTypeId.BuiltinFunction;
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Function;
         public override PythonMemberType MemberType => _memberType;
         public override string Name => _function.Name;
         public override ILocatedMember GetLocatedMember() => _function as ILocatedMember;

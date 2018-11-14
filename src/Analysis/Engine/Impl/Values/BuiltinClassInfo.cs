@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -81,7 +80,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public string FullyQualifiedName {
             get {
                 if (_type != null) {
-                    if (_type.IsBuiltin) {
+                    if (_type.IsBuiltIn) {
                         return _type.Name;
                     }
                     return _type.DeclaringModule.Name + "." + _type.Name;
@@ -101,7 +100,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IMro Mro {
             get {
-                var mro = _type.Mro;
+                var mro = (_type as IPythonClass)?.Mro;
                 if (mro != null) {
                     return new Mro(mro.Where(t => t != null).Select(t => ProjectState.GetBuiltinType(t)));
                 }
@@ -241,7 +240,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public virtual IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
-            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, _type.IsBuiltin ? "type " : "class ");
+            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, _type.IsBuiltIn ? "type " : "class ");
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Name, FullName);
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.EndOfDeclaration, string.Empty);
         }
@@ -249,7 +248,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private string FullName {
             get {
                 var name = _type.Name;
-                if (!_type.IsBuiltin && !string.IsNullOrEmpty(_type.DeclaringModule?.Name)) {
+                if (!_type.IsBuiltIn && !string.IsNullOrEmpty(_type.DeclaringModule?.Name)) {
                     name = _type.DeclaringModule.Name + "." + name;
                 }
                 return name;

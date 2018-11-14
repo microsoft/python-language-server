@@ -111,7 +111,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private LocationInfo GetLoc(Node node) => _scope.GetLoc(node);
 
         private IMember Clone(IMember member) =>
-            member is IPythonMultipleMembers mm ? AstPythonMultipleMembers.Create(mm.Members) :
+            member is IPythonMultipleMembers mm ? AstPythonMultipleMembers.Create(mm.GetMembers()) :
             member;
 
         public override bool Walk(AssignmentStatement node) {
@@ -321,14 +321,18 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault();
             foreach (var d in dec) {
                 var obj = _scope.GetValueFromExpression(d);
+
+                var declaringType = obj as IPythonType;
+                var declaringModule = declaringType?.DeclaringModule;
+
                 if (obj == _interpreter.GetBuiltinType(BuiltinTypeId.Property)) {
-                    AddProperty(node);
+                    AddProperty(node, declaringModule, declaringType);
                     return false;
                 }
-                var mod = (obj as IPythonType)?.DeclaringModule ?? (obj as IPythonFunction)?.DeclaringModule;
-                var name = (obj as IPythonType)?.Name ?? (obj as IPythonFunction)?.Name;
-                if (mod?.Name == "abc" && name == "abstractproperty") {
-                    AddProperty(node);
+
+                var name = declaringType?.Name;
+                if (declaringModule?.Name == "abc" && name == "abstractproperty") {
+                    AddProperty(node, declaringModule, declaringType);
                     return false;
                 }
             }
@@ -348,10 +352,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return false;
         }
 
-        private void AddProperty(FunctionDefinition node) {
+        private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType) {
             var existing = _scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
             if (existing == null) {
-                existing = new AstPythonProperty(_ast, node, GetLoc(node));
+                existing = new AstPythonProperty(node, declaringModule, declaringType, GetLoc(node));
                 _scope.SetInScope(node.Name, existing);
             }
 
@@ -383,14 +387,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return ce?.Value as string;
         }
 
-        private AstPythonType CreateType(ClassDefinition node) {
-            if (node == null) {
-                throw new ArgumentNullException(nameof(node));
-            }
-            return CreateBuiltinTypes
-                ? new AstPythonBuiltinType(node.Name, _module, node.StartIndex, GetDoc(node.Body as SuiteStatement), GetLoc(node))
-                : new AstPythonType(node.Name,  _module, node.StartIndex, GetDoc(node.Body as SuiteStatement), GetLoc(node));
+        private AstPythonClass CreateClass(ClassDefinition node) {
+            node = node ??throw new ArgumentNullException(nameof(node));
+            return new AstPythonClass(node,  _module, GetDoc(node.Body as SuiteStatement), GetLoc(node), CreateBuiltinTypes);
         }
+
         private void CollectTopLevelDefinitions() {
             var s = (_ast.Body as SuiteStatement).Statements.ToArray();
 
@@ -399,7 +400,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             foreach (var node in s.OfType<ClassDefinition>()) {
-                _members[node.Name] = CreateType(node);
+                _members[node.Name] = CreateClass(node);
             }
 
             foreach (var node in s.OfType<AssignmentStatement>().Where(n => n.Right is NameExpression)) {
@@ -414,10 +415,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public override bool Walk(ClassDefinition node) {
             var member = _scope.GetInScope(node.Name);
-            var t = member as AstPythonType ??
-                (member as IPythonMultipleMembers)?.Members.OfType<AstPythonType>().FirstOrDefault(pt => pt.StartIndex == node.StartIndex);
+            var t = member as AstPythonClass;
+            if (t == null && member is IPythonMultipleMembers mm) {
+                t = mm.GetMembers().OfType<AstPythonClass>().FirstOrDefault(pt => pt.ClassDefinition.StartIndex == node.StartIndex);
+            }
             if (t == null) {
-                t = CreateType(node);
+                t = CreateClass(node);
                 _scope.SetInScope(node.Name, t);
             }
 
@@ -447,7 +450,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var existing = _scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonFunction;
             if (existing == null) {
                 var cls = _scope.GetInScope("__class__") as IPythonType;
-                existing = new AstPythonFunction(_ast, _module, cls, node, GetLoc(node));
+                existing = new AstPythonFunction(node, _module, cls, GetLoc(node));
                 _scope.SetInScope(node.Name, existing);
             }
 

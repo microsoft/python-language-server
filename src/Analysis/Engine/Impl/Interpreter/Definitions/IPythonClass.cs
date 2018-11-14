@@ -1,4 +1,4 @@
-﻿// Python Tools for Visual Studio
+// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -9,24 +9,22 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Parsing.Ast;
 
-namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonBoundMethod : IPythonBoundFunction, ILocatedMember {
-        public AstPythonBoundMethod(IPythonFunction function, IPythonType selfType) {
-            Function = function;
-            SelfType = selfType;
-        }
-
-        public IPythonFunction Function { get; }
-        public IPythonType SelfType { get; }
-        public PythonMemberType MemberType => PythonMemberType.Method;
-        public IEnumerable<ILocationInfo> Locations => (Function as ILocatedMember)?.Locations;
+namespace Microsoft.PythonTools.Interpreter {
+    /// <summary>
+    /// Represents Python tclass - typically a type that has
+    /// __bases__ and the method resolution order.
+    /// </summary>
+    public interface IPythonClass : IPythonType {
+        ClassDefinition ClassDefinition { get; }
+        IReadOnlyList<IPythonType> Mro { get; }
+        IReadOnlyList<IPythonType> Bases { get; }
     }
 }

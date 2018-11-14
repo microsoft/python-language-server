@@ -19,10 +19,10 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinPropertyInfo : BuiltinNamespace<IPythonType> {
-        private readonly IBuiltinProperty _value;
+        private readonly IPythonProperty _value;
         private string _doc;
 
-        public BuiltinPropertyInfo(IBuiltinProperty value, PythonAnalyzer projectState)
+        public BuiltinPropertyInfo(IPythonProperty value, PythonAnalyzer projectState)
             : base(value.Type, projectState) {
             _value = value;
             _doc = null;

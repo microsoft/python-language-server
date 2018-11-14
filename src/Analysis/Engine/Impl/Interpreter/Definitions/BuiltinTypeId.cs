@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -22,7 +22,7 @@ namespace Microsoft.PythonTools.Interpreter {
     /// <summary>
     /// Well known built-in types that the analysis engine needs for doing interpretation.
     /// </summary>
-    public enum BuiltinTypeId : int {
+    public enum BuiltinTypeId {
         Unknown,
         Object,
         Type,
@@ -83,8 +83,8 @@ namespace Microsoft.PythonTools.Interpreter {
 
         Module,
         Function,
-        BuiltinMethodDescriptor,
-        BuiltinFunction,
+        Method,
+        MethodDescriptor,
         Generator,
 
         Property,
@@ -110,6 +110,7 @@ namespace Microsoft.PythonTools.Interpreter {
         DictItems,
         SetIterator,
         CallableIterator,
+        Class,
     }
 
     public static class BuiltinTypeIdExtensions {
@@ -162,8 +163,6 @@ namespace Microsoft.PythonTools.Interpreter {
                 case BuiltinTypeId.Tuple: name = "tuple"; break;
                 case BuiltinTypeId.Type: name = "type"; break;
 
-                case BuiltinTypeId.BuiltinFunction: name = "builtin_function"; break;
-                case BuiltinTypeId.BuiltinMethodDescriptor: name = "builtin_method_descriptor"; break;
                 case BuiltinTypeId.DictKeys: name = "dict_keys"; break;
                 case BuiltinTypeId.DictValues: name = "dict_values"; break;
                 case BuiltinTypeId.DictItems: name = "dict_items"; break;
@@ -211,8 +210,6 @@ namespace Microsoft.PythonTools.Interpreter {
                 case "type": return BuiltinTypeId.Type;
                 case "frozenset": return BuiltinTypeId.FrozenSet;
 
-                case "builtin_function": return BuiltinTypeId.BuiltinFunction;
-                case "builtin_method_descriptor": return BuiltinTypeId.BuiltinMethodDescriptor;
                 case "dict_keys": return BuiltinTypeId.DictKeys;
                 case "dict_values": return BuiltinTypeId.DictValues;
                 case "dict_items": return BuiltinTypeId.DictItems;

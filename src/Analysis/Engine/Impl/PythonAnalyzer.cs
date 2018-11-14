@@ -105,7 +105,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// Creates a new analyzer that is not ready for use. You must call and
         /// wait for <see cref="ReloadModulesAsync"/> to complete before using.
         /// </summary>
-        public static PythonAnalyzer Create(IPythonInterpreterFactory factory, IPythonInterpreter interpreter = null) 
+        public static PythonAnalyzer Create(IPythonInterpreterFactory factory, IPythonInterpreter interpreter = null)
             => new PythonAnalyzer(factory, interpreter);
 
         internal PythonAnalyzer(IPythonInterpreterFactory factory, IPythonInterpreter pythonInterpreter) {
@@ -172,7 +172,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             try {
                 // Cancel outstanding analysis
-                Queue.Clear(); 
+                Queue.Clear();
                 // Tell factory to clear cached modules. This also clears the interpreter data.
                 InterpreterFactory.NotifyImportNamesChanged();
                 // Now initialize the interpreter
@@ -574,7 +574,7 @@ namespace Microsoft.PythonTools.Analysis {
             return new IMemberResult[0];
         }
 
-        private static IMemberResult[] MemberDictToMemberResult(Dictionary<string, List<IAnalysisSet>> results) 
+        private static IMemberResult[] MemberDictToMemberResult(Dictionary<string, List<IAnalysisSet>> results)
             => results.Select(r => new MemberResult(r.Key, r.Value.SelectMany()) as IMemberResult).ToArray();
 
         /// <summary>
@@ -709,7 +709,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal BuiltinInstanceInfo GetInstance(IPythonType type) => GetBuiltinType(type).Instance;
 
-        internal BuiltinClassInfo GetBuiltinType(IPythonType type) => 
+        internal BuiltinClassInfo GetBuiltinType(IPythonType type) =>
             (BuiltinClassInfo)GetCached(type,
                 () => MakeBuiltinType(type)
             ) ?? ClassInfos[BuiltinTypeId.Object];
@@ -751,11 +751,14 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             var attrType = attr.GetType();
-            if (attr is IPythonType pt) {
-                return GetBuiltinType(pt);
-            } else if (attr is IPythonFunction pf) {
-                return GetCached(attr, () => new BuiltinFunctionInfo(pf, this)) ?? _noneInst;
-            } else if (attr is IPythonMethodDescriptor md) {
+            if (attr is IPythonFunction pf) {
+                if (pf.DeclaringType == null) {
+                    return GetCached(attr, () => new BuiltinFunctionInfo(pf, this)) ?? _noneInst;
+                }
+                return GetCached(attr, () => new BoundBuiltinMethodInfo(pf, this)) ?? _noneInst;
+            }
+
+            if (attr is IPythonMethodDescriptor md) {
                 return GetCached(attr, () => {
                     if (md.IsBound) {
                         return new BuiltinFunctionInfo(md.Function, this);
@@ -763,31 +766,45 @@ namespace Microsoft.PythonTools.Analysis {
                         return new BuiltinMethodInfo(md, this);
                     }
                 }) ?? _noneInst;
-            } else if (attr is IPythonBoundFunction pbf) {
-                return GetCached(attr, () => new BoundBuiltinMethodInfo(pbf, this)) ?? _noneInst;
-            } else if (attr is IBuiltinProperty bp) {
+            }
+
+            if (attr is IPythonProperty bp) {
                 return GetCached(attr, () => new BuiltinPropertyInfo(bp, this)) ?? _noneInst;
-            } else if (attr is IPythonModule pm) {
+            }
+
+            if (attr is IPythonModule pm) {
                 return Modules.GetBuiltinModule(pm);
-            } else if (attr is IPythonEvent pe) {
+            }
+
+            if (attr is IPythonEvent pe) {
                 return GetCached(attr, () => new BuiltinEventInfo(pe, this)) ?? _noneInst;
-            } else if (attr is IPythonConstant ||
+            }
+
+            if (attr is IPythonConstant ||
                        attrType == typeof(bool) || attrType == typeof(int) || attrType == typeof(Complex) ||
                        attrType == typeof(string) || attrType == typeof(long) || attrType == typeof(double)) {
                 return GetConstant(attr).First();
-            } else if (attr is IMemberContainer mc) {
+            }
+
+            if (attr is IMemberContainer mc) {
                 return GetCached(attr, () => new ReflectedNamespace(mc, this));
-            } else if (attr is IPythonMultipleMembers mm) {
-                var members = mm.Members;
+            }
+
+            if (attr is IPythonMultipleMembers mm) {
+                var members = mm.GetMembers();
                 return GetCached(attr, () =>
                     MultipleMemberInfo.Create(members.Select(GetAnalysisValueFromObjects)).FirstOrDefault() ??
                         ClassInfos[BuiltinTypeId.NoneType].Instance
                 );
-            } else {
-                var pyAttrType = GetTypeFromObject(attr);
-                Debug.Assert(pyAttrType != null);
-                return GetBuiltinType(pyAttrType).Instance;
             }
+
+            if (attr is IPythonType pt) {
+                return GetBuiltinType(pt);
+            }
+
+            var pyAttrType = GetTypeFromObject(attr);
+            Debug.Assert(pyAttrType != null);
+            return GetBuiltinType(pyAttrType).Instance;
         }
 
         internal IDictionary<string, IAnalysisSet> GetAllMembers(IMemberContainer container, IModuleContext moduleContext) {
@@ -998,7 +1015,7 @@ namespace Microsoft.PythonTools.Analysis {
             return GetAggregateWorker(aggregating);
         }
 
-        private static void SortAggregates(IProjectEntry[] aggregating) 
+        private static void SortAggregates(IProjectEntry[] aggregating)
             => Array.Sort(aggregating, (x, y) => x.GetHashCode() - y.GetHashCode());
 
         internal AggregateProjectEntry GetAggregate(HashSet<IProjectEntry> from, IProjectEntry with) {

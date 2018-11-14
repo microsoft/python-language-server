@@ -9,12 +9,11 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.PythonTools.Analysis;
@@ -22,24 +21,22 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonFunction : IPythonFunction2, ILocatedMember, IHasQualifiedName {
-        private readonly List<IPythonFunctionOverload> _overloads;
+    class AstPythonFunction : AstPythonType, IPythonFunction {
+        private readonly List<IPythonFunctionOverload> _overloads = new List<IPythonFunctionOverload>();
         private readonly string _doc;
+        private readonly object _lock = new object();
 
         public AstPythonFunction(
-            PythonAst ast,
-            IPythonModule declModule,
-            IPythonType declType,
-            FunctionDefinition def,
+            FunctionDefinition fd,
+            IPythonModule declaringModule,
+            IPythonType declaringType,
             ILocationInfo loc
-        ) {
-            DeclaringModule = declModule ?? throw new ArgumentNullException(nameof(declModule));
-            DeclaringType = declType;
-            FunctionDefinition = def;
+        ) : base(fd.Name, declaringModule, fd.Documentation, loc) {
+            FunctionDefinition = fd;
+            DeclaringType = declaringType;
 
-            Name = FunctionDefinition.Name;
             if (Name == "__init__") {
-                _doc = declType?.Documentation;
+                _doc = declaringType?.Documentation;
             }
 
             foreach (var dec in (FunctionDefinition.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().OfType<NameExpression>()) {
@@ -49,33 +46,32 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     IsStatic = true;
                 }
             }
-
-            _overloads = new List<IPythonFunctionOverload>();
-
-            Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
         }
 
+        #region IPythonFunction
         public FunctionDefinition FunctionDefinition { get; }
+        public IPythonType DeclaringType { get; }
+        public override string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
+        public override bool IsBuiltIn => true;
+        public virtual bool IsClassMethod { get; }
+        public virtual bool IsStatic { get; }
 
-        internal void AddOverload(IPythonFunctionOverload overload) => _overloads.Add(overload);
-
-        public IPythonModule DeclaringModule {get;}
-        public IPythonType DeclaringType {get;}
-        public string Name { get; }
-        public string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
-        public bool IsBuiltin => true;
-
-        public bool IsClassMethod { get; }
-        public bool IsStatic { get; }
-
-        public PythonMemberType MemberType => DeclaringType == null ? PythonMemberType.Function : PythonMemberType.Method;
+        public override PythonMemberType MemberType
+            => DeclaringType == null ? PythonMemberType.Function : PythonMemberType.Method;
 
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
+        #endregion
 
-        public IEnumerable<ILocationInfo> Locations { get; }
-
-        public string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
-        public KeyValuePair<string, string> FullyQualifiedNamePair =>
+        #region IHasQualifiedName
+        public override string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
+        public override KeyValuePair<string, string> FullyQualifiedNamePair =>
             new KeyValuePair<string, string>((DeclaringType as IHasQualifiedName)?.FullyQualifiedName ?? DeclaringType?.Name ?? DeclaringModule?.Name, Name);
+        #endregion
+
+        internal virtual void AddOverload(IPythonFunctionOverload overload) {
+            lock (_lock) {
+                _overloads.Add(overload);
+            }
+        }
     }
 }

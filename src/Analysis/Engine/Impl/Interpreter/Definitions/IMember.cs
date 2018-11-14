@@ -20,8 +20,6 @@ namespace Microsoft.PythonTools.Interpreter {
     /// Represents a member that appears in a module, type, etc...
     /// </summary>
     public interface IMember {
-        PythonMemberType MemberType {
-            get;
-        }
+        PythonMemberType MemberType { get; }
     }
 }

@@ -19,7 +19,7 @@ namespace Microsoft.PythonTools.Analysis {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -156,6 +156,24 @@ namespace Microsoft.PythonTools.Analysis {
         internal static string LinesBetweenMethodsInClassShort {
             get {
                 return ResourceManager.GetString("LinesBetweenMethodsInClassShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to property of type {0}.
+        /// </summary>
+        internal static string PropertyOfType {
+            get {
+                return ResourceManager.GetString("PropertyOfType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to property of unknown type.
+        /// </summary>
+        internal static string PropertyOfUnknownType {
+            get {
+                return ResourceManager.GetString("PropertyOfUnknownType", resourceCulture);
             }
         }
         

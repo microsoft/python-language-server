@@ -15,35 +15,43 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter {
     public interface IPythonType : IMemberContainer, IMember {
-        IPythonFunction GetConstructors();
-
-        // PythonType.Get__name__(this);
+        // Python __name__.
         string Name { get; }
+
+        /// <summary>
+        /// Module the type is declared in.
+        /// </summary>
+        IPythonModule DeclaringModule { get; }
+
+        /// <summary>
+        /// Indicates built-in type id such as 'int' or 'str'
+        /// or 'type' for user-defined entities.
+        /// </summary>
+        BuiltinTypeId TypeId { get; }
 
         /// <summary>
         /// Human-readable documentation that may be displayed in the editor hover tooltip.
         /// </summary>
         string Documentation { get; }
 
-        BuiltinTypeId TypeId { get; }
-
-        IPythonModule DeclaringModule { get; }
-
-        IReadOnlyList<IPythonType> Mro { get; }
-
-        bool IsBuiltin { get; }
-    }
-
-    public interface IPythonType2 : IPythonType {
         /// <summary>
-        /// Indicates that type is a class. Used in cases when function has to return
-        /// a class rather than the class instance. Example: function annotated as '-> Type[T]'
-        /// can be called as a T constructor so func() constructs class instance rather than invoking
-        /// // call on an existing instance. See also collections/namedtuple typing in the Typeshed.
+        /// Python __init__.
         /// </summary>
-        bool IsClass { get; }
+        /// <returns></returns>
+        IPythonFunction GetConstructors();
+
+        /// <summary>
+        /// Indicates if type is a built-in type.
+        /// </summary>
+        bool IsBuiltIn { get; }
+
+        /// <summary>
+        /// Type is a type class factory.
+        /// </summary>
+        bool IsClassFactory { get; }
     }
 }

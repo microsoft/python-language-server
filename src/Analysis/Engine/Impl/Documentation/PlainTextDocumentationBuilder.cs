@@ -22,7 +22,7 @@ namespace Microsoft.PythonTools.Analysis.Documentation {
         public PlainTextDocumentationBuilder(InformationDisplayOptions displayOptions) : base(displayOptions) { }
 
         public override string GetModuleDocumentation(ModuleReference modRef) {
-            var prefix = modRef.AnalysisModule?.PythonType?.IsBuiltin == true ? "built-in module " : "module ";
+            var prefix = modRef.AnalysisModule?.PythonType?.IsBuiltIn == true ? "built-in module " : "module ";
             var contents = $"{prefix}{modRef.Name}";
             var doc = modRef.Module?.Documentation;
             if (!string.IsNullOrEmpty(doc)) {
@@ -33,11 +33,11 @@ namespace Microsoft.PythonTools.Analysis.Documentation {
         }
 
         protected override string MakeModuleDocumentation(AnalysisValue value) {
-            var prefix = value.PythonType?.IsBuiltin == true ? "built-in module " : "module ";
+            var prefix = value.PythonType?.IsBuiltIn == true ? "built-in module " : "module ";
             return FromDocAndDescription(value, prefix);
         }
         protected override string MakeFunctionDocumentation(AnalysisValue value) {
-            var prefix = value.PythonType?.IsBuiltin == true ? "built-in function " : "function ";
+            var prefix = value.PythonType?.IsBuiltIn == true ? "built-in function " : "function ";
             return FromDocAndDescription(value, prefix);
         }
         protected override string MakeClassDocumentation(AnalysisValue value) => FromDocAndDescription(value, string.Empty);

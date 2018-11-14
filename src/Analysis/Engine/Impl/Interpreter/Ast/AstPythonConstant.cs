@@ -33,24 +33,16 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public IPythonType Type { get; }
 
         public IMember GetMember(IModuleContext context, string name) {
-            IMember m;
             lock (_cachedMembers) {
-                if (_cachedMembers.TryGetValue(name, out m)) {
-                    return m;
-                }
-            }
-
-            m = Type?.GetMember(context, name);
-            if (m is IPythonFunction f && !f.IsStatic) {
-                m = new AstPythonBoundMethod(f, Type);
-                lock (_cachedMembers) {
+                if (!_cachedMembers.TryGetValue(name, out var m)) {
+                    m = Type?.GetMember(context, name);
                     _cachedMembers[name] = m;
                 }
+                return m;
             }
-            return m;
         }
 
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) 
+        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext)
             => Type?.GetMemberNames(moduleContext);
     }
 }

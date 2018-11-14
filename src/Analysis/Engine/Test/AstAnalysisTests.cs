@@ -267,8 +267,8 @@ R_A3 = R_A1.r_A()";
             using (var server = await CreateServerAsync()) {
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync("from InstanceMethod import f1, f2");
 
-                analysis.Should().HaveVariable("f1").OfType(BuiltinTypeId.BuiltinFunction).WithValue<BuiltinFunctionInfo>()
-                    .And.HaveVariable("f2").OfType(BuiltinTypeId.BuiltinMethodDescriptor).WithValue<BoundBuiltinMethodInfo>();
+                analysis.Should().HaveVariable("f1").OfType(BuiltinTypeId.Function).WithValue<BuiltinFunctionInfo>()
+                    .And.HaveVariable("f2").OfType(BuiltinTypeId.MethodDescriptor).WithValue<BoundBuiltinMethodInfo>();
             }
         }
 
@@ -279,7 +279,7 @@ R_A3 = R_A1.r_A()";
 
                 foreach (var fnName in new[] { "seed", "randrange", "gauss" }) {
                     analysis.Should().HaveVariable(fnName)
-                        .OfType(BuiltinTypeId.BuiltinMethodDescriptor)
+                        .OfType(BuiltinTypeId.MethodDescriptor)
                         .WithValue<BoundBuiltinMethodInfo>()
                         .Which.Should().HaveOverloadWithParametersAt(0);
                 }
@@ -460,13 +460,13 @@ class BankAccount(object):
 
         [TestMethod, Priority(0)]
         public void AstMro() {
-            var O = new AstPythonType("O");
-            var A = new AstPythonType("A");
-            var B = new AstPythonType("B");
-            var C = new AstPythonType("C");
-            var D = new AstPythonType("D");
-            var E = new AstPythonType("E");
-            var F = new AstPythonType("F");
+            var O = new AstPythonClass("O");
+            var A = new AstPythonClass("A");
+            var B = new AstPythonClass("B");
+            var C = new AstPythonClass("C");
+            var D = new AstPythonClass("D");
+            var E = new AstPythonClass("E");
+            var F = new AstPythonClass("F");
 
             F.SetBases(null, new[] { O });
             E.SetBases(null, new[] { O });
@@ -475,9 +475,9 @@ class BankAccount(object):
             B.SetBases(null, new[] { D, E });
             A.SetBases(null, new[] { B, C });
 
-            AstPythonType.CalculateMro(A).Should().Equal(new[] { "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
-            AstPythonType.CalculateMro(B).Should().Equal(new[] { "B", "D", "E", "O" }, (p, n) => p.Name == n);
-            AstPythonType.CalculateMro(C).Should().Equal(new[] { "C", "D", "F", "O" }, (p, n) => p.Name == n);
+            AstPythonClass.CalculateMro(A).Should().Equal(new[] { "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
+            AstPythonClass.CalculateMro(B).Should().Equal(new[] { "B", "D", "E", "O" }, (p, n) => p.Name == n);
+            AstPythonClass.CalculateMro(C).Should().Equal(new[] { "C", "D", "F", "O" }, (p, n) => p.Name == n);
         }
 
         private static IPythonModule Parse(string path, PythonLanguageVersion version) {
@@ -987,8 +987,8 @@ i_5 = sys.getwindowsversion().platform_version[0]
                     .And.HaveVariable("s_1").OfTypes(BuiltinTypeId.Str)
                     .And.HaveVariable("s_2").OfTypes(BuiltinTypeId.Str)
                     .And.HaveVariable("s_3").OfTypes(BuiltinTypeId.Str)
-                    .And.HaveVariable("f_1").OfTypes(BuiltinTypeId.BuiltinMethodDescriptor)
-                    .And.HaveVariable("f_2").OfTypes(BuiltinTypeId.BuiltinMethodDescriptor)
+                    .And.HaveVariable("f_1").OfTypes(BuiltinTypeId.MethodDescriptor)
+                    .And.HaveVariable("f_2").OfTypes(BuiltinTypeId.MethodDescriptor)
                     .And.HaveVariable("i_1").OfTypes(BuiltinTypeId.Int)
                     .And.HaveVariable("i_2").OfTypes(BuiltinTypeId.Int)
                     .And.HaveVariable("i_3").OfTypes(BuiltinTypeId.Int)

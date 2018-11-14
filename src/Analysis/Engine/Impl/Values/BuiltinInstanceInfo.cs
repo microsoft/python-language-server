@@ -212,8 +212,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             if (TypeId != BuiltinTypeId.NoneType &&
                 TypeId != BuiltinTypeId.Type &&
-                TypeId != BuiltinTypeId.Function &&
-                TypeId != BuiltinTypeId.BuiltinFunction) {
+                TypeId != BuiltinTypeId.Function) {
                 return klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Object]);
             }
 

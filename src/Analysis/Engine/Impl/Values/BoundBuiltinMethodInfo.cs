@@ -28,8 +28,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _method = method;
         }
 
-        public BoundBuiltinMethodInfo(IPythonBoundFunction function, PythonAnalyzer projectState)
-            : this(new BuiltinMethodInfo(function.Function, PythonMemberType.Method, projectState)) {
+        public BoundBuiltinMethodInfo(IPythonFunction function, PythonAnalyzer projectState)
+            : this(new BuiltinMethodInfo(function, PythonMemberType.Method, projectState)) {
         }
 
         public override PythonMemberType MemberType => _method.MemberType;
@@ -42,7 +42,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override string Description {
             get {
-                if (_method.Function.IsBuiltin) {
+                if (_method.Function.IsBuiltIn) {
                     return "bound built-in method " + _method.Name;
                 }
                 return "bound method " + _method.Name;

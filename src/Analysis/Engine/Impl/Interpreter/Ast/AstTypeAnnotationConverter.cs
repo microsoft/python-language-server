@@ -39,7 +39,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             if (m is IPythonMultipleMembers mm) {
-                return AstPythonMultipleMembers.CreateAs<IPythonType>(mm.Members);
+                return AstPythonMultipleMembers.CreateAs<IPythonType>(mm.GetMembers());
             }
 
             return null;
@@ -76,8 +76,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public override IPythonType LookupName(string name) {
             var m = _scope.LookupNameInScopes(name, NameLookupContext.LookupOptions.Global | NameLookupContext.LookupOptions.Builtins);
             if (m is IPythonMultipleMembers mm) {
-                m = (IMember)AstPythonMultipleMembers.CreateAs<IPythonType>(mm.Members) ??
-                    AstPythonMultipleMembers.CreateAs<IPythonModule>(mm.Members);
+                m = (IMember)AstPythonMultipleMembers.CreateAs<IPythonType>(mm.GetMembers()) ??
+                    AstPythonMultipleMembers.CreateAs<IPythonModule>(mm.GetMembers());
             }
             if (m is IPythonModule mod) {
                 // Wrap the module in an IPythonType interface
@@ -98,7 +98,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             type is UnionType unionType
                 ? unionType.Types
                 : type is IPythonMultipleMembers multipleMembers
-                    ? multipleMembers.Members.OfType<IPythonType>().ToArray()
+                    ? multipleMembers.GetMembers().OfType<IPythonType>().ToArray()
                     : null;
 
         public override IPythonType MakeGeneric(IPythonType baseType, IReadOnlyList<IPythonType> args) {
@@ -196,76 +196,50 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         private IPythonType MakeGenericClassType(IPythonType typeArg) {
-            if (typeArg.IsBuiltin) {
+            if (typeArg.IsBuiltIn) {
                 var builtinType = _scope.Interpreter.GetBuiltinType(typeArg.TypeId) as AstPythonBuiltinType;
                 return builtinType.TypeId == BuiltinTypeId.Unknown
                     ? _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type)
-                    : builtinType.AsClass();
+                    : builtinType.GetClassFactory();
             }
-            return new AstPythonType(typeArg.Name, _scope.Module, 0, typeArg.Documentation, null, isClass: true);
+            return new AstPythonType(typeArg.Name, _scope.Module, typeArg.Documentation, null, isClassFactory: true);
         }
 
-        private class ModuleType : IPythonType {
-            public ModuleType(IPythonModule module) {
-                DeclaringModule = module;
-            }
+        private class ModuleType : AstPythonType {
+            public ModuleType(IPythonModule module):
+                base(module.Name, module, module.Documentation, null) {
+             }
 
-            public IPythonModule DeclaringModule { get; }
+            public override BuiltinTypeId TypeId => BuiltinTypeId.Module;
+            public override bool IsBuiltIn => true;
+            public override PythonMemberType MemberType => PythonMemberType.Module;
+            public override IPythonFunction GetConstructors() => null;
 
-            public string Name => DeclaringModule.Name;
-            public string Documentation => DeclaringModule.Documentation;
-            public BuiltinTypeId TypeId => BuiltinTypeId.Module;
-            public IReadOnlyList<IPythonType> Mro => new[] { this };
-            public bool IsBuiltin => true;
-            public PythonMemberType MemberType => PythonMemberType.Module;
-            public IPythonFunction GetConstructors() => null;
-
-            public IMember GetMember(IModuleContext context, string name) => DeclaringModule.GetMember(context, name);
-            public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => DeclaringModule.GetMemberNames(moduleContext);
+            public override  IMember GetMember(IModuleContext context, string name) => DeclaringModule.GetMember(context, name);
+            public override IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => DeclaringModule.GetMemberNames(moduleContext);
         }
 
-        private class UnionType : IPythonMultipleMembers, IPythonType {
-            public UnionType(IReadOnlyList<IPythonType> types) {
+        private class UnionType : AstPythonType, IPythonMultipleMembers {
+            public UnionType(IReadOnlyList<IPythonType> types):
+                base("Any", null, null, null) {
                 Types = types;
             }
 
             public IReadOnlyList<IPythonType> Types { get; }
 
-            public IReadOnlyList<IMember> Members => Types.OfType<IMember>().ToArray();
+            public IReadOnlyList<IMember> GetMembers() => Types.OfType<IMember>().ToArray();
 
-            public PythonMemberType MemberType => PythonMemberType.Unknown;
-            public string Name => "Any";
-            public string Documentation => null;
-            public BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
-            public IPythonModule DeclaringModule => null;
-            public IReadOnlyList<IPythonType> Mro => null;
-            public bool IsBuiltin => false;
-            public IPythonFunction GetConstructors() => null;
-
-            public IMember GetMember(IModuleContext context, string name) => new UnionType(
+            public override IMember GetMember(IModuleContext context, string name) => new UnionType(
                 Types.Select(t => t.GetMember(context, name)).OfType<IPythonType>().ToArray()
             );
 
-            public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Types.SelectMany(t => t.GetMemberNames(moduleContext));
+            public override IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Types.SelectMany(t => t.GetMemberNames(moduleContext));
         }
 
-        private class NameType : IPythonType {
-            public NameType(string name) {
-                Name = name;
+        private class NameType : AstPythonType {
+            public NameType(string name): base(name) {
             }
-
-            public IPythonModule DeclaringModule => null;
-
-            public string Name { get; }
-            public string Documentation => null;
-            public BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
-            public IReadOnlyList<IPythonType> Mro => null;
-            public bool IsBuiltin => true;
-            public PythonMemberType MemberType => PythonMemberType.Unknown;
-            public IPythonFunction GetConstructors() => null;
-
-            public IMember GetMember(IModuleContext context, string name) => null;
-            public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => null;
-        }
+            public override bool IsBuiltIn => true;
+         }
     }
 }

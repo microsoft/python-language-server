@@ -21,6 +21,7 @@ using System.Linq;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
+using Microsoft.PythonTools.Interpreter.Ast;
 using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.PythonTools.Analysis {
@@ -152,22 +153,15 @@ namespace Microsoft.PythonTools.Analysis {
         public void Imported(IModuleContext context) { }
     }
 
-    class FallbackBuiltinPythonType : IPythonType {
-        public FallbackBuiltinPythonType(IBuiltinPythonModule module, BuiltinTypeId typeId, string name = null) {
-            DeclaringModule = module;
-            Name = name ?? typeId.GetModuleName((DeclaringModule as FallbackBuiltinModule)?.LanguageVersion ?? PythonLanguageVersion.None);
+    class FallbackBuiltinPythonType : AstPythonType {
+        public FallbackBuiltinPythonType(IBuiltinPythonModule declaringModule, BuiltinTypeId typeId, string name = null) :
+            base(name ?? typeId.GetModuleName((declaringModule as FallbackBuiltinModule)?.LanguageVersion ?? PythonLanguageVersion.None),
+                declaringModule, declaringModule.Documentation, null) {
             TypeId = typeId;
         }
 
-        public IPythonModule DeclaringModule { get; }
-        public string Documentation => string.Empty;
-        public bool IsBuiltin => true;
-        public PythonMemberType MemberType => PythonMemberType.Class;
-        public IReadOnlyList<IPythonType> Mro => new[] { (IPythonType)this };
-        public string Name { get; }
-        public BuiltinTypeId TypeId {get;}
-        public IPythonFunction GetConstructors() => null;
-        public IMember GetMember(IModuleContext context, string name) => null;
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Enumerable.Empty<string>();
+        public override bool IsBuiltIn => true;
+        public override PythonMemberType MemberType => PythonMemberType.Class;
+        public override BuiltinTypeId TypeId { get; }
     }
 }

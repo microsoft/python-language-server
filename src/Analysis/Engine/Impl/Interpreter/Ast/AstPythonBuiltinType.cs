@@ -28,14 +28,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public AstPythonBuiltinType(
             string name,
-            IPythonModule declModule,
-            int startIndex,
+            IPythonModule declaringModule,
             string doc,
             LocationInfo loc,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown,
-            bool isClass = false
-        ) : base(name, declModule, startIndex, doc, loc, isClass) {
-            _typeId = typeId == BuiltinTypeId.Unknown && isClass ? BuiltinTypeId.Type : typeId;
+            bool isClassFactory = false
+        ) : base(name, declaringModule, doc, loc, isClassFactory) {
+            _typeId = typeId;
         }
 
         public bool TrySetTypeId(BuiltinTypeId typeId) {
@@ -46,20 +45,24 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return true;
         }
 
-        public override bool IsBuiltin => true;
+        #region IPythonType
+        public override bool IsBuiltIn => true;
         public override BuiltinTypeId TypeId => _typeId;
+        #endregion
 
         public bool IsHidden => ContainsMember("__hidden__");
 
         /// <summary>
-        /// Clones builtin type as class. Typically used in scenarios where method
-        /// returns an object that acts like a class constructor, such as namedtuple.
+        /// Provides class factory. Similar to __metaclass__ but does not expose full
+        /// metaclass functionality. Used in cases when function has to return a class
+        /// rather than the class instance. Example: function annotated as '-> Type[T]'
+        /// can be called as a T constructor so func() constructs class instance rather than invoking
+        /// call on an existing instance. See also collections/namedtuple typing in the Typeshed.
         /// </summary>
-        /// <returns></returns>
-        public AstPythonBuiltinType AsClass() {
-            var clone = new AstPythonBuiltinType(Name, DeclaringModule, StartIndex, Documentation, 
-                Locations.OfType<LocationInfo>().FirstOrDefault(), 
-                TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId, true);
+        internal AstPythonBuiltinType GetClassFactory() {
+            var clone = new AstPythonBuiltinType(Name, DeclaringModule, Documentation,
+               Locations.OfType<LocationInfo>().FirstOrDefault(),
+               TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId);
             clone.AddMembers(Members, true);
             return clone;
         }

@@ -19,34 +19,16 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter {
     /// <summary>
-    /// Represents an object which is a function.  Provides documentation for signature help.
+    /// Represents a function.
     /// </summary>
-    public interface IPythonFunction : IMember {
-        string Name { get; }
-        string Documentation { get; }
-        bool IsBuiltin { get; }
-
+    public interface IPythonFunction : IPythonType {
+        FunctionDefinition FunctionDefinition { get; }
+        IPythonType DeclaringType { get; }
         /// <summary>
         /// False if binds instance when in a class, true if always static.
         /// </summary>
         bool IsStatic { get; }
         bool IsClassMethod { get; }
         IReadOnlyList<IPythonFunctionOverload> Overloads { get; }
-        IPythonType DeclaringType { get; }
-        IPythonModule DeclaringModule { get; }
-    }
-
-    public interface IPythonFunction2 : IPythonFunction {
-        FunctionDefinition FunctionDefinition { get; }
-    }
-
-    /// <summary>
-    /// Represents a bound function. Similar to <see cref="IPythonMethodDescriptor"/>,
-    /// but uses Python 3.x semantics where the first argument of Function is
-    /// assumed to be filled with an instance of SelfType.
-    /// </summary>
-    public interface IPythonBoundFunction : IMember {
-        IPythonType SelfType { get; }
-        IPythonFunction Function { get; }
     }
 }
