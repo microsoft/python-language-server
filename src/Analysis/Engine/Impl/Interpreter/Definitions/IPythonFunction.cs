@@ -31,4 +31,13 @@ namespace Microsoft.PythonTools.Interpreter {
         bool IsClassMethod { get; }
         IReadOnlyList<IPythonFunctionOverload> Overloads { get; }
     }
+
+    /// <summary>
+    /// Represents a bound function. Similar to <see cref="IPythonMethodDescriptor"/>,
+    /// but uses Python 3.x semantics where the first argument of Function is
+    /// assumed to be filled with an instance of SelfType.
+    /// </summary>
+    public interface IPythonBoundFunction : IPythonFunction {
+        IPythonType SelfType { get; }
+    }
 }
