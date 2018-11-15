@@ -268,7 +268,7 @@ R_A3 = R_A1.r_A()";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync("from InstanceMethod import f1, f2");
 
                 analysis.Should()
-                    .HaveVariable("f1").OfType(BuiltinTypeId.Function).WithValue<BoundBuiltinMethodInfo>().And
+                    .HaveVariable("f1").OfType(BuiltinTypeId.Function).WithValue<BuiltinFunctionInfo>().And
                     .HaveVariable("f2").OfType(BuiltinTypeId.Method).WithValue<BoundBuiltinMethodInfo>();
             }
         }

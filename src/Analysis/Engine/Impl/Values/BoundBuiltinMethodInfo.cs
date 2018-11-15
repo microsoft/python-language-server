@@ -33,6 +33,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override PythonMemberType MemberType => Method.MemberType;
 
+        public override BuiltinTypeId TypeId => Method.TypeId;
+
         public override IPythonType PythonType => Type;
 
         public BuiltinMethodInfo Method { get; }

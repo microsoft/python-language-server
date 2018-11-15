@@ -30,9 +30,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             FunctionDefinition fd,
             IPythonModule declaringModule,
             IPythonType declaringType,
-            ILocationInfo loc
-        ) : base(fd.Name, declaringModule, fd.Documentation, loc,
-            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, true) {
+            ILocationInfo loc,
+            BuiltinTypeId typeId = BuiltinTypeId.Function
+        ) : base(fd.Name, declaringModule, fd.Documentation, loc, typeId, true) {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;
@@ -50,15 +50,17 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
         }
 
+        #region IMember
+        public override PythonMemberType MemberType 
+            => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
+        #endregion
+
         #region IPythonFunction
         public FunctionDefinition FunctionDefinition { get; }
         public IPythonType DeclaringType { get; }
         public override string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
         public virtual bool IsClassMethod { get; }
         public virtual bool IsStatic { get; }
-
-        public override PythonMemberType MemberType
-            => DeclaringType == null ? PythonMemberType.Function : PythonMemberType.Method;
 
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
         #endregion
@@ -74,5 +76,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 _overloads.Add(overload);
             }
         }
+
+        internal IPythonFunction ToBoundMethod()
+            => new AstPythonFunction(FunctionDefinition, DeclaringModule, DeclaringType, Locations.FirstOrDefault(), BuiltinTypeId.Method);
     }
 }

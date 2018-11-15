@@ -22,65 +22,58 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinMethodInfo : BuiltinNamespace<IPythonType>, IHasRichDescription {
-        private readonly IPythonFunction _function;
-        private readonly PythonMemberType _memberType;
         internal readonly bool _fromFunction;
         private string _doc;
-        private readonly IAnalysisSet _returnTypes;
         private BoundBuiltinMethodInfo _boundMethod;
 
         public BuiltinMethodInfo(IPythonMethod method, PythonAnalyzer projectState)
             : base(projectState.Types[BuiltinTypeId.Method], projectState) {
             var function = method.Function;
-            _memberType = method.MemberType;
-            _function = function;
-            _returnTypes = GetReturnTypes(function, projectState);
+            MemberType = method.MemberType;
+            Function = function;
+            ReturnTypes = GetReturnTypes(function, projectState);
         }
 
         public BuiltinMethodInfo(IPythonFunction function, PythonMemberType memType, PythonAnalyzer projectState)
-            : base(projectState.Types[BuiltinTypeId.Function], projectState) {
-            _memberType = memType;
-            _function = function;
-            _returnTypes = GetReturnTypes(function, projectState);
+            : base(projectState.Types[
+                    memType == PythonMemberType.Function ? BuiltinTypeId.Function : BuiltinTypeId.Method
+                ], projectState) {
+            MemberType = memType;
+            Function = function;
+            ReturnTypes = GetReturnTypes(function, projectState);
             _fromFunction = true;
         }
 
         public override IPythonType PythonType => Type;
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames)
-            => _returnTypes.GetInstanceType();
+            => ReturnTypes.GetInstanceType();
 
         public override IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) {
             if (instance == ProjectState._noneInst) {
                 return base.GetDescriptor(node, instance, context, unit);
             }
 
-            if (_boundMethod == null) {
-                _boundMethod = new BoundBuiltinMethodInfo(this);
-            }
-
+            _boundMethod = _boundMethod ?? new BoundBuiltinMethodInfo(this);
             return _boundMethod.SelfSet;
         }
 
         public IEnumerable<KeyValuePair<string, string>> GetRichDescription()
-            => BuiltinFunctionInfo.GetRichDescription(string.Empty, _function);
+            => BuiltinFunctionInfo.GetRichDescription(string.Empty, Function);
 
-        public IAnalysisSet ReturnTypes => _returnTypes;
-        public IPythonFunction Function => _function;
+        public IAnalysisSet ReturnTypes { get; }
+        public IPythonFunction Function { get; }
 
-        public override IEnumerable<OverloadResult> Overloads {
-            get {
-                return Function.Overloads.Select(overload =>
+        public override IEnumerable<OverloadResult> Overloads
+            => Function.Overloads.Select(overload =>
                     new BuiltinFunctionOverloadResult(
                         ProjectState,
-                        _function.Name,
+                        Function.Name,
                         overload,
                         0,
                         new ParameterResult("self")
                     )
                 );
-            }
-        }
 
         public override string Documentation {
             get {
@@ -98,17 +91,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
         public override BuiltinTypeId TypeId => BuiltinTypeId.Function;
-        public override PythonMemberType MemberType => _memberType;
-        public override string Name => _function.Name;
-        public override ILocatedMember GetLocatedMember() => _function as ILocatedMember;
+        public override PythonMemberType MemberType { get; }
+        public override string Name => Function.Name;
+        public override ILocatedMember GetLocatedMember() => Function as ILocatedMember;
 
-        public override int GetHashCode() => new { hc1 = base.GetHashCode(), hc2 = _function.GetHashCode() }.GetHashCode();
-        public override bool Equals(object obj) => base.Equals(obj) && obj is BuiltinMethodInfo bmi && _function.Equals(bmi._function);
+        public override int GetHashCode() => new { hc1 = base.GetHashCode(), hc2 = Function.GetHashCode() }.GetHashCode();
+        public override bool Equals(object obj) => base.Equals(obj) && obj is BuiltinMethodInfo bmi && Function.Equals(bmi.Function);
 
-        private IAnalysisSet GetReturnTypes(IPythonFunction func, PythonAnalyzer projectState) {
-            return AnalysisSet.UnionAll(func.Overloads
+        private IAnalysisSet GetReturnTypes(IPythonFunction func, PythonAnalyzer projectState)
+            => AnalysisSet.UnionAll(func.Overloads
                 .Where(fn => fn.ReturnType != null)
                 .Select(fn => projectState.GetAnalysisSetFromObjects(fn.ReturnType)));
-        }
     }
 }

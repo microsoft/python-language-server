@@ -38,6 +38,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     m = Type?.GetMember(context, name);
                     _cachedMembers[name] = m;
                 }
+                // If member is a function and container is a constant, 
+                // then this is an instance rather than class definition,
+                // so we need to return bound method rather that the function.
+                if(m is AstPythonFunction f && !f.IsStatic) {
+                    return f.ToBoundMethod();
+                }
                 return m;
             }
         }

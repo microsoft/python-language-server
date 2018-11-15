@@ -752,7 +752,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             var attrType = attr.GetType();
             if (attr is IPythonFunction pf) {
-                if (pf.DeclaringType == null) {
+                if (pf.MemberType == PythonMemberType.Function) {
                     return GetCached(attr, () => new BuiltinFunctionInfo(pf, this)) ?? _noneInst;
                 }
                 return GetCached(attr, () => new BoundBuiltinMethodInfo(pf, this)) ?? _noneInst;
