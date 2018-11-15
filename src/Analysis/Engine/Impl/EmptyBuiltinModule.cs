@@ -52,25 +52,23 @@ namespace Microsoft.PythonTools.Analysis {
 
         #endregion
 
-        #region IMemberContainer Members
+        #region IPythonType
+        public IPythonModule DeclaringModule => null;
+        public BuiltinTypeId TypeId => BuiltinTypeId.Module;
+        public bool IsBuiltIn => true;
+        public bool IsTypeFactory => false;
+        public IPythonFunction GetConstructors() => null;
+        #endregion
 
-        public IMember GetMember(IModuleContext context, string name) {
-            return null;
-        }
-
+        #region IMemberContainer
+        public IMember GetMember(IModuleContext context, string name) => null;
         public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
             yield break;
         }
-
         #endregion
 
-        #region IMember Members
-
-        public PythonMemberType MemberType {
-            get { return PythonMemberType.Module; }
-        }
-
+        #region IMember
+        public PythonMemberType MemberType => PythonMemberType.Module;
         #endregion
-
     }
 }

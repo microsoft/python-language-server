@@ -111,6 +111,14 @@ namespace Microsoft.PythonTools.Analysis {
             Name = BuiltinTypeId.Unknown.GetModuleName(version);
         }
 
+        #region IPythonType
+        public IPythonModule DeclaringModule => null;
+        public BuiltinTypeId TypeId => BuiltinTypeId.Module;
+        public bool IsBuiltIn => true;
+        public bool IsTypeFactory => false;
+        public IPythonFunction GetConstructors() => null;
+        #endregion
+
         private IMember GetOrCreate(BuiltinTypeId typeId) {
             if (typeId.IsVirtualId()) {
                 switch (typeId) {

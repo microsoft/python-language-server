@@ -39,9 +39,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IPythonType PythonType => Type;
-        public override bool IsOfType(IAnalysisSet klass) {
-            return klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Type]);
-        }
+        public override bool IsOfType(IAnalysisSet klass) 
+            => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Type]);
 
         public override BuiltinTypeId TypeId => Type.TypeId;
 

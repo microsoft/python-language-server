@@ -24,7 +24,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// <summary>
     /// Base class for things which get their members primarily via a built-in .NET type.
     /// </summary>
-    class BuiltinNamespace<MemberContainerType> : AnalysisValue where MemberContainerType : IMemberContainer {
+    class BuiltinNamespace<MemberContainerType> : AnalysisValue where MemberContainerType : IPythonType {
         internal Dictionary<string, IAnalysisSet> _specializedValues;
 
         public BuiltinNamespace(MemberContainerType pythonType, PythonAnalyzer projectState) {
@@ -33,6 +33,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             // Ideally we'd assert here whenever pythonType is null, but that
             // makes debug builds unusable because it happens so often.
         }
+
+        public override BuiltinTypeId TypeId => Type.TypeId;
+        public override PythonMemberType MemberType => Type.MemberType;
 
         public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) {
             var res = AnalysisSet.Empty;

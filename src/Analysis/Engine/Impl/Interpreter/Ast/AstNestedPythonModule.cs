@@ -23,8 +23,7 @@ using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstNestedPythonModule : IPythonModule, ILocatedMember {
-        private string _name;
+    class AstNestedPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
         private IPythonModule _module;
         private readonly IPythonInterpreter _interpreter;
         private readonly IReadOnlyList<string> _importNames;
@@ -33,15 +32,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             IPythonInterpreter interpreter,
             string name,
             IReadOnlyList<string> importNames
-        ) {
+        ) : base(name) {
             _interpreter = interpreter ?? throw new ArgumentNullException(nameof(interpreter));
-            _name = name ?? throw new ArgumentNullException(nameof(name));
             _importNames = importNames ?? throw new ArgumentNullException(nameof(importNames));
         }
 
-        public string Name => MaybeModule?.Name ?? _name;
-        public string Documentation => MaybeModule?.Documentation ?? string.Empty;
-        public PythonMemberType MemberType => PythonMemberType.Module;
+        public override string Documentation => MaybeModule?.Documentation ?? string.Empty;
         public IEnumerable<ILocationInfo> Locations => ((MaybeModule as ILocatedMember)?.Locations).MaybeEnumerate();
 
         public bool IsLoaded => MaybeModule != null;
@@ -69,9 +65,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IEnumerable<string> GetChildrenModules() => GetModule().GetChildrenModules();
 
-        public IMember GetMember(IModuleContext context, string name) => GetModule().GetMember(context, name);
+        public override IMember GetMember(IModuleContext context, string name)
+            => GetModule().GetMember(context, name);
 
-        public IEnumerable<string> GetMemberNames(IModuleContext context) =>
+        public override IEnumerable<string> GetMemberNames(IModuleContext context) =>
             // TODO: Make GetMemberNames() faster than Imported()
             GetModule().GetMemberNames(context);
 

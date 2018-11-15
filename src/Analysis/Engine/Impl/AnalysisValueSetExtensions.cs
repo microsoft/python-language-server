@@ -218,7 +218,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// Gets instance representations of all members of the set.
         /// </summary>
         public static IAnalysisSet GetInstanceType(this IAnalysisSet types)
-            => AnalysisSet.Create(types.SelectMany(ns => ns.PythonType.IsTypeFactory ? ns : ns.GetInstanceType()));
+            => AnalysisSet.Create(types.SelectMany(ns => ns.PythonType?.IsTypeFactory == true ? ns : ns.GetInstanceType()));
 
         public static bool IsUnknown(this IAnalysisSet res) {
             return res == null ||

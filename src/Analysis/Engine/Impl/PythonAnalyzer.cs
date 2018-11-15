@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 // 
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -784,10 +784,6 @@ namespace Microsoft.PythonTools.Analysis {
                        attrType == typeof(bool) || attrType == typeof(int) || attrType == typeof(Complex) ||
                        attrType == typeof(string) || attrType == typeof(long) || attrType == typeof(double)) {
                 return GetConstant(attr).First();
-            }
-
-            if (attr is IMemberContainer mc) {
-                return GetCached(attr, () => new ReflectedNamespace(mc, this));
             }
 
             if (attr is IPythonMultipleMembers mm) {

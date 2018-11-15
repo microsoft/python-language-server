@@ -20,16 +20,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Intellisense;
+using Microsoft.PythonTools.Interpreter.Ast;
 
 namespace Microsoft.PythonTools.Interpreter {
-    sealed class SentinelModule : IPythonModule {
+    sealed class SentinelModule : PythonModuleType, IPythonModule {
         private readonly AnalysisQueue _scope;
         private readonly SemaphoreSlim _semaphore;
         private volatile IPythonModule _realModule;
 
-        public SentinelModule(string name, bool importing) {
+        public SentinelModule(string name, bool importing): base(name) {
             _scope = AnalysisQueue.Current;
-            Name = name;
             if (importing) {
                 _semaphore = new SemaphoreSlim(0, 1000);
             } else {
@@ -68,12 +68,7 @@ namespace Microsoft.PythonTools.Interpreter {
             }
         }
 
-        public string Name { get; }
-        public string Documentation => null;
-        public PythonMemberType MemberType => PythonMemberType.Module;
-        public IEnumerable<string> GetChildrenModules() => Enumerable.Empty<string>();
-        public IMember GetMember(IModuleContext context, string name) => null;
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Enumerable.Empty<string>();
         public void Imported(IModuleContext context) { }
+        public IEnumerable<string> GetChildrenModules() => Enumerable.Empty<string>();
     }
 }

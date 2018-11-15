@@ -215,6 +215,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Modules.SelectMany(m => m.GetMemberNames(moduleContext)).Distinct();
             public override PythonMemberType MemberType => PythonMemberType.Module;
 
+            public IPythonModule DeclaringModule => null;
+            public BuiltinTypeId TypeId => BuiltinTypeId.Module;
+            public bool IsBuiltIn => true;
+            public bool IsTypeFactory => false;
+
             public void Imported(IModuleContext context) {
                 List<Exception> exceptions = null;
                 foreach (var m in Modules) {
@@ -229,6 +234,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     throw new AggregateException(exceptions);
                 }
             }
+
+            public IPythonFunction GetConstructors() => null;
         }
 
         class MultipleTypeMembers : AstPythonMultipleMembers, IPythonType {

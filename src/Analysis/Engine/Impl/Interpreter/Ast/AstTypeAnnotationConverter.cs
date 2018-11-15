@@ -221,7 +221,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private class UnionType : AstPythonType, IPythonMultipleMembers {
             public UnionType(IReadOnlyList<IPythonType> types):
-                base("Any", null, null, null) {
+                base("Any", types.Select(t => t.DeclaringModule).ExcludeDefault().FirstOrDefault(), null, null) {
                 Types = types;
             }
 
