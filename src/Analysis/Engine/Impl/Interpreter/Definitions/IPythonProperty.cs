@@ -14,11 +14,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.PythonTools.Parsing.Ast;
+
 namespace Microsoft.PythonTools.Interpreter {
     /// <summary>
     /// Represents a built-in property which has a getter/setter.  
     /// </summary>
-    public interface IPythonProperty : IPythonFunction {
+    public interface IPythonProperty : IPythonType {
         /// <summary>
         /// The type of the value the property gets/sets.
         /// </summary>
@@ -28,5 +30,14 @@ namespace Microsoft.PythonTools.Interpreter {
         /// A user readable description of the property.
         /// </summary>
         string Description { get; }
+
+        /// <summary>
+        /// True if the property is static (declared on the class) not the instance.
+        /// </summary>
+        bool IsStatic { get; }
+
+        IPythonType DeclaringType { get; }
+
+        FunctionDefinition FunctionDefinition { get; }
     }
 }
