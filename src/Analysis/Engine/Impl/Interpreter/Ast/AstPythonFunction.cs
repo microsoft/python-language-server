@@ -51,7 +51,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         #region IMember
-        public override PythonMemberType MemberType 
+        public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
         #endregion
 
@@ -77,7 +77,30 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
         }
 
-        internal IPythonFunction ToBoundMethod()
-            => new AstPythonFunction(FunctionDefinition, DeclaringModule, DeclaringType, Locations.FirstOrDefault(), BuiltinTypeId.Method);
+        internal IPythonFunction ToBoundMethod() => new AstPythonBoundMethod(this);
+
+        class AstPythonBoundMethod : IPythonFunction {
+            private readonly IPythonFunction _pf;
+
+            public AstPythonBoundMethod(IPythonFunction function) {
+                _pf = function;
+            }
+
+            public FunctionDefinition FunctionDefinition => _pf.FunctionDefinition;
+            public IPythonType DeclaringType => _pf.DeclaringType;
+            public bool IsStatic => _pf.IsStatic;
+            public bool IsClassMethod => _pf.IsClassMethod;
+            public IReadOnlyList<IPythonFunctionOverload> Overloads => _pf.Overloads;
+            public string Name => _pf.Name;
+            public IPythonModule DeclaringModule => _pf.DeclaringModule;
+            public BuiltinTypeId TypeId => BuiltinTypeId.Method;
+            public string Documentation => _pf.Documentation;
+            public bool IsBuiltIn => _pf.IsBuiltIn;
+            public bool IsTypeFactory => false;
+            public PythonMemberType MemberType => PythonMemberType.Method;
+            public IPythonFunction GetConstructors() => _pf.GetConstructors();
+            public IMember GetMember(IModuleContext context, string name) => _pf.GetMember(context, name);
+            public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => _pf.GetMemberNames(moduleContext);
+        }
     }
 }

@@ -358,6 +358,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var m = GetValueFromExpression(expr.Target);
             IMember value = null;
             switch (m) {
+                case IPythonFunction pf:
+                    value = GetValueFromPropertyOrFunction(pf, expr);
+                    break;
                 case IPythonType type when type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1:
                     value = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression, options));
                     break;
@@ -365,7 +368,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     value = new AstPythonConstant(type, GetLoc(expr));
                     break;
                 default:
-                    value = GetValueFromPropertyOrFunction(m, expr);
                     break;
             }
 
