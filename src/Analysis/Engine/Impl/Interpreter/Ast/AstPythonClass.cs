@@ -45,8 +45,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         internal AstPythonClass(string name) : base(name, BuiltinTypeId.Class, false) { }
 
         #region IPythonType
-        public override PythonMemberType MemberType 
-            => TypeId == BuiltinTypeId.Class ? PythonMemberType.Class : base.MemberType;
+        public override PythonMemberType MemberType => PythonMemberType.Class;
 
         public override IMember GetMember(IModuleContext context, string name) {
             IMember member;

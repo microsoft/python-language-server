@@ -69,7 +69,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public virtual string Documentation { get; }
         public IPythonModule DeclaringModule { get; } = NoDeclaringModule;
-        public virtual PythonMemberType MemberType => PythonMemberType.Unknown;
+        public virtual PythonMemberType MemberType => PythonMemberType.Class;
         public virtual BuiltinTypeId TypeId => _typeId;
         public virtual bool IsBuiltIn { get; }
         public virtual IPythonFunction GetConstructors() => null;
@@ -128,7 +128,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         internal AstPythonType GetTypeFactory() {
             var clone = new AstPythonType(Name, DeclaringModule, Documentation,
                Locations.OfType<LocationInfo>().FirstOrDefault(),
-               TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId);
+               TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId, IsBuiltIn, true);
             clone.AddMembers(Members, true);
             return clone;
         }
