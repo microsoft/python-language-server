@@ -39,33 +39,32 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             // will be stored as list of pairs: (2, a), (0, i), (1, y)
             // 
             // To provide immutability, it must be changed only by calling List<T>.Add
-            private readonly List<(int index, Node node)> _vertices;
+            private readonly ImmutableArray<(int index, Node node)> _vertices;
             private readonly int _index;
-            private readonly int _lastIndex;
 
-            public Node Start => IsFirst ? null : _vertices?[_index - 1].node;
-            public int EndIndex => _vertices?[_index].index ?? -1;
-            public Node End => _vertices?[_index].node;
-            public Edge Previous => IsFirst ? default : new Edge(_vertices, _index - 1, _lastIndex);
-            public Edge Next => IsLast ? default : new Edge(_vertices, _index + 1, _lastIndex);
-            public int PathLength => _index;
+            public Node Start => IsFirst ? default : _vertices[_index - 1].node;
+            public int EndIndex => _vertices[_index].index;
+            public Node End => _vertices[_index].node;
+            public Edge Previous => IsFirst ? default : new Edge(_vertices, _index - 1);
+            public Edge Next => IsLast ? default : new Edge(_vertices, _index + 1);
+            public int PathLength => _vertices.Count;
             public bool IsFirst => _index == 0;
-            private bool IsLast => _index == _lastIndex;
+            public bool IsNonRooted => _vertices.Count > 0 && _vertices[0].node.Name == "*";
+            public bool IsEmpty => _vertices.Count == 0;
+            private bool IsLast => _index == _vertices.Count - 1;
 
             public Edge(int startIndex, Node start) {
-                _vertices = new List<(int, Node)> {(startIndex, start)};
+                _vertices = ImmutableArray<(int, Node)>.Empty.Add((startIndex, start));
                 _index = 0;
-                _lastIndex = 0;
             }
 
-            public Edge GetFirstEdge() => new Edge(_vertices, 0, _lastIndex);
-            public Edge GetPrevious(int count) => count > _index ? default : new Edge(_vertices, _index - count, _lastIndex);
-            public Edge GetNext(int count) => _index + count > _lastIndex ? default : new Edge(_vertices, _index + count, _lastIndex);
+            public Edge FirstEdge => new Edge(_vertices, 0);
+            public Edge GetPrevious(int count) => count > _index ? default : new Edge(_vertices, _index - count);
+            public Edge GetNext(int count) => _index + count > _vertices.Count - 1 ? default : new Edge(_vertices, _index + count);
 
-            private Edge(List<(int index, Node node)> vertices, int index, int lastIndex) {
+            private Edge(ImmutableArray<(int index, Node node)> vertices, int index) {
                 _vertices = vertices;
                 _index = index;
-                _lastIndex = lastIndex;
             }
 
             /// <summary>
@@ -74,20 +73,10 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             /// <param name="nextVertexIndex"></param>
             /// <returns>New last arc</returns>
             public Edge Append(int nextVertexIndex) {
-                var nextVertex = End.GetChildAt(nextVertexIndex);
-
-                if (IsLast) {
-                    // Last arc, append vertex to the list and create a new one
-                    _vertices.Add((nextVertexIndex, nextVertex));
-                    return new Edge(_vertices, _index + 1, _index + 1);
-                }
-
-                // branch from existing arc
-                var branchVertexes = new List<(int, Node)>(_vertices);
-                var excess = branchVertexes.Count - _index - 1;
-                branchVertexes.RemoveRange(branchVertexes.Count - excess, excess);
-                branchVertexes.Add((nextVertexIndex, nextVertex));
-                return new Edge(branchVertexes, _index + 1, _index + 1);
+                var nextVertex = End.Children[nextVertexIndex];
+                var trimLength = _vertices.Count - _index - 1;
+                var vertices = _vertices.TrimEnd(trimLength).Add((nextVertexIndex, nextVertex));
+                return new Edge(vertices, _index + 1);
             }
 
             public override bool Equals(object obj) => obj is Edge other && Equals(other);
@@ -95,7 +84,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
 
             public override int GetHashCode() {
                 unchecked {
-                    return ((_vertices != null ? _vertices.GetHashCode() : 0) * 397) ^ _index;
+                    return (_vertices.GetHashCode() * 397) ^ _index;
                 }
             }
 
@@ -104,11 +93,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
 
             private string DebuggerDisplay {
                 get {
-                    if (_vertices == null) {
-                        return "Null";
-                    }
-
-                    var start = _index > 0 ? _vertices[_index - 1].node.Name : "*";
+                    var start = _index > 0 ? _vertices[_index - 1].node.Name : "null";
                     var endIndex = _vertices[_index].index.ToString();
                     var end = _vertices[_index].node.Name;
                     return $"[{start}]-{endIndex}-[{end}]";

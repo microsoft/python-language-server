@@ -119,26 +119,43 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return packageDict;
         }
 
-        private IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken) {
-            return ModulePath.GetModulesInPath(
-                searchPath,
-                recurse: false,
-                includePackages: true,
-                requireInitPy: _requireInitPy
-            ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
+        public ModulePath? FindModuleInSearchPath(IReadOnlyList<string> searchPaths, IReadOnlyDictionary<string, string> packages, string name) {
+            if (searchPaths == null || searchPaths.Count == 0) {
+                return null;
+            }
+
+            _log?.Log(TraceLevel.Verbose, "FindModule", name, "system", string.Join(", ", searchPaths));
+
+            int i = name.IndexOf('.');
+            var firstBit = i < 0 ? name : name.Remove(i);
+            string searchPath;
+
+            ModulePath mp;
+            Func<string, bool> isPackage = IsPackage;
+            if (firstBit.EndsWithOrdinal("-stubs", ignoreCase: true)) {
+                isPackage = Directory.Exists;
+            }
+
+            var requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_configuration.Version);
+            if (packages != null && packages.TryGetValue(firstBit, out searchPath) && !string.IsNullOrEmpty(searchPath)) {
+                if (ModulePath.FromBasePathAndName_NoThrow(searchPath, name, isPackage, null, requireInitPy, out mp, out _, out _, out _)) {
+                    return mp;
+                }
+            }
+
+            foreach (var sp in searchPaths.MaybeEnumerate()) {
+                if (ModulePath.FromBasePathAndName_NoThrow(sp, name, isPackage, null, requireInitPy, out mp, out _, out _, out _)) {
+                    return mp;
+                }
+            }
+
+            return null;
         }
 
-        private static IReadOnlyCollection<string> GetPackagesFromZipFile(string searchPath, CancellationToken cancellationToken) {
-            // TODO: Search zip files for packages
-            return new string[0];
-        }
-
-        /// <summary>
-        /// For test use only
-        /// </summary>
-        internal void SetCurrentSearchPaths(IEnumerable<string> paths) {
-            _searchPaths = paths.ToArray();
-            _searchPathPackages = null;
+        public async Task<ModulePath?> FindModuleInSearchPathAsync(string name, CancellationToken cancellationToken) {
+            var searchPaths = await GetSearchPathsAsync(cancellationToken).ConfigureAwait(false);
+            var packages = await GetImportableModulesAsync(cancellationToken).ConfigureAwait(false);
+            return FindModuleInSearchPath(searchPaths, packages, name);
         }
 
         public async Task<TryImportModuleResult> TryImportModuleAsync(string name, TryImportModuleContext context, CancellationToken cancellationToken) {
@@ -242,6 +259,20 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return new TryImportModuleResult(module);
         }
 
+        private IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken) {
+            return ModulePath.GetModulesInPath(
+                searchPath,
+                recurse: false,
+                includePackages: true,
+                requireInitPy: _requireInitPy
+            ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
+        }
+
+        private static IReadOnlyCollection<string> GetPackagesFromZipFile(string searchPath, CancellationToken cancellationToken) {
+            // TODO: Search zip files for packages
+            return new string[0];
+        }
+
         private async Task<IPythonModule> ImportFromTypeStubsAsync(string name, TryImportModuleContext context, CancellationToken cancellationToken) {
             var mp = FindModuleInSearchPath(context.TypeStubPaths, null, name);
 
@@ -327,45 +358,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
         }
 
-        public async Task<ModulePath?> FindModuleInSearchPathAsync(string name, CancellationToken cancellationToken) {
-            var searchPaths = await GetSearchPathsAsync(cancellationToken).ConfigureAwait(false);
-            var packages = await GetImportableModulesAsync(cancellationToken).ConfigureAwait(false);
-            return FindModuleInSearchPath(searchPaths, packages, name);
-        }
-
-        public ModulePath? FindModuleInSearchPath(IReadOnlyList<string> searchPaths, IReadOnlyDictionary<string, string> packages, string name) {
-            if (searchPaths == null || searchPaths.Count == 0) {
-                return null;
-            }
-
-            _log?.Log(TraceLevel.Verbose, "FindModule", name, "system", string.Join(", ", searchPaths));
-
-            int i = name.IndexOf('.');
-            var firstBit = i < 0 ? name : name.Remove(i);
-            string searchPath;
-
-            ModulePath mp;
-            Func<string, bool> isPackage = IsPackage;
-            if (firstBit.EndsWithOrdinal("-stubs", ignoreCase: true)) {
-                isPackage = Directory.Exists;
-            }
-
-            var requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_configuration.Version);
-            if (packages != null && packages.TryGetValue(firstBit, out searchPath) && !string.IsNullOrEmpty(searchPath)) {
-                if (ModulePath.FromBasePathAndName_NoThrow(searchPath, name, isPackage, null, requireInitPy, out mp, out _, out _, out _)) {
-                    return mp;
-                }
-            }
-
-            foreach (var sp in searchPaths.MaybeEnumerate()) {
-                if (ModulePath.FromBasePathAndName_NoThrow(sp, name, isPackage, null, requireInitPy, out mp, out _, out _, out _)) {
-                    return mp;
-                }
-            }
-
-            return null;
-        }
-
         private async Task<IPythonModule> ImportFromSearchPathsAsync(string name, TryImportModuleContext context, CancellationToken cancellationToken) {
             ModulePath? mmp = null;
             if (context.FindModuleInUserSearchPathAsync != null) {
@@ -426,15 +418,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return mp;
         }
 
-        internal static async Task<ModulePath> FindModuleAsync(IPythonInterpreterFactory factory, string filePath, CancellationToken cancellationToken) {
+        internal static async Task<ModulePath> FindModuleAsync(AstPythonInterpreter interpreter, string filePath, CancellationToken cancellationToken) {
             try {
-                var apif = factory as AstPythonInterpreterFactory;
-                if (apif != null) {
-                    return await apif.ModuleResolution.FindModuleAsync(filePath, cancellationToken);
-                }
-                return ModulePath.FromFullPath(filePath);
+                return await interpreter.ModuleResolution.FindModuleAsync(filePath, cancellationToken);
             } catch (ArgumentException) {
-                return default(ModulePath);
+                return default;
             }
         }
     }

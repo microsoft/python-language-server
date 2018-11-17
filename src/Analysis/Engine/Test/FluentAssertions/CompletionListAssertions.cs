@@ -73,13 +73,24 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => HaveLabels(labels, string.Empty);
 
         [CustomAssertion]
-        public AndConstraint<CompletionListAssertions> HaveLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs) {
+        public AndConstraint<CompletionListAssertions> HaveLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs) 
+            => HaveAttribute(labels, i => i.label, "label", "labels", because, reasonArgs);
+
+        [CustomAssertion]
+        public AndConstraint<CompletionListAssertions> HaveInsertTexts(params string[] insertTexts)
+            => HaveInsertTexts(insertTexts, string.Empty);
+
+        [CustomAssertion]
+        public AndConstraint<CompletionListAssertions> HaveInsertTexts(IEnumerable<string> insertTexts, string because = "", params object[] reasonArgs) 
+            => HaveAttribute(insertTexts, i => i.insertText, "insert text", "insert texts", because, reasonArgs);
+
+        private AndConstraint<CompletionListAssertions> HaveAttribute(IEnumerable<string> attributes, Func<CompletionItem, string> attributeSelector, string itemNameSingle, string itemNamePlural, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            var actual = Subject.items?.Select(i => i.label).ToArray() ?? new string[0];
-            var expected = labels.ToArray();
+            var actual = Subject.items?.Select(attributeSelector).ToArray() ?? Array.Empty<string>();
+            var expected = attributes.ToArray();
 
-            var errorMessage = GetAssertCollectionContainsMessage(actual, expected, GetName(), "label", "labels");
+            var errorMessage = GetAssertCollectionContainsMessage(actual, expected, GetName(), itemNameSingle, itemNamePlural);
 
             Execute.Assertion.ForCondition(errorMessage == null)
                 .BecauseOf(because, reasonArgs)

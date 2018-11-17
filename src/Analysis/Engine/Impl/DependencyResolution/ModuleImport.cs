@@ -14,16 +14,25 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using Microsoft.PythonTools.Parsing.Ast;
+namespace Microsoft.PythonTools.Analysis.DependencyResolution {
+    internal class ModuleImport : IImportSearchResult {
+        public string Name { get; }
+        public string FullName { get; }
+        public string RootPath { get; }
+        public string ModulePath { get; }
 
-namespace Microsoft.PythonTools.Analysis.Analyzer {
-    public interface IImportSource {
-        bool IsResolved { get; }
+        public ModuleImport(string name, string fullName, string rootPath, string modulePath) {
+            Name = name;
+            FullName = fullName;
+            RootPath = rootPath;
+            ModulePath = modulePath;
+        }
     }
 
-    public interface IImportDefinition {
-        IImportSource Source { get; }
-        IProjectEntry ProjectEntry { get; }
+    internal class ImportNotFound : IImportSearchResult {
+        public string FullName { get; }
+        public ImportNotFound(string fullName) {
+            FullName = fullName;
+        }
     }
 }

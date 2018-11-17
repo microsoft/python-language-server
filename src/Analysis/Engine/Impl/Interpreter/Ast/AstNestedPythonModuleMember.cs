@@ -63,7 +63,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             Module.Imported(_context);
-            m = Module.GetMember(_context, Name) ?? interp?.ImportModule(Module.Name + "." + Name);
+            m = Module.GetMember(_context, Name) ?? interp.ImportModule(Module.Name + "." + Name);
             if (m != null) {
                 (m as IPythonModule)?.Imported(_context);
                 var current = Interlocked.CompareExchange(ref _realMember, m, sentinel);

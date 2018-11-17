@@ -24,6 +24,12 @@ using System.Threading;
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
     static class PathUtils {
         private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly char[] InvalidFileNameChars;
+
+        static PathUtils() {
+            InvalidFileNameChars = Path.GetInvalidFileNameChars();
+            Array.Sort(InvalidFileNameChars);
+        }
 
         internal static readonly char[] DirectorySeparators = {
             Path.DirectorySeparatorChar,
@@ -32,26 +38,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
 
         public static bool IsValidWindowsDriveChar(char value) => (value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z');
 
-        public static bool IsValidFileNameCharacter(char character) {
-            if (character < 32) {
-                return false;
-            }
-
-            switch (character) {
-                case '\"':
-                case '*':
-                case '/':
-                case ':':
-                case '<':
-                case '>':
-                case '?':
-                case '\\':
-                case '|':
-                    return false;
-                default:
-                    return true;
-            }
-        }
+        public static bool IsValidFileNameCharacter(char character) => Array.BinarySearch(InvalidFileNameChars, character) < 0;
 
         /// <summary>
         /// Returns true if the path has a directory separator character at the end.
@@ -410,6 +397,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
 
         public static bool IsNormalizedPath(string path) {
             var separator = Path.DirectorySeparatorChar;
+            var altSeparator = Path.AltDirectorySeparatorChar;
             int offset;
             if (path.Length >= 1 && path[0] == separator) {
                 offset = 1;
@@ -422,7 +410,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             var impossibleName = false;
             for (var i = offset; i < path.Length; i++) {
                 var character = path[i];
-                if (character == Path.AltDirectorySeparatorChar) {
+                if (character == altSeparator && separator != altSeparator) {
                     return false;
                 }
 

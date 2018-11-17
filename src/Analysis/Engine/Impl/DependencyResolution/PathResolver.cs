@@ -25,10 +25,12 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             _currentSnapshot = new PathResolverSnapshot(pythonLanguageVersion);
         }
 
-        public void SetRoot(string root) => _currentSnapshot = _currentSnapshot.SetRoot(root);
-        public void SetUserSearchPaths(IEnumerable<string> searchPaths) => _currentSnapshot = _currentSnapshot.SetUserSearchPaths(searchPaths);
-        public void SetInterpreterSearchPaths(IEnumerable<string> searchPaths) => _currentSnapshot = _currentSnapshot.SetInterpreterPaths(searchPaths);
-        public bool TryAddModulePath(string path, out string fullModuleName) {
+        public void SetRoot(in string root) => _currentSnapshot = _currentSnapshot.SetWorkDirectory(root);
+        public void SetUserSearchPaths(in IEnumerable<string> searchPaths) => _currentSnapshot = _currentSnapshot.SetUserSearchPaths(searchPaths);
+        public void SetInterpreterSearchPaths(in IEnumerable<string> searchPaths) => _currentSnapshot = _currentSnapshot.SetInterpreterPaths(searchPaths);
+        public void SetBuiltins(in IEnumerable<string> builtinModuleNames) => _currentSnapshot = _currentSnapshot.SetBuiltins(builtinModuleNames);
+        public void RemoveModulePath(in string path) => _currentSnapshot = _currentSnapshot.RemoveModulePath(path);
+        public bool TryAddModulePath(in string path, out string fullModuleName) {
             _currentSnapshot = _currentSnapshot.AddModulePath(path, out fullModuleName);
             return fullModuleName != null;
         }

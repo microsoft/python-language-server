@@ -325,32 +325,6 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
-        public async Task AstSearchPathsThroughFactory() {
-            using (var factory = CreateInterpreterFactory())
-            using (var analyzer = await PythonAnalyzer.CreateAsync(factory)) {
-                try {
-                    var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
-
-                    var moduleNamesChanged = EventTaskSources.AstPythonInterpreter.ModuleNamesChanged.Create(interpreter, new CancellationTokenSource(1000).Token);
-                    factory.SetCurrentSearchPaths(new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) });
-                    await moduleNamesChanged;
-
-                    interpreter.GetModuleNames().Should().Contain("Values");
-                    interpreter.ImportModule("Values").Should().NotBeNull("module should be available");
-
-                    moduleNamesChanged = EventTaskSources.AstPythonInterpreter.ModuleNamesChanged.Create(interpreter, new CancellationTokenSource(1000).Token);
-                    factory.SetCurrentSearchPaths(Enumerable.Empty<string>());
-                    await moduleNamesChanged;
-
-                    interpreter.GetModuleNames().Should().NotContain("Values");
-                    interpreter.ImportModule("Values").Should().BeNull("module should be removed");
-                } finally {
-                    _analysisLog = factory.GetAnalysisLogContent(CultureInfo.InvariantCulture);
-                }
-            }
-        }
-
-        [TestMethod, Priority(0)]
         public async Task AstSearchPathsThroughAnalyzer() {
             using (var factory = CreateInterpreterFactory())
             using (var analyzer = await PythonAnalyzer.CreateAsync(factory)) {
@@ -386,7 +360,8 @@ class BankAccount(object):
                     searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
                     stubPaths: Enumerable.Empty<string>());
 
-                analysis.Should().HavePythonModuleVariable("Package");
+                analysis.Should().HavePythonPackageVariable("Package")
+                    .Which.Should().HaveChildModule("Module");
 
                 analysis.Should().HaveVariable("c")
                     .WithValue<IBuiltinInstanceInfo>()
@@ -407,7 +382,8 @@ class BankAccount(object):
                     searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
                     stubPaths: Enumerable.Empty<string>());
 
-                analysis.Should().HavePythonModuleVariable("Package");
+                analysis.Should().HavePythonPackageVariable("Package")
+                    .Which.Should().HaveChildModule("Module");
 
                 analysis.Should().HaveVariable("c")
                     .WithValue<IBuiltinInstanceInfo>()
@@ -427,7 +403,8 @@ class BankAccount(object):
                     searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
                     stubPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis", "Stubs")) });
 
-                analysis.Should().HavePythonModuleVariable("Package"); // member information comes from multiple sources
+                analysis.Should().HavePythonPackageVariable("Package")
+                    .Which.Should().HaveChildModule("Module"); // member information comes from multiple sources
 
                 analysis.Should().HaveVariable("c")
                     .WithValue<IBuiltinInstanceInfo>()
@@ -449,7 +426,8 @@ class BankAccount(object):
                     searchPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) },
                     stubPaths: new[] { TestData.GetPath(Path.Combine("TestData", "AstAnalysis", "Stubs")) });
 
-                analysis.Should().HavePythonModuleVariable("Package");
+                analysis.Should().HavePythonPackageVariable("Package")
+                    .Which.Should().HaveChildModule("Module");
 
                 analysis.Should().HaveVariable("c")
                     .WithValue<IBuiltinInstanceInfo>()
@@ -540,7 +518,7 @@ class BankAccount(object):
             AstScrapedPythonModule.KeepAst = true;
             configuration.AssertInstalled();
             using (var factory = CreateInterpreterFactory(configuration))
-            using (var analyzer = PythonAnalyzer.CreateSynchronously(factory)) {
+            using (var analyzer = await PythonAnalyzer.CreateAsync(factory)) {
                 try {
                     var interp = (AstPythonInterpreter)analyzer.Interpreter;
                     var ctxt = interp.CreateModuleContext();
@@ -549,7 +527,7 @@ class BankAccount(object):
                     Assert.IsInstanceOfType(mod, typeof(AstBuiltinsPythonModule));
                     mod.Imported(ctxt);
 
-                    var modPath = factory.ModuleCache.GetCacheFilePath(factory.Configuration.InterpreterPath);
+                    var modPath = interp.ModuleCache.GetCacheFilePath(factory.Configuration.InterpreterPath);
                     if (File.Exists(modPath)) {
                         _moduleCache = File.ReadAllText(modPath);
                     }
@@ -591,41 +569,40 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV38x64() => AstNativeBuiltinScrape(PythonVersions.Python38_x64);
+        public async Task AstNativeBuiltinScrapeV38x64() => await AstNativeBuiltinScrape(PythonVersions.Python38_x64);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV37x64() => AstNativeBuiltinScrape(PythonVersions.Python37_x64);
+        public async Task AstNativeBuiltinScrapeV37x64() => await AstNativeBuiltinScrape(PythonVersions.Python37_x64);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV36x64() => AstNativeBuiltinScrape(PythonVersions.Python36_x64);
+        public async Task AstNativeBuiltinScrapeV36x64() => await AstNativeBuiltinScrape(PythonVersions.Python36_x64);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV35x64() => AstNativeBuiltinScrape(PythonVersions.Python35_x64);
+        public async Task AstNativeBuiltinScrapeV35x64() => await AstNativeBuiltinScrape(PythonVersions.Python35_x64);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV27x64() => AstNativeBuiltinScrape(PythonVersions.Python27_x64);
+        public async Task AstNativeBuiltinScrapeV27x64() => await AstNativeBuiltinScrape(PythonVersions.Python27_x64);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV38x86() => AstNativeBuiltinScrape(PythonVersions.Python38);
+        public async Task AstNativeBuiltinScrapeV38x86() => await AstNativeBuiltinScrape(PythonVersions.Python38);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV37x86() => AstNativeBuiltinScrape(PythonVersions.Python37);
+        public async Task AstNativeBuiltinScrapeV37x86() => await AstNativeBuiltinScrape(PythonVersions.Python37);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV36x86() => AstNativeBuiltinScrape(PythonVersions.Python36);
+        public async Task AstNativeBuiltinScrapeV36x86() => await AstNativeBuiltinScrape(PythonVersions.Python36);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV35x86() => AstNativeBuiltinScrape(PythonVersions.Python35);
-
+        public async Task AstNativeBuiltinScrapeV35x86() => await AstNativeBuiltinScrape(PythonVersions.Python35);
 
         [TestMethod, Priority(0)]
-        public void AstNativeBuiltinScrapeV27x86() => AstNativeBuiltinScrape(PythonVersions.Python27);
+        public async Task AstNativeBuiltinScrapeV27x86() => await AstNativeBuiltinScrape(PythonVersions.Python27);
 
-        private void AstNativeBuiltinScrape(InterpreterConfiguration configuration) {
+        private async Task AstNativeBuiltinScrape(InterpreterConfiguration configuration) {
             configuration.AssertInstalled();
             AstScrapedPythonModule.KeepAst = true;
             using (var factory = CreateInterpreterFactory(configuration))
-            using (var analyzer = PythonAnalyzer.CreateSynchronously(factory)) {
+            using (var analyzer = await PythonAnalyzer.CreateAsync(factory)) {
                 try {
                     var interpreter = (AstPythonInterpreter)analyzer.Interpreter;
                     var ctxt = interpreter.CreateModuleContext();
@@ -651,7 +628,7 @@ class BankAccount(object):
                         Assert.IsInstanceOfType(mod, typeof(AstScrapedPythonModule));
                         mod.Imported(ctxt);
 
-                        var modPath = factory.ModuleCache.GetCacheFilePath(pyd);
+                        var modPath = interpreter.ModuleCache.GetCacheFilePath(pyd);
                         Assert.IsTrue(File.Exists(modPath), "No cache file created");
                         _moduleCache = File.ReadAllText(modPath);
 

@@ -14,6 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
@@ -49,11 +50,11 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             return sb;
         }
 
-        public static StringBuilder Append(this StringBuilder sb, string separator, string[] values) 
-            => sb.Append(separator, values, 0, values.Length);
+        public static StringBuilder Append(this StringBuilder sb, string separator, IReadOnlyList<string> values) 
+            => sb.Append(separator, values, 0, values.Count);
 
-        public static StringBuilder Append(this StringBuilder sb, string separator, string[] values, int start, int length) {
-            if (length <= 0 || values.Length < start + length) {
+        public static StringBuilder Append(this StringBuilder sb, string separator, IReadOnlyList<string> values, int start, int length) {
+            if (length <= 0 || values.Count < start + length) {
                 return sb;
             }
 

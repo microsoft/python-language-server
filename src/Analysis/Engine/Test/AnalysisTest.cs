@@ -154,7 +154,27 @@ f(x=42, y = 'abc')
         }
 
         [TestMethod, Priority(0)]
-        public async Task TestPackageImportStar() {
+        public async Task TestPackageImportStar2X() {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X, TestData.GetTestSpecificRootUri())) {
+                var fob = await server.AddModuleWithContentAsync(Path.Combine("fob", "__init__.py"), "from oar import *");
+                var oar = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "__init__.py"), "from baz import *");
+                var baz = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "baz.py"), $"import fob.oar.qox as qox{Environment.NewLine}func = qox.func");
+                var qox = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "qox.py"), "def func(): return 42");
+
+                var fobAnalysis = await fob.GetAnalysisAsync();
+                var oarAnalysis = await oar.GetAnalysisAsync();
+                var bazAnalysis = await baz.GetAnalysisAsync();
+                var qoxAnalysis = await qox.GetAnalysisAsync();
+
+                fobAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+                oarAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+                bazAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+                qoxAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TestPackageImportStar3X() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X, TestData.GetTestSpecificRootUri())) {
                 var fob = await server.AddModuleWithContentAsync(Path.Combine("fob", "__init__.py"), "from .oar import *");
                 var oar = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "__init__.py"), "from .baz import *");

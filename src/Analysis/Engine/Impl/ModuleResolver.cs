@@ -22,55 +22,6 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Analysis {
     internal class ModuleResolver {
         /// <summary>
-        /// Extracts actual module names from the 'from import' statement
-        /// such as [a, b, c] from 'from . import a, b, c' or [a] from 'from .a import b, c'
-        /// </summary>
-        /// <param name="entry">Project entry</param>
-        /// <param name="node">Import statement node</param>
-        /// <returns>Names of modules</returns>
-        internal static IEnumerable<string> GetModuleNamesFromImport(IPythonProjectEntry entry, FromImportStatement node)
-            => GetModuleNamesFromImport(entry.ModuleName, entry.FilePath, node);
-
-        /// <summary>
-        /// Extracts actual module names from the 'from import' statement
-        /// such as [a, b, c] from 'from . import a, b, c' or [a] from 'from .a import b, c'
-        /// </summary>
-        /// <param name="importingFromModuleName">Name of the importing module</param>
-        /// <param name="importingFromFilePath">Disk path to the importing module</param>
-        /// <param name="node">Import statement node</param>
-        /// <returns></returns>
-        internal static IEnumerable<string> GetModuleNamesFromImport(string importingFromModuleName, string importingFromFilePath, FromImportStatement node) {
-            var root = node.Root.MakeString();
-
-            if (!string.IsNullOrEmpty(root) && root.StartsWithOrdinal(".")) {
-                return root.All(c => c == '.')
-                    ? node.Names.Where(n => !string.IsNullOrEmpty(n.Name)).Select(n => n.Name)
-                    : ResolvePotentialModuleNames(importingFromModuleName, importingFromFilePath, root, node.ForceAbsolute);
-            }
-            return new[] { root };
-        }
-
-        /// <summary>
-        /// Returns a sequence of candidate absolute module names for the given
-        /// modules.
-        /// </summary>
-        /// <param name="importingFrom">
-        /// The project entry that is importing the module.
-        /// </param>
-        /// <param name="relativeModuleName">
-        /// A dotted name identifying the path to the module.
-        /// </param>
-        /// <returns>
-        /// A sequence of strings representing the absolute names of the module
-        /// in order of precedence.
-        /// </returns>
-        internal static IEnumerable<string> ResolvePotentialModuleNames(
-            IPythonProjectEntry importingFrom,
-            string relativeModuleName,
-            bool absoluteImports
-        ) => ResolvePotentialModuleNames(importingFrom?.ModuleName, importingFrom?.FilePath, relativeModuleName, absoluteImports);
-
-        /// <summary>
         /// Returns a sequence of candidate absolute module names for the given
         /// modules.
         /// </summary>

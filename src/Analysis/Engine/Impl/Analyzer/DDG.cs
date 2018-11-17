@@ -334,46 +334,38 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         }
 
         public override bool Walk(FromImportStatement node) {
-            var rootNames = node.Root.Names.Select(n => n.Name);
-            var availableImports = node.Root is RelativeModuleName relativeName
-                ? _pathResolver.GetAvailableImportsFromRelativePath(_filePath, relativeName.DotCount, rootNames)
-                : _pathResolver.GetAvailableImportsFromAbsolutePath(_filePath, rootNames);
+            var importSearchResult = _pathResolver.FindImports(_filePath, node);
 
-            switch (availableImports) {
-                case AvailableModuleImports moduleImports:
-                    ImportMembersFromModule(node, moduleImports);
+            switch (importSearchResult) {
+                case ModuleImport moduleImports when TryGetModule(node.Root, moduleImports, out var module):
+                case PossibleModuleImport possibleModuleImport when TryGetModule(node.Root, possibleModuleImport, out module):
+                    ImportMembersFromModule(node, module);
                     return false;
-                case AvailablePackageImports packageImports:
+                case PackageImport packageImports:
                     ImportModulesFromPackage(node, packageImports);
                     return false;
+                case ImportNotFound notFound:
+                    MakeUnresolvedImport(notFound.FullName, node.Root);
+                    return false;
                 default:
-                    _unit.DeclaringModule.AddUnresolvedModule(node.Root.MakeString(), node.ForceAbsolute);
                     return false;
             }
         }
 
-        private void ImportMembersFromModule(FromImportStatement node, AvailableModuleImports moduleImports) {
-            if (!ProjectState.Modules.TryImport(moduleImports.FullName, out var moduleReference)) {
-                return;
-            }
-
-            _unit.DeclaringModule.AddModuleReference(moduleImports.FullName, moduleReference);
-            var module = moduleReference.Module;
-            module.Imported(_unit);
-
-            if (node.Names.Count == 1 && node.Names[0].Name == "*") {
+        private void ImportMembersFromModule(FromImportStatement node, IModule module) {
+            var names = node.Names;
+            if (names.Count == 1 && names[0].Name == "*") {
                 // import all module public members
-                var publicMembers = moduleReference.Module
+                var publicMembers = module
                     .GetModuleMemberNames(GlobalScope.InterpreterContext)
                     .Where(n => !n.StartsWithOrdinal("_"));
                 foreach (var member in publicMembers) {
                     // Don't add references to "*" node
-                    SetVariableForImportedMember(module, node.Names[0], member, null, member, false);
+                    SetVariableForImportedMember(module, names[0], member, null, member, false);
                 }
                 return;
             }
 
-            var names = node.Names;
             var asNames = node.AsNames;
 
             var len = Math.Min(names.Count, asNames.Count);
@@ -390,23 +382,26 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             }
         }
 
-        private void ImportModulesFromPackage(FromImportStatement node, AvailablePackageImports packageImports) {
+        private void ImportModulesFromPackage(FromImportStatement node, PackageImport packageImport) {
             var names = node.Names;
             var asNames = node.AsNames;
 
             var importNames = names.Select(n => n.Name).ToArray();
             if (importNames.Length == 1 && importNames[0] == "*") {
                 // TODO: Need tracking of previous imports to determine possible imports for namespace package
+                MakeUnresolvedImport(packageImport.Name, node.Root);
                 return;
             }
 
-            foreach (var module in packageImports.Modules) {
+            foreach (var module in packageImport.Modules) {
                 var index = importNames.IndexOf(module.Name, StringExtensions.EqualsOrdinal);
                 if (index == -1) {
+                    MakeUnresolvedImport(module.FullName, node.Root);
                     continue;
                 }
 
                 if (!ProjectState.Modules.TryImport(module.FullName, out var moduleReference)) {
+                    MakeUnresolvedImport(module.FullName, node.Root);
                     continue;
                 }
 
@@ -498,48 +493,108 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         public override bool Walk(ImportStatement node) {
             var len = Math.Min(node.Names.Count, node.AsNames.Count);
             for (var i = 0; i < len; i++) {
-                var curName = node.Names[i];
-                var asName = node.AsNames[i];
+                var moduleImportExpression = node.Names[i];
+                var asNameExpression = node.AsNames[i];
 
-                var imports = _pathResolver.GetAvailableImportsFromAbsolutePath(_filePath, curName.Names.Select(n => n.Name));
-                if (!(imports is AvailableModuleImports moduleImports)) {
-                    continue;
+                var imports = _pathResolver.GetImportsFromAbsoluteName(_filePath, moduleImportExpression.Names.Select(n => n.Name), node.ForceAbsolute);
+                switch (imports) {
+                    case ModuleImport moduleImports when TryGetModule(moduleImportExpression, moduleImports, out var module):
+                    case PossibleModuleImport possibleModuleImport when TryGetModule(moduleImportExpression, possibleModuleImport, out module):
+                        ImportModule(node, module, moduleImportExpression, asNameExpression);
+                        break;
+                    default:
+                        MakeUnresolvedImport(moduleImportExpression.MakeString(), moduleImportExpression);
+                        break;
                 }
-
-                ImportModule(node, moduleImports, curName, asName);
             }
             return true;
         }
 
-        private void ImportModule(ImportStatement node, AvailableModuleImports moduleImports, DottedName moduleImportExpression, NameExpression asNameExpression) {
-            if (!ProjectState.Modules.TryImport(moduleImports.FullName, out var moduleReference)) {
-                return;
-            }
+        private void MakeUnresolvedImport(string name, Node spanNode) {
+            _unit.DeclaringModule.AddUnresolvedModule(name);
+            ProjectState.AddDiagnostic(spanNode, _unit, ErrorMessages.UnresolvedImport(name), DiagnosticSeverity.Warning, ErrorMessages.UnresolvedImportCode);
+        }
 
-            _unit.DeclaringModule.AddModuleReference(moduleImports.FullName, moduleReference);
-            var module = moduleReference.Module;
-            module.Imported(_unit);
-
+        private void ImportModule(in ImportStatement node, in IModule module, in DottedName moduleImportExpression, in NameExpression asNameExpression) {
             // "import fob.oar as baz" is handled as
             // baz = import_module('fob.oar')
             if (asNameExpression != null) {
-                AssignImportedModuleOrMember(asNameExpression.Name, moduleReference.AnalysisModule, true, node.Names.LastOrDefault(), asNameExpression);
+                AssignImportedModuleOrMember(asNameExpression.Name, module, true, node.Names.LastOrDefault(), asNameExpression);
                 return;
             }
 
             // "import fob.oar" is handled as
             // import_module('fob.oar')
             // fob = import_module('fob')
-            var firstImportNameExpression = moduleImportExpression.Names[0];
+            var importNames = moduleImportExpression.Names;
 
-            // Should be able to just get the module, as we only just imported it
-            if (!ProjectState.Modules.TryGetImportedModule(firstImportNameExpression.Name, out moduleReference)) {
-                Debug.Fail($"Failed to get module {firstImportNameExpression.Name} we just imported");
-                Scope.CreateEphemeralVariable(firstImportNameExpression, _unit, firstImportNameExpression.Name, true);
-                return;
+            var existingDepth = 0;
+            PythonPackage pythonPackage = null;
+            if (Scope.TryGetVariable(importNames[0].Name, out var importVariable)) {
+                var childPackage = importVariable.Types.OfType<PythonPackage>().FirstOrDefault();
+                while (childPackage != null && existingDepth < importNames.Count - 1) {
+                    existingDepth++;
+                    pythonPackage = childPackage;
+                    childPackage = pythonPackage.GetChildPackage(null, importNames[existingDepth].Name) as PythonPackage;
+                }
             }
 
-            AssignImportedModuleOrMember(firstImportNameExpression.Name, moduleReference.AnalysisModule, true, firstImportNameExpression, null);
+            var child = module;
+            for (var i = importNames.Count - 2; i >= existingDepth; i--) {
+                var childName = importNames[i + 1].Name;
+                var parentName = importNames[i].Name;
+                var parent = new PythonPackage(parentName, ProjectState);
+                parent.AddChildModule(childName, child);
+                child = parent;
+            }
+
+            if (pythonPackage == null) {
+                AssignImportedModuleOrMember(importNames[0].Name, child, true, importNames[0], null);
+            } else {
+                pythonPackage.AddChildModule(importNames[existingDepth].Name, child);
+            }
+        }
+
+        private bool TryGetModule(Node importNode, ModuleImport moduleImport, out IModule module) {
+            var fullName = moduleImport.FullName;
+            if (!ProjectState.Modules.TryImport(fullName, out var moduleReference)) {
+                MakeUnresolvedImport(fullName, importNode);
+                module = default;
+                return false;
+            }
+
+            _unit.DeclaringModule.AddModuleReference(fullName, moduleReference);
+            module = moduleReference.Module;
+            module.Imported(_unit);
+            return true;
+        }
+
+        private bool TryGetModule(Node importNode, PossibleModuleImport possibleModuleImport, out IModule module) {
+            var fullName = possibleModuleImport.PrecedingModuleFullName;
+            if (!ProjectState.Modules.TryImport(fullName, out var moduleReference)) {
+                MakeUnresolvedImport(fullName, importNode);
+                module = default;
+                return false;
+            }
+
+            _unit.DeclaringModule.AddModuleReference(fullName, moduleReference);
+            module = moduleReference.Module;
+            module.Imported(_unit);
+
+            var nameParts = possibleModuleImport.RemainingNameParts;
+            for (var i = 0; i < nameParts.Count; i++) {
+                var namePart = nameParts[i];
+                if (!module.Scope.TryGetVariable(namePart, out var variable) || !variable.Types.OfType<IModule>().Any()) {
+                    var unresolvedModuleName = string.Join(".", nameParts.Take(i + 1).Prepend(fullName));
+                    MakeUnresolvedImport(unresolvedModuleName, importNode);
+                    return false;
+                }
+
+                module = variable.Types.OfType<IModule>().First();
+                module.Imported(_unit);
+            }
+
+            return true;
         }
 
         public override bool Walk(ReturnStatement node) {

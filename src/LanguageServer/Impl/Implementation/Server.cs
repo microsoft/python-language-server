@@ -332,9 +332,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        public void SetSearchPaths(IEnumerable<string> searchPaths) => Analyzer.SetSearchPaths(searchPaths.MaybeEnumerate());
-        public void SetTypeStubSearchPaths(IEnumerable<string> typeStubSearchPaths) => Analyzer.SetTypeStubPaths(typeStubSearchPaths.MaybeEnumerate());
-
         #endregion
 
         #region IPythonLanguageServer
@@ -394,8 +391,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             Analyzer.SetRoot(_rootDir);
-            SetSearchPaths(@params.initializationOptions.searchPaths);
-            SetTypeStubSearchPaths(@params.initializationOptions.typeStubSearchPaths);
+            Analyzer.SetSearchPaths(@params.initializationOptions.searchPaths.MaybeEnumerate());
+            Analyzer.SetTypeStubPaths(@params.initializationOptions.typeStubSearchPaths.MaybeEnumerate());
 
             Analyzer.Interpreter.ModuleNamesChanged += Interpreter_ModuleNamesChanged;
         }
@@ -444,14 +441,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var factory = ActivateObject<IPythonInterpreterFactory>(interpreter.assembly, interpreter.typeName, interpreter.properties)
                 ?? new AstPythonInterpreterFactory(interpreter.properties);
 
-            var interp = factory.CreateInterpreter();
-            if (interp == null) {
-                throw new InvalidOperationException(Resources.Error_FailedToCreateInterpreter);
-            }
-
-            LogMessage(MessageType.Info, $"Created {interp.GetType().FullName} instance from {factory.GetType().FullName}");
-
-            var analyzer = await PythonAnalyzer.CreateAsync(factory, interp, token);
+            var analyzer = await PythonAnalyzer.CreateAsync(factory, token);
+            LogMessage(MessageType.Info, $"Created {analyzer.Interpreter.GetType().FullName} instance from {factory.GetType().FullName}");
             return analyzer;
         }
 

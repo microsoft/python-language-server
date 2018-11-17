@@ -171,12 +171,11 @@ namespace Microsoft.PythonTools.Analysis {
 
                     if (newModule == null) {
                         // this module was unloaded
-                        ModuleReference dummy;
-                        TryRemove(name, out dummy);
+                        TryRemove(name, out _);
 
                         _builtinModuleTable.TryRemove(builtinModule.InterpreterModule, out _);
                         foreach (var child in builtinModule.InterpreterModule.GetChildrenModules()) {
-                            TryRemove(builtinModule.Name + "." + child, out dummy);
+                            TryRemove(builtinModule.Name + "." + child, out _);
                         }
                     } else if (builtinModule.InterpreterModule != newModule) {
                         // this module was replaced with a new module

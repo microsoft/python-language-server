@@ -14,9 +14,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Collections.Generic;
+
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
-    internal interface IAvailableImports {
-        string Name { get; }
-        string RootPath { get; }
+    internal class PackageImport : IImportSearchResult {
+        public string Name { get; }
+        public ModuleImport[] Modules { get; }
+        public string[] Packages { get; }
+
+        public PackageImport(string name, ModuleImport[] modules, string[] packages) {
+            Name = name;
+            Modules = modules;
+            Packages = packages;
+        }
     }
 }

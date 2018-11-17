@@ -61,6 +61,9 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public static ProtocolInfoAssertions Should(this AnalysisValueTestInfo<ProtocolInfo> testInfo)
             => new ProtocolInfoAssertions(testInfo);
 
+        public static PythonPackageAssertions Should(this AnalysisValueTestInfo<PythonPackage> testInfo)
+            => new PythonPackageAssertions(testInfo);
+
         public static SequenceInfoAssertions Should(this AnalysisValueTestInfo<SequenceInfo> testInfo)
             => new SequenceInfoAssertions(testInfo);
 

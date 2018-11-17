@@ -37,36 +37,5 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
 
             return -1;
         }
-
-        public static T[] ImmutableAdd<T>(this T[] array, in T item) {
-            if (array.Length == 0) {
-                return new[] {item};
-            }
-
-            var copy = new T[array.Length + 1];
-            Array.Copy(array, copy, array.Length);
-            copy[array.Length] = item;
-            return copy;
-        }
-
-        public static T[] ImmutableReplaceAt<T>(this T[] array, in T item, in int index) {
-            var copy = new T[array.Length];
-            Array.Copy(array, copy, array.Length);
-            copy[index] = item;
-            return copy;
-        }
-
-        public static T[] ImmutableRemoveAt<T>(this T[] array, in int index) {
-            var copy = new T[array.Length - 1];
-            if (index > 0) {
-                Array.Copy(array, copy, index);
-            }
-
-            if (index < copy.Length) {
-                Array.Copy(array, index + 1, copy, index, copy.Length - index);
-            }
-
-            return copy;
-        }
     }
 }
