@@ -108,8 +108,7 @@ namespace Microsoft.PythonTools.Interpreter {
         /// </summary>
         DictItems,
         SetIterator,
-        CallableIterator,
-        Class,
+        CallableIterator
     }
 
     public static class BuiltinTypeIdExtensions {
@@ -183,7 +182,6 @@ namespace Microsoft.PythonTools.Interpreter {
                 case BuiltinTypeId.ClassMethod: name = "classmethod"; break;
                 case BuiltinTypeId.StaticMethod: name = "staticmethod"; break;
                 case BuiltinTypeId.FrozenSet: name = "frozenset"; break;
-                case BuiltinTypeId.Class: name = "class"; break;
 
                 case BuiltinTypeId.Unknown:
                 default:
@@ -233,7 +231,6 @@ namespace Microsoft.PythonTools.Interpreter {
                 case "method": return BuiltinTypeId.Method;
                 case "classmethod": return BuiltinTypeId.ClassMethod;
                 case "staticmethod": return BuiltinTypeId.StaticMethod;
-                case "class": return BuiltinTypeId.Class;
             }
             return BuiltinTypeId.Unknown;
         }

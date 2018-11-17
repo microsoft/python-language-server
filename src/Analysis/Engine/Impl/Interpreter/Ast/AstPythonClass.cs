@@ -36,13 +36,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             IPythonModule declaringModule,
             string doc,
             ILocationInfo loc,
-            BuiltinTypeId builtinTypeId = BuiltinTypeId.Class,
+            BuiltinTypeId builtinTypeId = BuiltinTypeId.Type,
             bool isBuiltIn = false
         ) : base(classDefinition.Name, declaringModule, doc, loc, builtinTypeId, isBuiltIn, false) {
             ClassDefinition = classDefinition;
         }
 
-        internal AstPythonClass(string name) : base(name, BuiltinTypeId.Class, false) { }
+        internal AstPythonClass(string name) : base(name, BuiltinTypeId.Type, false) { }
 
         #region IPythonType
         public override PythonMemberType MemberType => PythonMemberType.Class;
