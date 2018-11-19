@@ -105,7 +105,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// Creates a new analyzer that is not ready for use. You must call and
         /// wait for <see cref="ReloadModulesAsync"/> to complete before using.
         /// </summary>
-        public static PythonAnalyzer Create(IPythonInterpreterFactory factory, IPythonInterpreter interpreter = null) 
+        public static PythonAnalyzer Create(IPythonInterpreterFactory factory, IPythonInterpreter interpreter = null)
             => new PythonAnalyzer(factory, interpreter);
 
         internal PythonAnalyzer(IPythonInterpreterFactory factory, IPythonInterpreter pythonInterpreter) {
@@ -172,7 +172,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             try {
                 // Cancel outstanding analysis
-                Queue.Clear(); 
+                Queue.Clear();
                 // Tell factory to clear cached modules. This also clears the interpreter data.
                 InterpreterFactory.NotifyImportNamesChanged();
                 // Now initialize the interpreter
@@ -206,7 +206,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// <returns>The project entry for the new module.</returns>
         public IPythonProjectEntry AddModule(string moduleName, string filePath, Uri documentUri = null, IAnalysisCookie cookie = null) {
             if (documentUri == null || documentUri.Scheme != "python") {
-                _pathResolver.AddModulePath(filePath);
+                // _pathResolver.AddModulePath(filePath);
             }
 
             var entry = new ProjectEntry(this, moduleName, filePath, documentUri, cookie);
@@ -574,7 +574,7 @@ namespace Microsoft.PythonTools.Analysis {
             return new IMemberResult[0];
         }
 
-        private static IMemberResult[] MemberDictToMemberResult(Dictionary<string, List<IAnalysisSet>> results) 
+        private static IMemberResult[] MemberDictToMemberResult(Dictionary<string, List<IAnalysisSet>> results)
             => results.Select(r => new MemberResult(r.Key, r.Value.SelectMany()) as IMemberResult).ToArray();
 
         /// <summary>
@@ -709,7 +709,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal BuiltinInstanceInfo GetInstance(IPythonType type) => GetBuiltinType(type).Instance;
 
-        internal BuiltinClassInfo GetBuiltinType(IPythonType type) => 
+        internal BuiltinClassInfo GetBuiltinType(IPythonType type) =>
             (BuiltinClassInfo)GetCached(type,
                 () => MakeBuiltinType(type)
             ) ?? ClassInfos[BuiltinTypeId.Object];
@@ -923,7 +923,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public IReadOnlyList<string> GetSearchPaths() => _searchPaths.AsLockedEnumerable().ToArray();
 
-        internal void SetRoot(string rootDir) => _pathResolver.SetRoot(rootDir);
+        internal void SetRoot(string rootDir) { } // _pathResolver.SetRoot(rootDir);
 
         /// <summary>
         /// Sets the search paths for this analyzer, invoking callbacks for any
@@ -933,7 +933,7 @@ namespace Microsoft.PythonTools.Analysis {
             lock (_searchPaths) {
                 _searchPaths.Clear();
                 _searchPaths.AddRange(paths.MaybeEnumerate());
-                _pathResolver.SetSearchPaths(_searchPaths);
+                // _pathResolver.SetSearchPaths(_searchPaths);
             }
             SearchPathsChanged?.Invoke(this, EventArgs.Empty);
         }

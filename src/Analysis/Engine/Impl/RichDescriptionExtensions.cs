@@ -22,7 +22,8 @@ namespace Microsoft.PythonTools.Analysis {
             var items = new List<KeyValuePair<string, string>>();
             int itemCount = 0;
             foreach (var d in (useLongDescription ? set.GetDescriptions() : set.GetShortDescriptions())) {
-                items.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, d));
+                var desc = !string.IsNullOrEmpty(d) ? d : defaultIfEmpty; 
+                items.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, desc));
                 items.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", "));
                 itemCount += 1;
             }

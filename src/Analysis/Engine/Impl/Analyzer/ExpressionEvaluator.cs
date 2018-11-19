@@ -582,7 +582,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                     ).SelfSet;
                 } else {
                     Debug.Assert(node is TupleExpression);
-                    return new SequenceInfo(
+                    return new TupleInfo(
                         VariableDef.EmptyArray,
                         _unit.State.ClassInfos[BuiltinTypeId.Tuple],
                         node,
