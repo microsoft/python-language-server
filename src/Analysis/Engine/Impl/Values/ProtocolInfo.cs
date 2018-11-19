@@ -129,14 +129,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
 
-        internal override void AddReference(Node node, AnalysisUnit analysisUnit) {
-            _references.GetReferences(analysisUnit.ProjectEntry as ProjectEntry)?.AddReference(new EncodedLocation(analysisUnit, node));
-        }
+        internal override void AddReference(Node node, AnalysisUnit analysisUnit)
+            => _references.GetReferences(analysisUnit.ProjectEntry as ProjectEntry)?.AddReference(new EncodedLocation(analysisUnit, node));
 
         public override IEnumerable<ILocationInfo> Locations {
             get {
-                ReferenceList defns;
-                if (!_references.TryGetValue(DeclaringModule, out defns)) {
+                if (!_references.TryGetValue(DeclaringModule, out var defns)) {
                     return Enumerable.Empty<ILocationInfo>();
                 }
                 return defns.Definitions.Select(l => l.GetLocationInfo()).Where(l => l != null);
@@ -151,17 +149,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IAnalysisSet Await(Node node, AnalysisUnit unit) {
-            return AnalysisSet.UnionAll(_protocols.Select(p => p.Await(node, unit)));
-        }
+        public override IAnalysisSet Await(Node node, AnalysisUnit unit)
+            => AnalysisSet.UnionAll(_protocols.Select(p => p.Await(node, unit)));
 
-        public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
-            return AnalysisSet.UnionAll(_protocols.Select(p => p.BinaryOperation(node, unit, operation, rhs)));
-        }
+        public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs)
+            => AnalysisSet.UnionAll(_protocols.Select(p => p.BinaryOperation(node, unit, operation, rhs)));
 
-        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
-            return AnalysisSet.UnionAll(_protocols.Select(p => p.Call(node, unit, args, keywordArgNames)));
-        }
+        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames)
+            => AnalysisSet.UnionAll(_protocols.Select(p => p.Call(node, unit, args, keywordArgNames)));
 
         public override void DeleteMember(Node node, AnalysisUnit unit, string name) {
             foreach (var p in _protocols) {

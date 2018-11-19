@@ -63,20 +63,19 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override PythonMemberType MemberType => PythonMemberType.Unknown;
 
-        // Do not return any default values from protocols. We call these directly and handle null.
-        public override IAnalysisSet Await(Node node, AnalysisUnit unit) => null;
-        public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) => null;
-        public override IAnalysisSet GetAsyncEnumeratorTypes(Node node, AnalysisUnit unit) => null;
-        public override IAnalysisSet GetAsyncIterator(Node node, AnalysisUnit unit) => null;
-        public override IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) => null;
-        public override IAnalysisSet GetDescriptor(PythonAnalyzer projectState, AnalysisValue instance, AnalysisValue context) => null;
-        public override IAnalysisSet GetEnumeratorTypes(Node node, AnalysisUnit unit) => null;
-        public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) => null;
-        public override IAnalysisSet GetInstanceType() => null;
-        public override IEnumerable<KeyValuePair<IAnalysisSet, IAnalysisSet>> GetItems() => null;
-        public override IAnalysisSet GetIterator(Node node, AnalysisUnit unit) => null;
-        public override IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) => null;
-        public override IAnalysisSet UnaryOperation(Node node, AnalysisUnit unit, PythonOperator operation) => null;
+        public override IAnalysisSet Await(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
+        public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) => AnalysisSet.Empty;
+        public override IAnalysisSet GetAsyncEnumeratorTypes(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
+        public override IAnalysisSet GetAsyncIterator(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
+        public override IAnalysisSet GetDescriptor(Node node, AnalysisValue instance, AnalysisValue context, AnalysisUnit unit) => AnalysisSet.Empty;
+        public override IAnalysisSet GetDescriptor(PythonAnalyzer projectState, AnalysisValue instance, AnalysisValue context) => AnalysisSet.Empty;
+        public override IAnalysisSet GetEnumeratorTypes(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
+        public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) => AnalysisSet.Empty;
+        public override IAnalysisSet GetInstanceType() => AnalysisSet.Empty;
+        public override IEnumerable<KeyValuePair<IAnalysisSet, IAnalysisSet>> GetItems() => Enumerable.Empty< KeyValuePair<IAnalysisSet, IAnalysisSet>>();
+        public override IAnalysisSet GetIterator(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
+        public override IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
+        public override IAnalysisSet UnaryOperation(Node node, AnalysisUnit unit, PythonOperator operation) => AnalysisSet.Empty;
 
         public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None) {
             EnsureMembers();
@@ -131,7 +130,13 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private readonly BuiltinTypeId _typeId;
         private List<KeyValuePair<string, string>> _richDescription;
 
-        public NameProtocol(ProtocolInfo self, string name, string documentation = null, BuiltinTypeId typeId = BuiltinTypeId.Unknown, PythonMemberType memberType = PythonMemberType.Unknown) : base(self) {
+        public NameProtocol(
+            ProtocolInfo self, 
+            string name, 
+            string documentation = null, 
+            BuiltinTypeId typeId = BuiltinTypeId.Unknown, 
+            PythonMemberType memberType = PythonMemberType.Unknown) 
+            : base(self) {
             _name = name;
             _doc = documentation;
             _typeId = typeId;
@@ -139,13 +144,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _richDescription = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, _name) };
         }
 
-        public NameProtocol(ProtocolInfo self, IPythonType type) : base(self) {
-            _name = type.Name;
-            _doc = type.Documentation;
-            _typeId = type.TypeId;
-            MemberType = type.MemberType;
-            _richDescription = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, _name) };
-        }
+        public NameProtocol(ProtocolInfo self, IPythonType type) 
+            : this(self, type.Name, type.Documentation, type.TypeId, type.MemberType) { }
 
         public void ExtendDescription(KeyValuePair<string, string> part) {
             _richDescription.Add(part);

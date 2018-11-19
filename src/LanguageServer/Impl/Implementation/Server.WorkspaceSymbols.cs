@@ -78,10 +78,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var all = breadthFirst.SelectMany(c => analysis.GetAllAvailableMembersFromScope(c, opts));
             var result = all
                 .Where(m => {
-                    if (m.Values.Any(v => v.DeclaringModule == entry || v.Locations.Any(l => l.DocumentUri == entry.DocumentUri))) {
-                        if (string.IsNullOrEmpty(prefix) || m.Name.StartsWithOrdinal(prefix, ignoreCase: true)) {
-                            return true;
-                        }
+                    if (m.Values.Any(v => v.DeclaringModule == entry || 
+                        v.Locations.MaybeEnumerate().Any(l => l.DocumentUri == entry.DocumentUri))) {
+                        return string.IsNullOrEmpty(prefix) || m.Name.StartsWithOrdinal(prefix, ignoreCase: true);
                     }
                     return false;
                 })

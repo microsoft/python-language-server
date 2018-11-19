@@ -236,10 +236,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         private IAnalysisSet MakeTuple(params IAnalysisSet[] types) {
             var p = new ProtocolInfo(Entry, State);
-            var np = new NameProtocol(p, Types[BuiltinTypeId.Tuple]);
             var tp = new TupleProtocol(p, types);
-            np.ExtendDescription(tp.GetRichDescription());
-            p.AddProtocol(np);
             p.AddProtocol(tp);
             return p;
         }
