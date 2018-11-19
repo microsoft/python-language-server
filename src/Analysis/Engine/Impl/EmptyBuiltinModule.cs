@@ -57,7 +57,6 @@ namespace Microsoft.PythonTools.Analysis {
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltIn => true;
         public bool IsTypeFactory => false;
-        public IPythonFunction GetConstructors() => null;
         #endregion
 
         #region IMemberContainer

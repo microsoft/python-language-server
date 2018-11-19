@@ -389,10 +389,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private AstPythonClass CreateClass(ClassDefinition node) {
             node = node ?? throw new ArgumentNullException(nameof(node));
-            return new AstPythonClass(node, _module, 
+            return new AstPythonClass(node, _module,
                 GetDoc(node.Body as SuiteStatement), GetLoc(node),
-                CreateBuiltinTypes ? BuiltinTypeId.Unknown : BuiltinTypeId.Type, // built-ins set type later
-                CreateBuiltinTypes);
+                CreateBuiltinTypes ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
         }
 
         private void CollectTopLevelDefinitions() {

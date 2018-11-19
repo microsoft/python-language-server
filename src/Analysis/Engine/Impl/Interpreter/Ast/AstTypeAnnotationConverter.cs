@@ -211,9 +211,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
              }
 
             public override BuiltinTypeId TypeId => BuiltinTypeId.Module;
-            public override bool IsBuiltIn => true;
             public override PythonMemberType MemberType => PythonMemberType.Module;
-            public override IPythonFunction GetConstructors() => null;
 
             public override  IMember GetMember(IModuleContext context, string name) => DeclaringModule.GetMember(context, name);
             public override IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => DeclaringModule.GetMemberNames(moduleContext);

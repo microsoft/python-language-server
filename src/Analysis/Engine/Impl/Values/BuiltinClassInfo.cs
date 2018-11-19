@@ -125,21 +125,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return new BuiltinInstanceInfo(this);
         }
 
-        /// <summary>
-        /// Returns the overloads available for calling the constructor of the type.
-        /// </summary>
-        public override IEnumerable<OverloadResult> Overloads {
-            get {
-                // TODO: sometimes might have a specialized __init__.
-                // This just covers typical .NET types
-                var ctors = Type.GetConstructors();
-
-                if (ctors != null) {
-                    return ctors.Overloads.Select(ctor => new BuiltinFunctionOverloadResult(ProjectState, Type.Name, ctor, 1, () => Documentation));
-                }
-                return new OverloadResult[0];
-            }
-        }
+        public override IEnumerable<OverloadResult> Overloads => Array.Empty<OverloadResult>();
 
         public override IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) {
             // Must unconditionally call the base implementation of GetMember

@@ -39,12 +39,6 @@ namespace Microsoft.PythonTools.Interpreter {
         string Documentation { get; }
 
         /// <summary>
-        /// Python __init__.
-        /// </summary>
-        /// <returns></returns>
-        IPythonFunction GetConstructors();
-
-        /// <summary>
         /// Indicates if type is a built-in type.
         /// </summary>
         bool IsBuiltIn { get; }

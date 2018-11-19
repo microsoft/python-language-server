@@ -32,9 +32,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public override BuiltinTypeId TypeId => InnerType?.TypeId ?? BuiltinTypeId.Unknown;
-        public override bool IsBuiltIn => InnerType?.IsBuiltIn ?? false;
         public override PythonMemberType MemberType => InnerType?.MemberType ?? PythonMemberType.Unknown;
-        public override IPythonFunction GetConstructors() => InnerType?.GetConstructors();
         public override IMember GetMember(IModuleContext context, string name) => InnerType?.GetMember(context, name);
         public override IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => InnerType?.GetMemberNames(moduleContext);
 

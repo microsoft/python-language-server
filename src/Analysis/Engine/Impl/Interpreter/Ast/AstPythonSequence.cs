@@ -35,7 +35,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
  
         public override string Name => InnerType?.Name ?? "tuple";
         public override BuiltinTypeId TypeId => InnerType?.TypeId ?? BuiltinTypeId.Tuple;
-        public override bool IsBuiltIn => InnerType?.IsBuiltIn ?? true;
         public override PythonMemberType MemberType => InnerType?.MemberType ?? PythonMemberType.Class;
     }
 }

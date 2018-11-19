@@ -166,7 +166,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     var typeId = typeName.GetTypeId();
                     if (typeId != BuiltinTypeId.Unknown) {
                         _scope.SetInScope(name, 
-                            new AstPythonConstant(new AstPythonType(typeName, typeId, isBuiltIn: true)));
+                            new AstPythonConstant(new AstPythonType(typeName, typeId)));
                     }
                 }
             }

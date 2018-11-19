@@ -88,10 +88,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                         if (string.IsNullOrEmpty(name)) {
                             Debug.Assert(id == BuiltinTypeId.Unknown, $"no name for {id}");
                             if (!_builtinTypes.TryGetValue(BuiltinTypeId.Unknown, out res)) {
-                                _builtinTypes[BuiltinTypeId.Unknown] = res = new AstPythonType("<unknown>", BuiltinTypeId.Unknown);
+                                _builtinTypes[BuiltinTypeId.Unknown] = res = new AstPythonType("<unknown>", bm, null, null, BuiltinTypeId.Unknown);
                             }
                         } else {
-                            res = new AstPythonType(name, id);
+                            res = new AstPythonType(name, bm, null, null, id);
                         }
                     }
                     _builtinTypes[id] = res;

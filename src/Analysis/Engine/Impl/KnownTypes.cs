@@ -116,7 +116,6 @@ namespace Microsoft.PythonTools.Analysis {
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltIn => true;
         public bool IsTypeFactory => false;
-        public IPythonFunction GetConstructors() => null;
         #endregion
 
         private IMember GetOrCreate(BuiltinTypeId typeId) {
@@ -168,7 +167,6 @@ namespace Microsoft.PythonTools.Analysis {
             TypeId = typeId;
         }
 
-        public override bool IsBuiltIn => true;
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override BuiltinTypeId TypeId { get; }
     }

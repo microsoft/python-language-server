@@ -115,33 +115,26 @@ namespace Microsoft.PythonTools.Interpreter {
         /// <summary>
         /// Indicates whether an ID should be remapped by an interpreter.
         /// </summary>
-        public static bool IsVirtualId(this BuiltinTypeId id) {
-            return id == BuiltinTypeId.Str ||
+        public static bool IsVirtualId(this BuiltinTypeId id) => id == BuiltinTypeId.Str ||
                 id == BuiltinTypeId.StrIterator ||
                 (int)id > (int)LastTypeId;
-        }
 
         public static BuiltinTypeId LastTypeId => BuiltinTypeId.CallableIterator;
 
-        public static string GetModuleName(this BuiltinTypeId id, Version version) {
-            return id.GetModuleName(version.Major == 3);
-        }
+        public static string GetModuleName(this BuiltinTypeId id, Version version) 
+            => id.GetModuleName(version.Major == 3);
 
-        public static string GetModuleName(this BuiltinTypeId id, PythonLanguageVersion languageVersion) {
-            return id.GetModuleName(languageVersion.IsNone() || languageVersion.Is3x());
-        }
+        public static string GetModuleName(this BuiltinTypeId id, PythonLanguageVersion languageVersion)
+            => id.GetModuleName(languageVersion.IsNone() || languageVersion.Is3x());
 
-        private static string GetModuleName(this BuiltinTypeId id, bool is3x) {
-            return is3x ? "builtins" : "__builtin__";
-        }
+        private static string GetModuleName(this BuiltinTypeId id, bool is3x)
+            => is3x ? "builtins" : "__builtin__";
 
-        public static string GetTypeName(this BuiltinTypeId id, Version version) {
-            return id.GetTypeName(version.Major == 3);
-        }
+        public static string GetTypeName(this BuiltinTypeId id, Version version)
+            => id.GetTypeName(version.Major == 3);
 
-        public static string GetTypeName(this BuiltinTypeId id, PythonLanguageVersion languageVersion) {
-            return id.GetTypeName(languageVersion.IsNone() || languageVersion.Is3x());
-        }
+        public static string GetTypeName(this BuiltinTypeId id, PythonLanguageVersion languageVersion)
+            => id.GetTypeName(languageVersion.IsNone() || languageVersion.Is3x());
 
         private static string GetTypeName(this BuiltinTypeId id, bool is3x) {
             string name;

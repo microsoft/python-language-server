@@ -98,7 +98,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public bool IsBuiltIn => _pf.IsBuiltIn;
             public bool IsTypeFactory => false;
             public PythonMemberType MemberType => PythonMemberType.Method;
-            public IPythonFunction GetConstructors() => _pf.GetConstructors();
             public IMember GetMember(IModuleContext context, string name) => _pf.GetMember(context, name);
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => _pf.GetMemberNames(moduleContext);
         }

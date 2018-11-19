@@ -187,7 +187,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public IPythonType DeclaringType => CreateAs<IPythonType>(Functions.Select(f => f.DeclaringType));
             public IReadOnlyList<IPythonFunctionOverload> Overloads => Functions.SelectMany(f => f.Overloads).ToArray();
             public FunctionDefinition FunctionDefinition => Functions.FirstOrDefault(f => f.FunctionDefinition != null)?.FunctionDefinition;
-            public IPythonFunction GetConstructors() => null;
             public IMember GetMember(IModuleContext context, string name) => null;
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Enumerable.Empty<string>();
             #endregion
@@ -234,8 +233,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     throw new AggregateException(exceptions);
                 }
             }
-
-            public IPythonFunction GetConstructors() => null;
         }
 
         class MultipleTypeMembers : AstPythonMultipleMembers, IPythonType {
@@ -249,7 +246,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public IPythonModule DeclaringModule => CreateAs<IPythonModule>(Types.Select(t => t.DeclaringModule));
             public bool IsBuiltIn => Types.All(t => t.IsBuiltIn);
             public bool IsTypeFactory => Types.All(t => t.IsTypeFactory);
-            public IPythonFunction GetConstructors() => CreateAs<IPythonFunction>(Types.Select(t => t.GetConstructors()));
             public IMember GetMember(IModuleContext context, string name) => Create(Types.Select(t => t.GetMember(context, name)));
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Types.SelectMany(t => t.GetMemberNames(moduleContext)).Distinct();
             public override PythonMemberType MemberType => PythonMemberType.Class;

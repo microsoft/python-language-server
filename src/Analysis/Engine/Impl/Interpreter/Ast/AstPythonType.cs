@@ -17,13 +17,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonType : IPythonType, ILocatedMember, IHasQualifiedName {
-        protected static readonly IPythonModule NoDeclaringModule = new AstPythonModule();
-
         private readonly string _name;
         private readonly object _lock = new object();
         private Dictionary<string, IMember> _members;
@@ -40,23 +37,18 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             string doc,
             ILocationInfo loc,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown,
-            bool isBuiltIn = false,
             bool isTypeFactory = false
-        ) : this(name, typeId, isBuiltIn, isTypeFactory) {
+        ) : this(name, typeId, isTypeFactory) {
             Documentation = doc;
             DeclaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
             Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
             IsTypeFactory = isTypeFactory;
         }
 
-        public AstPythonType(string name, BuiltinTypeId typeId, bool isBuiltIn, bool isTypeFactory = false) {
+        public AstPythonType(string name, BuiltinTypeId typeId, bool isTypeFactory = false) {
             _name = name ?? throw new ArgumentNullException(nameof(name));
-            _typeId = typeId;
             _typeId = typeId == BuiltinTypeId.Unknown && isTypeFactory ? BuiltinTypeId.Type : typeId;
-            IsBuiltIn = isBuiltIn;
         }
-
-        public AstPythonType(string name, BuiltinTypeId typeId): this(name, typeId, true) { }
 
         #region IPythonType
         public virtual string Name {
@@ -68,11 +60,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public virtual string Documentation { get; }
-        public IPythonModule DeclaringModule { get; } = NoDeclaringModule;
+        public IPythonModule DeclaringModule { get; }
         public virtual PythonMemberType MemberType => PythonMemberType.Class;
         public virtual BuiltinTypeId TypeId => _typeId;
-        public virtual bool IsBuiltIn { get; }
-        public virtual IPythonFunction GetConstructors() => null;
+        public bool IsBuiltIn => DeclaringModule == null || DeclaringModule is IBuiltinPythonModule;
         public bool IsTypeFactory { get; }
 
         #endregion
@@ -128,7 +119,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         internal AstPythonType GetTypeFactory() {
             var clone = new AstPythonType(Name, DeclaringModule, Documentation,
                Locations.OfType<LocationInfo>().FirstOrDefault(),
-               TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId, IsBuiltIn, true);
+               TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId, true);
             clone.AddMembers(Members, true);
             return clone;
         }
