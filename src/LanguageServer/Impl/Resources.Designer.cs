@@ -106,6 +106,15 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unmatched token &apos;{0}&apos; on line {1}; line formatting may not be accurate..
+        /// </summary>
+        internal static string LineFormatter_UnmatchedToken {
+            get {
+                return ResourceManager.GetString("LineFormatter_UnmatchedToken", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Reloading modules... .
         /// </summary>
         internal static string ReloadingModules {
