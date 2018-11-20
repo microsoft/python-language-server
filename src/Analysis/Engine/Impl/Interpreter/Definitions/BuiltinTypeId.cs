@@ -121,7 +121,7 @@ namespace Microsoft.PythonTools.Interpreter {
 
         public static BuiltinTypeId LastTypeId => BuiltinTypeId.CallableIterator;
 
-        public static string GetModuleName(this BuiltinTypeId id, Version version) 
+        public static string GetModuleName(this BuiltinTypeId id, Version version)
             => id.GetModuleName(version.Major == 3);
 
         public static string GetModuleName(this BuiltinTypeId id, PythonLanguageVersion languageVersion)
@@ -228,5 +228,57 @@ namespace Microsoft.PythonTools.Interpreter {
             return BuiltinTypeId.Unknown;
         }
 
+        internal static PythonMemberType GetMemberId(this BuiltinTypeId id) {
+            switch (id) {
+                case BuiltinTypeId.Bool:
+                case BuiltinTypeId.Complex:
+                case BuiltinTypeId.Float:
+                case BuiltinTypeId.Int:
+                case BuiltinTypeId.Long:
+                case BuiltinTypeId.Str:
+                case BuiltinTypeId.Unicode:
+                case BuiltinTypeId.NoneType:
+                case BuiltinTypeId.Ellipsis:
+                    return PythonMemberType.Constant;
+
+                case BuiltinTypeId.Dict:
+                case BuiltinTypeId.List:
+                case BuiltinTypeId.Object:
+                case BuiltinTypeId.Set:
+                case BuiltinTypeId.Bytes:
+                case BuiltinTypeId.Tuple:
+                case BuiltinTypeId.DictKeys:
+                case BuiltinTypeId.DictValues:
+                case BuiltinTypeId.DictItems:
+                case BuiltinTypeId.Generator:
+                case BuiltinTypeId.FrozenSet:
+                case BuiltinTypeId.ListIterator:
+                case BuiltinTypeId.TupleIterator:
+                case BuiltinTypeId.SetIterator:
+                case BuiltinTypeId.StrIterator:
+                case BuiltinTypeId.UnicodeIterator:
+                case BuiltinTypeId.BytesIterator:
+                case BuiltinTypeId.CallableIterator:
+                    return PythonMemberType.Instance;
+
+                case BuiltinTypeId.Type:
+                    return PythonMemberType.Class;
+
+                case BuiltinTypeId.Module:
+                    return PythonMemberType.Module;
+
+                case BuiltinTypeId.Function:
+                case BuiltinTypeId.ClassMethod:
+                case BuiltinTypeId.StaticMethod:
+                    return PythonMemberType.Function;
+
+                case BuiltinTypeId.Property:
+                    return PythonMemberType.Property;
+
+                case BuiltinTypeId.Method:
+                    return PythonMemberType.Method;
+            }
+            return PythonMemberType.Unknown;
+        }
     }
 }

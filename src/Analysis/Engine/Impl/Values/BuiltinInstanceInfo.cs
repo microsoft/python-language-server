@@ -51,7 +51,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
             get {
                 switch (_klass.MemberType) {
                     case PythonMemberType.Enum: return PythonMemberType.EnumInstance;
-                    case PythonMemberType.Delegate: return PythonMemberType.DelegateInstance;
                     default:
                         return PythonMemberType.Instance;
                 }

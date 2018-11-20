@@ -944,7 +944,6 @@ scanner = _json.make_scanner()";
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
                 var v0 = analysis.Should().HaveVariable("scanner").WithValueAt<IBuiltinInstanceInfo>(0);
-                var v1 = analysis.Should().HaveVariable("scanner").WithValueAt<IBuiltinInstanceInfo>(1);
 
                   v0.Which.Should().HaveSingleOverload()
                     .Which.Should().HaveName("__call__")
@@ -952,11 +951,6 @@ scanner = _json.make_scanner()";
                     .And.HaveParameterAt(0).WithName("string").WithType("str").WithNoDefaultValue()
                     .And.HaveParameterAt(1).WithName("index").WithType("int").WithNoDefaultValue()
                     .And.HaveSingleReturnType("tuple[None, int]");
-
-                v1.Which.Should().HaveSingleOverload()
-                  .Which.Should().HaveName("__call__")
-                  .And.HaveParameters("*args", "**kwargs")
-                  .And.HaveSingleReturnType("type");
             }
         }
 

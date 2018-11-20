@@ -840,14 +840,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 case PythonMemberType.Unknown: return CompletionItemKind.None;
                 case PythonMemberType.Class: return CompletionItemKind.Class;
                 case PythonMemberType.Instance: return CompletionItemKind.Value;
-                case PythonMemberType.Delegate: return CompletionItemKind.Class;
-                case PythonMemberType.DelegateInstance: return CompletionItemKind.Function;
                 case PythonMemberType.Enum: return CompletionItemKind.Enum;
                 case PythonMemberType.EnumInstance: return CompletionItemKind.EnumMember;
                 case PythonMemberType.Function: return CompletionItemKind.Function;
                 case PythonMemberType.Method: return CompletionItemKind.Method;
                 case PythonMemberType.Module: return CompletionItemKind.Module;
-                case PythonMemberType.Namespace: return CompletionItemKind.Module;
                 case PythonMemberType.Constant: return CompletionItemKind.Constant;
                 case PythonMemberType.Event: return CompletionItemKind.Event;
                 case PythonMemberType.Field: return CompletionItemKind.Field;

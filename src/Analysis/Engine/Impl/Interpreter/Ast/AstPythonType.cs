@@ -61,7 +61,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public virtual string Documentation { get; }
         public IPythonModule DeclaringModule { get; }
-        public virtual PythonMemberType MemberType => PythonMemberType.Class;
+        public virtual PythonMemberType MemberType => _typeId.GetMemberId();
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltIn => DeclaringModule == null || DeclaringModule is IBuiltinPythonModule;
         public bool IsTypeFactory { get; }

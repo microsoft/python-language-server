@@ -33,14 +33,6 @@ namespace Microsoft.PythonTools.Interpreter {
         /// </summary>
         Instance,
         /// <summary>
-        /// The result is a delegate type.
-        /// </summary>
-        Delegate,
-        /// <summary>
-        /// The result is an instance of a delegate.
-        /// </summary>
-        DelegateInstance,
-        /// <summary>
         /// The result is an enum type.
         /// </summary>
         Enum,
@@ -61,15 +53,9 @@ namespace Microsoft.PythonTools.Interpreter {
         /// </summary>
         Module,
         /// <summary>
-        /// An instance of a namespace object that was imported from .NET.
-        /// </summary>
-        Namespace,
-
-        /// <summary>
         /// A constant defined in source code.
         /// </summary>
         Constant,
-
         /// <summary>
         /// A .NET event object that is exposed to Python.
         /// </summary>
@@ -82,22 +68,18 @@ namespace Microsoft.PythonTools.Interpreter {
         /// A .NET property object that is exposed to Python.
         /// </summary>
         Property,
-
         /// <summary>
         /// A merge of multiple types.
         /// </summary>
         Multiple,
-
         /// <summary>
         /// The member represents a keyword
         /// </summary>
         Keyword,
-
         /// <summary>
         /// The member represents a code snippet
         /// </summary>
         CodeSnippet,
-
         /// <summary>
         /// The member represents a named argument
         /// </summary>

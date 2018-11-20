@@ -448,8 +448,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             switch (value.MemberType) {
                 case PythonMemberType.Class:
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Type);
-                case PythonMemberType.Delegate:
-                case PythonMemberType.DelegateInstance:
                 case PythonMemberType.Function:
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Function);
                 case PythonMemberType.Method:
@@ -459,8 +457,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     break;
                 case PythonMemberType.Module:
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Module);
-                case PythonMemberType.Namespace:
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.Object);
                 case PythonMemberType.Event:
                     break;
             }

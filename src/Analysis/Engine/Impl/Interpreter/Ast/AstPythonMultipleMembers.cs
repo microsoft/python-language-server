@@ -47,11 +47,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             if (members.All(m => m is IPythonFunction)) {
                 return new MultipleFunctionMembers(members);
             }
-            if (members.All(m => m is IPythonType)) {
-                return new MultipleTypeMembers(members);
-            }
             if (members.All(m => m is IPythonModule)) {
                 return new MultipleModuleMembers(members);
+            }
+            if (members.All(m => m is IPythonType)) {
+                return new MultipleTypeMembers(members);
             }
 
             return new AstPythonMultipleMembers(members);

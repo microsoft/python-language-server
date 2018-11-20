@@ -187,14 +187,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 case PythonMemberType.Unknown: return SymbolKind.None;
                 case PythonMemberType.Class: return SymbolKind.Class;
                 case PythonMemberType.Instance: return SymbolKind.Variable;
-                case PythonMemberType.Delegate: return SymbolKind.Function;
-                case PythonMemberType.DelegateInstance: return SymbolKind.Function;
                 case PythonMemberType.Enum: return SymbolKind.Enum;
                 case PythonMemberType.EnumInstance: return SymbolKind.EnumMember;
                 case PythonMemberType.Function: return SymbolKind.Function;
                 case PythonMemberType.Method: return SymbolKind.Method;
                 case PythonMemberType.Module: return SymbolKind.Module;
-                case PythonMemberType.Namespace: return SymbolKind.Namespace;
                 case PythonMemberType.Constant: return SymbolKind.Constant;
                 case PythonMemberType.Event: return SymbolKind.Event;
                 case PythonMemberType.Field: return SymbolKind.Field;
