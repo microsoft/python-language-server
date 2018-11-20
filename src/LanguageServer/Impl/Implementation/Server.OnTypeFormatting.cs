@@ -55,7 +55,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 if (unmatchedToken != null) {
                     var message = Resources.LineFormatter_UnmatchedToken.FormatInvariant(unmatchedToken.Value.token, unmatchedToken.Value.line + 1);
-                    ShowMessage(MessageType.Warning, message);
+                    LogMessage(MessageType.Warning, message);
                 }
 
                 return edits;
