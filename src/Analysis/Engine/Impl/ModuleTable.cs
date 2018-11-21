@@ -416,7 +416,7 @@ namespace Microsoft.PythonTools.Analysis {
                                     return false;
                                 }
 
-                                foreach (var location in type.Locations) {
+                                foreach (var location in type.Locations.WhereNotNull()) {
                                     if (location.FilePath != modInfo.ProjectEntry.FilePath) {
                                         // declared in another module
                                         return false;

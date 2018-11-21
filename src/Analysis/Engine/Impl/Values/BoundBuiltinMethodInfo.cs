@@ -41,7 +41,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override string Documentation => Method.Documentation;
 
-        public override string Description => "bound method " + Method.Name;
+        public override string Description => $"bound method {Method.Name}";
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             // Check if method returns self

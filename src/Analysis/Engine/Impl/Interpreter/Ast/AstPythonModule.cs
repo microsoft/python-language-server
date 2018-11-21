@@ -91,7 +91,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public string FilePath { get; }
         public Uri DocumentUri { get; }
         public Dictionary<object, object> Properties { get; } = new Dictionary<object, object>();
-        public IEnumerable<ILocationInfo> Locations { get; }
+        public IEnumerable<ILocationInfo> Locations { get; } = Enumerable.Empty<ILocationInfo>();
 
         public int AnalysisVersion => 1;
         public IModuleContext AnalysisContext => null;

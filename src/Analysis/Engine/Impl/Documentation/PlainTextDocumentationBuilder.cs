@@ -22,8 +22,7 @@ namespace Microsoft.PythonTools.Analysis.Documentation {
         public PlainTextDocumentationBuilder(InformationDisplayOptions displayOptions) : base(displayOptions) { }
 
         public override string GetModuleDocumentation(ModuleReference modRef) {
-            var prefix = modRef.AnalysisModule?.PythonType?.IsBuiltIn == true ? "built-in module " : "module ";
-            var contents = $"{prefix}{modRef.Name}";
+            var contents = $"module {modRef.Name}";
             var doc = modRef.Module?.Documentation;
             if (!string.IsNullOrEmpty(doc)) {
                 doc = LimitLines(modRef.Module.Documentation);
@@ -32,14 +31,8 @@ namespace Microsoft.PythonTools.Analysis.Documentation {
             return contents;
         }
 
-        protected override string MakeModuleDocumentation(AnalysisValue value) {
-            var prefix = value.PythonType?.IsBuiltIn == true ? "built-in module " : "module ";
-            return FromDocAndDescription(value, prefix);
-        }
-        protected override string MakeFunctionDocumentation(AnalysisValue value) {
-            var prefix = value.PythonType?.IsBuiltIn == true ? "built-in function " : "function ";
-            return FromDocAndDescription(value, prefix);
-        }
+        protected override string MakeModuleDocumentation(AnalysisValue value) => FromDocAndDescription(value, "module ");
+        protected override string MakeFunctionDocumentation(AnalysisValue value) => FromDocAndDescription(value, "function ");
         protected override string MakeClassDocumentation(AnalysisValue value) => FromDocAndDescription(value, string.Empty);
         protected override string MakeConstantDocumentation(AnalysisValue value) => value.Description;
 

@@ -85,7 +85,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         internal PythonAst Ast { get; private set; }
 
 #if DEBUG
-        public IEnumerable<ILocationInfo> Locations { get; private set; } = new LocationInfo[0];
+        public IEnumerable<ILocationInfo> Locations { get; private set; } = Enumerable.Empty<ILocationInfo>();
 #endif
 
         protected virtual List<string> GetScrapeArguments(IPythonInterpreterFactory factory) {

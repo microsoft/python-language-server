@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -208,52 +209,17 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return _original.IsOfType(klass);
         }
 
-        public override IEnumerable<ILocationInfo> Locations {
-            get {
-                if (_original == null) {
-                    return new LocationInfo[0];
-                }
-                return _original.Locations;
-            }
-        }
+        public override IEnumerable<ILocationInfo> Locations => _original.Locations?.MaybeEnumerate();
 
-        public override string Name => _original == null ? base.Name : this._original.Name;
+        public override string Name => _original == null ? base.Name : _original.Name;
 
-        public override IEnumerable<OverloadResult> Overloads {
-            get {
-                if (_original == null) {
-                    return new OverloadResult[0];
-                }
-                return _original.Overloads;
-            }
-        }
+        public override IEnumerable<OverloadResult> Overloads =>_original.Overloads.MaybeEnumerate();
 
-        public override IPythonType PythonType {
-            get {
-                if (_original == null) {
-                    return null;
-                }
-                return _original.PythonType;
-            }
-        }
+        public override IPythonType PythonType => _original?.PythonType;
 
-        internal override IEnumerable<ILocationInfo> References {
-            get {
-                if (_original == null) {
-                    return new LocationInfo[0];
-                }
-                return _original.References;
-            }
-        }
+        internal override IEnumerable<ILocationInfo> References => _original.References?.MaybeEnumerate();
 
-        public override PythonMemberType MemberType {
-            get {
-                if (_original == null) {
-                    return PythonMemberType.Unknown;
-                }
-                return _original.MemberType;
-            }
-        }
+        public override PythonMemberType MemberType => _original == null ? PythonMemberType.Unknown : _original.MemberType;
 
         public override IAnalysisSet ReverseBinaryOperation(Node node, AnalysisUnit unit, Parsing.PythonOperator operation, IAnalysisSet rhs) {
             if (_original == null) {

@@ -81,7 +81,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override string Description => string.Join("", GetRichDescription().Select(kv => kv.Value));
-        public override string ShortDescription => string.Join("", GetRichDescription().TakeWhile(kv => kv.Key != WellKnownRichDescriptionKinds.EndOfDeclaration).Select(kv => kv.Value));
+        public override string ShortDescription {
+            get {
+                var rd = GetRichDescription().ToArray();
+                return string.Join(string.Empty, rd.TakeWhile(kv => kv.Key != WellKnownRichDescriptionKinds.EndOfDeclaration).Select(kv => kv.Value));
+            }
+        }
 
         public virtual IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, TypeName);
@@ -92,7 +97,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "[");
             if (indexTypes.Count < 6) {
-                foreach (var kv in indexTypes.GetRichDescriptions()) {
+                foreach (var kv in indexTypes.GetRichDescriptions(defaultIfEmpty: "Any")) {
                     yield return kv;
                 }
             } else {
@@ -298,7 +303,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 if (i > 0) {
                     yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", ");
                 }
-                foreach (var kv in indexTypes[i].Types.GetRichDescriptions(unionPrefix: "[", unionSuffix: "]")) {
+                foreach (var kv in indexTypes[i].Types.GetRichDescriptions(unionPrefix: "[", unionSuffix: "]", defaultIfEmpty: "Any")) {
                     yield return kv;
                 }
             }

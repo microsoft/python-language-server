@@ -85,7 +85,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// 
         /// New in 1.5.
         /// </summary>
-        public IEnumerable<ILocationInfo> Locations => Values.SelectMany(ns => ns.Locations);
+        public IEnumerable<ILocationInfo> Locations => Values.SelectMany(ns => ns.Locations.MaybeEnumerate());
 
         public IEnumerable<AnalysisValue> Values => _vars.Value;
 

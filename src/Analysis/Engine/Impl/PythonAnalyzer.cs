@@ -206,7 +206,7 @@ namespace Microsoft.PythonTools.Analysis {
         /// <returns>The project entry for the new module.</returns>
         public IPythonProjectEntry AddModule(string moduleName, string filePath, Uri documentUri = null, IAnalysisCookie cookie = null) {
             if (documentUri == null || documentUri.Scheme != "python") {
-                _pathResolver.AddModulePath(filePath);
+                // _pathResolver.AddModulePath(filePath);
             }
 
             var entry = new ProjectEntry(this, moduleName, filePath, documentUri, cookie);
@@ -936,7 +936,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public IReadOnlyList<string> GetSearchPaths() => _searchPaths.AsLockedEnumerable().ToArray();
 
-        internal void SetRoot(string rootDir) => _pathResolver.SetRoot(rootDir);
+        internal void SetRoot(string rootDir) { } // _pathResolver.SetRoot(rootDir);
 
         /// <summary>
         /// Sets the search paths for this analyzer, invoking callbacks for any
@@ -946,7 +946,7 @@ namespace Microsoft.PythonTools.Analysis {
             lock (_searchPaths) {
                 _searchPaths.Clear();
                 _searchPaths.AddRange(paths.MaybeEnumerate());
-                _pathResolver.SetSearchPaths(_searchPaths);
+                // _pathResolver.SetSearchPaths(_searchPaths);
             }
             SearchPathsChanged?.Invoke(this, EventArgs.Empty);
         }
