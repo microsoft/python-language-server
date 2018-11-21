@@ -55,13 +55,9 @@ namespace Microsoft.PythonTools.Analysis {
 
         public bool IsAlive => (Resolver as ICanExpire)?.IsAlive ?? true;
 
-        public override int GetHashCode() {
-            return (Resolver?.GetHashCode() ?? 0) ^ (Location?.GetHashCode() ?? 0);
-        }
+        public override int GetHashCode() => (Resolver?.GetHashCode() ?? 0) ^ (Location?.GetHashCode() ?? 0);
 
-        public override bool Equals(object obj) {
-            return obj is EncodedLocation location && Equals(location);
-        }
+        public override bool Equals(object obj) => obj is EncodedLocation location && Equals(location);
 
         #region IEquatable<EncodedLocation> Members
 
@@ -71,11 +67,6 @@ namespace Microsoft.PythonTools.Analysis {
 
         #endregion
 
-        public ILocationInfo GetLocationInfo() {
-            if (Resolver == null) {
-                return Location as ILocationInfo;
-            }
-            return Resolver.ResolveLocation(Location);
-        }
+        public ILocationInfo GetLocationInfo() => Resolver?.ResolveLocation(Location) ?? Location as ILocationInfo;
     }
 }
