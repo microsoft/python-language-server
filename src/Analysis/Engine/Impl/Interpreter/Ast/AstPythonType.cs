@@ -40,7 +40,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             bool isTypeFactory = false
         ) : this(name, typeId, isTypeFactory) {
             Documentation = doc;
-            DeclaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
+            DeclaringModule = declaringModule;
             Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
             IsTypeFactory = isTypeFactory;
         }
