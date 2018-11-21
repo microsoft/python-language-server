@@ -154,7 +154,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 res.children = Array.Empty<DocumentSymbol>();
             }
 
-            var loc = m.Locations.MaybeEnumerate().FirstOrDefault(l => !string.IsNullOrEmpty(l.FilePath));
+            var loc = m.Locations
+                .MaybeEnumerate()
+                .WhereNotNull()
+                .FirstOrDefault(l => !string.IsNullOrEmpty(l.FilePath));
+
             if (loc != null) {
                 res.range = new SourceSpan(
                         new SourceLocation(loc.StartLine, loc.StartColumn),

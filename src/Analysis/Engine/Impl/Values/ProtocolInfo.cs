@@ -271,75 +271,75 @@ namespace Microsoft.PythonTools.Analysis.Values {
         internal override bool UnionEquals(AnalysisValue av, int strength)
             => av is ProtocolInfo pi ? ObjectComparer.Instance.Equals(_protocols, pi._protocols) : false;
 
-    internal override int UnionHashCode(int strength) {
-        if (strength > 0) {
-            return Name.GetHashCode();
-        }
-        return GetHashCode();
-    }
-
-    internal override AnalysisValue UnionMergeTypes(AnalysisValue av, int strength) {
-        if (strength > 0 && av is ProtocolInfo pi && pi.Push()) {
-            try {
-                var name = _protocols.OfType<NameProtocol>().FirstOrDefault();
-                if (_protocols.Count == 1 && name != null) {
-                    return this;
-                }
-
-                var protocols = _protocols.Union(pi._protocols, out bool changed);
-                if (!changed) {
-                    return this;
-                }
-
-                if (name != null) {
-                    protocols.Split<NameProtocol>(out _, out protocols);
-                    protocols = protocols.Add(name);
-                }
-
-                return new ProtocolInfo(DeclaringModule, State) {
-                    _protocols = protocols
-                };
-            } finally {
-                pi.Pop();
+        internal override int UnionHashCode(int strength) {
+            if (strength > 0) {
+                return Name.GetHashCode();
             }
+            return GetHashCode();
         }
 
-        return this;
-    }
+        internal override AnalysisValue UnionMergeTypes(AnalysisValue av, int strength) {
+            if (strength > 0 && av is ProtocolInfo pi && pi.Push()) {
+                try {
+                    var name = _protocols.OfType<NameProtocol>().FirstOrDefault();
+                    if (_protocols.Count == 1 && name != null) {
+                        return this;
+                    }
 
-    public virtual IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
-        var names = _protocols.OfType<NameProtocol>().ToArray();
-        Debug.Assert(names.Length <= 1, "Multiple names are not supported");
-        var name = names.FirstOrDefault();
-        if (name != null) {
-            return name.GetRichDescription();
-        }
+                    var protocols = _protocols.Union(pi._protocols, out bool changed);
+                    if (!changed) {
+                        return this;
+                    }
 
-        var res = new List<KeyValuePair<string, string>>();
-        var namespaces = _protocols.OfType<NamespaceProtocol>().ToArray();
-        var tuples = _protocols.OfType<TupleProtocol>().ToArray();
-        var other = _protocols.OfType<Protocol>().Except(names).Except(namespaces).ToArray();
+                    if (name != null) {
+                        protocols.Split<NameProtocol>(out _, out protocols);
+                        protocols = protocols.Add(name);
+                    }
 
-        if (namespaces.Any()) {
-            var addComma = false;
-            res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "("));
-            foreach (var p in namespaces) {
-                if (addComma) {
-                    res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", "));
+                    return new ProtocolInfo(DeclaringModule, State) {
+                        _protocols = protocols
+                    };
+                } finally {
+                    pi.Pop();
                 }
-                addComma = true;
-                res.AddRange(p.GetRichDescription());
             }
-            res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, ")"));
+
+            return this;
         }
 
-        foreach (var p in other) {
-            res.AddRange(p.GetRichDescription().ToArray());
+        public virtual IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
+            var names = _protocols.OfType<NameProtocol>().ToArray();
+            Debug.Assert(names.Length <= 1, "Multiple names are not supported");
+            var name = names.FirstOrDefault();
+            if (name != null) {
+                return name.GetRichDescription();
+            }
+
+            var res = new List<KeyValuePair<string, string>>();
+            var namespaces = _protocols.OfType<NamespaceProtocol>().ToArray();
+            var tuples = _protocols.OfType<TupleProtocol>().ToArray();
+            var other = _protocols.OfType<Protocol>().Except(names).Except(namespaces).ToArray();
+
+            if (namespaces.Any()) {
+                var addComma = false;
+                res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "("));
+                foreach (var p in namespaces) {
+                    if (addComma) {
+                        res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Comma, ", "));
+                    }
+                    addComma = true;
+                    res.AddRange(p.GetRichDescription());
+                }
+                res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, ")"));
+            }
+
+            foreach (var p in other) {
+                res.AddRange(p.GetRichDescription().ToArray());
+            }
+
+            res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.EndOfDeclaration, string.Empty));
+
+            return res;
         }
-
-        res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.EndOfDeclaration, string.Empty));
-
-        return res;
     }
-}
 }
