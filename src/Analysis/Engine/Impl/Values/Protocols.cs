@@ -851,12 +851,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IEnumerable<KeyValuePair<IAnalysisSet, IAnalysisSet>> GetItems() => _actualType.GetItems();
         public override IAnalysisSet GetIterator(Node node, AnalysisUnit unit) => _actualType.GetIterator(node, unit);
         public override IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) => _actualType.GetReturnForYieldFrom(node, unit);
-        public override IEnumerable<ILocationInfo> Locations => _actualType.Locations;
+        public override IEnumerable<ILocationInfo> Locations => _actualType.Locations.MaybeEnumerate();
         public override IMro Mro => _actualType.Mro;
-        public override IEnumerable<OverloadResult> Overloads => _actualType.Overloads;
+        public override IEnumerable<OverloadResult> Overloads => _actualType.Overloads.MaybeEnumerate();
         public override int? GetLength() => _actualType.GetLength();
         internal override IAnalysisSet Resolve(AnalysisUnit unit, ResolutionContext context) => _actualType.Resolve(unit, context);
-        internal override IEnumerable<ILocationInfo> References => _actualType.References;
+        internal override IEnumerable<ILocationInfo> References => _actualType.References.MaybeEnumerate();
         public override IAnalysisSet ReverseBinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs)
             => _actualType.ReverseBinaryOperation(node, unit, operation, rhs);
 

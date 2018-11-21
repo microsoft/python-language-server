@@ -79,7 +79,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var result = all
                 .Where(m => {
                     if (m.Values.Any(v => v.DeclaringModule == entry || 
-                        v.Locations.MaybeEnumerate().Any(l => l.DocumentUri == entry.DocumentUri))) {
+                        v.Locations
+                            .MaybeEnumerate()
+                            .WhereNotNull()
+                            .Any(l => l.DocumentUri == entry.DocumentUri))) {
                         return string.IsNullOrEmpty(prefix) || m.Name.StartsWithOrdinal(prefix, ignoreCase: true);
                     }
                     return false;
@@ -95,7 +98,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _kind = m.MemberType.ToString().ToLowerInvariant()
             };
 
-            var loc = m.Locations.FirstOrDefault(l => !string.IsNullOrEmpty(l.FilePath));
+            var loc = m.Locations.MaybeEnumerate().FirstOrDefault(l => !string.IsNullOrEmpty(l.FilePath));
             if (loc != null) {
                 res.location = new Location {
                     uri = loc.DocumentUri,
@@ -151,7 +154,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 res.children = Array.Empty<DocumentSymbol>();
             }
 
-            var loc = m.Locations.FirstOrDefault(l => !string.IsNullOrEmpty(l.FilePath));
+            var loc = m.Locations.MaybeEnumerate().FirstOrDefault(l => !string.IsNullOrEmpty(l.FilePath));
             if (loc != null) {
                 res.range = new SourceSpan(
                         new SourceLocation(loc.StartLine, loc.StartColumn),

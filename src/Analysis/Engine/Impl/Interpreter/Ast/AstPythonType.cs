@@ -58,7 +58,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             _members = members;
             _mro = Array.Empty<IPythonType>();
             DeclaringModule = NoDeclModule;
-            Locations = locations;
+            Locations = locations ?? Enumerable.Empty<ILocationInfo>();
         }
 
         internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
