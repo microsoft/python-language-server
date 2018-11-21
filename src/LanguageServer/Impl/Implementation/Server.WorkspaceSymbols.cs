@@ -98,7 +98,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _kind = m.MemberType.ToString().ToLowerInvariant()
             };
 
-            var loc = m.Locations.MaybeEnumerate().FirstOrDefault(l => !string.IsNullOrEmpty(l.FilePath));
+            var loc = m.Locations
+                .MaybeEnumerate()
+                .WhereNotNull()
+                .FirstOrDefault(l => !string.IsNullOrEmpty(l.FilePath));
+
             if (loc != null) {
                 res.location = new Location {
                     uri = loc.DocumentUri,

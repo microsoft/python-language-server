@@ -271,12 +271,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         internal override bool UnionEquals(AnalysisValue av, int strength)
             => av is ProtocolInfo pi ? ObjectComparer.Instance.Equals(_protocols, pi._protocols) : false;
 
-        internal override int UnionHashCode(int strength) {
-            if (strength > 0) {
-                return Name.GetHashCode();
-            }
-            return GetHashCode();
-        }
+        internal override int UnionHashCode(int strength) => strength > 0 ? Name.GetHashCode() : GetHashCode();
 
         internal override AnalysisValue UnionMergeTypes(AnalysisValue av, int strength) {
             if (strength > 0 && av is ProtocolInfo pi && pi.Push()) {
