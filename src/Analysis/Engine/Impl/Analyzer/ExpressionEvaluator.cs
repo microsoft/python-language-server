@@ -150,7 +150,18 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                         res = refs.Types;
                     } else {
                         // ... warn the user
-                        warn = !(node is ConstantExpression); // Don't warn when None.
+                        // "atom" in Python grammar.
+                        switch (name) {
+                            case "None":
+                            case "False":
+                            case "True":
+                            case "...":
+                            case string _ when node is ConstantExpression:
+                                break;
+                            default:
+                                warn = true;
+                                break;
+                        }
                     }
                 }
             }
