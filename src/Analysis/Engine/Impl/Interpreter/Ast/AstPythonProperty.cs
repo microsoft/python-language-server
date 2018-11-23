@@ -14,7 +14,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             ILocationInfo location
         ) {
             IsReadOnly = true;
-            Locations = new[] { location };
+            Locations = location != null ? new[] { location } : Enumerable.Empty<ILocationInfo>();
             FunctionDefinition = definition;
         }
 

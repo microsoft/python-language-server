@@ -9,14 +9,14 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -45,7 +45,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IPythonProjectEntry DeclaringModule => Function.DeclaringModule;
         public override int DeclaringVersion => Function.DeclaringVersion;
-        public override IEnumerable<ILocationInfo> Locations => Function.Locations;
+        public override IEnumerable<ILocationInfo> Locations => Function.Locations.MaybeEnumerate();
         public override BuiltinTypeId TypeId => BuiltinTypeId.Function; 
 
         public IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
