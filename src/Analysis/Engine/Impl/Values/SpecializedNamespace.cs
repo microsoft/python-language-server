@@ -209,7 +209,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return _original.IsOfType(klass);
         }
 
-        public override IEnumerable<ILocationInfo> Locations => _original.Locations?.MaybeEnumerate();
+        public override IEnumerable<ILocationInfo> Locations => _original?.Locations?.MaybeEnumerate();
 
         public override string Name => _original == null ? base.Name : _original.Name;
 
