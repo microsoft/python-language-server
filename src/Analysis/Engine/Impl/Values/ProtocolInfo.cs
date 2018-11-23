@@ -269,7 +269,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override int GetHashCode() => ObjectComparer.Instance.GetHashCode(_protocols);
 
         internal override bool UnionEquals(AnalysisValue av, int strength)
-            => av is ProtocolInfo pi ? ObjectComparer.Instance.Equals(_protocols, pi._protocols) : false;
+            => av is ProtocolInfo pi && ObjectComparer.Instance.Equals(_protocols, pi._protocols);
 
         internal override int UnionHashCode(int strength) => strength > 0 ? Name.GetHashCode() : GetHashCode();
 
