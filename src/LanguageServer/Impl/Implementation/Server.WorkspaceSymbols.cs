@@ -79,7 +79,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var result = all
                 .Where(m => {
                     if (m.Values.Any(v => v.DeclaringModule == entry || 
-                        v.Locations.Any(l => l.DocumentUri == entry.DocumentUri))) {
+                        v.Locations
+                            .MaybeEnumerate()
+                            .ExcludeDefault()
+                            .Any(l => l.DocumentUri == entry.DocumentUri))) {
                         return string.IsNullOrEmpty(prefix) || m.Name.StartsWithOrdinal(prefix, ignoreCase: true);
                     }
                     return false;
