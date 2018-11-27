@@ -5,9 +5,7 @@ import contextlib
 from collections import defaultdict
 import string
 import sys
-import urllib.request
 import os.path
-from pprint import pprint
 
 
 def main():
