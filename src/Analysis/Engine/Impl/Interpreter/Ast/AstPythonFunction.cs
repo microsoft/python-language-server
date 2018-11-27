@@ -30,9 +30,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             FunctionDefinition fd,
             IPythonModule declaringModule,
             IPythonType declaringType,
-            ILocationInfo loc,
-            BuiltinTypeId typeId = BuiltinTypeId.Function
-        ) : base(fd.Name, declaringModule, fd.Documentation, loc, typeId, true) {
+            ILocationInfo loc
+        ) : base(fd.Name, declaringModule, fd.Documentation, loc, 
+                declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, true) {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;
@@ -61,7 +61,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public override string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
         public virtual bool IsClassMethod { get; }
         public virtual bool IsStatic { get; }
-
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
         #endregion
 
@@ -77,12 +76,15 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
         }
 
-        internal IPythonFunction ToBoundMethod() => new AstPythonBoundMethod(this);
+        internal IPythonFunction ToUnbound() => new AstPythonUnboundMethod(this);
 
-        class AstPythonBoundMethod : IPythonFunction {
+        /// <summary>
+        /// Represents unbound method, such in C.f where C is class rather than the instance.
+        /// </summary>
+        class AstPythonUnboundMethod : IPythonFunction {
             private readonly IPythonFunction _pf;
 
-            public AstPythonBoundMethod(IPythonFunction function) {
+            public AstPythonUnboundMethod(IPythonFunction function) {
                 _pf = function;
             }
 
@@ -93,11 +95,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public IReadOnlyList<IPythonFunctionOverload> Overloads => _pf.Overloads;
             public string Name => _pf.Name;
             public IPythonModule DeclaringModule => _pf.DeclaringModule;
-            public BuiltinTypeId TypeId => BuiltinTypeId.Method;
+            public BuiltinTypeId TypeId => BuiltinTypeId.Function;
             public string Documentation => _pf.Documentation;
             public bool IsBuiltIn => _pf.IsBuiltIn;
             public bool IsTypeFactory => false;
-            public PythonMemberType MemberType => PythonMemberType.Method;
+            public PythonMemberType MemberType => PythonMemberType.Function;
             public IMember GetMember(IModuleContext context, string name) => _pf.GetMember(context, name);
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => _pf.GetMemberNames(moduleContext);
         }
