@@ -233,6 +233,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             switch (e) {
                 case IMemberContainer mc:
                     value = mc.GetMember(Context, expr.Name);
+                    // If container is class rather than the instance, then method is an unbound function.
+                    value = mc is IPythonClass c && value is AstPythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
                     break;
                 case IPythonMultipleMembers mm:
                     value = mm.GetMembers().OfType<IMemberContainer>()

@@ -31,7 +31,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             IPythonModule declaringModule,
             IPythonType declaringType,
             ILocationInfo loc
-        ) : base(fd.Name, declaringModule, fd.Documentation, loc, 
+        ) : base(fd.Name, declaringModule, fd.Documentation, loc,
                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, true) {
 
             FunctionDefinition = fd;
@@ -81,10 +81,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         /// <summary>
         /// Represents unbound method, such in C.f where C is class rather than the instance.
         /// </summary>
-        class AstPythonUnboundMethod : IPythonFunction {
+        class AstPythonUnboundMethod : AstPythonTypeWrapper, IPythonFunction {
             private readonly IPythonFunction _pf;
 
-            public AstPythonUnboundMethod(IPythonFunction function) {
+            public AstPythonUnboundMethod(IPythonFunction function) : base(function, function.DeclaringModule) {
                 _pf = function;
             }
 
@@ -93,15 +93,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public bool IsStatic => _pf.IsStatic;
             public bool IsClassMethod => _pf.IsClassMethod;
             public IReadOnlyList<IPythonFunctionOverload> Overloads => _pf.Overloads;
-            public string Name => _pf.Name;
-            public IPythonModule DeclaringModule => _pf.DeclaringModule;
-            public BuiltinTypeId TypeId => BuiltinTypeId.Function;
-            public string Documentation => _pf.Documentation;
-            public bool IsBuiltIn => _pf.IsBuiltIn;
-            public bool IsTypeFactory => false;
-            public PythonMemberType MemberType => PythonMemberType.Function;
-            public IMember GetMember(IModuleContext context, string name) => _pf.GetMember(context, name);
-            public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => _pf.GetMemberNames(moduleContext);
+            public override BuiltinTypeId TypeId => BuiltinTypeId.Function;
+            public override PythonMemberType MemberType => PythonMemberType.Function;
         }
     }
 }

@@ -25,6 +25,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonTypeWrapper : AstPythonType {
         protected IPythonType InnerType { get; }
 
+        public AstPythonTypeWrapper(IPythonType type)
+            : this(type, type.DeclaringModule) { }
+
         public AstPythonTypeWrapper(IPythonType type, IPythonModule declaringModule)
             : base(type?.Name ?? "<type wrapper>", declaringModule, type?.Documentation,
              (type as ILocatedMember)?.Locations.MaybeEnumerate().FirstOrDefault()) {
