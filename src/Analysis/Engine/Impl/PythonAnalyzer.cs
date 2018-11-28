@@ -758,16 +758,6 @@ namespace Microsoft.PythonTools.Analysis {
                 return GetCached(attr, () => new BoundBuiltinMethodInfo(pf, this)) ?? _noneInst;
             }
 
-            if (attr is IPythonMethod md) {
-                return GetCached(attr, () => {
-                    if (md.IsBound) {
-                        return new BuiltinFunctionInfo(md.Function, this);
-                    } else {
-                        return new BuiltinMethodInfo(md, this);
-                    }
-                }) ?? _noneInst;
-            }
-
             if (attr is IPythonProperty bp) {
                 return GetCached(attr, () => new BuiltinPropertyInfo(bp, this)) ?? _noneInst;
             }

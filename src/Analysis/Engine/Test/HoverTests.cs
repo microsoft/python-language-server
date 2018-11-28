@@ -88,7 +88,7 @@ datetime.datetime.now().day
 ");
                 await AssertHover(s, mod, new SourceLocation(3, 1), "module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
                 await AssertHover(s, mod, new SourceLocation(3, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(3, 1, 3, 18));
-                await AssertHover(s, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound method now*", null, new SourceSpan(3, 1, 3, 22));
+                await AssertHover(s, mod, new SourceLocation(3, 20), "datetime.datetime.now: datetime.datetime.now(cls)*", null, new SourceSpan(3, 1, 3, 22));
             }
         }
 
@@ -101,7 +101,7 @@ datetime.datetime.now().day
 ");
                 await AssertHover(s, mod, new SourceLocation(3, 1), "module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
                 await AssertHover(s, mod, new SourceLocation(3, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(3, 1, 3, 18));
-                await AssertHover(s, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound method now*", null, new SourceSpan(3, 1, 3, 22));
+                await AssertHover(s, mod, new SourceLocation(3, 20), "datetime.datetime.now: datetime.datetime.now(cls*", null, new SourceSpan(3, 1, 3, 22));
                 await AssertHover(s, mod, new SourceLocation(3, 28), "datetime.datetime.now().day: int*", new[] { "int" }, new SourceSpan(3, 1, 3, 28));
             }
         }
@@ -111,8 +111,8 @@ datetime.datetime.now().day
             using (var s = await CreateServerAsync()) {
                 var mod = await s.OpenDefaultDocumentAndGetUriAsync("from os import path as p\n");
                 await AssertHover(s, mod, new SourceLocation(1, 6), "module os*", null, new SourceSpan(1, 6, 1, 8));
-                await AssertHover(s, mod, new SourceLocation(1, 16), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 16, 1, 20));
-                await AssertHover(s, mod, new SourceLocation(1, 24), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 24, 1, 25));
+                await AssertHover(s, mod, new SourceLocation(1, 16), "module path*", new[] { "path" }, new SourceSpan(1, 16, 1, 20));
+                await AssertHover(s, mod, new SourceLocation(1, 24), "module path*", new[] { "path" }, new SourceSpan(1, 24, 1, 25));
             }
         }
 

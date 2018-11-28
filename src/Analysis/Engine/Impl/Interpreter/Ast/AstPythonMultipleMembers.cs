@@ -179,7 +179,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 }
             }
             public bool IsTypeFactory => false;
-            public IPythonFunction GetConstructors() => null;
+            public IPythonFunction GetConstructor() => null;
             #endregion
 
             #region IPythonFunction
@@ -191,16 +191,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public IMember GetMember(IModuleContext context, string name) => null;
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Enumerable.Empty<string>();
             #endregion
-        }
-
-        class MultipleMethodMembers : AstPythonMultipleMembers, IPythonMethod {
-            public MultipleMethodMembers(IMember[] members) : base(members) { }
-
-            private IEnumerable<IPythonMethod> Methods => GetMembers().OfType<IPythonMethod>();
-
-            public IPythonFunction Function => CreateAs<IPythonFunction>(Methods.Select(m => m.Function));
-            public bool IsBound => Methods.Any(m => m.IsBound);
-            public override PythonMemberType MemberType => PythonMemberType.Method;
         }
 
         class MultipleModuleMembers : AstPythonMultipleMembers, IPythonModule {
@@ -219,7 +209,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public BuiltinTypeId TypeId => BuiltinTypeId.Module;
             public bool IsBuiltIn => true;
             public bool IsTypeFactory => false;
-            public IPythonFunction GetConstructors() => null;
+            public IPythonFunction GetConstructor() => null;
 
             public void Imported(IModuleContext context) {
                 List<Exception> exceptions = null;
@@ -251,7 +241,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public IMember GetMember(IModuleContext context, string name) => Create(Types.Select(t => t.GetMember(context, name)));
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Types.SelectMany(t => t.GetMemberNames(moduleContext)).Distinct();
             public override PythonMemberType MemberType => PythonMemberType.Class;
-            public IPythonFunction GetConstructors() => CreateAs<IPythonFunction>(Types.Select(t => t.GetConstructors()));
+            public IPythonFunction GetConstructor() => CreateAs<IPythonFunction>(Types.Select(t => t.GetConstructor()));
         }
     }
 }

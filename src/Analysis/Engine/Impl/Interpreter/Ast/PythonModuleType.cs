@@ -32,7 +32,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltIn => true;
         public bool IsTypeFactory => false;
-        public IPythonFunction GetConstructors() => null;
+        public IPythonFunction GetConstructor() => null;
         #endregion
 
         #region IMember

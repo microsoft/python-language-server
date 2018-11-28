@@ -480,10 +480,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Property);
             }
 
-            if (value is IPythonMethod) {
-                return Interpreter.GetBuiltinType(BuiltinTypeId.Method);
-            }
-
             if (value is IPythonMultipleMembers mm) {
                 return AstPythonMultipleMembers.CreateAs<IPythonType>(mm.GetMembers());
             }

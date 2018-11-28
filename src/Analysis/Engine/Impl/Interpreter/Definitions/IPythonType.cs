@@ -52,6 +52,6 @@ namespace Microsoft.PythonTools.Interpreter {
         /// Returns constructors of the type, if any.
         /// </summary>
         /// <returns></returns>
-        IPythonFunction GetConstructors();
+        IPythonFunction GetConstructor();
     }
 }
