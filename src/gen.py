@@ -217,30 +217,29 @@ namespace GenTests {"""
 POSTAMBLE = """
     public class GenTest : ServerBasedTest {
         private static Server _server;
-        private static readonly object _lock = new object();
+        private static readonly SemaphoreSlim _sem = new SemaphoreSlim(1, 1);
         private static readonly InterpreterConfiguration _interpreter = PythonVersions.LatestAvailable3X;
         private static readonly PythonLanguageVersion _version = _interpreter.Version.ToLanguageVersion();
         private static readonly ConcurrentDictionary<string, Task> _opened = new ConcurrentDictionary<string, Task>();
 
-        private Server SharedServer {
-            get {
-                if (_server != null) {
-                    return _server;
-                }
-
-                lock (_lock) {
-                    if (_server == null) {
-                        var root = new Uri(TestData.GetPath("TestData", "gen", "completion"));
-                        var task = Task.Run(() => CreateServerAsync(_interpreter, root));
-                        _server = task.Result;
-                    }
-                    return _server;
-                }
+        private async Task<Server> SharedServer() {
+            if (_server != null) {
+                return _server;
             }
+
+            await _sem.WaitAsync();
+            try {
+                var root = new Uri(TestData.GetPath("TestData", "gen", "completion"));
+                _server = await CreateServerAsync(_interpreter, root);
+            } finally {
+                _sem.Release();
+            }
+
+            return _server;
         }
 
         protected async Task<Uri> OpenAndWait(string module) {
-            var server = SharedServer;
+            var server = await SharedServer();
 
             var src = TestData.GetPath("TestData", "gen", "completion", module + ".py");
             var uri = new Uri(src);
@@ -252,7 +251,7 @@ POSTAMBLE = """
         }
 
         protected async Task DoCompletionTest(string module, int lineNum, int col, string args, string filter) {
-            var server = SharedServer;
+            var server = await SharedServer();
 
             var tests = string.IsNullOrWhiteSpace(args) ? new List<string>() : ParseStringList(args);
             var uri = await OpenAndWait(module);
@@ -268,7 +267,7 @@ POSTAMBLE = """
         }
 
         protected async Task DoHoverTest(string module, int lineNum, int col, string args) {
-            var server = SharedServer;
+            var server = await SharedServer();
 
             var tests = string.IsNullOrWhiteSpace(args)
                 ? new List<string>()
