@@ -26,14 +26,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private string _doc;
         private BoundBuiltinMethodInfo _boundMethod;
 
-        public BuiltinMethodInfo(IPythonMethod method, PythonAnalyzer projectState)
-            : base(projectState.Types[BuiltinTypeId.Method], projectState) {
-            var function = method.Function;
-            MemberType = method.MemberType;
-            Function = function;
-            ReturnTypes = GetReturnTypes(function, projectState);
-        }
-
         public BuiltinMethodInfo(IPythonFunction function, PythonMemberType memType, PythonAnalyzer projectState)
             : base(projectState.Types[
                     memType == PythonMemberType.Function ? BuiltinTypeId.Function : BuiltinTypeId.Method
