@@ -34,8 +34,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
             // makes debug builds unusable because it happens so often.
         }
 
-        public override BuiltinTypeId TypeId => Type.TypeId;
-        public override PythonMemberType MemberType => Type.MemberType;
+        public override BuiltinTypeId TypeId => Type?.TypeId ?? BuiltinTypeId.Unknown;
+        public override PythonMemberType MemberType => Type?.MemberType ?? PythonMemberType.Unknown;
 
         public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) {
             var res = AnalysisSet.Empty;

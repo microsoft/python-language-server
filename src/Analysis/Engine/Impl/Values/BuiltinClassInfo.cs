@@ -127,7 +127,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IEnumerable<OverloadResult> Overloads {
             get {
-                var ctors = Type.GetConstructors();
+                var ctors = Type.GetConstructor();
                 return ctors != null
                     ? ctors.Overloads.Select(ctor => new BuiltinFunctionOverloadResult(ProjectState, Type.Name, ctor, 1, () => Documentation))
                     : Enumerable.Empty<OverloadResult>();
