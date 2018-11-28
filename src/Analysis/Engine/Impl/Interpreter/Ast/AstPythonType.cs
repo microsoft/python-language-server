@@ -65,7 +65,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltIn => DeclaringModule == null || DeclaringModule is IBuiltinPythonModule;
         public bool IsTypeFactory { get; }
-
+        public IPythonFunction GetConstructors() => GetMember(null, "__init__") as IPythonFunction;
         #endregion
 
         #region ILocatedMember

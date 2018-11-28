@@ -16,14 +16,11 @@
 
 using System.Collections.Generic;
 using Microsoft.PythonTools.Interpreter;
+using Microsoft.PythonTools.Interpreter.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
-    class EmptyBuiltinModule : IBuiltinPythonModule {
-        private readonly string _name;
-
-        public EmptyBuiltinModule(string name) {
-            _name = name;
-        }
+    class EmptyBuiltinModule : PythonModuleType, IBuiltinPythonModule {
+        public EmptyBuiltinModule(string name): base(name) { }
 
         #region IBuiltinPythonModule Members
 
@@ -35,39 +32,12 @@ namespace Microsoft.PythonTools.Analysis {
 
         #region IPythonModule Members
 
-        public string Name {
-            get { return _name; }
-        }
-
         public IEnumerable<string> GetChildrenModules() {
             yield break;
         }
 
         public void Imported(IModuleContext context) {
         }
-
-        public string Documentation {
-            get { return string.Empty; }
-        }
-
-        #endregion
-
-        #region IPythonType
-        public IPythonModule DeclaringModule => null;
-        public BuiltinTypeId TypeId => BuiltinTypeId.Module;
-        public bool IsBuiltIn => true;
-        public bool IsTypeFactory => false;
-        #endregion
-
-        #region IMemberContainer
-        public IMember GetMember(IModuleContext context, string name) => null;
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
-            yield break;
-        }
-        #endregion
-
-        #region IMember
-        public PythonMemberType MemberType => PythonMemberType.Module;
         #endregion
     }
 }

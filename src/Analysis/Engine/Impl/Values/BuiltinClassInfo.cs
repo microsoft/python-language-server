@@ -39,7 +39,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IPythonType PythonType => Type;
-        public override bool IsOfType(IAnalysisSet klass) 
+        public override bool IsOfType(IAnalysisSet klass)
             => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Type]);
 
         public override BuiltinTypeId TypeId => Type.TypeId;
@@ -125,7 +125,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return new BuiltinInstanceInfo(this);
         }
 
-        public override IEnumerable<OverloadResult> Overloads => Array.Empty<OverloadResult>();
+        public override IEnumerable<OverloadResult> Overloads {
+            get {
+                var ctors = Type.GetConstructors();
+                return ctors != null
+                    ? ctors.Overloads.Select(ctor => new BuiltinFunctionOverloadResult(ProjectState, Type.Name, ctor, 1, () => Documentation))
+                    : Enumerable.Empty<OverloadResult>();
+            }
+        }
 
         public override IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) {
             // Must unconditionally call the base implementation of GetMember

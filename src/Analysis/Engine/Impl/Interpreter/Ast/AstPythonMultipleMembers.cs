@@ -179,6 +179,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 }
             }
             public bool IsTypeFactory => false;
+            public IPythonFunction GetConstructors() => null;
             #endregion
 
             #region IPythonFunction
@@ -218,6 +219,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public BuiltinTypeId TypeId => BuiltinTypeId.Module;
             public bool IsBuiltIn => true;
             public bool IsTypeFactory => false;
+            public IPythonFunction GetConstructors() => null;
 
             public void Imported(IModuleContext context) {
                 List<Exception> exceptions = null;
@@ -249,6 +251,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public IMember GetMember(IModuleContext context, string name) => Create(Types.Select(t => t.GetMember(context, name)));
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Types.SelectMany(t => t.GetMemberNames(moduleContext)).Distinct();
             public override PythonMemberType MemberType => PythonMemberType.Class;
+            public IPythonFunction GetConstructors() => CreateAs<IPythonFunction>(Types.Select(t => t.GetConstructors()));
         }
     }
 }

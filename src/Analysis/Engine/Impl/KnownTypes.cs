@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
@@ -40,7 +39,7 @@ namespace Microsoft.PythonTools.Analysis {
         public static KnownTypes CreateDefault(PythonAnalyzer state, IBuiltinPythonModule fallback) {
             var res = new KnownTypes();
 
-            for (int value = 0; value < res._types.Length; ++value) {
+            for (var value = 0; value < res._types.Length; ++value) {
                 res._types[value] = (IPythonType)fallback.GetAnyMember(
                     ((BuiltinTypeId)value).GetTypeName(state.LanguageVersion)
                 );
@@ -56,7 +55,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             var interpreter = state.Interpreter;
 
-            for (int value = 0; value < res._types.Length; ++value) {
+            for (var value = 0; value < res._types.Length; ++value) {
                 IPythonType type;
                 try {
                     type = interpreter.GetBuiltinType((BuiltinTypeId)value);
@@ -75,48 +74,33 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private KnownTypes() {
-            int count = (int)BuiltinTypeIdExtensions.LastTypeId + 1;
+            var count = (int)BuiltinTypeIdExtensions.LastTypeId + 1;
             _types = new IPythonType[count];
             _classInfos = new BuiltinClassInfo[count];
         }
 
         private void SetClassInfo(PythonAnalyzer state) {
-            for (int value = 0; value < _types.Length; ++value) {
+            for (var value = 0; value < _types.Length; ++value) {
                 if (_types[value] != null) {
                     _classInfos[value] = state.GetBuiltinType(_types[value]);
                 }
             }
         }
 
-        IPythonType IKnownPythonTypes.this[BuiltinTypeId id] {
-            get {
-                return _types[(int)id];
-            }
-        }
+        IPythonType IKnownPythonTypes.this[BuiltinTypeId id] => _types[(int)id];
 
-        BuiltinClassInfo IKnownClasses.this[BuiltinTypeId id] {
-            get {
-                return _classInfos[(int)id];
-            }
-        }
+        BuiltinClassInfo IKnownClasses.this[BuiltinTypeId id] => _classInfos[(int)id];
     }
 
-    class FallbackBuiltinModule : IBuiltinPythonModule, IPythonModule {
+    class FallbackBuiltinModule : PythonModuleType, IBuiltinPythonModule {
         public readonly PythonLanguageVersion LanguageVersion;
         private readonly Dictionary<BuiltinTypeId, IMember> _cachedInstances;
 
-        public FallbackBuiltinModule(PythonLanguageVersion version) {
+        public FallbackBuiltinModule(PythonLanguageVersion version)
+            : base(BuiltinTypeId.Unknown.GetModuleName(version)) {
             LanguageVersion = version;
             _cachedInstances = new Dictionary<BuiltinTypeId, IMember>();
-            Name = BuiltinTypeId.Unknown.GetModuleName(version);
         }
-
-        #region IPythonType
-        public IPythonModule DeclaringModule => null;
-        public BuiltinTypeId TypeId => BuiltinTypeId.Module;
-        public bool IsBuiltIn => true;
-        public bool IsTypeFactory => false;
-        #endregion
 
         private IMember GetOrCreate(BuiltinTypeId typeId) {
             if (typeId.IsVirtualId()) {
@@ -141,10 +125,6 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        public string Documentation => string.Empty;
-        public PythonMemberType MemberType => PythonMemberType.Module;
-        public string Name { get; }
-
         public IMember GetAnyMember(string name) {
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
                 if (typeId.GetTypeName(LanguageVersion) == name) {
@@ -155,8 +135,6 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         public IEnumerable<string> GetChildrenModules() => Enumerable.Empty<string>();
-        public IMember GetMember(IModuleContext context, string name) => null;
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Enumerable.Empty<string>();
         public void Imported(IModuleContext context) { }
     }
 

@@ -65,7 +65,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var self = GetSelf();
             _selfType = (self as AstPythonConstant)?.Type as AstPythonType;
 
-            _overload.ReturnTypes.AddRange(_scope.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault());
+            var annotationTypes = _scope.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault();
+            _overload.ReturnTypes.AddRange(annotationTypes);
+
             _scope.PushScope();
 
             // Declare self, if any
@@ -84,7 +86,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 _scope.SetInScope(p.Name, value ?? _scope.UnknownType);
             }
 
-            Target.Walk(this);
+            // return type from the annotation always wins, no need to walk the body.
+            if (!annotationTypes.Any()) {
+                Target.Walk(this);
+            }
             _scope.PopScope();
         }
 

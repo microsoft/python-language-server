@@ -865,6 +865,7 @@ y = g()";
         [TestMethod, Priority(0)]
         public async Task TypeShedElementTree() {
             using (var server = await CreateServerAsync()) {
+                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
                 var code = @"import xml.etree.ElementTree as ET
 
 e = ET.Element()
@@ -926,11 +927,11 @@ e1, e2, e3 = sys.exc_info()";
                 // sys.exc_info() -> (exception_type, exception_value, traceback)
                 analysis.Should().HaveVariable("e1").OfTypes(BuiltinTypeId.Type)
                     .And.HaveVariable("e2").OfTypes("BaseException")
-                    .And.HaveVariable("e3").OfTypes(BuiltinTypeId.NoneType)
+                    .And.HaveVariable("e3").OfTypes(BuiltinTypeId.Unknown)
                     .And.HaveVariable("sys").WithValue<BuiltinModule>()
                     .Which.Should().HaveMember<BuiltinFunctionInfo>("exc_info")
                     .Which.Should().HaveSingleOverload()
-                    .WithSingleReturnType("tuple[type, BaseException, None]");
+                    .WithSingleReturnType("tuple[type, BaseException, Unknown]");
             }
         }
 
@@ -950,7 +951,7 @@ scanner = _json.make_scanner()";
                     .And.HaveParameters("string", "index")
                     .And.HaveParameterAt(0).WithName("string").WithType("str").WithNoDefaultValue()
                     .And.HaveParameterAt(1).WithName("index").WithType("int").WithNoDefaultValue()
-                    .And.HaveSingleReturnType("tuple[None, int]");
+                    .And.HaveSingleReturnType("tuple[object, int]");
             }
         }
 

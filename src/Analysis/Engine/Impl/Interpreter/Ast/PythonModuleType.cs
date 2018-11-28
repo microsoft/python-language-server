@@ -26,12 +26,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         #region IPythonType
         public string Name { get; }
-        public virtual string Documentation { get; }
+        public virtual string Documentation { get; } = string.Empty;
 
         public virtual IPythonModule DeclaringModule => null;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltIn => true;
         public bool IsTypeFactory => false;
+        public IPythonFunction GetConstructors() => null;
         #endregion
 
         #region IMember

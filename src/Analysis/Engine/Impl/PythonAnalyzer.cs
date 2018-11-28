@@ -786,16 +786,20 @@ namespace Microsoft.PythonTools.Analysis {
                 return GetConstant(attr).First();
             }
 
-            if (attr is IPythonType pt) {
-                return GetBuiltinType(pt);
-            }
-
             if (attr is IPythonMultipleMembers mm) {
+                if(attr is IPythonType t && mm.GetMembers().OfType<IPythonClass>().Any()) {
+                    // Class info will merge multiple into a single unit.
+                    return GetBuiltinType(t);
+                }
                 var members = mm.GetMembers();
                 return GetCached(attr, () =>
                     MultipleMemberInfo.Create(members.Select(GetAnalysisValueFromObjects)).FirstOrDefault() ??
                         ClassInfos[BuiltinTypeId.NoneType].Instance
                 );
+            }
+
+            if (attr is IPythonType pt) {
+                return GetBuiltinType(pt);
             }
 
             var pyAttrType = GetTypeFromObject(attr);

@@ -568,6 +568,7 @@ s = y['x']['y']['value']
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/425")]
 
         public async Task RecursiveTuples() {
             var code = @"class A(object):
@@ -2609,7 +2610,7 @@ y_xor_x_0 = next(iter(y_xor_x))
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"x = {42:'abc'}");
                 analysis.Should().HaveVariable("x").WithValue<DictionaryInfo>()
                     .Which.Should().HaveMember<SpecializedCallable>("get")
-                    .Which.Should().HaveDescription("bound method get");
+                    .Which.Should().HaveDescription("dict.get(self, key, d = None)");
             }
         }
 
