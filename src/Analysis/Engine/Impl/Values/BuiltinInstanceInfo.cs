@@ -23,33 +23,32 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinInstanceInfo : BuiltinNamespace<IPythonType>, IBuiltinInstanceInfo {
-        private readonly BuiltinClassInfo _klass;
 
-        public BuiltinInstanceInfo(BuiltinClassInfo klass)
-            : base(klass?.Type, klass?.ProjectState) {
-            _klass = klass;
+        public BuiltinInstanceInfo(BuiltinClassInfo classInfo)
+            : base(classInfo?.Type, classInfo?.ProjectState) {
+            ClassInfo = classInfo;
         }
 
         IBuiltinClassInfo IBuiltinInstanceInfo.ClassInfo => ClassInfo;
-        public BuiltinClassInfo ClassInfo => _klass;
+        public BuiltinClassInfo ClassInfo { get; }
 
-        public override string Name => _klass.Name;
+        public override string Name => ClassInfo.Name;
         public override IPythonType PythonType => Type;
 
         public override IAnalysisSet GetInstanceType() {
-            if (_klass.TypeId == BuiltinTypeId.Type) {
+            if (ClassInfo.TypeId == BuiltinTypeId.Type) {
                 return ProjectState.ClassInfos[BuiltinTypeId.Object].Instance;
             }
             return base.GetInstanceType();
         }
 
-        public override string Description => _klass.InstanceDescription;
-        public override string ShortDescription => _klass.ShortInstanceDescription;
-        public override string Documentation => _klass.Documentation;
+        public override string Description => ClassInfo.InstanceDescription;
+        public override string ShortDescription => ClassInfo.ShortInstanceDescription;
+        public override string Documentation => ClassInfo.Documentation;
 
         public override PythonMemberType MemberType {
             get {
-                switch (_klass.MemberType) {
+                switch (ClassInfo.MemberType) {
                     case PythonMemberType.Enum: return PythonMemberType.EnumInstance;
                     default:
                         return PythonMemberType.Instance;
@@ -60,8 +59,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) {
             var res = base.GetTypeMember(node, unit, name);
             if (res.Count > 0) {
-                _klass.AddMemberReference(node, unit, name);
-                return res.GetDescriptor(node, this, _klass, unit);
+                ClassInfo.AddMemberReference(node, unit, name);
+                return res.GetDescriptor(node, this, ClassInfo, unit);
             }
             return res;
         }
@@ -69,7 +68,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override void SetMember(Node node, AnalysisUnit unit, string name, IAnalysisSet value) {
             var res = base.GetMember(node, unit, name);
             if (res.Count > 0) {
-                _klass.AddMemberReference(node, unit, name);
+                ClassInfo.AddMemberReference(node, unit, name);
             }
         }
 
@@ -140,7 +139,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IEnumerable<OverloadResult> Overloads {
             get {
                 IAnalysisSet callRes;
-                if (_klass.GetAllMembers(ProjectState._defaultContext).TryGetValue("__call__", out callRes)) {
+                if (ClassInfo.GetAllMembers(ProjectState._defaultContext).TryGetValue("__call__", out callRes)) {
                     foreach (var overload in callRes.SelectMany(av => av.Overloads)) {
                         yield return overload.WithoutLeadingParameters(1);
                     }
@@ -220,7 +219,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override BuiltinTypeId TypeId {
             get {
-                return _klass?.PythonType.TypeId ?? BuiltinTypeId.Unknown;
+                return ClassInfo?.PythonType.TypeId ?? BuiltinTypeId.Unknown;
             }
         }
 
@@ -271,16 +270,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
             } else if (strength >= MergeStrength.ToBaseClass) {
                 var bii = ns as BuiltinInstanceInfo;
                 if (bii != null) {
-                    return _klass != null && _klass.UnionEquals(bii.ClassInfo, strength);
+                    return ClassInfo != null && ClassInfo.UnionEquals(bii.ClassInfo, strength);
                 }
                 var ii = ns as InstanceInfo;
                 if (ii != null) {
-                    return _klass != null && _klass.UnionEquals(ii.ClassInfo, strength);
+                    return ClassInfo != null && ClassInfo.UnionEquals(ii.ClassInfo, strength);
                 }
             } else if (ns is BuiltinInstanceInfo) {
                 // ConI + BII => BII if CIs match
                 var bii = ns as BuiltinInstanceInfo;
-                return bii != null && _klass != null && _klass.Equals(bii.ClassInfo);
+                return bii != null && ClassInfo != null && ClassInfo.Equals(bii.ClassInfo);
             }
 
             return base.UnionEquals(ns, strength);
@@ -344,7 +343,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         #region IReferenceableContainer Members
 
         public IEnumerable<IReferenceable> GetDefinitions(string name) {
-            return _klass.GetDefinitions(name);
+            return ClassInfo.GetDefinitions(name);
         }
 
         #endregion

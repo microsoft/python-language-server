@@ -60,8 +60,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
     }
 
     class TupleBuiltinInstanceInfo : SequenceBuiltinInstanceInfo {
-        public TupleBuiltinInstanceInfo(BuiltinClassInfo classObj)
-            : base(classObj, false, false) { }
+        public TupleBuiltinInstanceInfo(BuiltinClassInfo classInfo)
+            : base(classInfo, false, false) { }
 
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (ClassInfo is TupleBuiltinClassInfo tuple && tuple.IndexTypes.Count > 0) {

@@ -127,6 +127,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IEnumerable<OverloadResult> Overloads {
             get {
+                // TODO: sometimes might have a specialized __init__.
+                // This just covers typical .NET types
                 var ctors = Type.GetConstructor();
                 return ctors != null
                     ? ctors.Overloads.Select(ctor => new BuiltinFunctionOverloadResult(ProjectState, Type.Name, ctor, 1, () => Documentation))
