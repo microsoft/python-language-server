@@ -71,7 +71,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IAnalysisSet GetDescriptor(PythonAnalyzer projectState, AnalysisValue instance, AnalysisValue context) => AnalysisSet.Empty;
         public override IAnalysisSet GetEnumeratorTypes(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
         public override IAnalysisSet GetIndex(Node node, AnalysisUnit unit, IAnalysisSet index) => AnalysisSet.Empty;
-        public override IAnalysisSet GetInstanceType() => AnalysisSet.Empty;
+        public override IAnalysisSet GetInstanceType() => null;
         public override IEnumerable<KeyValuePair<IAnalysisSet, IAnalysisSet>> GetItems() => Enumerable.Empty< KeyValuePair<IAnalysisSet, IAnalysisSet>>();
         public override IAnalysisSet GetIterator(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
         public override IAnalysisSet GetReturnForYieldFrom(Node node, AnalysisUnit unit) => AnalysisSet.Empty;
