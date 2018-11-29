@@ -18,7 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 

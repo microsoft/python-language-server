@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -9,7 +8,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -21,8 +20,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    class PathEqualityComparer : IEqualityComparer<string> {
+namespace Microsoft.Python.Core.IO {
+    public sealed class PathEqualityComparer : IEqualityComparer<string> {
         public static readonly PathEqualityComparer Instance = new PathEqualityComparer(
             RuntimeInformation.IsOSPlatform(OSPlatform.Linux), Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar
         );
@@ -35,7 +34,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
 
         // This is just a small cache to deal with the same keys being used
         // frequently in a loop.
-        internal class CacheItem {
+        public class CacheItem {
             public string CompareKey;
             public long Accessed;
         }
@@ -49,7 +48,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         private readonly char[] _directorySeparators;
         private readonly StringComparer _stringComparer;
 
-        internal PathEqualityComparer(bool isCaseSensitivePath, char directorySeparator, char altDirectorySeparator = '\0') {
+        public PathEqualityComparer(bool isCaseSensitivePath, char directorySeparator, char altDirectorySeparator = '\0') {
             _isCaseSensitivePath = isCaseSensitivePath;
             _directorySeparator = directorySeparator;
             _altDirectorySeparator = altDirectorySeparator;
@@ -63,7 +62,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             _stringComparer = _isCaseSensitivePath ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
         }
 
-        internal string GetCompareKeyUncached(string path) {
+        public string GetCompareKeyUncached(string path) {
             if (string.IsNullOrEmpty(path)) {
                 return path;
             }

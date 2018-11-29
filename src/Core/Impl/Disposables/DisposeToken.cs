@@ -1,5 +1,4 @@
-﻿// Visual Studio Shared Project
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -9,7 +8,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -18,12 +17,12 @@ using System;
 using System.Threading;
 using static System.FormattableString;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
+namespace Microsoft.Python.Core.Disposables {
     /// <summary>
-	/// Represents a disposable that does nothing on disposal.
-	/// Implementation is copied from System.Reactive.Core.dll
-	/// </summary>
-	internal sealed class EmptyDisposable : IDisposable {
+    /// Represents a disposable that does nothing on disposal.
+    /// Implementation is copied from System.Reactive.Core.dll
+    /// </summary>
+    public sealed class EmptyDisposable : IDisposable {
         /// <summary>
         /// Singleton default disposable.
         /// </summary>
@@ -37,7 +36,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         public void Dispose() { }
     }
 
-    internal sealed class DisposeToken {
+    public sealed class DisposeToken {
         private readonly Type _type;
         private readonly CancellationTokenSource _cts;
         private int _disposed;
@@ -94,7 +93,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             _cts.Dispose();
             return true;
         }
-    
+
         private ObjectDisposedException CreateException() => new ObjectDisposedException(_type.Name, Invariant($"{_type.Name} instance is disposed"));
     }
 }

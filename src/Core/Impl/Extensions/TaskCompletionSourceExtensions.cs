@@ -1,5 +1,4 @@
-﻿// Visual Studio Shared Project
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -9,7 +8,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -17,8 +16,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    internal static class TaskCompletionSourceExtensions {
+namespace Microsoft.Python.Core {
+    public static class TaskCompletionSourceExtensions {
         public static CancellationTokenRegistration RegisterForCancellation<T>(this TaskCompletionSource<T> taskCompletionSource, CancellationToken cancellationToken) 
             => taskCompletionSource.RegisterForCancellation(-1, cancellationToken);
 

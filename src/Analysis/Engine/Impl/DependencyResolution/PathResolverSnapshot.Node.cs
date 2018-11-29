@@ -19,7 +19,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
     internal partial struct PathResolverSnapshot {

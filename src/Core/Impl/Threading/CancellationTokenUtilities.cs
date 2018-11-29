@@ -1,4 +1,3 @@
-﻿// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -9,26 +8,19 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Threading;
+using System.Threading.Tasks;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    public static class TestEnvironment {
-        private static ITestEnvironment _current;
+namespace Microsoft.Python.Core.Threading {
+    public static class CancellationTokenUtilities {
+        public static void UnregisterOnCompletion(this CancellationTokenRegistration registration, Task task) 
+            => task.ContinueWith(UnregisterCancellationToken, registration, default(CancellationToken), TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
-        public static ITestEnvironment Current {
-            get => _current;
-            set {
-                var oldValue = Interlocked.CompareExchange(ref _current, value, null);
-                if (oldValue != null) {
-                    throw new InvalidOperationException("Only one test environment can be set per app domain");
-                }
-            }
-        }
+        private static void UnregisterCancellationToken(Task task, object state) => ((CancellationTokenRegistration)state).Dispose();
     }
 }

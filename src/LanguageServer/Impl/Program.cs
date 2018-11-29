@@ -19,6 +19,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using Microsoft.Python.Core.Threading;
 using Microsoft.Python.LanguageServer.Services;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Newtonsoft.Json;

@@ -21,8 +21,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core;
 using Microsoft.Python.LanguageServer.Extensions;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     partial class Server {

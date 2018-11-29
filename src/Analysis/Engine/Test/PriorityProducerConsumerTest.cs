@@ -16,7 +16,7 @@
 
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.Python.Core.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AnalysisTests {

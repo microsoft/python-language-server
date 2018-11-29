@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Parsing.Ast {

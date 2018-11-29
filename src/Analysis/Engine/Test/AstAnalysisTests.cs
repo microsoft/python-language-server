@@ -35,7 +35,7 @@ using Microsoft.PythonTools.Interpreter.Ast;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
-using static Microsoft.PythonTools.Analysis.Infrastructure.StringExtensions;
+using Microsoft.Python.Core;
 using Ast = Microsoft.PythonTools.Parsing.Ast;
 
 namespace AnalysisTests {
@@ -642,7 +642,7 @@ class BankAccount(object):
                         new[] { interpreter.BuiltinModuleName, "exceptions" } :
                         new[] { interpreter.BuiltinModuleName };
 
-                    foreach (var pyd in Microsoft.PythonTools.Analysis.Infrastructure.PathUtils.EnumerateFiles(dllsDir, "*", recurse: false).Where(ModulePath.IsPythonFile)) {
+                    foreach (var pyd in Microsoft.Python.Core.IO.PathUtils.EnumerateFiles(dllsDir, "*", recurse: false).Where(ModulePath.IsPythonFile)) {
                         var mp = ModulePath.FromFullPath(pyd);
                         if (mp.IsDebug) {
                             continue;

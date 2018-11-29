@@ -16,6 +16,7 @@
 
 using System;
 using System.Diagnostics;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
     public class LinearSpan {

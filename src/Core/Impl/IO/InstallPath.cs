@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,16 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using System.IO;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    /// <summary>
-    /// Tuple support for KeyValuePair. Remove when project is updated to .net standard 2.1
-    /// </summary>
-    internal static class KeyValuePairExtension {
-        public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> source, out TKey Key, out TValue Value) {
-            Key = source.Key;
-            Value = source.Value;
+namespace Microsoft.Python.Core.IO {
+    public static class InstallPath {
+        public static bool TryGetFile(string filename, out string fullpath) {
+            fullpath = Path.Combine(
+                Path.GetDirectoryName(typeof(InstallPath).Assembly.Location),
+                filename
+            );
+            return File.Exists(fullpath);
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,8 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    internal static class CharExtensions {
+namespace Microsoft.Python.Core {
+    public static class CharExtensions {
         public static bool IsLatin1(this char ch) => ch <= 'ÿ';
         public static bool IsLatin1Letter(this char ch) => ch.IsLatin1() && char.IsLetter(ch);
         public static bool IsLatin1LetterOrUnderscore(this char ch) => ch == '_' || ch.IsLatin1() && char.IsLetter(ch);

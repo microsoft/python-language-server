@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -9,7 +8,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -20,9 +19,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    static class PathUtils {
-        internal static readonly char[] DirectorySeparators = new[] {
+namespace Microsoft.Python.Core.IO {
+    public static class PathUtils {
+        public static readonly char[] DirectorySeparators = new[] {
             Path.DirectorySeparatorChar,
             Path.AltDirectorySeparatorChar
         };

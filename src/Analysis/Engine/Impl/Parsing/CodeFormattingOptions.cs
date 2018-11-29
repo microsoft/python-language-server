@@ -15,11 +15,10 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.Python.Core;
 
 namespace Microsoft.PythonTools.Parsing {
     /// <summary>

@@ -1,5 +1,4 @@
-// Visual Studio Shared Project
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,14 +13,24 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
+using System;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    internal static class CancellationTokenUtilities {
-        public static void UnregisterOnCompletion(this CancellationTokenRegistration registration, Task task) 
-            => task.ContinueWith(UnregisterCancellationToken, registration, default(CancellationToken), TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+namespace Microsoft.Python.Core.Disposables {
+    /// <summary>
+    /// Represents a disposable that does nothing on disposal.
+    /// Implementation is copied from System.Reactive.Core.dll
+    /// </summary>
+    public sealed class DefaultDisposable : IDisposable {
+        /// <summary>
+        /// Singleton default disposable.
+        /// </summary>
+        public static readonly DefaultDisposable Instance = new DefaultDisposable();
 
-        private static void UnregisterCancellationToken(Task task, object state) => ((CancellationTokenRegistration)state).Dispose();
+        private DefaultDisposable() { }
+
+        /// <summary>
+        /// Does nothing.
+        /// </summary>
+        public void Dispose() { }
     }
 }

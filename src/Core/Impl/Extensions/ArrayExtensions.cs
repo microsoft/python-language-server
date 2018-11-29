@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -16,8 +15,8 @@
 
 using System;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    internal static class ArrayExtensions {
+namespace Microsoft.Python.Core {
+    public static class ArrayExtensions {
         public static int IndexOf<T>(this T[] array, Func<T, bool> predicate) {
             for (var i = 0; i < array.Length; i++) {
                 if (predicate(array[i])) {
