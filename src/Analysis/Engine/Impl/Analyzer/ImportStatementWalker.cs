@@ -16,7 +16,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
     internal class ImportStatementWalker : PythonWalker {

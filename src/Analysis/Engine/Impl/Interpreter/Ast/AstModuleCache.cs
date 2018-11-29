@@ -23,7 +23,7 @@ using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     internal sealed class AstModuleCache {

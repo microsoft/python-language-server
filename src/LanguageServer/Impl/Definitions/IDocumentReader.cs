@@ -14,10 +14,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.PythonTools;
-using Microsoft.PythonTools.Analysis;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer {
     public interface IDocumentReader {

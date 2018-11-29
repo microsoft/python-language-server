@@ -15,7 +15,8 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.PythonTools.Intellisense {
     struct LineInfo {
@@ -47,9 +48,9 @@ namespace Microsoft.PythonTools.Intellisense {
 
         public static IEnumerable<LineInfo> SplitLines(string text, int firstLineNumber = 0) {
             NewLineLocation nextLine;
-            int lineNo = firstLineNumber;
+            var lineNo = firstLineNumber;
 
-            int lastLineEnd = 0;
+            var lastLineEnd = 0;
             while ((nextLine = NewLineLocation.FindNewLine(text, lastLineEnd)).EndIndex != lastLineEnd) {
                 yield return new LineInfo(
                     lastLineEnd,

@@ -21,7 +21,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
     internal partial struct PathResolverSnapshot {

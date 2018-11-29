@@ -18,8 +18,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     abstract class SpecializedNamespace : AnalysisValue {
@@ -67,7 +68,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             _original.AugmentAssign(node, unit, value);
         }
 
-        public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, Parsing.PythonOperator operation, IAnalysisSet rhs) {
+        public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
             if (_original == null) {
                 return base.BinaryOperation(node, unit, operation, rhs);
             }
@@ -221,7 +222,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override PythonMemberType MemberType => _original == null ? PythonMemberType.Unknown : _original.MemberType;
 
-        public override IAnalysisSet ReverseBinaryOperation(Node node, AnalysisUnit unit, Parsing.PythonOperator operation, IAnalysisSet rhs) {
+        public override IAnalysisSet ReverseBinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
             if (_original == null) {
                 return AnalysisSet.Empty;
             }
@@ -258,7 +259,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IAnalysisSet UnaryOperation(Node node, AnalysisUnit unit, Parsing.PythonOperator operation) {
+        public override IAnalysisSet UnaryOperation(Node node, AnalysisUnit unit, PythonOperator operation) {
             if (_original == null) {
                 return AnalysisSet.Empty;
             }

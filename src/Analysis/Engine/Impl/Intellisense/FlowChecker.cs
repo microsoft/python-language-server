@@ -18,7 +18,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 /*
  * The data flow.
@@ -388,7 +388,7 @@ namespace Microsoft.PythonTools.Intellisense {
 
             _bits = new BitArray(_bits.Length);
 
-            foreach (IfStatementTest ist in node.TestsInternal) {
+            foreach (IfStatementTest ist in node.Tests) {
                 // Set the initial branch value to bits
                 _bits.SetAll(false);
                 _bits.Or(save);

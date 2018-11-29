@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.PythonTools.Analysis {
     public interface ILocationInfo: IEquatable<ILocationInfo>, ILocationResolver {

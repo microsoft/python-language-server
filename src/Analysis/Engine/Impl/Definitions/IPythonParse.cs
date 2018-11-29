@@ -15,7 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
     public interface IPythonParse : IDisposable {

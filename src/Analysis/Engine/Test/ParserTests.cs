@@ -23,10 +23,10 @@ using System.Numerics;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Python.Core;
-using Microsoft.PythonTools;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -3004,7 +3004,7 @@ pass
   # line 4"), PythonLanguageVersion.V36);
             var tree = parser.ParseFile();
 
-            tree._commentLocations.Should().Equal(
+            tree.CommentLocations.Should().Equal(
                 new SourceLocation(1, 1),
                 new SourceLocation(3, 1),
                 new SourceLocation(5, 3)
@@ -3017,7 +3017,7 @@ pass
 pass
   # line 4"), PythonLanguageVersion.V36);
             tree = new PythonAst(new[] { tree1, parser.ParseFile() });
-            tree._commentLocations.Should().Equal(
+            tree.CommentLocations.Should().Equal(
                 new SourceLocation(1, 1),
                 new SourceLocation(3, 1),
                 new SourceLocation(5, 3)
@@ -3125,7 +3125,7 @@ pass
         private static Action<Expression> Four = CheckConstant(4);
         private static Action<Expression> None = CheckConstant(null);
         private static Action<Expression> Fob = CheckNameExpr("fob");
-        private static Action<Expression> Ellipsis = CheckConstant(Microsoft.PythonTools.Parsing.Ellipsis.Value);
+        private static Action<Expression> Ellipsis = CheckConstant(Microsoft.Python.Parsing.Ellipsis.Value);
         private static Action<Expression> Oar = CheckNameExpr("oar");
         private static Action<Expression> Baz = CheckNameExpr("baz");
         private static Action<Expression> Quox = CheckNameExpr("quox");
@@ -3321,7 +3321,7 @@ pass
                 Assert.AreEqual(typeof(IfStatement), stmt.GetType());
                 var ifStmt = (IfStatement)stmt;
 
-                tests(ifStmt.TestsInternal);
+                tests(ifStmt.Tests);
 
                 if (_else != null) {
                     _else(ifStmt.ElseStatement);

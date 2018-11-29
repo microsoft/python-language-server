@@ -20,7 +20,7 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Parsing;
 using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {

@@ -24,8 +24,9 @@ using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Documentation;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Intellisense;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {

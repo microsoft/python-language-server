@@ -33,7 +33,7 @@ using Microsoft.PythonTools.Analysis.Documentation;
 using Microsoft.PythonTools.Intellisense;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server : ServerBase, ILogger, IPythonLanguageServer, IDisposable {
@@ -101,9 +101,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposableBag
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
-                        (ext as IDisposable)?.Dispose();
-                    }
-                    foreach (var ext in _oldExtensions.Values) {
                         (ext as IDisposable)?.Dispose();
                     }
                 })

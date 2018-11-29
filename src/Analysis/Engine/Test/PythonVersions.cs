@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.PythonTools.Analysis {

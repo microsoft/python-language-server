@@ -25,8 +25,8 @@ using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Intellisense;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     class ParseQueue: IDisposable {

@@ -32,11 +32,11 @@ using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 using Microsoft.Python.Core;
-using Ast = Microsoft.PythonTools.Parsing.Ast;
+using Ast = Microsoft.Python.Parsing.Ast;
 
 namespace AnalysisTests {
     [TestClass]

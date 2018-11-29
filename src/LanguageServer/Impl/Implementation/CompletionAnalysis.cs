@@ -22,13 +22,13 @@ using System.Linq;
 using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.PythonTools;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Documentation;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     class CompletionAnalysis {
@@ -124,17 +124,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public Expression ParentExpression { get; private set; }
 
 
-        private IReadOnlyList<KeyValuePair<IndexSpan, Token>> _tokens;
+        private IReadOnlyList<KeyValuePair<LinearSpan, Token>> _tokens;
         private NewLineLocation[] _tokenNewlines;
 
-        private IEnumerable<KeyValuePair<IndexSpan, Token>> Tokens {
+        private IEnumerable<KeyValuePair<LinearSpan, Token>> Tokens {
             get {
                 EnsureTokens();
                 return _tokens;
             }
         }
 
-        private SourceSpan GetTokenSpan(IndexSpan span) {
+        private SourceSpan GetTokenSpan(LinearSpan span) {
             EnsureTokens();
             return new SourceSpan(
                 NewLineLocation.IndexToLocation(_tokenNewlines, span.Start),
@@ -150,12 +150,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var reader = _openDocument?.Invoke();
             if (reader == null) {
                 _log.TraceMessage($"Cannot get completions at error node without sources");
-                _tokens = Array.Empty<KeyValuePair<IndexSpan, Token>>();
+                _tokens = Array.Empty<KeyValuePair<LinearSpan, Token>>();
                 _tokenNewlines = Array.Empty<NewLineLocation>();
                 return;
             }
 
-            var tokens = new List<KeyValuePair<IndexSpan, Token>>();
+            var tokens = new List<KeyValuePair<LinearSpan, Token>>();
             Tokenizer tokenizer;
             using (reader) {
                 tokenizer = new Tokenizer(Tree.LanguageVersion, options: TokenizerOptions.GroupingRecovery);
@@ -163,7 +163,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 for (var t = tokenizer.GetNextToken();
                     t.Kind != TokenKind.EndOfFile && tokenizer.TokenSpan.Start < Index;
                     t = tokenizer.GetNextToken()) {
-                    tokens.Add(new KeyValuePair<IndexSpan, Token>(tokenizer.TokenSpan, t));
+                    tokens.Add(new KeyValuePair<LinearSpan, Token>(tokenizer.TokenSpan, t));
                 }
             }
 
@@ -594,7 +594,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private bool IsInsideComment() {
-            var match = Array.BinarySearch(Tree._commentLocations, Position);
+            var match = Array.BinarySearch(Tree.CommentLocations, Position);
             // If our index = -1, it means we're before the first comment
             if (match == -1) {
                 return false;
@@ -606,16 +606,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 match = ~match - 1;
             }
 
-            if (match >= Tree._commentLocations.Length) {
+            if (match >= Tree.CommentLocations.Length) {
                 Debug.Fail("Failed to find nearest preceding comment in AST");
                 return false;
             }
 
-            if (Tree._commentLocations[match].Line != Position.Line) {
+            if (Tree.CommentLocations[match].Line != Position.Line) {
                 return false;
             }
 
-            if (Tree._commentLocations[match].Column >= Position.Column) {
+            if (Tree.CommentLocations[match].Column >= Position.Column) {
                 return false;
             }
 
@@ -682,8 +682,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             var options = Options | GetMemberOptions.ForEval | GetMemberOptionsForTopLevelCompletions(Statement, Index, out var span);
-            if (span.HasValue) {
-                ApplicableSpan = new SourceSpan(Tree.IndexToLocation(span.Value.Start), Tree.IndexToLocation(span.Value.End));
+            if (span != null) {
+                ApplicableSpan = new SourceSpan(Tree.IndexToLocation(span.Start), Tree.IndexToLocation(span.End));
             }
 
             ShouldAllowSnippets = options.HasFlag(GetMemberOptions.IncludeExpressionKeywords);
@@ -710,7 +710,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Select(ToCompletionItem);
         }
 
-        private static GetMemberOptions GetMemberOptionsForTopLevelCompletions(Node statement, int index, out IndexSpan? span) {
+        private static GetMemberOptions GetMemberOptionsForTopLevelCompletions(Node statement, int index, out LinearSpan span) {
             span = null;
 
             const GetMemberOptions noKeywords = GetMemberOptions.None;
@@ -749,10 +749,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 case Statement s when index <= s.KeywordEndIndex:
                     var keywordStart = s.KeywordEndIndex - s.KeywordLength;
                     if (index >= keywordStart) {
-                        span = new IndexSpan(keywordStart, s.KeywordLength);
+                        span = new LinearSpan(keywordStart, s.KeywordLength);
                     } else if ((s as IMaybeAsyncStatement)?.IsAsync == true) {
                         // Must be in the "async" at the start of the keyword
-                        span = new IndexSpan(s.StartIndex, "async".Length);
+                        span = new LinearSpan(s.StartIndex, "async".Length);
                     }
                     return includeAllKeywords;
 
@@ -763,7 +763,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 case TryStatementHandler except when index <= except.KeywordEndIndex:
                     var exceptKeywordStart = except.KeywordEndIndex - except.KeywordLength;
                     if (index >= exceptKeywordStart) {
-                        span = new IndexSpan(exceptKeywordStart, except.KeywordLength);
+                        span = new LinearSpan(exceptKeywordStart, except.KeywordLength);
                     }
 
                     return includeAllKeywords;
@@ -914,12 +914,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return sb.ToString();
         }
 
-        private string ReadExpression(IEnumerable<KeyValuePair<IndexSpan, Token>> tokens) {
+        private string ReadExpression(IEnumerable<KeyValuePair<LinearSpan, Token>> tokens) {
             var expr = ReadExpressionTokens(tokens);
             return string.Join("", expr.Select(e => e.VerbatimImage ?? e.Image));
         }
 
-        private IEnumerable<Token> ReadExpressionTokens(IEnumerable<KeyValuePair<IndexSpan, Token>> tokens) {
+        private IEnumerable<Token> ReadExpressionTokens(IEnumerable<KeyValuePair<LinearSpan, Token>> tokens) {
             int nesting = 0;
             var exprTokens = new Stack<Token>();
             int currentLine = -1;

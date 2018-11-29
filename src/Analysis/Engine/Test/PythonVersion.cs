@@ -15,7 +15,7 @@
 // permissions and limitations under the License.
 
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.PythonTools.Analysis {
     public class PythonVersion {

@@ -16,7 +16,7 @@
 
 using System.IO;
 using System.Text;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AnalysisTests {

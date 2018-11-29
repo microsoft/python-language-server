@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -18,7 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -84,10 +85,10 @@ namespace AnalysisTests {
 
         struct ExpectedToken {
             public readonly TokenKind Kind;
-            public readonly IndexSpan Span;
+            public readonly LinearSpan Span;
             public readonly string Image;
 
-            public ExpectedToken(TokenKind kind, IndexSpan span, string image) {
+            public ExpectedToken(TokenKind kind, LinearSpan span, string image) {
                 Kind = kind;
                 Span = span;
                 Image = image;
@@ -104,9 +105,9 @@ namespace AnalysisTests {
             AssertEqualTokens(
                 tokens, 
                 new[] { 
-                    new ExpectedToken(TokenKind.Name, new IndexSpan(0, 3), "fob"), 
-                    new ExpectedToken(TokenKind.NewLine, new IndexSpan(3, Environment.NewLine.Length), Environment.NewLine), 
-                    new ExpectedToken(TokenKind.EndOfFile, new IndexSpan(3 + Environment.NewLine.Length, 1), "\\"),
+                    new ExpectedToken(TokenKind.Name, new LinearSpan(0, 3), "fob"), 
+                    new ExpectedToken(TokenKind.NewLine, new LinearSpan(3, Environment.NewLine.Length), Environment.NewLine), 
+                    new ExpectedToken(TokenKind.EndOfFile, new LinearSpan(3 + Environment.NewLine.Length, 1), "\\"),
                 }
             );
 
@@ -118,10 +119,10 @@ namespace AnalysisTests {
             AssertEqualTokens(
                 tokens,
                 new[] { 
-                    new ExpectedToken(TokenKind.Name, new IndexSpan(0, 3), "fob"), 
-                    new ExpectedToken(TokenKind.NewLine, new IndexSpan(3, Environment.NewLine.Length), Environment.NewLine),
-                    new ExpectedToken(TokenKind.Error, new IndexSpan(3 + Environment.NewLine.Length, 1), "\\"), 
-                    new ExpectedToken(TokenKind.Name, new IndexSpan(4 + Environment.NewLine.Length, 1), "b")
+                    new ExpectedToken(TokenKind.Name, new LinearSpan(0, 3), "fob"), 
+                    new ExpectedToken(TokenKind.NewLine, new LinearSpan(3, Environment.NewLine.Length), Environment.NewLine),
+                    new ExpectedToken(TokenKind.Error, new LinearSpan(3 + Environment.NewLine.Length, 1), "\\"), 
+                    new ExpectedToken(TokenKind.Name, new LinearSpan(4 + Environment.NewLine.Length, 1), "b")
                 }
             );
         }

@@ -20,7 +20,7 @@ using System.Threading;
 using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
     class FunctionAnalysisUnit : AnalysisUnit {
@@ -153,7 +153,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                         Expression nextExpr;
                         if (!_decoratorCalls.TryGetValue(d, out nextExpr)) {
                             nextExpr = _decoratorCalls[d] = new CallExpression(d, new[] { new Arg(expr) });
-                            nextExpr.SetLoc(d.IndexSpan);
+                            nextExpr.SetLoc(d.LinearSpan);
                         }
                         expr = nextExpr;
                         var decorated = AnalysisSet.Empty;

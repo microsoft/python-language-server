@@ -23,7 +23,7 @@ using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Intellisense;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     internal sealed class ProjectFiles : IDisposable, IEnumerable<IProjectEntry> {

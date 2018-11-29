@@ -22,12 +22,13 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
     /// <summary>
@@ -1084,8 +1085,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private static bool IsInFunctionParameter(InterpreterScope scope, PythonAst tree, SourceLocation location) {
-            var function = scope.Node as FunctionDefinition;
-            if (function == null) {
+            if (!(scope.Node is FunctionDefinition function)) {
                 // Not a function
                 return false;
             }
@@ -1283,7 +1283,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             // line is 1 based, and index 0 in the array is the position of the 2nd line in the file.
             line -= 2;
-            return _unit.Tree._lineLocations[line].EndIndex;
+            return _unit.Tree.NewLineLocations[line].EndIndex;
         }
 
         /// <summary>

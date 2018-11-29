@@ -17,8 +17,9 @@
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Core;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
     sealed class ExpressionFinder {
@@ -92,13 +93,9 @@ namespace Microsoft.PythonTools.Analysis {
             return GetExpression(startIndex, endIndex);
         }
 
-        public SourceSpan? GetExpressionSpan(int startIndex, int endIndex) {
-            return GetExpression(startIndex, endIndex)?.GetSpan(Ast);
-        }
+        public SourceSpan? GetExpressionSpan(int startIndex, int endIndex) => GetExpression(startIndex, endIndex)?.GetSpan(Ast);
 
-        public SourceSpan? GetExpressionSpan(SourceSpan range) {
-            return GetExpression(range)?.GetSpan(Ast);
-        }
+        public SourceSpan? GetExpressionSpan(SourceSpan range) => GetExpression(range)?.GetSpan(Ast);
 
         private abstract class ExpressionWalker : PythonWalkerWithLocation {
             public ExpressionWalker(int location) : base(location) { }

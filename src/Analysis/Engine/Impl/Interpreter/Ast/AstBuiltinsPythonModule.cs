@@ -20,8 +20,8 @@ using System.IO;
 using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstBuiltinsPythonModule : AstScrapedPythonModule, IBuiltinPythonModule {

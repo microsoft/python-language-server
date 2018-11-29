@@ -15,7 +15,7 @@
 // permissions and limitations under the License.
 
 using Microsoft.PythonTools.Analysis.Values;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
     sealed class ClassScope : InterpreterScope, IClassScope {

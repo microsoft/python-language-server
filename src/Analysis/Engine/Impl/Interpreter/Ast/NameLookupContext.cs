@@ -21,8 +21,8 @@ using System.Linq;
 using System.Numerics;
 using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     sealed class NameLookupContext {

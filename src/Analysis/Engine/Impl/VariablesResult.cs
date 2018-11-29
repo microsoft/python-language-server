@@ -16,7 +16,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
     public sealed class VariablesResult : IEnumerable<IAnalysisVariable> {

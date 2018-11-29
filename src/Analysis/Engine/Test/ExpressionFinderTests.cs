@@ -18,10 +18,10 @@ using System;
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Core;
-using Microsoft.PythonTools;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AnalysisTests {

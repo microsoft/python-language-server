@@ -20,7 +20,7 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     public class AstPythonInterpreterFactory : IPythonInterpreterFactory2, IPythonInterpreterFactoryWithLog, ICustomInterpreterSerialization, IDisposable {

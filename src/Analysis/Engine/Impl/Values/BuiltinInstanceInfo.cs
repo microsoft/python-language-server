@@ -18,8 +18,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinInstanceInfo : BuiltinNamespace<IPythonType>, IBuiltinInstanceInfo {
@@ -99,7 +99,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return ConstantInfo.NumericOp(node, this, unit, operation, rhs) ?? NumericOp(node, unit, operation, rhs) ?? AnalysisSet.Empty;
         }
 
-        private IAnalysisSet NumericOp(Node node, AnalysisUnit unit, Parsing.PythonOperator operation, IAnalysisSet rhs) {
+        private IAnalysisSet NumericOp(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
             string methodName = InstanceInfo.BinaryOpToString(operation);
             if (methodName != null) {
                 var method = GetMember(node, unit, methodName);

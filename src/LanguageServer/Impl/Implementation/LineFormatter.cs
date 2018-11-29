@@ -21,8 +21,8 @@ using System.Linq;
 using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     /// <summary>
@@ -390,7 +390,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             .EnsureEndsWithWhiteSpace();
 
         private class TokenExt {
-            public TokenExt(Token token, string precedingWhitespace, IndexSpan span, int line, bool isMultiLine,
+            public TokenExt(Token token, string precedingWhitespace, LinearSpan span, int line, bool isMultiLine,
                 TokenExt prev) {
                 Token = token;
                 PrecedingWhitespace = precedingWhitespace;
@@ -401,7 +401,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             public Token Token { get; }
-            public IndexSpan Span { get; }
+            public LinearSpan Span { get; }
             public int Line { get; }
             public TokenExt Inside { get; set; }
             public TokenExt Prev { get; }

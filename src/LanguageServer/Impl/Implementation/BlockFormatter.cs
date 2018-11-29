@@ -22,7 +22,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.PythonTools.Analysis;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     /// <summary>

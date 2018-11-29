@@ -21,8 +21,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Intellisense {
     static class ProjectEntryExtensions {

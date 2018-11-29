@@ -9,11 +9,12 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
@@ -34,7 +35,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         public override string Name => Module.Name;
 
-        public override bool AssignVariable(string name, Parsing.Ast.Node location, AnalysisUnit unit, IAnalysisSet values) {
+        public override bool AssignVariable(string name, Node location, AnalysisUnit unit, IAnalysisSet values) {
             if (base.AssignVariable(name, location, unit, values)) {
                 Module.ModuleDefinition.EnqueueDependents();
                 return true;

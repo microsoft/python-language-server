@@ -18,7 +18,8 @@ using System;
 using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.PythonTools.Intellisense {
     sealed class NamedLocation {

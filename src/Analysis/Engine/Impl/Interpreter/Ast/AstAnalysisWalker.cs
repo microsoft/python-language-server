@@ -20,8 +20,8 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstAnalysisWalker : PythonWalker {
@@ -271,7 +271,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public override bool Walk(IfStatement node) {
             var allValidComparisons = true;
-            foreach (var test in node.TestsInternal) {
+            foreach (var test in node.Tests) {
                 if (test.Test is BinaryExpression cmp &&
                     cmp.Left is MemberExpression me && (me.Target as NameExpression)?.Name == "sys" && me.Name == "version_info" &&
                     cmp.Right is TupleExpression te && te.Items.All(i => (i as ConstantExpression)?.Value is int)) {

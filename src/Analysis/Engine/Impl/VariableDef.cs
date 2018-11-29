@@ -20,7 +20,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis.Analyzer;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
     abstract class DependentData<TStorageType> where TStorageType : DependencyInfo {

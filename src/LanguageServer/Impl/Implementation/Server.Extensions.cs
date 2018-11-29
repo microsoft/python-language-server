@@ -14,10 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-#pragma warning disable CS0618 // Type or member is obsolete
-
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,50 +23,7 @@ using Microsoft.Python.LanguageServer.Extensions;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     partial class Server {
-        private readonly ConcurrentDictionary<string,
-            PythonTools.Analysis.LanguageServer.ILanguageServerExtension> _oldExtensions =
-                new ConcurrentDictionary<string, PythonTools.Analysis.LanguageServer.ILanguageServerExtension>();
-        private PythonTools.Analysis.LanguageServer.Server _oldServer;
-
         public async Task LoadExtensionAsync(PythonAnalysisExtensionParams extension, IServiceContainer services, CancellationToken cancellationToken) {
-            if (!await LoadExtensionAsyncOld(extension, cancellationToken)) {
-                await LoadExtensionAsyncNew(extension, services, cancellationToken);
-            }
-        }
-        private async Task<bool> LoadExtensionAsyncOld(PythonAnalysisExtensionParams extension, CancellationToken cancellationToken) {
-            try {
-                var provider = ActivateObject<PythonTools.Analysis.LanguageServer.ILanguageServerExtensionProvider>(extension.assembly, extension.typeName, null);
-                if (provider == null) {
-                    return false;
-                }
-
-                _oldServer = new PythonTools.Analysis.LanguageServer.Server();
-                var ext = await provider.CreateAsync(_oldServer, extension.properties ?? new Dictionary<string, object>(), cancellationToken);
-                if (ext == null) {
-                    LogMessage(MessageType.Error, $"Extension provider {extension.assembly} {extension.typeName} returned null");
-                    return false;
-                }
-
-                string n = null;
-                try {
-                    n = ext.Name;
-                } catch (NotImplementedException) {
-                } catch (NotSupportedException) {
-                }
-
-                if (!string.IsNullOrEmpty(n)) {
-                    _oldExtensions.AddOrUpdate(n, ext, (_, previous) => {
-                        (previous as IDisposable)?.Dispose();
-                        return ext;
-                    });
-                }
-                return true;
-            } catch (Exception) {
-            }
-            return false;
-        }
-
-        private async Task LoadExtensionAsyncNew(PythonAnalysisExtensionParams extension, IServiceContainer services, CancellationToken cancellationToken) {
             try {
                 var provider = ActivateObject<ILanguageServerExtensionProvider>(extension.assembly, extension.typeName, null);
                 if (provider == null) {

@@ -18,9 +18,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Core;
-using Microsoft.PythonTools;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     class DiagnosticsErrorSink : ErrorSink {

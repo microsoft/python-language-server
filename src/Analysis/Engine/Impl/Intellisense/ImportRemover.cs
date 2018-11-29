@@ -17,8 +17,9 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.PythonTools.Intellisense {
     class ImportRemover {
@@ -51,9 +52,9 @@ namespace Microsoft.PythonTools.Intellisense {
                 //var node = removeInfo.Node;
                 var removing = removeInfo.ToRemove;
                 var removed = removeInfo.Statement;
-                UpdatedStatement updatedStatement = removed.InitialStatement;
+                var updatedStatement = removed.InitialStatement;
 
-                int removeCount = 0;
+                var removeCount = 0;
                 for (int i = 0, curRemoveIndex = 0; i < removed.NameCount; i++) {
                     if (removed.IsRemoved(i, removing)) {
                         removeCount++;
@@ -71,7 +72,7 @@ namespace Microsoft.PythonTools.Intellisense {
                 } else {
                     var newCode = updatedStatement.ToCodeString(_ast);
 
-                    int proceedingLength = (removed.LeadingWhitespace ?? "").Length;
+                    var proceedingLength = (removed.LeadingWhitespace ?? "").Length;
 
                     changes.Add(DocumentChange.Replace(new SourceSpan(
                         _ast.IndexToLocation(removed.Node.StartIndex - proceedingLength),
@@ -86,9 +87,9 @@ namespace Microsoft.PythonTools.Intellisense {
             // remove the entire node, leave any trailing whitespace/comments, but include the
             // newline and any indentation.
 
-            int start = _ast.LocationToIndex(span.Start);
-            int length = _ast.GetSpanLength(span);
-            int cur = start - 1;
+            var start = _ast.LocationToIndex(span.Start);
+            var length = _ast.GetSpanLength(span);
+            var cur = start - 1;
             if (!insertPass) {
                 // backup to remove any indentation
                 while (start - 1 > 0) {
@@ -349,7 +350,7 @@ namespace Microsoft.PythonTools.Intellisense {
             }
 
             public ICollection<ImportRemovalInfo> GetToRemove() {
-                Dictionary<Statement, ImportRemovalInfo> removeInfo = new Dictionary<Statement, ImportRemovalInfo>();
+                var removeInfo = new Dictionary<Statement, ImportRemovalInfo>();
 
                 foreach (var nameAndList in _importedNames) {
                     if (!_readNames.Contains(nameAndList.Key)) {
@@ -369,7 +370,7 @@ namespace Microsoft.PythonTools.Intellisense {
 
             public override bool Walk(ImportStatement node) {
                 if (InTargetScope && !(_scopes[_scopes.Count - 1] is ClassDefinition)) {
-                    for (int i = 0; i < node.Names.Count; i++) {
+                    for (var i = 0; i < node.Names.Count; i++) {
                         if (node.AsNames != null && node.AsNames[i] != null) {
                             var name = node.AsNames[i].Name;
                             TrackImport(node, name);
@@ -387,12 +388,12 @@ namespace Microsoft.PythonTools.Intellisense {
                 StrongBox<int> statementCount;
 
                 if (!_statementCount.TryGetValue(parent, out statementCount)) {
-                    PythonAst outerParent = parent as PythonAst;
+                    var outerParent = parent as PythonAst;
                     if (outerParent != null) {
                         // we don't care about the number of children at the top level
                         statementCount = new StrongBox<int>(-1);
                     } else {
-                        FunctionDefinition funcDef = parent as FunctionDefinition;
+                        var funcDef = parent as FunctionDefinition;
                         if (funcDef != null) {
                             statementCount = GetNumberOfChildStatements(funcDef.Body);
                         } else {
@@ -420,7 +421,7 @@ namespace Microsoft.PythonTools.Intellisense {
 
             public override bool Walk(FromImportStatement node) {
                 if (InTargetScope && !node.IsFromFuture && !(_scopes[_scopes.Count - 1] is ClassDefinition)) {
-                    for (int i = 0; i < node.Names.Count; i++) {
+                    for (var i = 0; i < node.Names.Count; i++) {
                         if (node.Names[i].Name == "*") {
                             // ignore from .. import *
                             continue;
