@@ -22,7 +22,6 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinMethodInfo : BuiltinNamespace<IPythonType>, IHasRichDescription {
-        internal readonly bool _fromFunction;
         private string _doc;
         private BoundBuiltinMethodInfo _boundMethod;
 
@@ -33,7 +32,6 @@ namespace Microsoft.PythonTools.Analysis.Values {
             MemberType = memType;
             Function = function;
             ReturnTypes = GetReturnTypes(function, projectState);
-            _fromFunction = true;
         }
 
         public override IPythonType PythonType => Type;

@@ -23,6 +23,7 @@ namespace Microsoft.PythonTools.Analysis {
         string Documentation { get; }
         [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays",
             Justification = "breaking change")]
+        ParameterResult SelfParameter { get; }
         ParameterResult[] Parameters { get; }
         IReadOnlyList<string> ReturnType { get; }
     }

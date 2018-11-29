@@ -58,7 +58,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     var overloads = Method.Function.Overloads;
                     var result = new OverloadResult[overloads.Count];
                     for (var i = 0; i < result.Length; i++) {
-                        result[i] = new BuiltinFunctionOverloadResult(Method.ProjectState, Method.Name, overloads[i], Method._fromFunction ? 1 : 0);
+                        result[i] = new BuiltinFunctionOverloadResult(Method.ProjectState, Method.Name, overloads[i], 1);
                     }
                     _overloads = result;
                 }

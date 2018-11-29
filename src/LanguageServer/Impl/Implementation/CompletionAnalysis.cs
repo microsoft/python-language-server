@@ -881,11 +881,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private string MakeOverrideCompletionString(string indentation, IOverloadResult result, string className) {
             var sb = new StringBuilder();
 
-            sb.AppendLine(result.Name + "(" + string.Join(", ", result.Parameters.Select(MakeOverrideDefParamater)) + "):");
+            var self = result.SelfParameter != null ? new[] { result.SelfParameter } : Array.Empty<ParameterResult>();
+            var parameters = self.Concat(result.Parameters).ToArray();
+
+            sb.AppendLine(result.Name + "(" + string.Join(", ", parameters.Select(MakeOverrideDefParamater)) + "):");
             sb.Append(indentation);
 
-            if (result.Parameters.Length > 0) {
-                var parameterString = string.Join(", ", result.Parameters.Skip(1).Select(MakeOverrideCallParameter));
+            if (parameters.Length > 0) {
+                var parameterString = string.Join(", ", 
+                    result.Parameters
+                        .Where(p => p.Name != "self")
+                        .Select(MakeOverrideCallParameter));
 
                 if (Tree.LanguageVersion.Is3x()) {
                     sb.AppendFormat("return super().{0}({1})",
@@ -894,7 +900,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 } else if (!string.IsNullOrEmpty(className)) {
                     sb.AppendFormat("return super({0}, {1}).{2}({3})",
                         className,
-                        result.Parameters.First().Name,
+                        parameters.FirstOrDefault()?.Name ?? string.Empty,
                         result.Name,
                         parameterString);
                 } else {
