@@ -21,12 +21,12 @@ namespace Microsoft.Python.Parsing {
     public struct TokenWithSpan {
         public static readonly TokenWithSpan Empty = new TokenWithSpan();
 
-        public TokenWithSpan(Token token, LinearSpan span) {
+        public TokenWithSpan(Token token, IndexSpan span) {
             Token = token;
             Span = span;
         }
 
-        public LinearSpan Span { get; }
+        public IndexSpan Span { get; }
         public Token Token { get; }
     }
 

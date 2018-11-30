@@ -169,7 +169,7 @@ namespace Microsoft.Python.Parsing {
 
         public bool IsEndOfFile => Peek() == EOF;
 
-        public LinearSpan TokenSpan => new LinearSpan(_tokenStartIndex, _tokenEndIndex - _tokenStartIndex);
+        public IndexSpan TokenSpan => new IndexSpan(_tokenStartIndex, _tokenEndIndex - _tokenStartIndex);
 
         public void Initialize(TextReader sourceUnit) {
             Contract.Assert(sourceUnit != null);
@@ -926,7 +926,7 @@ namespace Microsoft.Python.Parsing {
                         // CPython reports the multi-line string error as if it is a single line
                         // ending at the last char in the file.
                         MarkTokenEnd();
-                        ReportSyntaxError(new LinearSpan(_tokenEndIndex, 0), "EOF while scanning triple-quoted string", ErrorCodes.SyntaxError | ErrorCodes.IncompleteToken);
+                        ReportSyntaxError(new IndexSpan(_tokenEndIndex, 0), "EOF while scanning triple-quoted string", ErrorCodes.SyntaxError | ErrorCodes.IncompleteToken);
                     } else {
                         MarkTokenEnd();
                     }
@@ -1175,7 +1175,7 @@ namespace Microsoft.Python.Parsing {
                         MarkTokenEnd();
 
                         if (_langVersion.Is3x()) {
-                            ReportSyntaxError(new LinearSpan(_tokenEndIndex - 1, 1), "invalid token", ErrorCodes.SyntaxError);
+                            ReportSyntaxError(new IndexSpan(_tokenEndIndex - 1, 1), "invalid token", ErrorCodes.SyntaxError);
                         }
 
                         if (Verbatim) {
@@ -1439,7 +1439,7 @@ namespace Microsoft.Python.Parsing {
                 }
             }
             if (_langVersion.Is3x() && tokenStr.EndsWithOrdinal("l", ignoreCase: true)) {
-                ReportSyntaxError(new LinearSpan(_tokenEndIndex - 1, 1), "invalid token", ErrorCodes.SyntaxError);
+                ReportSyntaxError(new IndexSpan(_tokenEndIndex - 1, 1), "invalid token", ErrorCodes.SyntaxError);
                 return true;
             }
             return false;
@@ -2138,7 +2138,7 @@ namespace Microsoft.Python.Parsing {
 
                 if (spaces != current && indentStart != -1) {
                     ReportSyntaxError(
-                        new LinearSpan(indentStart, spaces),
+                        new IndexSpan(indentStart, spaces),
                         "unindent does not match any outer indentation level", ErrorCodes.IndentationError);
                 }
             }
@@ -2205,7 +2205,7 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        private void ReportSyntaxError(LinearSpan span, string message, int errorCode) {
+        private void ReportSyntaxError(IndexSpan span, string message, int errorCode) {
             _errors.Add(message, _newLineLocations.ToArray(), span.Start, span.End, errorCode, Severity.FatalError);
         }
 
@@ -2511,7 +2511,7 @@ namespace Microsoft.Python.Parsing {
 
         private SourceLocation BufferTokenEnd => IndexToLocation(_tokenEndIndex);
 
-        private LinearSpan BufferTokenSpan => new LinearSpan(_tokenStartIndex, _tokenEndIndex - _tokenStartIndex);
+        private IndexSpan BufferTokenSpan => new IndexSpan(_tokenStartIndex, _tokenEndIndex - _tokenStartIndex);
 
         private bool NextChar(int ch) {
             CheckInvariants();

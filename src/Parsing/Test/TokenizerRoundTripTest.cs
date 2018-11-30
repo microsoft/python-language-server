@@ -84,10 +84,10 @@ namespace Microsoft.Python.Parsing.Tests {
 
         struct ExpectedToken {
             public readonly TokenKind Kind;
-            public readonly LinearSpan Span;
+            public readonly IndexSpan Span;
             public readonly string Image;
 
-            public ExpectedToken(TokenKind kind, LinearSpan span, string image) {
+            public ExpectedToken(TokenKind kind, IndexSpan span, string image) {
                 Kind = kind;
                 Span = span;
                 Image = image;
@@ -104,9 +104,9 @@ namespace Microsoft.Python.Parsing.Tests {
             AssertEqualTokens(
                 tokens, 
                 new[] { 
-                    new ExpectedToken(TokenKind.Name, new LinearSpan(0, 3), "fob"), 
-                    new ExpectedToken(TokenKind.NewLine, new LinearSpan(3, Environment.NewLine.Length), Environment.NewLine), 
-                    new ExpectedToken(TokenKind.EndOfFile, new LinearSpan(3 + Environment.NewLine.Length, 1), "\\"),
+                    new ExpectedToken(TokenKind.Name, new IndexSpan(0, 3), "fob"), 
+                    new ExpectedToken(TokenKind.NewLine, new IndexSpan(3, Environment.NewLine.Length), Environment.NewLine), 
+                    new ExpectedToken(TokenKind.EndOfFile, new IndexSpan(3 + Environment.NewLine.Length, 1), "\\"),
                 }
             );
 
@@ -118,10 +118,10 @@ namespace Microsoft.Python.Parsing.Tests {
             AssertEqualTokens(
                 tokens,
                 new[] { 
-                    new ExpectedToken(TokenKind.Name, new LinearSpan(0, 3), "fob"), 
-                    new ExpectedToken(TokenKind.NewLine, new LinearSpan(3, Environment.NewLine.Length), Environment.NewLine),
-                    new ExpectedToken(TokenKind.Error, new LinearSpan(3 + Environment.NewLine.Length, 1), "\\"), 
-                    new ExpectedToken(TokenKind.Name, new LinearSpan(4 + Environment.NewLine.Length, 1), "b")
+                    new ExpectedToken(TokenKind.Name, new IndexSpan(0, 3), "fob"), 
+                    new ExpectedToken(TokenKind.NewLine, new IndexSpan(3, Environment.NewLine.Length), Environment.NewLine),
+                    new ExpectedToken(TokenKind.Error, new IndexSpan(3 + Environment.NewLine.Length, 1), "\\"), 
+                    new ExpectedToken(TokenKind.Name, new IndexSpan(4 + Environment.NewLine.Length, 1), "b")
                 }
             );
         }

@@ -25,11 +25,11 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     public static class DocumentReaderExtensions {
-        public static string ReadLinearSpan(this IDocumentReader reader, LinearSpan span)
+        public static string ReadLinearSpan(this IDocumentReader reader, IndexSpan span)
             => reader.Read(span.Start, span.Length);
         public static string ReadRange(this IDocumentReader reader, Range range, PythonAst ast)
-            => reader.ReadLinearSpan(range.ToLinearSpan(ast));
+            => reader.ReadLinearSpan(range.ToIndexSpan(ast));
         public static string ReadSourceSpan(this IDocumentReader reader, SourceSpan span, PythonAst ast)
-            => reader.ReadLinearSpan(span.ToLinearSpan(ast));
+            => reader.ReadLinearSpan(span.ToIndexSpan(ast));
     }
 }

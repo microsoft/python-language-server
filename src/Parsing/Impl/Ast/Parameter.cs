@@ -38,7 +38,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public virtual string/*!*/ Name => NameExpression?.Name ?? string.Empty;
 
         public NameExpression NameExpression { get; }
-        internal LinearSpan NameSpan => NameExpression?.LinearSpan ?? LinearSpan;
+        internal IndexSpan NameSpan => NameExpression?.IndexSpan ?? IndexSpan;
 
         public Expression DefaultValue { get; set; }
 

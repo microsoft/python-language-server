@@ -47,7 +47,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 throw new EditorOperationException(Resources.RenameVariable_CannotRename);
             }
 
-            var definitionSpan = definition.range.ToLinearSpan(tree);
+            var definitionSpan = definition.range.ToIndexSpan(tree);
             var reader = new DocumentReader(entry as IDocument, ProjectFiles.GetPart(definition.uri));
             var originalName = reader.Read(definitionSpan.Start, definitionSpan.Length);
             if (originalName == null) {

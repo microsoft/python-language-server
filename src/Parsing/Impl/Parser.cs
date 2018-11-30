@@ -50,7 +50,7 @@ namespace Microsoft.Python.Parsing {
         private string _privatePrefix;
         private bool _parsingStarted, _allowIncomplete;
         private bool _inLoop, _inFinally, _isGenerator, _inGeneratorExpression;
-        private List<LinearSpan> _returnsWithValue;
+        private List<IndexSpan> _returnsWithValue;
         private int _errorCode;
         private readonly bool _verbatim;                            // true if we're in verbatim mode and the ASTs can be turned back into source code, preserving white space / comments
         private readonly bool _bindReferences;                      // true if we should bind the references in the ASTs
@@ -271,15 +271,11 @@ namespace Microsoft.Python.Parsing {
 
         #region Error Reporting
 
-        private void ReportSyntaxError(TokenWithSpan t) {
-            ReportSyntaxError(t, ErrorCodes.SyntaxError);
-        }
+        private void ReportSyntaxError(TokenWithSpan t) => ReportSyntaxError(t, ErrorCodes.SyntaxError);
 
-        private void ReportSyntaxError(TokenWithSpan t, int errorCode) {
-            ReportSyntaxError(t.Token, t.Span, errorCode, true);
-        }
+        private void ReportSyntaxError(TokenWithSpan t, int errorCode) => ReportSyntaxError(t.Token, t.Span, errorCode, true);
 
-        private void ReportSyntaxError(Token t, LinearSpan span, int errorCode, bool allowIncomplete) {
+        private void ReportSyntaxError(Token t, IndexSpan span, int errorCode, bool allowIncomplete) {
             var start = span.Start;
             var end = span.End;
 
@@ -669,9 +665,9 @@ namespace Microsoft.Python.Parsing {
                     ReportSyntaxError(returnToken.Span.Start, expr.EndIndex, "'return' with argument inside generator");
                 } else {
                     if (_returnsWithValue == null) {
-                        _returnsWithValue = new List<LinearSpan>();
+                        _returnsWithValue = new List<IndexSpan>();
                     }
-                    _returnsWithValue.Add(new LinearSpan(returnToken.Span.Start, expr.EndIndex - returnToken.Span.Start));
+                    _returnsWithValue.Add(new IndexSpan(returnToken.Span.Start, expr.EndIndex - returnToken.Span.Start));
                 }
             }
 
@@ -2265,8 +2261,8 @@ namespace Microsoft.Python.Parsing {
 
             var ret = new LambdaExpression(func);
             func.LambdaExpression = ret;
-            func.SetLoc(func.LinearSpan);
-            ret.SetLoc(func.LinearSpan);
+            func.SetLoc(func.IndexSpan);
+            ret.SetLoc(func.IndexSpan);
             if (_verbatim) {
                 AddPreceedingWhiteSpace(ret, whitespace);
                 AddSecondPreceedingWhiteSpace(ret, colonWhiteSpace);
@@ -4114,7 +4110,7 @@ namespace Microsoft.Python.Parsing {
                                 setMembers.Add(e1);
                             } else {
                                 var slice = new DictKeyOnlyExpression(e1);
-                                slice.SetLoc(e1.LinearSpan);
+                                slice.SetLoc(e1.IndexSpan);
                                 if (_verbatim) {
                                     AddErrorIsIncompleteNode(slice);
                                 }

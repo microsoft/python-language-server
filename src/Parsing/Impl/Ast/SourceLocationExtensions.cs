@@ -22,9 +22,9 @@ namespace Microsoft.Python.Parsing.Ast {
     }
 
     public static class SourceSpanExtensions {
-        public static LinearSpan ToLinearSpan(this SourceSpan span, PythonAst ast)
-            => LinearSpan.FromBounds(ast.LocationToIndex(span.Start), ast.LocationToIndex(span.End));
-        public static LinearSpan ToLinearSpan(this Range range, PythonAst ast)
-            => LinearSpan.FromBounds(ast.LocationToIndex(range.start), ast.LocationToIndex(range.end));
+        public static IndexSpan ToIndexSpan(this SourceSpan span, PythonAst ast)
+            => IndexSpan.FromBounds(ast.LocationToIndex(span.Start), ast.LocationToIndex(span.End));
+        public static IndexSpan ToIndexSpan(this Range range, PythonAst ast)
+            => IndexSpan.FromBounds(ast.LocationToIndex(range.start), ast.LocationToIndex(range.end));
     }
 }

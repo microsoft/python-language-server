@@ -19,7 +19,7 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class Node {
-        private LinearSpan _span;
+        private IndexSpan _span;
 
         internal Node() {
         }
@@ -28,12 +28,12 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public int EndIndex {
             get => _span.End;
-            set => _span = new LinearSpan(_span.Start, value - _span.Start);
+            set => _span = new IndexSpan(_span.Start, value - _span.Start);
         }
 
         public int StartIndex {
             get => _span.Start;
-            set => _span = new LinearSpan(value, 0);
+            set => _span = new IndexSpan(value, 0);
         }
 
         public abstract void Walk(PythonWalker walker);
@@ -119,10 +119,10 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        public void SetLoc(int start, int end) => _span = new LinearSpan(start, end >= start ? end - start : start);
-        public void SetLoc(LinearSpan span) => _span = span;
+        public void SetLoc(int start, int end) => _span = new IndexSpan(start, end >= start ? end - start : start);
+        public void SetLoc(IndexSpan span) => _span = span;
 
-        public LinearSpan LinearSpan {
+        public IndexSpan IndexSpan {
             get => _span;
             set => _span = value;
         }

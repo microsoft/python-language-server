@@ -390,7 +390,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             .EnsureEndsWithWhiteSpace();
 
         private class TokenExt {
-            public TokenExt(Token token, string precedingWhitespace, LinearSpan span, int line, bool isMultiLine,
+            public TokenExt(Token token, string precedingWhitespace, IndexSpan span, int line, bool isMultiLine,
                 TokenExt prev) {
                 Token = token;
                 PrecedingWhitespace = precedingWhitespace;
@@ -401,7 +401,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             public Token Token { get; }
-            public LinearSpan Span { get; }
+            public IndexSpan Span { get; }
             public int Line { get; }
             public TokenExt Inside { get; set; }
             public TokenExt Prev { get; }

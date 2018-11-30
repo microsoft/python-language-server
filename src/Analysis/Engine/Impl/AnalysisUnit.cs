@@ -421,7 +421,7 @@ namespace Microsoft.PythonTools.Analysis {
                     Expression nextExpr;
                     if (!_decoratorCalls.TryGetValue(d, out nextExpr)) {
                         nextExpr = _decoratorCalls[d] = new CallExpression(d, new[] { new Arg(expr) });
-                        nextExpr.SetLoc(d.LinearSpan);
+                        nextExpr.SetLoc(d.IndexSpan);
                     }
                     expr = nextExpr;
                     var decorated = AnalysisSet.Empty;

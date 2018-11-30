@@ -360,7 +360,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
             if (scope is FunctionScope funcScope) {
                 var funcDef = funcScope.Function.FunctionDefinition;
-                var varSpan = v.Location.Span.ToLinearSpan(_unit.Tree);
+                var varSpan = v.Location.Span.ToIndexSpan(_unit.Tree);
                 return funcDef.NameExpression.EndIndex <= varSpan.Start && varSpan.End <= funcDef.HeaderIndex;
             }
             return false;
