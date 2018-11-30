@@ -19,10 +19,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.PythonTools.Analysis.Analyzer;
-using Microsoft.PythonTools.Interpreter;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Interpreter;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class ModuleInfo : AnalysisValue, IReferenceableContainer, IModuleInfo {

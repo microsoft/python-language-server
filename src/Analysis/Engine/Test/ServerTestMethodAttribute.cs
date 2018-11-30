@@ -15,11 +15,11 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Threading.Tasks;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.LanguageServer.Implementation;
-using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Interpreter;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
+using Microsoft.PythonTools.Analysis;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 

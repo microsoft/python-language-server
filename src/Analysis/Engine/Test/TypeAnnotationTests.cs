@@ -24,6 +24,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Values;

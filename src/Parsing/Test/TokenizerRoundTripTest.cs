@@ -19,11 +19,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
-namespace AnalysisTests {
+namespace Microsoft.Python.Parsing.Tests {
     /// <summary>
     /// Test cases to verify that the tokenizer successfully preserves all information for round tripping source code.
     /// </summary>

@@ -26,14 +26,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.LanguageServer.Extensions;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Documentation;
 using Microsoft.PythonTools.Intellisense;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server : ServerBase, ILogger, IPythonLanguageServer, IDisposable {

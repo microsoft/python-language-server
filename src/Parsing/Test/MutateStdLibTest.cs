@@ -9,20 +9,18 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
 using System;
 using System.IO;
-using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Interpreter;
-using Microsoft.Python.Parsing;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
-namespace AnalysisTests {
+namespace Microsoft.Python.Parsing.Tests {
     [TestClass]
     public class MutateStdLibTest {
         public TestContext TestContext { get; set; }

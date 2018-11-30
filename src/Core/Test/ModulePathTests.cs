@@ -17,11 +17,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
-using Microsoft.PythonTools.Analysis;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AnalysisTests {
+namespace Microsoft.Python.Core.Tests {
     [TestClass]
     public class ModulePathTests {
         [TestMethod, Priority(0)]

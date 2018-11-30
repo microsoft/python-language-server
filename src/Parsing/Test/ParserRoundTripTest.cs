@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -18,14 +18,12 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Interpreter;
-using Microsoft.Python.Parsing;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
-namespace AnalysisTests {
+namespace Microsoft.Python.Parsing.Tests {
     /// <summary>
     /// Test cases to verify that the parser successfully preserves all information for round tripping source code.
     /// </summary>
@@ -1686,7 +1684,7 @@ class BaseSet(object):
             TestOneString(version, originalText, filename: filename);
         }
 
-        internal static void TestOneString(
+        public static void TestOneString(
             PythonLanguageVersion version,
             string originalText,
             CodeFormattingOptions format = null,

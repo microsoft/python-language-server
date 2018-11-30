@@ -21,11 +21,11 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
-using Microsoft.PythonTools.Interpreter;
 using Microsoft.Win32;
 
-namespace Microsoft.PythonTools.Analysis {
+namespace Microsoft.Python.Parsing.Tests {
     internal sealed class WindowsPythonInstallPathResolver : IPythonInstallPathResolver {
         private readonly List<InterpreterConfiguration> _registryCache;
 

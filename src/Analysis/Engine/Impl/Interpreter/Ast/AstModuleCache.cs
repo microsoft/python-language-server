@@ -21,9 +21,10 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
-using Microsoft.PythonTools.Analysis;
 using Microsoft.Python.Parsing;
+using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     internal sealed class AstModuleCache {

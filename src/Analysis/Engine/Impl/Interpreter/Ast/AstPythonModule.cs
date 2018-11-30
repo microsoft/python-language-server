@@ -21,8 +21,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.Python.Core;
-using Microsoft.PythonTools.Analysis;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     sealed class AstPythonModule : PythonModuleType, IPythonModule, IProjectEntry, ILocatedMember {

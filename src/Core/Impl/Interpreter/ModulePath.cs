@@ -24,9 +24,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using Microsoft.PythonTools.Interpreter;
 
-namespace Microsoft.PythonTools.Analysis {
+namespace Microsoft.Python.Core.Interpreter {
     public struct ModulePath {
         public static readonly ModulePath Empty = new ModulePath(null, null, null);
 
@@ -684,7 +683,7 @@ namespace Microsoft.PythonTools.Analysis {
             return m.Groups["name"].Value == mod;
         }
 
-        internal static string GetPackageInitPy(string path) {
+        public static string GetPackageInitPy(string path) {
             if (!Directory.Exists(path)) {
                 return null;
             }
@@ -704,7 +703,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
 
-        internal static bool FromBasePathAndName_NoThrow(
+        public static bool FromBasePathAndName_NoThrow(
             string basePath,
             string moduleName,
             Func<string, bool> isPackage,
@@ -784,7 +783,7 @@ namespace Microsoft.PythonTools.Analysis {
             return true;
         }
 
-        internal static bool FromBasePathAndFile_NoThrow(
+        public static bool FromBasePathAndFile_NoThrow(
             string basePath,
             string sourceFile,
             bool isPackage,
@@ -844,7 +843,7 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
 
-        internal static IEnumerable<string> GetParents(string name, bool includeFullName = true) {
+        public static IEnumerable<string> GetParents(string name, bool includeFullName = true) {
             if (string.IsNullOrEmpty(name)) {
                 yield break;
             }

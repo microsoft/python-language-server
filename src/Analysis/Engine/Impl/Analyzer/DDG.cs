@@ -20,8 +20,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Microsoft.Python.Core;
-using Microsoft.PythonTools.Analysis.Values;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
     internal class DDG : PythonWalker {

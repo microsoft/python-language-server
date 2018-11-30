@@ -20,7 +20,7 @@ using System.Globalization;
 using System.Linq;
 using Microsoft.Python.Core;
 
-namespace Microsoft.PythonTools.Interpreter {
+namespace Microsoft.Python.Core.Interpreter {
     public sealed class InterpreterConfiguration : IEquatable<InterpreterConfiguration> {
         private readonly string _description;
         private string _fullDescription;
@@ -96,7 +96,7 @@ namespace Microsoft.PythonTools.Interpreter {
             }
         }
 
-        internal void WriteToDictionary(Dictionary<string, object> properties) {
+        public void WriteToDictionary(Dictionary<string, object> properties) {
             properties[nameof(Id)] = Id;
             properties[nameof(Description)] = _description;
             properties[nameof(InterpreterPath)] = InterpreterPath;

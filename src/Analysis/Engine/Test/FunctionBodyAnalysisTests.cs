@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.FluentAssertions;

@@ -24,7 +24,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.PythonTools.Analysis;
@@ -32,10 +36,8 @@ using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
-using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
-using Microsoft.Python.Core;
 using Ast = Microsoft.Python.Parsing.Ast;
 
 namespace AnalysisTests {

@@ -22,11 +22,12 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
-using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstScrapedPythonModule : PythonModuleType, IPythonModule

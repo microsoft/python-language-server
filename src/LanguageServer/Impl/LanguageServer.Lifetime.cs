@@ -23,8 +23,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
-using Microsoft.PythonTools.Analysis;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 

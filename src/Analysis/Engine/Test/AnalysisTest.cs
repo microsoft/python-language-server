@@ -24,6 +24,8 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.UnitTests.Core.MSTest;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Analyzer;
@@ -31,7 +33,6 @@ using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
-using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 

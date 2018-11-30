@@ -21,11 +21,12 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Interpreter;
 using TestUtilities;
 
 namespace AnalysisTests {

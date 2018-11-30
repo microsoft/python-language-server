@@ -1,23 +1,22 @@
 ﻿<Project>
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RootNamespace>AnalysisTests</RootNamespace>
-    <AssemblyName>Microsoft.Python.Analysis.Engine.Tests</AssemblyName>
+    <RootNamespace>Microsoft.Python.Parsing.Tests</RootNamespace>
+    <AssemblyName>Microsoft.Python.Parsing.Tests</AssemblyName>
   </PropertyGroup>
   <PropertyGroup>
     <!-- 
       1701, 1702 - "You may need to supply assembly policy"
-      1998 - "This async method lacks 'await'"
     -->
-    <NoWarn>1701;1702;1998;$(NoWarn)</NoWarn>
+    <NoWarn>1701;1702;$(NoWarn)</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <CodeAnalysisRuleSet>..\..\..\PLS.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <CodeAnalysisRuleSet>..\..\..\PLS.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <Import Project="..\..\..\..\build\NetStandard.settings" />
+  <Import Project="..\..\..\build\NetStandard.settings" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
     <!--Mocks-->
@@ -38,13 +37,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Core\Impl\Microsoft.Python.Core.csproj" />
-    <ProjectReference Include="..\..\..\LanguageServer\Impl\Microsoft.Python.LanguageServer.csproj" />
-    <ProjectReference Include="..\..\..\Parsing\Impl\Microsoft.Python.Parsing.csproj" />
-    <ProjectReference Include="..\..\..\Parsing\Test\Microsoft.Python.Parsing.Tests.csproj" />
-    <ProjectReference Include="..\..\..\UnitTests\Core\Impl\UnitTests.Core.csproj" />
-    <ProjectReference Include="..\Impl\Microsoft.Python.Analysis.Engine.csproj" />
+    <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Core.csproj" />
+    <ProjectReference Include="..\..\UnitTests\Core\Impl\UnitTests.Core.csproj" />
+    <ProjectReference Include="..\Impl\Microsoft.Python.Parsing.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-  <Import Project="..\..\..\..\build\NetStandard.targets" />
+  <Import Project="..\..\..\build\NetStandard.targets" />
 </Project>

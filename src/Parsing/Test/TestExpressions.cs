@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace AnalysisTests {
+namespace Microsoft.Python.Parsing.Tests {
     public static class TestExpressions {
         public static IEnumerable<string> Snippets2x {
             get {

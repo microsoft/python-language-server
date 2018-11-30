@@ -20,9 +20,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Microsoft.PythonTools.Interpreter;
+using Microsoft.Python.Core.Interpreter;
 
-namespace Microsoft.PythonTools.Analysis {
+namespace Microsoft.Python.Parsing.Tests {
     internal class UnixPythonInstallPathResolver : IPythonInstallPathResolver {
         private static readonly Regex _pythonNameRegex = new Regex(@"^python(\d+(.\d+)?)?$", RegexOptions.Compiled);
         private readonly Dictionary<Version, InterpreterConfiguration> _coreCache;

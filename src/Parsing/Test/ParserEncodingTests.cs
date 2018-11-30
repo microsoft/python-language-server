@@ -19,7 +19,7 @@ using System.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AnalysisTests {
+namespace Microsoft.Python.Parsing.Tests {
     /// <summary>
     /// Test cases for parser written in a continuation passing style.
     /// </summary>

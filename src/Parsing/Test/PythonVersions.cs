@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -17,11 +17,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.PythonTools.Interpreter;
-using Microsoft.Python.Parsing;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Microsoft.PythonTools.Analysis {
+namespace Microsoft.Python.Parsing.Tests {
     public static class PythonVersions {
         public static readonly InterpreterConfiguration Python27 = GetCPythonVersion(PythonLanguageVersion.V27, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Python35 = GetCPythonVersion(PythonLanguageVersion.V35, InterpreterArchitecture.x86);

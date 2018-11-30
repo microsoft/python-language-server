@@ -17,8 +17,8 @@
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
-using Microsoft.PythonTools.Analysis;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 

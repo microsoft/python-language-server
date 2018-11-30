@@ -23,14 +23,13 @@ using System.Numerics;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
-using Microsoft.PythonTools.Interpreter;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
-namespace AnalysisTests {
+namespace Microsoft.Python.Parsing.Tests {
     /// <summary>
     /// Test cases for parser written in a continuation passing style.
     /// </summary>
