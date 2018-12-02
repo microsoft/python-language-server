@@ -33,31 +33,30 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
         private struct ImmutableArray<T> : IEnumerable<T> {
             private readonly T[] _items;
             private readonly int _size; // Size of the part of array that is used. Equal or less than _items.Length
-            private readonly int _count; // Length of the ImmutableArray. Equal or less than _size.
 
             private ImmutableArray(T[] items, int size, int count) {
                 _items = items;
                 _size = size;
-                _count = count;
+                Count = count;
             }
 
             public static ImmutableArray<T> Empty { get; } = new ImmutableArray<T>(Array.Empty<T>(), 0, 0);
 
             public T this[int index] => _items[index];
-            public int Count => _count;
+            public int Count { get; } // Length of the ImmutableArray. Equal or less than _size.
 
             [Pure]
             public ImmutableArray<T> Add(T item) {
-                var newCount = _count + 1;
+                var newCount = Count + 1;
                 var newItems = _items;
 
-                if (_size != _count || newCount > _items.Length) {
+                if (_size != Count || newCount > _items.Length) {
                     var capacity = GetCapacity(newCount);
                     newItems = new T[capacity];
-                    Array.Copy(_items, 0, newItems, 0, _count);
+                    Array.Copy(_items, 0, newItems, 0, Count);
                 }
 
-                newItems[_count] = item;
+                newItems[Count] = item;
                 return new ImmutableArray<T>(newItems, newCount, newCount);
             }
 
@@ -67,22 +66,22 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                     return this;
                 }
 
-                var newCount = _count + items.Length;
+                var newCount = Count + items.Length;
                 var newItems = _items;
 
-                if (_size != _count || newCount > _items.Length) {
+                if (_size != Count || newCount > _items.Length) {
                     var capacity = GetCapacity(newCount);
                     newItems = new T[capacity];
-                    Array.Copy(_items, 0, newItems, 0, _count);
+                    Array.Copy(_items, 0, newItems, 0, Count);
                 }
 
-                Array.Copy(items, 0, newItems, _count, items.Length);
+                Array.Copy(items, 0, newItems, Count, items.Length);
                 return new ImmutableArray<T>(newItems, newCount, newCount);
             }
 
             [Pure]
             public ImmutableArray<T> RemoveAt(int index) {
-                var newCount = _count - 1;
+                var newCount = Count - 1;
                 if (index == newCount) {
                     return new ImmutableArray<T>(_items, _size, newCount);
                 }
@@ -100,15 +99,15 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
 
             [Pure]
             public ImmutableArray<T> TrimEnd(int trimLength) 
-                => trimLength >= _count ? Empty : new ImmutableArray<T>(_items, _size, _count - trimLength);
+                => trimLength >= Count ? Empty : new ImmutableArray<T>(_items, _size, Count - trimLength);
 
             [Pure]
             public ImmutableArray<T> ReplaceAt(int index, T value) {
-                var capacity = GetCapacity(_count);
+                var capacity = GetCapacity(Count);
                 var newArray = new T[capacity];
-                Array.Copy(_items, newArray, _count);
+                Array.Copy(_items, newArray, Count);
                 newArray[index] = value;
-                return new ImmutableArray<T>(newArray, _count, _count);
+                return new ImmutableArray<T>(newArray, Count, Count);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -131,7 +130,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             }
 
             private bool Equals(ImmutableArray<T> other) {
-                return Equals(_items, other._items) && _size == other._size && _count == other._count;
+                return Equals(_items, other._items) && _size == other._size && Count == other.Count;
             }
 
             public override bool Equals(object obj) => obj is ImmutableArray<T> other && Equals(other);
@@ -140,7 +139,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 unchecked {
                     var hashCode = (_items != null ? _items.GetHashCode() : 0);
                     hashCode = (hashCode * 397) ^ _size;
-                    hashCode = (hashCode * 397) ^ _count;
+                    hashCode = (hashCode * 397) ^ Count;
                     return hashCode;
                 }
             }
@@ -178,7 +177,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 public bool MoveNext() {
                     var localList = _owner;
 
-                    if (_index < localList._count) {
+                    if (_index < localList.Count) {
                         Current = localList._items[_index];
                         _index++;
                         return true;

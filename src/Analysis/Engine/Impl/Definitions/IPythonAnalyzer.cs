@@ -73,14 +73,6 @@ namespace Microsoft.PythonTools.Analysis {
         IMemberResult[] GetModules();
 
         /// <summary>
-        /// Searches all modules which match the given name and searches in the modules
-        /// for top-level items which match the given name.  Returns a list of all the
-        /// available names fully qualified to their name.  
-        /// </summary>
-        /// <param name="name"></param>
-        IEnumerable<ExportedMemberInfo> FindNameInAllModules(string name);
-
-        /// <summary>
         /// Returns the interpreter that the analyzer is using.
         /// This property is thread safe.
         /// </summary>

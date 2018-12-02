@@ -100,7 +100,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposableBag
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
-                        (ext as IDisposable)?.Dispose();
+                        ext?.Dispose();
                     }
                     foreach (var ext in _oldExtensions.Values) {
                         (ext as IDisposable)?.Dispose();
@@ -109,6 +109,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(ProjectFiles)
                 .Add(() => Analyzer?.Dispose())
                 .Add(AnalysisQueue)
+                .Add(_editorFiles)
                 .Add(() => _shutdownCts.Cancel());
         }
 

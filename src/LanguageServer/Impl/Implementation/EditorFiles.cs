@@ -26,10 +26,10 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Intellisense;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
-    internal sealed class EditorFiles {
+    internal sealed class EditorFiles : IDisposable {
         private readonly ConcurrentDictionary<Uri, EditorFile> _files = new ConcurrentDictionary<Uri, EditorFile>();
         private readonly Server _server;
-        private readonly SynchronizationContext _syncContext;
+        private readonly SingleThreadSynchronizationContext _syncContext;
 
         public EditorFiles(Server server) {
             _server = server;
@@ -46,6 +46,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 GetDocument(entry.DocumentUri).UpdateAnalysisDiagnostics(entry, -1);
             }
         }
+
+        public void Dispose() => _syncContext.Dispose();
     }
 
     internal sealed class EditorFile {

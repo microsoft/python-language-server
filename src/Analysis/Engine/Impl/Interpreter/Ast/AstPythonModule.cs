@@ -21,6 +21,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.DependencyResolution;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -50,7 +51,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             _foundChildModules = !ModulePath.IsInitPyFile(FilePath);
 
             var walker = new AstAnalysisWalker(
-                interpreter, ast, this, filePath, DocumentUri, _members,
+                interpreter,
+                interpreter is AstPythonInterpreter astPythonInterpreter ? astPythonInterpreter.CurrentPathResolver : new PathResolverSnapshot(ast.LanguageVersion),
+                ast, this, filePath, DocumentUri, _members,
                 includeLocationInfo: true,
                 warnAboutUndefinedValues: true,
                 suppressBuiltinLookup: false
@@ -60,15 +63,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             walker.Complete();
 
             ParseErrors = parseErrors?.ToArray();
-        }
-
-        internal void AddChildModule(string name, IPythonModule module) {
-            lock (_childModules) {
-                _childModules.Add(name);
-            }
-            lock (_members) {
-                _members[name] = module;
-            }
         }
 
         public void Dispose() { }
@@ -127,9 +121,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     // We've already checked whether this module may have children
                     // so don't worry about checking again here.
                     _foundChildModules = true;
-                    foreach (var m in GetChildModules(FilePath, Name, _interpreter)) {
-                        _members[m] = new AstNestedPythonModule(_interpreter, m, new[] { Name + "." + m });
-                        _childModules.Add(m);
+                    foreach (var childModuleName in GetChildModules(FilePath, Name, _interpreter)) {
+                        _members[childModuleName] = new AstNestedPythonModule(_interpreter, Name + "." + childModuleName);
+                        _childModules.Add(childModuleName);
                     }
                 }
                 return _childModules.ToArray();

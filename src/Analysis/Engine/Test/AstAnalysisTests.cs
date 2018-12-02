@@ -393,7 +393,6 @@ class BankAccount(object):
         }
 
         [TestMethod, Priority(0)]
-
         public async Task AstTypeStubPaths_MergeStubsPath() {
             using (var server = await CreateServerAsync()) {
                 var analysis = await GetStubBasedAnalysis(
@@ -476,6 +475,7 @@ class BankAccount(object):
             Console.WriteLine("Using {0}", version.InterpreterPath);
             using (var server = await CreateServerAsync(version)) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync("import numpy.core.numeric as NP; ndarray = NP.ndarray");
+                                                                        //1234567890123456789012345678901234
                 await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
                 var hover = await server.SendHover(uri, 0, 34);
                 hover.Should().HaveTypeName("numpy.core.multiarray.ndarray");
@@ -1052,7 +1052,7 @@ if sys.version_info >= (2, 7):
                 Console.WriteLine("Testing with {0}", ver.InterpreterPath);
 
                 var interpreter = InterpreterFactoryCreator.CreateAnalysisInterpreterFactory(ver.Version).CreateInterpreter();
-                var entry = PythonModuleLoader.FromStream(interpreter, new MemoryStream(Encoding.ASCII.GetBytes(code)), "testmodule.pyi", ver.Version.ToLanguageVersion());
+                var entry = PythonModuleLoader.FromStream(interpreter, new MemoryStream(Encoding.ASCII.GetBytes(code)), TestData.GetTestSpecificPath("testmodule.pyi"), ver.Version.ToLanguageVersion(), null);
 
                 var expected = new List<string>();
                 var pythonVersion = ver.Version.ToLanguageVersion();

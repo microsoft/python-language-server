@@ -54,16 +54,12 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             public static Node CreateModule(string name, string modulePath, string fullModuleName)
                 => new Node(name, ImmutableArray<Node>.Empty, modulePath, fullModuleName);
 
+            public static Node CreatePackage(string name, Node child)
+                => new Node(name, ImmutableArray<Node>.Empty.Add(child), null, null);
+
             public static Node CreateBuiltinModule(string name)
                 => new Node(name, ImmutableArray<Node>.Empty, null, name);
-
-            public Node(string name, Node child) {
-                Name = name;
-                Children = ImmutableArray<Node>.Empty.Add(child);
-                ModulePath = null;
-                FullModuleName = null;
-            }
-
+            
             public Node ToModuleNode(string modulePath, string fullModuleName) => new Node(Name, Children, modulePath, fullModuleName);
             public Node ToPackage() => new Node(Name, Children, null, null);
             public Node AddChild(Node child) => new Node(Name, Children.Add(child), ModulePath, FullModuleName);

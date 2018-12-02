@@ -227,10 +227,6 @@ namespace Microsoft.PythonTools.Analysis {
             foreach (var keyValue in _modules) {
                 unresolvedNames?.Remove(keyValue.Key);
 
-                if (keyValue.Value.Module is Interpreter.Ast.AstNestedPythonModule anpm && !anpm.IsLoaded) {
-                    continue;
-                }
-
                 unloadedNames.Remove(keyValue.Key);
                 yield return new KeyValuePair<string, ModuleLoadState>(keyValue.Key, new InitializedModuleLoadState(keyValue.Value));
             }

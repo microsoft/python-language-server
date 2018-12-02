@@ -20,19 +20,15 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
         public string FullName { get; }
         public string RootPath { get; }
         public string ModulePath { get; }
+        public bool IsCompiled { get; }
+        public bool IsBuiltin => IsCompiled && ModulePath == null;
 
-        public ModuleImport(string name, string fullName, string rootPath, string modulePath) {
+        public ModuleImport(string name, string fullName, string rootPath, string modulePath, bool isCompiled) {
             Name = name;
             FullName = fullName;
             RootPath = rootPath;
             ModulePath = modulePath;
-        }
-    }
-
-    internal class ImportNotFound : IImportSearchResult {
-        public string FullName { get; }
-        public ImportNotFound(string fullName) {
-            FullName = fullName;
+            IsCompiled = isCompiled;
         }
     }
 }

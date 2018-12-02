@@ -35,26 +35,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             PythonLanguageVersion langVersion,
             string moduleFullName
         ) {
-            Stream stream = null;
-            try {
-                if (Directory.Exists(sourceFile)) {
-                    stream = new MemoryStream(); // Module without __init__.py, create empty stream
-                } else {
-                    stream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                }
+            using (var stream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                 return FromStream(interpreter, stream, sourceFile, langVersion, moduleFullName);
-            } finally {
-                stream?.Dispose();
             }
-        }
-
-        public static IPythonModule FromStream(
-            IPythonInterpreter interpreter,
-            Stream sourceFile,
-            string fileName,
-            PythonLanguageVersion langVersion
-        ) {
-            return FromStream(interpreter, sourceFile, fileName, langVersion, null);
         }
 
         public static IPythonModule FromStream(

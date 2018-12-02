@@ -249,57 +249,6 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         }
 
         /// <summary>
-        /// Resolves and returns an imported member.
-        /// </summary>
-        /// <param name="module">
-        /// The module to import or import from.
-        /// </param>
-        /// <param name="attribute">
-        /// An optional attribute (already split at the dots) to
-        /// </param>
-        /// <param name="node">
-        /// The import location. If <paramref name="addRef"/> is true,
-        /// this location will be marked as a reference of the imported
-        /// value.
-        /// </param>
-        /// <param name="addRef">
-        /// True to make <paramref name="node"/> a reference to the
-        /// imported member.
-        /// </param>
-        /// <param name="linkToName">
-        /// If not null, the name in the current scope to link to the
-        /// value in the module. This is only used when 
-        /// <paramref name="attribute"/> contains one element.
-        /// </param>
-        /// <returns>The imported member, or null.</returns>
-        private IAnalysisSet GetImportedModuleOrMember(ModuleReference module, IReadOnlyList<string> attribute, bool addRef, Node node, NameExpression nameReference, string linkToName) {
-            if (module?.Module == null) {
-                return null;
-            }
-
-            if (attribute == null || attribute.Count == 0) {
-                return module.AnalysisModule;
-            }
-
-            var value = module.Module.GetModuleMember(node, _unit, attribute[0], addRef, Scope, linkToName);
-
-            if (attribute.Count == 1) {
-                if (nameReference != null) {
-                    module.Module.GetModuleMember(nameReference, _unit, attribute[0], addRef, null, null);
-                }
-            } else {
-                foreach (var n in attribute.Skip(1)) {
-                    if (value.IsNullOrEmpty()) {
-                        return null;
-                    }
-                    value = value.GetMember(node, _unit, n);
-                }
-            }
-
-            return value.IsNullOrEmpty() ? null : value;
-        }
-
-        /// <summary>
         /// Creates the variable for containing an imported member.
         /// </summary>
         /// <param name="variableName">The name of the variable.</param>
@@ -584,13 +533,14 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
             var nameParts = possibleModuleImport.RemainingNameParts;
             for (var i = 0; i < nameParts.Count; i++) {
                 var namePart = nameParts[i];
-                if (!module.Scope.TryGetVariable(namePart, out var variable) || !variable.Types.OfType<IModule>().Any()) {
+                var childModule = module.GetChildPackage(null, namePart);
+                if (childModule == null) {
                     var unresolvedModuleName = string.Join(".", nameParts.Take(i + 1).Prepend(fullName));
                     MakeUnresolvedImport(unresolvedModuleName, importNode);
                     return false;
                 }
 
-                module = variable.Types.OfType<IModule>().First();
+                module = childModule;
                 module.Imported(_unit);
             }
 

@@ -179,7 +179,7 @@ class Derived(Base):
                 hover._typeNames.Should().OnlyContain(typeNames.ToArray());
             }
             if (range.HasValue) {
-                hover.range.Should().Be((Range?)range);
+                hover.range.Should().Be(range.Value);
             }
         }
         private static InterpreterConfiguration DefaultV3 {

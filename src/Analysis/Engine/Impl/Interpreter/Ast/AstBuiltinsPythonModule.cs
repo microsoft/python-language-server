@@ -74,25 +74,24 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return new List<string> { "-B", "-E", sb };
         }
 
-        protected override PythonWalker PrepareWalker(IPythonInterpreter interpreter, PythonAst ast) {
+        protected override PythonWalker PrepareWalker(AstPythonInterpreter interpreter, PythonAst ast) {
             string filePath = null;
 #if DEBUG
-            if (interpreter is AstPythonInterpreter pythonInterpreter) {
-                filePath = pythonInterpreter.ModuleCache.GetCacheFilePath(pythonInterpreter.InterpreterPath ?? "python.exe");    
-            }
-
+            filePath = interpreter.ModuleCache.GetCacheFilePath(interpreter.InterpreterPath ?? "python.exe");
             const bool includeLocations = true;
 #else
             const bool includeLocations = false;
 #endif
 
             var walker = new AstAnalysisWalker(
-                interpreter, ast, this, filePath, null, _members, 
-                includeLocations, 
-                warnAboutUndefinedValues: true, 
+                interpreter, interpreter.CurrentPathResolver, ast, this, filePath, null, _members,
+                includeLocations,
+                warnAboutUndefinedValues: true,
                 suppressBuiltinLookup: true
-            );
-            walker.CreateBuiltinTypes = true;
+            ) {
+                CreateBuiltinTypes = true
+            };
+
             return walker;
         }
 

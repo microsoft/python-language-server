@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -22,22 +23,28 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.DependencyResolution;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     internal sealed class AstModuleResolution {
         private static IReadOnlyDictionary<string, string> _emptyModuleSet = new Dictionary<string, string>();
-        private readonly AstModuleCache _moduleCache;
+        private readonly IPythonInterpreter _interpreter;
+        private readonly ConcurrentDictionary<string, IPythonModule> _modules;
+        private readonly AstModuleCache _astModuleCache;
         private readonly InterpreterConfiguration _configuration;
         private readonly AnalysisLogWriter _log;
         private readonly bool _requireInitPy;
 
         private IReadOnlyDictionary<string, string> _searchPathPackages;
         private IReadOnlyList<string> _searchPaths;
+        public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_configuration.Version.ToLanguageVersion());
 
-        public AstModuleResolution(AstModuleCache moduleCache, InterpreterConfiguration configuration, AnalysisLogWriter log) {
-            _moduleCache = moduleCache;
+        public AstModuleResolution(IPythonInterpreter interpreter, ConcurrentDictionary<string, IPythonModule> modules, AstModuleCache astModuleCache, InterpreterConfiguration configuration, AnalysisLogWriter log) {
+            _interpreter = interpreter;
+            _modules = modules;
+            _astModuleCache = astModuleCache;
             _configuration = configuration;
             _log = log;
             _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_configuration.Version);
@@ -77,27 +84,19 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             if (_configuration.SearchPaths.Any()) {
                 return _configuration.SearchPaths;
             }
+
             if (!File.Exists(_configuration.InterpreterPath)) {
                 return Array.Empty<string>();
             }
 
-            _log?.Log(TraceLevel.Info, "GetCurrentSearchPaths", _configuration.InterpreterPath, _moduleCache.SearchPathCachePath);
+            _log?.Log(TraceLevel.Info, "GetCurrentSearchPaths", _configuration.InterpreterPath, _astModuleCache.SearchPathCachePath);
             try {
-                var paths = await PythonLibraryPath.GetDatabaseSearchPathsAsync(_configuration, _moduleCache.SearchPathCachePath).ConfigureAwait(false);
+                var paths = await PythonLibraryPath.GetDatabaseSearchPathsAsync(_configuration, _astModuleCache.SearchPathCachePath).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
                 return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
             } catch (InvalidOperationException) {
                 return Array.Empty<string>();
             }
-        }
-
-        public async Task<IReadOnlyDictionary<string, string>> GetPackagesFromSearchPathsAsync(IReadOnlyList<string> searchPaths, CancellationToken cancellationToken) {
-            if (searchPaths == null || searchPaths.Count == 0) {
-                return _emptyModuleSet;
-            }
-
-            _log?.Log(TraceLevel.Verbose, "GetImportableModulesAsync");
-            return await GetImportableModulesAsync(searchPaths, cancellationToken);
         }
 
         public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken) {
@@ -119,7 +118,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return packageDict;
         }
 
-        public ModulePath? FindModuleInSearchPath(IReadOnlyList<string> searchPaths, IReadOnlyDictionary<string, string> packages, string name) {
+        private ModulePath? FindModuleInSearchPath(IReadOnlyList<string> searchPaths, IReadOnlyDictionary<string, string> packages, string name) {
             if (searchPaths == null || searchPaths.Count == 0) {
                 return null;
             }
@@ -151,15 +150,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             return null;
         }
-
-        public async Task<ModulePath?> FindModuleInSearchPathAsync(string name, CancellationToken cancellationToken) {
-            var searchPaths = await GetSearchPathsAsync(cancellationToken).ConfigureAwait(false);
-            var packages = await GetImportableModulesAsync(cancellationToken).ConfigureAwait(false);
-            return FindModuleInSearchPath(searchPaths, packages, name);
-        }
-
-        public async Task<TryImportModuleResult> TryImportModuleAsync(string name, TryImportModuleContext context, CancellationToken cancellationToken) {
-            IPythonModule module = null;
+        
+        public async Task<TryImportModuleResult> TryImportModuleAsync(string name, PathResolverSnapshot pathResolver, IReadOnlyList<string> typeStubPaths, bool mergeTypeStubPackages, CancellationToken cancellationToken) {
             if (string.IsNullOrEmpty(name)) {
                 return TryImportModuleResult.ModuleNotFound;
             }
@@ -167,94 +159,80 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             Debug.Assert(!name.EndsWithOrdinal("."), $"{name} should not end with '.'");
 
             // Handle builtins explicitly
-            if (name == BuiltinTypeId.Unknown.GetModuleName(_configuration.Version.ToLanguageVersion())) {
+            if (name == BuiltinModuleName) {
                 Debug.Fail($"Interpreters must handle import {name} explicitly");
                 return TryImportModuleResult.NotSupported;
             }
 
-            var modules = context?.ModuleCache;
-            SentinelModule sentinelValue = null;
-
-            if (modules != null) {
-                // Return any existing module
-                if (modules.TryGetValue(name, out module) && module != null) {
-                    if (module is SentinelModule sentinelModule) {
-                        // If we are importing this module on another thread, allow
-                        // time for it to complete. This does not block if we are
-                        // importing on the current thread or the module is not
-                        // really being imported.
-                        try {
-                            module = await sentinelModule.WaitForImportAsync(cancellationToken);
-                        } catch (OperationCanceledException) {
-                            _log?.Log(TraceLevel.Warning, "ImportTimeout", name);
-                            return TryImportModuleResult.Timeout;
-                        }
-
-                        if (module is SentinelModule) {
-                            _log?.Log(TraceLevel.Warning, "RecursiveImport", name);
-                        }
+            // Return any existing module
+            if (_modules.TryGetValue(name, out var module) && module != null) {
+                if (module is SentinelModule sentinelModule) {
+                    // If we are importing this module on another thread, allow
+                    // time for it to complete. This does not block if we are
+                    // importing on the current thread or the module is not
+                    // really being imported.
+                    try {
+                        module = await sentinelModule.WaitForImportAsync(cancellationToken);
+                    } catch (OperationCanceledException) {
+                        _log?.Log(TraceLevel.Warning, "ImportTimeout", name);
+                        return TryImportModuleResult.Timeout;
                     }
+
+                    if (module is SentinelModule) {
+                        _log?.Log(TraceLevel.Warning, "RecursiveImport", name);
+                    }
+                }
+                return new TryImportModuleResult(module);
+            }
+
+            // Set up a sentinel so we can detect recursive imports
+            var sentinelValue = new SentinelModule(name, true);
+            if (!_modules.TryAdd(name, sentinelValue)) {
+                // Try to get the new module, in case we raced with a .Clear()
+                if (_modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
                     return new TryImportModuleResult(module);
                 }
-
-                // Set up a sentinel so we can detect recursive imports
-                sentinelValue = new SentinelModule(name, true);
-                if (!modules.TryAdd(name, sentinelValue)) {
-                    // Try to get the new module, in case we raced with a .Clear()
-                    if (modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
-                        return new TryImportModuleResult(module);
-                    }
-                    // If we reach here, the race is too complicated to recover
-                    // from. Signal the caller to try importing again.
-                    _log?.Log(TraceLevel.Warning, "RetryImport", name);
-                    return TryImportModuleResult.NeedRetry;
-                }
+                // If we reach here, the race is too complicated to recover
+                // from. Signal the caller to try importing again.
+                _log?.Log(TraceLevel.Warning, "RetryImport", name);
+                return TryImportModuleResult.NeedRetry;
             }
 
             // Do normal searches
             if (!string.IsNullOrEmpty(_configuration?.InterpreterPath)) {
                 try {
-                    module = await ImportFromSearchPathsAsync(name, context, cancellationToken);
+                    module = ImportFromSearchPaths(name, pathResolver);
                 } catch (OperationCanceledException) {
                     _log?.Log(TraceLevel.Error, "ImportTimeout", name, "ImportFromSearchPaths");
                     return TryImportModuleResult.Timeout;
                 }
-
-                if (module == null) {
-                    module = ImportFromBuiltins(name, context.BuiltinModule as AstBuiltinsPythonModule);
-                }
             }
+
             if (module == null) {
-                module = _moduleCache.ImportFromCache(name, context);
+                module = _astModuleCache.ImportFromCache(name, _interpreter);
             }
 
             // Also search for type stub packages if enabled and we are not a blacklisted module
-            if (module != null && context?.TypeStubPaths != null && module.Name != "typing") {
-                var tsModule = await ImportFromTypeStubsAsync(module.Name, context, cancellationToken);
+            if (module != null && typeStubPaths != null && module.Name != "typing") {
+                var tsModule = ImportFromTypeStubs(module.Name, typeStubPaths, pathResolver);
                 if (tsModule != null) {
-                    if (context.MergeTypeStubPackages) {
-                        module = AstPythonMultipleMembers.CombineAs<IPythonModule>(module, tsModule);
-                    } else {
-                        module = tsModule;
-                    }
+                    module = mergeTypeStubPackages ? AstPythonMultipleMembers.CombineAs<IPythonModule>(module, tsModule) : tsModule;
                 }
             }
 
-            if (modules != null) {
-                // Replace our sentinel, or if we raced, get the current
-                // value and abandon the one we just created.
-                if (!modules.TryUpdate(name, module, sentinelValue)) {
-                    // Try to get the new module, in case we raced
-                    if (modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
-                        return new TryImportModuleResult(module);
-                    }
-                    // If we reach here, the race is too complicated to recover
-                    // from. Signal the caller to try importing again.
-                    _log?.Log(TraceLevel.Warning, "RetryImport", name);
-                    return TryImportModuleResult.NeedRetry;
+            // Replace our sentinel, or if we raced, get the current
+            // value and abandon the one we just created.
+            if (!_modules.TryUpdate(name, module, sentinelValue)) {
+                // Try to get the new module, in case we raced
+                if (_modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
+                    return new TryImportModuleResult(module);
                 }
-                sentinelValue.Complete(module);
+                // If we reach here, the race is too complicated to recover
+                // from. Signal the caller to try importing again.
+                _log?.Log(TraceLevel.Warning, "RetryImport", name);
+                return TryImportModuleResult.NeedRetry;
             }
+            sentinelValue.Complete(module);
 
             return new TryImportModuleResult(module);
         }
@@ -273,37 +251,25 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return new string[0];
         }
 
-        private async Task<IPythonModule> ImportFromTypeStubsAsync(string name, TryImportModuleContext context, CancellationToken cancellationToken) {
-            var mp = FindModuleInSearchPath(context.TypeStubPaths, null, name);
+        private IPythonModule ImportFromTypeStubs(string name, IReadOnlyList<string> typeStubPaths, PathResolverSnapshot pathResolver) {
+            var mp = FindModuleInSearchPath(typeStubPaths, null, name);
 
             if (mp == null) {
-                int i = name.IndexOf('.');
+                var i = name.IndexOf('.');
                 if (i == 0) {
                     Debug.Fail("Invalid module name");
                     return null;
                 }
-                var stubName = i < 0 ? (name + "-stubs") : (name.Remove(i)) + "-stubs" + name.Substring(i);
-                ModulePath? stubMp = null;
-                if (context.FindModuleInUserSearchPathAsync != null) {
-                    try {
-                        stubMp = await context.FindModuleInUserSearchPathAsync(stubName, cancellationToken);
-                    } catch (Exception ex) {
-                        _log?.Log(TraceLevel.Error, "Exception", ex.ToString());
-                        _log?.Flush();
-                        return null;
-                    }
-                }
-                if (stubMp == null) {
-                    stubMp = await FindModuleInSearchPathAsync(stubName, cancellationToken);
-                }
 
-                if (stubMp != null) {
-                    mp = new ModulePath(name, stubMp?.SourceFile, stubMp?.LibraryPath);
+                foreach (var stubPath in pathResolver.GetPossibleModuleStubPaths(name)) {
+                    if (File.Exists(stubPath)) {
+                        return PythonModuleLoader.FromTypeStub(_interpreter, stubPath, _configuration.Version.ToLanguageVersion(), name);
+                    }
                 }
             }
 
-            if (mp == null && context.TypeStubPaths != null && context.TypeStubPaths.Count > 0) {
-                mp = FindModuleInSearchPath(context.TypeStubPaths.SelectMany(GetTypeShedPaths).ToArray(), null, name);
+            if (mp == null && typeStubPaths != null && typeStubPaths.Count > 0) {
+                mp = FindModuleInSearchPath(typeStubPaths.SelectMany(GetTypeShedPaths).ToArray(), null, name);
             }
 
             if (mp == null) {
@@ -316,7 +282,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             _log?.Log(TraceLevel.Verbose, "ImportTypeStub", mp?.FullName, mp?.SourceFile);
-            return PythonModuleLoader.FromTypeStub(context.Interpreter, mp?.SourceFile, _configuration.Version.ToLanguageVersion(), mp?.FullName);
+            return PythonModuleLoader.FromTypeStub(_interpreter, mp?.SourceFile, _configuration.Version.ToLanguageVersion(), mp?.FullName);
         }
 
         private IEnumerable<string> GetTypeShedPaths(string path) {
@@ -333,70 +299,31 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
         }
 
-        private IPythonModule ImportFromBuiltins(string name, AstBuiltinsPythonModule builtinModule) {
-            if (builtinModule == null) {
-                return null;
-            }
-            var bmn = builtinModule.GetAnyMember("__builtin_module_names__") as AstPythonStringLiteral;
-            var names = bmn?.Value ?? string.Empty;
-            // Quick substring check
-            if (!names.Contains(name)) {
-                return null;
-            }
-            // Proper split/trim check
-            if (!names.Split(',').Select(n => n.Trim()).Contains(name)) {
-                return null;
-            }
-
-            _log?.Log(TraceLevel.Info, "ImportBuiltins", name, _configuration.InterpreterPath);
-
-            try {
-                return new AstBuiltinPythonModule(name, _configuration.InterpreterPath);
-            } catch (ArgumentNullException) {
-                Debug.Fail("No factory means cannot import builtin modules");
-                return null;
-            }
-        }
-
-        private async Task<IPythonModule> ImportFromSearchPathsAsync(string name, TryImportModuleContext context, CancellationToken cancellationToken) {
-            ModulePath? mmp = null;
-            if (context.FindModuleInUserSearchPathAsync != null) {
-                try {
-                    mmp = await context.FindModuleInUserSearchPathAsync(name, cancellationToken);
-                } catch (Exception ex) {
-                    _log?.Log(TraceLevel.Error, "Exception", ex.ToString());
-                    _log?.Flush();
-                    return null;
-                }
-            }
-
-            if (!mmp.HasValue) {
-                mmp = await FindModuleInSearchPathAsync(name, cancellationToken);
-            }
-
-            if (!mmp.HasValue) {
+        private IPythonModule ImportFromSearchPaths(string name, PathResolverSnapshot pathResolver) {
+            var moduleImport = pathResolver.GetModuleImportFromModuleName(name);
+            if (moduleImport == null) {
                 _log?.Log(TraceLevel.Verbose, "ImportNotFound", name);
                 return null;
             }
 
-            var mp = mmp.Value;
-            IPythonModule module;
-
-            if (mp.IsCompiled) {
-                _log?.Log(TraceLevel.Verbose, "ImportScraped", mp.FullName, mp.SourceFile);
-                module = new AstScrapedPythonModule(mp.FullName, mp.SourceFile);
-            } else {
-                _log?.Log(TraceLevel.Verbose, "Import", mp.FullName, mp.SourceFile);
-                module = PythonModuleLoader.FromFile(context.Interpreter, mp.SourceFile, _configuration.Version.ToLanguageVersion(), mp.FullName);
+            if (moduleImport.IsBuiltin) {
+                _log?.Log(TraceLevel.Info, "ImportBuiltins", name, _configuration.InterpreterPath);
+                return new AstBuiltinPythonModule(name, _configuration.InterpreterPath);
             }
 
-            return module;
+            if (moduleImport.IsCompiled) {
+                _log?.Log(TraceLevel.Verbose, "ImportScraped", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
+                return new AstScrapedPythonModule(moduleImport.FullName, moduleImport.ModulePath);
+            }
+
+            _log?.Log(TraceLevel.Verbose, "Import", moduleImport.FullName, moduleImport.ModulePath);
+            return PythonModuleLoader.FromFile(_interpreter, moduleImport.ModulePath, _configuration.Version.ToLanguageVersion(), moduleImport.FullName);
         }
 
         /// <summary>
         /// Determines whether the specified directory is an importable package.
         /// </summary>
-        public bool IsPackage(string directory) {
+        private bool IsPackage(string directory) {
             return ModulePath.PythonVersionRequiresInitPyFiles(_configuration.Version) ?
                 !string.IsNullOrEmpty(ModulePath.GetPackageInitPy(directory)) :
                 Directory.Exists(directory);

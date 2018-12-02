@@ -129,12 +129,9 @@ namespace Microsoft.PythonTools.Analysis {
             AddBuiltInSpecializations();
         }
 
-        private void ReloadModulePaths() {
-            var rootPaths = CurrentPathResolver.GetRootPaths();
-            foreach (var rootPath in rootPaths.Where(Directory.Exists)) {
-                foreach (var modulePath in ModulePath.GetModulesInPath(rootPath)) {
-                    _pathResolver.TryAddModulePath(modulePath.SourceFile, out _);
-                }
+        private void ReloadModulePaths(in IEnumerable<string> rootPaths) {
+            foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => ModulePath.GetModulesInPath(p))) {
+                _pathResolver.TryAddModulePath(modulePath.SourceFile, out _);
             }
         }
 
@@ -378,79 +375,6 @@ namespace Microsoft.PythonTools.Analysis {
                     }
                 }
                 return type ?? PythonMemberType.Unknown;
-            }
-        }
-
-        /// <summary>
-        /// Searches all modules which match the given name and searches in the modules
-        /// for top-level items which match the given name.  Returns a list of all the
-        /// available names fully qualified to their name.  
-        /// </summary>
-        /// <param name="name"></param>
-        public IEnumerable<ExportedMemberInfo> FindNameInAllModules(string name) {
-            string pkgName;
-
-            if (Interpreter is ICanFindModuleMembers finder) {
-                foreach (var modName in finder.GetModulesNamed(name)) {
-                    var dot = modName.LastIndexOf('.');
-                    if (dot < 0) {
-                        yield return new ExportedMemberInfo(null, modName);
-                    } else {
-                        yield return new ExportedMemberInfo(modName.Remove(dot), modName.Substring(dot + 1));
-                    }
-                }
-
-                foreach (var modName in finder.GetModulesContainingName(name)) {
-                    yield return new ExportedMemberInfo(modName, name);
-                }
-
-                // Scan added modules directly
-                foreach (var mod in ModulesByFilename.Values) {
-                    if (mod.Name == name) {
-                        yield return new ExportedMemberInfo(null, mod.Name);
-                    } else if (GetPackageNameIfMatch(name, mod.Name, out pkgName)) {
-                        yield return new ExportedMemberInfo(pkgName, name);
-                    }
-
-                    if (mod.IsMemberDefined(_defaultContext, name)) {
-                        yield return new ExportedMemberInfo(mod.Name, name);
-                    }
-                }
-
-                yield break;
-            }
-
-            // provide module names first
-            foreach (var keyValue in Modules.GetModuleStates()) {
-                var modName = keyValue.Key;
-                var moduleRef = keyValue.Value;
-
-                if (moduleRef.IsValid) {
-                    // include modules which can be imported
-                    if (modName == name) {
-                        yield return new ExportedMemberInfo(null, modName);
-                    } else if (GetPackageNameIfMatch(name, modName, out pkgName)) {
-                        yield return new ExportedMemberInfo(pkgName, name);
-                    }
-                }
-            }
-
-            foreach (var modName in Interpreter.GetModuleNames()) {
-                if (modName == name) {
-                    yield return new ExportedMemberInfo(null, modName);
-                } else if (GetPackageNameIfMatch(name, modName, out pkgName)) {
-                    yield return new ExportedMemberInfo(pkgName, name);
-                }
-            }
-
-            // then include imported module members
-            foreach (var keyValue in Modules.GetModuleStates()) {
-                var modName = keyValue.Key;
-                var moduleRef = keyValue.Value;
-
-                if (moduleRef.IsValid && moduleRef.ModuleContainsMember(_defaultContext, name)) {
-                    yield return new ExportedMemberInfo(modName, name);
-                }
             }
         }
 
@@ -883,15 +807,20 @@ namespace Microsoft.PythonTools.Analysis {
         /// </summary>
         public void SetSearchPaths(IEnumerable<string> paths) {
             Interlocked.Exchange(ref _searchPaths, new List<string>(paths).AsReadOnly());
-            _pathResolver.SetUserSearchPaths(_searchPaths);
-            ReloadModulePaths();
+            var addedRoots = _pathResolver.SetUserSearchPaths(_searchPaths);
+            ReloadModulePaths(addedRoots);
             SearchPathsChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        internal void SetRoot(string rootDir) => _pathResolver.SetRoot(rootDir);
+        internal void SetRoot(string rootDir) {
+            var addedRoots = _pathResolver.SetRoot(rootDir);
+            ReloadModulePaths(addedRoots);
+        }
 
-        internal void SetInterpreterPaths(IEnumerable<string> paths) 
-            => _pathResolver.SetInterpreterSearchPaths(paths);
+        internal void SetInterpreterPaths(IEnumerable<string> paths) {
+            var addedRoots = _pathResolver.SetInterpreterSearchPaths(paths);
+            ReloadModulePaths(addedRoots);
+        }
 
         public IReadOnlyList<string> GetTypeStubPaths() => _typeStubPaths;
 

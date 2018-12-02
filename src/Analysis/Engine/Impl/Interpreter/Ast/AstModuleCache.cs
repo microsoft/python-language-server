@@ -55,7 +55,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public string DatabasePath { get; }
         public string SearchPathCachePath { get; }
 
-        public IPythonModule ImportFromCache(string name, TryImportModuleContext context) {
+        public IPythonModule ImportFromCache(string name, IPythonInterpreter interpreter) {
             if (string.IsNullOrEmpty(DatabasePath)) {
                 return null;
             }
@@ -71,7 +71,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 }
             }
 
-            return PythonModuleLoader.FromTypeStub(context.Interpreter, cache, _configuration.Version.ToLanguageVersion(), name);
+            return PythonModuleLoader.FromTypeStub(interpreter, cache, _configuration.Version.ToLanguageVersion(), name);
         }
 
         public void Clear() {

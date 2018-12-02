@@ -114,12 +114,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return args;
         }
 
-        protected virtual PythonWalker PrepareWalker(IPythonInterpreter interpreter, PythonAst ast) {
+        protected virtual PythonWalker PrepareWalker(AstPythonInterpreter interpreter, PythonAst ast) {
 #if DEBUG
             // In debug builds we let you F12 to the scraped file
             var filePath = string.IsNullOrEmpty(_filePath)
                 ? null
-                : (interpreter as AstPythonInterpreter)?.ModuleCache.GetCacheFilePath(_filePath);
+                : interpreter.ModuleCache.GetCacheFilePath(_filePath);
             var uri = string.IsNullOrEmpty(filePath) ? null : new Uri(filePath);
             const bool includeLocations = true;
 #else
@@ -128,7 +128,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             const bool includeLocations = false;
 #endif
             return new AstAnalysisWalker(
-                interpreter, ast, this, filePath, uri, _members,
+                interpreter, interpreter.CurrentPathResolver, ast, this, filePath, uri, _members,
                 includeLocations,
                 warnAboutUndefinedValues: true,
                 suppressBuiltinLookup: false

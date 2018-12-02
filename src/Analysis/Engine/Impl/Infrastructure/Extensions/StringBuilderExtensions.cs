@@ -42,6 +42,14 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             return sb;
         }
 
+        public static StringBuilder AppendIf(this StringBuilder sb, bool condition, char value) {
+            if (condition) {
+                sb.Append(value);
+            }
+
+            return sb;
+        }
+
         public static StringBuilder AppendIf(this StringBuilder sb, bool condition, string value) {
             if (condition) {
                 sb.Append(value);

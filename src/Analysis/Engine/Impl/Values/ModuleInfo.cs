@@ -157,7 +157,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 }
 
                 _packageModules.Remove(name);
+            } else if (Scope != null && Scope.TryGetVariable(name, out var variable)) {
+                return variable.Types.OfType<IModule>().FirstOrDefault();
             }
+
             return null;
         }
 
