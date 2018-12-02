@@ -41,7 +41,7 @@ namespace Microsoft.PythonTools.Interpreter {
         /// <summary>
         /// Indicates if type is a built-in type.
         /// </summary>
-        bool IsBuiltIn { get; }
+        bool IsBuiltin { get; }
 
         /// <summary>
         /// Type is a type class factory.

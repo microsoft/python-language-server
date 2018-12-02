@@ -139,9 +139,8 @@ namespace Microsoft.PythonTools.Analysis {
     }
 
     class FallbackBuiltinPythonType : AstPythonType {
-        public FallbackBuiltinPythonType(IBuiltinPythonModule declaringModule, BuiltinTypeId typeId, string name = null) :
-            base(name ?? typeId.GetModuleName((declaringModule as FallbackBuiltinModule)?.LanguageVersion ?? PythonLanguageVersion.None),
-                declaringModule, declaringModule.Documentation, null) {
+        public FallbackBuiltinPythonType(FallbackBuiltinModule declaringModule, BuiltinTypeId typeId) :
+            base(typeId.GetModuleName(declaringModule.LanguageVersion), declaringModule, declaringModule.Documentation, null) {
             TypeId = typeId;
         }
 

@@ -79,7 +79,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public string FullyQualifiedName {
             get {
                 if (Type != null) {
-                    if (Type.IsBuiltIn) {
+                    if (Type.IsBuiltin) {
                         return Type.Name;
                     }
                     return Type.DeclaringModule.Name + "." + Type.Name;
@@ -127,6 +127,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IEnumerable<OverloadResult> Overloads {
             get {
+                // TODO: sometimes might have a specialized __init__.
+                // This just covers typical .NET types
                 var ctors = Type.GetConstructor();
                 return ctors != null
                     ? ctors.Overloads.Select(ctor => new BuiltinFunctionOverloadResult(ProjectState, Type.Name, ctor, 1, () => Documentation))
@@ -232,7 +234,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public virtual IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
-            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, Type.IsBuiltIn ? "type " : "class ");
+            yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, Type.IsBuiltin ? "type " : "class ");
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Name, FullName);
             yield return new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.EndOfDeclaration, string.Empty);
         }
@@ -240,7 +242,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private string FullName {
             get {
                 var name = Type.Name;
-                if (!Type.IsBuiltIn && !string.IsNullOrEmpty(Type.DeclaringModule?.Name)) {
+                if (!Type.IsBuiltin && !string.IsNullOrEmpty(Type.DeclaringModule?.Name)) {
                     name = Type.DeclaringModule.Name + "." + name;
                 }
                 return name;

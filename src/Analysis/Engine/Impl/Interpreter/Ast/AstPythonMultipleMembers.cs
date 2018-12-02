@@ -23,12 +23,12 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonMultipleMembers : IPythonMultipleMembers, ILocatedMember {
-        private readonly IMember[] _members = Array.Empty<IMember>();
+        private readonly IMember[] _members;
         private IReadOnlyList<IMember> _resolvedMembers;
         private readonly object _lock = new object();
 
         private AstPythonMultipleMembers(IMember[] members) {
-            _members = members;
+            _members = members ?? Array.Empty<IMember>();
         }
 
         public static IMember Create(IEnumerable<IMember> members) => Create(members.Where(m => m != null).Distinct().ToArray(), null);
@@ -40,7 +40,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             if (members.Length == 1) {
                 return members[0];
-            } else if (members.Length == 0) {
+            }
+            if (members.Length == 0) {
                 return null;
             }
 
@@ -60,11 +61,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public static IMember Combine(IMember x, IMember y) {
             if (x == null && y == null) {
                 throw new InvalidOperationException("Cannot add two null members");
-            } else if (x == null || (x.MemberType == PythonMemberType.Unknown && !(x is ILazyMember))) {
+            }
+            if (x == null || (x.MemberType == PythonMemberType.Unknown && !(x is ILazyMember))) {
                 return y;
-            } else if (y == null || (y.MemberType == PythonMemberType.Unknown && !(y is ILazyMember))) {
+            }
+            if (y == null || (y.MemberType == PythonMemberType.Unknown && !(y is ILazyMember))) {
                 return x;
-            } else if (x == y) {
+            }
+            if (x == y) {
                 return x;
             }
 
@@ -73,13 +77,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             if (mmx != null && mmy == null) {
                 return Create(mmx._members, y);
-            } else if (mmy != null && mmx == null) {
-                return Create(mmy._members, x);
-            } else if (mmx != null && mmy != null) {
-                return Create(mmx._members.Union(mmy._members).ToArray(), null);
-            } else {
-                return Create(new[] { x }, y);
             }
+            if (mmy != null && mmx == null) {
+                return Create(mmy._members, x);
+            }
+            if (mmx != null && mmy != null) {
+                return Create(mmx._members.Union(mmy._members).ToArray(), null);
+            }
+            return Create(new[] { x }, y);
         }
 
         public static T CreateAs<T>(IEnumerable<IMember> members) => As<T>(Create(members));
@@ -165,14 +170,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             #region IPythonType
             public string Name => ChooseName(Functions.Select(f => f.Name)) ?? "<function>";
             public string Documentation => ChooseDocumentation(Functions.Select(f => f.Documentation));
-            public bool IsBuiltIn => Functions.Any(f => f.IsBuiltIn);
+            public bool IsBuiltin => Functions.Any(f => f.IsBuiltin);
             public IPythonModule DeclaringModule => CreateAs<IPythonModule>(Functions.Select(f => f.DeclaringModule));
             public BuiltinTypeId TypeId {
                 get {
-                    if(IsClassMethod) {
+                    if (IsClassMethod) {
                         return BuiltinTypeId.ClassMethod;
                     }
-                    if(IsStatic) {
+                    if (IsStatic) {
                         return BuiltinTypeId.StaticMethod;
                     }
                     return DeclaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function;
@@ -207,7 +212,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             public IPythonModule DeclaringModule => null;
             public BuiltinTypeId TypeId => BuiltinTypeId.Module;
-            public bool IsBuiltIn => true;
+            public bool IsBuiltin => true;
             public bool IsTypeFactory => false;
             public IPythonFunction GetConstructor() => null;
 
@@ -236,7 +241,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             public string Documentation => ChooseDocumentation(Types.Select(t => t.Documentation));
             public BuiltinTypeId TypeId => Types.GroupBy(t => t.TypeId).OrderByDescending(g => g.Count()).FirstOrDefault()?.Key ?? BuiltinTypeId.Unknown;
             public IPythonModule DeclaringModule => CreateAs<IPythonModule>(Types.Select(t => t.DeclaringModule));
-            public bool IsBuiltIn => Types.All(t => t.IsBuiltIn);
+            public bool IsBuiltin => Types.All(t => t.IsBuiltin);
             public bool IsTypeFactory => Types.All(t => t.IsTypeFactory);
             public IMember GetMember(IModuleContext context, string name) => Create(Types.Select(t => t.GetMember(context, name)));
             public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Types.SelectMany(t => t.GetMemberNames(moduleContext)).Distinct();

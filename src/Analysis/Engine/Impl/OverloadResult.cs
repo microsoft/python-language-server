@@ -38,7 +38,7 @@ namespace Microsoft.PythonTools.Analysis {
         public virtual IReadOnlyList<string> ReturnType => _returnType;
         public virtual string Documentation { get; } = string.Empty;
         public virtual ParameterResult[] Parameters => _parameters;
-        public virtual ParameterResult SelfParameter => null;
+        public virtual ParameterResult FirstParameter => null;
 
         internal virtual OverloadResult WithNewParameters(ParameterResult[] newParameters)
             => new OverloadResult(newParameters, Name, Documentation, _returnType);
@@ -335,7 +335,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        public override ParameterResult SelfParameter {
+        public override ParameterResult FirstParameter {
             get {
                 EnsureParameters();
                 return _selfParameter;
@@ -355,8 +355,6 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             if (_overload != null) {
-                var target = _overload;
-
                 var pinfo = _overload.GetParameters();
                 var result = new List<ParameterResult>(pinfo.Length + _extraParameters.Length);
                 var ignored = 0;

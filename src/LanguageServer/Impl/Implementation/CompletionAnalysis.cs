@@ -859,7 +859,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private static string MakeOverrideDefParamater(ParameterResult result) {
+        private static string MakeOverrideDefParameter(ParameterResult result) {
             if (!string.IsNullOrEmpty(result.DefaultValue)) {
                 return result.Name + "=" + result.DefaultValue;
             }
@@ -882,17 +882,24 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private string MakeOverrideCompletionString(string indentation, IOverloadResult result, string className) {
             var sb = new StringBuilder();
 
-            var self = result.SelfParameter != null ? new[] { result.SelfParameter } : Array.Empty<ParameterResult>();
-            var parameters = self.Concat(result.Parameters).ToArray();
+            ParameterResult first;
+            ParameterResult[] skipFirstParameters;
+            ParameterResult[] allParameters;
+            if (result.FirstParameter != null) {
+                first = result.FirstParameter;
+                skipFirstParameters = result.Parameters;
+                allParameters = new[] {first}.Concat(skipFirstParameters).ToArray();
+            } else {
+                first = result.Parameters.FirstOrDefault();
+                skipFirstParameters = result.Parameters.Skip(1).ToArray();
+                allParameters = result.Parameters;
+            }
 
-            sb.AppendLine(result.Name + "(" + string.Join(", ", parameters.Select(MakeOverrideDefParamater)) + "):");
+            sb.AppendLine(result.Name + "(" + string.Join(", ", allParameters.Select(MakeOverrideDefParameter)) + "):");
             sb.Append(indentation);
 
-            if (parameters.Length > 0) {
-                var parameterString = string.Join(", ", 
-                    result.Parameters
-                        .Where(p => p.Name != "self")
-                        .Select(MakeOverrideCallParameter));
+            if (allParameters.Length > 0) {
+                var parameterString = string.Join(", ", skipFirstParameters.Select(MakeOverrideCallParameter));
 
                 if (Tree.LanguageVersion.Is3x()) {
                     sb.AppendFormat("return super().{0}({1})",
@@ -901,7 +908,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 } else if (!string.IsNullOrEmpty(className)) {
                     sb.AppendFormat("return super({0}, {1}).{2}({3})",
                         className,
-                        parameters.FirstOrDefault()?.Name ?? string.Empty,
+                        first?.Name ?? string.Empty,
                         result.Name,
                         parameterString);
                 } else {

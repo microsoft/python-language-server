@@ -211,7 +211,7 @@ namespace Microsoft.PythonTools.Analysis.Documentation {
         protected virtual string SoftWrap(string s) => s;
 
         private static bool IsBasicType(IPythonType type) {
-            if (type == null || !type.IsBuiltIn) {
+            if (type == null || !type.IsBuiltin) {
                 return false;
             }
 
