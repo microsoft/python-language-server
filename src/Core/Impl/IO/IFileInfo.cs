@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,19 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using System.IO;
 
-namespace Microsoft.Python.Core.Shell {
-    public interface IIdleTimeService {
-        /// <summary>
-        /// Fires when host application enters idle state.
-        /// </summary>
-        event EventHandler<EventArgs> Idle;
-
-        /// <summary>
-        /// Fires when application is closing
-        /// </summary>
-        event EventHandler<EventArgs> Closing;
+namespace Microsoft.Python.Core.IO {
+    public interface IFileInfo : IFileSystemInfo {
+        IDirectoryInfo Directory { get; }
+        StreamWriter CreateText();
     }
 }
-

@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Shell;
 using Microsoft.Python.LanguageServer.Extensions;
 
 namespace Microsoft.Python.LanguageServer.Implementation {

@@ -78,7 +78,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             e.Properties["name"] = exception.GetType().Name;
             e.Properties["stackTrace"] = exception.StackTrace;
 
-            _telemetryService.SendTelemetry(e).DoNotWait();
+            _telemetryService.SendTelemetryAsync(e).DoNotWait();
         }
 
         public override void Write(string message) { }

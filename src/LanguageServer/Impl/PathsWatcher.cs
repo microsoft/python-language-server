@@ -16,10 +16,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using Microsoft.Python.Core.Disposables;
+using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.LanguageServer {
     internal sealed class PathsWatcher : IDisposable {
@@ -33,7 +35,7 @@ namespace Microsoft.Python.LanguageServer {
 
         public PathsWatcher(string[] paths, Action onChanged, ILogger log) {
             _log = log;
-            paths = paths != null ? paths.Where(p => Path.IsPathRooted(p)).ToArray() : Array.Empty<string>();
+            paths = paths != null ? paths.Where(Path.IsPathRooted).ToArray() : Array.Empty<string>();
             if (paths.Length == 0) {
                 return;
             }
@@ -47,7 +49,7 @@ namespace Microsoft.Python.LanguageServer {
                         continue;
                     }
                 } catch (IOException ex) {
-                    _log.TraceMessage($"Unable to access directory {p}, exception {ex.Message}");
+                    _log.Log(TraceEventType.Warning, $"Unable to access directory {p}, exception {ex.Message}");
                     continue;
                 }
 
@@ -68,7 +70,7 @@ namespace Microsoft.Python.LanguageServer {
                         .Add(() => fsw.EnableRaisingEvents = false)
                         .Add(fsw);
                 } catch (ArgumentException ex) {
-                    _log.TraceMessage($"Unable to create file watcher for {p}, exception {ex.Message}");
+                    _log.Log(TraceEventType.Warning, $"Unable to create file watcher for {p}, exception {ex.Message}");
                 }
             }
         }

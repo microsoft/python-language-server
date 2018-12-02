@@ -22,6 +22,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -149,7 +150,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var reader = _openDocument?.Invoke();
             if (reader == null) {
-                _log.TraceMessage($"Cannot get completions at error node without sources");
+                _log.Log(TraceEventType.Verbose, "Cannot get completions at error node without sources");
                 _tokens = Array.Empty<KeyValuePair<IndexSpan, Token>>();
                 _tokenNewlines = Array.Empty<NewLineLocation>();
                 return;
@@ -174,7 +175,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public IEnumerable<CompletionItem> GetCompletionsFromString(string expr) {
             Check.ArgumentNotNullOrEmpty(nameof(expr), expr);
-            _log.TraceMessage($"Completing expression '{expr}'");
+            _log.Log(TraceEventType.Verbose, $"Completing expression '{expr}'");
             return Analysis.GetMembers(expr, Position, Options).Select(ToCompletionItem);
         }
 
@@ -245,7 +246,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private IEnumerable<CompletionItem> GetCompletionsFromMembers(MemberExpression me) {
-            _log.TraceMessage(
+            _log.Log(TraceEventType.Verbose,
                 $"Completing expression {me.Target.ToCodeString(Tree, CodeFormattingOptions.Traditional)}");
             ParentExpression = me.Target;
             if (!string.IsNullOrEmpty(me.Name)) {
@@ -688,7 +689,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             ShouldAllowSnippets = options.HasFlag(GetMemberOptions.IncludeExpressionKeywords);
 
-            _log.TraceMessage($"Completing all names");
+            _log.Log(TraceEventType.Verbose, "Completing all names");
             var members = Analysis.GetAllMembers(Position, options);
 
             var finder = new ExpressionFinder(Tree, new GetExpressionOptions { Calls = true });
@@ -701,7 +702,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     .Select(n => new MemberResult($"{n}=", PythonMemberType.NamedArgument) as IMemberResult)
                     .ToArray();
 
-                _log.TraceMessage($"Including {argNames.Length} named arguments");
+                _log.Log(TraceEventType.Verbose, $"Including {argNames.Length} named arguments");
                 members = members.Concat(argNames);
             }
 

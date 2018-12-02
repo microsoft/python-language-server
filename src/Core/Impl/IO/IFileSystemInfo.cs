@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,21 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using System.IO;
 
-namespace Microsoft.Python.Analysis.Documents {
-    public sealed class DocumentEventArgs : EventArgs {
-        public DocumentEventArgs(IDocument document) {
-            Document = document;
-        }
-        public IDocument Document { get; }
-    }
-
-    public interface IDocumentTable {
-        void OpenDocument(Uri uri, string filePath, string content);
-        void CloseDocument(Uri uri);
-
-        event EventHandler<DocumentEventArgs> Opened;
-        event EventHandler<DocumentEventArgs> Closed;
+namespace Microsoft.Python.Core.IO {
+    public interface IFileSystemInfo {
+        bool Exists { get; }
+        string FullName { get; }
+        FileAttributes Attributes { get; }
+        void Delete();
     }
 }

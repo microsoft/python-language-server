@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core.Logging;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.Python.Parsing.Ast;
 

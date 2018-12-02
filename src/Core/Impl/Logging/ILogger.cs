@@ -19,7 +19,12 @@ using System.Diagnostics;
 
 namespace Microsoft.Python.Core.Logging {
     public interface ILogger {
-        void Log(TraceLevel level, IFormattable message);
-        void Log(TraceLevel level, string message);
+        /// <summary>
+        /// Sets minimal log level for output to appear in the host application.
+        /// </summary>
+        TraceEventType LogLevel { get; set; }
+
+        void Log(TraceEventType eventType, IFormattable message);
+        void Log(TraceEventType eventType, string message);
     }
 }

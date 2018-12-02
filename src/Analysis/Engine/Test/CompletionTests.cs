@@ -23,6 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Extensions;

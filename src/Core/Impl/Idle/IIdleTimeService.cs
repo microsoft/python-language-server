@@ -14,8 +14,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Core.Shell {
-    public interface IIdleTimeTracker {
-        void NotifyUserActivity();
+using System;
+
+namespace Microsoft.Python.Core.Idle {
+    public interface IIdleTimeService {
+        /// <summary>
+        /// Fires when host application enters idle state.
+        /// </summary>
+        event EventHandler<EventArgs> Idle;
+
+        /// <summary>
+        /// Fires when application is closing
+        /// </summary>
+        event EventHandler<EventArgs> Closing;
     }
 }
+

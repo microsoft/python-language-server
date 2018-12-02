@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Text;
@@ -70,15 +71,6 @@ namespace Microsoft.Python.LanguageServer {
         public MessageType type;
         public string message;
         public MessageActionItem[] actions;
-    }
-
-    public sealed class LogMessageEventArgs : EventArgs {
-        public MessageType type { get; set; }
-        public string message { get; set; }
-    }
-
-    public sealed class TelemetryEventArgs : EventArgs {
-        public object value { get; set; }
     }
 
     public sealed class CommandEventArgs: EventArgs {

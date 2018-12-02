@@ -24,6 +24,9 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Services;
+using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Extensions;
@@ -80,8 +83,11 @@ namespace AnalysisTests {
         public async Task<Server> CreateServer(Uri rootUri, InterpreterConfiguration configuration = null, Dictionary<Uri, PublishDiagnosticsEventArgs> diagnosticEvents = null) {
             configuration = configuration ?? Default;
             configuration.AssertInstalled();
-            var s = new Server();
-            s.OnLogMessage += Server_OnLogMessage;
+
+            var sm = new ServiceManager();
+            sm.AddService(new TestLogger());
+            var s = new Server(sm);
+
             var properties = new InterpreterFactoryCreationOptions {
                 TraceLevel = System.Diagnostics.TraceLevel.Verbose,
                 DatabasePath = TestData.GetAstAnalysisCachePath(configuration.Version)
@@ -127,15 +133,6 @@ namespace AnalysisTests {
                 if (ModulePath.IsPythonSourceFile(file)) {
                     await s.LoadFileAsync(new Uri(file));
                 }
-            }
-        }
-
-        private void Server_OnLogMessage(object sender, LogMessageEventArgs e) {
-            switch (e.type) {
-                case MessageType.Error: Trace.TraceError(e.message); break;
-                case MessageType.Warning: Trace.TraceWarning(e.message); break;
-                case MessageType.Info: Trace.TraceInformation(e.message); break;
-                case MessageType.Log: Trace.TraceInformation("LOG: " + e.message); break;
             }
         }
 

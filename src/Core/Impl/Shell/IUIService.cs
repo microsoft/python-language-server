@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Core.Shell {
@@ -24,30 +24,17 @@ namespace Microsoft.Python.Core.Shell {
         /// <summary>
         /// Displays error message in a host-specific UI
         /// </summary>
-        Task ShowMessage(string message, MessageType messageType);
+        Task ShowMessageAsync(string message, TraceEventType eventType);
 
         /// <summary>
         /// Displays message with specified buttons in a host-specific UI
         /// </summary>
-        Task<MessageActionItem?> ShowMessage(string message, MessageActionItem[] actions, MessageType messageType);
-
-        /// <summary>
-        /// Writes message to the host application output log
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="messageType"></param>
-        Task LogMessage(string message, MessageType messageType);
+        Task<string> ShowMessageAsync(string message, string[] actions, TraceEventType eventType);
 
         /// <summary>
         /// Writes message to the host application status bar
         /// </summary>
         /// <param name="message"></param>
-        Task SetStatusBarMessage(string message);
-
-        /// <summary>
-        /// Sets log level for output in the host application.
-        /// </summary>
-        /// <param name="logLevel"></param>
-        void SetLogLevel(MessageType logLevel);
+        Task SetStatusBarMessageAsync(string message);
     }
 }

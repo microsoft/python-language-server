@@ -26,10 +26,8 @@ namespace Microsoft.Python.Analysis {
         PythonLanguageVersion LanguageVersion { get; }
 
         /// <summary>
-        /// Reloads the modules from the interpreter.
-        /// 
-        /// This method should be called on the analysis thread and is usually invoked
-        /// when the interpreter signals that it's modules have changed.
+        /// Reloads the modules from the interpreter. Usually invoked when
+        /// the interpreter signals that it's modules have changed.
         /// </summary>
         Task ReloadModulesAsync(CancellationToken token = default);
 
@@ -40,27 +38,13 @@ namespace Microsoft.Python.Analysis {
         /// <param name="filePath">The path to the file on disk</param>
         /// <param name="documentUri">Document URI.</param>
         /// <returns>The project entry for the new module.</returns>
-        IProjectEntry AddModule(string moduleName, string filePath, Uri documentUri = null);
+        IDocument AddModule(string moduleName, string filePath, Uri documentUri = null);
 
         /// <summary>
         /// Removes the specified project entry from the current analysis.
         /// </summary>
-        /// <param name="entry">The entry to remove.</param>
-        /// <param name="onImporter">Action to perform on each module that
-        /// had imported the one being removed.</param>
-        void RemoveModule(IProjectEntry entry, Action<IPythonProjectEntry> onImporter = null);
-
-        /// <summary>
-        /// Returns a sequence of project entries that import the specified
-        /// module. The sequence will be empty if the module is unknown.
-        /// </summary>
-        /// <param name="moduleName">
-        /// The absolute name of the module. This should never end with
-        /// '__init__'.
-        /// </param>
-        IEnumerable<IPythonProjectEntry> GetEntriesThatImportModule(string moduleName, bool includeUnresolved);
-
-        AnalysisValue GetAnalysisValueFromObjects(object attr);
+        /// <param name="document">The document to remove.</param>
+        void RemoveModule(IDocument entry);
 
         /// <summary>
         /// Returns true if a module has been imported.
@@ -125,7 +109,6 @@ namespace Microsoft.Python.Analysis {
         /// </summary>
         IEnumerable<string> TypeStubDirectories { get; }
 
-        AnalysisLimits Limits { get; set; }
         bool EnableDiagnostics { get; set; }
         void AddDiagnostic(Node node, AnalysisUnit unit, string message, DiagnosticSeverity severity, string code = null);
         IReadOnlyList<Diagnostic> GetDiagnostics(IProjectEntry entry);

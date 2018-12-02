@@ -16,6 +16,7 @@
 
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Shell;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Services {

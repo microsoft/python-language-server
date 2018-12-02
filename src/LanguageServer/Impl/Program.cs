@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -19,10 +18,10 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Threading;
 using Microsoft.Python.LanguageServer.Services;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Newtonsoft.Json;
 using StreamJsonRpc;
 using StreamJsonRpc.Protocol;
@@ -47,10 +46,14 @@ namespace Microsoft.Python.LanguageServer.Server {
                     rpc.TraceSource.Switch.Level = SourceLevels.Error;
                     rpc.SynchronizationContext = new SingleThreadSynchronizationContext();
 
-                    services.AddService(new UIService(rpc));
-                    services.AddService(new ProgressService(rpc));
-                    services.AddService(new TelemetryService(rpc));
-                    services.AddService(new IdleTimeService());
+                    services
+                        .AddService(rpc)
+                        .AddService(new Logger(rpc))
+                        .AddService(new UIService(rpc))
+                        .AddService(new ProgressService(rpc))
+                        .AddService(new TelemetryService(rpc))
+                        .AddService(new IdleTimeService())
+                        .AddService(new FileSystem());
 
                     services.AddService(messageFormatter.JsonSerializer);
 

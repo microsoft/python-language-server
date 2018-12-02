@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -28,6 +27,8 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Shell;
 using Microsoft.Python.LanguageServer.Extensions;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis;
@@ -37,7 +38,7 @@ using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
-    public sealed partial class Server : ServerBase, ILogger, IPythonLanguageServer, IDisposable {
+    public sealed partial class Server : ServerBase, IPythonLanguageServer, IDisposable {
         /// <summary>
         /// Implements ability to execute module reload on the analyzer thread
         /// </summary>
@@ -92,7 +93,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             maxDocumentationLines = 100
         };
 
-        public Server() {
+        public Server(IServiceContainer services = null): base(services) {
+
             AnalysisQueue = new AnalysisQueue();
             AnalysisQueue.UnhandledException += Analysis_UnhandledException;
 
@@ -102,7 +104,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposableBag
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
-                        (ext as IDisposable)?.Dispose();
+                        ext.Dispose();
                     }
                 })
                 .Add(ProjectFiles)
@@ -338,7 +340,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #endregion
 
         #region IPythonLanguageServer
-        public ILogger Logger => this;
+        public ILogger Logger { get; }
 
         public PythonAst GetCurrentAst(Uri documentUri) {
             ProjectFiles.GetEntry(documentUri, null, out var entry, out var tree);

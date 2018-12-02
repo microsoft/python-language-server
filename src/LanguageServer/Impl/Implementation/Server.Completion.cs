@@ -15,7 +15,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,7 +40,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             var opts = GetOptions(@params.context);
-            var ctxt = new CompletionAnalysis(analysis, tree, @params.position, opts, Settings.completion, _displayTextBuilder, this, () => entry.ReadDocument(ProjectFiles.GetPart(uri), out _));
+            var ctxt = new CompletionAnalysis(analysis, tree, @params.position, opts, Settings.completion, _displayTextBuilder, Logger, () => entry.ReadDocument(ProjectFiles.GetPart(uri), out _));
 
             var members = string.IsNullOrEmpty(@params._expr)
                 ? ctxt.GetCompletions()

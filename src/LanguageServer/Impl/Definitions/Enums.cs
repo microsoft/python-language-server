@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Diagnostics;
 
 namespace Microsoft.Python.LanguageServer {
     public sealed class SerializeAsAttribute : Attribute {
@@ -97,6 +98,24 @@ namespace Microsoft.Python.LanguageServer {
         /// Language server log-level diagnostic messages.
         /// </summary>
         Log = 4
+    }
+
+    public static class MessageTypeExtensions {
+        public static TraceEventType ToTraceEventType(this MessageType mt) {
+            switch (mt) {
+                case MessageType.Error:
+                    return TraceEventType.Error;
+                case MessageType.Warning:
+                    return TraceEventType.Warning;
+                case MessageType.Info:
+                case MessageType._General:
+                    return TraceEventType.Information;
+                case MessageType.Log:
+                    return TraceEventType.Verbose;
+            }
+
+            return TraceEventType.Error;
+        }
     }
 
     public enum FileChangeType : int {

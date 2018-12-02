@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -17,13 +16,25 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public abstract class ServerBase {
+        protected IServiceContainer Services { get; private set; }
+        protected ILogger Logger { get; private set; }
+
+        protected ServerBase(IServiceContainer services) {
+            SetServices(services);
+        }
+
         /// <summary>
-        /// Doesn't do anything. Left here for legacy purpores
+        /// For tests
         /// </summary>
-        public IDisposable AllowRequestCancellation(int millisecondsTimeout = -1) => EmptyDisposable.Instance;
+        internal void SetServices(IServiceContainer services) {
+            Services = services;
+            Logger = services?.GetService<ILogger>();
+        }
 
         #region Client Requests
 
@@ -118,20 +129,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #endregion
 
         #region Server Requests
-        public event EventHandler<ShowMessageEventArgs> OnShowMessage;
-
-        public void ShowMessage(MessageType type, string message) 
-            => OnShowMessage?.Invoke(this, new ShowMessageEventArgs { type = type, message = message });
-
-        public event EventHandler<LogMessageEventArgs> OnLogMessage;
-
-        public void LogMessage(MessageType type, string message) 
-            => OnLogMessage?.Invoke(this, new LogMessageEventArgs { type = type, message = message });
-
-        [Obsolete]
-        public event EventHandler<TelemetryEventArgs> OnTelemetry;
-        [Obsolete]
-        public void Telemetry(TelemetryEventArgs e) => OnTelemetry?.Invoke(this, e);
+        public void LogMessage(MessageType mt, string message) => Logger.Log(mt.ToTraceEventType(), message);
 
         public event EventHandler<CommandEventArgs> OnCommand;
         public void Command(CommandEventArgs e) => OnCommand?.Invoke(this, e);

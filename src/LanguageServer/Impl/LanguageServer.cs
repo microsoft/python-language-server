@@ -16,15 +16,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
+using Microsoft.Python.Core.Idle;
+using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Core.Threading;
-using Microsoft.PythonTools.Analysis;
+using Microsoft.Python.LanguageServer.Diagnostics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
@@ -37,57 +38,51 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     /// </summary>
     public sealed partial class LanguageServer : IDisposable {
         private readonly DisposableBag _disposables = new DisposableBag(nameof(LanguageServer));
-        private readonly Server _server = new Server();
         private readonly CancellationTokenSource _sessionTokenSource = new CancellationTokenSource();
-        private readonly RestTextConverter _textConverter = new RestTextConverter();
-        private readonly Dictionary<Uri, Diagnostic[]> _pendingDiagnostic = new Dictionary<Uri, Diagnostic[]>();
         private readonly object _lock = new object();
         private readonly Prioritizer _prioritizer = new Prioritizer();
         private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
 
         private IServiceContainer _services;
-        private IUIService _ui;
+        private Server _server;
+        private ILogger _logger;
 
         private JsonRpc _rpc;
         private JsonSerializer _jsonSerializer;
         private bool _filesLoaded;
         private PathsWatcher _pathsWatcher;
         private IIdleTimeTracker _idleTimeTracker;
-        private IIdleTimeService _idleTimeService;
+        private DiagnosticsPublisher _diagnosticsPublisher;
 
         private bool _watchSearchPaths;
         private string[] _searchPaths = Array.Empty<string>();
 
         public CancellationToken Start(IServiceContainer services, JsonRpc rpc) {
+            _server = new Server(services);
             _services = services;
-            _ui = services.GetService<IUIService>();
             _rpc = rpc;
-            _jsonSerializer = services.GetService<JsonSerializer>();
 
+            _jsonSerializer = services.GetService<JsonSerializer>();
             _idleTimeTracker = services.GetService<IIdleTimeTracker>();
-            _idleTimeService = services.GetService<IIdleTimeService>();
+            _logger = services.GetService<ILogger>();
 
             var rpcTraceListener = new TelemetryRpcTraceListener(services.GetService<ITelemetryService>());
             _rpc.TraceSource.Listeners.Add(rpcTraceListener);
 
-            _server.OnLogMessage += OnLogMessage;
-            _server.OnShowMessage += OnShowMessage;
-            _server.OnPublishDiagnostics += OnPublishDiagnostics;
+            _diagnosticsPublisher = new DiagnosticsPublisher(_server, services);
             _server.OnApplyWorkspaceEdit += OnApplyWorkspaceEdit;
             _server.OnRegisterCapability += OnRegisterCapability;
             _server.OnUnregisterCapability += OnUnregisterCapability;
 
             _disposables
-                .Add(() => _server.OnLogMessage -= OnLogMessage)
-                .Add(() => _server.OnShowMessage -= OnShowMessage)
-                .Add(() => _server.OnPublishDiagnostics -= OnPublishDiagnostics)
                 .Add(() => _server.OnApplyWorkspaceEdit -= OnApplyWorkspaceEdit)
                 .Add(() => _server.OnRegisterCapability -= OnRegisterCapability)
                 .Add(() => _server.OnUnregisterCapability -= OnUnregisterCapability)
                 .Add(() => _shutdownCts.Cancel())
                 .Add(_prioritizer)
                 .Add(() => _pathsWatcher?.Dispose())
-                .Add(() => _rpc.TraceSource.Listeners.Remove(rpcTraceListener));
+                .Add(() => _rpc.TraceSource.Listeners.Remove(rpcTraceListener))
+                .Add(_diagnosticsPublisher);
 
             return _sessionTokenSource.Token;
         }
@@ -97,31 +92,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _server.Dispose();
         }
 
-        [JsonObject]
-        private class PublishDiagnosticsParams {
-            [JsonProperty]
-            public Uri uri;
-            [JsonProperty]
-            public Diagnostic[] diagnostics;
-        }
-
         #region Events
-        private void OnShowMessage(object sender, ShowMessageEventArgs e) => _ui.ShowMessage(e.message, e.type);
-        private void OnLogMessage(object sender, LogMessageEventArgs e) => _ui.LogMessage(e.message, e.type);
-
-        private void OnPublishDiagnostics(object sender, PublishDiagnosticsEventArgs e) {
-            lock (_lock) {
-                // If list is empty (errors got fixed), publish immediately,
-                // otherwise throttle so user does not get spurious squiggles
-                // while typing normally.
-                var diags = e.diagnostics.ToArray();
-                _pendingDiagnostic[e.uri] = diags;
-                if (diags.Length == 0) {
-                    PublishPendingDiagnostics();
-                }
-            }
-        }
-
         private void OnApplyWorkspaceEdit(object sender, ApplyWorkspaceEditEventArgs e)
             => _rpc.NotifyWithParameterObjectAsync("workspace/applyEdit", e.@params).DoNotWait();
         private void OnRegisterCapability(object sender, RegisterCapabilityEventArgs e)
@@ -152,10 +123,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 settings.symbolsHierarchyDepthLimit = GetSetting(analysis, "symbolsHierarchyDepthLimit", 10);
                 settings.symbolsHierarchyMaxSymbols = GetSetting(analysis, "symbolsHierarchyMaxSymbols", 1000);
 
-                _ui.SetLogLevel(GetLogLevel(analysis));
-
-
-                _idleTimeTracker = new IdleTimeTracker(settings.diagnosticPublishDelay, PublishPendingDiagnostics);
+                _logger.LogLevel = GetLogLevel(analysis).ToTraceEventType();
+                _diagnosticsPublisher.PublishingDelay = settings.diagnosticPublishDelay;
 
                 HandlePathWatchChange(token);
 
@@ -416,23 +385,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return MessageType.Error;
         }
 
-        private void PublishPendingDiagnostics() {
-            List<KeyValuePair<Uri, Diagnostic[]>> list;
-
-            lock (_lock) {
-                list = _pendingDiagnostic.ToList();
-                _pendingDiagnostic.Clear();
-            }
-
-            foreach (var kvp in list) {
-                var parameters = new PublishDiagnosticsParams {
-                    uri = kvp.Key,
-                    diagnostics = kvp.Value.Where(d => d.severity != DiagnosticSeverity.Unspecified).ToArray()
-                };
-                _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
-            }
-        }
-
         private void HandlePathWatchChange(JToken section) {
             var watchSearchPaths = GetSetting(section, "watchSearchPaths", true);
             if (!watchSearchPaths) {
@@ -450,7 +402,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _pathsWatcher = new PathsWatcher(
                     _initParams.initializationOptions.searchPaths,
                     () => _server.ReloadModulesAsync(CancellationToken.None).DoNotWait(),
-                    _server
+                    _services.GetService<ILogger>()
                  );
             }
 

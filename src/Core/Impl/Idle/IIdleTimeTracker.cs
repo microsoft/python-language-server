@@ -14,21 +14,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-
-namespace Microsoft.Python.Analysis.Documents {
-    public sealed class DocumentEventArgs : EventArgs {
-        public DocumentEventArgs(IDocument document) {
-            Document = document;
-        }
-        public IDocument Document { get; }
-    }
-
-    public interface IDocumentTable {
-        void OpenDocument(Uri uri, string filePath, string content);
-        void CloseDocument(Uri uri);
-
-        event EventHandler<DocumentEventArgs> Opened;
-        event EventHandler<DocumentEventArgs> Closed;
+namespace Microsoft.Python.Core.Idle {
+    public interface IIdleTimeTracker {
+        void NotifyUserActivity();
     }
 }
