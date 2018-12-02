@@ -93,7 +93,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return name;
             }
             name = type.Name + "." + name;
-            if (type.IsBuiltIn || type.DeclaringModule == null) {
+            if (type.IsBuiltin || type.DeclaringModule == null) {
                 return name;
             }
             return type.DeclaringModule.Name + "." + name;

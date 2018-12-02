@@ -196,7 +196,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         private IPythonType MakeGenericClassType(IPythonType typeArg) {
-            if (typeArg.IsBuiltIn) {
+            if (typeArg.IsBuiltin) {
                 var type = _scope.Interpreter.GetBuiltinType(typeArg.TypeId) as AstPythonType;
                 return type.TypeId == BuiltinTypeId.Unknown
                     ? _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type)

@@ -9,22 +9,40 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.PythonTools.Analysis {
     public interface IOverloadResult {
+        /// <summary>
+        /// Function name.
+        /// </summary>
         string Name { get; }
+
+        /// <summary>
+        /// Function documentation.
+        /// </summary>
         string Documentation { get; }
-        [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays",
-            Justification = "breaking change")]
-        ParameterResult SelfParameter { get; }
+
+        /// <summary>
+        /// First parameter if removed from the set.
+        /// Typically 'self' or 'cls'.
+        /// </summary>
+        ParameterResult FirstParameter { get; }
+
+        /// <summary>
+        /// Function parameters. First parameter may be removed, in which case
+        /// it is present as <see cref="FirstParameter"/>.
+        /// </summary>
         ParameterResult[] Parameters { get; }
+
+        /// <summary>
+        /// Possible return types.
+        /// </summary>
         IReadOnlyList<string> ReturnType { get; }
     }
 }

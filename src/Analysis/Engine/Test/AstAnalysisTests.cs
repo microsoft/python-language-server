@@ -576,7 +576,7 @@ class BankAccount(object):
                     foreach (BuiltinTypeId v in Enum.GetValues(typeof(BuiltinTypeId))) {
                         var type = interp.GetBuiltinType(v);
                         type.Should().NotBeNull().And.BeAssignableTo<IPythonType>($"Did not find {v}");
-                        type.IsBuiltIn.Should().BeTrue();
+                        type.IsBuiltin.Should().BeTrue();
                     }
 
                     // Ensure we cannot see or get builtin types directly

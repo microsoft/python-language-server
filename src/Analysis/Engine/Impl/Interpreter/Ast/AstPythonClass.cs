@@ -29,7 +29,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private readonly object _lock = new object();
 
         private IReadOnlyList<IPythonType> _mro;
-        private AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
+        private readonly AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
 
         public AstPythonClass(
             ClassDefinition classDefinition,
