@@ -18,6 +18,7 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Shell;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
@@ -30,9 +31,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     }
 
     internal class TelemetryRpcTraceListener : TraceListener {
-        private readonly ITelemetryService2 _telemetryService;
+        private readonly ITelemetryService _telemetryService;
 
-        public TelemetryRpcTraceListener(ITelemetryService2 telemetryService) {
+        public TelemetryRpcTraceListener(ITelemetryService telemetryService) {
             _telemetryService = telemetryService;
         }
 

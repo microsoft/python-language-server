@@ -21,9 +21,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
+using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Core.Threading;
-using Microsoft.Python.LanguageServer.Services;
 using Microsoft.PythonTools.Analysis;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -52,7 +52,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private JsonSerializer _jsonSerializer;
         private bool _filesLoaded;
         private PathsWatcher _pathsWatcher;
-        private IdleTimeTracker _idleTimeTracker;
+        private IIdleTimeTracker _idleTimeTracker;
+        private IIdleTimeService _idleTimeService;
 
         private bool _watchSearchPaths;
         private string[] _searchPaths = Array.Empty<string>();
@@ -63,9 +64,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _rpc = rpc;
             _jsonSerializer = services.GetService<JsonSerializer>();
 
-            var progress = services.GetService<IProgressService>();
+            _idleTimeTracker = services.GetService<IIdleTimeTracker>();
+            _idleTimeService = services.GetService<IIdleTimeService>();
 
-            var rpcTraceListener = new TelemetryRpcTraceListener(services.GetService<ITelemetryService2>());
+            var rpcTraceListener = new TelemetryRpcTraceListener(services.GetService<ITelemetryService>());
             _rpc.TraceSource.Listeners.Add(rpcTraceListener);
 
             _server.OnLogMessage += OnLogMessage;
@@ -152,7 +154,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 _ui.SetLogLevel(GetLogLevel(analysis));
 
-                _idleTimeTracker?.Dispose();
+
                 _idleTimeTracker = new IdleTimeTracker(settings.diagnosticPublishDelay, PublishPendingDiagnostics);
 
                 HandlePathWatchChange(token);
@@ -174,7 +176,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         [JsonRpcMethod("workspace/didChangeWatchedFiles")]
         public async Task DidChangeWatchedFiles(JToken token, CancellationToken cancellationToken) {
-            using (await _prioritizer.DocumentChangePriorityAsync()) {
+            using (await _prioritizer.DocumentChangePriorityAsync(cancellationToken)) {
                 await _server.DidChangeWatchedFiles(ToObject<DidChangeWatchedFilesParams>(token), cancellationToken);
             }
         }

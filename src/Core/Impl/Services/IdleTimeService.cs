@@ -9,24 +9,21 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
 using System;
 using System.Threading;
+using Microsoft.Python.Core.Shell;
 
-namespace Microsoft.Python.LanguageServer.Services {
-    sealed class IdleTimeTracker : IDisposable {
-        private readonly int _delay;
-        private readonly Action _action;
+namespace Microsoft.Python.Core.Services {
+    public sealed class IdleTimeService : IIdleTimeService, IIdleTimeTracker, IDisposable {
         private Timer _timer;
         private DateTime _lastActivityTime;
 
-        public IdleTimeTracker(int msDelay, Action action) {
-            _delay = msDelay;
-            _action = action;
+        public IdleTimeService() {
             _timer = new Timer(OnTimer, this, 50, 50);
             NotifyUserActivity();
         }
@@ -36,12 +33,16 @@ namespace Microsoft.Python.LanguageServer.Services {
         public void Dispose() {
             _timer?.Dispose();
             _timer = null;
+            Closing?.Invoke(this, EventArgs.Empty);
         }
 
         private void OnTimer(object state) {
-            if ((DateTime.Now - _lastActivityTime).TotalMilliseconds >= _delay && _timer != null) {
-                _action();
+            if ((DateTime.Now - _lastActivityTime).TotalMilliseconds >= 100 && _timer != null) {
+                Idle?.Invoke(this, EventArgs.Empty);
             }
         }
+
+        public event EventHandler<EventArgs> Idle;
+        public event EventHandler<EventArgs> Closing;
     }
 }

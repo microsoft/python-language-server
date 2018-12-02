@@ -1,4 +1,4 @@
-﻿// Python Tools for Visual Studio
+// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -9,29 +9,17 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Threading.Tasks;
 
-namespace Microsoft.Python.LanguageServer {
+namespace Microsoft.Python.Analysis {
     /// <summary>
-    /// Progress reporting service
+    /// Represents a member that appears in a module, type, etc...
     /// </summary>
-    public interface IProgressService {
-        /// <summary>
-        /// Displays progress message in the application UI.
-        /// </summary>
-        IProgress BeginProgress();
-    }
-
-    public interface IProgress: IDisposable {
-        /// <summary>
-        /// Updates progress message in the application UI.
-        /// </summary>
-        Task Report(string message);
+    public interface IMember {
+        PythonMemberType MemberType { get; }
     }
 }

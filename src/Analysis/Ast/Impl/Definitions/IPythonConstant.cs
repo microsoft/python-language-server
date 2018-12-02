@@ -1,4 +1,4 @@
-﻿// Python Tools for Visual Studio
+// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -9,24 +9,16 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
 
-namespace Microsoft.Python.LanguageServer {
-    public interface IServiceContainer {
-        /// <summary>
-        /// Provides access to global application services
-        /// </summary>
-        T GetService<T>(Type type = null) where T : class;
-
-        /// <summary>
-        /// Enumerates all available services
-        /// </summary>
-        IEnumerable<Type> AllServices { get; }
+namespace Microsoft.Python.Analysis {
+    public interface IPythonConstant : IMember {
+        IPythonType Type {
+            get;
+        }
     }
 }

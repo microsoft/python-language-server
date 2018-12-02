@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Python.Parsing", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Python.Parsing.Tests", "Parsing\Test\Microsoft.Python.Parsing.Tests.csproj", "{FF6696BA-5071-439C-A811-A46A2650C689}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Python.Analysis", "Analysis\Ast\Impl\Microsoft.Python.Analysis.csproj", "{615CC909-CDDD-49B1-87B8-CE8A637613E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{FF6696BA-5071-439C-A811-A46A2650C689}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF6696BA-5071-439C-A811-A46A2650C689}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF6696BA-5071-439C-A811-A46A2650C689}.Release|Any CPU.Build.0 = Release|Any CPU
+		{615CC909-CDDD-49B1-87B8-CE8A637613E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{615CC909-CDDD-49B1-87B8-CE8A637613E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{615CC909-CDDD-49B1-87B8-CE8A637613E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{615CC909-CDDD-49B1-87B8-CE8A637613E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -74,6 +80,7 @@ Global
 		{AFEA5563-CED6-4932-8BB7-2A83D797FB36} = {80AA38A1-3E82-4B87-BB21-FDEDD2CC87E6}
 		{C59C4212-95B8-43FA-B909-60652FA5E8E0} = {C465393D-145E-4695-A7DB-AF55951BD533}
 		{FF6696BA-5071-439C-A811-A46A2650C689} = {80AA38A1-3E82-4B87-BB21-FDEDD2CC87E6}
+		{615CC909-CDDD-49B1-87B8-CE8A637613E9} = {C465393D-145E-4695-A7DB-AF55951BD533}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ABC12ED7-0EC8-4219-8A14-A058F7942D92}

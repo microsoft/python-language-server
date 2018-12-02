@@ -16,6 +16,8 @@
 
 using System;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Services;
+using Microsoft.Python.Core.Shell;
 using Microsoft.PythonTools.LanguageServer.Services;
 
 namespace Microsoft.Python.LanguageServer.Services {

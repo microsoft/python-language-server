@@ -22,11 +22,11 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Disposables;
-using Microsoft.Python.LanguageServer;
+using Microsoft.Python.Core.Shell;
 using static System.FormattableString;
 
-namespace Microsoft.PythonTools.LanguageServer.Services {
-    public class ServiceManager : IServiceManager {
+namespace Microsoft.Python.Core.Services {
+    public sealed class ServiceManager : IServiceManager {
         private readonly DisposeToken _disposeToken = DisposeToken.Create<ServiceManager>();
         private readonly ConcurrentDictionary<Type, object> _s = new ConcurrentDictionary<Type, object>();
 
@@ -39,7 +39,7 @@ namespace Microsoft.PythonTools.LanguageServer.Services {
         /// some global services are registered as 'SVsService` while
         /// actual interface type is IVsService.
         /// </param>
-        public virtual IServiceManager AddService(object service, Type type = null) {
+        public IServiceManager AddService(object service, Type type = null) {
             _disposeToken.ThrowIfDisposed();
 
             type = type ?? service.GetType();
@@ -53,7 +53,7 @@ namespace Microsoft.PythonTools.LanguageServer.Services {
         /// Adds on-demand created service
         /// </summary>
         /// <param name="factory">Service factory</param>
-        public virtual IServiceManager AddService<T>(Func<IServiceContainer, T> factory) where T : class {
+        public IServiceManager AddService<T>(Func<IServiceContainer, T> factory) where T : class {
             _disposeToken.ThrowIfDisposed();
 
             var lazy = new Lazy<object>(() => factory(this));
@@ -66,7 +66,7 @@ namespace Microsoft.PythonTools.LanguageServer.Services {
         /// </summary>
         /// <typeparam name="T">Service type</typeparam>
         /// <returns>Service instance or null if it doesn't exist</returns>
-        public virtual T GetService<T>(Type type = null) where T : class {
+        public T GetService<T>(Type type = null) where T : class {
             if (_disposeToken.IsDisposed) {
                 // Do not throw. When editor text buffer is closed, the associated service manager
                 // is disposed. However, some actions may still hold on the text buffer reference
@@ -83,9 +83,9 @@ namespace Microsoft.PythonTools.LanguageServer.Services {
             return (T)CheckDisposed(value as T ?? (value as Lazy<object>)?.Value);
         }
 
-        public virtual void RemoveService(object service) => _s.TryRemove(service.GetType(), out object dummy);
+        public void RemoveService(object service) => _s.TryRemove(service.GetType(), out object dummy);
 
-        public virtual IEnumerable<Type> AllServices => _s.Keys.ToList();
+        public IEnumerable<Type> AllServices => _s.Keys.ToList();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private object CheckDisposed(object service) {

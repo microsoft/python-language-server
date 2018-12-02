@@ -9,27 +9,19 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace Microsoft.Python.LanguageServer {
-    [Obsolete]
-    public interface ITelemetryService {
-        Task SendTelemetry(object o);
-    }
-    public interface ITelemetryService2 {
-        Task SendTelemetry(TelemetryEvent telemetryEvent);
-    }
-
-    public sealed class TelemetryEvent {
-        public string EventName { get; set; }
-        public Dictionary<string, string> Properties { get; } = new Dictionary<string, string>();
-        public Dictionary<string, double> Measurements { get; } = new Dictionary<string, double>();
+namespace Microsoft.Python.Analysis {
+    /// <summary>
+    /// Represents a member that needs to be "got". It subclasses
+    /// <see cref="IMember"/> to allow for ease of storing in containers,
+    /// but should appear as Unknown if used directly.
+    /// </summary>
+    public interface ILazyMember : IMember {
+        string Name { get; }
+        IMember Get();
     }
 }

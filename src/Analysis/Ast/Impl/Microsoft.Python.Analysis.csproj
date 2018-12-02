@@ -1,0 +1,139 @@
+﻿<Project>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Microsoft.Python.Analysis</RootNamespace>
+    <AssemblyName>Microsoft.Python.Analysis</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!--
+      1701, 1702 - "You may need to supply assembly policy"
+      1998 - "This async method lacks 'await'"
+    -->
+    <NoWarn>1701;1702;1998;$(NoWarn)</NoWarn>
+    <LangVersion>7.2</LangVersion>
+  </PropertyGroup>
+  <Import Project="..\..\..\..\build\NetStandard.settings" />
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <ItemGroup>
+    <PackageReference Include="MicroBuild.Core" Version="0.3.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="get_search_paths.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="scrape_module.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="typing-stub.pyi">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Typeshed\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Core\Impl\Microsoft.Python.Core.csproj" />
+    <ProjectReference Include="..\..\..\Parsing\Impl\Microsoft.Python.Parsing.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Interpreter\" />
+    <Folder Include="Properties\" />
+    <Folder Include="Typeshed\stdlib\2and3\ctypes\" />
+    <Folder Include="Typeshed\stdlib\2and3\distutils\command\" />
+    <Folder Include="Typeshed\stdlib\2and3\lib2to3\pgen2\" />
+    <Folder Include="Typeshed\stdlib\2and3\logging\" />
+    <Folder Include="Typeshed\stdlib\2and3\pyexpat\" />
+    <Folder Include="Typeshed\stdlib\2and3\sqlite3\" />
+    <Folder Include="Typeshed\stdlib\2and3\wsgiref\" />
+    <Folder Include="Typeshed\stdlib\2and3\xml\etree\" />
+    <Folder Include="Typeshed\stdlib\2and3\xml\parsers\expat\" />
+    <Folder Include="Typeshed\stdlib\2and3\xml\sax\" />
+    <Folder Include="Typeshed\stdlib\2\distutils\" />
+    <Folder Include="Typeshed\stdlib\2\email\mime\" />
+    <Folder Include="Typeshed\stdlib\2\encodings\" />
+    <Folder Include="Typeshed\stdlib\2\multiprocessing\dummy\" />
+    <Folder Include="Typeshed\stdlib\2\os\" />
+    <Folder Include="Typeshed\stdlib\3.3\" />
+    <Folder Include="Typeshed\stdlib\3.4\asyncio\" />
+    <Folder Include="Typeshed\stdlib\3.5\" />
+    <Folder Include="Typeshed\stdlib\3.6\" />
+    <Folder Include="Typeshed\stdlib\3.7\" />
+    <Folder Include="Typeshed\stdlib\3\collections\" />
+    <Folder Include="Typeshed\stdlib\3\concurrent\futures\" />
+    <Folder Include="Typeshed\stdlib\3\curses\" />
+    <Folder Include="Typeshed\stdlib\3\email\mime\" />
+    <Folder Include="Typeshed\stdlib\3\encodings\" />
+    <Folder Include="Typeshed\stdlib\3\html\" />
+    <Folder Include="Typeshed\stdlib\3\http\" />
+    <Folder Include="Typeshed\stdlib\3\importlib\" />
+    <Folder Include="Typeshed\stdlib\3\json\" />
+    <Folder Include="Typeshed\stdlib\3\multiprocessing\dummy\" />
+    <Folder Include="Typeshed\stdlib\3\os\" />
+    <Folder Include="Typeshed\stdlib\3\tkinter\" />
+    <Folder Include="Typeshed\stdlib\3\unittest\" />
+    <Folder Include="Typeshed\stdlib\3\urllib\" />
+    <Folder Include="Typeshed\third_party\2and3\atomicwrites\" />
+    <Folder Include="Typeshed\third_party\2and3\attr\" />
+    <Folder Include="Typeshed\third_party\2and3\backports\" />
+    <Folder Include="Typeshed\third_party\2and3\boto\ec2\" />
+    <Folder Include="Typeshed\third_party\2and3\boto\elb\" />
+    <Folder Include="Typeshed\third_party\2and3\boto\kms\" />
+    <Folder Include="Typeshed\third_party\2and3\boto\s3\" />
+    <Folder Include="Typeshed\third_party\2and3\characteristic\" />
+    <Folder Include="Typeshed\third_party\2and3\click\" />
+    <Folder Include="Typeshed\third_party\2and3\Crypto\Cipher\" />
+    <Folder Include="Typeshed\third_party\2and3\Crypto\Hash\" />
+    <Folder Include="Typeshed\third_party\2and3\Crypto\Protocol\" />
+    <Folder Include="Typeshed\third_party\2and3\Crypto\PublicKey\" />
+    <Folder Include="Typeshed\third_party\2and3\Crypto\Random\Fortuna\" />
+    <Folder Include="Typeshed\third_party\2and3\Crypto\Random\OSRNG\" />
+    <Folder Include="Typeshed\third_party\2and3\Crypto\Signature\" />
+    <Folder Include="Typeshed\third_party\2and3\Crypto\Util\" />
+    <Folder Include="Typeshed\third_party\2and3\dateutil\tz\" />
+    <Folder Include="Typeshed\third_party\2and3\google\protobuf\compiler\" />
+    <Folder Include="Typeshed\third_party\2and3\google\protobuf\internal\" />
+    <Folder Include="Typeshed\third_party\2and3\google\protobuf\util\" />
+    <Folder Include="Typeshed\third_party\2and3\jinja2\" />
+    <Folder Include="Typeshed\third_party\2and3\markupsafe\" />
+    <Folder Include="Typeshed\third_party\2and3\pymysql\constants\" />
+    <Folder Include="Typeshed\third_party\2and3\pynamodb\connection\" />
+    <Folder Include="Typeshed\third_party\2and3\pytz\" />
+    <Folder Include="Typeshed\third_party\2and3\requests\" />
+    <Folder Include="Typeshed\third_party\2and3\simplejson\" />
+    <Folder Include="Typeshed\third_party\2and3\werkzeug\contrib\" />
+    <Folder Include="Typeshed\third_party\2and3\werkzeug\debug\" />
+    <Folder Include="Typeshed\third_party\2and3\yaml\" />
+    <Folder Include="Typeshed\third_party\2\concurrent\futures\" />
+    <Folder Include="Typeshed\third_party\2\cryptography\hazmat\primitives\asymmetric\" />
+    <Folder Include="Typeshed\third_party\2\fb303\" />
+    <Folder Include="Typeshed\third_party\2\kazoo\recipe\" />
+    <Folder Include="Typeshed\third_party\2\OpenSSL\" />
+    <Folder Include="Typeshed\third_party\2\redis\" />
+    <Folder Include="Typeshed\third_party\2\routes\" />
+    <Folder Include="Typeshed\third_party\2\scribe\" />
+    <Folder Include="Typeshed\third_party\2\six\moves\urllib\" />
+    <Folder Include="Typeshed\third_party\2\tornado\" />
+    <Folder Include="Typeshed\third_party\3\docutils\parsers\rst\" />
+    <Folder Include="Typeshed\third_party\3\jwt\contrib\algorithms\" />
+    <Folder Include="Typeshed\third_party\3\six\moves\urllib\" />
+    <Folder Include="Typeshed\third_party\3\typed_ast\" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="..\..\..\..\build\NetStandard.targets" />
+</Project>

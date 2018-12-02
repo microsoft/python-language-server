@@ -19,6 +19,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Threading;
 using Microsoft.Python.LanguageServer.Services;
 using Microsoft.PythonTools.Analysis.Infrastructure;
@@ -49,6 +50,8 @@ namespace Microsoft.Python.LanguageServer.Server {
                     services.AddService(new UIService(rpc));
                     services.AddService(new ProgressService(rpc));
                     services.AddService(new TelemetryService(rpc));
+                    services.AddService(new IdleTimeService());
+
                     services.AddService(messageFormatter.JsonSerializer);
 
                     var token = server.Start(services, rpc);
