@@ -124,7 +124,7 @@ namespace Microsoft.PythonTools.Analysis {
                         varType = VariableType.Definition;
                     }
 
-                    foreach (var loc in type.Locations.WhereNotNull()) {
+                    foreach (var loc in type.Locations.MaybeEnumerate().WhereNotNull()) {
                         yield return new AnalysisVariable(def, varType, loc);
                     }
                 }

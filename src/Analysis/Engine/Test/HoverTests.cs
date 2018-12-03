@@ -66,14 +66,14 @@ x = 3.14
 
                 await AssertHover(s, mod, new SourceLocation(1, 1), "int", new[] { "int" }, new SourceSpan(1, 1, 1, 4));
                 await AssertHover(s, mod, new SourceLocation(2, 1), "str", new[] { "str" }, new SourceSpan(2, 1, 2, 6));
-                await AssertHover(s, mod, new SourceLocation(3, 1), "built-in function module.f()", new[] { "module.f" }, new SourceSpan(3, 1, 3, 2));
-                await AssertHover(s, mod, new SourceLocation(4, 6), "built-in function module.f()", new[] { "module.f" }, new SourceSpan(4, 5, 4, 6));
+                await AssertHover(s, mod, new SourceLocation(3, 1), "function module.f()", new[] { "module.f" }, new SourceSpan(3, 1, 3, 2));
+                await AssertHover(s, mod, new SourceLocation(4, 6), "function module.f()", new[] { "module.f" }, new SourceSpan(4, 5, 4, 6));
 
                 await AssertHover(s, mod, new SourceLocation(12, 1), "class module.C", new[] { "module.C" }, new SourceSpan(12, 1, 12, 2));
                 await AssertHover(s, mod, new SourceLocation(13, 1), "c: C", new[] { "module.C" }, new SourceSpan(13, 1, 13, 2));
                 await AssertHover(s, mod, new SourceLocation(14, 7), "c: C", new[] { "module.C" }, new SourceSpan(14, 7, 14, 8));
                 await AssertHover(s, mod, new SourceLocation(14, 9), "c.f: method f of module.C objects*", new[] { "module.C.f" }, new SourceSpan(14, 7, 14, 10));
-                await AssertHover(s, mod, new SourceLocation(14, 1), $"built-in function module.C.f.g(self)  {Environment.NewLine}declared in C.f", new[] { "module.C.f.g" }, new SourceSpan(14, 1, 14, 4));
+                await AssertHover(s, mod, new SourceLocation(14, 1), $"function module.C.f.g(self)  {Environment.NewLine}declared in C.f", new[] { "module.C.f.g" }, new SourceSpan(14, 1, 14, 4));
 
                 await AssertHover(s, mod, new SourceLocation(16, 1), "x: int, float", new[] { "int", "float" }, new SourceSpan(16, 1, 16, 2));
             }
@@ -86,9 +86,9 @@ x = 3.14
 import datetime
 datetime.datetime.now().day
 ");
-                await AssertHover(s, mod, new SourceLocation(3, 1), "built-in module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
+                await AssertHover(s, mod, new SourceLocation(3, 1), "module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
                 await AssertHover(s, mod, new SourceLocation(3, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(3, 1, 3, 18));
-                await AssertHover(s, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound built-in method now*", null, new SourceSpan(3, 1, 3, 22));
+                await AssertHover(s, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound method now*", null, new SourceSpan(3, 1, 3, 22));
             }
         }
 
@@ -99,9 +99,9 @@ datetime.datetime.now().day
 import datetime
 datetime.datetime.now().day
 ");
-                await AssertHover(s, mod, new SourceLocation(3, 1), "built-in module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
+                await AssertHover(s, mod, new SourceLocation(3, 1), "module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
                 await AssertHover(s, mod, new SourceLocation(3, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(3, 1, 3, 18));
-                await AssertHover(s, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound built-in method now*", null, new SourceSpan(3, 1, 3, 22));
+                await AssertHover(s, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound method now*", null, new SourceSpan(3, 1, 3, 22));
                 await AssertHover(s, mod, new SourceLocation(3, 28), "datetime.datetime.now().day: int*", new[] { "int" }, new SourceSpan(3, 1, 3, 28));
             }
         }
@@ -110,9 +110,9 @@ datetime.datetime.now().day
         public async Task FromImportHover() {
             using (var s = await CreateServerAsync()) {
                 var mod = await s.OpenDefaultDocumentAndGetUriAsync("from os import path as p\n");
-                await AssertHover(s, mod, new SourceLocation(1, 6), "built-in module os*", null, new SourceSpan(1, 6, 1, 8));
-                await AssertHover(s, mod, new SourceLocation(1, 16), "built-in module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 16, 1, 20));
-                await AssertHover(s, mod, new SourceLocation(1, 24), "built-in module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 24, 1, 25));
+                await AssertHover(s, mod, new SourceLocation(1, 6), "module os*", null, new SourceSpan(1, 6, 1, 8));
+                await AssertHover(s, mod, new SourceLocation(1, 16), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 16, 1, 20));
+                await AssertHover(s, mod, new SourceLocation(1, 24), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 24, 1, 25));
             }
         }
 
@@ -121,7 +121,7 @@ datetime.datetime.now().day
             using (var s = await CreateServerAsync()) {
                 var mod1 = await s.OpenDocumentAndGetUriAsync("mod1.py", "from . import mod2\n");
                 var mod2 = await s.OpenDocumentAndGetUriAsync("mod2.py", "def foo():\n  pass\n");
-                await AssertHover(s, mod1, new SourceLocation(1, 16), "built-in module mod2", null, new SourceSpan(1, 15, 1, 19));
+                await AssertHover(s, mod1, new SourceLocation(1, 16), "module mod2", null, new SourceSpan(1, 15, 1, 19));
             }
         }
 
@@ -141,6 +141,22 @@ class Derived(Base):
                 var uri = await s.OpenDefaultDocumentAndGetUriAsync(text);
                 await AssertHover(s, uri, new SourceLocation(3, 19), "class module.Base(object)", null, new SourceSpan(2, 7, 2, 11));
                 await AssertHover(s, uri, new SourceLocation(8, 8), "class module.Derived(Base)", null, new SourceSpan(6, 7, 6, 14));
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TupleFunctionArgumentsHover() {
+            using (var s = await CreateServerAsync()) {
+                var uri = await s.OpenDefaultDocumentAndGetUriAsync("def what(a, b):\n    return a, b, 1\n");
+                await AssertHover(s, uri, new SourceLocation(1, 6), "function module.what(a, b) -> tuple[Any, Any, int]", null, new SourceSpan(1, 5, 1, 9));
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TupleFunctionArgumentsWithCallHover() {
+            using (var s = await CreateServerAsync()) {
+                var uri = await s.OpenDefaultDocumentAndGetUriAsync("def what(a, b):\n    return a, b, 1\n\nwhat(1, 2)");
+                await AssertHover(s, uri, new SourceLocation(1, 6), "function module.what(a, b) -> tuple[int, int, int]", null, new SourceSpan(1, 5, 1, 9));
             }
         }
 

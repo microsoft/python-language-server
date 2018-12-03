@@ -614,12 +614,6 @@ s = y['x']['y']['value']
 
 a=A()
 a.fn(1, 2)
-a.fn(3, 4)
-a.fn(5, 6)
-a.fn(7, 8)
-a.fn(9, 10)
-a.fn(11, 12)
-a.fn(13, 14)
 x1, y1, _1 = a.top
 a.original()
 ";
@@ -2635,7 +2629,7 @@ y_xor_x_0 = next(iter(y_xor_x))
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"x = {42:'abc'}");
                 analysis.Should().HaveVariable("x").WithValue<DictionaryInfo>()
                     .Which.Should().HaveMember<SpecializedCallable>("get")
-                    .Which.Should().HaveDescription("bound built-in method get");
+                    .Which.Should().HaveDescription("bound method get");
             }
         }
 

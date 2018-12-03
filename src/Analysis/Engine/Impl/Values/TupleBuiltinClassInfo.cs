@@ -20,6 +20,15 @@ using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
+
+    class TupleInfo : SequenceInfo {
+        public TupleInfo(VariableDef[] indexTypes, BuiltinClassInfo seqType, Node node, IPythonProjectEntry entry)
+            : base(indexTypes, seqType, node, entry) {
+        }
+        protected override string TypeName => "tuple";
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Tuple;
+    }
+
     class TupleBuiltinClassInfo : SequenceBuiltinClassInfo {
         private AnalysisValue[] _tupleTypes;
 
@@ -34,7 +43,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         internal override SequenceInfo MakeFromIndexes(Node node, IPythonProjectEntry entry) {
             if (_tupleTypes != null) {
-                return new SequenceInfo(_tupleTypes.Select(t => {
+                return new TupleInfo(_tupleTypes.Select(t => {
                     var v = new VariableDef();
                     v.AddTypes(entry, t);
                     return v;
@@ -43,9 +52,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             if (_indexTypes.Length > 0) {
                 var vals = _indexTypes.Zip(VariableDef.Generator, (t, v) => { v.AddTypes(entry, t, false, entry); return v; }).ToArray();
-                return new SequenceInfo(vals, this, node, entry);
+                return new TupleInfo(vals, this, node, entry);
             } else {
-                return new SequenceInfo(VariableDef.EmptyArray, this, node, entry);
+                return new TupleInfo(VariableDef.EmptyArray, this, node, entry);
             }
         }
     }

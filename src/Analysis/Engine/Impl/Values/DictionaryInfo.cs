@@ -26,7 +26,7 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class DictionaryInfo : BuiltinInstanceInfo, IAnalysisIterableValue {
-        private SequenceInfo _keyValueTuple;
+        private TupleInfo _keyValueTuple;
         private readonly Node _node;
         private VariableDef _keysVariable, _valuesVariable, _keyValueTupleVariable;
 
@@ -295,7 +295,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         /// <summary>
         /// Gets a type which represents the tuple of (keyTypes, valueTypes)
         /// </summary>
-        private SequenceInfo KeyValueTuple {
+        private TupleInfo KeyValueTuple {
             get {
                 if (_keyValueTuple == null) {
                     var keysDef = new VariableDef();
@@ -304,7 +304,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     _keysAndValues.CopyKeysTo(keysDef);
                     _keysAndValues.CopyValuesTo(valuesDef);
 
-                    _keyValueTuple = new SequenceInfo(
+                    _keyValueTuple = new TupleInfo(
                         new[] { keysDef, valuesDef },
                         ProjectState.ClassInfos[BuiltinTypeId.Tuple],
                         _node,

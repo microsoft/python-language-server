@@ -16,6 +16,7 @@
 
 using System.Collections.Generic;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonBoundMethod : IPythonBoundFunction, ILocatedMember {
@@ -27,6 +28,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public IPythonFunction Function { get; }
         public IPythonType SelfType { get; }
         public PythonMemberType MemberType => PythonMemberType.Method;
-        public IEnumerable<ILocationInfo> Locations => (Function as ILocatedMember)?.Locations;
+        public IEnumerable<ILocationInfo> Locations => (Function as ILocatedMember)?.Locations.MaybeEnumerate();
     }
 }

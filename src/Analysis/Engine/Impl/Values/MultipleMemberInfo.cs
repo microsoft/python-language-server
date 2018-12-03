@@ -228,7 +228,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IEnumerable<ILocationInfo> Locations => _members.SelectMany(m => m.Locations);
+        public override IEnumerable<ILocationInfo> Locations => _members.SelectMany(m => m.Locations.MaybeEnumerate());
 
         IModule IModule.GetChildPackage(IModuleContext context, string name) {
             var children = new List<AnalysisValue>();

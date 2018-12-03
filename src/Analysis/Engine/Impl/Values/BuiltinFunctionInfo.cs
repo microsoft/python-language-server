@@ -23,6 +23,7 @@ using Microsoft.PythonTools.Parsing.Ast;
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinFunctionInfo : BuiltinNamespace<IPythonType>, IHasRichDescription, IHasQualifiedName {
         private string _doc;
+        private OverloadResult[] _overloadResults;
         private IPythonFunctionOverload[] _overloads;
         private BuiltinMethodInfo _method;
 
@@ -33,7 +34,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IPythonType PythonType => _type;
 
-        public override bool IsOfType(IAnalysisSet klass) 
+        public override bool IsOfType(IAnalysisSet klass)
             => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]) || klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.BuiltinFunction]);
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
@@ -122,8 +123,16 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IEnumerable<OverloadResult> Overloads
-            => GetFunctionOverloads().Select(o => new BuiltinFunctionOverloadResult(ProjectState, Function.Name, o, 0, () => Description));
+        public override IEnumerable<OverloadResult> Overloads {
+            get {
+                if (_overloadResults == null) {
+                    _overloadResults = GetFunctionOverloads()
+                        .Select(o => new BuiltinFunctionOverloadResult(ProjectState, Function.Name, o, 0, () => Description))
+                        .ToArray();
+                }
+                return _overloadResults;
+            }
+        }
 
         public override string Documentation => _doc ?? (_doc = Utils.StripDocumentation(Function.Documentation));
 

@@ -129,17 +129,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
 
-        internal override void AddReference(Node node, AnalysisUnit analysisUnit) {
-            _references.GetReferences(analysisUnit.ProjectEntry as ProjectEntry)?.AddReference(new EncodedLocation(analysisUnit, node));
-        }
+        internal override void AddReference(Node node, AnalysisUnit analysisUnit)
+            => _references.GetReferences(analysisUnit.ProjectEntry as ProjectEntry)?.AddReference(new EncodedLocation(analysisUnit, node));
 
         public override IEnumerable<ILocationInfo> Locations {
             get {
-                ReferenceList defns;
-                if (!_references.TryGetValue(DeclaringModule, out defns)) {
+                if (!_references.TryGetValue(DeclaringModule, out var defns)) {
                     return Enumerable.Empty<ILocationInfo>();
                 }
-                return defns.Definitions.Select(l => l.GetLocationInfo()).Where(l => l != null);
+                return defns.Definitions.Select(l => l.GetLocationInfo()).ExcludeDefault();
             }
         }
 
@@ -151,17 +149,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
             }
         }
 
-        public override IAnalysisSet Await(Node node, AnalysisUnit unit) {
-            return AnalysisSet.UnionAll(_protocols.Select(p => p.Await(node, unit)));
-        }
+        public override IAnalysisSet Await(Node node, AnalysisUnit unit)
+            => AnalysisSet.UnionAll(_protocols.Select(p => p.Await(node, unit)));
 
-        public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
-            return AnalysisSet.UnionAll(_protocols.Select(p => p.BinaryOperation(node, unit, operation, rhs)));
-        }
+        public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs)
+            => AnalysisSet.UnionAll(_protocols.Select(p => p.BinaryOperation(node, unit, operation, rhs)));
 
-        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
-            return AnalysisSet.UnionAll(_protocols.Select(p => p.Call(node, unit, args, keywordArgNames)));
-        }
+        public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames)
+            => AnalysisSet.UnionAll(_protocols.Select(p => p.Call(node, unit, args, keywordArgNames)));
 
         public override void DeleteMember(Node node, AnalysisUnit unit, string name) {
             foreach (var p in _protocols) {
@@ -273,22 +268,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override int GetHashCode() => ObjectComparer.Instance.GetHashCode(_protocols);
 
-        internal override bool UnionEquals(AnalysisValue av, int strength) {
-            if (av is ProtocolInfo pi) {
-                if (strength > 0) {
-                    return Name == pi.Name;
-                }
-                return ObjectComparer.Instance.Equals(_protocols, pi._protocols);
-            }
-            return false;
-        }
+        internal override bool UnionEquals(AnalysisValue av, int strength)
+            => av is ProtocolInfo pi && ObjectComparer.Instance.Equals(_protocols, pi._protocols);
 
-        internal override int UnionHashCode(int strength) {
-            if (strength > 0) {
-                return Name.GetHashCode();
-            }
-            return GetHashCode();
-        }
+        internal override int UnionHashCode(int strength) => strength > 0 ? Name.GetHashCode() : GetHashCode();
 
         internal override AnalysisValue UnionMergeTypes(AnalysisValue av, int strength) {
             if (strength > 0 && av is ProtocolInfo pi && pi.Push()) {
@@ -329,15 +312,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             var res = new List<KeyValuePair<string, string>>();
             var namespaces = _protocols.OfType<NamespaceProtocol>().ToArray();
+            var tuples = _protocols.OfType<TupleProtocol>().ToArray();
             var other = _protocols.OfType<Protocol>().Except(names).Except(namespaces).ToArray();
 
-            var fallbackName = other.Select(p => p.Name).FirstOrDefault(n => !string.IsNullOrEmpty(n)) ?? "<unknown>";
-            if (!string.IsNullOrEmpty(fallbackName)) {
-                res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, fallbackName));
-            }
-
             if (namespaces.Any()) {
-                bool addComma = false;
+                var addComma = false;
                 res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Misc, "("));
                 foreach (var p in namespaces) {
                     if (addComma) {
@@ -353,7 +332,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 res.AddRange(p.GetRichDescription().ToArray());
             }
 
-            res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.EndOfDeclaration, ""));
+            res.Add(new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.EndOfDeclaration, string.Empty));
 
             return res;
         }

@@ -18,6 +18,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
@@ -49,7 +50,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
 
                 var lineFormatter = new LineFormatter(reader, Analyzer.LanguageVersion);
-                return lineFormatter.FormatLine(targetLine);
+                var edits = lineFormatter.FormatLine(targetLine);
+                var unmatchedToken = lineFormatter.UnmatchedToken(targetLine);
+
+                if (unmatchedToken != null) {
+                    var message = Resources.LineFormatter_UnmatchedToken.FormatInvariant(unmatchedToken.Value.token, unmatchedToken.Value.line + 1);
+                    LogMessage(MessageType.Warning, message);
+                }
+
+                return edits;
             }
         }
     }

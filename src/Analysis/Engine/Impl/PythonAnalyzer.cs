@@ -152,7 +152,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             try {
                 // Cancel outstanding analysis
-                Queue.Clear(); 
+                Queue.Clear();
                 // Tell factory to clear cached modules. This also clears the interpreter data.
                 InterpreterFactory.NotifyImportNamesChanged();
                 // Now initialize the interpreter
@@ -462,7 +462,7 @@ namespace Microsoft.PythonTools.Analysis {
             return MemberDictToMemberResult(result);
         }
 
-        private static IMemberResult[] MemberDictToMemberResult(Dictionary<string, List<IAnalysisSet>> results) 
+        private static IMemberResult[] MemberDictToMemberResult(Dictionary<string, List<IAnalysisSet>> results)
             => results.Select(r => new MemberResult(r.Key, r.Value.SelectMany()) as IMemberResult).ToArray();
 
         /// <summary>
@@ -597,7 +597,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal BuiltinInstanceInfo GetInstance(IPythonType type) => GetBuiltinType(type).Instance;
 
-        internal BuiltinClassInfo GetBuiltinType(IPythonType type) => 
+        internal BuiltinClassInfo GetBuiltinType(IPythonType type) =>
             (BuiltinClassInfo)GetCached(type,
                 () => MakeBuiltinType(type)
             ) ?? ClassInfos[BuiltinTypeId.Object];

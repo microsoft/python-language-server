@@ -105,15 +105,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public virtual ILocatedMember GetLocatedMember() => null;
 
-        public override IEnumerable<ILocationInfo> Locations {
-            get {
-                var locatedMem = GetLocatedMember();
-                if (locatedMem != null) {
-                    return locatedMem.Locations;
-                }
-                return LocationInfo.Empty;
-            }
-        }
+        public override IEnumerable<ILocationInfo> Locations => GetLocatedMember()?.Locations.MaybeEnumerate();
 
         public override bool Equals(object obj) {
             if (obj is BuiltinNamespace<TMemberContainer> bn && GetType() == bn.GetType()) {
