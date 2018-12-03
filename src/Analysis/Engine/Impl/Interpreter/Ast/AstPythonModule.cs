@@ -39,9 +39,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             _foundChildModules = true;
         }
 
-        internal AstPythonModule(string moduleName, IPythonInterpreter interpreter, PythonAst ast, string filePath, IEnumerable<string> parseErrors) {
+        internal AstPythonModule(string moduleName, IPythonInterpreter interpreter, string documentation, string filePath, IEnumerable<string> parseErrors) {
             Name = moduleName;
-            _documentation = ast.Documentation;
+            _documentation = documentation;
             FilePath = filePath;
             DocumentUri = ProjectEntry.MakeDocumentUri(FilePath);
             Locations = new[] { new LocationInfo(filePath, DocumentUri, 1, 1) };
@@ -49,11 +49,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             // Do not allow children of named modules
             _foundChildModules = !ModulePath.IsInitPyFile(FilePath);
+            ParseErrors = parseErrors?.ToArray();
+        }
 
-            var walker = new AstAnalysisWalker(
-                interpreter,
-                interpreter is AstPythonInterpreter astPythonInterpreter ? astPythonInterpreter.CurrentPathResolver : new PathResolverSnapshot(ast.LanguageVersion),
-                ast, this, filePath, DocumentUri, _members,
+        internal void Analyze(PythonAst ast, PathResolverSnapshot currentPathResolver) {
+            var walker = new AstAnalysisWalker(_interpreter, currentPathResolver, ast, this, FilePath, DocumentUri, _members,
                 includeLocationInfo: true,
                 warnAboutUndefinedValues: true,
                 suppressBuiltinLookup: false
@@ -61,8 +61,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             ast.Walk(walker);
             walker.Complete();
-
-            ParseErrors = parseErrors?.ToArray();
         }
 
         public void Dispose() { }

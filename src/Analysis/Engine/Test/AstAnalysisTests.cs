@@ -235,9 +235,12 @@ x = B().getA().methodA()
             }
         }
 
-        [TestMethod, Priority(0)]
-        public void AstImports() {
-            var mod = Parse("Imports.py", PythonLanguageVersion.V35);
+        [ServerTestMethod(Version = PythonLanguageVersion.V35), Priority(0)]
+        public void AstImports(Server server) {
+            var interpreter = server.Analyzer.Interpreter;
+            var path = TestData.GetPath(Path.Combine("TestData", "AstAnalysis", "Imports.py"));
+
+            var mod = PythonModuleLoader.FromFile(interpreter, path, server.Analyzer.LanguageVersion);
             mod.GetMemberNames(null).Should().OnlyContain("version_info", "a_made_up_module");
         }
 

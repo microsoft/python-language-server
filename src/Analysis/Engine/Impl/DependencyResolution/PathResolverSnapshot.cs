@@ -362,7 +362,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 .ToArray();
 
             userRootsCount = filteredUserSearchPaths.Length + 1;
-            nodes = AddRootsFromSearchPaths(ImmutableArray<Node>.Empty.Add(Node.CreateRoot(rootDirectory)), filteredUserSearchPaths, filteredInterpreterSearchPaths);
+            nodes = AddRootsFromSearchPaths(ImmutableArray<Node>.Empty.Add(GetOrCreateRoot(rootDirectory)), filteredUserSearchPaths, filteredInterpreterSearchPaths);
 
             string FixPath(string p) => Path.IsPathRooted(p) ? PathUtils.NormalizePath(p) : PathUtils.NormalizePath(Path.Combine(rootDirectory, p));
         }
@@ -682,7 +682,12 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             }
 
             var rootIndex = 0;
-            while (rootIndex < _roots.Count && !normalizedPath.StartsWithOrdinal(_roots[rootIndex].Name, IgnoreCaseInPaths)) {
+            while (rootIndex < _roots.Count) {
+                var rootPath = _roots[rootIndex].Name;
+                if (normalizedPath.StartsWithOrdinal(rootPath, IgnoreCaseInPaths) && IsRootedPathEndsWithValidNames(normalizedPath, rootPath.Length)) {
+                    break;
+                }
+
                 rootIndex++;
             }
 
@@ -692,15 +697,31 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 : MatchNodePathInNonRooted(normalizedPath, out lastEdge, out unmatchedPathSpan);
         }
 
+        private static bool IsRootedPathEndsWithValidNames(string rootedPath, int start) {
+            var nameSpan = (start: 0, length: start);
+            var modulePathLength = GetModuleNameEnd(rootedPath); // exclude extension
+
+            while (rootedPath.TryGetNextNonEmptySpan(Path.DirectorySeparatorChar, modulePathLength, ref nameSpan)) {
+                if (!IsValidIdentifier(rootedPath, nameSpan.start, nameSpan.length)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private static bool IsRootedPathEndsWithPythonFile(string rootedPath) {
             if (!IsPythonFile(rootedPath) && !IsPythonCompiled(rootedPath)) {
                 return false;
             }
 
             var moduleNameStart = GetModuleNameStart(rootedPath);
-            return rootedPath[moduleNameStart].IsLatin1LetterOrUnderscore()
-                   && rootedPath.CharsAreLatin1LetterOrDigitOrUnderscore(moduleNameStart + 1, GetModuleNameEnd(rootedPath) - moduleNameStart - 1);
+            var moduleNameLength = GetModuleNameEnd(rootedPath) - moduleNameStart;
+            return IsValidIdentifier(rootedPath, moduleNameStart, moduleNameLength);
         }
+
+        private static bool IsValidIdentifier(string str, int start, int length) 
+            => str[start].IsLatin1LetterOrUnderscore() && str.CharsAreLatin1LetterOrDigitOrUnderscore(start + 1, length - 1);
 
         private static bool IsPythonFile(string rootedPath)
             => rootedPath.EndsWithAnyOrdinal(new[] {".py", ".pyi", ".pyw"}, IgnoreCaseInPaths);
@@ -712,7 +733,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             => rootedModulePath.LastIndexOf(Path.DirectorySeparatorChar) + 1;
 
         private static int GetModuleNameEnd(string rootedModulePath) 
-            => rootedModulePath.LastIndexOf('.');
+            => IsPythonCompiled(rootedModulePath) ? rootedModulePath.IndexOf('.', GetModuleNameStart(rootedModulePath)) : rootedModulePath.LastIndexOf('.');
 
         private static bool IsNotInitPy(string name)
             => !name.EqualsOrdinal("__init__");

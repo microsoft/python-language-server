@@ -451,8 +451,8 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                     case PossibleModuleImport possibleModuleImport when TryGetModule(moduleImportExpression, possibleModuleImport, out module):
                         ImportModule(node, module, moduleImportExpression, asNameExpression);
                         break;
-                    default:
-                        MakeUnresolvedImport(moduleImportExpression.MakeString(), moduleImportExpression);
+                    case ImportNotFound notFound:
+                        MakeUnresolvedImport(notFound.FullName, moduleImportExpression);
                         break;
                 }
             }

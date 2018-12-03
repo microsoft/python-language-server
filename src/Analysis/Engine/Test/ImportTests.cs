@@ -16,6 +16,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Implementation;
@@ -97,10 +98,47 @@ package.sub_package.module2.";
             completionModule2.Should().HaveLabels("Y").And.NotContainLabels("X");
         }
 
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/443")]
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        public async Task Completions_ImportResolution_OneSearchPathInsideAnother(Server server) {
+            var tempPath = Path.GetTempPath();
+            var folder1 = Path.Combine(tempPath, "folder");
+            var folder2 = Path.Combine(folder1, "d-sh");
+            var folder3 = Path.Combine(folder1, "un_scr");
+
+            server.Analyzer.SetSearchPaths(new[] { folder1, folder2, folder3 });
+
+            var module1Path = Path.Combine(folder1, "mod.py");
+            var module2Path = Path.Combine(folder2, "mod.py");
+            var module3Path = Path.Combine(folder3, "mod.py");
+
+            var module1Content = "A = 1";
+            var module2Content = "B = 1";
+            var module3Content = "C = 1";
+
+            await server.OpenDocumentAndGetUriAsync(module1Path, module1Content);
+            await server.OpenDocumentAndGetUriAsync(module2Path, module2Content);
+            await server.OpenDocumentAndGetUriAsync(module3Path, module3Content);
+
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(@"import mod as mod1
+import un_scr.mod as mod2
+mod1.
+mod2.");
+
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+
+            var completionMod1 = await server.SendCompletion(uri, 2, 5);
+            var completionMod2 = await server.SendCompletion(uri, 3, 5);
+
+            completionMod1.Should().HaveLabels("A").And.NotContainLabels("B");
+            completionMod2.Should().HaveLabels("C");
+
+        }
+
         [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
         public async Task Completions_FromPackageImportModule_UncSearchPaths(Server server) {
-            server.Analyzer.SetSearchPaths(new[] { @"c:\Folder\", @"\\machine\share\" });
-            var module1Path = @"c:\Folder\package\module1.py";
+            server.Analyzer.SetSearchPaths(new[] { @"q:\Folder\", @"\\machine\share\" });
+            var module1Path = @"q:\Folder\package\module1.py";
             var module2Path = @"\\machine\share\package\module2.py";
 
             var appPath = "app.py";
@@ -152,18 +190,43 @@ projectA.";
             completion.Should().HaveLabels("foo");
         }
 
-        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
         public async Task Completions_SysModuleChain(Server server) {
-            var uri1 = await server.OpenDocumentAndGetUriAsync("module1.py", @"import module2.mod as mod
-mod.");
-            var uri2 = await server.OpenDocumentAndGetUriAsync("module2.py", @"import module3 as mod");
-            var uri3 = await server.OpenDocumentAndGetUriAsync("module3.py", @"import sys
+            var content1 = @"import module2.mod as mod
+mod.";
+            var content2 = @"import module3 as mod";
+            var content3 = @"import sys
 sys.modules['module2.mod'] = None
-VALUE = 42");
+VALUE = 42";
 
-            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            var uri1 = await TestData.CreateTestSpecificFileAsync("module1.py", content1);
+            var uri2 = await TestData.CreateTestSpecificFileAsync("module2.py", content2);
+            var uri3 = await TestData.CreateTestSpecificFileAsync("module3.py", content3);
+
+            server.Analyzer.SetRoot(TestData.GetTestSpecificRootUri().AbsolutePath);
+
+            await server.SendDidOpenTextDocument(uri1, content1);
+            await server.GetAnalysisAsync(uri1);
+            await server.SendDidOpenTextDocument(uri2, content2);
+            await server.GetAnalysisAsync(uri2);
+            await server.SendDidOpenTextDocument(uri3, content3);
+            await server.GetAnalysisAsync(uri3);
 
             var completion = await server.SendCompletion(uri1, 1, 4);
+            completion.Should().HaveLabels("VALUE");
+        }
+
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        [CreateTestSpecificFile("module1.py", @"import module2 as mod")]
+        [CreateTestSpecificFile("module2.py", @"import sys
+sys.modules['module1.mod'] = None
+VALUE = 42")]
+        public async Task Completions_SysModuleChain_SingleOpen(Server server) {
+            var content = @"import module1.mod as mod
+mod.";
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(content);
+
+            var completion = await server.SendCompletion(uri, 1, 4);
             completion.Should().HaveLabels("VALUE");
         }
     }

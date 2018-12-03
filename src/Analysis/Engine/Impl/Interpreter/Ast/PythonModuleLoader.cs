@@ -17,6 +17,7 @@
 using System.IO;
 using System.Linq;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.DependencyResolution;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
@@ -47,21 +48,24 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             PythonLanguageVersion langVersion,
             string moduleFullName
         ) {
-            PythonAst ast;
             var sink = KeepParseErrors ? new CollectingErrorSink() : ErrorSink.Null;
             var parser = Parser.CreateParser(sourceFile, langVersion, new ParserOptions {
                 StubFile = fileName.EndsWithOrdinal(".pyi", ignoreCase: true),
                 ErrorSink = sink
             });
-            ast = parser.ParseFile();
+            var ast = parser.ParseFile();
+            var pathResolver = interpreter is AstPythonInterpreter astPythonInterpreter ? astPythonInterpreter.CurrentPathResolver : new PathResolverSnapshot(langVersion);
 
-            return new AstPythonModule(
+            var module = new AstPythonModule(
                 moduleFullName ?? ModulePath.FromFullPath(fileName, isPackage: IsPackageCheck).FullName,
                 interpreter,
-                ast,
+                ast.Documentation,
                 fileName,
                 (sink as CollectingErrorSink)?.Errors.Select(e => "{0} ({1}): {2}".FormatUI(fileName ?? "(builtins)", e.Span, e.Message))
             );
+
+            module.Analyze(ast, pathResolver);
+            return module;
         }
 
         public static IPythonModule FromTypeStub(
