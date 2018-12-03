@@ -90,9 +90,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 #endif
 
             var walker = new AstAnalysisWalker(
-                interpreter, ast, this, filePath, null, _members, 
-                includeLocations, 
-                warnAboutUndefinedValues: true, 
+                interpreter, ast, this, filePath, null, _members,
+                includeLocations,
+                warnAboutUndefinedValues: true,
                 suppressBuiltinLookup: true
             );
             walker.CreateBuiltinTypes = true;
@@ -101,6 +101,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         protected override void PostWalk(PythonWalker walker) {
             IPythonType boolType = null;
+            IPythonType noneType = null;
 
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
                 IMember m;
@@ -119,12 +120,20 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     if (typeId == BuiltinTypeId.Bool) {
                         boolType = m as IPythonType;
                     }
+
+                    if (typeId == BuiltinTypeId.NoneType) {
+                        noneType = m as IPythonType;
+                    }
                 }
             }
             _hiddenNames.Add("__builtin_module_names__");
 
             if (boolType != null) {
                 _members["True"] = _members["False"] = new AstPythonConstant(boolType);
+            }
+
+            if (noneType != null) {
+                _members["None"] = new AstPythonConstant(noneType);
             }
 
             base.PostWalk(walker);
