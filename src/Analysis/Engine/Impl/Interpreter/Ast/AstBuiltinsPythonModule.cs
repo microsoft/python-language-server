@@ -100,13 +100,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         protected override void PostWalk(PythonWalker walker) {
-            IPythonType boolType = null;
-            IPythonType noneType = null;
+            AstPythonBuiltinType boolType = null;
+            AstPythonBuiltinType noneType = null;
 
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
-                IMember m;
-                AstPythonBuiltinType biType;
-                if (_members.TryGetValue("__{0}__".FormatInvariant(typeId), out m) && (biType = m as AstPythonBuiltinType) != null) {
+                if (_members.TryGetValue("__{0}__".FormatInvariant(typeId), out IMember m) && m is AstPythonBuiltinType biType) {
                     if (typeId != BuiltinTypeId.Str &&
                         typeId != BuiltinTypeId.StrIterator) {
                         biType.TrySetTypeId(typeId);
@@ -118,11 +116,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     _hiddenNames.Add("__{0}__".FormatInvariant(typeId));
 
                     if (typeId == BuiltinTypeId.Bool) {
-                        boolType = m as IPythonType;
+                        boolType = boolType ?? biType;
                     }
 
                     if (typeId == BuiltinTypeId.NoneType) {
-                        noneType = m as IPythonType;
+                        noneType = noneType ?? biType;
                     }
                 }
             }
