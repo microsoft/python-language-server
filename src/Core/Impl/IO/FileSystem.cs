@@ -5,9 +5,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Core.IO {
     public sealed class FileSystem : IFileSystem {
+        private readonly IOSPlatform _os;
+
+        public FileSystem(IOSPlatform os) {
+            _os = os;
+        }
+
         public IFileSystemWatcher CreateFileSystemWatcher(string path, string filter) => new FileSystemWatcherProxy(path, filter);
         public IDirectoryInfo GetDirectoryInfo(string directoryPath) => new DirectoryInfoProxy(directoryPath);
         public bool FileExists(string path) => File.Exists(path);
@@ -27,8 +34,6 @@ namespace Microsoft.Python.Core.IO {
         public Stream FileOpen(string path, FileMode mode) => File.Open(path, mode);
         public bool DirectoryExists(string path) => Directory.Exists(path);
         public FileAttributes GetFileAttributes(string path) => File.GetAttributes(path);
-        public string ToLongPath(string path) => path;
-        public string ToShortPath(string path) => path;
         public Version GetFileVersion(string path) {
             var fvi = FileVersionInfo.GetVersionInfo(path);
             return new Version(fvi.FileMajorPart, fvi.FileMinorPart, fvi.FileBuildPart, fvi.FilePrivatePart);
@@ -42,5 +47,8 @@ namespace Microsoft.Python.Core.IO {
         public string[] GetFiles(string path, string pattern) => Directory.GetFiles(path, pattern);
         public string[] GetFiles(string path, string pattern, SearchOption option) => Directory.GetFiles(path, pattern, option);
         public string[] GetDirectories(string path) => Directory.GetDirectories(path);
+
+        public bool IsPathUnderRoot(string root, string path) => Path.GetFullPath(path).StartsWith(root, StringComparison);
+        public StringComparison StringComparison => _os.IsLinux ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
     }
 }

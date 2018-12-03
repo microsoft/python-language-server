@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -63,7 +62,7 @@ namespace Microsoft.Python.Analysis {
         /// <returns>
         /// True if the module was imported during analysis; otherwise, false.
         /// </returns>
-        bool IsModuleResolved(IPythonProjectEntry importFrom, string relativeModuleName, bool absoluteImports);
+        bool IsModuleResolved(IPythonModule importFrom, string relativeModuleName, bool absoluteImports);
 
         /// <summary>
         /// Gets a top-level list of all the available modules as a list of MemberResults.

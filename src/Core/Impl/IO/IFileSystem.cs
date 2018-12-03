@@ -27,8 +27,6 @@ namespace Microsoft.Python.Core.IO {
         long FileSize(string path);
 
         FileAttributes GetFileAttributes(string fullPath);
-        string ToLongPath(string path);
-        string ToShortPath(string path);
 
         string ReadAllText(string path);
         void WriteAllText(string path, string content);
@@ -52,5 +50,8 @@ namespace Microsoft.Python.Core.IO {
         string[] GetFiles(string path, string pattern);
         string[] GetFiles(string path, string pattern, SearchOption option);
         string[] GetDirectories(string path);
+
+        bool IsPathUnderRoot(string root, string path);
+        StringComparison StringComparison { get; }
     }
 }

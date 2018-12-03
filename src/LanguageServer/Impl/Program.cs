@@ -19,6 +19,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Threading;
 using Microsoft.Python.LanguageServer.Services;
@@ -46,6 +47,7 @@ namespace Microsoft.Python.LanguageServer.Server {
                     rpc.TraceSource.Switch.Level = SourceLevels.Error;
                     rpc.SynchronizationContext = new SingleThreadSynchronizationContext();
 
+                    var osp = new OSPlatform();
                     services
                         .AddService(rpc)
                         .AddService(new Logger(rpc))
@@ -53,7 +55,8 @@ namespace Microsoft.Python.LanguageServer.Server {
                         .AddService(new ProgressService(rpc))
                         .AddService(new TelemetryService(rpc))
                         .AddService(new IdleTimeService())
-                        .AddService(new FileSystem());
+                        .AddService(osp)
+                        .AddService(new FileSystem(osp));
 
                     services.AddService(messageFormatter.JsonSerializer);
 

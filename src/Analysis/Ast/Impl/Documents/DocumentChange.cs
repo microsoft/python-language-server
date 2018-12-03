@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -17,10 +16,11 @@
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis {
+namespace Microsoft.Python.Analysis.Documents {
     public sealed class DocumentChange {
         public string InsertedText { get; set; }
         public SourceSpan ReplacedSpan { get; set; }
+        public bool WholeBuffer { get; set; }
 
         public static DocumentChange Insert(string text, SourceLocation start) 
             => new DocumentChange { InsertedText = text, ReplacedSpan = new SourceSpan(start, start) };

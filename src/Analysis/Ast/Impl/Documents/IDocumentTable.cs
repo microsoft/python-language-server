@@ -15,20 +15,51 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis.Documents {
-    public sealed class DocumentEventArgs : EventArgs {
-        public DocumentEventArgs(IDocument document) {
-            Document = document;
-        }
-        public IDocument Document { get; }
-    }
+    /// <summary>
+    /// Represents collection of loaded modules.
+    /// </summary>
+    public interface IDocumentTable: IEnumerable<IDocument> {
+        /// <summary>
+        /// Adds file to the list of available documents.
+        /// </summary>
+        /// <param name="moduleName">The name of the module; used to associate with imports</param>
+        /// <param name="filePath">The path to the file on disk</param>
+        /// <param name="documentUri">Document URI. Can be null if module is not a user document.</param>
+        IDocument AddDocument(string moduleName, string filePath, Uri uri = null);
 
-    public interface IDocumentTable {
-        void OpenDocument(Uri uri, string filePath, string content);
-        void CloseDocument(Uri uri);
+        /// <summary>
+        /// Adds file to the list of available documents.
+        /// </summary>
+        /// <param name="documentUri">Document URI. Can be null if module is not a user document.</param>
+        /// <param name="content">Document content</param>
+        IDocument AddDocument(Uri uri, string content);
 
+        /// <summary>
+        /// Removes document from the table.
+        /// </summary>
+        void RemoveDocument(Uri uri);
+
+        /// <summary>
+        /// Fetches document by its URI. Returns null if document is not loaded.
+        /// </summary>
+        IDocument GetDocument(Uri uri);
+
+        /// <summary>
+        /// Fetches document by name. Returns null if document is not loaded.
+        /// </summary>
+        IDocument GetDocument(string name);
+
+        /// <summary>
+        /// Fires when document is opened.
+        /// </summary>
         event EventHandler<DocumentEventArgs> Opened;
+
+        /// <summary>
+        /// Fires when document is closed.
+        /// </summary>
         event EventHandler<DocumentEventArgs> Closed;
     }
 }

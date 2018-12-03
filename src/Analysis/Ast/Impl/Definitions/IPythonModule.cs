@@ -18,10 +18,10 @@ using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis {
     /// <summary>
-    /// Represents a Python module which members can be imported from.
+    /// Represents a Python module.
     /// </summary>
     public interface IPythonModule : IPythonType {
-        IEnumerable<string> GetChildrenModules();
+        IEnumerable<string> GetChildrenModuleNames();
 
         void Imported(IModuleContext context);
     }

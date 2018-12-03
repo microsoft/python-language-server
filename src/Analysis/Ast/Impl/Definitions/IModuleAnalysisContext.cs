@@ -1,4 +1,5 @@
-﻿// Copyright(c) Microsoft Corporation
+﻿// Python Tools for Visual Studio
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,23 +15,22 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Text;
 
-namespace Microsoft.Python.Core.Shell {
+namespace Microsoft.Python.Analysis.Definitions {
     /// <summary>
-    /// Progress reporting service
+    /// Provides context in which module was analyzed.
     /// </summary>
-    public interface IProgressService {
+    public interface IModuleAnalysisContext {
         /// <summary>
-        /// Displays progress message in the application UI.
+        /// Interpreter used in the analysis.
         /// </summary>
-        IProgress BeginProgress();
-    }
+        IPythonInterpreter PythonInterpreter { get; }
 
-    public interface IProgress: IDisposable {
         /// <summary>
-        /// Updates progress message in the application UI.
+        /// Returns the interpreter factory that the analyzer is using.
         /// </summary>
-        Task Report(string message);
+        IPythonInterpreterFactory InterpreterFactory { get; }
     }
 }

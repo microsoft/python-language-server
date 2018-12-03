@@ -13,24 +13,21 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Threading.Tasks;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 
-namespace Microsoft.Python.Core.Shell {
-    /// <summary>
-    /// Progress reporting service
-    /// </summary>
-    public interface IProgressService {
-        /// <summary>
-        /// Displays progress message in the application UI.
-        /// </summary>
-        IProgress BeginProgress();
-    }
+namespace Microsoft.Python.Analysis.Diagnostics {
+    public sealed class DiagnosticsEntry {
+        public DiagnosticsEntry(string message, SourceSpan span, int errorCode, Severity severity) {
+            Message = message;
+            SourceSpan = span;
+            ErrorCode = errorCode;
+            Severity = severity;
+        }
 
-    public interface IProgress: IDisposable {
-        /// <summary>
-        /// Updates progress message in the application UI.
-        /// </summary>
-        Task Report(string message);
+        public string Message { get; }
+        public SourceSpan SourceSpan { get; }
+        public int ErrorCode { get; }
+        public Severity Severity { get; }
     }
 }

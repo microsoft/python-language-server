@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -19,40 +18,53 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis {
+namespace Microsoft.Python.Analysis.Documents {
+    /// <summary>
+    /// Represent document (file) loaded for the analysis.
+    /// </summary>
     public interface IDocument: IDisposable {
         /// <summary>
-        /// Returns the project entries file path.
+        /// File path to the module.
         /// </summary>
         string FilePath { get; }
 
         /// <summary>
-        /// Document URI.
+        /// Module name.
+        /// </summary>
+        string Name { get; }
+
+        /// <summary>
+        /// Module URI.
         /// </summary>
         Uri Uri { get; }
 
         /// <summary>
-        /// Module name.
-        /// </summary>
-        string ModuleName { get; }
-
-        /// <summary>
-        /// Document version (increments after every change).
+        /// Module content version (increments after every change).
         /// </summary>
         int Version { get; }
 
         /// <summary>
-        /// Updates document content with the list of changes.
+        /// Indicates if module belongs to the workspace tree.
         /// </summary>
-        /// <param name="changes"></param>
-        void Update(IEnumerable<DocumentChange> changes);
+        bool IsInWorkspace { get; }
+
+        /// <summary>
+        /// Indicates if module is open in the editor.
+        /// </summary>
+        bool IsOpen { get; }
 
         /// <summary>
         /// Document parse tree
         /// </summary>
-        Task<PythonAst> GetAst(CancellationToken cancellationToken = default);
+        Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Python module type.
+        /// </summary>
+        IPythonModule PythonModule { get; }
 
         /// <summary>
         /// Returns reader to read the document content.
@@ -68,6 +80,17 @@ namespace Microsoft.Python.Analysis {
         /// Returns document content as string.
         /// </summary>
         string GetContent();
+
+        /// <summary>
+        /// Updates document content with the list of changes.
+        /// </summary>
+        /// <param name="changes"></param>
+        void Update(IEnumerable<DocumentChangeSet> changes);
+
+        /// <summary>
+        /// Provides collection of parsing errors, if any.
+        /// </summary>
+        IEnumerable<DiagnosticsEntry> GetDiagnostics();
 
         /// <summary>
         /// Fires when new AST is ready (typically as a result of the document change)
