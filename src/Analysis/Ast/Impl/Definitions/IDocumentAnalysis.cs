@@ -13,17 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Dependencies;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    public interface IAnalysisQueue {
-        /// <summary>
-        /// Enqueues chain of dependencies for analysis.
-        /// </summary>
-        /// <param name="node">Dependency root node.</param>
-        /// <returns>Task that completes when analysis of the entire chain is complete.</returns>
-        Task EnqueueAsync(IDependencyChainNode node, CancellationToken cancellationToken);
+namespace Microsoft.Python.Analysis {
+    /// <summary>
+    /// Repsents analysis of the Python module.
+    /// </summary>
+    public interface IDocumentAnalysis {
     }
 }

@@ -64,7 +64,7 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <summary>
         /// Returns document analysis.
         /// </summary>
-        Task<IModuleAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default);
+        Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Python module type.

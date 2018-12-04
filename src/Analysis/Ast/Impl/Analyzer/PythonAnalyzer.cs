@@ -15,23 +15,88 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer: IPythonAnalyzer {
-        public PythonAnalyzer(IServiceContainer services) {
+        private readonly IDependencyResolver _dependencyResolver;
 
+        public PythonAnalyzer(IServiceContainer services) {
+            Interpreter = services.GetService<IPythonInterpreter>();
+            _dependencyResolver = services.GetService<IDependencyResolver>();
         }
 
-        public PythonLanguageVersion LanguageVersion => throw new NotImplementedException();
-
-        public IPythonInterpreter Interpreter => throw new NotImplementedException();
+        public IPythonInterpreter Interpreter { get; }
 
         public IEnumerable<string> TypeStubDirectories => throw new NotImplementedException();
 
-        public Task AnalyzeAsync(IDocument document) => throw new NotImplementedException();
+        /// <summary>
+        /// Analyze single document.
+        /// </summary>
+        public Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken) {
+            if(!(document is IAnalyzable a)) {
+                return;
+            }
+
+            a.NotifyAnalysisPending();
+
+        }
+
+        /// <summary>
+        /// Analyze document with dependents.
+        /// </summary>
+        public async Task AnalyzeDocumentDependencyChainAsync(IDocument document, CancellationToken cancellationToken) {
+            if (!(document is IAnalyzable a)) {
+                return;
+            }
+
+            var dependencyRoot = await _dependencyResolver.GetDependencyChainAsync(document, cancellationToken);
+            // Notify each dependency that the analysis is now pending
+            NotifyAnalysisPending(dependencyRoot);
+
+
+            CheckDocumentVersionMatch(node, cancellationToken);
+        }
+
+        private void NotifyAnalysisPending(IDependencyChainNode node) {
+            node.Analyzable.NotifyAnalysisPending();
+            foreach (var c in node.Children) {
+                NotifyAnalysisPending(c);
+            }
+        }
+
+        private void AnalyzeChainAsync(IDependencyChainNode node, CancellationToken cancellationToken) {
+            Task.Run(async () => {
+                if (node.Analyzable is IDocument doc) {
+                    await Analyze(doc, cancellationToken);
+                    foreach (var c in node.Children) {
+                        await EnqueueAsync(c, cancellationToken);
+                    }
+                }
+            });
+        }
+
+        private Task AnalyzeAsync(IDependencyChainNode node, CancellationToken cancellationToken)
+            => Task.Run(() => {
+                var analysis = Analyze(node.Document);
+                if(!node.Analyzable.NotifyAnalysisComplete(analysis)) {
+                    throw new OperationCanceledException();
+                }
+            });
+
+        private IDocumentAnalysis Analyze(IDocument document) {
+        }
+
+        private void CheckDocumentVersionMatch(IDependencyChainNode node, CancellationToken cancellationToken) {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (node.Analyzable.ExpectedAnalysisVersion != node.SnapshotVersion) {
+            }
+        }
+
     }
 }

@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -33,7 +34,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Documents {
     /// </inheritdoc>
-    public sealed class Document : IDocument {
+    public sealed class Document : IDocument, IAnalyzable {
         private readonly IFileSystem _fs;
         private readonly IDiagnosticsPublisher _dps;
         private readonly IIdleTimeService _idleTimeService;
@@ -156,20 +157,34 @@ namespace Microsoft.Python.Analysis.Documents {
         }
         #endregion
 
-        #region Analysis
-        public async Task<PythonAst> GetAnalysisAsync(CancellationToken cancellationToken = default) {
-            var ast = await GetAstAsync(cancellationToken);
-            while (!cancellationToken.IsCancellationRequested) {
-                try {
-                    await _parsingTask;
-                    break;
-                } catch (OperationCanceledException) {
-                    // Parsing as canceled, try next task.
-                    continue;
+        private TaskCompletionSource<IDocumentAnalysis> _tcs;
+        private readonly object _analysisLock = new object();
+
+        #region IAnalyzable
+        public int ExpectedAnalysisVersion { get; private set; }
+
+        public void NotifyAnalysisPending() {
+            lock (_analysisLock) {
+                ExpectedAnalysisVersion++;
+                if (_tcs == null || _tcs.Task.IsCanceled || _tcs.Task.IsCompleted || _tcs.Task.IsFaulted) {
+                    _tcs = new TaskCompletionSource<IDocumentAnalysis>();
                 }
             }
-            return _ast;
         }
+        public bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion) {
+            lock (_analysisLock) {
+                if (analysisVersion == ExpectedAnalysisVersion) {
+                    _tcs.TrySetResult(analysis);
+                    return true;
+                }
+                Debug.Assert(ExpectedAnalysisVersion > analysisVersion);
+                return false;
+            }
+        }
+        #endregion
+
+        #region Analysis
+        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) => _tcs?.Task;
         #endregion
     }
 }

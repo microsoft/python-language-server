@@ -17,12 +17,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public interface IPythonAnalyzer {
-        PythonLanguageVersion LanguageVersion { get; }
-
         /// <summary>
         /// Returns the interpreter that the analyzer is using.
         /// This property is thread safe.
@@ -38,6 +35,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Analyze single document.
         /// </summary>
-        Task AnalyzeAsync(IDocument document, CancellationToken cancellationToken);
+        Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Analyze document with dependents.
+        /// </summary>
+        Task AnalyzeDocumentDependencyChainAsync(IDocument document, CancellationToken cancellationToken);
     }
 }

@@ -18,6 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis {
     /// <summary>
@@ -35,6 +37,11 @@ namespace Microsoft.Python.Analysis {
         /// Performs any interpreter-specific initialization.
         /// </summary>
         void Initialize(IPythonAnalyzer analyzer);
+
+        /// <summary>
+        /// Python language version.
+        /// </summary>
+        PythonLanguageVersion LanguageVersion { get; }
 
         /// <summary>
         /// Gets a well known built-in type such as int, list, dict, etc...

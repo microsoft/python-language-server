@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 
 namespace Microsoft.Python.Analysis.Dependencies {
@@ -21,6 +22,11 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// Represents a node in a chain of a document dependencies.
     /// </summary>
     public interface IDependencyChainNode {
+        /// <summary>
+        /// Analyzable object (usually the document itself).
+        /// </summary>
+        IAnalyzable Analyzable { get; }
+
         /// <summary>
         /// Document to analyze.
         /// </summary>
@@ -30,7 +36,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
         /// Version of the document at the time of the dependency chain creation.
         /// Used to track if completed analysis matches current document snapshot.
         /// </summary>
-        int DocumentVersion { get; }
+        int SnapshotVersion { get; }
 
         /// <summary>
         /// Dependent documents to analyze after this one. Child chains
