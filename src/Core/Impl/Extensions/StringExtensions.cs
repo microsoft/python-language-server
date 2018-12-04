@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Core {
     public static class StringExtensions {

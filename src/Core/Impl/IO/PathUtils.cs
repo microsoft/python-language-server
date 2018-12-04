@@ -20,8 +20,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
-    static class PathUtils {
+namespace Microsoft.Python.Core.IO {
+    public static class PathUtils {
         private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         private static readonly char[] InvalidFileNameChars;
 
@@ -30,7 +30,7 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             Array.Sort(InvalidFileNameChars);
         }
 
-        internal static readonly char[] DirectorySeparators = {
+        public static readonly char[] DirectorySeparators = {
             Path.DirectorySeparatorChar,
             Path.AltDirectorySeparatorChar
         };

@@ -18,7 +18,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Microsoft.PythonTools.Analysis.Infrastructure {
+namespace Microsoft.Python.Core.Text {
     /// <summary>
     /// This type represents the span over the string
     /// It is a temporary solution until .net standard 2.1 with ReadOnlySpan is published

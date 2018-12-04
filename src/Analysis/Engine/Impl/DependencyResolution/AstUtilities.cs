@@ -15,7 +15,7 @@
 // permissions and limitations under the License.
 
 using System.Linq;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
     internal static class AstUtilities {

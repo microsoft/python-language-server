@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -20,11 +19,11 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
-using System.Text;
-using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
     internal partial struct PathResolverSnapshot {
