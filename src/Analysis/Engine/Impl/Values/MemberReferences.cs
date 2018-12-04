@@ -17,6 +17,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Analyzer;
+using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -62,7 +63,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
             var member = innerContainer.GetMember(context, name) as ILocatedMember;
             if (member != null) {
-                res.AddRange(member.Locations.Select(loc => new DefinitionList(loc)));
+                res.AddRange(member.Locations.MaybeEnumerate().Select(loc => new DefinitionList(loc)));
             }
 
             return res;

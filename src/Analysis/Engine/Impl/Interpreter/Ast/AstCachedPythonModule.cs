@@ -37,7 +37,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return PathUtils.OpenWithRetry(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
 
-        protected override List<string> GetScrapeArguments(IPythonInterpreterFactory factory) {
+        protected override List<string> GetScrapeArguments(AstPythonInterpreter factory) {
             // Cannot scrape this module
             return null;
         }

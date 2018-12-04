@@ -15,7 +15,5 @@
 // permissions and limitations under the License.
 
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
-    internal interface IAvailableImports {
-        string Name { get; }
-    }
+    internal interface IImportSearchResult {}
 }

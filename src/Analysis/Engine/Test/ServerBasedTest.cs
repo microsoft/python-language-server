@@ -45,13 +45,6 @@ namespace AnalysisTests {
 
         protected virtual AnalysisLimits GetLimits() => AnalysisLimits.GetDefaultLimits();
 
-        protected Uri GetDocument(string file) {
-            if (!Path.IsPathRooted(file)) {
-                file = TestData.GetPath(file);
-            }
-            return new Uri(file);
-        }
-
         protected static Task<Tuple<string, int>> ApplyChange(
             Server s,
             Uri document,

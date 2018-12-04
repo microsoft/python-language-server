@@ -18,14 +18,27 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Microsoft.PythonTools.Analysis.Infrastructure {
     static class PathUtils {
-        internal static readonly char[] DirectorySeparators = new[] {
+        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly char[] InvalidFileNameChars;
+
+        static PathUtils() {
+            InvalidFileNameChars = Path.GetInvalidFileNameChars();
+            Array.Sort(InvalidFileNameChars);
+        }
+
+        internal static readonly char[] DirectorySeparators = {
             Path.DirectorySeparatorChar,
             Path.AltDirectorySeparatorChar
         };
+
+        public static bool IsValidWindowsDriveChar(char value) => (value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z');
+
+        public static bool IsValidFileNameCharacter(char character) => Array.BinarySearch(InvalidFileNameChars, character) < 0;
 
         /// <summary>
         /// Returns true if the path has a directory separator character at the end.
@@ -382,6 +395,47 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
             return null;
         }
 
+        public static bool IsNormalizedPath(string path) {
+            var separator = Path.DirectorySeparatorChar;
+            var altSeparator = Path.AltDirectorySeparatorChar;
+            int offset;
+            if (path.Length >= 1 && path[0] == separator) {
+                offset = 1;
+            } else if (IsWindows && path.Length >= 2 && IsValidWindowsDriveChar(path[0]) && path[1] == ':') {
+                offset = 2;
+            } else {
+                return false;
+            }
+
+            var impossibleName = false;
+            for (var i = offset; i < path.Length; i++) {
+                var character = path[i];
+                if (character == altSeparator && separator != altSeparator) {
+                    return false;
+                }
+
+                var previousChar = path[i - 1];
+                if (character == separator) {
+                    if (impossibleName || previousChar == separator || char.IsWhiteSpace(previousChar)) {
+                        return false;
+                    }
+                } else if (!IsValidFileNameCharacter(character)) {
+                    return false;
+                }
+
+                if (character == '.' || char.IsWhiteSpace(character)) {
+                    if (previousChar == separator) {
+                        impossibleName = true;
+                    }
+                } else {
+                    impossibleName = false;
+                }
+            }
+
+            var last = path[path.Length - 1];
+            return !(impossibleName || last == '.' || char.IsWhiteSpace(last));
+        }
+
         /// <summary>
         /// Normalizes and returns the provided path.
         /// </summary>
@@ -391,6 +445,10 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         public static string NormalizePath(string path) {
             if (string.IsNullOrEmpty(path)) {
                 return string.Empty;
+            }
+
+            if (IsNormalizedPath(path)) {
+                return path;
             }
 
             var root = EnsureEndSeparator(Path.GetPathRoot(path));

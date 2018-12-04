@@ -68,36 +68,9 @@ namespace Microsoft.PythonTools.Analysis {
         AnalysisValue GetAnalysisValueFromObjects(object attr);
 
         /// <summary>
-        /// Returns true if a module has been imported.
-        /// </summary>
-        /// <param name="importFrom">
-        /// The entry of the module doing the import. If null, the module name
-        /// is resolved as an absolute name.
-        /// </param>
-        /// <param name="relativeModuleName">
-        /// The absolute or relative name of the module. If a relative name is 
-        /// passed here, <paramref name="importFrom"/> must be provided.
-        /// </param>
-        /// <param name="absoluteImports">
-        /// True if Python 2.6/3.x style imports should be used.
-        /// </param>
-        /// <returns>
-        /// True if the module was imported during analysis; otherwise, false.
-        /// </returns>
-        bool IsModuleResolved(IPythonProjectEntry importFrom, string relativeModuleName, bool absoluteImports);
-
-        /// <summary>
         /// Gets a top-level list of all the available modules as a list of MemberResults.
         /// </summary>
         IMemberResult[] GetModules();
-
-        /// <summary>
-        /// Searches all modules which match the given name and searches in the modules
-        /// for top-level items which match the given name.  Returns a list of all the
-        /// available names fully qualified to their name.  
-        /// </summary>
-        /// <param name="name"></param>
-        IEnumerable<ExportedMemberInfo> FindNameInAllModules(string name);
 
         /// <summary>
         /// Returns the interpreter that the analyzer is using.

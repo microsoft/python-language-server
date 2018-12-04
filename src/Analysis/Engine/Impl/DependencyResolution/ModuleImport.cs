@@ -14,19 +14,21 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
-
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
-    internal class AvailablePackageImports : IAvailableImports {
+    internal class ModuleImport : IImportSearchResult {
         public string Name { get; }
-        public IReadOnlyDictionary<string, string> Modules { get; }
-        public string[] Packages { get; }
+        public string FullName { get; }
+        public string RootPath { get; }
+        public string ModulePath { get; }
+        public bool IsCompiled { get; }
+        public bool IsBuiltin => IsCompiled && ModulePath == null;
 
-        public AvailablePackageImports(string name, IReadOnlyDictionary<string, string> modules, string[] packages) {
+        public ModuleImport(string name, string fullName, string rootPath, string modulePath, bool isCompiled) {
             Name = name;
-            Modules = modules;
-            Packages = packages;
+            FullName = fullName;
+            RootPath = rootPath;
+            ModulePath = modulePath;
+            IsCompiled = isCompiled;
         }
     }
 }

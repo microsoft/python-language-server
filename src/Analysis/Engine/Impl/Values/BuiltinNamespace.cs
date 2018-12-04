@@ -24,13 +24,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// <summary>
     /// Base class for things which get their members primarily via a built-in .NET type.
     /// </summary>
-    class BuiltinNamespace<MemberContainerType> : AnalysisValue where MemberContainerType : IMemberContainer {
-        private readonly PythonAnalyzer _projectState;
-        internal readonly MemberContainerType _type;
+    class BuiltinNamespace<TMemberContainer> : AnalysisValue where TMemberContainer : IMemberContainer {
+        internal readonly TMemberContainer _type;
         internal Dictionary<string, IAnalysisSet> _specializedValues;
 
-        public BuiltinNamespace(MemberContainerType pythonType, PythonAnalyzer projectState) {
-            _projectState = projectState ?? throw new ArgumentNullException(nameof(projectState)); ;
+        public BuiltinNamespace(TMemberContainer pythonType, PythonAnalyzer projectState) {
+            ProjectState = projectState ?? throw new ArgumentNullException(nameof(projectState)); ;
             _type = pythonType;
             // Ideally we'd assert here whenever pythonType is null, but that
             // makes debug builds unusable because it happens so often.
@@ -39,8 +38,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) {
             var res = AnalysisSet.Empty;
 
-            IAnalysisSet specializedRes;
-            if (_specializedValues != null && _specializedValues.TryGetValue(name, out specializedRes)) {
+            if (_specializedValues != null && _specializedValues.TryGetValue(name, out var specializedRes)) {
                 return specializedRes;
             }
 
@@ -97,13 +95,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return false;
         }
 
-        public PythonAnalyzer ProjectState {
-            get {
-                return _projectState;
-            }
-        }
+        public PythonAnalyzer ProjectState { get; }
 
-        public MemberContainerType ContainedValue {
+        public TMemberContainer ContainedValue {
             get {
                 return _type;
             }
@@ -111,18 +105,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public virtual ILocatedMember GetLocatedMember() => null;
 
-        public override IEnumerable<ILocationInfo> Locations {
-            get {
-                var locatedMem = GetLocatedMember();
-                if (locatedMem != null) {
-                    return locatedMem.Locations;
-                }
-                return LocationInfo.Empty;
-            }
-        }
+        public override IEnumerable<ILocationInfo> Locations => GetLocatedMember()?.Locations.MaybeEnumerate();
 
         public override bool Equals(object obj) {
-            if (obj is BuiltinNamespace<MemberContainerType> bn && GetType() == bn.GetType()) {
+            if (obj is BuiltinNamespace<TMemberContainer> bn && GetType() == bn.GetType()) {
                 if (_type != null) {
                     return _type.Equals(bn._type);
                 }
