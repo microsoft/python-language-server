@@ -71,45 +71,7 @@ namespace Microsoft.PythonTools.Analysis {
         internal bool TryGetImportedModule(string name, out ModuleReference res) {
             return _modules.TryGetValue(name, out res);
         }
-
-        /// <summary>
-        /// Gets a reference to a module.
-        /// </summary>
-        /// <param name="name">The full import name of the module.</param>
-        /// <param name="token"></param>
-        /// <returns>
-        /// True if the module is available. This means that <c>moduleReference.Module</c>
-        /// is not null. If this function returns false, <paramref name="res"/>
-        /// may be valid and should not be replaced, but it is an unresolved
-        /// reference.
-        /// </returns>
-        public async Task<ModuleReference> TryImportAsync(string name, CancellationToken token) {
-            var firstImport = false;
-
-            if (!_modules.TryGetValue(name, out var moduleReference) || moduleReference == null) {
-                var pythonModule = await ImportModuleAsync(name, token).ConfigureAwait(false);
-                moduleReference = SetModule(name, GetBuiltinModule(pythonModule));
-                firstImport = true;
-            }
-
-            if (moduleReference.Module == null) {
-                var pythonModule = await ImportModuleAsync(name, token).ConfigureAwait(false);
-                moduleReference.Module = GetBuiltinModule(pythonModule);
-            }
-
-            if (firstImport && moduleReference.Module != null) {
-                _analyzer.DoDelayedSpecialization(name);
-            }
-
-            return moduleReference.Module == null ? null : moduleReference;
-        }
-
-        private Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token) {
-            return _interpreter is IPythonInterpreter2 interpreter2
-                ? interpreter2.ImportModuleAsync(name, token)
-                : Task.Run(() => _interpreter.ImportModule(name), token);
-        }
-
+        
         /// <summary>
         /// Gets a reference to a module.
         /// </summary>

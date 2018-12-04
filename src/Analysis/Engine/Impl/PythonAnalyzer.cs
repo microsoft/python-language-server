@@ -101,8 +101,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             var fallback = new FallbackBuiltinModule(LanguageVersion);
 
-            var moduleRef = await Modules.TryImportAsync(_builtinName, token).ConfigureAwait(false);
-            if (moduleRef != null) {
+            if (Modules.TryImport(_builtinName, out var moduleRef)) {
                 _builtinModule = (BuiltinModule)moduleRef.Module;
             } else {
                 _builtinModule = new BuiltinModule(fallback, this);

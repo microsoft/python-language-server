@@ -14,12 +14,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
-using System.Xml.Schema;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Analysis.DependencyResolution {
@@ -78,8 +74,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             }
 
             public int GetChildIndex(string childName) => Children.IndexOf(childName, NameEquals);
-            public int GetChildIndex(string modulePath, (int start, int length) nameSpan) 
-                => Children.IndexOf((modulePath, nameSpan.start, nameSpan.length), NameEquals);
+            public int GetChildIndex(StringSpan nameSpan) => Children.IndexOf(nameSpan, NameEquals);
 
             private string DebuggerDisplay {
                 get {
@@ -98,8 +93,8 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
 
             private static bool NameEquals(Node n, string name) => n.Name.EqualsOrdinal(name);
 
-            private static bool NameEquals(Node n, (string str, int start, int length) span) 
-                    => n.Name.Length == span.length && n.Name.EqualsOrdinal(0, span.str, span.start, span.length);
+            private static bool NameEquals(Node n, StringSpan span) 
+                    => n.Name.Length == span.Length && n.Name.EqualsOrdinal(0, span.Source, span.Start, span.Length);
         }
     }
 }

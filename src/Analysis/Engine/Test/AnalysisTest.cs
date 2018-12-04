@@ -174,7 +174,7 @@ f(x=42, y = 'abc')
         }
 
         [TestMethod, Priority(0)]
-        public async Task TestPackageImportStar3X() {
+-        public async Task TestPackageImportStar3X() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X, TestData.GetTestSpecificRootUri())) {
                 var fob = await server.AddModuleWithContentAsync(Path.Combine("fob", "__init__.py"), "from .oar import *");
                 var oar = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "__init__.py"), "from .baz import *");
