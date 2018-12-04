@@ -62,6 +62,11 @@ namespace Microsoft.Python.Analysis.Documents {
         Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Document parse tree
+        /// </summary>
+        Task<IModuleAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Python module type.
         /// </summary>
         IPythonModule PythonModule { get; }

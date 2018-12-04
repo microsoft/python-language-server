@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Text;
@@ -33,7 +34,8 @@ namespace Microsoft.Python.Analysis.Documents {
     /// </inheritdoc>
     public sealed class Document : IDocument {
         private readonly IFileSystem _fs;
-        private readonly IDiagnosticsPublishingService _dps;
+        private readonly IDiagnosticsPublisher _dps;
+        private readonly IIdleTimeService _idleTimeService;
         private readonly IPythonAnalyzer _analyzer;
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly object _lock = new object();
@@ -59,6 +61,7 @@ namespace Microsoft.Python.Analysis.Documents {
 
             _fs = services.GetService<IFileSystem>();
             _analyzer = services.GetService<IPythonAnalyzer>();
+            _idleTimeService = services.GetService<IIdleTimeService>();
 
             Load(content);
         }
@@ -79,6 +82,9 @@ namespace Microsoft.Python.Analysis.Documents {
             Load(content);
         }
 
+        public event EventHandler<EventArgs> NewAst;
+        public event EventHandler<EventArgs> NewAnalysis;
+
         public string FilePath { get; }
         public string Name { get; }
         public Uri Uri { get; }
@@ -89,11 +95,23 @@ namespace Microsoft.Python.Analysis.Documents {
 
         public IPythonModule PythonModule => throw new NotImplementedException();
 
-        public event EventHandler<EventArgs> NewAst;
-        public event EventHandler<EventArgs> NewAnalysis;
-
         public void Dispose() { }
+
         public async Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default) {
+            while (!cancellationToken.IsCancellationRequested) {
+                try {
+                    await _parsingTask;
+                    break;
+                } catch (OperationCanceledException) {
+                    // Parsing as canceled, try next task.
+                    continue;
+                }
+            }
+            return _ast;
+        }
+
+        public async Task<PythonAst> GetAnalysisAsync(CancellationToken cancellationToken = default) {
+            var ast = await GetAstAsync(cancellationToken);
             while (!cancellationToken.IsCancellationRequested) {
                 try {
                     await _parsingTask;

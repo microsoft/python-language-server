@@ -17,7 +17,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Diagnostics {
-    public interface IDiagnosticsPublishingService {
+    public interface IDiagnosticsPublisher {
         void AddDiagnostics(string message, SourceSpan span, int errorCode, Severity severity);
     }
 }

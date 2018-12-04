@@ -23,6 +23,6 @@ namespace Microsoft.Python.Analysis {
     public interface IPythonModule : IPythonType {
         IEnumerable<string> GetChildrenModuleNames();
 
-        void Imported(IModuleContext context);
+        void Imported(IModuleAnalysisContext context);
     }
 }

@@ -13,69 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public interface IPythonAnalyzer {
         PythonLanguageVersion LanguageVersion { get; }
-
-        /// <summary>
-        /// Reloads the modules from the interpreter. Usually invoked when
-        /// the interpreter signals that it's modules have changed.
-        /// </summary>
-        Task ReloadModulesAsync(CancellationToken token = default);
-
-        /// <summary>
-        /// Adds a new user file to the list of available modules and returns a ProjectEntry object.
-        /// </summary>
-        /// <param name="moduleName">The name of the module; used to associate with imports</param>
-        /// <param name="filePath">The path to the file on disk</param>
-        /// <param name="documentUri">Document URI.</param>
-        /// <returns>The project entry for the new module.</returns>
-        IDocument AddModule(string moduleName, string filePath, Uri documentUri = null);
-
-        /// <summary>
-        /// Removes the specified project entry from the current analysis.
-        /// </summary>
-        /// <param name="document">The document to remove.</param>
-        void RemoveModule(IDocument entry);
-
-        /// <summary>
-        /// Returns true if a module has been imported.
-        /// </summary>
-        /// <param name="importFrom">
-        /// The entry of the module doing the import. If null, the module name
-        /// is resolved as an absolute name.
-        /// </param>
-        /// <param name="relativeModuleName">
-        /// The absolute or relative name of the module. If a relative name is 
-        /// passed here, <paramref name="importFrom"/> must be provided.
-        /// </param>
-        /// <param name="absoluteImports">
-        /// True if Python 2.6/3.x style imports should be used.
-        /// </param>
-        /// <returns>
-        /// True if the module was imported during analysis; otherwise, false.
-        /// </returns>
-        bool IsModuleResolved(IPythonModule importFrom, string relativeModuleName, bool absoluteImports);
-
-        /// <summary>
-        /// Gets a top-level list of all the available modules as a list of MemberResults.
-        /// </summary>
-        IMemberResult[] GetModules();
-
-        /// <summary>
-        /// Searches all modules which match the given name and searches in the modules
-        /// for top-level items which match the given name.  Returns a list of all the
-        /// available names fully qualified to their name.  
-        /// </summary>
-        /// <param name="name"></param>
-        IEnumerable<ExportedMemberInfo> FindNameInAllModules(string name);
 
         /// <summary>
         /// Returns the interpreter that the analyzer is using.
@@ -84,35 +29,14 @@ namespace Microsoft.Python.Analysis {
         IPythonInterpreter Interpreter { get; }
 
         /// <summary>
-        /// Returns the interpreter factory that the analyzer is using.
-        /// </summary>
-        IPythonInterpreterFactory InterpreterFactory { get; }
-
-        /// <summary>
-        /// returns the MemberResults associated with modules in the specified
-        /// list of names.  The list of names is the path through the module, for example
-        /// ['System', 'Runtime']
-        /// </summary>
-        /// <returns></returns>
-        IMemberResult[] GetModuleMembers(IModuleContext moduleContext, string[] names, bool includeMembers = false);
-
-        /// <summary>
-        /// Gets the list of directories which should be analyzed.
-        /// This property is thread safe.
-        /// </summary>
-        IEnumerable<string> AnalysisDirectories { get; }
-
-        /// <summary>
         /// Gets the list of directories which should be searched for type stubs.
         /// This property is thread safe.
         /// </summary>
         IEnumerable<string> TypeStubDirectories { get; }
 
-        bool EnableDiagnostics { get; set; }
-        void AddDiagnostic(Node node, AnalysisUnit unit, string message, DiagnosticSeverity severity, string code = null);
-        IReadOnlyList<Diagnostic> GetDiagnostics(IProjectEntry entry);
-        IReadOnlyDictionary<IProjectEntry, IReadOnlyList<Diagnostic>> GetAllDiagnostics();
-        void ClearDiagnostic(Node node, AnalysisUnit unit, string code = null);
-        void ClearDiagnostics(IProjectEntry entry);
+        /// <summary>
+        /// Analyze single document.
+        /// </summary>
+        Task AnalyzeAsync(IDocument document);
     }
 }

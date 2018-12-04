@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,23 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Microsoft.Python.Analysis.Definitions {
+namespace Microsoft.Python.Analysis {
     /// <summary>
     /// Provides context in which module was analyzed.
     /// </summary>
     public interface IModuleAnalysisContext {
         /// <summary>
-        /// Interpreter used in the analysis.
+        /// Analyzer used in the analysis.
         /// </summary>
-        IPythonInterpreter PythonInterpreter { get; }
-
-        /// <summary>
-        /// Returns the interpreter factory that the analyzer is using.
-        /// </summary>
-        IPythonInterpreterFactory InterpreterFactory { get; }
+        IPythonAnalyzer Analyzer { get; }
     }
 }
