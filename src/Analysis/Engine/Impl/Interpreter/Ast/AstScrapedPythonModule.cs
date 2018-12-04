@@ -88,10 +88,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public IEnumerable<ILocationInfo> Locations { get; private set; } = Enumerable.Empty<ILocationInfo>();
 #endif
 
-        protected virtual List<string> GetScrapeArguments(IPythonInterpreterFactory factory) {
+        protected virtual List<string> GetScrapeArguments(AstPythonInterpreter interpreter) {
             var args = new List<string> { "-B", "-E" };
 
-            ModulePath mp = AstModuleResolution.FindModuleAsync(factory, _filePath, CancellationToken.None)
+            ModulePath mp = AstModuleResolution.FindModuleAsync(interpreter, _filePath, CancellationToken.None)
                 .WaitAndUnwrapExceptions();
             if (string.IsNullOrEmpty(mp.FullName)) {
                 return null;
@@ -109,12 +109,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return args;
         }
 
-        protected virtual PythonWalker PrepareWalker(IPythonInterpreter interpreter, PythonAst ast) {
+        protected virtual PythonWalker PrepareWalker(AstPythonInterpreter interpreter, PythonAst ast) {
 #if DEBUG
             // In debug builds we let you F12 to the scraped file
             var filePath = string.IsNullOrEmpty(_filePath)
                 ? null
-                : ((interpreter as AstPythonInterpreter)?.Factory as AstPythonInterpreterFactory)?.ModuleCache.GetCacheFilePath(_filePath);
+                : interpreter.ModuleCache.GetCacheFilePath(_filePath);
             var uri = string.IsNullOrEmpty(filePath) ? null : new Uri(filePath);
             const bool includeLocations = true;
 #else
@@ -123,7 +123,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             const bool includeLocations = false;
 #endif
             return new AstAnalysisWalker(
-                interpreter, ast, this, filePath, uri, _members,
+                interpreter, interpreter.CurrentPathResolver, ast, this, filePath, uri, _members,
                 includeLocations,
                 warnAboutUndefinedValues: true,
                 suppressBuiltinLookup: false
@@ -135,11 +135,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         protected virtual Stream LoadCachedCode(AstPythonInterpreter interpreter) {
-            return (interpreter.Factory as AstPythonInterpreterFactory)?.ModuleCache.ReadCachedModule(_filePath);
+            return interpreter.ModuleCache.ReadCachedModule(_filePath);
         }
 
         protected virtual void SaveCachedCode(AstPythonInterpreter interpreter, Stream code) {
-            (interpreter.Factory as AstPythonInterpreterFactory)?.ModuleCache.WriteCachedModule(_filePath, code);
+            interpreter.ModuleCache.WriteCachedModule(_filePath, code);
         }
 
         public void Imported(IModuleContext context) {
@@ -148,23 +148,23 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
             Debugger.NotifyOfCrossThreadDependency();
 
-            var interp = context as AstPythonInterpreter;
-            var fact = interp?.Factory as AstPythonInterpreterFactory;
+            var interpreter = context as AstPythonInterpreter;
+            var fact = interpreter?.Factory as AstPythonInterpreterFactory;
             if (fact == null) {
                 return;
             }
 
-            var code = LoadCachedCode(interp);
+            var code = LoadCachedCode(interpreter);
             bool needCache = code == null;
 
             _scraped = true;
 
             if (needCache) {
-                if (!File.Exists(fact.Configuration.InterpreterPath)) {
+                if (!File.Exists(interpreter.InterpreterPath)) {
                     return;
                 }
 
-                var args = GetScrapeArguments(fact);
+                var args = GetScrapeArguments(interpreter);
                 if (args == null) {
                     return;
                 }
@@ -223,7 +223,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 if (needCache) {
                     // We know we created the stream, so it's safe to seek here
                     code.Seek(0, SeekOrigin.Begin);
-                    SaveCachedCode(interp, code);
+                    SaveCachedCode(interpreter, code);
                 }
             }
 
@@ -233,14 +233,14 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
 #if DEBUG
             if (!string.IsNullOrEmpty(_filePath)) {
-                var cachePath = fact.ModuleCache.GetCacheFilePath(_filePath);
+                var cachePath = interpreter.ModuleCache.GetCacheFilePath(_filePath);
                 if (!string.IsNullOrEmpty(cachePath)) {
                     Locations = new[] { new LocationInfo(cachePath, null, 1, 1) };
                 }
             }
 #endif
 
-            var walker = PrepareWalker(interp, ast);
+            var walker = PrepareWalker(interpreter, ast);
             lock (_members) {
                 ast.Walk(walker);
                 PostWalk(walker);

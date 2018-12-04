@@ -1,4 +1,4 @@
-﻿// Python Tools for Visual Studio
+// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -9,17 +9,22 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using System;
 
-namespace Microsoft.PythonTools.Interpreter {
-    public interface ICanFindModuleMembers {
-        IEnumerable<string> GetModulesNamed(string name);
+namespace AnalysisTests {
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+    public class CreateTestSpecificFileAttribute : Attribute {
+        public string RelativeFilePath { get; }
+        public string Content { get; }
 
-        IEnumerable<string> GetModulesContainingName(string name);
+        public CreateTestSpecificFileAttribute(string relativeFilePath, string content) {
+            RelativeFilePath = relativeFilePath;
+            Content = content;
+        }
     }
 }

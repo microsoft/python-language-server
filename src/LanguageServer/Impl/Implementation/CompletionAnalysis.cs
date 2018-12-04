@@ -22,6 +22,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.DependencyResolution;
 using Microsoft.PythonTools.Analysis.Documentation;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
@@ -34,6 +35,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly Node _statement;
         private readonly ScopeStatement _scope;
         private readonly ILogger _log;
+        private readonly PathResolverSnapshot _pathResolver;
         private readonly DocumentationBuilder _textBuilder;
         private readonly Func<TextReader> _openDocument;
         private readonly bool _addBrackets;
@@ -53,6 +55,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             Position = position;
             Index = Tree.LocationToIndex(Position);
             Options = opts;
+            _pathResolver = analysis.ProjectState.CurrentPathResolver;
             _textBuilder = textBuilder;
             _log = log;
             _openDocument = openDocument;
@@ -346,13 +349,35 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             if (fromImport.ImportIndex > fromImport.StartIndex) {
                 if (Index > fromImport.ImportIndex + 6 && Analysis.Scope.AnalysisValue is ModuleInfo moduleInfo) {
-                    var root = fromImport.Root;
-                    var rootName = root.MakeString();
-                    if (moduleInfo.TryGetModuleReference(rootName, out var moduleReference)) {
-                        var moduleMembers = PythonAnalyzer.GetModuleMembers(Analysis.InterpreterContext, GetNamesFromDottedName(root), true, moduleReference.Module);
-                        result = Once(StarCompletion).Concat(moduleMembers.Select(ToCompletionItem));
+                    var importSearchResult = _pathResolver.FindImports(moduleInfo.ProjectEntry.FilePath, fromImport);
+                    switch (importSearchResult) {
+                        case ModuleImport moduleImports when moduleInfo.TryGetModuleReference(moduleImports.FullName, out var moduleReference):
+                        case PossibleModuleImport possibleModuleImport when moduleInfo.TryGetModuleReference(possibleModuleImport.PossibleModuleFullName, out moduleReference):
+                            var module = moduleReference.Module;
+                            if (module != null) {
+                                result = module.GetAllMembers(Analysis.InterpreterContext)
+                                    .GroupBy(kvp => kvp.Key)
+                                    .Select(g => (IMemberResult)new MemberResult(g.Key, g.SelectMany(kvp => kvp.Value)))
+                                    .Select(ToCompletionItem)
+                                    .Prepend(StarCompletion);
+                            }
+
+                            return true;
+
+                        case PackageImport packageImports:
+                            var modules = Analysis.ProjectState.Modules;
+                            result = packageImports.Modules
+                                .Select(m => {
+                                    var hasReference = modules.TryGetImportedModule(m.FullName, out var mr);
+                                    return (hasReference: hasReference && mr?.Module != null, name: m.Name, module: mr?.AnalysisModule);
+                                })
+                                .Where(t => t.hasReference)
+                                .Select(t => ToCompletionItem(new MemberResult(t.name, new[] { t.module })))
+                                .Prepend(StarCompletion);
+                            return true;
+                        default:
+                            return true;
                     }
-                    return true;
                 }
 
                 if (Index >= fromImport.ImportIndex) {

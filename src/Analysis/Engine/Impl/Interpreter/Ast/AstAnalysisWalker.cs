@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.DependencyResolution;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
@@ -33,9 +34,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private readonly NameLookupContext _scope;
         private readonly PythonAst _ast;
         private readonly IPythonInterpreter _interpreter;
+        private readonly PathResolverSnapshot _pathResolver;
 
         public AstAnalysisWalker(
             IPythonInterpreter interpreter,
+            PathResolverSnapshot pathResolver,
             PythonAst ast,
             IPythonModule module,
             string filePath,
@@ -62,6 +65,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             );
             _ast = ast;
             _interpreter = interpreter;
+            _pathResolver = pathResolver;
             _scope.SuppressBuiltinLookup = suppressBuiltinLookup;
             _scope.PushScope(_typingScope);
             WarnAboutUndefinedValues = warnAboutUndefinedValues;
@@ -164,25 +168,33 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return false;
             }
 
-            try {
-                for (var i = 0; i < node.Names.Count; ++i) {
-                    var n = node.AsNames?[i] ?? node.Names[i].Names[0];
-                    if (n != null) {
-                        if (n.Name == "typing") {
-                            _scope.SetInScope(n.Name, new AstTypingModule(), scope: _typingScope);
-                        } else if (n.Name == _module.Name) {
-                            _scope.SetInScope(n.Name, _module);
-                        } else {
-                            _scope.SetInScope(n.Name, new AstNestedPythonModule(
-                                _interpreter,
-                                n.Name,
-                                ModuleResolver.ResolvePotentialModuleNames(_module.Name, _scope.FilePath, node.Names[i].MakeString(), true).ToArray()
-                            ));
-                        }
+            var len = Math.Min(node.Names.Count, node.AsNames.Count);
+            for (var i = 0; i < len; i++) {
+                var moduleImportExpression = node.Names[i];
+                var importNames = moduleImportExpression.Names.Select(n => n.Name).ToArray();
+                var memberReference = node.AsNames[i] ?? moduleImportExpression.Names[0];
+                var memberName = memberReference.Name;
+
+                if (importNames.Length == 1 && importNames[0] == "typing") {
+                    _scope.SetInScope(memberName, new AstTypingModule(), scope: _typingScope);
+                } else {var imports = _pathResolver.GetImportsFromAbsoluteName(_scope.FilePath, importNames, node.ForceAbsolute);
+                    switch (imports) {
+                        case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
+                            _scope.SetInScope(memberName, _module);
+                            break;
+                        case ModuleImport moduleImport:
+                            _scope.SetInScope(memberName, new AstNestedPythonModule(_interpreter, moduleImport.FullName));
+                            break;
+                        case PossibleModuleImport possibleModuleImport:
+                            _scope.SetInScope(memberName, new AstNestedPythonModule(_interpreter, possibleModuleImport.PossibleModuleFullName));
+                            break;
+                        default:
+                            _scope.SetInScope(memberName, new AstPythonConstant(_scope.UnknownType, GetLoc(memberReference)));
+                            break;
                     }
                 }
-            } catch (IndexOutOfRangeException) {
             }
+
             return false;
         }
 
@@ -200,73 +212,163 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         public override bool Walk(FromImportStatement node) {
-            var modName = node.Root.MakeString();
-            if (modName == "__future__") {
+            if (node.Root == null || node.Names == null) {
                 return false;
             }
 
-            if (node.Names == null) {
-                return false;
-            }
-
-            IPythonModule mod = null;
-            Dictionary<string, IMember> scope = null;
-
-            var isTyping = modName == "typing";
-            var warnAboutUnknownValues = WarnAboutUndefinedValues;
-            if (isTyping) {
-                mod = new AstTypingModule();
-                scope = _typingScope;
-                warnAboutUnknownValues = false;
-            } else if (modName == _module.Name) {
-                mod = _module;
-            }
-
-            mod = mod ?? new AstNestedPythonModule(
-                _interpreter,
-                modName,
-                ModuleResolver.ResolvePotentialModuleNames(_module.Name, _scope.FilePath, modName, true).ToArray()
-            );
-
-            foreach (var name in GetImportNames(node.Names, node.AsNames)) {
-                if (name.Key == "*") {
-                    mod.Imported(_scope.Context);
-                    // Ensure child modules have been loaded
-                    mod.GetChildrenModules();
-                    foreach (var member in mod.GetMemberNames(_scope.Context)) {
-                        var mem = mod.GetMember(_scope.Context, member);
-                        if (mem == null) {
-                            if (WarnAboutUndefinedValues) {
-                                _log?.Log(TraceLevel.Warning, "UndefinedImport", modName, member);
-                            }
-                            mem = new AstPythonConstant(_scope.UnknownType, ((mod as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
-                        } else if (mem.MemberType == PythonMemberType.Unknown && warnAboutUnknownValues) {
-                            _log?.Log(TraceLevel.Warning, "UnknownImport", modName, member);
-                        }
-                        _scope.SetInScope(member, mem, scope: scope);
-                        (mem as IPythonModule)?.Imported(_scope.Context);
-                    }
-                } else {
-                    IMember mem;
-                    if (mod is AstNestedPythonModule m && !m.IsLoaded) {
-                        mem = new AstNestedPythonModuleMember(name.Key, m, _scope.Context, GetLoc(name.Value));
-                    } else {
-                        mem = mod.GetMember(_scope.Context, name.Key);
-                        if (mem == null) {
-                            if (WarnAboutUndefinedValues) {
-                                _log?.Log(TraceLevel.Warning, "UndefinedImport", modName, name);
-                            }
-                            mem = new AstPythonConstant(_scope.UnknownType, GetLoc(name.Value));
-                        } else if (mem.MemberType == PythonMemberType.Unknown && warnAboutUnknownValues) {
-                            _log?.Log(TraceLevel.Warning, "UnknownImport", modName, name);
-                        }
-                        (mem as IPythonModule)?.Imported(_scope.Context);
-                    }
-                    _scope.SetInScope(name.Value.Name, mem, scope: scope);
+            var rootNames = node.Root.Names;
+            if (rootNames.Count == 1) {
+                switch (rootNames[0].Name) {
+                    case "__future__":
+                        return false;
+                    case "typing":
+                        ImportMembersFromTyping(node);
+                        return false;
                 }
             }
 
-            return false;
+            var importSearchResult = _pathResolver.FindImports(_scope.FilePath, node);
+            switch (importSearchResult) {
+                case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
+                    ImportMembersFromSelf(node);
+                    return false;
+                case ModuleImport moduleImport:
+                    ImportMembersFromModule(node, moduleImport.FullName);
+                    return false;
+                case PossibleModuleImport possibleModuleImport:
+                    ImportMembersFromModule(node, possibleModuleImport.PossibleModuleFullName);
+                    return false;
+                case PackageImport packageImports:
+                    ImportMembersFromPackage(node, packageImports);
+                    return false;
+                default:
+                    return false;
+            }
+        }
+
+        private void ImportMembersFromTyping(FromImportStatement node) {
+            var names = node.Names;
+            var asNames = node.AsNames;
+            var module = new AstTypingModule();
+
+            if (names.Count == 1 && names[0].Name == "*") {
+                foreach (var memberName in module.GetMemberNames(_scope.Context)) {
+                    SetMember(module, memberName, memberName);
+                }
+            } else {
+                for (var i = 0; i < names.Count; i++) {
+                    var importName = names[i].Name;
+                    var memberReference = asNames[i] ?? names[i];
+
+                    SetMember(module, importName, memberReference.Name, GetLoc(memberReference));
+                }
+            } 
+
+            void SetMember(IMemberContainer container, string name, string memberName, ILocationInfo location = null) {
+                var member = container.GetMember(_scope.Context, name);
+                if (member == null) {
+                    if (WarnAboutUndefinedValues) {
+                        _log?.Log(TraceLevel.Warning, "UndefinedImport", module.Name, name);
+                    }
+
+                    member = new AstPythonConstant(_scope.UnknownType, location != null ? new[] {location} : Array.Empty<ILocationInfo>());
+                }
+
+                (member as IPythonModule)?.Imported(_scope.Context);
+                _scope.SetInScope(memberName, member, scope: _typingScope);
+            }
+        }
+
+        private void ImportMembersFromSelf(FromImportStatement node) {
+            var names = node.Names;
+            var asNames = node.AsNames;
+
+            if (names.Count == 1 && names[0].Name == "*") {
+                // from self import * won't define any new members
+                return;
+            }
+
+            for (var i = 0; i < names.Count; i++) {
+                if (asNames[i] == null) {
+                    continue;
+                }
+
+                var importName = names[i].Name;
+                var memberReference = asNames[i];
+                var memberName = memberReference.Name;
+
+                var member = _module.GetMember(_scope.Context, importName);
+                _scope.SetInScope(memberName, member);
+            }
+        }
+
+        private void ImportMembersFromModule(FromImportStatement node, string fullModuleName) {
+            var names = node.Names;
+            var asNames = node.AsNames;
+            var nestedModule = new AstNestedPythonModule(_interpreter, fullModuleName);
+
+            if (names.Count == 1 && names[0].Name == "*") {
+                HandleModuleImportStar(nestedModule);
+                return;
+            }
+
+            for (var i = 0; i < names.Count; i++) {
+                var importName = names[i].Name;
+                var memberReference = asNames[i] ?? names[i];
+                var memberName = memberReference.Name;
+                var location = GetLoc(memberReference);
+
+                var member = new AstNestedPythonModuleMember(importName, nestedModule, _scope.Context, location);
+                _scope.SetInScope(memberName, member);
+            }
+        }
+
+        private void HandleModuleImportStar(IPythonModule module) {
+            module.Imported(_scope.Context);
+            // Ensure child modules have been loaded
+            module.GetChildrenModules();
+            foreach (var memberName in module.GetMemberNames(_scope.Context)) {
+                var member = module.GetMember(_scope.Context, memberName);
+                if (WarnAboutUndefinedValues) {
+                    if (member == null) {
+                        _log?.Log(TraceLevel.Warning, "UndefinedImport", module.Name, memberName);
+                    } else if (member.MemberType == PythonMemberType.Unknown) {
+                        _log?.Log(TraceLevel.Warning, "UnknownImport", module.Name, memberName);
+                    }
+                }
+
+                member = member ?? new AstPythonConstant(_scope.UnknownType, ((module as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
+                _scope.SetInScope(memberName, member);
+                (member as IPythonModule)?.Imported(_scope.Context);
+            }
+        }
+
+        private void ImportMembersFromPackage(FromImportStatement node, PackageImport packageImport) {
+            var names = node.Names;
+            var asNames = node.AsNames;
+
+            if (names.Count == 1 && names[0].Name == "*") {
+                // TODO: Need tracking of previous imports to determine possible imports for namespace package. For now import nothing
+                _scope.SetInScope("*", new AstPythonConstant(_scope.UnknownType, GetLoc(names[0])));
+                return;
+            }
+
+            for (var i = 0; i < names.Count; i++) {
+                var importName = names[i].Name;
+                var memberReference = asNames[i] ?? names[i];
+                var memberName = memberReference.Name;
+                var location = GetLoc(memberReference);
+
+                ModuleImport moduleImport;
+                IMember member;
+                if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
+                    member = new AstNestedPythonModule(_interpreter, moduleImport.FullName);
+                } else {
+                    member = new AstPythonConstant(_scope.UnknownType, location);
+                }
+
+                _scope.SetInScope(memberName, member);
+            }
         }
 
         public override bool Walk(IfStatement node) {

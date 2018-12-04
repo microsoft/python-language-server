@@ -18,7 +18,6 @@ using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
     sealed class ModuleScope : InterpreterScope, IModuleScope {
-
         public ModuleScope(ModuleInfo moduleInfo)
             : base(moduleInfo, null) {
         }

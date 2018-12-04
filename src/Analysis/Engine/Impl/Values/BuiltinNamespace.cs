@@ -24,11 +24,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// <summary>
     /// Base class for things which get their members primarily via a built-in .NET type.
     /// </summary>
-    class BuiltinNamespace<MemberContainerType> : AnalysisValue where MemberContainerType : IPythonType {
+    class BuiltinNamespace<TMemberContainer> : AnalysisValue where TMemberContainer : IPythonType {
         internal Dictionary<string, IAnalysisSet> _specializedValues;
 
-        public BuiltinNamespace(MemberContainerType pythonType, PythonAnalyzer projectState) {
-            ProjectState = projectState ?? throw new ArgumentNullException(nameof(projectState)); ;
+        public BuiltinNamespace(TMemberContainer pythonType, PythonAnalyzer projectState) {
+            ProjectState = projectState ?? throw new ArgumentNullException(nameof(projectState));
             Type = pythonType;
             // Ideally we'd assert here whenever pythonType is null, but that
             // makes debug builds unusable because it happens so often.
@@ -97,14 +97,14 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public PythonAnalyzer ProjectState { get; }
 
-        public MemberContainerType Type { get; }
+        public TMemberContainer Type { get; }
 
         public virtual ILocatedMember GetLocatedMember() => null;
 
         public override IEnumerable<ILocationInfo> Locations => GetLocatedMember()?.Locations.MaybeEnumerate();
 
         public override bool Equals(object obj) {
-            if (obj is BuiltinNamespace<MemberContainerType> bn && GetType() == bn.GetType()) {
+            if (obj is BuiltinNamespace<TMemberContainer> bn && GetType() == bn.GetType()) {
                 return Type != null ? Type.Equals(bn.Type) : bn.Type == null;
             }
             return false;

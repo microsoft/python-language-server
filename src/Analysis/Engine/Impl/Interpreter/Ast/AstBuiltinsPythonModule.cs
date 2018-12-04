@@ -55,22 +55,17 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         protected override Stream LoadCachedCode(AstPythonInterpreter interpreter) {
-            var fact = interpreter.Factory as AstPythonInterpreterFactory;
-            if (fact?.Configuration.InterpreterPath == null) {
-                return fact.ModuleCache.ReadCachedModule("python.exe");
-            }
-            return fact.ModuleCache.ReadCachedModule(fact.Configuration.InterpreterPath);
+            var path = interpreter.InterpreterPath ?? "python.exe";
+            return interpreter.ModuleCache.ReadCachedModule(path);
         }
 
         protected override void SaveCachedCode(AstPythonInterpreter interpreter, Stream code) {
-            var fact = interpreter.Factory as AstPythonInterpreterFactory;
-            if (fact?.Configuration.InterpreterPath == null) {
-                return;
+            if (interpreter.InterpreterPath != null) {
+                interpreter.ModuleCache.WriteCachedModule(interpreter.InterpreterPath, code);
             }
-            fact.ModuleCache.WriteCachedModule(fact.Configuration.InterpreterPath, code);
         }
 
-        protected override List<string> GetScrapeArguments(IPythonInterpreterFactory factory) {
+        protected override List<string> GetScrapeArguments(AstPythonInterpreter interpreter) {
             if (!InstallPath.TryGetFile("scrape_module.py", out string sb)) {
                 return null;
             }
@@ -78,28 +73,30 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return new List<string> { "-B", "-E", sb };
         }
 
-        protected override PythonWalker PrepareWalker(IPythonInterpreter interpreter, PythonAst ast) {
+        protected override PythonWalker PrepareWalker(AstPythonInterpreter interpreter, PythonAst ast) {
+            string filePath = null;
 #if DEBUG
-            var fact = (interpreter as AstPythonInterpreter)?.Factory as AstPythonInterpreterFactory;
-            var filePath = fact?.ModuleCache.GetCacheFilePath(fact?.Configuration.InterpreterPath ?? "python.exe");
+            filePath = interpreter.ModuleCache.GetCacheFilePath(interpreter.InterpreterPath ?? "python.exe");
             const bool includeLocations = true;
 #else
-            string filePath = null;
             const bool includeLocations = false;
 #endif
 
             var walker = new AstAnalysisWalker(
-                interpreter, ast, this, filePath, null, _members, 
-                includeLocations, 
-                warnAboutUndefinedValues: true, 
+                interpreter, interpreter.CurrentPathResolver, ast, this, filePath, null, _members,
+                includeLocations,
+                warnAboutUndefinedValues: true,
                 suppressBuiltinLookup: true
-            );
-            walker.CreateBuiltinTypes = true;
+            ) {
+                CreateBuiltinTypes = true
+            };
+
             return walker;
         }
 
         protected override void PostWalk(PythonWalker walker) {
-            IPythonType boolType = null;
+            AstPythonBuiltinType boolType = null;
+            AstPythonBuiltinType noneType = null;
 
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
                 if (_members.TryGetValue("__{0}__".FormatInvariant(typeId), out var m) && m is AstPythonType biType) {
@@ -113,7 +110,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     _hiddenNames.Add("__{0}__".FormatInvariant(typeId));
 
                     if (typeId == BuiltinTypeId.Bool) {
-                        boolType = m as IPythonType;
+                        boolType = boolType ?? biType;
+                    }
+
+                    if (typeId == BuiltinTypeId.NoneType) {
+                        noneType = noneType ?? biType;
                     }
                 }
             }
@@ -121,6 +122,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
             if (boolType != null) {
                 _members["True"] = _members["False"] = new AstPythonConstant(boolType);
+            }
+
+            if (noneType != null) {
+                _members["None"] = new AstPythonConstant(noneType);
             }
 
             base.PostWalk(walker);

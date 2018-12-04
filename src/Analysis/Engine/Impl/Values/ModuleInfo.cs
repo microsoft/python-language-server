@@ -92,8 +92,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
         /// </summary>
         public ISet<string> GetAllUnresolvedModules() => _unresolvedModules;
 
-        internal void AddUnresolvedModule(string relativeModuleName, bool absoluteImports) {
-            _unresolvedModules.UnionWith(ModuleResolver.ResolvePotentialModuleNames(_projectEntry, relativeModuleName, absoluteImports));
+        internal void AddUnresolvedModule(in string fullModuleName) {
+            _unresolvedModules.Add(fullModuleName);
             _projectEntry.ProjectState.ModuleHasUnresolvedImports(this, true);
         }
 
@@ -157,7 +157,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 }
 
                 _packageModules.Remove(name);
+            } else if (Scope != null && Scope.TryGetVariable(name, out var variable)) {
+                return variable.Types.OfType<IModule>().FirstOrDefault();
             }
+
             return null;
         }
 
