@@ -26,10 +26,10 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Intellisense;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
-    internal sealed class EditorFiles {
+    internal sealed class EditorFiles : IDisposable {
         private readonly ConcurrentDictionary<Uri, EditorFile> _files = new ConcurrentDictionary<Uri, EditorFile>();
         private readonly Server _server;
-        private readonly SynchronizationContext _syncContext;
+        private readonly SingleThreadSynchronizationContext _syncContext;
 
         public EditorFiles(Server server) {
             _server = server;
@@ -42,10 +42,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void Close(Uri uri) => GetDocument(uri).Close(uri);
 
         public void UpdateDiagnostics() {
-            foreach (var entry in _server.ProjectFiles) {
+            foreach (var entry in _server.ProjectFiles.OfType<IPythonProjectEntry>()) {
                 GetDocument(entry.DocumentUri).UpdateAnalysisDiagnostics(entry, -1);
             }
         }
+
+        public void Dispose() => _syncContext.Dispose();
     }
 
     internal sealed class EditorFile {
@@ -174,7 +176,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        public void UpdateAnalysisDiagnostics(IProjectEntry projectEntry, int version) {
+        public void UpdateAnalysisDiagnostics(IPythonProjectEntry projectEntry, int version) {
             lock (_lock) {
                 var diags = _server.Analyzer.GetDiagnostics(projectEntry);
                 var settings = _server.Settings;
@@ -183,18 +185,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     diags[i].severity = settings.analysis.GetEffectiveSeverity(diags[i].code, diags[i].severity);
                 }
 
-                var severity = settings.analysis.GetEffectiveSeverity(ErrorMessages.UnresolvedImportCode, DiagnosticSeverity.Warning);
-                var pythonProjectEntry = projectEntry as IPythonProjectEntry;
-                var parse = pythonProjectEntry?.GetCurrentParse();
-
-                // TODO: move this to the normal analysis process
-                if (parse != null && severity != DiagnosticSeverity.Unspecified) {
-                    var walker = new ImportStatementWalker(parse.Tree, pythonProjectEntry, _server.Analyzer, severity);
-                    parse.Tree.Walk(walker);
-                    diags = diags.Concat(walker.Diagnostics).ToArray();
-                }
-
-                if (pythonProjectEntry is IDocument doc) {
+                if (projectEntry is IDocument) {
                     if (_lastReportedParseDiagnostics != null) {
                         diags = diags.Concat(_lastReportedParseDiagnostics.SelectMany(d => d.diagnostics)).ToArray();
                     }
@@ -204,7 +195,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 version = version >= 0 ? version : (lastPublishedVersion.HasValue ? lastPublishedVersion.Value : 0);
 
                 _lastReportedAnalysisDiagnostics = new[] { new PublishDiagnosticsEventArgs {
-                    uri = pythonProjectEntry.DocumentUri,
+                    uri = projectEntry.DocumentUri,
                     diagnostics = diags,
                     _version = version
                 }};

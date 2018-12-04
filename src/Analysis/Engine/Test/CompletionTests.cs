@@ -445,26 +445,17 @@ class B(A):
                 .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
-        [TestMethod, Priority(0)]
-        public async Task TopLevelCompletions() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri = GetDocument(Path.Combine("TestData", "AstAnalysis", "TopLevelCompletions.py"));
-                await server.LoadFileAsync(uri);
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
+        public async Task TopLevelCompletions(Server server) {
+            var uri = new Uri(TestData.GetPath(Path.Combine("TestData", "AstAnalysis", "TopLevelCompletions.py")));
+            await server.LoadFileAsync(uri);
 
-                await AssertCompletion(
-                    server, uri,
-                    new[] { "x", "y", "z", "int", "float", "class", "def", "while", "in" },
-                    new[] { "return", "sys", "yield" }
-                );
+            (await server.SendCompletion(uri, 0, 0)).Should().HaveLabels("x", "y", "z", "int", "float", "class", "def", "while", "in")
+                .And.NotContainLabels("return", "sys", "yield");
 
-                // Completions in function body
-                await AssertCompletion(
-                    server, uri,
-                    new[] { "x", "y", "z", "int", "float", "class", "def", "while", "in", "return", "yield" },
-                    new[] { "sys" },
-                    position: new Position { line = 5, character = 5 }
-                );
-            }
+            // Completions in function body
+            (await server.SendCompletion(uri, 5, 5)).Should().HaveLabels("x", "y", "z", "int", "float", "class", "def", "while", "in", "return", "yield")
+                .And.NotContainLabels("sys");
         }
 
         [ServerTestMethod(TestSpecificRootUri = true), Priority(0)]
@@ -507,53 +498,48 @@ class B(A):
                 .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
-        [DataRow(true)]
-        [DataRow(false)]
-        [DataTestMethod, Priority(0)]
-        public async Task InForStatement(bool is2X) {
-            using (var server = await CreateServerAsync(is2X ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X)) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("for  ");
-                await AssertCompletion(server, uri, new[] { "for" }, new string[0], new SourceLocation(1, 4));
-                (await server.SendCompletion(uri, 0, 4)).Should().HaveNoCompletion();
-                await server.UnloadFileAsync(uri);
+        [DataRow(PythonLanguageMajorVersion.LatestV2)]
+        [DataRow(PythonLanguageMajorVersion.LatestV3)]
+        [ServerTestMethod(VersionArgumentIndex = 1), Priority(0)]
+        public async Task InForStatement(Server server, PythonLanguageVersion version) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync("for  ");
+            (await server.SendCompletion(uri, 0, 3)).Should().HaveLabels("for");
+            (await server.SendCompletion(uri, 0, 4)).Should().HaveNoCompletion();
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("for  x ");
-                await AssertCompletion(server, uri, new[] { "for" }, new string[0], new SourceLocation(1, 4));
-                (await server.SendCompletion(uri, 0, 4)).Should().HaveNoCompletion();
-                (await server.SendCompletion(uri, 0, 5)).Should().HaveNoCompletion();
-                (await server.SendCompletion(uri, 0, 6)).Should().HaveNoCompletion();
-                await AssertCompletion(server, uri, new[] { "in" }, new[] { "for", "abs" }, new SourceLocation(1, 8));
-                await server.UnloadFileAsync(uri);
+            await server.ChangeDefaultDocumentAndGetAnalysisAsync("for  x ");
+            (await server.SendCompletion(uri, 0, 3)).Should().HaveLabels("for");
+            (await server.SendCompletion(uri, 0, 4)).Should().HaveNoCompletion();
+            (await server.SendCompletion(uri, 0, 5)).Should().HaveNoCompletion();
+            (await server.SendCompletion(uri, 0, 6)).Should().HaveNoCompletion();
+            (await server.SendCompletion(uri, 0, 7)).Should().HaveLabels("in").And.NotContainLabels("for", "abs");
 
-                // TODO: Fix parser to parse "for x i" as ForStatement and not ForStatement+ExpressionStatement
-                //u = await s.OpenDefaultDocumentAndGetUriAsync("for x i");
-                //await AssertCompletion(s, u, new[] { "in" }, new[] { "for", "abs" }, new SourceLocation(1, 8), applicableSpan: new SourceSpan(1, 7, 1, 8));
-                //await s.UnloadFileAsync(u);
+            // TODO: Fix parser to parse "for x i" as ForStatement and not ForStatement+ExpressionStatement
+            //u = await s.OpenDefaultDocumentAndGetUriAsync("for x i");
+            //await AssertCompletion(s, u, new[] { "in" }, new[] { "for", "abs" }, new SourceLocation(1, 8), applicableSpan: new SourceSpan(1, 7, 1, 8));
+            //await s.UnloadFileAsync(u);
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("for x in ");
-                await AssertCompletion(server, uri, new[] { "in" }, new[] { "for", "abs" }, new SourceLocation(1, 7));
-                await AssertCompletion(server, uri, new[] { "in" }, new[] { "for", "abs" }, new SourceLocation(1, 9));
-                await AssertCompletion(server, uri, new[] { "abs", "x" }, new string[0], new SourceLocation(1, 10));
-                await server.UnloadFileAsync(uri);
+            await server.ChangeDefaultDocumentAndGetAnalysisAsync("for x in ");
+            (await server.SendCompletion(uri, 0, 6)).Should().HaveLabels("in").And.NotContainLabels("for", "abs");
+            (await server.SendCompletion(uri, 0, 8)).Should().HaveLabels("in").And.NotContainLabels("for", "abs");
+            (await server.SendCompletion(uri, 0, 9)).Should().HaveLabels("abs", "x");
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("def f():\n    for ");
-                (await server.SendCompletion(uri, 1, 8)).Should().HaveNoCompletion();
-                await server.UnloadFileAsync(uri);
+            await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"def f():
+    for ");
+            (await server.SendCompletion(uri, 1, 8)).Should().HaveNoCompletion();
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("def f():\n    for x in ");
-                await AssertCompletion(server, uri, new[] { "in" }, new[] { "for", "abs" }, new SourceLocation(2, 11));
-                await AssertCompletion(server, uri, new[] { "in" }, new[] { "for", "abs" }, new SourceLocation(2, 13));
-                await AssertCompletion(server, uri, new[] { "abs", "x" }, new string[0], new SourceLocation(2, 14));
-                await server.UnloadFileAsync(uri);
+            await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"def f():
+    for x in ");
+            (await server.SendCompletion(uri, 1, 10)).Should().HaveLabels("in").And.NotContainLabels("for", "abs");
+            (await server.SendCompletion(uri, 1, 12)).Should().HaveLabels("in").And.NotContainLabels("for", "abs");
+            (await server.SendCompletion(uri, 1, 13)).Should().HaveLabels("abs", "x");
 
-                if (!is2X) {
-                    uri = await server.OpenDefaultDocumentAndGetUriAsync("async def f():\n    async for x in ");
-                    await AssertCompletion(server, uri, new[] { "async", "for" }, new string[0], new SourceLocation(2, 5));
-                    await AssertCompletion(server, uri, new[] { "async", "for" }, new string[0], new SourceLocation(2, 10));
-                    await AssertCompletion(server, uri, new[] { "async", "for" }, new string[0], new SourceLocation(2, 14));
-                    (await server.SendCompletion(uri, 1, 14)).Should().HaveNoCompletion();
-                    await server.UnloadFileAsync(uri);
-                }
+            if (version.Is3x()) {
+                await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"async def f():
+    async for x in ");
+                (await server.SendCompletion(uri, 1, 4)).Should().HaveLabels("async", "for");
+                (await server.SendCompletion(uri, 1, 9)).Should().HaveLabels("async", "for");
+                (await server.SendCompletion(uri, 1, 13)).Should().HaveLabels("async", "for");
+                (await server.SendCompletion(uri, 1, 14)).Should().HaveNoCompletion();
             }
         }
 
@@ -624,89 +610,97 @@ class B(A):
             (await server.SendCompletion(uri, 0, 21)).Should().HaveLabels("object").And.NotContainLabels("metaclass=");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task InWithStatement() {
-            using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("with x as y, z as w: pass");
-                await AssertAnyCompletion(server, uri, new SourceLocation(1, 6));
-                await AssertCompletion(server, uri, new[] { "as" }, new[] { "abs", "dir" }, new SourceLocation(1, 8));
-                (await server.SendCompletion(uri, 0, 10)).Should().HaveNoCompletion();
-                await AssertAnyCompletion(server, uri, new SourceLocation(1, 14));
-                await AssertCompletion(server, uri, new[] { "as" }, new[] { "abs", "dir" }, new SourceLocation(1, 17));
-                (await server.SendCompletion(uri, 0, 19)).Should().HaveNoCompletion();
-                await AssertAnyCompletion(server, uri, new SourceLocation(1, 21));
-                await server.UnloadFileAsync(uri);
+        [ServerTestMethod, Priority(0)]
+        public async Task InWithStatement(Server server) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync("with x as y, z as w: pass");
+            await AssertAnyCompletion(server, uri, new SourceLocation(1, 6));
+            await AssertCompletion(server, uri, new[] { "as" }, new[] { "abs", "dir" }, new SourceLocation(1, 8));
+            (await server.SendCompletion(uri, 0, 10)).Should().HaveNoCompletion();
+            await AssertAnyCompletion(server, uri, new SourceLocation(1, 14));
+            await AssertCompletion(server, uri, new[] { "as" }, new[] { "abs", "dir" }, new SourceLocation(1, 17));
+            (await server.SendCompletion(uri, 0, 19)).Should().HaveNoCompletion();
+            await AssertAnyCompletion(server, uri, new SourceLocation(1, 21));
+            await server.UnloadFileAsync(uri);
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("with ");
-                await AssertAnyCompletion(server, uri, new SourceLocation(1, 6));
-                await server.UnloadFileAsync(uri);
+            uri = await server.OpenDefaultDocumentAndGetUriAsync("with ");
+            await AssertAnyCompletion(server, uri, new SourceLocation(1, 6));
+            await server.UnloadFileAsync(uri);
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("with x ");
-                await AssertAnyCompletion(server, uri, new SourceLocation(1, 6));
-                await AssertCompletion(server, uri, new[] { "as" }, new[] { "abs", "dir" }, new SourceLocation(1, 8));
-                await server.UnloadFileAsync(uri);
+            uri = await server.OpenDefaultDocumentAndGetUriAsync("with x ");
+            await AssertAnyCompletion(server, uri, new SourceLocation(1, 6));
+            await AssertCompletion(server, uri, new[] { "as" }, new[] { "abs", "dir" }, new SourceLocation(1, 8));
+            await server.UnloadFileAsync(uri);
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("with x as ");
-                await AssertAnyCompletion(server, uri, new SourceLocation(1, 6));
-                await AssertCompletion(server, uri, new[] { "as" }, new[] { "abs", "dir" }, new SourceLocation(1, 8));
-                (await server.SendCompletion(uri, 0, 10)).Should().HaveNoCompletion();
-                await server.UnloadFileAsync(uri);
-            }
+            uri = await server.OpenDefaultDocumentAndGetUriAsync("with x as ");
+            await AssertAnyCompletion(server, uri, new SourceLocation(1, 6));
+            await AssertCompletion(server, uri, new[] { "as" }, new[] { "abs", "dir" }, new SourceLocation(1, 8));
+            (await server.SendCompletion(uri, 0, 10)).Should().HaveNoCompletion();
+            await server.UnloadFileAsync(uri);
         }
 
-        [TestMethod, Priority(0)]
-        public async Task InImport() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("import unittest.case as C, unittest\nfrom unittest.case import TestCase as TC, TestCase");
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
+        public async Task InImport(Server server) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(@"import unittest.case as C, unittest
+from unittest.case import TestCase as TC, TestCase");
 
-                await AssertCompletion(server, uri, new[] { "from", "import", "abs", "dir" }, new[] { "abc" }, new SourceLocation(1, 7));
-                await AssertCompletion(server, uri, new[] { "abc", "unittest" }, new[] { "abs", "dir" }, new SourceLocation(1, 8));
-                await AssertCompletion(server, uri, new[] { "case" }, new[] { "abc", "unittest", "abs", "dir" }, new SourceLocation(1, 17));
-                await AssertCompletion(server, uri, new[] { "as" }, new[] { "abc", "unittest", "abs", "dir" }, new SourceLocation(1, 22));
-                (await server.SendCompletion(uri, 0, 24)).Should().HaveNoCompletion();
-                await AssertCompletion(server, uri, new[] { "abc", "unittest" }, new[] { "abs", "dir" }, new SourceLocation(1, 28));
+            (await server.SendCompletion(uri, 0, 6)).Should().HaveLabels("from", "import", "abs", "dir").And.NotContainLabels("abc");
+            (await server.SendCompletion(uri, 0, 7)).Should().HaveLabels("abc", "unittest").And.NotContainLabels("abs", "dir");
+            (await server.SendCompletion(uri, 0, 16)).Should().HaveLabels("case").And.NotContainLabels("abc", "unittest", "abs", "dir");
+            (await server.SendCompletion(uri, 0, 22)).Should().HaveLabels("as").And.NotContainLabels("abc", "unittest", "abs", "dir");
+            (await server.SendCompletion(uri, 0, 24)).Should().HaveNoCompletion();
+            (await server.SendCompletion(uri, 0, 27)).Should().HaveLabels("abc", "unittest").And.NotContainLabels("abs", "dir");
 
-                await AssertCompletion(server, uri, new[] { "from", "import", "abs", "dir" }, new[] { "abc" }, new SourceLocation(2, 5));
-                await AssertCompletion(server, uri, new[] { "abc", "unittest" }, new[] { "abs", "dir" }, new SourceLocation(2, 6));
-                await AssertCompletion(server, uri, new[] { "case" }, new[] { "abc", "unittest", "abs", "dir" }, new SourceLocation(2, 15));
-                await AssertCompletion(server, uri, new[] { "import" }, new[] { "abc", "unittest", "abs", "dir" }, new SourceLocation(2, 20));
-                await AssertCompletion(server, uri, new[] { "import" }, new[] { "abc", "unittest", "abs", "dir" }, new SourceLocation(2, 22), applicableSpan: new SourceSpan(2, 20, 2, 26));
-                await AssertCompletion(server, uri, new[] { "TestCase" }, new[] { "abs", "dir", "case" }, new SourceLocation(2, 27));
-                await AssertCompletion(server, uri, new[] { "as" }, new[] { "abc", "unittest", "abs", "dir" }, new SourceLocation(2, 36));
-                (await server.SendCompletion(uri, 1, 38)).Should().HaveNoCompletion();
-                await AssertCompletion(server, uri, new[] { "TestCase" }, new[] { "abs", "dir", "case" }, new SourceLocation(2, 44));
+            (await server.SendCompletion(uri, 1, 4)).Should().HaveLabels("from", "import", "abs", "dir").And.NotContainLabels("abc");
+            (await server.SendCompletion(uri, 1, 5)).Should().HaveLabels("abc", "unittest").And.NotContainLabels("abs", "dir");
+            (await server.SendCompletion(uri, 1, 14)).Should().HaveLabels("case").And.NotContainLabels("abc", "unittest", "abs", "dir");
+            (await server.SendCompletion(uri, 1, 19)).Should().HaveLabels("import").And.NotContainLabels("abc", "unittest", "abs", "dir");
+            (await server.SendCompletion(uri, 1, 21)).Should().HaveLabels("import")
+                .And.NotContainLabels("abc", "unittest", "abs", "dir")
+                .And.Subject._applicableSpan.Should().Be(1, 19, 1, 25);
 
-                await server.UnloadFileAsync(uri);
+            (await server.SendCompletion(uri, 1, 26)).Should().HaveLabels("TestCase").And.NotContainLabels("abs", "dir", "case");
+            (await server.SendCompletion(uri, 1, 35)).Should().HaveLabels("as").And.NotContainLabels("abc", "unittest", "abs", "dir");
+            (await server.SendCompletion(uri, 1, 38)).Should().HaveNoCompletion();
+            (await server.SendCompletion(uri, 1, 43)).Should().HaveLabels("TestCase").And.NotContainLabels("abs", "dir", "case");
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("from unittest.case imp\n\npass");
-                await AssertCompletion(server, uri, new[] { "import" }, new[] { "abc", "unittest", "abs", "dir" }, new SourceLocation(1, 22), applicableSpan: new SourceSpan(1, 20, 1, 23));
-                await server.UnloadFileAsync(uri);
+            await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"from unittest.case imp
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("import unittest.case a\n\npass");
-                await AssertCompletion(server, uri, new[] { "as" }, new[] { "abc", "unittest", "abs", "dir" }, new SourceLocation(1, 23), applicableSpan: new SourceSpan(1, 22, 1, 23));
-                await server.UnloadFileAsync(uri);
+pass");
+            (await server.SendCompletion(uri, 0, 21)).Should().HaveLabels("import")
+                .And.NotContainLabels("abc", "unittest", "abs", "dir")
+                .And.Subject._applicableSpan.Should().Be(0, 19, 0, 22);
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("from unittest.case import TestCase a\n\npass");
-                await AssertCompletion(server, uri, new[] { "as" }, new[] { "abc", "unittest", "abs", "dir" }, new SourceLocation(1, 37), applicableSpan: new SourceSpan(1, 36, 1, 37));
-                await server.UnloadFileAsync(uri);
-            }
+            await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"import unittest.case a
+
+pass");
+            (await server.SendCompletion(uri, 0, 22)).Should().HaveLabels("as")
+                .And.NotContainLabels("abc", "unittest", "abs", "dir")
+                .And.Subject._applicableSpan.Should().Be(0, 21, 0, 22);
+
+            await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"from unittest.case import TestCase a
+
+pass");
+            (await server.SendCompletion(uri, 0, 36)).Should().HaveLabels("as")
+                .And.NotContainLabels("abc", "unittest", "abs", "dir")
+                .And.Subject._applicableSpan.Should().Be(0, 35, 0, 36);
         }
 
-        [TestMethod, Priority(0)]
-        public async Task ForOverride() {
-            using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("class A(object):\n    def i(): pass\n    def \npass");
+        [ServerTestMethod, Priority(0)]
+        public async Task ForOverride(Server server) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(@"class A(object):
+    def i(): pass
+    def 
+pass");
 
-                (await server.SendCompletion(uri, 1, 8)).Should().HaveNoCompletion();
-                await AssertCompletion(server, uri, new[] { "def" }, new[] { "__init__" }, new SourceLocation(3, 8));
-                await AssertCompletion(server, uri, new[] { "__init__" }, new[] { "def" }, new SourceLocation(3, 9), cmpKey: ci => ci.label);
-            }
+            (await server.SendCompletion(uri, 1, 8)).Should().HaveNoCompletion();
+            (await server.SendCompletion(uri, 2, 7)).Should().HaveInsertTexts("def").And.NotContainInsertTexts("__init__");
+            (await server.SendCompletion(uri, 2, 8)).Should().HaveLabels("__init__").And.NotContainLabels("def");
         }
 
-        [DataRow(true)]
-        [DataRow(false)]
-        [DataTestMethod, Priority(0)]
-        public async Task ForOverrideArgs(bool is2X) {
+        [DataRow(PythonLanguageMajorVersion.LatestV2)]
+        [DataRow(PythonLanguageMajorVersion.LatestV3)]
+        [ServerTestMethod(VersionArgumentIndex = 1), Priority(0)]
+        public async Task ForOverrideArgs(Server server, PythonLanguageVersion version) {
             var code = @"
 class A(object):
     def foo(self, a, b=None, *args, **kwargs):
@@ -715,100 +709,96 @@ class A(object):
 class B(A):
     def f";
 
-            using (var server = await CreateServerAsync(is2X ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X)) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
 
-                (await server.SendCompletion(uri, 2, 8)).Should().HaveNoCompletion();
-                if (!is2X) {
-                    await AssertCompletion(server, uri,
-                        new[] { $"foo(self, a, b=None, *args, **kwargs):{Environment.NewLine}    return super().foo(a, b=b, *args, **kwargs)" },
-                        new[] { $"foo(self, a, b = None, *args, **kwargs):{Environment.NewLine}    return super().foo(a, b = b, *args, **kwargs)" },
-                        new SourceLocation(7, 10));
-                } else {
-                    await AssertCompletion(server, uri,
-                        new[] { $"foo(self, a, b=None, *args, **kwargs):{Environment.NewLine}    return super(B, self).foo(a, b=b, *args, **kwargs)" },
-                        new[] { $"foo(self, a, b = None, *args, **kwargs):{Environment.NewLine}    return super(B, self).foo(a, b = b, *args, **kwargs)" },
-                        new SourceLocation(7, 10));
-                }
+            (await server.SendCompletion(uri, 2, 8)).Should().HaveNoCompletion();
+            if (version.Is3x()) {
+                await AssertCompletion(server, uri,
+                    new[] { $"foo(self, a, b=None, *args, **kwargs):{Environment.NewLine}    return super().foo(a, b=b, *args, **kwargs)" },
+                    new[] { $"foo(self, a, b = None, *args, **kwargs):{Environment.NewLine}    return super().foo(a, b = b, *args, **kwargs)" },
+                    new SourceLocation(7, 10));
+            } else {
+                await AssertCompletion(server, uri,
+                    new[] { $"foo(self, a, b=None, *args, **kwargs):{Environment.NewLine}    return super(B, self).foo(a, b=b, *args, **kwargs)" },
+                    new[] { $"foo(self, a, b = None, *args, **kwargs):{Environment.NewLine}    return super(B, self).foo(a, b = b, *args, **kwargs)" },
+                    new SourceLocation(7, 10));
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task InDecorator() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("@dec\ndef f(): pass\n\nx = a @ b");
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
+        public async Task InDecorator(Server server) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(@"@dec
+def f(): pass
 
-                await AssertCompletion(server, uri, new[] { "f", "x", "property", "abs" }, new[] { "def" }, new SourceLocation(1, 2));
-                await AssertCompletion(server, uri, new[] { "f", "x", "property", "abs" }, new[] { "def" }, new SourceLocation(4, 8));
-                await server.UnloadFileAsync(uri);
+x = a @ b");
+            (await server.SendCompletion(uri, 0, 1)).Should().HaveLabels("f", "x", "property", "abs").And.NotContainLabels("def");
+            (await server.SendCompletion(uri, 3, 7)).Should().HaveLabels("f", "x", "property", "abs").And.NotContainLabels("def");
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("@");
-                await AssertAnyCompletion(server, uri, new SourceLocation(1, 2));
-                await server.UnloadFileAsync(uri);
+            await server.ChangeDefaultDocumentAndGetAnalysisAsync("@");
+            await AssertAnyCompletion(server, uri, new SourceLocation(1, 2));
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("import unittest\n\n@unittest.\n");
-                await AssertCompletion(server, uri, new[] { "TestCase", "skip", "skipUnless" }, new[] { "abs", "def" }, new SourceLocation(3, 11));
-                await server.UnloadFileAsync(uri);
+            await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"import unittest
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("import unittest\n\n@unittest.\ndef f(): pass");
-                await AssertCompletion(server, uri, new[] { "TestCase", "skip", "skipUnless" }, new[] { "abs", "def" }, new SourceLocation(3, 11));
-                await server.UnloadFileAsync(uri);
-            }
+@unittest.
+");
+            (await server.SendCompletion(uri, 2, 10)).Should().HaveLabels("TestCase", "skip", "skipUnless").And.NotContainLabels("abs", "def");
+
+            await server.ChangeDefaultDocumentAndGetAnalysisAsync(@"import unittest
+
+@unittest.
+def f(): pass");
+            (await server.SendCompletion(uri, 2, 10)).Should().HaveLabels("TestCase", "skip", "skipUnless").And.NotContainLabels("abs", "def");
         }
 
-        [DataRow(true)]
-        [DataRow(false)]
-        [DataTestMethod, Priority(0)]
-        public async Task InRaise(bool is2X) {
-            using (var server = await CreateServerAsync(is2X ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X)) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("raise ");
+        [DataRow(PythonLanguageMajorVersion.LatestV2)]
+        [DataRow(PythonLanguageMajorVersion.LatestV3)]
+        [ServerTestMethod(VersionArgumentIndex = 1), Priority(0)]
+        public async Task InRaise(Server server, PythonLanguageVersion version) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync("raise ");
+            await AssertCompletion(server, uri, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(1, 7));
+            await server.UnloadFileAsync(uri);
+
+            if (version.Is3x()) {
+                uri = await server.OpenDefaultDocumentAndGetUriAsync("raise Exception from ");
                 await AssertCompletion(server, uri, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(1, 7));
+                await AssertCompletion(server, uri, new[] { "from" }, new[] { "Exception", "def", "abs" }, new SourceLocation(1, 17));
+                await AssertAnyCompletion(server, uri, new SourceLocation(1, 22));
                 await server.UnloadFileAsync(uri);
 
-                if (!is2X) {
-                    uri = await server.OpenDefaultDocumentAndGetUriAsync("raise Exception from ");
-                    await AssertCompletion(server, uri, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(1, 7));
-                    await AssertCompletion(server, uri, new[] { "from" }, new[] { "Exception", "def", "abs" }, new SourceLocation(1, 17));
-                    await AssertAnyCompletion(server, uri, new SourceLocation(1, 22));
-                    await server.UnloadFileAsync(uri);
-
-                    uri = await server.OpenDefaultDocumentAndGetUriAsync("raise Exception fr");
-                    await AssertCompletion(server, uri, new[] { "from" }, new[] { "Exception", "def", "abs" }, new SourceLocation(1, 19), applicableSpan: new SourceSpan(1, 17, 1, 19));
-                    await server.UnloadFileAsync(uri);
-                }
-
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("raise Exception, x, y");
-                await AssertAnyCompletion(server, uri, new SourceLocation(1, 17));
-                await AssertAnyCompletion(server, uri, new SourceLocation(1, 20));
+                uri = await server.OpenDefaultDocumentAndGetUriAsync("raise Exception fr");
+                await AssertCompletion(server, uri, new[] { "from" }, new[] { "Exception", "def", "abs" }, new SourceLocation(1, 19), applicableSpan: new SourceSpan(1, 17, 1, 19));
                 await server.UnloadFileAsync(uri);
             }
+
+            uri = await server.OpenDefaultDocumentAndGetUriAsync("raise Exception, x, y");
+            await AssertAnyCompletion(server, uri, new SourceLocation(1, 17));
+            await AssertAnyCompletion(server, uri, new SourceLocation(1, 20));
+            await server.UnloadFileAsync(uri);
         }
 
-        [TestMethod, Priority(0)]
-        public async Task InExcept() {
-            using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexcept ");
-                await AssertCompletion(server, uri, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(3, 8));
-                await server.UnloadFileAsync(uri);
+        [ServerTestMethod, Priority(0)]
+        public async Task InExcept(Server server) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexcept ");
+            await AssertCompletion(server, uri, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(3, 8));
+            await server.UnloadFileAsync(uri);
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexcept (");
-                await AssertCompletion(server, uri, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(3, 9));
-                await server.UnloadFileAsync(uri);
+            uri = await server.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexcept (");
+            await AssertCompletion(server, uri, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(3, 9));
+            await server.UnloadFileAsync(uri);
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexcept Exception  as ");
-                await AssertCompletion(server, uri, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(3, 8));
-                await AssertCompletion(server, uri, new[] { "as" }, new[] { "Exception", "def", "abs" }, new SourceLocation(3, 18));
-                (await server.SendCompletion(uri, 2, 21)).Should().HaveNoCompletion();
-                await server.UnloadFileAsync(uri);
+            uri = await server.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexcept Exception  as ");
+            await AssertCompletion(server, uri, new[] { "Exception", "ValueError" }, new[] { "def", "abs" }, new SourceLocation(3, 8));
+            await AssertCompletion(server, uri, new[] { "as" }, new[] { "Exception", "def", "abs" }, new SourceLocation(3, 18));
+            (await server.SendCompletion(uri, 2, 21)).Should().HaveNoCompletion();
+            await server.UnloadFileAsync(uri);
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexc");
-                await AssertCompletion(server, uri, new[] { "except", "def", "abs" }, new string[0], new SourceLocation(3, 3));
-                await server.UnloadFileAsync(uri);
+            uri = await server.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexc");
+            await AssertCompletion(server, uri, new[] { "except", "def", "abs" }, new string[0], new SourceLocation(3, 3));
+            await server.UnloadFileAsync(uri);
 
-                uri = await server.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexcept Exception a");
-                await AssertCompletion(server, uri, new[] { "as" }, new[] { "Exception", "def", "abs" }, new SourceLocation(3, 19), applicableSpan: new SourceSpan(3, 18, 3, 19));
-                await server.UnloadFileAsync(uri);
-            }
+            uri = await server.OpenDefaultDocumentAndGetUriAsync("try:\n    pass\nexcept Exception a");
+            await AssertCompletion(server, uri, new[] { "as" }, new[] { "Exception", "def", "abs" }, new SourceLocation(3, 19), applicableSpan: new SourceSpan(3, 18, 3, 19));
+            await server.UnloadFileAsync(uri);
         }
 
         [ServerTestMethod, Priority(0)]
@@ -831,226 +821,201 @@ class B(A):
             (await server.SendCompletion(uri, 1, 4)).Should().HaveLabels("x", "abs");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task WithNewDot() {
+        [ServerTestMethod, Priority(0)]
+        public async Task WithNewDot(Server server) {
             // LSP assumes that the text buffer is up to date with typing,
             // which means the language server must know about dot for a
             // dot completion.
             // To do this, we have to support using a newer tree than the
             // current analysis, so that we can quickly parse the new text
             // with the dot but not block on reanalysis.
-            using (var server = await CreateServerAsync()) {
-                var code = @"
+            var code = @"
 class MyClass:
     def f(self): pass
 
 mc = MyClass()
 mc
 ";
-                int testLine = 5;
-                int testChar = 2;
+            var testLine = 5;
+            var testChar = 2;
 
-                var mod = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            var mod = await server.OpenDefaultDocumentAndGetUriAsync(code);
 
-                // Completion after "mc " should normally be blank
-                await AssertCompletion(server, mod,
-                    new string[0],
-                    new string[0],
-                    position: new Position { line = testLine, character = testChar + 1 }
-                );
+            // Completion after "mc " should normally be blank
+            await AssertCompletion(server, mod,
+                new string[0],
+                new string[0],
+                position: new Position { line = testLine, character = testChar + 1 }
+            );
 
-                // While we're here, test with the special override field
-                await AssertCompletion(server, mod,
-                    new[] { "f" },
-                    new[] { "abs", "bin", "int", "mc" },
-                    position: new Position { line = testLine, character = testChar + 1 },
-                    expr: "mc"
-                );
+            // While we're here, test with the special override field
+            await AssertCompletion(server, mod,
+                new[] { "f" },
+                new[] { "abs", "bin", "int", "mc" },
+                position: new Position { line = testLine, character = testChar + 1 },
+                expr: "mc"
+            );
 
-                // Send the document update.
-                await server.DidChangeTextDocument(new DidChangeTextDocumentParams {
-                    textDocument = new VersionedTextDocumentIdentifier { uri = mod, version = 1 },
-                    contentChanges = new[] { new TextDocumentContentChangedEvent {
-                    text = ".",
-                    range = new Range {
-                        start = new Position { line = testLine, character = testChar },
-                        end = new Position { line = testLine, character = testChar }
-                    }
-                } },
-                }, CancellationToken.None);
+            // Send the document update.
+            await server.DidChangeTextDocument(new DidChangeTextDocumentParams {
+                textDocument = new VersionedTextDocumentIdentifier { uri = mod, version = 1 },
+                contentChanges = new[] { new TextDocumentContentChangedEvent {
+                text = ".",
+                range = new Range {
+                    start = new Position { line = testLine, character = testChar },
+                    end = new Position { line = testLine, character = testChar }
+                }
+            } },
+            }, CancellationToken.None);
 
-                // Now with the "." event sent, we should see this as a dot completion
-                await AssertCompletion(server, mod,
-                    new[] { "f" },
-                    new[] { "abs", "bin", "int", "mc" },
-                    position: new Position { line = testLine, character = testChar + 1 }
-                );
-            }
+            // Now with the "." event sent, we should see this as a dot completion
+            await AssertCompletion(server, mod,
+                new[] { "f" },
+                new[] { "abs", "bin", "int", "mc" },
+                position: new Position { line = testLine, character = testChar + 1 }
+            );
         }
 
-        [TestMethod, Priority(0)]
-        public async Task AfterLoad() {
-            using (var server = await CreateServerAsync()) {
-                var mod1 = await server.OpenDocumentAndGetUriAsync("mod1.py", "import mod2\n\nmod2.");
+        [ServerTestMethod, Priority(0)]
+        public async Task AfterLoad(Server server) {
+            var mod1 = await server.OpenDocumentAndGetUriAsync("mod1.py", "import mod2\n\nmod2.");
 
-                await AssertCompletion(server, mod1,
-                    position: new Position { line = 2, character = 5 },
-                    contains: new string[0],
-                    excludes: new[] { "value" }
-                );
+            await AssertCompletion(server, mod1,
+                position: new Position { line = 2, character = 5 },
+                contains: new string[0],
+                excludes: new[] { "value" }
+            );
 
-                var mod2 = await server.OpenDocumentAndGetUriAsync("mod2.py", "value = 123");
+            var mod2 = await server.OpenDocumentAndGetUriAsync("mod2.py", "value = 123");
 
-                await AssertCompletion(server, mod1,
-                    position: new Position { line = 2, character = 5 },
-                    contains: new[] { "value" },
-                    excludes: new string[0]
-                );
+            await AssertCompletion(server, mod1,
+                position: new Position { line = 2, character = 5 },
+                contains: new[] { "value" },
+                excludes: new string[0]
+            );
 
-                await server.UnloadFileAsync(mod2);
-                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            await server.UnloadFileAsync(mod2);
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
-                await AssertCompletion(server, mod1,
-                    position: new Position { line = 2, character = 5 },
-                    contains: new string[0],
-                    excludes: new[] { "value" }
-                );
-            }
+            await AssertCompletion(server, mod1,
+                position: new Position { line = 2, character = 5 },
+                contains: new string[0],
+                excludes: new[] { "value" }
+            );
         }
 
-        [TestMethod, Priority(0)]
-        public async Task MethodFromBaseClass2X() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
-                var code = @"
+        [ServerTestMethod(LatestAvailable2X = true), Priority(0)]
+        public async Task MethodFromBaseClass2X(Server server) {
+            var code = @"
 import unittest
 class Simple(unittest.TestCase):
     def test_exception(self):
         self.assertRaises().
 ";
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
 
-                await AssertCompletion(server, uri,
-                     position: new Position { line = 4, character = 28 },
-                     contains: new[] { "exception" },
-                     excludes: Array.Empty<string>()
-                 );
-            }
+            await AssertCompletion(server, uri,
+                 position: new Position { line = 4, character = 28 },
+                 contains: new[] { "exception" },
+                 excludes: Array.Empty<string>()
+             );
         }
 
-        [TestMethod, Priority(0)]
-        public async Task MethodFromBaseClass3X() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var code = @"
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
+        public async Task MethodFromBaseClass3X(Server server) {
+            var code = @"
 import unittest
 class Simple(unittest.TestCase):
     def test_exception(self):
         self.assertRaises().
 ";
 
-                var analysis = await GetStubBasedAnalysis(
-                                    server, code,
-                                    new AnalysisLimits { UseTypeStubPackages = true },
-                                    searchPaths: Enumerable.Empty<string>(),
-                                    stubPaths: new[] { GetTypeshedPath() });
+            server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true };
+            server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
 
-                await AssertCompletion(server, analysis.DocumentUri,
-                    position: new Position { line = 4, character = 28 },
-                    contains: new[] { "exception" },
-                    excludes: Array.Empty<string>()
-                );
-            }
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            var completion = await server.SendCompletion(uri, 4, 28);
+            completion.Should().HaveInsertTexts("exception");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task CollectionsNamedTuple() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
+        public async Task CollectionsNamedTuple(Server server) {
                 var code = @"
 from collections import namedtuple
 nt = namedtuple('Point', ['x', 'y'])
 pt = nt(1, 2)
 pt.
 ";
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
-                server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = false };
+            server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+            server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = false };
 
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
-                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
-                var completion = await server.SendCompletion(uri, 4, 3);
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            var completion = await server.SendCompletion(uri, 4, 3);
 
-                completion.Should().HaveLabels("count", "index");
-            }
+            completion.Should().HaveLabels("count", "index");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task Hook() {
-            using (var server = await CreateServerAsync()) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync("x = 123\nx.");
+        [ServerTestMethod, Priority(0)]
+        public async Task Hook(Server server) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync("x = 123\nx.");
 
-                await AssertCompletion(server, uri, new[] { "real", "imag" }, new string[0], new Position { line = 1, character = 2 });
+            await AssertCompletion(server, uri, new[] { "real", "imag" }, new string[0], new Position { line = 1, character = 2 });
 
-                await server.LoadExtensionAsync(new PythonAnalysisExtensionParams {
-                    assembly = typeof(TestCompletionHookProvider).Assembly.FullName,
-                    typeName = typeof(TestCompletionHookProvider).FullName
-                }, null, CancellationToken.None);
+            await server.LoadExtensionAsync(new PythonAnalysisExtensionParams {
+                assembly = typeof(TestCompletionHookProvider).Assembly.FullName,
+                typeName = typeof(TestCompletionHookProvider).FullName
+            }, null, CancellationToken.None);
 
-                await AssertCompletion(server, uri, new[] { "*real", "*imag" }, new[] { "real" }, new Position { line = 1, character = 2 });
-            }
+            await AssertCompletion(server, uri, new[] { "*real", "*imag" }, new[] { "real" }, new Position { line = 1, character = 2 });
         }
 
-        [TestMethod, Priority(0)]
-        public async Task MultiPartDocument() {
-            using (var server = await CreateServerAsync()) {
-                var mod = await AddModule(server, "x = 1", "mod");
-                var modP2 = new Uri(mod, "#2");
-                var modP3 = new Uri(mod, "#3");
+        [ServerTestMethod, Priority(0)]
+        public async Task MultiPartDocument(Server server) {
+            var mod = await AddModule(server, "x = 1", "mod");
+            var modP2 = new Uri(mod, "#2");
+            var modP3 = new Uri(mod, "#3");
 
-                await AssertCompletion(server, mod, new[] { "x" }, null);
+            (await server.SendCompletion(mod, 0, 0)).Should().HaveLabels("x");
 
-                Assert.AreEqual(Tuple.Create("y = 2", 1), await ApplyChange(server, modP2, DocumentChange.Insert("y = 2", SourceLocation.MinValue)));
-                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            Assert.AreEqual(Tuple.Create("y = 2", 1), await ApplyChange(server, modP2, DocumentChange.Insert("y = 2", SourceLocation.MinValue)));
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
-                await AssertCompletion(server, modP2, new[] { "x", "y" }, null);
+            (await server.SendCompletion(modP2, 0, 0)).Should().HaveLabels("x", "y");
 
-                Assert.AreEqual(Tuple.Create("z = 3", 1), await ApplyChange(server, modP3, DocumentChange.Insert("z = 3", SourceLocation.MinValue)));
-                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            Assert.AreEqual(Tuple.Create("z = 3", 1), await ApplyChange(server, modP3, DocumentChange.Insert("z = 3", SourceLocation.MinValue)));
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
-                await AssertCompletion(server, modP3, new[] { "x", "y", "z" }, null);
-                await AssertCompletion(server, mod, new[] { "x", "y", "z" }, null);
+            (await server.SendCompletion(modP3, 0, 0)).Should().HaveLabels("x", "y", "z");
+            (await server.SendCompletion(mod, 0, 0)).Should().HaveLabels("x", "y", "z");
 
-                await ApplyChange(server, mod, DocumentChange.Delete(SourceLocation.MinValue, SourceLocation.MinValue.AddColumns(5)));
-                await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
-                await AssertCompletion(server, modP2, new[] { "y", "z" }, new[] { "x" });
-                await AssertCompletion(server, modP3, new[] { "y", "z" }, new[] { "x" });
-            }
+            await ApplyChange(server, mod, DocumentChange.Delete(SourceLocation.MinValue, SourceLocation.MinValue.AddColumns(5)));
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+
+            (await server.SendCompletion(modP2, 0, 0)).Should().HaveLabels("y", "z").And.NotContainLabels("x");
+            (await server.SendCompletion(modP3, 0, 0)).Should().HaveLabels("y", "z").And.NotContainLabels("x");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task WithWhitespaceAroundDot() {
-            using (var s = await CreateServerAsync()) {
-                var u = await s.OpenDefaultDocumentAndGetUriAsync("import sys\nsys  .  version\n");
-                await AssertCompletion(s, u, new[] { "argv" }, null, new SourceLocation(2, 7),
-                    new CompletionContext { triggerCharacter = ".", triggerKind = CompletionTriggerKind.TriggerCharacter });
-            }
+        [ServerTestMethod, Priority(0)]
+        public async Task WithWhitespaceAroundDot(Server server) {
+            var u = await server.OpenDefaultDocumentAndGetUriAsync("import sys\nsys  .  version\n");
+            await AssertCompletion(server, u, new[] { "argv" }, null, new SourceLocation(2, 7),
+                new CompletionContext { triggerCharacter = ".", triggerKind = CompletionTriggerKind.TriggerCharacter });
         }
 
-        [TestMethod, Priority(0)]
-        public async Task MarkupKindValid() {
-            using (var s = await CreateServerAsync()) {
-                var u = await s.OpenDefaultDocumentAndGetUriAsync("import sys\nsys.\n");
+        [ServerTestMethod, Priority(0)]
+        public async Task MarkupKindValid(Server server) {
+            var u = await server.OpenDefaultDocumentAndGetUriAsync("import sys\nsys.\n");
 
-                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
-                var res = await s.Completion(new CompletionParams {
-                    textDocument = new TextDocumentIdentifier { uri = u },
-                    position = new SourceLocation(2, 5),
-                    context = new CompletionContext { triggerCharacter = ".", triggerKind = CompletionTriggerKind.TriggerCharacter },
-                }, CancellationToken.None);
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            var completion = await server.SendCompletion(u, 1, 4);
 
-                res.items?.Select(i => i.documentation.kind).Should().NotBeEmpty().And.BeSubsetOf(new[] { MarkupKind.PlainText, MarkupKind.Markdown });
-            }
+            completion.items?.Select(i => i.documentation.kind).Should().NotBeEmpty().And.BeSubsetOf(new[] { MarkupKind.PlainText, MarkupKind.Markdown });
         }
 
-        [TestMethod, Priority(0)]
-        public async Task NewType() {
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
+        public async Task NewType(Server server) {
             var code = @"
 from typing import NewType
 
@@ -1058,17 +1023,15 @@ Foo = NewType('Foo', dict)
 foo: Foo = Foo({ })
 foo.
 ";
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
-                await server.GetAnalysisAsync(uri);
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            await server.GetAnalysisAsync(uri);
 
-                var completions = await server.SendCompletion(uri, 5, 4);
-                completions.Should().HaveLabels("clear", "copy", "items", "keys", "update", "values");
-            }
+            var completions = await server.SendCompletion(uri, 5, 4);
+            completions.Should().HaveLabels("clear", "copy", "items", "keys", "update", "values");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task GenericListBase() {
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
+        public async Task GenericListBase(Server server) {
             var code = @"
 from typing import List
 
@@ -1077,20 +1040,18 @@ def func(a: List[str]):
     a[0].
     pass
 ";
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
-                await server.GetAnalysisAsync(uri);
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
+            await server.GetAnalysisAsync(uri);
 
-                var completions = await server.SendCompletion(uri, 4, 6);
-                completions.Should().HaveLabels("clear", "copy", "count", "index", "remove", "reverse");
+            var completions = await server.SendCompletion(uri, 4, 6);
+            completions.Should().HaveLabels("clear", "copy", "count", "index", "remove", "reverse");
 
-                completions = await server.SendCompletion(uri, 5, 9);
-                completions.Should().HaveLabels("capitalize");
-            }
+            completions = await server.SendCompletion(uri, 5, 9);
+            completions.Should().HaveLabels("capitalize");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task GenericDictBase() {
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
+        public async Task GenericDictBase(Server server) {
             var code = @"
 from typing import Dict
 
@@ -1099,7 +1060,6 @@ def func(a: Dict[int, str]):
     a[0].
     pass
 ";
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
                 var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
                 await server.GetAnalysisAsync(uri);
 
@@ -1108,8 +1068,8 @@ def func(a: Dict[int, str]):
 
                 completions = await server.SendCompletion(uri, 5, 9);
                 completions.Should().HaveLabels("capitalize");
-            }
         }
+
         private static async Task AssertCompletion(
             Server s, 
             Uri uri, 
@@ -1146,7 +1106,7 @@ def func(a: Dict[int, str]):
             }
 
             if (applicableSpan.HasValue) {
-                res._applicableSpan.Should().Be(applicableSpan);
+                res._applicableSpan.Should().Be(applicableSpan.Value);
             }
         }
 

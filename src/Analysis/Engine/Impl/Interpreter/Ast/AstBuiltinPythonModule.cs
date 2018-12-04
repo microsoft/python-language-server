@@ -35,7 +35,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return $"{interpreterPath}.{name}.exe"; // Fake the extension
         }
 
-        protected override List<string> GetScrapeArguments(IPythonInterpreterFactory factory) {
+        protected override List<string> GetScrapeArguments(AstPythonInterpreter interpreter) {
             if (!InstallPath.TryGetFile("scrape_module.py", out string sm)) {
                 return null;
             }

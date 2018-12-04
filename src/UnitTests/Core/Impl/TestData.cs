@@ -84,14 +84,7 @@ namespace TestUtilities {
         public static string GetNextModulePath() => TestRunScopeAsyncLocal.Value.GetNextModulePath();
         public static string GetAstAnalysisCachePath(Version version, bool testSpecific = false) 
             => testSpecific ? TestRunScopeAsyncLocal.Value.GetTestSpecificPath($"AstAnalysisCache{version}") : GetTestOutputRootPath($"AstAnalysisCache{version}");
-
-        public static Uri CreateTestSpecificFile(string relativePath) {
-            var path = GetTestSpecificPath(relativePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            using (File.Create(path)) { }
-            return new Uri(path);
-        }
-
+        
         public static async Task<Uri> CreateTestSpecificFileAsync(string relativePath, string content) {
             var path = GetTestSpecificPath(relativePath);
             Directory.CreateDirectory(Path.GetDirectoryName(path));

@@ -58,7 +58,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public AndWhichConstraint<CompletionListAssertions, CompletionItem> HaveItem(string label, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            var actual = Subject?.items.Where(i => string.Equals(i.label, label, StringComparison.Ordinal)).ToArray() ?? Array.Empty<CompletionItem>();
+            var actual = Subject.items?.Where(i => string.Equals(i.label, label, StringComparison.Ordinal)).ToArray() ?? Array.Empty<CompletionItem>();
             var errorMessage = GetAssertCollectionContainsMessage(actual.Select(i => i.label).ToArray(), new [] { label }, GetName(), "label", "labels");
 
             Execute.Assertion.ForCondition(errorMessage == null)
@@ -73,13 +73,24 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => HaveLabels(labels, string.Empty);
 
         [CustomAssertion]
-        public AndConstraint<CompletionListAssertions> HaveLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs) {
+        public AndConstraint<CompletionListAssertions> HaveLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs) 
+            => HaveAttribute(labels, i => i.label, "label", "labels", because, reasonArgs);
+
+        [CustomAssertion]
+        public AndConstraint<CompletionListAssertions> HaveInsertTexts(params string[] insertTexts)
+            => HaveInsertTexts(insertTexts, string.Empty);
+
+        [CustomAssertion]
+        public AndConstraint<CompletionListAssertions> HaveInsertTexts(IEnumerable<string> insertTexts, string because = "", params object[] reasonArgs) 
+            => HaveAttribute(insertTexts, i => i.insertText, "insert text", "insert texts", because, reasonArgs);
+
+        private AndConstraint<CompletionListAssertions> HaveAttribute(IEnumerable<string> attributes, Func<CompletionItem, string> attributeSelector, string itemNameSingle, string itemNamePlural, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            var actual = Subject.items?.Select(i => i.label).ToArray() ?? new string[0];
-            var expected = labels.ToArray();
+            var actual = Subject.items?.Select(attributeSelector).ToArray() ?? Array.Empty<string>();
+            var expected = attributes.ToArray();
 
-            var errorMessage = GetAssertCollectionContainsMessage(actual, expected, GetName(), "label", "labels");
+            var errorMessage = GetAssertCollectionContainsMessage(actual, expected, GetName(), itemNameSingle, itemNamePlural);
 
             Execute.Assertion.ForCondition(errorMessage == null)
                 .BecauseOf(because, reasonArgs)
@@ -93,11 +104,22 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             => NotContainLabels(labels, string.Empty);
 
         [CustomAssertion]
-        public AndConstraint<CompletionListAssertions> NotContainLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs) {
+        public AndConstraint<CompletionListAssertions> NotContainLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs)
+            => NotContainAttributes(labels, i => i.label, "label", "labels", because, reasonArgs);
+
+        [CustomAssertion]
+        public AndConstraint<CompletionListAssertions> NotContainInsertTexts(params string[] insertTexts)
+            => NotContainInsertTexts(insertTexts, string.Empty);
+
+        [CustomAssertion]
+        public AndConstraint<CompletionListAssertions> NotContainInsertTexts(IEnumerable<string> insertTexts, string because = "", params object[] reasonArgs)
+            => NotContainAttributes(insertTexts, i => i.insertText, "insert text", "insert texts", because, reasonArgs);
+
+        public AndConstraint<CompletionListAssertions> NotContainAttributes(IEnumerable<string> attributes, Func<CompletionItem, string> attributeSelector, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            var actual = Subject.items?.Select(i => i.label).ToArray() ?? new string[0];
-            var expected = labels.ToArray();
+            var actual = Subject.items?.Select(attributeSelector).ToArray() ?? Array.Empty<string>();
+            var expected = attributes.ToArray();
 
             var errorMessage = GetAssertCollectionNotContainMessage(actual, expected, GetName(), "label", "labels");
 
