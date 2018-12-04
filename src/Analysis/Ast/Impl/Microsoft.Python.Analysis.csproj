@@ -53,7 +53,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Interpreter\" />
-    <Folder Include="Dependencies\" />
     <Folder Include="Properties\" />
     <Folder Include="Typeshed\stdlib\2and3\ctypes\" />
     <Folder Include="Typeshed\stdlib\2and3\distutils\command\" />

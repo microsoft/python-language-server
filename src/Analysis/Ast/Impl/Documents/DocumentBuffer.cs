@@ -17,11 +17,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Documents {
     internal sealed class DocumentBuffer {
         private readonly StringBuilder _sb = new StringBuilder();
+        private readonly int _ownerThreadId = Thread.CurrentThread.ManagedThreadId;
 
         public int Version { get; private set; } = -1;
         public string Text => _sb.ToString();
@@ -41,6 +44,9 @@ namespace Microsoft.Python.Analysis.Documents {
         }
 
         public void Update(DocumentChangeSet changes) {
+            Check.InvalidOperation(() => _ownerThreadId == Thread.CurrentThread.ManagedThreadId,
+                "Document buffer update must be done from the thread that created it");
+
             if (!changes.Any(c => c.WholeBuffer)) {
                 if (Version >= 0) {
                     if (changes.FromVersion < Version) {

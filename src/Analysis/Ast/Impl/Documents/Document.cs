@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
@@ -39,7 +40,6 @@ namespace Microsoft.Python.Analysis.Documents {
         private readonly IPythonAnalyzer _analyzer;
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly object _lock = new object();
-        private readonly int _ownerThreadId = Thread.CurrentThread.ManagedThreadId;
 
         private IReadOnlyList<DiagnosticsEntry> _diagnostics;
         private CancellationTokenSource _cts;
@@ -63,24 +63,14 @@ namespace Microsoft.Python.Analysis.Documents {
             _analyzer = services.GetService<IPythonAnalyzer>();
             _idleTimeService = services.GetService<IIdleTimeService>();
 
-            Load(content);
+            content = content ?? _fs.ReadAllText(FilePath);
+            _buffer.Reset(0, content);
+
+            ParseAsync().DoNotWait();
         }
 
-        public Document(Uri uri, string content, bool isInWorkspace, IServiceContainer services) {
-            Check.ArgumentNotNull(nameof(uri), uri);
-            Check.ArgumentNotNull(nameof(content), content);
-            Check.ArgumentNotNull(nameof(services), services);
-
-            FilePath = uri.LocalPath;
-            Uri = uri;
-            Name = Path.GetFileNameWithoutExtension(FilePath);
-            IsInWorkspace = isInWorkspace;
-
-            _fs = services.GetService<IFileSystem>();
-            _analyzer = services.GetService<IPythonAnalyzer>();
-
-            Load(content);
-        }
+        public Document(Uri uri, string content, bool isInWorkspace, IServiceContainer services) :
+            this(Path.GetFileNameWithoutExtension(uri.LocalPath), uri.LocalPath, uri, isInWorkspace, content, services) { }
 
         public event EventHandler<EventArgs> NewAst;
         public event EventHandler<EventArgs> NewAnalysis;
@@ -97,24 +87,13 @@ namespace Microsoft.Python.Analysis.Documents {
 
         public void Dispose() { }
 
+        #region Parsing
         public async Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default) {
-            while (!cancellationToken.IsCancellationRequested) {
+            Task t = null;
+            while (t != _parsingTask && !cancellationToken.IsCancellationRequested) {
+                t = _parsingTask;
                 try {
-                    await _parsingTask;
-                    break;
-                } catch (OperationCanceledException) {
-                    // Parsing as canceled, try next task.
-                    continue;
-                }
-            }
-            return _ast;
-        }
-
-        public async Task<PythonAst> GetAnalysisAsync(CancellationToken cancellationToken = default) {
-            var ast = await GetAstAsync(cancellationToken);
-            while (!cancellationToken.IsCancellationRequested) {
-                try {
-                    await _parsingTask;
+                    await t;
                     break;
                 } catch (OperationCanceledException) {
                     // Parsing as canceled, try next task.
@@ -130,17 +109,9 @@ namespace Microsoft.Python.Analysis.Documents {
         public IEnumerable<DiagnosticsEntry> GetDiagnostics() => _diagnostics.ToArray();
 
         public void Update(IEnumerable<DocumentChangeSet> changes) {
-            Check.InvalidOperation(() => _ownerThreadId == Thread.CurrentThread.ManagedThreadId,
-                "Document update must be done from the thread that created it");
             lock (_lock) {
                 _buffer.Update(changes);
             }
-            ParseAsync().DoNotWait();
-        }
-
-        private void Load(string content) {
-            content = content ?? _fs.ReadAllText(FilePath);
-            _buffer.Reset(0, content);
             ParseAsync().DoNotWait();
         }
 
@@ -152,15 +123,18 @@ namespace Microsoft.Python.Analysis.Documents {
         }
 
         private PythonAst Parse(CancellationToken cancellationToken) {
+            var sink = new CollectingErrorSink();
             int version;
+            Parser parser;
+
             lock (_lock) {
                 version = _buffer.Version;
+                parser = Parser.CreateParser(GetReader(), _analyzer.LanguageVersion, new ParserOptions {
+                    StubFile = Path.GetExtension(FilePath).Equals(".pyi", _fs.StringComparison),
+                    ErrorSink = sink
+                });
             }
-            var sink = new CollectingErrorSink();
-            var parser = Parser.CreateParser(GetReader(), _analyzer.LanguageVersion, new ParserOptions {
-                StubFile = Path.GetExtension(FilePath).Equals(".pyi", _fs.StringComparison),
-                ErrorSink = sink
-            });
+
             var ast = parser.ParseFile();
 
             lock (_lock) {
@@ -180,5 +154,22 @@ namespace Microsoft.Python.Analysis.Documents {
             public override void Add(string message, SourceSpan span, int errorCode, Severity severity)
                 => _diagnostics.Add(new DiagnosticsEntry(message, span, errorCode, severity));
         }
+        #endregion
+
+        #region Analysis
+        public async Task<PythonAst> GetAnalysisAsync(CancellationToken cancellationToken = default) {
+            var ast = await GetAstAsync(cancellationToken);
+            while (!cancellationToken.IsCancellationRequested) {
+                try {
+                    await _parsingTask;
+                    break;
+                } catch (OperationCanceledException) {
+                    // Parsing as canceled, try next task.
+                    continue;
+                }
+            }
+            return _ast;
+        }
+        #endregion
     }
 }

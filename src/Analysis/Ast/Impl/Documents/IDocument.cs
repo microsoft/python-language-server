@@ -57,12 +57,12 @@ namespace Microsoft.Python.Analysis.Documents {
         bool IsOpen { get; }
 
         /// <summary>
-        /// Document parse tree
+        /// Returns document parse tree.
         /// </summary>
         Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Document parse tree
+        /// Returns document analysis.
         /// </summary>
         Task<IModuleAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default);
 

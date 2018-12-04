@@ -13,30 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Parsing;
+using Microsoft.Python.Analysis.Dependencies;
 
-namespace Microsoft.Python.Analysis {
-    public interface IPythonAnalyzer {
-        PythonLanguageVersion LanguageVersion { get; }
-
+namespace Microsoft.Python.Analysis.Analyzer {
+    public interface IAnalysisQueue {
         /// <summary>
-        /// Returns the interpreter that the analyzer is using.
-        /// This property is thread safe.
+        /// Enqueues chain of dependencies for analysis.
         /// </summary>
-        IPythonInterpreter Interpreter { get; }
-
-        /// <summary>
-        /// Gets the list of directories which should be searched for type stubs.
-        /// This property is thread safe.
-        /// </summary>
-        IEnumerable<string> TypeStubDirectories { get; }
-
-        /// <summary>
-        /// Analyze single document.
-        /// </summary>
-        Task AnalyzeAsync(IDocument document);
+        /// <param name="node">Dependency root node.</param>
+        /// <returns>Task that completes when analysis of the entire chain is complete.</returns>
+        Task EnqueueAsync(IDependencyChainNode node, CancellationToken cancellationToken);
     }
 }
