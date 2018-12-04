@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 
 namespace Microsoft.Python.Core {
@@ -40,9 +41,34 @@ namespace Microsoft.Python.Core {
             return sb;
         }
 
+        public static StringBuilder AppendIf(this StringBuilder sb, bool condition, char value) {
+            if (condition) {
+                sb.Append(value);
+            }
+
+            return sb;
+        }
+
         public static StringBuilder AppendIf(this StringBuilder sb, bool condition, string value) {
             if (condition) {
                 sb.Append(value);
+            }
+
+            return sb;
+        }
+
+        public static StringBuilder Append(this StringBuilder sb, string separator, IReadOnlyList<string> values) 
+            => sb.Append(separator, values, 0, values.Count);
+
+        public static StringBuilder Append(this StringBuilder sb, string separator, IReadOnlyList<string> values, int start, int length) {
+            if (length <= 0 || values.Count < start + length) {
+                return sb;
+            }
+
+            sb.Append(values[start]);
+
+            for (var i = start + 1; i < start + length; i++) {
+                sb.Append(separator).Append(values[i]);
             }
 
             return sb;

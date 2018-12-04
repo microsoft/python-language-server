@@ -32,9 +32,7 @@ namespace Microsoft.PythonTools.Interpreter {
         /// <summary>
         /// Configuration settings for the interpreter.
         /// </summary>
-        InterpreterConfiguration Configuration {
-            get;
-        }
+        InterpreterConfiguration Configuration { get; }
 
         /// <summary>
         /// Creates an IPythonInterpreter instance.
@@ -46,12 +44,5 @@ namespace Microsoft.PythonTools.Interpreter {
         /// can be imported may have changed.
         /// </summary>
         void NotifyImportNamesChanged();
-    }
-
-    public interface IPythonInterpreterFactory2: IPythonInterpreterFactory {
-        /// <summary>
-        /// Creates an IPythonInterpreter instance.
-        /// </summary>
-        IPythonInterpreter CreateInterpreter(string workspaceRoot);
     }
 }

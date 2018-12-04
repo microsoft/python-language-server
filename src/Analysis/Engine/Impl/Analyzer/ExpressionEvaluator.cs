@@ -150,7 +150,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                         res = refs.Types;
                     } else {
                         // ... warn the user
-                        warn = !(node is ConstantExpression); // Don't warn when None.
+                        warn = true;
                     }
                 }
             }

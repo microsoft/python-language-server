@@ -44,10 +44,12 @@ namespace AnalysisTests {
         public void TestCleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public void CrossThreadAnalysisCalls() {
+        public async Task CrossThreadAnalysisCalls() {
             var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
-            var tasks = StartCrossThreadAnalysisCalls(cts.Token, PythonLanguageVersion.V34).ToArray();
+            var interpreterFactory = InterpreterFactoryCreator.CreateAnalysisInterpreterFactory(PythonLanguageVersion.V34.ToVersion());
+            var state = await PythonAnalyzer.CreateAsync(interpreterFactory, cts.Token);
+            var tasks = StartCrossThreadAnalysisCalls(state, cts.Token).ToArray();
             try {
                 Task.WaitAny(tasks, cts.Token);
             } catch (OperationCanceledException) {
@@ -89,13 +91,7 @@ namespace AnalysisTests {
 
         private static readonly IList<string> PythonTypes = new[] { "list", "tuple", "dict", "str" };
 
-        private IEnumerable<Task> StartCrossThreadAnalysisCalls(
-            CancellationToken cancel,
-            PythonLanguageVersion version
-        ) {
-            var fact = InterpreterFactoryCreator.CreateAnalysisInterpreterFactory(version.ToVersion());
-            var state = PythonAnalyzer.CreateSynchronously(fact);
-
+        private IEnumerable<Task> StartCrossThreadAnalysisCalls(PythonAnalyzer state, CancellationToken cancel) {
             const string testCode = @"from mod{0:000} import test_func as other_test_func, MyClass as other_mc
 
 c = None

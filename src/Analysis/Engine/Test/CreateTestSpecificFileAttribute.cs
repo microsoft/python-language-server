@@ -1,4 +1,4 @@
-﻿// Python Tools for Visual Studio
+// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -17,13 +17,15 @@
 using System;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.PythonTools.Analysis.Analyzer {
-    public interface IImportSource {
-        bool IsResolved { get; }
-    }
+namespace AnalysisTests {
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+    public class CreateTestSpecificFileAttribute : Attribute {
+        public string RelativeFilePath { get; }
+        public string Content { get; }
 
-    public interface IImportDefinition {
-        IImportSource Source { get; }
-        IProjectEntry ProjectEntry { get; }
+        public CreateTestSpecificFileAttribute(string relativeFilePath, string content) {
+            RelativeFilePath = relativeFilePath;
+            Content = content;
+        }
     }
 }

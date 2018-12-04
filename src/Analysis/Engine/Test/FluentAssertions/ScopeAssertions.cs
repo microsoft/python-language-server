@@ -65,6 +65,13 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
             return new AndWhichConstraint<TScopeAssertions, IPythonModule>((TScopeAssertions)this, assertion.Which);
         }
 
+        public AndWhichConstraint<TScopeAssertions, AnalysisValueTestInfo<PythonPackage>> HavePythonPackageVariable(string name, string because = "", params object[] reasonArgs) {
+            var assertion = HaveVariable(name, because, reasonArgs)
+                .Which.Should().HaveValue<PythonPackage>();
+
+            return new AndWhichConstraint<TScopeAssertions, AnalysisValueTestInfo<PythonPackage>>((TScopeAssertions)this, assertion.Which);
+        }
+
         public AndWhichConstraint<TScopeAssertions, IClassScope> HaveClass(string name, string because = "", params object[] reasonArgs) {
             var assertion = HaveVariable(name, because, reasonArgs)
                 .Which.Should().HaveValue<IClassInfo>()

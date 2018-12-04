@@ -110,6 +110,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(ProjectFiles)
                 .Add(() => Analyzer?.Dispose())
                 .Add(AnalysisQueue)
+                .Add(_editorFiles)
                 .Add(() => _shutdownCts.Cancel());
         }
 
@@ -190,7 +191,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         Version = @params.textDocument.version
                     };
                 }
-                entry = await AddFileAsync(@params.textDocument.uri, null, cookie);
+                entry = await AddFileAsync(@params.textDocument.uri, cookie);
             }
         }
 
@@ -295,8 +296,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public int GetPart(TextDocumentIdentifier document) => ProjectFiles.GetPart(document.uri);
         public IEnumerable<string> GetLoadedFiles() => ProjectFiles.GetLoadedFiles();
 
-        public Task<IProjectEntry> LoadFileAsync(Uri documentUri) => AddFileAsync(documentUri, null);
-        public Task<IProjectEntry> LoadFileAsync(Uri documentUri, Uri fromSearchPath) => AddFileAsync(documentUri, fromSearchPath);
+        public Task<IProjectEntry> LoadFileAsync(Uri documentUri) => AddFileAsync(documentUri);
 
         public Task<bool> UnloadFileAsync(Uri documentUri) {
             var entry = RemoveEntry(documentUri);
@@ -333,9 +333,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 OnAnalysisQueued?.Invoke(this, new AnalysisQueuedEventArgs { uri = uri });
             }
         }
-
-        public void SetSearchPaths(IEnumerable<string> searchPaths) => Analyzer.SetSearchPaths(searchPaths.MaybeEnumerate());
-        public void SetTypeStubSearchPaths(IEnumerable<string> typeStubSearchPaths) => Analyzer.SetTypeStubPaths(typeStubSearchPaths.MaybeEnumerate());
 
         #endregion
 
@@ -396,8 +393,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             Analyzer.SetRoot(_rootDir);
-            SetSearchPaths(@params.initializationOptions.searchPaths);
-            SetTypeStubSearchPaths(@params.initializationOptions.typeStubSearchPaths);
+            Analyzer.SetSearchPaths(@params.initializationOptions.searchPaths.MaybeEnumerate());
+            Analyzer.SetTypeStubPaths(@params.initializationOptions.typeStubSearchPaths.MaybeEnumerate());
 
             Analyzer.Interpreter.ModuleNamesChanged += Interpreter_ModuleNamesChanged;
         }
@@ -446,14 +443,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var factory = ActivateObject<IPythonInterpreterFactory>(interpreter.assembly, interpreter.typeName, interpreter.properties)
                 ?? new AstPythonInterpreterFactory(interpreter.properties);
 
-            var interp = factory.CreateInterpreter();
-            if (interp == null) {
-                throw new InvalidOperationException(Resources.Error_FailedToCreateInterpreter);
-            }
-
-            LogMessage(MessageType.Info, $"Created {interp.GetType().FullName} instance from {factory.GetType().FullName}");
-
-            var analyzer = await PythonAnalyzer.CreateAsync(factory, interp, token);
+            var analyzer = await PythonAnalyzer.CreateAsync(factory, token);
+            LogMessage(MessageType.Info, $"Created {analyzer.Interpreter.GetType().FullName} instance from {factory.GetType().FullName}");
             return analyzer;
         }
 
@@ -496,28 +487,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return string.Join(Path.DirectorySeparatorChar.ToString(), bits);
         }
 
-        private async Task<IProjectEntry> AddFileAsync(Uri documentUri, Uri fromSearchPath, IAnalysisCookie cookie = null) {
+        private async Task<IProjectEntry> AddFileAsync(Uri documentUri, IAnalysisCookie cookie = null) {
             var item = ProjectFiles.GetEntry(documentUri, throwIfMissing: false);
             if (item != null) {
                 return item;
             }
 
-            string[] aliases = null;
             var path = GetLocalPath(documentUri);
-            if (fromSearchPath != null) {
-                if (ModulePath.FromBasePathAndFile_NoThrow(GetLocalPath(fromSearchPath), path, out var mp)) {
-                    aliases = new[] { mp.ModuleName };
-                }
-            } else {
-                aliases = GetImportNames(documentUri).Select(mp => mp.ModuleName).ToArray();
-            }
-
-            if (aliases.IsNullOrEmpty()) {
+            var aliases = GetImportNames(documentUri).Select(mp => mp.ModuleName).ToArray();
+            if (aliases.Length == 0) {
                 aliases = new[] { Path.GetFileNameWithoutExtension(path) };
             }
 
-            var reanalyzeEntries = aliases.SelectMany(a => Analyzer.GetEntriesThatImportModule(a, true)).ToArray();
-            var first = aliases.FirstOrDefault();
+            var first = aliases.First();
 
             var pyItem = Analyzer.AddModule(first, path, documentUri, cookie);
             item = pyItem;
@@ -527,6 +509,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return actualItem;
             }
 
+            var reanalyzeEntries = Analyzer.GetEntriesThatImportModule(pyItem.ModuleName, true).ToArray();
             pyItem.NewAnalysis += OnProjectEntryNewAnalysis;
 
             if (item is IDocument doc) {

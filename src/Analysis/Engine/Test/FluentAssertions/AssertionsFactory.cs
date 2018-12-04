@@ -17,7 +17,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Python.LanguageServer;
-using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
@@ -61,6 +60,9 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
         public static ProtocolInfoAssertions Should(this AnalysisValueTestInfo<ProtocolInfo> testInfo)
             => new ProtocolInfoAssertions(testInfo);
 
+        public static PythonPackageAssertions Should(this AnalysisValueTestInfo<PythonPackage> testInfo)
+            => new PythonPackageAssertions(testInfo);
+
         public static SequenceInfoAssertions Should(this AnalysisValueTestInfo<SequenceInfo> testInfo)
             => new SequenceInfoAssertions(testInfo);
 
@@ -93,6 +95,9 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
         public static ParameterResultAssertions Should(this ParameterResult overloadResult)
             => new ParameterResultAssertions(overloadResult);
+
+        public static RangeAssertions Should(this Range? range)
+            => new RangeAssertions(range);
 
         public static ReferenceCollectionAssertions Should(this IEnumerable<Reference> references)
             => new ReferenceCollectionAssertions(references);

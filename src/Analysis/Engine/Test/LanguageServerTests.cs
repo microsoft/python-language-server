@@ -361,17 +361,14 @@ def f(a = 2, b): pass
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task TypeHintNoneDiagnostic() {
+        [DataRow("def f(b: None) -> None:\n    b: None")]
+        [DataRow("from typing import Generator\ndef fun() -> Generator[int, None, None]:\n    yield from range(10)")]
+        [DataTestMethod, Priority(0)]
+        public async Task TypeHintNoneDiagnostic(string code) {
             if (this is LanguageServerTests_V2) {
                 // No type hints in Python 2.
                 return;
             }
-
-            var code = @"
-def f(b: None) -> None:
-    b: None
-";
 
             var diags = new Dictionary<Uri, PublishDiagnosticsEventArgs>();
             using (var s = await CreateServer((Uri)null, null, diags)) {

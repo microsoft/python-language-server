@@ -292,10 +292,9 @@ n1 : MyNamedTuple = ...
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task TypingModuleNestedIndex() {
-            using (var server = await new Server().InitializeAsync(PythonVersions.Required_Python36X)) {
-                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"from typing import *
+        [ServerTestMethod(Version = PythonLanguageVersion.V36), Priority(0)]
+        public async Task TypingModuleNestedIndex(Server server) {
+            var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"from typing import *
 
 MyList = List[List[str]]
 
@@ -304,10 +303,9 @@ l_s = l_l_s[0]
 s = l_s[0]
 ");
 
-                analysis.Should().HaveVariable("l_l_s").OfType(BuiltinTypeId.List).
-                    And.HaveVariable("l_s").OfType(BuiltinTypeId.List).
-                    And.HaveVariable("s").OfType(BuiltinTypeId.Str);
-            }
+            analysis.Should().HaveVariable("l_l_s").OfType(BuiltinTypeId.List).
+                And.HaveVariable("l_s").OfType(BuiltinTypeId.List).
+                And.HaveVariable("s").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
@@ -480,7 +478,7 @@ def async_query(on_success: Callable[[int], None],
 ",
                 new[] {
                     "feeder:feeder(get_next_item:function() -> str) -> None",
-                    "async_query:async_query(on_success:function(int), on_error:function(int, Exception)) -> None"
+                    "async_query:async_query(on_success:function(int) -> None, on_error:function(int, Exception) -> None) -> None"
                 }
             );
         }

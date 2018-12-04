@@ -17,24 +17,17 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstNestedPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
-        private IPythonModule _module;
+    internal sealed class AstNestedPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
         private readonly IPythonInterpreter _interpreter;
-        private readonly IReadOnlyList<string> _importNames;
+        private IPythonModule _module;
 
-        public AstNestedPythonModule(
-            IPythonInterpreter interpreter,
-            string name,
-            IReadOnlyList<string> importNames
-        ) : base(name) {
+        public AstNestedPythonModule(IPythonInterpreter interpreter, string fullName) : base(fullName) {
             _interpreter = interpreter ?? throw new ArgumentNullException(nameof(interpreter));
-            _importNames = importNames ?? throw new ArgumentNullException(nameof(importNames));
         }
 
         public override string Documentation => MaybeModule?.Documentation ?? string.Empty;
@@ -44,23 +37,21 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private IPythonModule MaybeModule => Volatile.Read(ref _module);
 
         private IPythonModule GetModule() {
-            var mod = Volatile.Read(ref _module);
-            if (mod != null) {
-                return mod;
+            var module = Volatile.Read(ref _module);
+            if (module != null) {
+                return module;
             }
 
-            foreach (var n in _importNames) {
-                mod = _interpreter.ImportModule(n);
-                if (mod != null) {
-                    Debug.Assert(!(mod is AstNestedPythonModule), "ImportModule should not return nested module");
-                    break;
-                }
-            }
-            if (mod == null) {
-                mod = new SentinelModule(_importNames.FirstOrDefault() ?? "<unknown>", false);
+            module = _interpreter.ImportModule(Name);
+            if (module != null) {
+                Debug.Assert(!(module is AstNestedPythonModule), "ImportModule should not return nested module");
             }
 
-            return Interlocked.CompareExchange(ref _module, mod, null) ?? mod;
+            if (module == null) {
+                module = new SentinelModule(Name, false);
+            }
+
+            return Interlocked.CompareExchange(ref _module, module, null) ?? module;
         }
 
         public IEnumerable<string> GetChildrenModules() => GetModule().GetChildrenModules();

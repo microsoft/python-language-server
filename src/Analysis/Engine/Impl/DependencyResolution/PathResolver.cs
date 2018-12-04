@@ -25,9 +25,28 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             _currentSnapshot = new PathResolverSnapshot(pythonLanguageVersion);
         }
 
-        public void SetRoot(string root) => _currentSnapshot = _currentSnapshot.SetRoot(root);
-        public void SetSearchPaths(IEnumerable<string> searchPaths) => _currentSnapshot = _currentSnapshot.SetSearchPaths(searchPaths);
-        public void AddModulePath(string path) => _currentSnapshot = _currentSnapshot.AddModulePath(path);
+        public IEnumerable<string> SetRoot(in string root) {
+            _currentSnapshot = _currentSnapshot.SetWorkDirectory(root, out var addedRoots);
+            return addedRoots;
+        }
+
+        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths) {
+            _currentSnapshot = _currentSnapshot.SetUserSearchPaths(searchPaths, out var addedRoots);
+            return addedRoots;
+        }
+
+        public IEnumerable<string> SetInterpreterSearchPaths(in IEnumerable<string> searchPaths) {
+            _currentSnapshot = _currentSnapshot.SetInterpreterPaths(searchPaths, out var addedRoots);
+            return addedRoots;
+        }
+
+        public void SetBuiltins(in IEnumerable<string> builtinModuleNames) => _currentSnapshot = _currentSnapshot.SetBuiltins(builtinModuleNames);
+        public void RemoveModulePath(in string path) => _currentSnapshot = _currentSnapshot.RemoveModulePath(path);
+        public bool TryAddModulePath(in string path, out string fullModuleName) {
+            _currentSnapshot = _currentSnapshot.AddModulePath(path, out fullModuleName);
+            return fullModuleName != null;
+        }
+
         public PathResolverSnapshot CurrentSnapshot => _currentSnapshot;
     }
 }

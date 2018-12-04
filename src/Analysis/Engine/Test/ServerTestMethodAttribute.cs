@@ -43,10 +43,15 @@ namespace AnalysisTests {
 
         private TestResult ExecuteWithServer(ITestMethod testMethod) {
             var arguments = ExtendArguments(testMethod.Arguments);
+            var filesToCreate = testMethod.GetAttributes<CreateTestSpecificFileAttribute>(false);
 
             TestEnvironmentImpl.AddBeforeAfterTest(async () => {
                 var interpreterConfiguration = GetInterpreterConfiguration(arguments);
                 var rootUri = TestSpecificRootUri ? TestData.GetTestSpecificRootUri() : null;
+                foreach (var file in filesToCreate) {
+                    await TestData.CreateTestSpecificFileAsync(file.RelativeFilePath, file.Content);
+                }
+
                 var server = await new Server().InitializeAsync(interpreterConfiguration, rootUri);
                 arguments[0] = server;
                 return server;

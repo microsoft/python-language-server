@@ -24,7 +24,7 @@ using Microsoft.Python.Parsing;
 using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    public class AstPythonInterpreterFactory : IPythonInterpreterFactory2, IPythonInterpreterFactoryWithLog, ICustomInterpreterSerialization, IDisposable {
+    public class AstPythonInterpreterFactory : IPythonInterpreterFactory, IPythonInterpreterFactoryWithLog, ICustomInterpreterSerialization, IDisposable {
         private readonly bool _useDefaultDatabase;
         private bool _disposed;
 
@@ -61,10 +61,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 _log = new AnalysisLogWriter(Path.Combine(CreationOptions.DatabasePath, "AnalysisLog.txt"), false, LogToConsole, LogCacheSize);
                 _log.Rotate(LogRotationSize);
                 _log.MinimumLevel = CreationOptions.TraceLevel;
-            }
-
-            ModuleCache = new AstModuleCache(config, CreationOptions.DatabasePath, useDefaultDatabase, !CreationOptions.UseExistingCache, _log);
-            ModuleResolution = new AstModuleResolution(ModuleCache, config, _log);
+            }            
         }
 
         public void Dispose() {
@@ -75,9 +72,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         ~AstPythonInterpreterFactory() {
             Dispose(false);
         }
-
-        internal AstModuleResolution ModuleResolution { get; }
-        internal AstModuleCache ModuleCache { get; }
 
         protected virtual void Dispose(bool disposing) {
             if (!_disposed) {
@@ -119,29 +113,16 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         public event EventHandler ImportableModulesChanged;
 
         public void NotifyImportNamesChanged() {
-            ModuleCache.Clear();
             ImportableModulesChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        /// <summary>
-        /// For test use only
-        /// </summary>
-        internal void SetCurrentSearchPaths(IEnumerable<string> paths) {
-            ModuleResolution.SetCurrentSearchPaths(paths);
-            ImportableModulesChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        public virtual IPythonInterpreter CreateInterpreter(string workspaceRoot) 
-            => new AstPythonInterpreter(this, workspaceRoot, _log);
         public virtual IPythonInterpreter CreateInterpreter() 
-            => CreateInterpreter(string.Empty);
+            => new AstPythonInterpreter(this, _useDefaultDatabase, _log);
 
         internal void Log(TraceLevel level, string eventName, params object[] args) {
             _log?.Log(level, eventName, args);
         }
-
-
-
+        
         public string GetAnalysisLogContent(IFormatProvider culture) {
             _log?.Flush(synchronous: true);
             var logfile = _log?.OutputFile;

@@ -27,7 +27,6 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinModule : BuiltinNamespace<IPythonModule>, IReferenceableContainer, IModule {
         private readonly MemberReferences _references = new MemberReferences();
-        private Dictionary<string, IAnalysisSet> _childModules;
 
         public BuiltinModule(IPythonModule module, PythonAnalyzer projectState)
             : base(module, projectState) {
@@ -36,23 +35,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public IPythonModule InterpreterModule { get; }
 
-        public void AddChildModule(string memberName, AnalysisValue module) {
-            if (_childModules == null) {
-                _childModules = new Dictionary<string, IAnalysisSet>();
-            }
-            if (_childModules.TryGetValue(memberName, out var existing)) {
-                _childModules[memberName] = existing.Add(module);
-            } else {
-                _childModules[memberName] = module;
-            }
-        }
-
         public override IAnalysisSet GetMember(Node node, AnalysisUnit unit, string name) {
             // Must unconditionally call the base implementation of GetMember
             var res = base.GetMember(node, unit, name);
-            if (_childModules != null && _childModules.TryGetValue(name, out var child)) {
-                res = res.Union(child);
-            }
             if (res.Count > 0) {
                 _references.AddReference(node, unit, name);
             }
@@ -61,7 +46,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None) {
             var res = ProjectState.GetAllMembers(InterpreterModule, moduleContext);
-            foreach (var value in _specializedValues.MaybeEnumerate().Concat(_childModules.MaybeEnumerate())) {
+            foreach (var value in _specializedValues.MaybeEnumerate()) {
                 if (!res.TryGetValue(value.Key, out var existing)) {
                     res[value.Key] = value.Value;
                 } else {
@@ -91,8 +76,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         internal IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
             return Type.GetMemberNames(moduleContext)
-                .Union(_specializedValues.MaybeEnumerate().Keys())
-                .Union(_childModules.MaybeEnumerate().Keys());
+                .Union(_specializedValues.MaybeEnumerate().Keys());
         }
 
         public IModule GetChildPackage(IModuleContext context, string name) {
@@ -100,14 +84,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
             if (mem != null) {
                 return ProjectState.GetAnalysisValueFromObjects(mem) as IModule;
             }
-            if (_childModules != null && _childModules.TryGetValue(name, out var child)) {
-                return child as IModule ?? MultipleMemberInfo.Create(child.Where(m => m is IModule)) as IModule;
-            }
             return null;
         }
 
         public IEnumerable<KeyValuePair<string, AnalysisValue>> GetChildrenPackages(IModuleContext context) {
-            return Type.GetChildrenModules().Union(_childModules.MaybeEnumerate().Keys())
+            return Type.GetChildrenModules()
                 .Select(name => new KeyValuePair<string, AnalysisValue>(name, ProjectState.GetAnalysisValueFromObjects(Type.GetMember(context, name))));
         }
 

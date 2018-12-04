@@ -82,8 +82,8 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         // TODO: Replace usages of AddModuleWithContent with OpenDefaultDocumentAndGetUriAsync
-        public static async Task<ProjectEntry> AddModuleWithContentAsync(this Server server, string moduleName, string relativePath, string content) {
-            var entry = (ProjectEntry)server.Analyzer.AddModule(moduleName, TestData.GetTestSpecificPath(relativePath));
+        public static async Task<ProjectEntry> AddModuleWithContentAsync(this Server server, string relativePath, string content) {
+            var entry = (ProjectEntry)server.Analyzer.AddModule(null, TestData.GetTestSpecificPath(relativePath));
             entry.ResetDocument(0, content);
             await server.EnqueueItemAsync(entry);
             return entry;

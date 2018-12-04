@@ -239,6 +239,15 @@ namespace Microsoft.Python.Core {
             return result;
         }
 
+        public static StringSpan Slice(this string s, int start, int length)
+            => new StringSpan(s, start, length); 
+
+        public static StringSpanSplitSequence SplitIntoSpans(this string s, char separator)
+            => s.SplitIntoSpans(separator, 0, s.Length);
+
+        public static StringSpanSplitSequence SplitIntoSpans(this string s, char separator, int start, int length)
+            => new StringSpanSplitSequence(s, start, length, separator);
+
         public static bool TryGetNextNonEmptySpan(this string s, char separator, ref (int start, int length) span)
             => s.TryGetNextNonEmptySpan(separator, s.Length, ref span);
 

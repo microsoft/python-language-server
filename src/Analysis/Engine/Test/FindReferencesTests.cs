@@ -1719,8 +1719,8 @@ class Base(object):
             }
         }
 
-        [TestMethod, Priority(0)]
-        public async Task ClassMethodInRelativeImportedBase() {
+        [ServerTestMethod(), Priority(0)]
+        public async Task ClassMethodInRelativeImportedBase(Server server) {
             var text1 = @"
 from .mod2 import Base
 
@@ -1737,24 +1737,22 @@ class Base(object):
         pass
 ";
 
-            using (var server = await CreateServerAsync()) {
-                Uri uri1, uri2;
-                using (server.AnalysisQueue.Pause()) {
-                    uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
-                    await server.LoadFileAsync(uri2);
-                    uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
-                }
-
-                var references = await server.SendFindReferences(uri1, 6, 9);
-
-                var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
-                    (uri2, (3, 8, 3, 16), ReferenceKind.Definition),
-                    (uri2, (2, 4, 4, 12), ReferenceKind.Value),
-                    (uri1, (6, 8, 6, 16), ReferenceKind.Reference),
-                };
-
-                references.Should().OnlyHaveReferences(expectedReferences);
+            Uri uri1, uri2;
+            using (server.AnalysisQueue.Pause()) {
+                uri2 = await TestData.CreateTestSpecificFileAsync("mod2.py", text2);
+                await server.LoadFileAsync(uri2);
+                uri1 = await server.OpenDefaultDocumentAndGetUriAsync(text1);
             }
+
+            var references = await server.SendFindReferences(uri1, 6, 9);
+
+            var expectedReferences = new (Uri, (int, int, int, int), ReferenceKind?)[] {
+                (uri2, (3, 8, 3, 16), ReferenceKind.Definition),
+                (uri2, (2, 4, 4, 12), ReferenceKind.Value),
+                (uri1, (6, 8, 6, 16), ReferenceKind.Reference),
+            };
+
+            references.Should().OnlyHaveReferences(expectedReferences);
         }
 
         [TestMethod, Priority(0)]

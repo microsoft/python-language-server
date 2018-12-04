@@ -14,10 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -26,49 +23,59 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
     internal partial struct PathResolverSnapshot {
         [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
         private class Node {
-            private readonly Node[] _children;
+            public readonly ImmutableArray<Node> Children;
             public readonly string Name;
             public readonly string ModulePath;
+            public readonly string FullModuleName;
             public bool IsModule => ModulePath != null;
-            public int ChildrenCount => _children.Length;
 
-            private Node(string name, Node[] children, string modulePath) {
+            private Node(string name, ImmutableArray<Node> children, string modulePath, string fullModuleName) {
                 Name = name;
-                _children = children;
+                Children = children;
                 ModulePath = modulePath;
+                FullModuleName = fullModuleName;
             }
+
+            public static Node CreateDefaultRoot()
+                => new Node("*", ImmutableArray<Node>.Empty, null, null);
+
+            public static Node CreateBuiltinRoot()
+                => new Node(":", ImmutableArray<Node>.Empty, null, null);
+
+            public static Node CreateBuiltinRoot(ImmutableArray<Node> builtins)
+                => new Node(":", builtins, null, null);
 
             public static Node CreateRoot(string path) 
-                => new Node(PathUtils.NormalizePath(path), Array.Empty<Node>(), null);
+                => new Node(PathUtils.NormalizePath(path), ImmutableArray<Node>.Empty, null, null);
 
-            public static Node CreateModule(string name, string modulePath)
-                => new Node(name, Array.Empty<Node>(), modulePath);
+            public static Node CreateModule(string name, string modulePath, string fullModuleName)
+                => new Node(name, ImmutableArray<Node>.Empty, modulePath, fullModuleName);
 
-            public Node(string name, Node child) {
-                Name = name;
-                _children = new[] {child};
-                ModulePath = null;
-            }
+            public static Node CreatePackage(string name, Node child)
+                => new Node(name, ImmutableArray<Node>.Empty.Add(child), null, null);
 
-            public Node ToModule(string modulePath) => new Node(Name, _children, modulePath);
-            public Node ToPackage() => new Node(Name, _children, null);
-            public Node AddChild(Node child) => new Node(Name, _children.ImmutableAdd(child), ModulePath);
-            public Node ReplaceChildAt(Node child, int index) => new Node(Name, _children.ImmutableReplaceAt(child, index), ModulePath);
-            public Node RemoveChildAt(int index) => new Node(Name, _children.ImmutableRemoveAt(index), ModulePath);
+            public static Node CreateBuiltinModule(string name)
+                => new Node(name, ImmutableArray<Node>.Empty, null, name);
+            
+            public Node ToModuleNode(string modulePath, string fullModuleName) => new Node(Name, Children, modulePath, fullModuleName);
+            public Node ToPackage() => new Node(Name, Children, null, null);
+            public Node AddChild(Node child) => new Node(Name, Children.Add(child), ModulePath, FullModuleName);
+            public Node ReplaceChildAt(Node child, int index) => new Node(Name, Children.ReplaceAt(index, child), ModulePath, FullModuleName);
+            public Node RemoveChildAt(int index) => new Node(Name, Children.RemoveAt(index), ModulePath, FullModuleName);
 
-            public Node GetChildAt(int index) => _children[index];
-            public Node GetChild(string childName) {
+            public bool TryGetChild(string childName, out Node child) {
                 var index = GetChildIndex(childName);
-                return index == -1 ? default : _children[index];
+                if (index == -1) {
+                    child = default;
+                    return false;
+                }
+
+                child = Children[index];
+                return true;
             }
 
-            public int GetChildIndex(string childName) => _children.IndexOf(childName, NameEquals);
-
-            public int GetChildIndex(string modulePath, (int start, int length) nameSpan) 
-                => _children.IndexOf((modulePath, nameSpan.start, nameSpan.length), NameEquals);
-
-            public string[] GetChildPackageNames() => _children.Where(c => !c.IsModule).Select(c => c.Name).ToArray();
-            public IReadOnlyDictionary<string, string> GetChildModules() => _children.Where(c => c.IsModule).ToDictionary(c => c.Name, c => c.ModulePath);
+            public int GetChildIndex(string childName) => Children.IndexOf(childName, NameEquals);
+            public int GetChildIndex(StringSpan nameSpan) => Children.IndexOf(nameSpan, NameEquals);
 
             private string DebuggerDisplay {
                 get {
@@ -80,15 +87,15 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
 
             private void GetDebuggerDisplay(StringBuilder sb, int offset) {
                 sb.Append(' ', offset).Append(IsModule ? Name : "[" + Name + "]").AppendLine();
-                foreach (var child in _children) {
+                foreach (var child in Children) {
                     child.GetDebuggerDisplay(sb, offset + 2);
                 }
             }
 
             private static bool NameEquals(Node n, string name) => n.Name.EqualsOrdinal(name);
 
-            private static bool NameEquals(Node n, (string str, int start, int length) span) 
-                    => n.Name.EqualsOrdinal(0, span.str, span.start, span.length);
+            private static bool NameEquals(Node n, StringSpan span) 
+                    => n.Name.Length == span.Length && n.Name.EqualsOrdinal(0, span.Source, span.Start, span.Length);
         }
     }
 }

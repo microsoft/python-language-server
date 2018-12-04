@@ -21,6 +21,7 @@ using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.PythonTools.Analysis.DependencyResolution;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     public static class PythonModuleLoader {
@@ -36,26 +37,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             PythonLanguageVersion langVersion,
             string moduleFullName
         ) {
-            Stream stream = null;
-            try {
-                if (Directory.Exists(sourceFile)) {
-                    stream = new MemoryStream(); // Module without __init__.py, create empty stream
-                } else {
-                    stream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                }
+            using (var stream = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                 return FromStream(interpreter, stream, sourceFile, langVersion, moduleFullName);
-            } finally {
-                stream?.Dispose();
             }
-        }
-
-        public static IPythonModule FromStream(
-            IPythonInterpreter interpreter,
-            Stream sourceFile,
-            string fileName,
-            PythonLanguageVersion langVersion
-        ) {
-            return FromStream(interpreter, sourceFile, fileName, langVersion, null);
         }
 
         public static IPythonModule FromStream(
@@ -65,21 +49,24 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             PythonLanguageVersion langVersion,
             string moduleFullName
         ) {
-            PythonAst ast;
             var sink = KeepParseErrors ? new CollectingErrorSink() : ErrorSink.Null;
             var parser = Parser.CreateParser(sourceFile, langVersion, new ParserOptions {
                 StubFile = fileName.EndsWithOrdinal(".pyi", ignoreCase: true),
                 ErrorSink = sink
             });
-            ast = parser.ParseFile();
+            var ast = parser.ParseFile();
+            var pathResolver = interpreter is AstPythonInterpreter astPythonInterpreter ? astPythonInterpreter.CurrentPathResolver : new PathResolverSnapshot(langVersion);
 
-            return new AstPythonModule(
+            var module = new AstPythonModule(
                 moduleFullName ?? ModulePath.FromFullPath(fileName, isPackage: IsPackageCheck).FullName,
                 interpreter,
-                ast,
+                ast.Documentation,
                 fileName,
                 (sink as CollectingErrorSink)?.Errors.Select(e => "{0} ({1}): {2}".FormatUI(fileName ?? "(builtins)", e.Span, e.Message))
             );
+
+            module.Analyze(ast, pathResolver);
+            return module;
         }
 
         public static IPythonModule FromTypeStub(

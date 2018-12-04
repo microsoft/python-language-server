@@ -112,8 +112,8 @@ datetime.datetime.now().day
             using (var s = await CreateServerAsync()) {
                 var mod = await s.OpenDefaultDocumentAndGetUriAsync("from os import path as p\n");
                 await AssertHover(s, mod, new SourceLocation(1, 6), "module os*", null, new SourceSpan(1, 6, 1, 8));
-                await AssertHover(s, mod, new SourceLocation(1, 16), "module path*", new[] { "path" }, new SourceSpan(1, 16, 1, 20));
-                await AssertHover(s, mod, new SourceLocation(1, 24), "module path*", new[] { "path" }, new SourceSpan(1, 24, 1, 25));
+                await AssertHover(s, mod, new SourceLocation(1, 16), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 16, 1, 20));
+                await AssertHover(s, mod, new SourceLocation(1, 24), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 24, 1, 25));
             }
         }
 
@@ -196,7 +196,7 @@ class Derived(Base):
                 hover._typeNames.Should().OnlyContain(typeNames.ToArray());
             }
             if (range.HasValue) {
-                hover.range.Should().Be((Range?)range);
+                hover.range.Should().Be(range.Value);
             }
         }
         private static InterpreterConfiguration DefaultV3 {

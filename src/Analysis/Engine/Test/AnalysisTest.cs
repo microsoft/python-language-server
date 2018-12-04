@@ -155,22 +155,42 @@ f(x=42, y = 'abc')
         }
 
         [TestMethod, Priority(0)]
-        public async Task TestPackageImportStar() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                var fob = await server.AddModuleWithContentAsync("fob", Path.Combine("fob", "__init__.py"), "from oar import *");
-                var oar = await server.AddModuleWithContentAsync("fob.oar", Path.Combine("fob", "oar", "__init__.py"), "from .baz import *");
-                var baz = await server.AddModuleWithContentAsync("fob.oar.baz", Path.Combine("fob", "oar", "baz.py"), $"import fob.oar.quox as quox{Environment.NewLine}func = quox.func");
-                var quox = await server.AddModuleWithContentAsync("fob.oar.quox", Path.Combine("fob", "oar", "quox.py"), "def func(): return 42");
+        public async Task TestPackageImportStar2X() {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X, TestData.GetTestSpecificRootUri())) {
+                var fob = await server.AddModuleWithContentAsync(Path.Combine("fob", "__init__.py"), "from oar import *");
+                var oar = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "__init__.py"), "from baz import *");
+                var baz = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "baz.py"), $"import fob.oar.qox as qox{Environment.NewLine}func = qox.func");
+                var qox = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "qox.py"), "def func(): return 42");
 
                 var fobAnalysis = await fob.GetAnalysisAsync();
                 var oarAnalysis = await oar.GetAnalysisAsync();
                 var bazAnalysis = await baz.GetAnalysisAsync();
-                var quoxAnalysis = await quox.GetAnalysisAsync();
+                var qoxAnalysis = await qox.GetAnalysisAsync();
 
-                fobAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.quox.func() -> int");
-                oarAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.quox.func() -> int");
-                bazAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.quox.func() -> int");
-                quoxAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.quox.func() -> int");
+                fobAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+                oarAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+                bazAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+                qoxAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TestPackageImportStar3X() {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X, TestData.GetTestSpecificRootUri())) {
+                var fob = await server.AddModuleWithContentAsync(Path.Combine("fob", "__init__.py"), "from .oar import *");
+                var oar = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "__init__.py"), "from .baz import *");
+                var baz = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "baz.py"), $"import fob.oar.qox as qox{Environment.NewLine}func = qox.func");
+                var qox = await server.AddModuleWithContentAsync(Path.Combine("fob", "oar", "qox.py"), "def func(): return 42");
+
+                var fobAnalysis = await fob.GetAnalysisAsync();
+                var oarAnalysis = await oar.GetAnalysisAsync();
+                var bazAnalysis = await baz.GetAnalysisAsync();
+                var qoxAnalysis = await qox.GetAnalysisAsync();
+
+                fobAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+                oarAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+                bazAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
+                qoxAnalysis.Should().HaveVariable("func").WithDescription("fob.oar.qox.func() -> int");
             }
         }
 
@@ -6200,7 +6220,7 @@ e = Employee('Guido')
 
         [TestMethod, Priority(0)]
         public async Task CrossModuleUnassignedImport() {
-            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable)) {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable, TestData.GetTestSpecificRootUri())) {
                 // Hack to avoid creation of the real files
                 // Project entries are explicitly added to the server before DidOpenTextDocument is called
                 var path1 = TestData.GetTestSpecificPath(Path.Combine("p", "__init__.py"));

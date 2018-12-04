@@ -134,7 +134,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IEnumerable<ILocationInfo> Locations {
             get {
-                if (!_references.TryGetValue(DeclaringModule, out var defns)) {
+                if (DeclaringModule == null || !_references.TryGetValue(DeclaringModule, out var defns)) {
                     return Enumerable.Empty<ILocationInfo>();
                 }
                 return defns.Definitions.Select(l => l.GetLocationInfo()).ExcludeDefault();
