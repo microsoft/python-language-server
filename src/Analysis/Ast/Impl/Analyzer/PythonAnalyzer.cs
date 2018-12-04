@@ -20,10 +20,9 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Shell;
-using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    public sealed class PythonAnalyzer: IPythonAnalyzer {
+    public sealed class PythonAnalyzer : IPythonAnalyzer {
         private readonly IDependencyResolver _dependencyResolver;
 
         public PythonAnalyzer(IServiceContainer services) {
@@ -39,7 +38,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Analyze single document.
         /// </summary>
         public Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken) {
-            if(!(document is IAnalyzable a)) {
+            if (!(document is IAnalyzable a)) {
                 return;
             }
 
@@ -58,9 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var dependencyRoot = await _dependencyResolver.GetDependencyChainAsync(document, cancellationToken);
             // Notify each dependency that the analysis is now pending
             NotifyAnalysisPending(dependencyRoot);
-
-
-            CheckDocumentVersionMatch(node, cancellationToken);
+            await AnalyzeChainAsync(dependencyRoot, cancellationToken);
         }
 
         private void NotifyAnalysisPending(IDependencyChainNode node) {
@@ -70,22 +67,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void AnalyzeChainAsync(IDependencyChainNode node, CancellationToken cancellationToken) {
+        private Task AnalyzeChainAsync(IDependencyChainNode node, CancellationToken cancellationToken) =>
             Task.Run(async () => {
-                if (node.Analyzable is IDocument doc) {
-                    await Analyze(doc, cancellationToken);
-                    foreach (var c in node.Children) {
-                        await EnqueueAsync(c, cancellationToken);
-                    }
-                }
-            });
-        }
-
-        private Task AnalyzeAsync(IDependencyChainNode node, CancellationToken cancellationToken)
-            => Task.Run(() => {
                 var analysis = Analyze(node.Document);
-                if(!node.Analyzable.NotifyAnalysisComplete(analysis)) {
+                if (!node.Analyzable.NotifyAnalysisComplete(analysis, node.SnapshotVersion)) {
+                    // If snapshot does not match, there is no reason to continue analysis along the chain
+                    // since subsequent change that incremented the expected version will start
+                    // another analysis run.
                     throw new OperationCanceledException();
+                }
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var c in node.Children) {
+                    await AnalyzeChainAsync(c, cancellationToken);
                 }
             });
 
