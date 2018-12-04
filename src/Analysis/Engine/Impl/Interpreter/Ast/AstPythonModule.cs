@@ -38,8 +38,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             _foundChildModules = true;
         }
 
-        internal AstPythonModule(string moduleName, IPythonInterpreter interpreter, string documentation, string filePath, IEnumerable<string> parseErrors) {
-            Name = moduleName;
+        internal AstPythonModule(string moduleName, IPythonInterpreter interpreter, string documentation, string filePath, IEnumerable<string> parseErrors):
+            base(moduleName) {
             _documentation = documentation;
             FilePath = filePath;
             DocumentUri = ProjectEntry.MakeDocumentUri(FilePath);

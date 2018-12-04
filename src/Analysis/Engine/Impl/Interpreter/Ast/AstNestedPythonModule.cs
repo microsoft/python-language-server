@@ -23,13 +23,11 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     internal sealed class AstNestedPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
-        private readonly string _name;
         private readonly IPythonInterpreter _interpreter;
         private IPythonModule _module;
 
-        public AstNestedPythonModule(IPythonInterpreter interpreter, string fullName) {
+        public AstNestedPythonModule(IPythonInterpreter interpreter, string fullName) : base(fullName) {
             _interpreter = interpreter ?? throw new ArgumentNullException(nameof(interpreter));
-            _name = fullName ?? throw new ArgumentNullException(nameof(fullName));
         }
 
         public override string Documentation => MaybeModule?.Documentation ?? string.Empty;
@@ -44,13 +42,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return module;
             }
 
-            module = _interpreter.ImportModule(_name);
+            module = _interpreter.ImportModule(Name);
             if (module != null) {
                 Debug.Assert(!(module is AstNestedPythonModule), "ImportModule should not return nested module");
             }
 
             if (module == null) {
-                module = new SentinelModule(_name, false);
+                module = new SentinelModule(Name, false);
             }
 
             return Interlocked.CompareExchange(ref _module, module, null) ?? module;

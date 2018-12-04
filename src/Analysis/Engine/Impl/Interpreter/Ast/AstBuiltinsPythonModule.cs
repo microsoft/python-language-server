@@ -95,8 +95,8 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         protected override void PostWalk(PythonWalker walker) {
-            AstPythonBuiltinType boolType = null;
-            AstPythonBuiltinType noneType = null;
+            IPythonType boolType = null;
+            IPythonType noneType = null;
 
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
                 if (_members.TryGetValue("__{0}__".FormatInvariant(typeId), out var m) && m is AstPythonType biType) {

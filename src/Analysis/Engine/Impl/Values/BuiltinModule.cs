@@ -88,7 +88,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public IEnumerable<KeyValuePair<string, AnalysisValue>> GetChildrenPackages(IModuleContext context) {
             return Type.GetChildrenModules()
-                .Select(name => new KeyValuePair<string, AnalysisValue>(name, ProjectState.GetAnalysisValueFromObjects(_type.GetMember(context, name))));
+                .Select(name => new KeyValuePair<string, AnalysisValue>(name, ProjectState.GetAnalysisValueFromObjects(Type.GetMember(context, name))));
         }
 
         public void SpecializeFunction(string name, CallDelegate callable, bool mergeOriginalAnalysis) {
