@@ -34,8 +34,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
         protected IAnalysisSet _unionType;        // all types that have been seen
         private AnalysisValue _iterMethod;
 
-        public BaseIterableValue(BuiltinClassInfo seqType)
-            : base(seqType) {
+        public BaseIterableValue(BuiltinClassInfo classInfo)
+            : base(classInfo) {
         }
 
         public IAnalysisSet UnionType {
@@ -43,7 +43,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 EnsureUnionType();
                 return _unionType;
             }
-            set { _unionType = value; }
+            set => _unionType = value;
         }
 
         protected abstract void EnsureUnionType();

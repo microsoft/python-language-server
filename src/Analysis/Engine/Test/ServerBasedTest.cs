@@ -99,10 +99,5 @@ namespace AnalysisTests {
             var uri = await server.OpenDefaultDocumentAndGetUriAsync(code);
             return await server.GetAnalysisAsync(uri);
         }
-
-        protected static string GetTypeshedPath() {
-            var asmPath = Assembly.GetExecutingAssembly().GetAssemblyPath();
-            return Path.Combine(Path.GetDirectoryName(asmPath), "Typeshed");
-        }
     }
 }

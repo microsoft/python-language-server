@@ -24,11 +24,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
     class DictBuiltinInstanceInfo : BuiltinInstanceInfo, IHasRichDescription {
         private readonly IPythonLookupType _dict;
 
-        public DictBuiltinInstanceInfo(DictBuiltinClassInfo klass, IPythonLookupType dict)
-            : base(klass) {
+        public DictBuiltinInstanceInfo(DictBuiltinClassInfo classInfo, IPythonLookupType dict)
+            : base(classInfo) {
             _dict = dict;
-            KeyType = klass.ProjectState.GetAnalysisSetFromObjects(dict.KeyTypes);
-            ValueType = klass.ProjectState.GetAnalysisSetFromObjects(dict.ValueTypes);
+            KeyType = classInfo.ProjectState.GetAnalysisSetFromObjects(dict.KeyTypes);
+            ValueType = classInfo.ProjectState.GetAnalysisSetFromObjects(dict.ValueTypes);
         }
 
         protected IAnalysisSet KeyType { get; }

@@ -20,8 +20,8 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     class NumericInstanceInfo : BuiltinInstanceInfo {
-        public NumericInstanceInfo(BuiltinClassInfo klass)
-            : base(klass) {
+        public NumericInstanceInfo(BuiltinClassInfo classInfo)
+            : base(classInfo) {
         }
 
         public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {

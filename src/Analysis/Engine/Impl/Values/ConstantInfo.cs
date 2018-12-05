@@ -27,11 +27,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private readonly PythonMemberType _memberType;
         private string _doc;
 
-        internal ConstantInfo(BuiltinClassInfo klass, object value, PythonMemberType memberType)
-            : base(klass) {
+        internal ConstantInfo(BuiltinClassInfo classInfo, object value, PythonMemberType memberType)
+            : base(classInfo) {
             _value = value;
             _memberType = memberType;
-            _builtinInfo = klass.Instance;
+            _builtinInfo = classInfo.Instance;
         }
 
         public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {

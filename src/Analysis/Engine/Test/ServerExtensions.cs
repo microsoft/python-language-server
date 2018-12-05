@@ -64,22 +64,13 @@ namespace Microsoft.PythonTools.Analysis {
                         liveLinting = true,
                     }
                 }
-            }, CancellationToken.None);
+            }, GetCancellationToken());
             
             return server;
         }
 
         public static Task<IModuleAnalysis> GetAnalysisAsync(this Server server, Uri uri, int waitingTimeout = -1, int failAfter = 30000)
             => ((ProjectEntry)server.ProjectFiles.GetEntry(uri)).GetAnalysisAsync(waitingTimeout, GetCancellationToken(failAfter));
-
-        public static Task EnqueueItemAsync(this Server server, Uri uri) 
-            => server.EnqueueItemAsync((IDocument)server.ProjectFiles.GetEntry(uri));
-
-        public static async Task EnqueueItemsAsync(this Server server, CancellationToken cancellationToken, params IDocument[] projectEntries) {
-            foreach (var document in projectEntries) {
-                await server.EnqueueItemAsync(document);
-            }
-        }
 
         // TODO: Replace usages of AddModuleWithContent with OpenDefaultDocumentAndGetUriAsync
         public static async Task<ProjectEntry> AddModuleWithContentAsync(this Server server, string relativePath, string content) {
@@ -97,8 +88,24 @@ namespace Microsoft.PythonTools.Analysis {
                 position = new Position {
                     line = line,
                     character = character
+                },
+            }, GetCancellationToken());
+        }
+
+        public static Task<CompletionList> SendCompletion(this Server server, Uri uri, int line, int character, string triggerCharacter, CompletionTriggerKind triggerKind) {
+            return server.Completion(new CompletionParams {
+                textDocument = new TextDocumentIdentifier {
+                    uri = uri
+                },
+                position = new Position {
+                    line = line,
+                    character = character
+                },
+                context = new CompletionContext {
+                    triggerCharacter = triggerCharacter,
+                    triggerKind = triggerKind
                 }
-            }, CancellationToken.None);
+            }, GetCancellationToken());
         }
 
         public static Task<Hover> SendHover(this Server server, Uri uri, int line, int character) {
@@ -110,7 +117,7 @@ namespace Microsoft.PythonTools.Analysis {
                     line = line,
                     character = character
                 }
-            }, CancellationToken.None);
+            }, GetCancellationToken());
         }
 
         public static Task<SignatureHelp> SendSignatureHelp(this Server server, Uri uri, int line, int character) {
@@ -120,7 +127,7 @@ namespace Microsoft.PythonTools.Analysis {
                     line = line,
                     character = character
                 }
-            }, CancellationToken.None);
+            }, GetCancellationToken());
         }
 
         public static Task<Reference[]> SendFindReferences(this Server server, Uri uri, int line, int character, bool includeDeclaration = true) {
@@ -134,7 +141,7 @@ namespace Microsoft.PythonTools.Analysis {
                     includeDeclaration = includeDeclaration,
                     _includeValues = true // For compatibility with PTVS
                 }
-            }, CancellationToken.None);
+            }, GetCancellationToken());
         }
 
         public static async Task<Uri> OpenDefaultDocumentAndGetUriAsync(this Server server, string content) {
@@ -162,7 +169,7 @@ namespace Microsoft.PythonTools.Analysis {
                     text = content,
                     languageId = languageId ?? "python"
                 }
-            }, CancellationToken.None);
+            }, GetCancellationToken());
         }
 
         public static async Task<IModuleAnalysis> OpenDefaultDocumentAndGetAnalysisAsync(this Server server, string content, int failAfter = 30000, string languageId = null) {
@@ -181,9 +188,29 @@ namespace Microsoft.PythonTools.Analysis {
                 contentChanges = new [] {
                     new TextDocumentContentChangedEvent {
                         text = text,
+                    } 
+                }
+            }, GetCancellationToken());
+        }
+
+        public static Task SendDidChangeTextDocumentAsync(this Server server, Uri uri, string text, Position position) 
+            => server.SendDidChangeTextDocumentAsync(uri, text, position, position);
+
+        public static Task SendDidChangeTextDocumentAsync(this Server server, Uri uri, string text, Position start, Position end) {
+            return server.DidChangeTextDocument(new DidChangeTextDocumentParams {
+                textDocument = new VersionedTextDocumentIdentifier {
+                    uri = uri
+                }, 
+                contentChanges = new [] {
+                    new TextDocumentContentChangedEvent {
+                        text = text,
+                        range = new Range {
+                            start = start,
+                            end = end
+                        }
                     }, 
                 }
-            }, CancellationToken.None);
+            }, GetCancellationToken());
         }
 
         public static Task<TextEdit[]> SendDocumentOnTypeFormatting(this Server server, TextDocumentIdentifier textDocument, Position position, string ch) {
@@ -191,7 +218,7 @@ namespace Microsoft.PythonTools.Analysis {
                 textDocument = textDocument,
                 position = position,
                 ch = ch,
-            }, CancellationToken.None);
+            }, GetCancellationToken());
         }
 
         public static Task SendDidChangeConfiguration(this Server server, ServerSettings.PythonCompletionOptions pythonCompletionOptions, int failAfter = 30000) {

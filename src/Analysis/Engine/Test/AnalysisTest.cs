@@ -3142,7 +3142,7 @@ nt = namedtuple('Point', ['x', 'y'])
 pt = nt(1, 2)
 ";
 
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.SetTypeStubPaths(new[] { TestData.GetDefaultTypeshedPath() });
                 server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = false };
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
 
