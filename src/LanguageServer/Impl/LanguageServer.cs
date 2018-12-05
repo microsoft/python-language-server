@@ -465,8 +465,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             var te = Telemetry.CreateEventWithException("analyzer.unhandledException", ex);
-            te.Properties["isTerminating"] = e.IsTerminating.ToString();
-
             _telemetry.SendTelemetry(te).DoNotWait();
         }
 
