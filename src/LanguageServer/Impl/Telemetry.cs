@@ -30,22 +30,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public static TelemetryEvent CreateEventWithException(string eventName, Exception e) {
             var te = CreateEvent(eventName);
+
+            if (e is AggregateException ae && ae.InnerException != null) {
+                te.Properties["outerName"] = e.GetType().Name;
+                te.Properties["outerStackTrace"] = e.StackTrace;
+
+                e = ae.Flatten();
+
+                while (e.InnerException != null) {
+                    e = e.InnerException;
+                }
+            }
+
             te.Properties["name"] = e.GetType().Name;
             te.Properties["stackTrace"] = e.StackTrace;
-
-            var inner = e.InnerException;
-            if (inner != null) {
-                if (inner is AggregateException ae) {
-                    inner = ae.Flatten();
-                }
-
-                while (inner.InnerException != null) {
-                    inner = inner.InnerException;
-                }
-
-                te.Properties["innerName"] = inner.GetType().Name;
-                te.Properties["innerStackTrace"] = inner.StackTrace;
-            }
 
             return te;
         }
