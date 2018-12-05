@@ -845,7 +845,7 @@ y = g()";
         [TestMethod, Priority(0)]
         public async Task TypeShedElementTree() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.SetTypeStubPaths(new[] { TestData.GetDefaultTypeshedPath() });
                 var code = @"import xml.etree.ElementTree as ET
 
 e = ET.Element()
