@@ -18,7 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis {
     public interface IPythonAnalyzer {
         /// <summary>
         /// Returns the interpreter that the analyzer is using.

@@ -130,7 +130,7 @@ namespace Microsoft.Python.Analysis.Documents {
 
             lock (_lock) {
                 version = _buffer.Version;
-                parser = Parser.CreateParser(GetReader(), _analyzer.LanguageVersion, new ParserOptions {
+                parser = Parser.CreateParser(GetReader(), _analyzer.Interpreter.LanguageVersion, new ParserOptions {
                     StubFile = Path.GetExtension(FilePath).Equals(".pyi", _fs.StringComparison),
                     ErrorSink = sink
                 });

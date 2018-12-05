@@ -1,12 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// Copyright(c) Microsoft Corporation
+// All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the License); you may not use
+// this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0
+//
+// THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
+// OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
+// IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+// MERCHANTABILITY OR NON-INFRINGEMENT.
+//
+// See the Apache Version 2.0 License for specific language governing
+// permissions and limitations under the License.
 
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents document that can be analyzed asynchronously.
     /// </summary>
-    public interface IAnalyzable {
+    internal interface IAnalyzable {
         /// <summary>
         /// Expected version of the analysis when asynchronous operations complete.
         /// Typically every change to the document or documents that depend on it
@@ -27,6 +38,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Notifies document that its analysis is now complete.
         /// </summary>
         /// <param name="analysis">Document analysis</param>
+        /// <param name="analysisVersion">Expected version of the analysis
+        /// (version of the snapshot in the beginning of analysis).</param>
         /// <returns>True if analysis was accepted, false if is is out of date.</returns>
         bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion);
     }

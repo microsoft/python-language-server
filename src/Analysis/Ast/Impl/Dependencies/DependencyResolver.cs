@@ -19,7 +19,7 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.Analysis.Dependencies {
-    public sealed class DependencyResolver : IDependencyResolver {
+    internal sealed class DependencyResolver : IDependencyResolver {
         public DependencyResolver(IServiceContainer services) {
         }
         public Task<IDependencyChainNode> GetDependencyChainAsync(IDocument document, CancellationToken cancellationToken) {

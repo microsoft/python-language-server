@@ -39,11 +39,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         public Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken) {
             if (!(document is IAnalyzable a)) {
-                return;
+                return Task.CompletedTask;
             }
 
             a.NotifyAnalysisPending();
-
+            var version = a.ExpectedAnalysisVersion;
+            return Task
+                .Run(() => Analyze(document), cancellationToken)
+                .ContinueWith(t => a.NotifyAnalysisComplete(t.Result, version), cancellationToken);
         }
 
         /// <summary>
@@ -83,13 +86,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             });
 
         private IDocumentAnalysis Analyze(IDocument document) {
+            return null;
         }
-
-        private void CheckDocumentVersionMatch(IDependencyChainNode node, CancellationToken cancellationToken) {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (node.Analyzable.ExpectedAnalysisVersion != node.SnapshotVersion) {
-            }
-        }
-
     }
 }
