@@ -65,6 +65,11 @@ namespace TestUtilities {
         private static readonly Lazy<string> RootLazy = new Lazy<string>(CalculateTestDataRoot);
         public static string Root => RootLazy.Value;
 
+        public static string GetDefaultTypeshedPath() {
+            var asmPath = Assembly.GetExecutingAssembly().GetAssemblyPath();
+            return Path.Combine(Path.GetDirectoryName(asmPath), "Typeshed");
+        }
+
         public static Uri GetDefaultModuleUri() => new Uri(GetDefaultModulePath());
         public static Uri GetNextModuleUri() => new Uri(GetNextModulePath());
         public static Uri[] GetNextModuleUris(int count) {
