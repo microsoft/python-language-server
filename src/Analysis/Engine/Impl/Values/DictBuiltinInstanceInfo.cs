@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -24,11 +24,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
     class DictBuiltinInstanceInfo : BuiltinInstanceInfo, IHasRichDescription {
         private readonly IPythonLookupType _dict;
 
-        public DictBuiltinInstanceInfo(DictBuiltinClassInfo klass, IPythonLookupType dict)
-            : base(klass) {
+        public DictBuiltinInstanceInfo(DictBuiltinClassInfo classInfo, IPythonLookupType dict)
+            : base(classInfo) {
             _dict = dict;
-            KeyType = klass.ProjectState.GetAnalysisSetFromObjects(dict.KeyTypes);
-            ValueType = klass.ProjectState.GetAnalysisSetFromObjects(dict.ValueTypes);
+            KeyType = classInfo.ProjectState.GetAnalysisSetFromObjects(dict.KeyTypes);
+            ValueType = classInfo.ProjectState.GetAnalysisSetFromObjects(dict.ValueTypes);
         }
 
         protected IAnalysisSet KeyType { get; }

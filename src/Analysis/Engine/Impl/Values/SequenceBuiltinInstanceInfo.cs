@@ -26,12 +26,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
     class SequenceBuiltinInstanceInfo : BaseIterableValue {
         private readonly bool _supportsMod;
 
-        public SequenceBuiltinInstanceInfo(BuiltinClassInfo ClassInfo, bool sequenceOfSelf, bool supportsMod)
-            : base(ClassInfo) {
+        public SequenceBuiltinInstanceInfo(BuiltinClassInfo classInfo, bool sequenceOfSelf, bool supportsMod)
+            : base(classInfo) {
             _supportsMod = supportsMod;
 
-            var seqInfo = ClassInfo as SequenceBuiltinClassInfo;
-            if (seqInfo != null) {
+            if (classInfo is SequenceBuiltinClassInfo seqInfo) {
                 UnionType = AnalysisSet.UnionAll(seqInfo.IndexTypes);
             } else if (sequenceOfSelf) {
                 UnionType = SelfSet;

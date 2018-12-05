@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -23,9 +23,8 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     internal class BuiltinInstanceInfo : BuiltinNamespace<IPythonType>, IBuiltinInstanceInfo {
-
         public BuiltinInstanceInfo(BuiltinClassInfo classInfo)
-            : base(classInfo?.Type, classInfo?.ProjectState) {
+            : base(classInfo.Type, classInfo.ProjectState) {
             ClassInfo = classInfo;
         }
 
@@ -98,7 +97,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return ConstantInfo.NumericOp(node, this, unit, operation, rhs) ?? NumericOp(node, unit, operation, rhs) ?? AnalysisSet.Empty;
         }
 
-        private IAnalysisSet NumericOp(Node node, AnalysisUnit unit, Parsing.PythonOperator operation, IAnalysisSet rhs) {
+        private IAnalysisSet NumericOp(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
             string methodName = InstanceInfo.BinaryOpToString(operation);
             if (methodName != null) {
                 var method = GetMember(node, unit, methodName);
@@ -138,8 +137,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override IEnumerable<OverloadResult> Overloads {
             get {
-                IAnalysisSet callRes;
-                if (ClassInfo.GetAllMembers(ProjectState._defaultContext).TryGetValue("__call__", out callRes)) {
+                if (ClassInfo.GetAllMembers(ProjectState._defaultContext).TryGetValue("__call__", out var callRes)) {
                     foreach (var overload in callRes.SelectMany(av => av.Overloads)) {
                         yield return overload.WithoutLeadingParameters(1);
                     }
@@ -203,25 +201,21 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return base.GetAsyncEnumeratorTypes(node, unit);
         }
 
-        public override bool IsOfType(IAnalysisSet klass) {
-            if (klass.Contains(this.ClassInfo)) {
+        public override bool IsOfType(IAnalysisSet classes) {
+            if (classes.Contains(ClassInfo)) {
                 return true;
             }
 
             if (TypeId != BuiltinTypeId.NoneType &&
                 TypeId != BuiltinTypeId.Type &&
                 TypeId != BuiltinTypeId.Function) {
-                return klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Object]);
+                return classes.Contains(ProjectState.ClassInfos[BuiltinTypeId.Object]);
             }
 
             return false;
         }
 
-        public override BuiltinTypeId TypeId {
-            get {
-                return ClassInfo?.PythonType.TypeId ?? BuiltinTypeId.Unknown;
-            }
-        }
+        public override BuiltinTypeId TypeId => ClassInfo?.PythonType.TypeId ?? BuiltinTypeId.Unknown;
 
         internal override bool UnionEquals(AnalysisValue ns, int strength) {
             var dict = ProjectState.ClassInfos[BuiltinTypeId.Dict];
@@ -229,8 +223,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 if (ns is DictionaryInfo || ns == dict.Instance) {
                     return true;
                 }
-                var ci = ns as ConstantInfo;
-                if (ci != null && ci.ClassInfo == dict) {
+
+                if (ns is ConstantInfo ci && ci.ClassInfo == dict) {
                     return true;
                 }
                 return false;
@@ -258,7 +252,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     // FI + BII(function) => BII(function)
                     return ns is FunctionInfo || ns is BuiltinFunctionInfo ||
                         (ns is BuiltinInstanceInfo && ns.TypeId == BuiltinTypeId.Function);
-                } else if (ns.TypeId == BuiltinTypeId.Function) {
+                }
+                if (ns.TypeId == BuiltinTypeId.Function) {
                     return false;
                 }
 
@@ -267,19 +262,19 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return ns is InstanceInfo ||
                     (ns is BuiltinInstanceInfo && ns.TypeId != BuiltinTypeId.Function);
 
-            } else if (strength >= MergeStrength.ToBaseClass) {
-                var bii = ns as BuiltinInstanceInfo;
-                if (bii != null) {
-                    return ClassInfo != null && ClassInfo.UnionEquals(bii.ClassInfo, strength);
+            }
+
+            if (strength >= MergeStrength.ToBaseClass) {
+                if (ns is BuiltinInstanceInfo bii) {
+                    return ClassInfo.UnionEquals(bii.ClassInfo, strength);
                 }
-                var ii = ns as InstanceInfo;
-                if (ii != null) {
-                    return ClassInfo != null && ClassInfo.UnionEquals(ii.ClassInfo, strength);
+
+                if (ns is InstanceInfo ii) {
+                    return ClassInfo.UnionEquals(ii.ClassInfo, strength);
                 }
-            } else if (ns is BuiltinInstanceInfo) {
+            } else if (ns is BuiltinInstanceInfo bii) {
                 // ConI + BII => BII if CIs match
-                var bii = ns as BuiltinInstanceInfo;
-                return bii != null && ClassInfo != null && ClassInfo.Equals(bii.ClassInfo);
+                return ClassInfo.Equals(bii.ClassInfo);
             }
 
             return base.UnionEquals(ns, strength);
@@ -327,7 +322,9 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 /// BII + BII => BII(object)
                 return ProjectState.ClassInfos[BuiltinTypeId.Object].Instance;
 
-            } else if (strength >= MergeStrength.ToBaseClass) {
+            }
+
+            if (strength >= MergeStrength.ToBaseClass) {
                 if (ns is BuiltinInstanceInfo bii) {
                     return ClassInfo.UnionMergeTypes(bii.ClassInfo, strength).GetInstanceType().Single();
                 }
