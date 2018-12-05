@@ -865,14 +865,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 case PythonMemberType.Unknown: return CompletionItemKind.None;
                 case PythonMemberType.Class: return CompletionItemKind.Class;
                 case PythonMemberType.Instance: return CompletionItemKind.Value;
-                case PythonMemberType.Delegate: return CompletionItemKind.Class;
-                case PythonMemberType.DelegateInstance: return CompletionItemKind.Function;
                 case PythonMemberType.Enum: return CompletionItemKind.Enum;
                 case PythonMemberType.EnumInstance: return CompletionItemKind.EnumMember;
                 case PythonMemberType.Function: return CompletionItemKind.Function;
                 case PythonMemberType.Method: return CompletionItemKind.Method;
                 case PythonMemberType.Module: return CompletionItemKind.Module;
-                case PythonMemberType.Namespace: return CompletionItemKind.Module;
                 case PythonMemberType.Constant: return CompletionItemKind.Constant;
                 case PythonMemberType.Event: return CompletionItemKind.Event;
                 case PythonMemberType.Field: return CompletionItemKind.Field;
@@ -886,7 +883,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private static string MakeOverrideDefParamater(ParameterResult result) {
+        private static string MakeOverrideDefParameter(ParameterResult result) {
             if (!string.IsNullOrEmpty(result.DefaultValue)) {
                 return result.Name + "=" + result.DefaultValue;
             }
@@ -909,11 +906,24 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private string MakeOverrideCompletionString(string indentation, IOverloadResult result, string className) {
             var sb = new StringBuilder();
 
-            sb.AppendLine(result.Name + "(" + string.Join(", ", result.Parameters.Select(MakeOverrideDefParamater)) + "):");
+            ParameterResult first;
+            ParameterResult[] skipFirstParameters;
+            ParameterResult[] allParameters;
+            if (result.FirstParameter != null) {
+                first = result.FirstParameter;
+                skipFirstParameters = result.Parameters;
+                allParameters = new[] {first}.Concat(skipFirstParameters).ToArray();
+            } else {
+                first = result.Parameters.FirstOrDefault();
+                skipFirstParameters = result.Parameters.Skip(1).ToArray();
+                allParameters = result.Parameters;
+            }
+
+            sb.AppendLine(result.Name + "(" + string.Join(", ", allParameters.Select(MakeOverrideDefParameter)) + "):");
             sb.Append(indentation);
 
-            if (result.Parameters.Length > 0) {
-                var parameterString = string.Join(", ", result.Parameters.Skip(1).Select(MakeOverrideCallParameter));
+            if (allParameters.Length > 0) {
+                var parameterString = string.Join(", ", skipFirstParameters.Select(MakeOverrideCallParameter));
 
                 if (Tree.LanguageVersion.Is3x()) {
                     sb.AppendFormat("return super().{0}({1})",
@@ -922,7 +932,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 } else if (!string.IsNullOrEmpty(className)) {
                     sb.AppendFormat("return super({0}, {1}).{2}({3})",
                         className,
-                        result.Parameters.First().Name,
+                        first?.Name ?? string.Empty,
                         result.Name,
                         parameterString);
                 } else {

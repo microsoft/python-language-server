@@ -28,20 +28,20 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private BuiltinMethodInfo _method;
 
         public BuiltinFunctionInfo(IPythonFunction function, PythonAnalyzer projectState)
-            : base(projectState.Types[BuiltinTypeId.BuiltinFunction], projectState) {
+            : base(projectState.Types[BuiltinTypeId.Function], projectState) {
             Function = function;
         }
 
-        public override IPythonType PythonType => _type;
+        public override IPythonType PythonType => Type;
 
         public override bool IsOfType(IAnalysisSet klass)
-            => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]) || klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.BuiltinFunction]);
+            => klass.Contains(ProjectState.ClassInfos[BuiltinTypeId.Function]);
 
         public override IAnalysisSet Call(Node node, AnalysisUnit unit, IAnalysisSet[] args, NameExpression[] keywordArgNames) {
             var returnTypes = GetFunctionOverloads().Where(o => o.ReturnType != null).SelectMany(o => o.ReturnType);
             var types = returnTypes.Select(t => {
                 var av = ProjectState.GetAnalysisValueFromObjects(t);
-                return t is IPythonType2 pt2 && pt2.IsClass
+                return t.IsTypeFactory
                     ? AnalysisSet.Create(av)
                     : ProjectState.GetAnalysisValueFromObjects(t).GetInstanceType();
             });

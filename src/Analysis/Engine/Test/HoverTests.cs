@@ -84,7 +84,7 @@ datetime.datetime.now().day
 ");
             await AssertHover(server, mod, new SourceLocation(3, 1), "module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
             await AssertHover(server, mod, new SourceLocation(3, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(3, 1, 3, 18));
-            await AssertHover(server, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound method now*", null, new SourceSpan(3, 1, 3, 22));
+            await AssertHover(server, mod, new SourceLocation(3, 20), "datetime.datetime.now: datetime.datetime.now(cls)*", null, new SourceSpan(3, 1, 3, 22));
         }
 
         [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
@@ -95,7 +95,7 @@ datetime.datetime.now().day
 ");
             await AssertHover(server, mod, new SourceLocation(3, 1), "module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
             await AssertHover(server, mod, new SourceLocation(3, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(3, 1, 3, 18));
-            await AssertHover(server, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound method now*", null, new SourceSpan(3, 1, 3, 22));
+            await AssertHover(server, mod, new SourceLocation(3, 20), "datetime.datetime.now: datetime.datetime.now(cls*", null, new SourceSpan(3, 1, 3, 22));
             await AssertHover(server, mod, new SourceLocation(3, 28), "datetime.datetime.now().day: int*", new[] { "int" }, new SourceSpan(3, 1, 3, 28));
         }
 

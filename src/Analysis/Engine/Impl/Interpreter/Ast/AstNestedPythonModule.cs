@@ -22,19 +22,15 @@ using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    internal sealed class AstNestedPythonModule : IPythonModule, ILocatedMember {
-        private readonly string _name;
+    internal sealed class AstNestedPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
         private readonly IPythonInterpreter _interpreter;
         private IPythonModule _module;
 
-        public AstNestedPythonModule(IPythonInterpreter interpreter, string fullName) {
+        public AstNestedPythonModule(IPythonInterpreter interpreter, string fullName) : base(fullName) {
             _interpreter = interpreter ?? throw new ArgumentNullException(nameof(interpreter));
-            _name = fullName ?? throw new ArgumentNullException(nameof(fullName));
         }
 
-        public string Name => MaybeModule?.Name ?? _name;
-        public string Documentation => MaybeModule?.Documentation ?? string.Empty;
-        public PythonMemberType MemberType => PythonMemberType.Module;
+        public override string Documentation => MaybeModule?.Documentation ?? string.Empty;
         public IEnumerable<ILocationInfo> Locations => ((MaybeModule as ILocatedMember)?.Locations).MaybeEnumerate();
 
         public bool IsLoaded => MaybeModule != null;
@@ -46,13 +42,13 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 return module;
             }
 
-            module = _interpreter.ImportModule(_name);
+            module = _interpreter.ImportModule(Name);
             if (module != null) {
                 Debug.Assert(!(module is AstNestedPythonModule), "ImportModule should not return nested module");
             }
 
             if (module == null) {
-                module = new SentinelModule(_name, false);
+                module = new SentinelModule(Name, false);
             }
 
             return Interlocked.CompareExchange(ref _module, module, null) ?? module;
@@ -60,9 +56,10 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IEnumerable<string> GetChildrenModules() => GetModule().GetChildrenModules();
 
-        public IMember GetMember(IModuleContext context, string name) => GetModule().GetMember(context, name);
+        public override IMember GetMember(IModuleContext context, string name)
+            => GetModule().GetMember(context, name);
 
-        public IEnumerable<string> GetMemberNames(IModuleContext context) =>
+        public override IEnumerable<string> GetMemberNames(IModuleContext context) =>
             // TODO: Make GetMemberNames() faster than Imported()
             GetModule().GetMemberNames(context);
 

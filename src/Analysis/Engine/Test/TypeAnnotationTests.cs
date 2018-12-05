@@ -477,7 +477,7 @@ def async_query(on_success: Callable[[int], None],
 ",
                 new[] {
                     "feeder:feeder(get_next_item:function() -> str) -> None",
-                    "async_query:async_query(on_success:function(int), on_error:function(int, Exception)) -> None"
+                    "async_query:async_query(on_success:function(int) -> None, on_error:function(int, Exception) -> None) -> None"
                 }
             );
         }

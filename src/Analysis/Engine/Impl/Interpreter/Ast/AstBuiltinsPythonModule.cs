@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -43,8 +43,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IMember GetAnyMember(string name) {
             lock (_members) {
-                IMember m;
-                _members.TryGetValue(name, out m);
+                _members.TryGetValue(name, out var m);
                 return m;
             }
         }
@@ -96,13 +95,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
 
         protected override void PostWalk(PythonWalker walker) {
-            AstPythonBuiltinType boolType = null;
-            AstPythonBuiltinType noneType = null;
+            IPythonType boolType = null;
+            IPythonType noneType = null;
 
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
-                if (_members.TryGetValue("__{0}__".FormatInvariant(typeId), out IMember m) && m is AstPythonBuiltinType biType) {
-                    if (typeId != BuiltinTypeId.Str &&
-                        typeId != BuiltinTypeId.StrIterator) {
+                if (_members.TryGetValue("__{0}__".FormatInvariant(typeId), out var m) && m is AstPythonType biType && biType.IsBuiltin) {
+                    if (typeId != BuiltinTypeId.Str && typeId != BuiltinTypeId.StrIterator) {
                         biType.TrySetTypeId(typeId);
                     }
 

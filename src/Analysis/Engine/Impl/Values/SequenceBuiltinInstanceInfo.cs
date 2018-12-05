@@ -26,12 +26,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
     class SequenceBuiltinInstanceInfo : BaseIterableValue {
         private readonly bool _supportsMod;
 
-        public SequenceBuiltinInstanceInfo(BuiltinClassInfo klass, bool sequenceOfSelf, bool supportsMod)
-            : base(klass) {
+        public SequenceBuiltinInstanceInfo(BuiltinClassInfo classInfo, bool sequenceOfSelf, bool supportsMod)
+            : base(classInfo) {
             _supportsMod = supportsMod;
 
-            var seqInfo = klass as SequenceBuiltinClassInfo;
-            if (seqInfo != null) {
+            if (classInfo is SequenceBuiltinClassInfo seqInfo) {
                 UnionType = AnalysisSet.UnionAll(seqInfo.IndexTypes);
             } else if (sequenceOfSelf) {
                 UnionType = SelfSet;
@@ -113,7 +112,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override IEnumerable<KeyValuePair<string, string>> GetRichDescription() {
             if (UnionType == this) {
                 return new[] {
-                    new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, _type.Name)
+                    new KeyValuePair<string, string>(WellKnownRichDescriptionKinds.Type, Type.Name)
                 };
             }
             return base.GetRichDescription();

@@ -27,7 +27,7 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
             Execute.Assertion.ForCondition(constraint.Which.MemberType == memberType)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {AssertionsUtilities.GetQuotedName(constraint.Which)} to have type '{memberType}', but found '{memberType}'");
+                .FailWith($"Expected {AssertionsUtilities.GetQuotedName(constraint.Which)} to have type '{memberType}', but found '{constraint.Which.MemberType}'");
 
             return new AndWhichConstraint<TAssertions, TMember>(constraint.And, constraint.Which);
         }

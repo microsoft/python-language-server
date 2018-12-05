@@ -26,21 +26,20 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    sealed class AstPythonModule : IPythonModule, IProjectEntry, ILocatedMember {
+    sealed class AstPythonModule : PythonModuleType, IPythonModule, IProjectEntry, ILocatedMember {
         private readonly IPythonInterpreter _interpreter;
         private readonly List<string> _childModules = new List<string>();
         private readonly Dictionary<string, IMember> _members = new Dictionary<string, IMember>();
         private bool _foundChildModules;
         private string _documentation = string.Empty;
 
-        internal AstPythonModule() {
-            Name = string.Empty;
-            FilePath = string.Empty;
+        internal AstPythonModule(): base(string.Empty) {
+             FilePath = string.Empty;
             _foundChildModules = true;
         }
 
-        internal AstPythonModule(string moduleName, IPythonInterpreter interpreter, string documentation, string filePath, IEnumerable<string> parseErrors) {
-            Name = moduleName;
+        internal AstPythonModule(string moduleName, IPythonInterpreter interpreter, string documentation, string filePath, IEnumerable<string> parseErrors):
+            base(moduleName) {
             _documentation = documentation;
             FilePath = filePath;
             DocumentUri = ProjectEntry.MakeDocumentUri(FilePath);
@@ -65,8 +64,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public void Dispose() { }
 
-        public string Name { get; }
-        public string Documentation {
+        public override string Documentation {
             get {
                 if (_documentation == null) {
                     _members.TryGetValue("__doc__", out var m);
@@ -84,7 +82,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         }
         public string FilePath { get; }
         public Uri DocumentUri { get; }
-        public PythonMemberType MemberType => PythonMemberType.Module;
         public Dictionary<object, object> Properties { get; } = new Dictionary<object, object>();
         public IEnumerable<ILocationInfo> Locations { get; } = Enumerable.Empty<ILocationInfo>();
 
@@ -128,7 +125,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
         }
 
-        public IMember GetMember(IModuleContext context, string name) {
+        public override IMember GetMember(IModuleContext context, string name) {
             IMember member = null;
             lock (_members) {
                 _members.TryGetValue(name, out member);
@@ -142,7 +139,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return member;
         }
 
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
+        public override IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
             lock (_members) {
                 return _members.Keys.ToArray();
             }

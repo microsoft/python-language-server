@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -27,11 +27,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
         private readonly PythonMemberType _memberType;
         private string _doc;
 
-        internal ConstantInfo(BuiltinClassInfo klass, object value, PythonMemberType memberType)
-            : base(klass) {
+        internal ConstantInfo(BuiltinClassInfo classInfo, object value, PythonMemberType memberType)
+            : base(classInfo) {
             _value = value;
             _memberType = memberType;
-            _builtinInfo = klass.Instance;
+            _builtinInfo = classInfo.Instance;
         }
 
         public override IAnalysisSet BinaryOperation(Node node, AnalysisUnit unit, PythonOperator operation, IAnalysisSet rhs) {
@@ -163,7 +163,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
                     return "None";
                 }
 
-                return _type.Name;
+                return Type.Name;
                 //return PythonOps.Repr(ProjectState.CodeContext, _value);
             }
         }
@@ -171,7 +171,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
         public override string Documentation {
             get {
                 if (_doc == null) {
-                    object docObj = _type.Documentation;
+                    object docObj = Type.Documentation;
                     _doc = docObj == null ? "" : Utils.StripDocumentation(docObj.ToString());
                 }
                 return _doc;

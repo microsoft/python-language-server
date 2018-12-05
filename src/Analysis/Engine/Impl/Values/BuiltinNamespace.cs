@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -24,16 +24,18 @@ namespace Microsoft.PythonTools.Analysis.Values {
     /// <summary>
     /// Base class for things which get their members primarily via a built-in .NET type.
     /// </summary>
-    class BuiltinNamespace<TMemberContainer> : AnalysisValue where TMemberContainer : IMemberContainer {
-        internal readonly TMemberContainer _type;
+    class BuiltinNamespace<TMemberContainer> : AnalysisValue where TMemberContainer : IPythonType {
         internal Dictionary<string, IAnalysisSet> _specializedValues;
 
         public BuiltinNamespace(TMemberContainer pythonType, PythonAnalyzer projectState) {
-            ProjectState = projectState ?? throw new ArgumentNullException(nameof(projectState)); ;
-            _type = pythonType;
+            ProjectState = projectState ?? throw new ArgumentNullException(nameof(projectState));
+            Type = pythonType;
             // Ideally we'd assert here whenever pythonType is null, but that
             // makes debug builds unusable because it happens so often.
         }
+
+        public override BuiltinTypeId TypeId => Type?.TypeId ?? BuiltinTypeId.Unknown;
+        public override PythonMemberType MemberType => Type?.MemberType ?? PythonMemberType.Unknown;
 
         public override IAnalysisSet GetTypeMember(Node node, AnalysisUnit unit, string name) {
             var res = AnalysisSet.Empty;
@@ -42,11 +44,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
                 return specializedRes;
             }
 
-            if (_type == null) {
+            if (Type == null) {
                 return unit.State.ClassInfos[BuiltinTypeId.NoneType].Instance;
             }
 
-            var member = _type.GetMember(unit.DeclaringModule.InterpreterContext, name);
+            var member = Type.GetMember(unit.DeclaringModule.InterpreterContext, name);
             if (member != null) {
                 res = ProjectState.GetAnalysisValueFromObjects(member);
             }
@@ -54,16 +56,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public override IDictionary<string, IAnalysisSet> GetAllMembers(IModuleContext moduleContext, GetMemberOptions options = GetMemberOptions.None) {
-            if (_type == null) {
+            if (Type == null) {
                 return new Dictionary<string, IAnalysisSet>();
             }
-            return ProjectState.GetAllMembers(_type, moduleContext);
+            return ProjectState.GetAllMembers(Type, moduleContext);
         }
 
         public IAnalysisSet this[string name] {
             get {
-                IAnalysisSet value;
-                if (TryGetMember(name, out value)) {
+                if (TryGetMember(name, out var value)) {
                     return value;
                 }
                 throw new KeyNotFoundException("Key {0} not found".FormatInvariant(name));
@@ -77,16 +78,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public bool TryGetMember(string name, out IAnalysisSet value) {
-            IAnalysisSet res;
-            if (_specializedValues != null && _specializedValues.TryGetValue(name, out res)) {
+            if (_specializedValues != null && _specializedValues.TryGetValue(name, out var res)) {
                 value = res;
                 return true;
             }
-            if (_type == null) {
+            if (Type == null) {
                 value = null;
                 return false;
             }
-            var member = _type.GetMember(ProjectState._defaultContext, name);
+            var member = Type.GetMember(ProjectState._defaultContext, name);
             if (member != null) {
                 value = ProjectState.GetAnalysisValueFromObjects(member);
                 return true;
@@ -97,11 +97,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public PythonAnalyzer ProjectState { get; }
 
-        public TMemberContainer ContainedValue {
-            get {
-                return _type;
-            }
-        }
+        public TMemberContainer Type { get; }
 
         public virtual ILocatedMember GetLocatedMember() => null;
 
@@ -109,14 +105,11 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public override bool Equals(object obj) {
             if (obj is BuiltinNamespace<TMemberContainer> bn && GetType() == bn.GetType()) {
-                if (_type != null) {
-                    return _type.Equals(bn._type);
-                }
-                return bn._type == null;
+                return Type != null ? Type.Equals(bn.Type) : bn.Type == null;
             }
             return false;
         }
 
-        public override int GetHashCode() => new { hc1 = GetType().GetHashCode(), hc2 = _type?.GetHashCode() }.GetHashCode();
+        public override int GetHashCode() => new { hc1 = GetType().GetHashCode(), hc2 = Type?.GetHashCode() }.GetHashCode();
     }
 }

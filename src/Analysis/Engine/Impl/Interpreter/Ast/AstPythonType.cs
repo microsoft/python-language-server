@@ -17,238 +17,113 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonType : IPythonType2, IMemberContainer, ILocatedMember, IHasQualifiedName {
-        private static readonly IPythonModule NoDeclModule = new AstPythonModule();
-
+    class AstPythonType : IPythonType, ILocatedMember, IHasQualifiedName {
         private readonly string _name;
         private readonly object _lock = new object();
-
         private Dictionary<string, IMember> _members;
-        private IReadOnlyList<IPythonType> _mro;
-        private AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
+        private BuiltinTypeId _typeId;
 
-        protected Dictionary<string, IMember> Members =>
+        protected IReadOnlyDictionary<string, IMember> Members => WritableMembers;
+
+        private Dictionary<string, IMember> WritableMembers =>
             _members ?? (_members = new Dictionary<string, IMember>());
-
-        public AstPythonType(string name): this(name, new Dictionary<string, IMember>(), Array.Empty<ILocationInfo>()) { }
 
         public AstPythonType(
             string name,
-            IPythonModule declModule,
-            int startIndex,
+            IPythonModule declaringModule,
             string doc,
             ILocationInfo loc,
-            bool isClass = false
-        ) {
-            _name = name ?? throw new ArgumentNullException(nameof(name));
+            BuiltinTypeId typeId = BuiltinTypeId.Unknown,
+            bool isTypeFactory = false
+        ) : this(name, typeId, isTypeFactory) {
             Documentation = doc;
-            DeclaringModule = declModule ?? throw new ArgumentNullException(nameof(declModule));
+            DeclaringModule = declaringModule;
             Locations = loc != null ? new[] { loc } : Array.Empty<ILocationInfo>();
-            StartIndex = startIndex;
-            IsClass = isClass;
+            IsTypeFactory = isTypeFactory;
         }
 
-        private AstPythonType(string name, Dictionary<string, IMember> members, IEnumerable<ILocationInfo> locations) {
+        public AstPythonType(string name, BuiltinTypeId typeId, bool isTypeFactory = false) {
             _name = name ?? throw new ArgumentNullException(nameof(name));
-            _members = members;
-            _mro = Array.Empty<IPythonType>();
-            DeclaringModule = NoDeclModule;
-            Locations = locations ?? Enumerable.Empty<ILocationInfo>();
+            _typeId = typeId == BuiltinTypeId.Unknown && isTypeFactory ? BuiltinTypeId.Type : typeId;
+        }
+
+        #region IPythonType
+        public virtual string Name {
+            get {
+                lock (_lock) {
+                    return Members.TryGetValue("__name__", out var nameMember) && nameMember is AstPythonStringLiteral lit ? lit.Value : _name;
+                }
+            }
+        }
+
+        public virtual string Documentation { get; }
+        public IPythonModule DeclaringModule { get; }
+        public virtual PythonMemberType MemberType => _typeId.GetMemberId();
+        public virtual BuiltinTypeId TypeId => _typeId;
+        public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinPythonModule;
+        public bool IsTypeFactory { get; }
+        public IPythonFunction GetConstructor() => GetMember(null, "__init__") as IPythonFunction;
+        #endregion
+
+        #region ILocatedMember
+        public virtual IEnumerable<ILocationInfo> Locations { get; } = Array.Empty<ILocationInfo>();
+        #endregion
+
+        #region IHasQualifiedName
+        public virtual string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
+        public virtual KeyValuePair<string, string> FullyQualifiedNamePair => new KeyValuePair<string, string>(DeclaringModule.Name, Name);
+        #endregion
+
+        #region IMemberContainer
+        public virtual IMember GetMember(IModuleContext context, string name) => Members.TryGetValue(name, out var member) ? member : null;
+        public virtual IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Members.Keys;
+        #endregion
+
+        internal bool TrySetTypeId(BuiltinTypeId typeId) {
+            if (_typeId != BuiltinTypeId.Unknown) {
+                return false;
+            }
+            _typeId = typeId;
+            return true;
         }
 
         internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
             lock (_lock) {
-                foreach (var kv in members) {
-                    if (!overwrite) {
-                        if (Members.TryGetValue(kv.Key, out var existing)) {
-                            continue;
-                        }
-                    }
-                    Members[kv.Key] = kv.Value;
+                foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
+                    WritableMembers[kv.Key] = kv.Value;
                 }
             }
         }
 
-        internal void SetBases(IPythonInterpreter interpreter, IEnumerable<IPythonType> bases) {
+        internal IMember AddMember(string name, IMember member, bool overwrite) {
             lock (_lock) {
-                if (Bases != null) {
-                    return; // Already set
+                if (overwrite || !Members.ContainsKey(name)) {
+                    WritableMembers[name] = member;
                 }
-
-                Bases = bases.MaybeEnumerate().ToArray();
-                if (Bases.Count > 0) {
-                    Members["__base__"] = Bases[0];
-                }
-
-                Members["__bases__"] = new AstPythonSequence(
-                    interpreter?.GetBuiltinType(BuiltinTypeId.Tuple),
-                    DeclaringModule,
-                    Bases,
-                    interpreter?.GetBuiltinType(BuiltinTypeId.TupleIterator)
-                );
+                return member;
             }
         }
 
-        public IReadOnlyList<IPythonType> Mro {
-            get {
-                lock (_lock) {
-                    if (_mro != null) {
-                        return _mro;
-                    }
-                    if (Bases == null) {
-                        //Debug.Fail("Accessing Mro before SetBases has been called");
-                        return new IPythonType[] { this };
-                    }
-                    _mro = new IPythonType[] { this };
-                    _mro = CalculateMro(this);
-                    return _mro;
-                }
-            }
-        }
-
-        internal static IReadOnlyList<IPythonType> CalculateMro(IPythonType cls, HashSet<IPythonType> recursionProtection = null) {
-            if (cls == null) {
-                return Array.Empty<IPythonType>();
-            }
-            if (recursionProtection == null) {
-                recursionProtection = new HashSet<IPythonType>();
-            }
-            if (!recursionProtection.Add(cls)) {
-                return Array.Empty<IPythonType>();
-            }
-            try {
-                var mergeList = new List<List<IPythonType>> { new List<IPythonType>() };
-                var finalMro = new List<IPythonType> { cls };
-
-                var bases = (cls as AstPythonType)?.Bases ??
-                    (cls.GetMember(null, "__bases__") as IPythonSequenceType)?.IndexTypes ??
-                    Array.Empty<IPythonType>();
-
-                foreach (var b in bases) {
-                    var b_mro = new List<IPythonType>();
-                    b_mro.AddRange(CalculateMro(b, recursionProtection));
-                    mergeList.Add(b_mro);
-                }
-
-                while (mergeList.Any()) {
-                    // Next candidate is the first head that does not appear in
-                    // any other tails.
-                    var nextInMro = mergeList.FirstOrDefault(mro => {
-                        var m = mro.FirstOrDefault();
-                        return m != null && !mergeList.Any(m2 => m2.Skip(1).Contains(m));
-                    })?.FirstOrDefault();
-
-                    if (nextInMro == null) {
-                        // MRO is invalid, so return just this class
-                        return new IPythonType[] { cls };
-                    }
-
-                    finalMro.Add(nextInMro);
-
-                    // Remove all instances of that class from potentially being returned again
-                    foreach (var mro in mergeList) {
-                        mro.RemoveAll(ns => ns == nextInMro);
-                    }
-
-                    // Remove all lists that are now empty.
-                    mergeList.RemoveAll(mro => !mro.Any());
-                }
-
-                return finalMro;
-            } finally {
-                recursionProtection.Remove(cls);
-            }
-        }
-
-        public string Name {
-            get {
-                lock (_lock) {
-                    if (Members.TryGetValue("__name__", out var nameMember) && nameMember is AstPythonStringLiteral lit) {
-                        return lit.Value;
-                    }
-                }
-                return _name;
-            }
-        }
-        public string Documentation { get; }
-        public IPythonModule DeclaringModule { get; }
-        public IReadOnlyList<IPythonType> Bases { get; private set; }
-        public virtual bool IsBuiltin => false;
-        public PythonMemberType MemberType => PythonMemberType.Class;
-        public virtual BuiltinTypeId TypeId => BuiltinTypeId.Type;
-        public virtual bool IsClass { get; }
+        internal bool IsHidden => ContainsMember("__hidden__");
 
         /// <summary>
-        /// The start index of this class. Used to disambiguate multiple
-        /// class definitions with the same name in the same file.
+        /// Provides type factory. Similar to __metaclass__ but does not expose full
+        /// metaclass functionality. Used in cases when function has to return a class
+        /// rather than the class instance. Example: function annotated as '-> Type[T]'
+        /// can be called as a T constructor so func() constructs class instance rather than invoking
+        /// call on an existing instance. See also collections/namedtuple typing in the Typeshed.
         /// </summary>
-        public int StartIndex { get; }
-
-        public IEnumerable<ILocationInfo> Locations { get; }
-
-        public string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
-        public KeyValuePair<string, string> FullyQualifiedNamePair => new KeyValuePair<string, string>(DeclaringModule.Name, Name);
-
-        public IMember GetMember(IModuleContext context, string name) {
-            IMember member;
-            lock (_lock) {
-                if (Members.TryGetValue(name, out member)) {
-                    return member;
-                }
-
-                // Special case names that we want to add to our own Members dict
-                switch (name) {
-                    case "__mro__":
-                        member = Members[name] = new AstPythonSequence(
-                            (context as IPythonInterpreter)?.GetBuiltinType(BuiltinTypeId.Tuple),
-                            DeclaringModule,
-                            Mro,
-                            (context as IPythonInterpreter)?.GetBuiltinType(BuiltinTypeId.TupleIterator)
-                        );
-                        return member;
-                }
-            }
-            if (Push()) {
-                try {
-                    foreach (var m in Mro.Reverse()) {
-                        if (m == this) {
-                            return member;
-                        }
-                        member = member ?? m.GetMember(context, name);
-                    }
-                } finally {
-                    Pop();
-                }
-            }
-            return null;
+        internal AstPythonType GetTypeFactory() {
+            var clone = new AstPythonType(Name, DeclaringModule, Documentation,
+               Locations.OfType<LocationInfo>().FirstOrDefault(),
+               TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId, true);
+            clone.AddMembers(Members, true);
+            return clone;
         }
 
-        private bool Push() => _isProcessing.Value ? false : (_isProcessing.Value = true);
-        private void Pop() => _isProcessing.Value = false;
-
-        public IPythonFunction GetConstructors() => GetMember(null, "__init__") as IPythonFunction;
-
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
-            var names = new HashSet<string>();
-            lock (_lock) {
-                names.UnionWith(Members.Keys);
-            }
-
-            foreach (var m in Mro.Skip(1)) {
-                names.UnionWith(m.GetMemberNames(moduleContext));
-            }
-            return names;
-        }
-
-        protected bool ContainsMember(string name) {
-            lock (_lock) {
-                return Members.ContainsKey(name);
-            }
-        }
+        protected bool ContainsMember(string name) => Members.ContainsKey(name);
     }
 }

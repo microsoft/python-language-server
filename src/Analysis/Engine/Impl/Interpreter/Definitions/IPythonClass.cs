@@ -9,29 +9,22 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter {
     /// <summary>
-    /// Represents a method descriptor for an instance of a function.
+    /// Represents Python tclass - typically a type that has
+    /// __bases__ and the method resolution order.
     /// </summary>
-    public interface IPythonMethodDescriptor : IMember {
-        /// <summary>
-        /// The built-in function that the method descriptor wraps.
-        /// </summary>
-        IPythonFunction Function {
-            get;
-        }
-
-        /// <summary>
-        /// True if the method is already bound to an instance.
-        /// </summary>
-        bool IsBound {
-            get;
-        }
+    public interface IPythonClass : IPythonType {
+        ClassDefinition ClassDefinition { get; }
+        IReadOnlyList<IPythonType> Mro { get; }
+        IReadOnlyList<IPythonType> Bases { get; }
     }
 }

@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -20,37 +20,14 @@ using System.Linq;
 using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstPythonConstant : IPythonConstant, IMemberContainer, ILocatedMember {
-        private readonly Dictionary<string, IMember> _cachedMembers = new Dictionary<string, IMember>();
-
-        public AstPythonConstant(IPythonType type, params ILocationInfo[] locations) {
+    class AstPythonConstant : AstPythonTypeWrapper, IPythonConstant {
+        public AstPythonConstant(IPythonType type, params ILocationInfo[] locations): base(type, type.DeclaringModule) {
             Type = type ?? throw new ArgumentNullException(nameof(type));
             Locations = locations.ToArray();
         }
 
-        public IEnumerable<ILocationInfo> Locations { get; }
-        public PythonMemberType MemberType => PythonMemberType.Constant;
+        public override IEnumerable<ILocationInfo> Locations { get; }
+        public override PythonMemberType MemberType => PythonMemberType.Constant;
         public IPythonType Type { get; }
-
-        public IMember GetMember(IModuleContext context, string name) {
-            IMember m;
-            lock (_cachedMembers) {
-                if (_cachedMembers.TryGetValue(name, out m)) {
-                    return m;
-                }
-            }
-
-            m = Type?.GetMember(context, name);
-            if (m is IPythonFunction f && !f.IsStatic) {
-                m = new AstPythonBoundMethod(f, Type);
-                lock (_cachedMembers) {
-                    _cachedMembers[name] = m;
-                }
-            }
-            return m;
-        }
-
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) 
-            => Type?.GetMemberNames(moduleContext);
     }
 }

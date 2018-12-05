@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -20,16 +20,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools.Intellisense;
+using Microsoft.PythonTools.Interpreter.Ast;
 
 namespace Microsoft.PythonTools.Interpreter {
-    sealed class SentinelModule : IPythonModule {
+    sealed class SentinelModule : PythonModuleType, IPythonModule {
         private readonly AnalysisQueue _scope;
         private readonly SemaphoreSlim _semaphore;
         private volatile IPythonModule _realModule;
 
-        public SentinelModule(string name, bool importing) {
+        public SentinelModule(string name, bool importing): base(name) {
             _scope = AnalysisQueue.Current;
-            Name = name;
             if (importing) {
                 _semaphore = new SemaphoreSlim(0, 1000);
             } else {
@@ -68,12 +68,7 @@ namespace Microsoft.PythonTools.Interpreter {
             }
         }
 
-        public string Name { get; }
-        public string Documentation => null;
-        public PythonMemberType MemberType => PythonMemberType.Module;
-        public IEnumerable<string> GetChildrenModules() => Enumerable.Empty<string>();
-        public IMember GetMember(IModuleContext context, string name) => null;
-        public IEnumerable<string> GetMemberNames(IModuleContext moduleContext) => Enumerable.Empty<string>();
         public void Imported(IModuleContext context) { }
+        public IEnumerable<string> GetChildrenModules() => Enumerable.Empty<string>();
     }
 }

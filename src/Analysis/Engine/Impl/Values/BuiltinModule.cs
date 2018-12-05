@@ -55,7 +55,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return res;
         }
 
-        public override string Documentation => _type.Documentation;
+        public override string Documentation => Type.Documentation;
         public override string Description => InterpreterModule.Name;
         public override string Name => InterpreterModule.Name;
         public override IPythonType PythonType => ProjectState.Types[BuiltinTypeId.Module];
@@ -74,12 +74,12 @@ namespace Microsoft.PythonTools.Analysis.Values {
         #endregion
 
         internal IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
-            return _type.GetMemberNames(moduleContext)
+            return Type.GetMemberNames(moduleContext)
                 .Union(_specializedValues.MaybeEnumerate().Keys());
         }
 
         public IModule GetChildPackage(IModuleContext context, string name) {
-            var mem = _type.GetMember(context, name);
+            var mem = Type.GetMember(context, name);
             if (mem != null) {
                 return ProjectState.GetAnalysisValueFromObjects(mem) as IModule;
             }
@@ -87,8 +87,8 @@ namespace Microsoft.PythonTools.Analysis.Values {
         }
 
         public IEnumerable<KeyValuePair<string, AnalysisValue>> GetChildrenPackages(IModuleContext context) {
-            return _type.GetChildrenModules()
-                .Select(name => new KeyValuePair<string, AnalysisValue>(name, ProjectState.GetAnalysisValueFromObjects(_type.GetMember(context, name))));
+            return Type.GetChildrenModules()
+                .Select(name => new KeyValuePair<string, AnalysisValue>(name, ProjectState.GetAnalysisValueFromObjects(Type.GetMember(context, name))));
         }
 
         public void SpecializeFunction(string name, CallDelegate callable, bool mergeOriginalAnalysis) {

@@ -23,31 +23,21 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         public static bool IsNullOrEmpty<T>(this IEnumerable<T> source)
             => source == null || !source.Any();
 
-        public static T[] MaybeEnumerate<T>(this T[] source) {
-            return source ?? Array.Empty<T>();
-        }
+        public static T[] MaybeEnumerate<T>(this T[] source) => source ?? Array.Empty<T>();
 
-        public static IEnumerable<T> MaybeEnumerate<T>(this IEnumerable<T> source) {
-            return source ?? Enumerable.Empty<T>();
-        }
+        public static IEnumerable<T> MaybeEnumerate<T>(this IEnumerable<T> source) => source ?? Enumerable.Empty<T>();
 
-        private static T Identity<T>(T source) {
-            return source;
-        }
+        private static T Identity<T>(T source) => source;
 
-        public static IEnumerable<T> SelectMany<T>(this IEnumerable<IEnumerable<T>> source) {
-            return source.SelectMany(Identity);
-        }
+        public static IEnumerable<T> SelectMany<T>(this IEnumerable<IEnumerable<T>> source) => source.SelectMany(Identity);
 
-        public static IEnumerable<T> Ordered<T>(this IEnumerable<T> source) {
-            return source.OrderBy(Identity);
-        }
+        public static IEnumerable<T> Ordered<T>(this IEnumerable<T> source)
+            => source.OrderBy(Identity);
 
         private static bool NotNull<T>(T obj) where T : class => obj != null;
 
-        public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T> source) where T : class {
-            return source.Where(NotNull);
-        }
+        public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T> source) where T : class
+            => source != null ? source.Where(NotNull) : Enumerable.Empty<T>();
 
         public static bool SetEquals<T>(this IEnumerable<T> source, IEnumerable<T> other,
             IEqualityComparer<T> comparer = null) where T : class {

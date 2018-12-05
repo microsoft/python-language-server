@@ -38,6 +38,7 @@ namespace Microsoft.PythonTools.Analysis {
         public virtual IReadOnlyList<string> ReturnType => _returnType;
         public virtual string Documentation { get; } = string.Empty;
         public virtual ParameterResult[] Parameters => _parameters;
+        public virtual ParameterResult FirstParameter => null;
 
         internal virtual OverloadResult WithNewParameters(ParameterResult[] newParameters)
             => new OverloadResult(newParameters, Name, Documentation, _returnType);
@@ -241,6 +242,7 @@ namespace Microsoft.PythonTools.Analysis {
 
     class BuiltinFunctionOverloadResult : OverloadResult {
         private readonly IPythonFunctionOverload _overload;
+        private ParameterResult _selfParameter;
         private ParameterResult[] _parameters;
         private readonly ParameterResult[] _extraParameters;
         private readonly int _removedParams;
@@ -333,43 +335,55 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
+        public override ParameterResult FirstParameter {
+            get {
+                EnsureParameters();
+                return _selfParameter;
+            }
+        }
+
         public override ParameterResult[] Parameters {
             get {
-                if (_parameters == null) {
-                    if (_overload != null) {
-                        var target = _overload;
+                EnsureParameters();
+                return _parameters;
+            }
+        }
 
-                        var pinfo = _overload.GetParameters();
-                        var result = new List<ParameterResult>(pinfo.Length + _extraParameters.Length);
-                        var ignored = 0;
-                        ParameterResult kwDict = null;
-                        foreach (var param in pinfo) {
-                            if (ignored < _removedParams) {
-                                ignored++;
-                            } else {
-                                var paramResult = GetParameterResultFromParameterInfo(param);
-                                if (param.IsKeywordDict) {
-                                    kwDict = paramResult;
-                                } else {
-                                    result.Add(paramResult);
-                                }
-                            }
-                        }
+        private void EnsureParameters() {
+            if (_parameters != null) {
+                return;
+            }
 
-                        result.InsertRange(0, _extraParameters);
-
-                        // always add kw dict last.  When defined in C# and combined w/ params 
-                        // it has to come earlier than it's legally allowed in Python so we 
-                        // move it to the end for intellisense purposes here.
-                        if (kwDict != null) {
-                            result.Add(kwDict);
-                        }
-                        _parameters = result.ToArray();
+            if (_overload != null) {
+                var pinfo = _overload.GetParameters();
+                var result = new List<ParameterResult>(pinfo.Length + _extraParameters.Length);
+                var ignored = 0;
+                ParameterResult kwDict = null;
+                foreach (var param in pinfo) {
+                    if (ignored < _removedParams) {
+                        _selfParameter = GetParameterResultFromParameterInfo(param);
+                        ignored++;
                     } else {
-                        _parameters = new ParameterResult[0];
+                        var paramResult = GetParameterResultFromParameterInfo(param);
+                        if (param.IsKeywordDict) {
+                            kwDict = paramResult;
+                        } else {
+                            result.Add(paramResult);
+                        }
                     }
                 }
-                return _parameters;
+
+                result.InsertRange(0, _extraParameters);
+
+                // always add kw dict last.  When defined in C# and combined w/ params 
+                // it has to come earlier than it's legally allowed in Python so we 
+                // move it to the end for intellisense purposes here.
+                if (kwDict != null) {
+                    result.Add(kwDict);
+                }
+                _parameters = result.ToArray();
+            } else {
+                _parameters = Array.Empty<ParameterResult>();
             }
         }
 

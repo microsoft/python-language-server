@@ -157,7 +157,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             var m = ann.GetValue(new AstTypeAnnotationConverter(this));
             if (m is IPythonMultipleMembers mm) {
-                return mm.Members.OfType<IPythonType>();
+                return mm.GetMembers().OfType<IPythonType>();
             } else if (m is IPythonType type) {
                 return Enumerable.Repeat(type, 1);
             }
@@ -233,9 +233,11 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             switch (e) {
                 case IMemberContainer mc:
                     value = mc.GetMember(Context, expr.Name);
+                    // If container is class rather than the instance, then method is an unbound function.
+                    value = mc is IPythonClass c && value is AstPythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
                     break;
                 case IPythonMultipleMembers mm:
-                    value = mm.Members.OfType<IMemberContainer>()
+                    value = mm.GetMembers().OfType<IMemberContainer>()
                         .Select(x => x.GetMember(Context, expr.Name))
                         .ExcludeDefault()
                         .FirstOrDefault();
@@ -245,7 +247,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     break;
             }
 
-            if (value is IBuiltinProperty2 p) {
+            if (value is IPythonProperty p) {
                 value = GetPropertyReturnType(p, expr);
             } else if (value == null) {
                 _log?.Log(TraceLevel.Verbose, "UnknownMember", expr.ToCodeString(Ast).Trim());
@@ -358,6 +360,9 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             var m = GetValueFromExpression(expr.Target);
             IMember value = null;
             switch (m) {
+                case IPythonFunction pf:
+                    value = GetValueFromPropertyOrFunction(pf, expr);
+                    break;
                 case IPythonType type when type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1:
                     value = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression, options));
                     break;
@@ -365,7 +370,6 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     value = new AstPythonConstant(type, GetLoc(expr));
                     break;
                 default:
-                    value = GetValueFromPropertyOrFunction(m, expr);
                     break;
             }
 
@@ -377,19 +381,17 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         private IMember GetValueFromPropertyOrFunction(IMember fn, Expression expr) {
             switch (fn) {
-                case IPythonBoundFunction bf when bf.Function is IPythonFunction2 f:
-                    return GetValueFromFunction(f, expr);
-                case IPythonFunction2 f:
-                    return GetValueFromFunction(f, expr);
-                case IBuiltinProperty2 p:
+                case IPythonProperty p:
                     return GetPropertyReturnType(p, expr);
+                case IPythonFunction f:
+                    return GetValueFromFunction(f, expr);
                 case IPythonConstant c when c.Type?.MemberType == PythonMemberType.Class:
                     return c.Type; // typically cls()
             }
             return null;
         }
 
-        private IMember GetValueFromFunction(IPythonFunction2 fn, Expression expr) {
+        private IMember GetValueFromFunction(IPythonFunction fn, Expression expr) {
             var returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
             if (IsUnknown(returnType)) {
                 // Function may not have been walked yet. Do it now.
@@ -402,7 +404,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         private IPythonType GetFunctionReturnType(IPythonFunctionOverload o)
             => o != null && o.ReturnType.Count > 0 ? o.ReturnType[0] : UnknownType;
 
-        private IMember GetPropertyReturnType(IBuiltinProperty2 p, Expression expr) {
+        private IMember GetPropertyReturnType(IPythonProperty p, Expression expr) {
             if (IsUnknown(p.Type)) {
                 // Function may not have been walked yet. Do it now.
                 _functionWalkers.ProcessFunction(p.FunctionDefinition);
@@ -425,7 +427,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
 
         public IEnumerable<IPythonType> GetTypesFromValue(IMember value) {
             if (value is IPythonMultipleMembers mm) {
-                return mm.Members.Select(GetTypeFromValue).Distinct();
+                return mm.GetMembers().Select(GetTypeFromValue).Distinct();
             } else {
                 var t = GetTypeFromValue(value);
                 if (t != null) {
@@ -448,45 +450,38 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             switch (value.MemberType) {
                 case PythonMemberType.Class:
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Type);
-                case PythonMemberType.Delegate:
-                case PythonMemberType.DelegateInstance:
                 case PythonMemberType.Function:
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Function);
                 case PythonMemberType.Method:
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.BuiltinMethodDescriptor);
+                    return Interpreter.GetBuiltinType(BuiltinTypeId.Method);
                 case PythonMemberType.Enum:
                 case PythonMemberType.EnumInstance:
                     break;
                 case PythonMemberType.Module:
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Module);
-                case PythonMemberType.Namespace:
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.Object);
                 case PythonMemberType.Event:
                     break;
             }
 
-            IPythonFunction f;
-            if ((f = value as IPythonFunction ?? (value as IPythonBoundFunction)?.Function) != null) {
+            if (value is IPythonFunction f) {
                 if (f.IsStatic) {
                     return Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
                 } else if (f.IsClassMethod) {
                     return Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
                 }
-                return Interpreter.GetBuiltinType(BuiltinTypeId.Function);
+                return f.DeclaringType == null 
+                    ? Interpreter.GetBuiltinType(BuiltinTypeId.Function)
+                    : Interpreter.GetBuiltinType(BuiltinTypeId.Method);
             }
 
-            if (value is IBuiltinProperty prop) {
+            if (value is IPythonProperty prop) {
                 return prop.Type ?? Interpreter.GetBuiltinType(BuiltinTypeId.Property);
             } else if (value.MemberType == PythonMemberType.Property) {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Property);
             }
 
-            if (value is IPythonMethodDescriptor) {
-                return Interpreter.GetBuiltinType(BuiltinTypeId.BuiltinMethodDescriptor);
-            }
-
             if (value is IPythonMultipleMembers mm) {
-                return AstPythonMultipleMembers.CreateAs<IPythonType>(mm.Members);
+                return AstPythonMultipleMembers.CreateAs<IPythonType>(mm.GetMembers());
             }
 
             if (value is IPythonType) {

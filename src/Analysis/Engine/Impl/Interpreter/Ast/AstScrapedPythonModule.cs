@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -27,7 +27,7 @@ using Microsoft.PythonTools.Parsing;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
-    class AstScrapedPythonModule : IPythonModule
+    class AstScrapedPythonModule : PythonModuleType, IPythonModule
 #if DEBUG
         // In debug builds we let you F12 to the scraped file
         , ILocatedMember
@@ -37,28 +37,23 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
         protected readonly Dictionary<string, IMember> _members;
         private bool _scraped;
 
-        public AstScrapedPythonModule(string name, string filePath) {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
+        public AstScrapedPythonModule(string name, string filePath): base(name) {
             ParseErrors = Enumerable.Empty<string>();
             _filePath = filePath;
             _members = new Dictionary<string, IMember>();
             _scraped = false;
         }
 
-        public string Name { get; }
-
-        public string Documentation {
+        public override string Documentation {
             get {
                 var m = GetMember(null, "__doc__") as AstPythonStringLiteral;
                 return m != null ? m.Value : string.Empty;
             }
         }
 
-        public PythonMemberType MemberType => PythonMemberType.Module;
-
         public IEnumerable<string> GetChildrenModules() => Enumerable.Empty<string>();
 
-        public virtual IMember GetMember(IModuleContext context, string name) {
+        public override IMember GetMember(IModuleContext context, string name) {
             IMember m;
             if (!_scraped) {
                 Imported(context);
@@ -75,7 +70,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             return m;
         }
 
-        public virtual IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
+        public override IEnumerable<string> GetMemberNames(IModuleContext moduleContext) {
             if (!_scraped) {
                 Imported(moduleContext);
             }
