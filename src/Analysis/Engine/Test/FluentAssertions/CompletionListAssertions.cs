@@ -33,12 +33,30 @@ namespace Microsoft.PythonTools.Analysis.FluentAssertions {
 
         protected override string Identifier => nameof(CompletionList);
 
+        [CustomAssertion]
         public AndConstraint<CompletionListAssertions> OnlyHaveLabels(params string[] labels)
             => OnlyHaveLabels(labels, string.Empty);
 
+        [CustomAssertion]
+        public AndConstraint<CompletionListAssertions> HaveAnyCompletions(string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+
+            var errorMessage = Subject.items != null
+                ? Subject.items.Length > 0 ? null : $"Expected {GetName()} to have completion items{{reason}}, but CompletionList.items collection is empty."
+                : $"Expected {GetName()} to have completion items{{reason}}, but CompletionList.items collection is null.";
+
+            Execute.Assertion.ForCondition(errorMessage == null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith(errorMessage);
+
+            return new AndConstraint<CompletionListAssertions>(this);
+        }
+
+        [CustomAssertion]
         public AndConstraint<CompletionListAssertions> HaveNoCompletion(string because = "", params object[] reasonArgs) 
             => OnlyHaveLabels(Array.Empty<string>(), because, reasonArgs);
 
+        [CustomAssertion]
         public AndConstraint<CompletionListAssertions> OnlyHaveLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 

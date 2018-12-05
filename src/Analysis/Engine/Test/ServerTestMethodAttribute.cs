@@ -28,6 +28,7 @@ namespace AnalysisTests {
 
     public class ServerTestMethodAttribute : TestMethodAttribute {
         public bool TestSpecificRootUri { get; set; }
+        public bool DefaultTypeshedPath { get; set; }
         public bool LatestAvailable3X { get; set; }
         public bool LatestAvailable2X { get; set; }
         public PythonLanguageVersion Version { get; set; } = PythonLanguageVersion.None;
@@ -53,6 +54,13 @@ namespace AnalysisTests {
                 }
 
                 var server = await new Server().InitializeAsync(interpreterConfiguration, rootUri);
+                if (DefaultTypeshedPath) {
+                    var limits = server.Analyzer.Limits;
+                    limits.UseTypeStubPackages = true;
+                    server.Analyzer.Limits = limits;
+                    server.Analyzer.SetTypeStubPaths(new[] { TestData.GetDefaultTypeshedPath() });
+                }
+
                 arguments[0] = server;
                 return server;
             });
