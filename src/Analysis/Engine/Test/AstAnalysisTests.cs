@@ -881,7 +881,7 @@ l = iterfind()";
             }
 
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.SetTypeStubPaths(new[] { TestData.GetDefaultTypeshedPath() });
                 var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(@"import urllib");
 
                 var secondMembers = server.Analyzer.GetModuleMembers(analysis.InterpreterContext, new[] { "urllib" })
@@ -895,7 +895,7 @@ l = iterfind()";
         [TestMethod, Priority(0)]
         public async Task TypeShedSysExcInfo() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.SetTypeStubPaths(new[] { TestData.GetDefaultTypeshedPath() });
                 var code = @"import sys
 
 e1, e2, e3 = sys.exc_info()";
@@ -915,7 +915,7 @@ e1, e2, e3 = sys.exc_info()";
         [TestMethod, Priority(0)]
         public async Task TypeShedJsonMakeScanner() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.SetTypeStubPaths(new[] { TestData.GetDefaultTypeshedPath() });
                 var code = @"import _json
 
 scanner = _json.make_scanner()";
@@ -941,7 +941,7 @@ scanner = _json.make_scanner()";
         [TestMethod, Priority(0)]
         public async Task TypeShedSysInfo() {
             using (var server = await CreateServerAsync()) {
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.SetTypeStubPaths(new[] { TestData.GetDefaultTypeshedPath() });
                 server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = true };
 
                 var code = @"import sys
@@ -1016,7 +1016,7 @@ pt = nt(1, 2)
         [TestMethod, Priority(0)]
         public async Task TypeShedNamedTuple() {
             using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
-                server.Analyzer.SetTypeStubPaths(new[] { GetTypeshedPath() });
+                server.Analyzer.SetTypeStubPaths(new[] { TestData.GetDefaultTypeshedPath() });
                 server.Analyzer.Limits = new AnalysisLimits { UseTypeStubPackages = true, UseTypeStubPackagesExclusively = true };
                 var code = "from collections import namedtuple\n";
 

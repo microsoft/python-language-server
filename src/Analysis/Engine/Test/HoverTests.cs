@@ -27,13 +27,12 @@ using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Documentation;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
-using Microsoft.PythonTools.Interpreter;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
 namespace AnalysisTests {
     [TestClass]
-    public class HoverTests : ServerBasedTest {
+    public class HoverTests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -42,10 +41,9 @@ namespace AnalysisTests {
         [TestCleanup]
         public void TestCleanup() => TestEnvironmentImpl.TestCleanup();
 
-        [TestMethod, Priority(0)]
-        public async Task Hover() {
-            using (var s = await CreateServerAsync()) {
-                var mod = await s.OpenDefaultDocumentAndGetUriAsync(@"123
+        [ServerTestMethod, Priority(0)]
+        public async Task Hover(Server server) {
+            var mod = await server.OpenDefaultDocumentAndGetUriAsync(@"123
 'abc'
 f()
 def f(): pass
@@ -64,69 +62,60 @@ x = 123
 x = 3.14
 ");
 
-                await AssertHover(s, mod, new SourceLocation(1, 1), "int", new[] { "int" }, new SourceSpan(1, 1, 1, 4));
-                await AssertHover(s, mod, new SourceLocation(2, 1), "str", new[] { "str" }, new SourceSpan(2, 1, 2, 6));
-                await AssertHover(s, mod, new SourceLocation(3, 1), "function module.f()", new[] { "module.f" }, new SourceSpan(3, 1, 3, 2));
-                await AssertHover(s, mod, new SourceLocation(4, 6), "function module.f()", new[] { "module.f" }, new SourceSpan(4, 5, 4, 6));
+            await AssertHover(server, mod, new SourceLocation(1, 1), "int", new[] { "int" }, new SourceSpan(1, 1, 1, 4));
+            await AssertHover(server, mod, new SourceLocation(2, 1), "str", new[] { "str" }, new SourceSpan(2, 1, 2, 6));
+            await AssertHover(server, mod, new SourceLocation(3, 1), "function module.f()", new[] { "module.f" }, new SourceSpan(3, 1, 3, 2));
+            await AssertHover(server, mod, new SourceLocation(4, 6), "function module.f()", new[] { "module.f" }, new SourceSpan(4, 5, 4, 6));
 
-                await AssertHover(s, mod, new SourceLocation(12, 1), "class module.C", new[] { "module.C" }, new SourceSpan(12, 1, 12, 2));
-                await AssertHover(s, mod, new SourceLocation(13, 1), "c: C", new[] { "module.C" }, new SourceSpan(13, 1, 13, 2));
-                await AssertHover(s, mod, new SourceLocation(14, 7), "c: C", new[] { "module.C" }, new SourceSpan(14, 7, 14, 8));
-                await AssertHover(s, mod, new SourceLocation(14, 9), "c.f: method f of module.C objects*", new[] { "module.C.f" }, new SourceSpan(14, 7, 14, 10));
-                await AssertHover(s, mod, new SourceLocation(14, 1), $"function module.C.f.g(self)  {Environment.NewLine}declared in C.f", new[] { "module.C.f.g" }, new SourceSpan(14, 1, 14, 4));
+            await AssertHover(server, mod, new SourceLocation(12, 1), "class module.C", new[] { "module.C" }, new SourceSpan(12, 1, 12, 2));
+            await AssertHover(server, mod, new SourceLocation(13, 1), "c: C", new[] { "module.C" }, new SourceSpan(13, 1, 13, 2));
+            await AssertHover(server, mod, new SourceLocation(14, 7), "c: C", new[] { "module.C" }, new SourceSpan(14, 7, 14, 8));
+            await AssertHover(server, mod, new SourceLocation(14, 9), "c.f: method f of module.C objects*", new[] { "module.C.f" }, new SourceSpan(14, 7, 14, 10));
+            await AssertHover(server, mod, new SourceLocation(14, 1), $"function module.C.f.g(self)  {Environment.NewLine}declared in C.f", new[] { "module.C.f.g" }, new SourceSpan(14, 1, 14, 4));
 
-                await AssertHover(s, mod, new SourceLocation(16, 1), "x: int, float", new[] { "int", "float" }, new SourceSpan(16, 1, 16, 2));
-            }
+            await AssertHover(server, mod, new SourceLocation(16, 1), "x: int, float", new[] { "int", "float" }, new SourceSpan(16, 1, 16, 2));
         }
 
-        [TestMethod, Priority(0)]
-        public async Task HoverSpanCheck_V2() {
-            using (var s = await CreateServerAsync(DefaultV2)) {
-                var mod = await s.OpenDefaultDocumentAndGetUriAsync(@"
+        [ServerTestMethod(LatestAvailable2X = true), Priority(0)]
+        public async Task HoverSpanCheck_V2(Server server) {
+            var mod = await server.OpenDefaultDocumentAndGetUriAsync(@"
 import datetime
 datetime.datetime.now().day
 ");
-                await AssertHover(s, mod, new SourceLocation(3, 1), "module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
-                await AssertHover(s, mod, new SourceLocation(3, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(3, 1, 3, 18));
-                await AssertHover(s, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound method now*", null, new SourceSpan(3, 1, 3, 22));
-            }
+            await AssertHover(server, mod, new SourceLocation(3, 1), "module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
+            await AssertHover(server, mod, new SourceLocation(3, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(3, 1, 3, 18));
+            await AssertHover(server, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound method now*", null, new SourceSpan(3, 1, 3, 22));
         }
 
-        [TestMethod, Priority(0)]
-        public async Task HoverSpanCheck_V3() {
-            using (var s = await CreateServerAsync(DefaultV3)) {
-                var mod = await s.OpenDefaultDocumentAndGetUriAsync(@"
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
+        public async Task HoverSpanCheck_V3(Server server) {
+            var mod = await server.OpenDefaultDocumentAndGetUriAsync(@"
 import datetime
 datetime.datetime.now().day
 ");
-                await AssertHover(s, mod, new SourceLocation(3, 1), "module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
-                await AssertHover(s, mod, new SourceLocation(3, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(3, 1, 3, 18));
-                await AssertHover(s, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound method now*", null, new SourceSpan(3, 1, 3, 22));
-                await AssertHover(s, mod, new SourceLocation(3, 28), "datetime.datetime.now().day: int*", new[] { "int" }, new SourceSpan(3, 1, 3, 28));
-            }
+            await AssertHover(server, mod, new SourceLocation(3, 1), "module datetime*", new[] { "datetime" }, new SourceSpan(3, 1, 3, 9));
+            await AssertHover(server, mod, new SourceLocation(3, 11), "class datetime.datetime*", new[] { "datetime.datetime" }, new SourceSpan(3, 1, 3, 18));
+            await AssertHover(server, mod, new SourceLocation(3, 20), "datetime.datetime.now: bound method now*", null, new SourceSpan(3, 1, 3, 22));
+            await AssertHover(server, mod, new SourceLocation(3, 28), "datetime.datetime.now().day: int*", new[] { "int" }, new SourceSpan(3, 1, 3, 28));
         }
 
-        [TestMethod, Priority(0)]
-        public async Task FromImportHover() {
-            using (var s = await CreateServerAsync()) {
-                var mod = await s.OpenDefaultDocumentAndGetUriAsync("from os import path as p\n");
-                await AssertHover(s, mod, new SourceLocation(1, 6), "module os*", null, new SourceSpan(1, 6, 1, 8));
-                await AssertHover(s, mod, new SourceLocation(1, 16), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 16, 1, 20));
-                await AssertHover(s, mod, new SourceLocation(1, 24), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 24, 1, 25));
-            }
+        [ServerTestMethod, Priority(0)]
+        public async Task FromImportHover(Server server) {
+            var mod = await server.OpenDefaultDocumentAndGetUriAsync("from os import path as p\n");
+            await AssertHover(server, mod, new SourceLocation(1, 6), "module os*", null, new SourceSpan(1, 6, 1, 8));
+            await AssertHover(server, mod, new SourceLocation(1, 16), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 16, 1, 20));
+            await AssertHover(server, mod, new SourceLocation(1, 24), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 24, 1, 25));
         }
 
-        [TestMethod, Priority(0)]
-        public async Task FromImportRelativeHover() {
-            using (var s = await CreateServerAsync()) {
-                var mod1 = await s.OpenDocumentAndGetUriAsync("mod1.py", "from . import mod2\n");
-                var mod2 = await s.OpenDocumentAndGetUriAsync("mod2.py", "def foo():\n  pass\n");
-                await AssertHover(s, mod1, new SourceLocation(1, 16), "module mod2", null, new SourceSpan(1, 15, 1, 19));
-            }
+        [ServerTestMethod, Priority(0)]
+        public async Task FromImportRelativeHover(Server server) {
+            var mod1 = await server.OpenDocumentAndGetUriAsync("mod1.py", "from . import mod2\n");
+            var mod2 = await server.OpenDocumentAndGetUriAsync("mod2.py", "def foo():\n  pass\n");
+            await AssertHover(server, mod1, new SourceLocation(1, 16), "module mod2", null, new SourceSpan(1, 15, 1, 19));
         }
 
-        [TestMethod, Priority(0)]
-        public async Task SelfHover() {
+        [ServerTestMethod, Priority(0)]
+        public async Task SelfHover(Server server) {
             var text = @"
 class Base(object):
     def fob_base(self):
@@ -137,42 +126,34 @@ class Derived(Base):
        self.fob_base()
        pass
 ";
-            using (var s = await CreateServerAsync()) {
-                var uri = await s.OpenDefaultDocumentAndGetUriAsync(text);
-                await AssertHover(s, uri, new SourceLocation(3, 19), "class module.Base(object)", null, new SourceSpan(2, 7, 2, 11));
-                await AssertHover(s, uri, new SourceLocation(8, 8), "class module.Derived(Base)", null, new SourceSpan(6, 7, 6, 14));
-            }
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync(text);
+            await AssertHover(server, uri, new SourceLocation(3, 19), "class module.Base(object)", null, new SourceSpan(2, 7, 2, 11));
+            await AssertHover(server, uri, new SourceLocation(8, 8), "class module.Derived(Base)", null, new SourceSpan(6, 7, 6, 14));
         }
 
-        [TestMethod, Priority(0)]
-        public async Task TupleFunctionArgumentsHover() {
-            using (var s = await CreateServerAsync()) {
-                var uri = await s.OpenDefaultDocumentAndGetUriAsync("def what(a, b):\n    return a, b, 1\n");
-                await AssertHover(s, uri, new SourceLocation(1, 6), "function module.what(a, b) -> tuple[Any, Any, int]", null, new SourceSpan(1, 5, 1, 9));
-            }
+        [ServerTestMethod, Priority(0)]
+        public async Task TupleFunctionArgumentsHover(Server server) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync("def what(a, b):\n    return a, b, 1\n");
+            await AssertHover(server, uri, new SourceLocation(1, 6), "function module.what(a, b) -> tuple[Any, Any, int]", null, new SourceSpan(1, 5, 1, 9));
         }
 
-        [TestMethod, Priority(0)]
-        public async Task TupleFunctionArgumentsWithCallHover() {
-            using (var s = await CreateServerAsync()) {
-                var uri = await s.OpenDefaultDocumentAndGetUriAsync("def what(a, b):\n    return a, b, 1\n\nwhat(1, 2)");
-                await AssertHover(s, uri, new SourceLocation(1, 6), "function module.what(a, b) -> tuple[int, int, int]", null, new SourceSpan(1, 5, 1, 9));
-            }
+        [ServerTestMethod, Priority(0)]
+        public async Task TupleFunctionArgumentsWithCallHover(Server server) {
+            var uri = await server.OpenDefaultDocumentAndGetUriAsync("def what(a, b):\n    return a, b, 1\n\nwhat(1, 2)");
+            await AssertHover(server, uri, new SourceLocation(1, 6), "function module.what(a, b) -> tuple[int, int, int]", null, new SourceSpan(1, 5, 1, 9));
         }
 
-        [TestMethod, Priority(0)]
-        public async Task MarkupKindValid() {
-            using (var s = await CreateServerAsync()) {
-                var u = await s.OpenDefaultDocumentAndGetUriAsync("123");
+        [ServerTestMethod, Priority(0)]
+        public async Task MarkupKindValid(Server server) {
+            var u = await server.OpenDefaultDocumentAndGetUriAsync("123");
 
-                await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
-                var hover = await s.Hover(new TextDocumentPositionParams {
-                    textDocument = new TextDocumentIdentifier { uri = u },
-                    position = new SourceLocation(1, 1),
-                }, CancellationToken.None);
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            var hover = await server.Hover(new TextDocumentPositionParams {
+                textDocument = new TextDocumentIdentifier { uri = u },
+                position = new SourceLocation(1, 1),
+            }, CancellationToken.None);
 
-                hover.contents.kind.Should().BeOneOf(MarkupKind.PlainText, MarkupKind.Markdown);
-            }
+            hover.contents.kind.Should().BeOneOf(MarkupKind.PlainText, MarkupKind.Markdown);
         }
 
         private static async Task AssertHover(Server s, Uri uri, SourceLocation position, string hoverText, IEnumerable<string> typeNames, SourceSpan? range = null, string expr = null) {
@@ -196,22 +177,6 @@ class Derived(Base):
             }
             if (range.HasValue) {
                 hover.range.Should().Be(range.Value);
-            }
-        }
-        private static InterpreterConfiguration DefaultV3 {
-            get {
-                var ver = PythonVersions.Python36_x64 ?? PythonVersions.Python36 ??
-                          PythonVersions.Python35_x64 ?? PythonVersions.Python35;
-                ver.AssertInstalled();
-                return ver;
-            }
-        }
-
-        private static InterpreterConfiguration DefaultV2 {
-            get {
-                var ver = PythonVersions.Python27_x64 ?? PythonVersions.Python27;
-                ver.AssertInstalled();
-                return ver;
             }
         }
     }
