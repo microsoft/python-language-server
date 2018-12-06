@@ -19,15 +19,19 @@ using System.Threading;
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AstNestedPythonModuleMember : ILazyMember {
         private volatile IMember _realMember;
+        private readonly IPythonInterpreter _interpreter;
 
         public AstNestedPythonModuleMember(
             string memberName,
             AstNestedPythonModule module,
-            LocationInfo importLocation
+            LocationInfo importLocation,
+            IPythonInterpreter interpreter
+
         ) {
             Name = memberName ?? throw new ArgumentNullException(nameof(memberName));
             Module = module ?? throw new ArgumentNullException(nameof(module));
             ImportLocation = importLocation;
+            _interpreter = interpreter;
         }
 
         public string Name { get; }
@@ -42,14 +46,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return m;
             }
 
-            var interp = _context as AstPythonInterpreter;
-            if (interp == null) {
-                return null;
-            }
-
             // Set an "unknown" value to prevent recursion
-            var locs = ImportLocation == null ? Array.Empty<LocationInfo>() : new[] { ImportLocation };
-            var sentinel = new AstPythonConstant(interp.GetBuiltinType(BuiltinTypeId.Unknown), locs);
+            var locs = ImportLocation == null ? LocationInfo.Empty : ImportLocation;
+            var sentinel = new AstPythonConstant(_interpreter.GetBuiltinType(BuiltinTypeId.Unknown), locs);
             m = Interlocked.CompareExchange(ref _realMember, sentinel, null);
             if (m != null) {
                 // We raced and someone else set a value, so just return that
@@ -57,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             Module.NotifyImported();
-            m = Module.GetMember(Name) ?? interp.ModuleResolution.ImportModule(Module.Name + "." + Name);
+            m = Module.GetMember(Name) ?? _interpreter.ModuleResolution.ImportModule(Module.Name + "." + Name);
             if (m != null) {
                 (m as IPythonModule)?.NotifyImported();
                 var current = Interlocked.CompareExchange(ref _realMember, m, sentinel);

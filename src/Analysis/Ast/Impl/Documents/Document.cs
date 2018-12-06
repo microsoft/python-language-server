@@ -36,7 +36,6 @@ namespace Microsoft.Python.Analysis.Documents {
     /// </inheritdoc>
     public sealed class Document : IDocument, IAnalyzable {
         private readonly IFileSystem _fs;
-        private readonly IDiagnosticsPublisher _dps;
         private readonly IIdleTimeService _idleTimeService;
         private readonly IPythonAnalyzer _analyzer;
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
@@ -186,5 +185,15 @@ namespace Microsoft.Python.Analysis.Documents {
         #region Analysis
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) => _tcs?.Task;
         #endregion
+
+        public static Uri MakeDocumentUri(string filePath) {
+            Uri u;
+            if (!Path.IsPathRooted(filePath)) {
+                u = new Uri("file:///LOCAL-PATH/{0}".FormatInvariant(filePath.Replace('\\', '/')));
+            } else {
+                u = new Uri(filePath);
+            }
+            return u;
+        }
     }
 }

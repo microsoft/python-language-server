@@ -22,7 +22,7 @@ using Microsoft.Python.Core.Shell;
 namespace Microsoft.Python.LanguageServer.Implementation {
     public abstract class ServerBase {
         protected IServiceContainer Services { get; private set; }
-        protected ILogger Logger { get; private set; }
+        public ILogger Logger { get; private set; }
 
         protected ServerBase(IServiceContainer services) {
             SetServices(services);

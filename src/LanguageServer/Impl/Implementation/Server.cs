@@ -27,7 +27,6 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.LanguageServer.Extensions;
 using Microsoft.Python.Parsing.Ast;
@@ -337,8 +336,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #endregion
 
         #region IPythonLanguageServer
-        public ILogger Logger { get; }
-
         public PythonAst GetCurrentAst(Uri documentUri) {
             ProjectFiles.GetEntry(documentUri, null, out var entry, out var tree);
             return entry.GetCurrentParse()?.Tree;

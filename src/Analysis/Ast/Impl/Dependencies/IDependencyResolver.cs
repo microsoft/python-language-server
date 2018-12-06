@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// for the analysis. The chain is a tree where child branches can be analyzed
     /// concurrently.
     /// </summary>
-    internal interface IDependencyResolver {
+    public interface IDependencyResolver {
         Task<IDependencyChainNode> GetDependencyChainAsync(IDocument document, CancellationToken cancellationToken);
     }
 }

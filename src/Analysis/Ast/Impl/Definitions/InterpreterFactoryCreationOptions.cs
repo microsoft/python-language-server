@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis {
     /// Specifies creation options for an interpreter factory.
     /// </summary>
     public sealed class InterpreterFactoryCreationOptions {
-        public InterpreterFactoryCreationOptions Clone() => (InterpreterFactoryCreationOptions)MemberwiseClone();
+        public string TypeshedPath { get; set; }
 
         public string DatabasePath { get; set; }
 

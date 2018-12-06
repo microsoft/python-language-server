@@ -31,11 +31,10 @@ namespace Microsoft.Python.Analysis {
         IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Returns set of paths to typeshed stubs for .
+        /// Returns set of paths to typeshed stubs.
         /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        IEnumerable<string> GetTypeShedPaths(string path);
+        /// <param name="typeshedRootPath">Path to the Typeshed root.</param>
+        IEnumerable<string> GetTypeShedPaths(string typeshedRootPath);
 
         /// <summary>
         /// Derermines if directory contains Python package.
@@ -47,7 +46,7 @@ namespace Microsoft.Python.Analysis {
         /// </summary>
         PathResolverSnapshot CurrentPathResolver { get; }
 
-        Task<TryImportModuleResult> TryImportModuleAsync(string name, IReadOnlyList<string> typeStubPaths, CancellationToken cancellationToken);
+        Task<TryImportModuleResult> TryImportModuleAsync(string name, CancellationToken cancellationToken);
 
         /// <summary>
         /// Returns an IPythonModule for a given module name. Returns null if

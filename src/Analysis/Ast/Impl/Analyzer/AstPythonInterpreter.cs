@@ -16,9 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
-using Microsoft.Python.Analysis.Core.DependencyResolution;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
@@ -34,28 +33,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly AstPythonInterpreterFactory _factory;
         private readonly object _userSearchPathsLock = new object();
 
-        private IPythonAnalyzer _analyzer;
-        private AstBuiltinsPythonModule _builtinModule;
-        
         public AstPythonInterpreter(AstPythonInterpreterFactory factory) {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
-            _factory.ImportableModulesChanged += Factory_ImportableModulesChanged;
-
             ModuleResolution = new AstModuleResolution(this, factory);
         }
 
-        public void Dispose() {
-            _factory.ImportableModulesChanged -= Factory_ImportableModulesChanged;
-            if (_analyzer != null) {
-                _analyzer.SearchPathsChanged -= Analyzer_SearchPathsChanged;
-            }
-        }
+        public void Dispose() { }
+        
         /// <summary>
         /// Interpreter configuration.
         /// </summary>
         public InterpreterConfiguration Configuration { get; }
 
-        public event EventHandler ModuleNamesChanged;
         public IPythonInterpreterFactory Factory => _factory;
         public ILogger Log => _factory.Log;
         public PythonLanguageVersion LanguageVersion => _factory.LanguageVersion;
@@ -64,7 +53,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Module resolution service.
         /// </summary>
-        public IModuleResolution ModuleResolution { get; }
+        public IModuleResolution ModuleResolution { get; private set; }
 
         /// <summary>
         /// Gets a well known built-in type such as int, list, dict, etc...
@@ -101,43 +90,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return res;
         }
 
-        public void Initialize(IPythonAnalyzer analyzer) {
-            if (_analyzer != null) {
-                return;
-            }
-
-            _analyzer = analyzer;
-            if (analyzer != null) {
-                var searchPaths = ModuleResolution.GetSearchPathsAsync(CancellationToken.None).WaitAndUnwrapExceptions();
-                _analyzer.SetSearchPaths(searchPaths);
-
-                analyzer.SearchPathsChanged += Analyzer_SearchPathsChanged;
-                var bm = ModuleResolution.BuiltinModule;
-                if (!string.IsNullOrEmpty(bm?.Name)) {
-                    _modules[bm.Name] = bm.InterpreterModule;
-                }
-            }
-        }
-
-        private void Factory_ImportableModulesChanged(object sender, EventArgs e) {
-            _modules.Clear();
-            if (_builtinModule != null) {
-                _modules[ModuleResolution.BuiltinModuleName] = _builtinModule;
-            }
-            ModuleCache.Clear();
-            ModuleNamesChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        private void Analyzer_SearchPathsChanged(object sender, EventArgs e) {
-            var moduleNames = ModuleResolution.CurrentPathResolver.GetInterpreterModuleNames().Append(BuiltinModuleName);
-            lock (_userSearchPathsLock) {
-                // Remove imported modules from search paths so we will import them again.
-                var modulesNamesToRemove = _modules.Keys.Except(moduleNames).ToList();
-                foreach (var moduleName in modulesNamesToRemove) {
-                    _modules.TryRemove(moduleName, out _);
-                }
-            }
-            ModuleNamesChanged?.Invoke(this, EventArgs.Empty);
-        }
+        public void NotifyImportableModulesChanged() => ModuleResolution = new AstModuleResolution(this, _factory);
     }
 }

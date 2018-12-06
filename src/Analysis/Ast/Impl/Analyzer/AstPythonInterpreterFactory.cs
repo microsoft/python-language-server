@@ -36,6 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             Log = log;
+            DatabasePath = CreationOptions.DatabasePath;
 
             UseDefaultDatabase = string.IsNullOrEmpty(options?.DatabasePath);
             if (UseDefaultDatabase) {
@@ -53,7 +54,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public PythonLanguageVersion LanguageVersion { get; }
 
         public ILogger Log { get; }
-        public string SearchPathCachePath => Path.Combine(CreationOptions.DatabasePath, "database.path");
+        public string TypeshedPath => CreationOptions.TypeshedPath;
+        public string SearchPathCachePath => Path.Combine(DatabasePath, "database.path");
         public string DatabasePath { get; }
         public bool UseDefaultDatabase { get; }
 

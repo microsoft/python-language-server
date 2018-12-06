@@ -40,6 +40,11 @@ namespace Microsoft.Python.Analysis {
         ILogger Log { get; }
 
         /// <summary>
+        /// Typeshed root folder.
+        /// </summary>
+        string TypeshedPath { get; }
+
+        /// <summary>
         /// Cache search path.
         /// </summary>
         string SearchPathCachePath { get; }

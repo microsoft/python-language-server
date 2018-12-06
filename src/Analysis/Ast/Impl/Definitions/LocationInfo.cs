@@ -19,7 +19,11 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis {
     public sealed class LocationInfo : IEquatable<LocationInfo> {
-        internal static readonly LocationInfo[] Empty = new LocationInfo[0];
+        public static readonly LocationInfo Empty = new LocationInfo();
+
+        private LocationInfo() {
+            FilePath = string.Empty;
+        }
 
         public LocationInfo(string path, Uri documentUri, int line, int column) :
              this(path, documentUri, line, column, null, null) {

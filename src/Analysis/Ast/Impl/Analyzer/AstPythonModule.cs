@@ -21,6 +21,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -41,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             base(moduleName) {
             _documentation = documentation;
             FilePath = filePath;
-            DocumentUri = ProjectEntry.MakeDocumentUri(FilePath);
+            DocumentUri = Document.MakeDocumentUri(FilePath);
             Locations = new[] { new LocationInfo(filePath, DocumentUri, 1, 1) };
             _interpreter = interpreter;
 

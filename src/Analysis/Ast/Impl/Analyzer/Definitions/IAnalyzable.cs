@@ -17,7 +17,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents document that can be analyzed asynchronously.
     /// </summary>
-    internal interface IAnalyzable {
+    public interface IAnalyzable {
         /// <summary>
         /// Expected version of the analysis when asynchronous operations complete.
         /// Typically every change to the document or documents that depend on it

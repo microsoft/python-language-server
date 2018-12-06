@@ -19,15 +19,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer {
         private readonly IDependencyResolver _dependencyResolver;
 
-        public PythonAnalyzer(IServiceContainer services) {
-            Interpreter = services.GetService<IPythonInterpreter>();
-            _dependencyResolver = services.GetService<IDependencyResolver>();
+        public PythonAnalyzer(IPythonInterpreter interpreter, IDependencyResolver dependencyResolver) {
+            Interpreter = interpreter;
+            _dependencyResolver = dependencyResolver;
         }
 
         public IPythonInterpreter Interpreter { get; }

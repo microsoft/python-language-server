@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
@@ -32,11 +31,6 @@ namespace Microsoft.Python.Analysis {
     /// <see cref="IPythonInterpreterFactory"/>.
     /// </summary>
     public interface IPythonInterpreter : IDisposable {
-        /// <summary>
-        /// Performs any interpreter-specific initialization.
-        /// </summary>
-        void Initialize(IPythonAnalyzer analyzer);
-
         /// <summary>
         /// Interpreter configuration.
         /// </summary>
@@ -68,12 +62,6 @@ namespace Microsoft.Python.Analysis {
         IPythonType GetBuiltinType(BuiltinTypeId id);
 
         /// <summary>
-        /// The list of built-in module names has changed (usually because a
-        /// background analysis of the standard library has completed).
-        /// </summary>
-        event EventHandler ModuleNamesChanged;
-
-        /// <summary>
         /// Module resolution service.
         /// </summary>
         IModuleResolution ModuleResolution { get; }
@@ -82,5 +70,12 @@ namespace Microsoft.Python.Analysis {
         /// Application logger.
         /// </summary>
         ILogger Log { get; }
+
+        /// <summary>
+        /// Tells analyzer that module set has changed. Client application that tracks changes
+        /// to the Python libraries (via watching file system or otherwise) should call this
+        /// method in order to tell analyzer that modules were added or removed.
+        /// </summary>
+        void NotifyImportableModulesChanged();
     }
 }

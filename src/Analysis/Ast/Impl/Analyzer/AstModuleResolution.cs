@@ -31,25 +31,24 @@ using Microsoft.Python.Parsing;
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AstModuleResolution: IModuleResolution {
         private static readonly IReadOnlyDictionary<string, string> _emptyModuleSet = new Dictionary<string, string>();
-        private readonly ConcurrentDictionary<string, IPythonModule> _modules = new ConcurrentDictionary<string, IPythonModule>();
         private readonly InterpreterConfiguration _configuration;
         private readonly IPythonInterpreterFactory _factory;
         private readonly IPythonInterpreter _interpreter;
         private readonly ILogger _log;
         private readonly bool _requireInitPy;
 
+        private ConcurrentDictionary<string, IPythonModule> _modules = new ConcurrentDictionary<string, IPythonModule>();
         private IReadOnlyDictionary<string, string> _searchPathPackages;
         private IReadOnlyList<string> _searchPaths;
         private AstBuiltinsPythonModule _builtinModule;
 
-        public AstModuleResolution(
-            IPythonInterpreter interpreter,
-            IPythonInterpreterFactory factory
-            ) {
+        public AstModuleResolution(IPythonInterpreter interpreter, IPythonInterpreterFactory factory) {
             _interpreter = interpreter;
+            _factory = factory;
             _configuration = factory.Configuration;
             _log = factory.Log;
             _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_configuration.Version);
+            
             ModuleCache = new AstModuleCache(factory);
             CurrentPathResolver = new PathResolverSnapshot(_configuration.Version.ToLanguageVersion());
         }
@@ -140,7 +139,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return packageDict;
         }
 
-        public async Task<TryImportModuleResult> TryImportModuleAsync(string name, IReadOnlyList<string> typeStubPaths, CancellationToken cancellationToken) {
+        public async Task<TryImportModuleResult> TryImportModuleAsync(string name, CancellationToken cancellationToken) {
             if (string.IsNullOrEmpty(name)) {
                 return TryImportModuleResult.ModuleNotFound;
             }
@@ -201,8 +200,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 module = ModuleCache.ImportFromCache(name, _interpreter);
             }
 
+            var typeStubPaths = GetTypeShedPaths(_factory.TypeshedPath).ToArray();
             // Also search for type stub packages if enabled and we are not a blacklisted module
-            if (module != null && typeStubPaths != null && module.Name != "typing") {
+            if (module != null && typeStubPaths.Length > 0 && module.Name != "typing") {
                 var tsModule = ImportFromTypeStubs(module.Name, typeStubPaths);
                 if (tsModule != null) {
                     module = AstPythonMultipleMembers.CombineAs<IPythonModule>(module, tsModule);
@@ -252,8 +252,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return _builtinModule;
             }
 
-            var typeStubPaths = _analyzer.Limits.UseTypeStubPackages ? GetTypeStubPaths() : null;
-
             for (var retries = 5; retries > 0; --retries) {
                 // The call should be cancelled by the cancellation token, but since we
                 // are blocking here we wait for slightly longer. Timeouts are handled
@@ -263,7 +261,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 // (And if we've got a debugger attached, don't time out at all.)
                 TryImportModuleResult result;
                 try {
-                    result = await TryImportModuleAsync(name, CurrentPathResolver, typeStubPaths, token);
+                    result = await TryImportModuleAsync(name, token);
                 } catch (OperationCanceledException) {
                     _log?.Log(TraceEventType.Error, $"Import timeout: {name}");
                     Debug.Fail("Import timeout");
@@ -361,9 +359,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return PythonModuleLoader.FromTypeStub(_interpreter, mp?.SourceFile, _configuration.Version.ToLanguageVersion(), mp?.FullName);
         }
 
-        public IEnumerable<string> GetTypeShedPaths(string path) {
-            var stdlib = Path.Combine(path, "stdlib");
-            var thirdParty = Path.Combine(path, "third_party");
+        public IEnumerable<string> GetTypeShedPaths(string typeshedRootPath) {
+            if(string.IsNullOrEmpty(typeshedRootPath)) {
+                yield break;
+            }
+
+            var stdlib = Path.Combine(typeshedRootPath, "stdlib");
+            var thirdParty = Path.Combine(typeshedRootPath, "third_party");
 
             var v = _configuration.Version;
             foreach (var subdir in new[] { v.ToString(), v.Major.ToString(), "2and3" }) {

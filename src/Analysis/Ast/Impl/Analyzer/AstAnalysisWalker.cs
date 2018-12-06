@@ -318,7 +318,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
                 var location = GetLoc(memberReference);
 
-                var member = new AstNestedPythonModuleMember(importName, nestedModule, location);
+                var member = new AstNestedPythonModuleMember(importName, nestedModule, location, _interpreter);
                 _scope.SetInScope(memberName, member);
             }
         }
