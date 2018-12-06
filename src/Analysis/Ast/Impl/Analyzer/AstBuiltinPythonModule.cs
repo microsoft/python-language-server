@@ -18,12 +18,11 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    class AstBuiltinPythonModule : AstScrapedPythonModule {
-        public AstBuiltinPythonModule(string name, IPythonInterpreter interpreter, ILogger log = null)
-            : base(name, MakeFakeFilePath(interpreter.InterpreterPath, name), interpreter, log) {
+    internal class AstBuiltinPythonModule : AstScrapedPythonModule {
+        public AstBuiltinPythonModule(string name, IPythonInterpreter interpreter)
+            : base(name, MakeFakeFilePath(interpreter.InterpreterPath, name), interpreter) {
         }
 
         private static string MakeFakeFilePath(string interpreterPath, string name) {

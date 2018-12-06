@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis {
     /// <summary>
@@ -34,10 +35,24 @@ namespace Microsoft.Python.Analysis {
         InterpreterConfiguration Configuration { get; }
 
         /// <summary>
-        /// Notifies the interpreter factory that the set of names that
-        /// can be imported may have changed.
+        /// Application logger.
         /// </summary>
-        void NotifyImportNamesChanged();
+        ILogger Log { get; }
+
+        /// <summary>
+        /// Cache search path.
+        /// </summary>
+        string SearchPathCachePath { get; }
+
+        /// <summary>
+        /// Module information database path.
+        /// </summary>
+        string DatabasePath { get; }
+
+        /// <summary>
+        /// Indicates that analysis is using default database.
+        /// </summary>
+        bool UseDefaultDatabase { get; }
 
         /// <summary>
         /// Creates an IPythonInterpreter instance.

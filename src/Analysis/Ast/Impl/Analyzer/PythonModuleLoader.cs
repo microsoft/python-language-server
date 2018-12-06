@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ErrorSink = sink
             });
             var ast = parser.ParseFile();
-            var pathResolver = interpreter is AstPythonInterpreter astPythonInterpreter ? astPythonInterpreter.CurrentPathResolver : new PathResolverSnapshot(langVersion);
+            var pathResolver = interpreter.ModuleResolution.CurrentPathResolver;
 
             var module = new AstPythonModule(
                 moduleFullName ?? ModulePath.FromFullPath(fileName, isPackage: IsPackageCheck).FullName,

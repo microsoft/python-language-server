@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -26,9 +27,9 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AstAnalysisWalker : PythonWalker {
         private readonly IPythonModule _module;
-        private readonly Dictionary<string, IMember> _members;
+        private readonly ConcurrentDictionary<string, IMember> _members;
+        private readonly ConcurrentDictionary<string, IMember> _typingScope = new ConcurrentDictionary<string, IMember>();
         private readonly ILogger _log;
-        private readonly Dictionary<string, IMember> _typingScope = new Dictionary<string, IMember>();
         private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
         private readonly NameLookupContext _scope;
         private readonly PythonAst _ast;
@@ -42,7 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IPythonModule module,
             string filePath,
             Uri documentUri,
-            Dictionary<string, IMember> members,
+            ConcurrentDictionary<string, IMember> members,
             bool includeLocationInfo,
             bool warnAboutUndefinedValues,
             bool suppressBuiltinLookup,
@@ -174,7 +175,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
 
                 if (importNames.Length == 1 && importNames[0] == "typing") {
-                    _scope.SetInScope(memberName, new AstTypingModule(_interpreter, _log), scope: _typingScope);
+                    _scope.SetInScope(memberName, new AstTypingModule(_interpreter), scope: _typingScope);
                 } else {
                     var imports = _pathResolver.GetImportsFromAbsoluteName(_scope.FilePath, importNames, node.ForceAbsolute);
                     switch (imports) {
@@ -248,7 +249,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void ImportMembersFromTyping(FromImportStatement node) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var module = new AstTypingModule(_interpreter, _log);
+            var module = new AstTypingModule(_interpreter);
 
             if (names.Count == 1 && names[0].Name == "*") {
                 foreach (var memberName in module.GetMemberNames()) {
@@ -490,8 +491,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private AstPythonClass CreateClass(ClassDefinition node) {
             node = node ?? throw new ArgumentNullException(nameof(node));
-            return new AstPythonClass(node, _module,
-                GetDoc(node.Body as SuiteStatement), GetLoc(node),
+            return new AstPythonClass(
+                node,
+                _module,
+                GetDoc(node.Body as SuiteStatement),
+                GetLoc(node),
+                _interpreter,
                 CreateBuiltinTypes ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
         }
 

@@ -14,14 +14,13 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -29,16 +28,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
     sealed class AstPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
         private readonly IPythonInterpreter _interpreter;
         private readonly List<string> _childModules = new List<string>();
-        private readonly Dictionary<string, IMember> _members = new Dictionary<string, IMember>();
+        private readonly ConcurrentDictionary<string, IMember> _members = new ConcurrentDictionary<string, IMember>();
         private bool _foundChildModules;
         private string _documentation = string.Empty;
 
-        internal AstPythonModule(): base(string.Empty) {
-             FilePath = string.Empty;
+        internal AstPythonModule() : base(string.Empty) {
+            FilePath = string.Empty;
             _foundChildModules = true;
         }
 
-        internal AstPythonModule(string moduleName, IPythonInterpreter interpreter, string documentation, string filePath, IEnumerable<string> parseErrors):
+        internal AstPythonModule(string moduleName, IPythonInterpreter interpreter, string documentation, string filePath, IEnumerable<string> parseErrors) :
             base(moduleName) {
             _documentation = documentation;
             FilePath = filePath;
@@ -52,7 +51,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         internal void Analyze(PythonAst ast, PathResolverSnapshot currentPathResolver) {
-            var walker = new AstAnalysisWalker(_interpreter, currentPathResolver, ast, this, FilePath, DocumentUri, _members,
+            var walker = new AstAnalysisWalker(
+                _interpreter,
+                currentPathResolver,
+                ast,
+                this,
+                FilePath,
+                DocumentUri,
+                _members,
                 includeLocationInfo: true,
                 warnAboutUndefinedValues: true,
                 suppressBuiltinLookup: false

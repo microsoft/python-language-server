@@ -34,16 +34,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         IEnumerable<string> TypeStubDirectories { get; }
 
         /// <summary>
-        /// Path resolver providing file resolution in module imports.
-        /// </summary>
-        PathResolverSnapshot CurrentPathResolver { get; }
-
-        /// <summary>
-        /// Builtins module.
-        /// </summary>
-        IBuiltinPythonModule BuiltinModule { get; }
-
-        /// <summary>
         /// Analyze single document.
         /// </summary>
         Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken);

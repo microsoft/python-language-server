@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             Module.NotifyImported();
-            m = Module.GetMember(Name) ?? interp.ImportModule(Module.Name + "." + Name);
+            m = Module.GetMember(Name) ?? interp.ModuleResolution.ImportModule(Module.Name + "." + Name);
             if (m != null) {
                 (m as IPythonModule)?.NotifyImported();
                 var current = Interlocked.CompareExchange(ref _realMember, m, sentinel);

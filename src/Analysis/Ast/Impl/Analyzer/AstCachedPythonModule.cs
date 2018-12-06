@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -17,18 +16,17 @@
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     class AstCachedPythonModule : AstScrapedPythonModule {
         private readonly string _cachePath;
 
-        public AstCachedPythonModule(string name, string cachePath, IPythonInterpreter interpreter, ILogger log = null)
-            : base(name, null, interpreter, log) {
+        public AstCachedPythonModule(string name, string cachePath, IPythonInterpreter interpreter)
+            : base(name, null, interpreter) {
             _cachePath = cachePath;
         }
 
-        protected override Stream LoadCachedCode(AstPythonInterpreter interpreter) {
+        protected override Stream LoadCachedCode() {
             var filePath = _cachePath;
             if(Directory.Exists(_cachePath)) {
                 filePath = Path.Combine(_cachePath, Name);
@@ -41,7 +39,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         protected override List<string> GetScrapeArguments(IPythonInterpreter factory) => null;
 
-        protected override void SaveCachedCode(AstPythonInterpreter interpreter, Stream code) {
+        protected override void SaveCachedCode(Stream code) {
             // Cannot save
         }
     }

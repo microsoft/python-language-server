@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -25,7 +26,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     sealed class NameLookupContext {
-        private readonly Stack<Dictionary<string, IMember>> _scopes = new Stack<Dictionary<string, IMember>>();
+        private readonly Stack<ConcurrentDictionary<string, IMember>> _scopes = new Stack<ConcurrentDictionary<string, IMember>>();
         private readonly AstAnalysisFunctionWalkerSet _functionWalkers;
         private readonly Lazy<IPythonModule> _builtinModule;
         private readonly ILogger _log;
@@ -88,7 +89,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             foreach (var scope in _scopes.Reverse()) {
                 if (copyScopeContents) {
-                    ctxt._scopes.Push(new Dictionary<string, IMember>(scope));
+                    ctxt._scopes.Push(new ConcurrentDictionary<string, IMember>(scope));
                 } else {
                     ctxt._scopes.Push(scope);
                 }
@@ -99,19 +100,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private IPythonModule ImportBuiltinModule() {
             var modname = BuiltinTypeId.Unknown.GetModuleName(Ast.LanguageVersion);
-            var mod = Interpreter.ImportModule(modname);
+            var mod = Interpreter.ModuleResolution.ImportModule(modname);
             Debug.Assert(mod != null, "Failed to import " + modname);
             mod?.NotifyImported();
             return mod;
         }
 
-        public Dictionary<string, IMember> PushScope(Dictionary<string, IMember> scope = null) {
-            scope = scope ?? new Dictionary<string, IMember>();
+        public ConcurrentDictionary<string, IMember> PushScope(ConcurrentDictionary<string, IMember> scope = null) {
+            scope = scope ?? new ConcurrentDictionary<string, IMember>();
             _scopes.Push(scope);
             return scope;
         }
 
-        public Dictionary<string, IMember> PopScope() => _scopes.Pop();
+        public ConcurrentDictionary<string, IMember> PopScope() => _scopes.Pop();
 
         public LocationInfo GetLoc(Node node) {
             if (!IncludeLocationInfo) {
@@ -548,7 +549,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return null;
         }
 
-        public IMember GetInScope(string name, Dictionary<string, IMember> scope = null) {
+        public IMember GetInScope(string name, ConcurrentDictionary<string, IMember> scope = null) {
             if (scope == null && _scopes.Count == 0) {
                 return null;
             }
@@ -560,14 +561,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             (value as IPythonType)?.TypeId == BuiltinTypeId.Unknown ||
             (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;
 
-        public void SetInScope(string name, IMember value, bool mergeWithExisting = true, Dictionary<string, IMember> scope = null) {
+        public void SetInScope(string name, IMember value, bool mergeWithExisting = true, ConcurrentDictionary<string, IMember> scope = null) {
             Debug.Assert(_scopes.Count > 0);
             if (value == null && _scopes.Count == 0) {
                 return;
             }
             var s = scope ?? _scopes.Peek();
             if (value == null) {
-                s.Remove(name);
+                s.TryRemove(name, out _);
                 return;
             }
             if (mergeWithExisting && s.TryGetValue(name, out var existing) && existing != null) {

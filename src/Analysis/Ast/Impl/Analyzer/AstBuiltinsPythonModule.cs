@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,62 +25,45 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AstBuiltinsPythonModule : AstScrapedPythonModule, IBuiltinPythonModule {
         // protected by lock(_members)
-        private readonly HashSet<string> _hiddenNames;
+        private readonly ConcurrentBag<string> _hiddenNames = new ConcurrentBag<string>();
 
         public AstBuiltinsPythonModule(IPythonInterpreter interpreter)
             : base(BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion), null, interpreter) {
-            _hiddenNames = new HashSet<string>();
         }
 
-        public override IMember GetMember(string name) {
-            lock (_members) {
-                if (_hiddenNames.Contains(name)) {
-                    return null;
-                }
-            }
-            return base.GetMember(name);
+        public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
+
+        public IMember GetAnyMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
+
+        public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
+
+        protected override Stream LoadCachedCode() {
+            var path = Interpreter.InterpreterPath ?? "python.exe";
+            return ModuleCache.ReadCachedModule(path);
         }
 
-        public IMember GetAnyMember(string name) {
-            lock (_members) {
-                _members.TryGetValue(name, out var m);
-                return m;
-            }
-        }
-
-        public override IEnumerable<string> GetMemberNames() {
-            lock (_members) {
-                return base.GetMemberNames().Except(_hiddenNames).ToArray();
+        protected override void SaveCachedCode(Stream code) {
+            if (Interpreter.InterpreterPath != null) {
+                ModuleCache.WriteCachedModule(Interpreter.InterpreterPath, code);
             }
         }
 
-        protected override Stream LoadCachedCode(AstPythonInterpreter interpreter) {
-            var path = interpreter.InterpreterPath ?? "python.exe";
-            return interpreter.ModuleCache.ReadCachedModule(path);
-        }
-
-        protected override void SaveCachedCode(AstPythonInterpreter interpreter, Stream code) {
-            if (interpreter.InterpreterPath != null) {
-                interpreter.ModuleCache.WriteCachedModule(interpreter.InterpreterPath, code);
-            }
-        }
-
-        protected override List<string> GetScrapeArguments(IPythonInterpreter interpreter) 
-            => !InstallPath.TryGetFile("scrape_module.py", out string sb) 
-                ? null 
+        protected override List<string> GetScrapeArguments(IPythonInterpreter interpreter)
+            => !InstallPath.TryGetFile("scrape_module.py", out string sb)
+                ? null
                 : new List<string> { "-B", "-E", sb };
 
-        protected override PythonWalker PrepareWalker(AstPythonInterpreter interpreter, PythonAst ast) {
+        protected override PythonWalker PrepareWalker(PythonAst ast) {
             string filePath = null;
 #if DEBUG
-            filePath = interpreter.ModuleCache.GetCacheFilePath(interpreter.InterpreterPath ?? "python.exe");
+            filePath = ModuleCache.GetCacheFilePath(Interpreter.InterpreterPath ?? "python.exe");
             const bool includeLocations = true;
 #else
             const bool includeLocations = false;
 #endif
 
             var walker = new AstAnalysisWalker(
-                interpreter, interpreter.CurrentPathResolver, ast, this, filePath, null, _members,
+                Interpreter, Interpreter.ModuleResolution.CurrentPathResolver, ast, this, filePath, null, Members,
                 includeLocations,
                 warnAboutUndefinedValues: true,
                 suppressBuiltinLookup: true
@@ -95,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IPythonType noneType = null;
 
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
-                if (_members.TryGetValue("__{0}__".FormatInvariant(typeId), out var m) && m is AstPythonType biType && biType.IsBuiltin) {
+                if (Members.TryGetValue("__{0}__".FormatInvariant(typeId), out var m) && m is AstPythonType biType && biType.IsBuiltin) {
                     if (typeId != BuiltinTypeId.Str && typeId != BuiltinTypeId.StrIterator) {
                         biType.TrySetTypeId(typeId);
                     }
@@ -118,11 +102,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _hiddenNames.Add("__builtin_module_names__");
 
             if (boolType != null) {
-                _members["True"] = _members["False"] = new AstPythonConstant(boolType);
+                Members["True"] = Members["False"] = new AstPythonConstant(boolType);
             }
 
             if (noneType != null) {
-                _members["None"] = new AstPythonConstant(noneType);
+                Members["None"] = new AstPythonConstant(noneType);
             }
 
             base.PostWalk(walker);

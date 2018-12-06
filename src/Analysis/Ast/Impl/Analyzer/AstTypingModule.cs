@@ -20,8 +20,8 @@ using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AstTypingModule : AstCachedPythonModule {
-        public AstTypingModule(IPythonInterpreter interpreter, ILogger log = null)
-            : base("typing", FindTypingStub(), interpreter, log) { }
+        public AstTypingModule(IPythonInterpreter interpreter)
+            : base("typing", FindTypingStub(), interpreter) { }
 
         private static string FindTypingStub() {
             if (InstallPath.TryGetFile("typing-stub.pyi", out var fullPath)) {

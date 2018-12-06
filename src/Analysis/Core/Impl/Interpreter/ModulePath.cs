@@ -53,11 +53,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <summary>
         /// The last portion of <see cref="FullName"/>.
         /// </summary>
-        public string Name {
-            get {
-                return FullName.Substring(FullName.LastIndexOf('.') + 1);
-            }
-        }
+        public string Name => FullName.Substring(FullName.LastIndexOf('.') + 1);
 
         /// <summary>
         /// True if the module is named '__main__' or '__init__'.

@@ -40,15 +40,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return module;
             }
 
-            module = _interpreter.ImportModule(Name);
+            module = _interpreter.ModuleResolution.ImportModule(Name);
             if (module != null) {
                 Debug.Assert(!(module is AstNestedPythonModule), "ImportModule should not return nested module");
             }
 
-            if (module == null) {
-                module = new SentinelModule(Name, false);
-            }
-
+            module = module ?? new SentinelModule(Name, false);
             return Interlocked.CompareExchange(ref _module, module, null) ?? module;
         }
 

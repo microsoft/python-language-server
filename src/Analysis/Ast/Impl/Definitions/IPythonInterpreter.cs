@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -16,9 +15,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis {
@@ -37,6 +36,11 @@ namespace Microsoft.Python.Analysis {
         /// Performs any interpreter-specific initialization.
         /// </summary>
         void Initialize(IPythonAnalyzer analyzer);
+
+        /// <summary>
+        /// Interpreter configuration.
+        /// </summary>
+        InterpreterConfiguration Configuration { get; }
 
         /// <summary>
         /// Python language version.
@@ -64,27 +68,19 @@ namespace Microsoft.Python.Analysis {
         IPythonType GetBuiltinType(BuiltinTypeId id);
 
         /// <summary>
-        /// Returns a list of module names that can be imported by this
-        /// interpreter.
-        /// </summary>
-        IEnumerable<string> GetModuleNames();
-
-        /// <summary>
         /// The list of built-in module names has changed (usually because a
         /// background analysis of the standard library has completed).
         /// </summary>
         event EventHandler ModuleNamesChanged;
 
         /// <summary>
-        /// Returns an IPythonModule for a given module name. Returns null if
-        /// the module does not exist. The import is performed asynchronously.
+        /// Module resolution service.
         /// </summary>
-        Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token);
-        
+        IModuleResolution ModuleResolution { get; }
+
         /// <summary>
-        /// Returns an IPythonModule for a given module name. Returns null if
-        /// the module does not exist. The import is performed synchronously.
+        /// Application logger.
         /// </summary>
-        IPythonModule ImportModule(string name);
+        ILogger Log { get; }
     }
 }

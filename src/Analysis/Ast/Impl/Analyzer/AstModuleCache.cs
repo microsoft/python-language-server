@@ -19,41 +19,22 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class AstModuleCache {
-        private readonly InterpreterConfiguration _configuration;
+    internal sealed class AstModuleCache: IModuleCache {
+        private readonly IPythonInterpreterFactory _factory;
         private readonly bool _skipCache;
-        private readonly bool _useDefaultDatabase;
-        private readonly ILogger _log;
         private bool _loggedBadDbPath;
 
-        public AstModuleCache(InterpreterConfiguration configuration, string databasePath, bool useDefaultDatabase, bool useExistingCache, ILogger log) {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-
-            DatabasePath = databasePath;
-            _useDefaultDatabase = useDefaultDatabase;
-            _log = log;
-
-            if (_useDefaultDatabase) {
-                var dbPath = Path.Combine("DefaultDB", $"v{_configuration.Version.Major}", "python.pyi");
-                if (InstallPath.TryGetFile(dbPath, out string biPath)) {
-                    DatabasePath = Path.GetDirectoryName(biPath);
-                } else {
-                    _skipCache = true;
-                }
-            } else {
-                SearchPathCachePath = Path.Combine(DatabasePath, "database.path");
-            }
-            _skipCache = !useExistingCache;
+        public AstModuleCache(IPythonInterpreterFactory factory) {
+            _factory = factory;
+            _skipCache = string.IsNullOrEmpty(_factory.DatabasePath);
         }
 
-        public string DatabasePath { get; }
+        public string DatabasePath => _factory.DatabasePath;
         public string SearchPathCachePath { get; }
 
         public IPythonModule ImportFromCache(string name, IPythonInterpreter interpreter) {
@@ -72,7 +53,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            return PythonModuleLoader.FromTypeStub(interpreter, cache, _configuration.Version.ToLanguageVersion(), name);
+            return PythonModuleLoader.FromTypeStub(interpreter, cache, _factory.Configuration.Version.ToLanguageVersion(), name);
         }
 
         public void Clear() {
@@ -85,14 +66,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (!PathEqualityComparer.IsValidPath(DatabasePath)) {
                 if (!_loggedBadDbPath) {
                     _loggedBadDbPath = true;
-                    _log?.Log(TraceEventType.Warning, $"Invalid database path: {DatabasePath}");
+                    _factory.Log?.Log(TraceEventType.Warning, $"Invalid database path: {DatabasePath}");
                 }
                 return null;
             }
 
             var name = PathUtils.GetFileName(filePath);
             if (!PathEqualityComparer.IsValidPath(name)) {
-                _log?.Log(TraceEventType.Warning, $"Invalid cache name: {name}");
+                _factory.Log?.Log(TraceEventType.Warning, $"Invalid cache name: {name}");
                 return null;
             }
             try {
@@ -134,7 +115,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var file = PathUtils.OpenWithRetry(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-            if (file == null || _useDefaultDatabase) {
+            if (file == null || _factory.UseDefaultDatabase) {
                 return file;
             }
 
@@ -158,14 +139,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             file.Dispose();
             file = null;
 
-            _log?.Log(TraceEventType.Verbose, "Invalidate cached module", path);
+            _factory.Log?.Log(TraceEventType.Verbose, "Invalidate cached module", path);
 
             PathUtils.DeleteFile(path);
             return null;
         }
 
-        internal void WriteCachedModule(string filePath, Stream code) {
-            if (_useDefaultDatabase) {
+        public void WriteCachedModule(string filePath, Stream code) {
+            if (_factory.UseDefaultDatabase) {
                 return;
             }
 
@@ -174,21 +155,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
-            _log?.Log(TraceEventType.Verbose, "Write cached module: ", cache);
+            _factory.Log?.Log(TraceEventType.Verbose, "Write cached module: ", cache);
 
             try {
                 using (var stream = PathUtils.OpenWithRetry(cache, FileMode.Create, FileAccess.Write, FileShare.Read)) {
-                    if (stream == null) {
-                        return;
+                    if (stream != null) {
+                        code.CopyTo(stream);
                     }
-
-                    code.CopyTo(stream);
                 }
             } catch (Exception ex) when (!ex.IsCriticalException()) {
-                try {
-                    File.Delete(cache);
-                } catch (Exception) {
-                }
+                PathUtils.DeleteFile(cache);
             }
         }
     }

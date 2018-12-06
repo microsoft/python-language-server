@@ -14,25 +14,17 @@
 // permissions and limitations under the License.
 
 using System;
+using System.IO;
 using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public class AstPythonInterpreterFactory : IPythonInterpreterFactory {
-        private readonly bool _useDefaultDatabase;
-        private readonly ILogger _log;
-
         public AstPythonInterpreterFactory(
             InterpreterConfiguration config,
             InterpreterFactoryCreationOptions options,
-            ILogger log
-            ) : this(config, options, string.IsNullOrEmpty(options?.DatabasePath), log) { }
-
-        private AstPythonInterpreterFactory(
-            InterpreterConfiguration config,
-            InterpreterFactoryCreationOptions options,
-            bool useDefaultDatabase,
             ILogger log
         ) {
             Configuration = config ?? throw new ArgumentNullException(nameof(config));
@@ -43,8 +35,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 throw new ArgumentException(ex.Message, ex);
             }
 
-            _log = log;
-            _useDefaultDatabase = useDefaultDatabase;
+            Log = log;
+
+            UseDefaultDatabase = string.IsNullOrEmpty(options?.DatabasePath);
+            if (UseDefaultDatabase) {
+                var dbPath = Path.Combine("DefaultDB", $"v{Configuration.Version.Major}", "python.pyi");
+                if (InstallPath.TryGetFile(dbPath, out var biPath)) {
+                    DatabasePath = Path.GetDirectoryName(biPath);
+                }
+            }
         }
 
         public InterpreterConfiguration Configuration { get; }
@@ -53,10 +52,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public PythonLanguageVersion LanguageVersion { get; }
 
-        public event EventHandler ImportableModulesChanged;
+        public ILogger Log { get; }
+        public string SearchPathCachePath => Path.Combine(CreationOptions.DatabasePath, "database.path");
+        public string DatabasePath { get; }
+        public bool UseDefaultDatabase { get; }
 
-        public void NotifyImportNamesChanged() => ImportableModulesChanged?.Invoke(this, EventArgs.Empty);
-
-        public virtual IPythonInterpreter CreateInterpreter() => new AstPythonInterpreter(this, _useDefaultDatabase, _log);
+        public virtual IPythonInterpreter CreateInterpreter() => new AstPythonInterpreter(this);
     }
 }
