@@ -19,9 +19,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using Microsoft.PythonTools.Analysis.DependencyResolution;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis.Values;
 

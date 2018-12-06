@@ -17,8 +17,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Core.Text;
-using Microsoft.PythonTools;
-using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Documentation;
 
 namespace Microsoft.Python.LanguageServer {

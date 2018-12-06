@@ -24,12 +24,12 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis.Analyzer;
-using Microsoft.PythonTools.Analysis.DependencyResolution;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 

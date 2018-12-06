@@ -16,7 +16,7 @@
 
 using System;
 using System.IO;
-using Microsoft.Python.Core.Interpreter;
+using Microsoft.Python.Analysis.Core.Interpreter;
 
 namespace Microsoft.PythonTools.Interpreter {
     public static class PythonInterpreterFactoryExtensions {

@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -25,43 +24,32 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         /// The name of the parameter.
         /// </summary>
-        string Name {
-            get;
-        }
+        string Name { get; }
 
         /// <summary>
         /// The types of the parameter.
         /// </summary>
-        IList<IPythonType> ParameterTypes {
-            get;
-        }
+        IReadOnlyList<IPythonType> ParameterTypes { get; }
 
         /// <summary>
         /// Documentation for the parameter.
         /// </summary>
-        string Documentation {
-            get;
-        }
+        string Documentation { get; }
 
         /// <summary>
         /// True if the parameter is a *args parameter.
         /// </summary>
-        bool IsParamArray {
-            get;
-        }
+        bool IsParamArray { get; }
 
         /// <summary>
         /// True if the parameter is a **args parameter.
         /// </summary>
-        bool IsKeywordDict {
-            get;
-        }
+        bool IsKeywordDict { get; }
 
         /// <summary>
-        /// Default value.  Returns String.Empty for optional parameters, or a string representation of the default value
+        /// Default value. Returns empty string  for optional parameters,
+        /// or a string representation of the default value.
         /// </summary>
-        string DefaultValue {
-            get;
-        }
+        string DefaultValue { get; }
     }
 }

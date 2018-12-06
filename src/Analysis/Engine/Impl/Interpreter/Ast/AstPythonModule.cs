@@ -20,11 +20,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.DependencyResolution;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     sealed class AstPythonModule : PythonModuleType, IPythonModule, IProjectEntry, ILocatedMember {

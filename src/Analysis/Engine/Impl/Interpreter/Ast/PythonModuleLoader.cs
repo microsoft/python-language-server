@@ -16,12 +16,11 @@
 
 using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
-using Microsoft.PythonTools.Analysis.DependencyResolution;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     public static class PythonModuleLoader {

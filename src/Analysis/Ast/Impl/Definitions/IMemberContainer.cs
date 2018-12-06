@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis {
     /// Represents an object which can contain other members.
     /// </summary>
     public interface IMemberContainer {
-        IMember GetMember(IModuleAnalysisContext context, string name);
-        IEnumerable<string> GetMemberNames(IModuleAnalysisContext moduleContext);
+        IMember GetMember(string name);
+        IEnumerable<string> GetMemberNames();
     }
 }

@@ -44,6 +44,16 @@ namespace Microsoft.Python.Analysis {
         PythonLanguageVersion LanguageVersion { get; }
 
         /// <summary>
+        /// Path to the interpreter executable.
+        /// </summary>
+        string InterpreterPath { get; }
+
+        /// <summary>
+        /// Path to the interpreter lib folder.
+        /// </summary>
+        string LibraryPath { get; }
+
+        /// <summary>
         /// Gets a well known built-in type such as int, list, dict, etc...
         /// </summary>
         /// <param name="id">The built-in type to get</param>
@@ -70,5 +80,11 @@ namespace Microsoft.Python.Analysis {
         /// the module does not exist. The import is performed asynchronously.
         /// </summary>
         Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token);
+        
+        /// <summary>
+        /// Returns an IPythonModule for a given module name. Returns null if
+        /// the module does not exist. The import is performed synchronously.
+        /// </summary>
+        IPythonModule ImportModule(string name);
     }
 }

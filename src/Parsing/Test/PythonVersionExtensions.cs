@@ -15,7 +15,7 @@
 // permissions and limitations under the License.
 
 using System.IO;
-using Microsoft.Python.Core.Interpreter;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.Python.Parsing.Tests {

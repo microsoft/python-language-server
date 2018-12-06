@@ -36,6 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Parsing\Impl\Microsoft.Python.Parsing.csproj" />
+    <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="Resources.resx">

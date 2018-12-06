@@ -15,7 +15,6 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Values;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {

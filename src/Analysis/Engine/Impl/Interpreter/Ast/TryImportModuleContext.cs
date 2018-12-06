@@ -19,7 +19,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Core.Interpreter;
+using Microsoft.Python.Analysis.Core.Interpreter;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     public sealed class TryImportModuleContext {

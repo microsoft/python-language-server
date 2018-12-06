@@ -18,7 +18,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Microsoft.Python.Core.Interpreter;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;

@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -19,7 +18,7 @@ using System.Collections.Generic;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis {
-    internal class LocationInfo: IEquatable<LocationInfo> {
+    public sealed class LocationInfo : IEquatable<LocationInfo> {
         internal static readonly LocationInfo[] Empty = new LocationInfo[0];
 
         public LocationInfo(string path, Uri documentUri, int line, int column) :
@@ -60,15 +59,17 @@ namespace Microsoft.Python.Analysis {
             if (other == null) {
                 return false;
             }
+
             // currently we filter only to line & file - so we'll only show 1 ref per each line
             // This works nicely for get and call which can both add refs and when they're broken
             // apart you still see both refs, but when they're together you only see 1.
-            return StartLine == other.StartLine && FilePath == other.FilePath;
+            return StartLine == other.StartLine &&
+                FilePath == other.FilePath;
         }
 
         /// <summary>
         /// Provides an IEqualityComparer that compares line, column and project entries.  By
-        /// default locations are equatable based upon only line/project entry.
+        /// default locations are equaitable based upon only line/project entry.
         /// </summary>
         public static IEqualityComparer<LocationInfo> FullComparer { get; } = new FullLocationComparer();
 
@@ -77,9 +78,12 @@ namespace Microsoft.Python.Analysis {
                 if (x == null || y == null) {
                     return x == null && y == null;
                 }
-                return x.StartLine == y.StartLine && x.StartColumn == y.StartColumn &&
+
+                return x.StartLine == y.StartLine &&
+                    x.StartColumn == y.StartColumn &&
                     x.FilePath == y.FilePath &&
-                    x.EndLine == y.EndLine && x.EndColumn == y.EndColumn;
+                    x.EndLine == y.EndLine &&
+                    x.EndColumn == y.EndColumn;
             }
 
             public int GetHashCode(LocationInfo obj)

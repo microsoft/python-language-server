@@ -16,7 +16,6 @@
 
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.Python.LanguageServer {
     public interface IDocumentReader {

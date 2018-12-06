@@ -15,6 +15,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
@@ -33,6 +34,16 @@ namespace Microsoft.Python.LanguageServer.Services {
             => LogMessageAsync(message, eventType).DoNotWait();
         public void Log(TraceEventType eventType, IFormattable message)
             => Log(eventType, message.ToString());
+
+        public void Log(TraceEventType eventType, params object[] parameters) {
+            var sb = new StringBuilder();
+            for(var  i = 0; i < parameters.Length; i++) {
+                sb.Append('{');
+                sb.Append(i.ToString());
+                sb.Append("} ");
+                Log(eventType, sb.ToString().FormatUI(parameters));
+            }
+        }
 
         public Task LogMessageAsync(string message, TraceEventType eventType) {
             if (eventType > LogLevel && eventType != TraceEventType.Information) {

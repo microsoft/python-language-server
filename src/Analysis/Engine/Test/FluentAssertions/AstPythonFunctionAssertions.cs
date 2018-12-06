@@ -19,7 +19,6 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
-using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {

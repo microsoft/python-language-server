@@ -16,7 +16,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.Python.Parsing.Ast;
 

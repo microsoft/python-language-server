@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -98,13 +97,9 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <summary>
         /// Gets the variable reference for the specific assignment to the variable for this function definition.
         /// </summary>
-        public PythonReference GetVariableReference(PythonAst ast) {
-            return GetVariableReference(this, ast);
-        }
+        public PythonReference GetVariableReference(PythonAst ast) => GetVariableReference(this, ast);
 
-        internal override bool ExposesLocalVariable(PythonVariable variable) {
-            return NeedsLocalsDictionary;
-        }
+        internal override bool ExposesLocalVariable(PythonVariable variable) => NeedsLocalsDictionary;
 
         internal override bool TryBindOuter(ScopeStatement from, string name, bool allowGlobals, out PythonVariable variable) {
             // Functions expose their locals to direct access
@@ -115,7 +110,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (variable.Kind == VariableKind.Local || variable.Kind == VariableKind.Parameter) {
                     from.AddFreeVariable(variable, true);
 
-                    for (ScopeStatement scope = from.Parent; scope != this; scope = scope.Parent) {
+                    for (var scope = from.Parent; scope != this; scope = scope.Parent) {
                         scope.AddFreeVariable(variable, false);
                     }
 
@@ -129,10 +124,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override PythonVariable BindReference(PythonNameBinder binder, string name) {
-            PythonVariable variable;
-
             // First try variables local to this scope
-            if (TryGetVariable(name, out variable) && variable.Kind != VariableKind.Nonlocal) {
+            if (TryGetVariable(name, out var variable) && variable.Kind != VariableKind.Nonlocal) {
                 if (variable.Kind == VariableKind.Global) {
                     AddReferencedGlobal(name);
                 }
@@ -140,7 +133,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             // Try to bind in outer scopes
-            for (ScopeStatement parent = Parent; parent != null; parent = parent.Parent) {
+            for (var parent = Parent; parent != null; parent = parent.Parent) {
                 if (parent.TryBindOuter(this, name, true, out variable)) {
                     return variable;
                 }

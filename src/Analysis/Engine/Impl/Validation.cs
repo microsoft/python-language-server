@@ -16,7 +16,6 @@
 
 using System;
 using System.Diagnostics;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Analysis {
 #if FULL_VALIDATION || DEBUG

@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -17,7 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.Python.Core.Interpreter;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

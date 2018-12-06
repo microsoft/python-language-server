@@ -16,7 +16,6 @@
 
 using System.IO;
 using System.Text;
-using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.Python.Parsing.Tests {

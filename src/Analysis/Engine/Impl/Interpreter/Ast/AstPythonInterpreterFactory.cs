@@ -18,8 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Interpreter;
 using Microsoft.Python.Parsing;
 using Microsoft.PythonTools.Analysis;
 

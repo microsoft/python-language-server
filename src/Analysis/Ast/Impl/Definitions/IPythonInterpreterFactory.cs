@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -14,7 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Core.Interpreter;
+using Microsoft.Python.Analysis.Core.Interpreter;
 
 namespace Microsoft.Python.Analysis {
     /// <summary>
@@ -32,26 +31,17 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         /// Configuration settings for the interpreter.
         /// </summary>
-        InterpreterConfiguration Configuration {
-            get;
-        }
-
-        /// <summary>
-        /// Creates an IPythonInterpreter instance.
-        /// </summary>
-        IPythonInterpreter CreateInterpreter();
+        InterpreterConfiguration Configuration { get; }
 
         /// <summary>
         /// Notifies the interpreter factory that the set of names that
         /// can be imported may have changed.
         /// </summary>
         void NotifyImportNamesChanged();
-    }
 
-    public interface IPythonInterpreterFactory2: IPythonInterpreterFactory {
         /// <summary>
         /// Creates an IPythonInterpreter instance.
         /// </summary>
-        IPythonInterpreter CreateInterpreter(string workspaceRoot);
+        IPythonInterpreter CreateInterpreter();
     }
 }

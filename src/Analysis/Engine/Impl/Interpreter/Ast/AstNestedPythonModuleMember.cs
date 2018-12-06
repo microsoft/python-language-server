@@ -15,7 +15,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Linq;
 using System.Threading;
 using Microsoft.PythonTools.Analysis;
 

@@ -14,12 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;

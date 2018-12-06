@@ -15,6 +15,8 @@
 
 using System;
 using System.Diagnostics;
+using System.Text;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
 using TestUtilities;
 
@@ -38,6 +40,16 @@ namespace AnalysisTests {
                 case TraceEventType.Verbose:
                     Trace.TraceInformation($"LOG: {m}");
                     break;
+            }
+        }
+
+        public void Log(TraceEventType eventType, params object[] parameters) {
+            var sb = new StringBuilder();
+            for (var i = 0; i < parameters.Length; i++) {
+                sb.Append('{');
+                sb.Append(i.ToString());
+                sb.Append("} ");
+                Log(eventType, sb.ToString().FormatUI(parameters));
             }
         }
     }

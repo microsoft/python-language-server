@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {

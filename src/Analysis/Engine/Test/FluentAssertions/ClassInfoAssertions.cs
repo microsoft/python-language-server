@@ -19,7 +19,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.Values;
 using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities;
 

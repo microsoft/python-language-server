@@ -18,15 +18,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Interpreter;
-using Microsoft.Python.Parsing;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.DependencyResolution;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     internal class AstPythonInterpreter : IPythonInterpreter2, IModuleContext {

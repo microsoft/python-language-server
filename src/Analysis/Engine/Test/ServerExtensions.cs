@@ -21,7 +21,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AnalysisTests;
-using Microsoft.Python.Core.Interpreter;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer;

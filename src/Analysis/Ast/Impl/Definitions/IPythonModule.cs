@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -23,6 +22,6 @@ namespace Microsoft.Python.Analysis {
     public interface IPythonModule : IPythonType {
         IEnumerable<string> GetChildrenModuleNames();
 
-        void Imported(IModuleAnalysisContext context);
+        void NotifyImported();
     }
 }

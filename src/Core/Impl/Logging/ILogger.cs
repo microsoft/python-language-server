@@ -26,5 +26,6 @@ namespace Microsoft.Python.Core.Logging {
 
         void Log(TraceEventType eventType, IFormattable message);
         void Log(TraceEventType eventType, string message);
+        void Log(TraceEventType eventType, params object[] p);
     }
 }

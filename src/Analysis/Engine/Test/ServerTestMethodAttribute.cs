@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,7 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
-using Microsoft.Python.Core.Interpreter;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;

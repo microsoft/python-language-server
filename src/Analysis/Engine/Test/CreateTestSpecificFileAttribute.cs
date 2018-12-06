@@ -15,7 +15,6 @@
 // permissions and limitations under the License.
 
 using System;
-using Microsoft.Python.Parsing.Ast;
 
 namespace AnalysisTests {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]

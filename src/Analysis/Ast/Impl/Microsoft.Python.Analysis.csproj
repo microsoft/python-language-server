@@ -37,6 +37,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Core\Impl\Microsoft.Python.Core.csproj" />
     <ProjectReference Include="..\..\..\Parsing\Impl\Microsoft.Python.Parsing.csproj" />
+    <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Resources.Designer.cs">

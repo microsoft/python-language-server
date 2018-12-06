@@ -37,6 +37,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Analysis\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
     <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Core.csproj" />
     <ProjectReference Include="..\..\UnitTests\Core\Impl\UnitTests.Core.csproj" />
   </ItemGroup>
