@@ -149,8 +149,19 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                         refs = createIn.CreateVariable(node, _unit, name, addRef);
                         res = refs.Types;
                     } else {
-                        // ... warn the user
-                        warn = true;
+                        switch (name) {
+                            // "atom" in Python grammar.
+                            case "True":
+                            case "False":
+                            case "None":
+                            case "...":
+                                Debug.Fail($"Known good name '{name}' not found in scope");
+                                break;
+                            default:
+                                // ... warn the user
+                                warn = true;
+                                break;
+                        }
                     }
                 }
             }
