@@ -74,7 +74,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _server.OnApplyWorkspaceEdit += OnApplyWorkspaceEdit;
             _server.OnRegisterCapability += OnRegisterCapability;
             _server.OnUnregisterCapability += OnUnregisterCapability;
-            _server.AnalysisQueue.UnhandledException += OnAnalyzerUnhandledException;
+            _server.AnalysisQueue.UnhandledException += OnAnalysisQueueUnhandledException;
 
             _disposables
                 .Add(() => _server.OnLogMessage -= OnLogMessage)
@@ -83,7 +83,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(() => _server.OnApplyWorkspaceEdit -= OnApplyWorkspaceEdit)
                 .Add(() => _server.OnRegisterCapability -= OnRegisterCapability)
                 .Add(() => _server.OnUnregisterCapability -= OnUnregisterCapability)
-                .Add(() => _server.AnalysisQueue.UnhandledException -= OnAnalyzerUnhandledException)
+                .Add(() => _server.AnalysisQueue.UnhandledException -= OnAnalysisQueueUnhandledException)
                 .Add(() => _shutdownCts.Cancel())
                 .Add(_prioritizer)
                 .Add(() => _pathsWatcher?.Dispose())
@@ -458,13 +458,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _searchPaths = _initParams.initializationOptions.searchPaths;
         }
 
-        private void OnAnalyzerUnhandledException(object sender, UnhandledExceptionEventArgs e) {
+        private void OnAnalysisQueueUnhandledException(object sender, UnhandledExceptionEventArgs e) {
             if (!(e.ExceptionObject is Exception ex)) {
                 Debug.Fail($"ExceptionObject was {e.ExceptionObject.GetType()}, not Exception");
                 return;
             }
 
-            var te = Telemetry.CreateEventWithException("analyzer.unhandledException", ex);
+            var te = Telemetry.CreateEventWithException("analysis_queue.unhandled_exception", ex);
             _telemetry.SendTelemetry(te).DoNotWait();
         }
 
