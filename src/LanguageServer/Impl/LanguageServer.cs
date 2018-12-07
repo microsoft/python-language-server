@@ -45,6 +45,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private IServiceContainer _services;
         private IUIService _ui;
+        private ITelemetryService2 _telemetry;
 
         private JsonRpc _rpc;
         private JsonSerializer _jsonSerializer;
@@ -60,10 +61,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _ui = services.GetService<IUIService>();
             _rpc = rpc;
             _jsonSerializer = services.GetService<JsonSerializer>();
+            _telemetry = services.GetService<ITelemetryService2>();
 
             var progress = services.GetService<IProgressService>();
 
-            var rpcTraceListener = new TelemetryRpcTraceListener(services.GetService<ITelemetryService2>());
+            var rpcTraceListener = new TelemetryRpcTraceListener(_telemetry);
             _rpc.TraceSource.Listeners.Add(rpcTraceListener);
 
             _server.OnLogMessage += OnLogMessage;
@@ -72,6 +74,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _server.OnApplyWorkspaceEdit += OnApplyWorkspaceEdit;
             _server.OnRegisterCapability += OnRegisterCapability;
             _server.OnUnregisterCapability += OnUnregisterCapability;
+            _server.AnalysisQueue.UnhandledException += OnAnalysisQueueUnhandledException;
 
             _disposables
                 .Add(() => _server.OnLogMessage -= OnLogMessage)
@@ -80,6 +83,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(() => _server.OnApplyWorkspaceEdit -= OnApplyWorkspaceEdit)
                 .Add(() => _server.OnRegisterCapability -= OnRegisterCapability)
                 .Add(() => _server.OnUnregisterCapability -= OnUnregisterCapability)
+                .Add(() => _server.AnalysisQueue.UnhandledException -= OnAnalysisQueueUnhandledException)
                 .Add(() => _shutdownCts.Cancel())
                 .Add(_prioritizer)
                 .Add(() => _pathsWatcher?.Dispose())
@@ -452,6 +456,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _watchSearchPaths = watchSearchPaths;
             _searchPaths = _initParams.initializationOptions.searchPaths;
+        }
+
+        private void OnAnalysisQueueUnhandledException(object sender, UnhandledExceptionEventArgs e) {
+            if (!(e.ExceptionObject is Exception ex)) {
+                Debug.Fail($"ExceptionObject was {e.ExceptionObject.GetType()}, not Exception");
+                return;
+            }
+
+            var te = Telemetry.CreateEventWithException("analysis_queue.unhandled_exception", ex);
+            _telemetry.SendTelemetry(te).DoNotWait();
         }
 
         private class Prioritizer : IDisposable {
