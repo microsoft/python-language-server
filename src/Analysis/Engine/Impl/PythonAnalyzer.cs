@@ -129,8 +129,8 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private void ReloadModulePaths(in IEnumerable<string> rootPaths) {
-            foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => ModulePath.GetModulesInPath(p))) {
-                _pathResolver.TryAddModulePath(modulePath.SourceFile, out _);
+            foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(p))) {
+                _pathResolver.TryAddModulePath(modulePath, out _);
             }
         }
 

@@ -164,6 +164,14 @@ namespace Microsoft.PythonTools.Analysis {
             }, GetCancellationToken());
         }
 
+        public static async Task<IModuleAnalysis> OpenDocumentAndGetAnalysisAsync(this Server server, string relativePath, string content, int failAfter = 30000, string languageId = null) {
+            var cancellationToken = GetCancellationToken(failAfter);
+            var uri = TestData.GetTestSpecificUri(relativePath);
+            await server.SendDidOpenTextDocument(uri, content, languageId);
+            cancellationToken.ThrowIfCancellationRequested();
+            return await server.GetAnalysisAsync(uri, cancellationToken);
+        }
+
         public static async Task<IModuleAnalysis> OpenDefaultDocumentAndGetAnalysisAsync(this Server server, string content, int failAfter = 30000, string languageId = null) {
             var cancellationToken = GetCancellationToken(failAfter);
             await server.SendDidOpenTextDocument(TestData.GetDefaultModuleUri(), content, languageId);
