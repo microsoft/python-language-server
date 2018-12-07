@@ -21,7 +21,7 @@ using System.Linq;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.PythonTools.Interpreter {
-    public sealed class InterpreterConfiguration : IEquatable<InterpreterConfiguration> {
+    public class InterpreterConfiguration : IEquatable<InterpreterConfiguration> {
         private readonly string _description;
         private string _fullDescription;
 

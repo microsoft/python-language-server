@@ -377,17 +377,6 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        private static bool GetPackageNameIfMatch(string name, string fullName, out string packageName) {
-            var lastDot = fullName.LastIndexOf('.');
-            if (lastDot < 0) {
-                packageName = null;
-                return false;
-            }
-
-            packageName = fullName.Remove(lastDot);
-            return String.Compare(fullName, lastDot + 1, name, 0, name.Length, StringComparison.Ordinal) == 0;
-        }
-
         /// <summary>
         /// Returns the interpreter that the analyzer is using.
         /// 

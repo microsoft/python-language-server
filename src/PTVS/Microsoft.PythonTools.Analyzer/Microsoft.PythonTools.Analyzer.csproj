@@ -1,0 +1,73 @@
+﻿<Project>
+    <PropertyGroup>
+      <TargetFramework>net472</TargetFramework>
+      <RootNamespace>Microsoft.PythonTools.Analysis</RootNamespace>
+      <AssemblyName>Microsoft.PythonTools.Analyzer</AssemblyName>
+    </PropertyGroup>
+    <Import Project="..\..\..\build\NetStandard.settings" />
+    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <DebugType>portable</DebugType>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+      <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+      <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>
+    </PropertyGroup>
+    <ItemGroup>
+      <Compile Remove="obj\**" />
+      <EmbeddedResource Remove="obj\**" />
+      <None Remove="obj\**" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="MicroBuild.Core" Version="0.3.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+    <ItemGroup Condition="$(AnalysisReference) != ''">
+      <Reference Include="Microsoft.Python.Analysis.Engine">
+        <HintPath>$(AnalysisReference)/Microsoft.Python.Analysis.Engine.dll</HintPath>
+      </Reference>
+      <Content Include="$(AnalysisReference)/**/*">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+  <ItemGroup>
+    <Content Include="BuiltinScraper.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>True</IncludeInVSIX>
+    </Content>
+    <Content Include="ExtensionScraper.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>True</IncludeInVSIX>
+    </Content>
+    <Content Include="IronPythonScraper.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>True</IncludeInVSIX>
+    </Content>
+    <Content Include="PythonScraper.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>True</IncludeInVSIX>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuiltinScraperTests.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Analysis\Engine\Impl\Microsoft.Python.Analysis.Engine.csproj" />
+    <ProjectReference Include="..\..\LanguageServer\Core\Impl\Microsoft.Python.LanguageServer.Core.csproj" />
+    <ProjectReference Include="..\Microsoft.PythonTools.Ipc.Json\Microsoft.PythonTools.Ipc.Json.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NewtonSoft.Json" Version="11.0.2" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+    <Import Project="..\..\..\build\NetStandard.targets" />
+</Project>
