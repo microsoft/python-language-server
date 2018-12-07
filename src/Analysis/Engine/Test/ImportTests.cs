@@ -99,7 +99,7 @@ package.sub_package.module2.";
         }
 
         [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
-        public async Task Completions_ImportResolution_UserSearchPathsInsideRoot(Server server) {
+        public async Task Completions_ImportResolution_UserSearchPathsInsideWorkspace(Server server) {
             var folder1 = TestData.GetTestSpecificPath("folder1");
             var folder2 = TestData.GetTestSpecificPath("folder2");
             var packageInFolder1 = Path.Combine(folder1, "package");
@@ -136,6 +136,27 @@ mod2.B.";
             completionMod2.Should().HaveLabels("B").And.NotContainLabels("A");
             completionA.Should().HaveLabels("method1");
             completionB.Should().HaveLabels("method2");
+        }
+
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/468")]
+        public async Task Completions_ImportResolution_ModuleInWorkspaceAndInUserSearchPath(Server server) {
+            var extraSearchPath = TestData.GetTestSpecificPath(Path.Combine("some", "other"));
+            var module1Path = TestData.GetTestSpecificPath("module.py");
+            var module2Path = Path.Combine(extraSearchPath, "module.py");
+            var module1Content = "A = 1";
+            var module2Content = "B = 2";
+            var mainContent = @"import module as mod; mod.";
+
+            server.Analyzer.SetSearchPaths(new[] { extraSearchPath });
+
+            await server.OpenDocumentAndGetUriAsync(module1Path, module1Content);
+            await server.OpenDocumentAndGetUriAsync(module2Path, module2Content);
+            var uri = await server.OpenDocumentAndGetUriAsync("main.py", mainContent);
+
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            var completion = await server.SendCompletion(uri, 0, 26);
+            completion.Should().HaveLabels("A").And.NotContainLabels("B");
         }
 
         [Ignore("https://github.com/Microsoft/python-language-server/issues/443")]
