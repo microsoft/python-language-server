@@ -54,23 +54,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 : new List<string> { "-B", "-E", sb };
 
         protected override PythonWalker PrepareWalker(PythonAst ast) {
-            string filePath = null;
-#if DEBUG
-            filePath = ModuleCache.GetCacheFilePath(Interpreter.InterpreterPath ?? "python.exe");
-            const bool includeLocations = true;
-#else
-            const bool includeLocations = false;
-#endif
-
-            var walker = new AstAnalysisWalker(
-                Interpreter, Interpreter.ModuleResolution.CurrentPathResolver, ast, this, filePath, null, Members,
-                includeLocations,
-                warnAboutUndefinedValues: true,
-                suppressBuiltinLookup: true
-            ) {
+            var filePath = ModuleCache.GetCacheFilePath(Interpreter.InterpreterPath ?? "python.exe");
+            var walker = new AstAnalysisWalker(Interpreter, ast, this, filePath, null, Members, warnAboutUndefinedValues: true, suppressBuiltinLookup: true) {
                 CreateBuiltinTypes = true
             };
-
             return walker;
         }
 

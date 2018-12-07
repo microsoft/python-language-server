@@ -25,16 +25,11 @@ namespace Microsoft.Python.Analysis.Documents {
     /// <summary>
     /// Represent document (file) loaded for the analysis.
     /// </summary>
-    public interface IDocument: IDisposable {
+    public interface IDocument: IPythonModule {
         /// <summary>
         /// File path to the module.
         /// </summary>
         string FilePath { get; }
-
-        /// <summary>
-        /// Module name.
-        /// </summary>
-        string Name { get; }
 
         /// <summary>
         /// Module URI.
@@ -47,14 +42,14 @@ namespace Microsoft.Python.Analysis.Documents {
         int Version { get; }
 
         /// <summary>
-        /// Indicates if module belongs to the workspace tree.
-        /// </summary>
-        bool IsInWorkspace { get; }
-
-        /// <summary>
         /// Indicates if module is open in the editor.
         /// </summary>
-        bool IsOpen { get; }
+        bool IsOpen { get; set; }
+
+        /// <summary>
+        /// Python interpreter associated wth the document.
+        /// </summary>
+        IPythonInterpreter Interpreter { get; }
 
         /// <summary>
         /// Returns document parse tree.
@@ -65,21 +60,6 @@ namespace Microsoft.Python.Analysis.Documents {
         /// Returns document analysis.
         /// </summary>
         Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Python module type.
-        /// </summary>
-        IPythonModule PythonModule { get; }
-
-        /// <summary>
-        /// Returns reader to read the document content.
-        /// </summary>
-        TextReader GetReader();
-
-        /// <summary>
-        /// Returns document content as stream.
-        /// </summary>
-        Stream GetStream();
 
         /// <summary>
         /// Returns document content as string.

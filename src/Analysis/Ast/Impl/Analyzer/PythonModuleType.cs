@@ -13,14 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal abstract class PythonModuleType: IPythonType {
+    public abstract class PythonModuleType: IPythonType {
         protected PythonModuleType(string name) {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Check.ArgumentNotNull(nameof(name), name);
+            Name = name;
         }
 
         #region IPythonType

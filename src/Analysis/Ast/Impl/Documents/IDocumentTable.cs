@@ -25,17 +25,19 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <summary>
         /// Adds file to the list of available documents.
         /// </summary>
+        /// <param name="interpreter">Interpreter associated with the document.</param>
         /// <param name="moduleName">The name of the module; used to associate with imports</param>
         /// <param name="filePath">The path to the file on disk</param>
         /// <param name="documentUri">Document URI. Can be null if module is not a user document.</param>
-        IDocument AddDocument(string moduleName, string filePath, Uri uri = null);
+        IDocument AddDocument(IPythonInterpreter interpreter, string moduleName, string filePath, Uri uri = null);
 
         /// <summary>
         /// Adds file to the list of available documents.
         /// </summary>
+        /// <param name="interpreter">Interpreter associated with the document.</param>
         /// <param name="documentUri">Document URI. Can be null if module is not a user document.</param>
         /// <param name="content">Document content</param>
-        IDocument AddDocument(Uri uri, string content);
+        IDocument AddDocument(IPythonInterpreter interpreter, Uri uri, string content);
 
         /// <summary>
         /// Removes document from the table.

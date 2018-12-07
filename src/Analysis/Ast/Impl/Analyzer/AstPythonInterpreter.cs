@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -30,11 +31,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             { BuiltinTypeId.Unknown, new AstPythonType("Unknown", BuiltinTypeId.Unknown) }
         };
         
-        private readonly AstPythonInterpreterFactory _factory;
         private readonly object _userSearchPathsLock = new object();
 
-        public AstPythonInterpreter(AstPythonInterpreterFactory factory) {
-            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+        public AstPythonInterpreter(IPythonInterpreterFactory factory) {
+            Factory = factory ?? throw new ArgumentNullException(nameof(factory));
             ModuleResolution = new AstModuleResolution(this, factory);
         }
 
@@ -45,11 +45,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         public InterpreterConfiguration Configuration { get; }
 
-        public IPythonInterpreterFactory Factory => _factory;
-        public ILogger Log => _factory.Log;
-        public PythonLanguageVersion LanguageVersion => _factory.LanguageVersion;
-        public string InterpreterPath => _factory.Configuration.InterpreterPath;
-        public string LibraryPath => _factory.Configuration.LibraryPath;
+        public IPythonInterpreterFactory Factory { get; }
+        public IServiceContainer Services => Factory.Services;
+        public ILogger Log => Factory.Log;
+        public PythonLanguageVersion LanguageVersion => Factory.LanguageVersion;
+        public string InterpreterPath => Factory.Configuration.InterpreterPath;
+        public string LibraryPath => Factory.Configuration.LibraryPath;
         /// <summary>
         /// Module resolution service.
         /// </summary>
@@ -74,7 +75,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     var bm = ModuleResolution.BuiltinModule;
                     res = bm.GetAnyMember("__{0}__".FormatInvariant(id)) as IPythonType;
                     if (res == null) {
-                        var name = id.GetTypeName(_factory.Configuration.Version);
+                        var name = id.GetTypeName(Factory.Configuration.Version);
                         if (string.IsNullOrEmpty(name)) {
                             Debug.Assert(id == BuiltinTypeId.Unknown, $"no name for {id}");
                             if (!_builtinTypes.TryGetValue(BuiltinTypeId.Unknown, out res)) {
@@ -90,6 +91,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return res;
         }
 
-        public void NotifyImportableModulesChanged() => ModuleResolution = new AstModuleResolution(this, _factory);
+        public void NotifyImportableModulesChanged() => ModuleResolution = new AstModuleResolution(this, Factory);
     }
 }

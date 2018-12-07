@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Documents {
         public event EventHandler<DocumentEventArgs> Opened;
         public event EventHandler<DocumentEventArgs> Closed;
 
-        public IDocument AddDocument(string moduleName, string filePath, Uri uri = null) {
+        public IDocument AddDocument(IPythonInterpreter interpreter, string moduleName, string filePath, Uri uri = null) {
             if (uri != null && _documentsByUri.TryGetValue(uri, out var document)) {
                 return document;
             }
@@ -49,14 +49,14 @@ namespace Microsoft.Python.Analysis.Documents {
             if (uri == null && !Uri.TryCreate(filePath, UriKind.Absolute, out uri)) {
                 throw new ArgumentException("Unable to determine file path from URI");
             }
-            return CreateDocument(moduleName, filePath, uri, null);
+            return CreateDocument(interpreter, moduleName, filePath, uri, null);
         }
 
-        public IDocument AddDocument(Uri uri, string content) {
+        public IDocument AddDocument(IPythonInterpreter interpreter, Uri uri, string content) {
             if (uri != null && _documentsByUri.TryGetValue(uri, out var document)) {
                 return document;
             }
-            return CreateDocument(Path.GetFileNameWithoutExtension(uri.LocalPath), uri.LocalPath, uri, content);
+            return CreateDocument(interpreter, null, null, uri, content);
         }
 
         public IDocument GetDocument(Uri documentUri)
@@ -71,17 +71,19 @@ namespace Microsoft.Python.Analysis.Documents {
             if (_documentsByUri.TryGetValue(documentUri, out var document)) {
                 _documentsByUri.Remove(documentUri);
                 _documentsByName.Remove(document.Name);
+                document.IsOpen = false;
                 Closed?.Invoke(this, new DocumentEventArgs(document));
             }
         }
 
         IEnumerator IEnumerable.GetEnumerator() => _documentsByUri.Values.GetEnumerator();
 
-        private IDocument CreateDocument(string moduleName, string filePath, Uri uri, string content) {
-            var document = new Document(moduleName, filePath, uri, _fs.IsPathUnderRoot(_workspaceRoot, filePath), content, _services);
+        private IDocument CreateDocument(IPythonInterpreter interpreter, string moduleName, string filePath, Uri uri, string content) {
+            var document = Document.FromContent(interpreter, content, uri, filePath, moduleName);
 
-            _documentsByUri[uri] = document;
+            _documentsByUri[document.Uri] = document;
             _documentsByName[moduleName] = document;
+            document.IsOpen = true;
 
             Opened?.Invoke(this, new DocumentEventArgs(document));
             return document;

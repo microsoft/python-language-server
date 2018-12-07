@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis {
@@ -35,6 +36,11 @@ namespace Microsoft.Python.Analysis {
         /// Interpreter configuration.
         /// </summary>
         InterpreterConfiguration Configuration { get; }
+
+        /// <summary>
+        /// Application services.
+        /// </summary>
+        IServiceContainer Services { get; }
 
         /// <summary>
         /// Python language version.

@@ -105,20 +105,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             const Uri uri = null;
             const bool includeLocations = false;
 #endif
-            return new AstAnalysisWalker(
-                Interpreter, Interpreter.ModuleResolution.CurrentPathResolver, ast, this, filePath, uri, Members,
-                includeLocations,
-                warnAboutUndefinedValues: true,
-                suppressBuiltinLookup: false
-            );
+            return new AstAnalysisWalker(Interpreter, ast, this, filePath, uri, Members,warnAboutUndefinedValues: true, suppressBuiltinLookup: false);
         }
 
-        protected virtual void PostWalk(PythonWalker walker) {
-            (walker as AstAnalysisWalker)?.Complete();
-        }
-
+        protected virtual void PostWalk(PythonWalker walker) => (walker as AstAnalysisWalker)?.Complete();
         protected virtual Stream LoadCachedCode() => ModuleCache.ReadCachedModule(_filePath);
-
         protected virtual void SaveCachedCode(Stream code) => ModuleCache.WriteCachedModule(_filePath, code);
 
         public void NotifyImported() {

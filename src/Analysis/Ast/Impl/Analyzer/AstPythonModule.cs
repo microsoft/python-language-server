@@ -19,14 +19,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    sealed class AstPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
+    public class AstPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
         private readonly IPythonInterpreter _interpreter;
         private readonly List<string> _childModules = new List<string>();
         private readonly ConcurrentDictionary<string, IMember> _members = new ConcurrentDictionary<string, IMember>();
@@ -38,41 +37,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _foundChildModules = true;
         }
 
-        internal AstPythonModule(string moduleName, IPythonInterpreter interpreter, string documentation, string filePath, IEnumerable<string> parseErrors) :
+        protected AstPythonModule(string moduleName, IPythonInterpreter interpreter, string filePath, Uri uri) :
             base(moduleName) {
-            _documentation = documentation;
+            Check.ArgumentNotNull(nameof(filePath), filePath);
+            Check.ArgumentNotNull(nameof(interpreter), interpreter);
+            Check.ArgumentNotNull(nameof(uri), uri);
+
             FilePath = filePath;
-            DocumentUri = Document.MakeDocumentUri(FilePath);
-            Locations = new[] { new LocationInfo(filePath, DocumentUri, 1, 1) };
+            Uri = uri;
+            Locations = new[] { new LocationInfo(filePath, uri, 1, 1) };
             _interpreter = interpreter;
 
             // Do not allow children of named modules
             _foundChildModules = !ModulePath.IsInitPyFile(FilePath);
-            ParseErrors = parseErrors?.ToArray();
         }
 
-        internal void Analyze(PythonAst ast, PathResolverSnapshot currentPathResolver) {
-            var walker = new AstAnalysisWalker(
-                _interpreter,
-                currentPathResolver,
-                ast,
-                this,
-                FilePath,
-                DocumentUri,
-                _members,
-                includeLocationInfo: true,
-                warnAboutUndefinedValues: true,
-                suppressBuiltinLookup: false
-            );
-
-            ast.Walk(walker);
-            walker.Complete();
-        }
-
-        public void Dispose() { }
+        protected virtual PythonAst GetAst() => null;
 
         public override string Documentation {
             get {
+                _documentation = _documentation ?? GetAst()?.Documentation;
                 if (_documentation == null) {
                     _members.TryGetValue("__doc__", out var m);
                     _documentation = (m as AstPythonStringLiteral)?.Value ?? string.Empty;
@@ -88,7 +72,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
         public string FilePath { get; }
-        public Uri DocumentUri { get; }
+        public Uri Uri { get; }
         public Dictionary<object, object> Properties { get; } = new Dictionary<object, object>();
         public IEnumerable<LocationInfo> Locations { get; } = Enumerable.Empty<LocationInfo>();
 

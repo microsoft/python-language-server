@@ -18,10 +18,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
@@ -34,58 +34,61 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Documents {
     /// </inheritdoc>
-    public sealed class Document : IDocument, IAnalyzable {
+    public sealed class Document : AstPythonModule, IDocument, IAnalyzable {
+        private readonly object _analysisLock = new object();
         private readonly IFileSystem _fs;
         private readonly IIdleTimeService _idleTimeService;
-        private readonly IPythonAnalyzer _analyzer;
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly object _lock = new object();
 
+        private TaskCompletionSource<IDocumentAnalysis> _tcs;
         private IReadOnlyList<DiagnosticsEntry> _diagnostics;
         private CancellationTokenSource _cts;
         private Task<PythonAst> _parsingTask;
         private PythonAst _ast;
 
-        public Document(string name, string filePath, Uri uri, bool isInWorkspace, string content, IServiceContainer services) {
-            Check.ArgumentNotNull(nameof(name), name);
-            Check.ArgumentNotNull(nameof(filePath), filePath);
-            Check.ArgumentNotNull(nameof(services), services);
+        /// <summary>
+        /// Creates document from a disk file. Module name is determined automatically from the file name.
+        /// </summary>
+        public static IDocument FromFile(IPythonInterpreter interpreter, string filePath)
+            => FromFile(interpreter, filePath, null);
 
-            if (uri == null && !Uri.TryCreate(filePath, UriKind.Absolute, out uri)) {
-                throw new ArgumentException("Unable to create URI from the file path");
-            }
-            Name = name;
-            FilePath = filePath;
-            Uri = uri;
-            IsInWorkspace = isInWorkspace;
-
-            _fs = services.GetService<IFileSystem>();
-            _analyzer = services.GetService<IPythonAnalyzer>();
-            _idleTimeService = services.GetService<IIdleTimeService>();
-
-            content = content ?? _fs.ReadAllText(FilePath);
-            _buffer.Reset(0, content);
-
-            ParseAsync().DoNotWait();
+        /// <summary>
+        /// Creates document from a disk file.
+        /// </summary>
+        public static IDocument FromFile(IPythonInterpreter interpreter, string filePath, string moduleName) {
+            var fs = interpreter.Services.GetService<IFileSystem>();
+            return FromContent(interpreter, fs.ReadAllText(filePath), null, filePath, moduleName);
         }
 
-        public Document(Uri uri, string content, bool isInWorkspace, IServiceContainer services) :
-            this(Path.GetFileNameWithoutExtension(uri.LocalPath), uri.LocalPath, uri, isInWorkspace, content, services) { }
+        /// <summary>
+        /// Creates document from a supplied content.
+        /// </summary>
+        public static IDocument FromContent(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName) { 
+            uri = uri ?? MakeDocumentUri(filePath);
+            filePath = filePath ?? uri.LocalPath;
+            moduleName = moduleName ?? ModulePath.FromFullPath(filePath, isPackage: IsPackageCheck).FullName;
+            return new Document(interpreter, content, uri, filePath, moduleName);
+        }
+
+        private Document(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName):
+            base(moduleName, interpreter, filePath, uri) {
+
+            Interpreter = interpreter;
+
+            _fs = Interpreter.Services.GetService<IFileSystem>();
+            _idleTimeService = Interpreter.Services.GetService<IIdleTimeService>();
+
+            _buffer.Reset(0, content);
+            ParseAsync().DoNotWait();
+        }
 
         public event EventHandler<EventArgs> NewAst;
         public event EventHandler<EventArgs> NewAnalysis;
 
-        public string FilePath { get; }
-        public string Name { get; }
-        public Uri Uri { get; }
-
+        public IPythonInterpreter Interpreter { get; }
         public int Version { get; private set; }
-        public bool IsInWorkspace { get; }
         public bool IsOpen { get; set; }
-
-        public IPythonModule PythonModule => throw new NotImplementedException();
-
-        public void Dispose() { }
 
         #region Parsing
         public async Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default) {
@@ -102,10 +105,7 @@ namespace Microsoft.Python.Analysis.Documents {
             }
             return _ast;
         }
-
         public string GetContent() => _buffer.Text;
-        public TextReader GetReader() => new StringReader(_buffer.Text);
-        public Stream GetStream() => new MemoryStream(Encoding.UTF8.GetBytes(_buffer.Text.ToCharArray()));
         public IEnumerable<DiagnosticsEntry> GetDiagnostics() => _diagnostics.ToArray();
 
         public void Update(IEnumerable<DocumentChangeSet> changes) {
@@ -129,7 +129,7 @@ namespace Microsoft.Python.Analysis.Documents {
 
             lock (_lock) {
                 version = _buffer.Version;
-                parser = Parser.CreateParser(GetReader(), _analyzer.Interpreter.LanguageVersion, new ParserOptions {
+                parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, new ParserOptions {
                     StubFile = Path.GetExtension(FilePath).Equals(".pyi", _fs.StringComparison),
                     ErrorSink = sink
                 });
@@ -142,6 +142,7 @@ namespace Microsoft.Python.Analysis.Documents {
                 if (version == _buffer.Version) {
                     _ast = ast;
                     _diagnostics = sink.Diagnostics;
+                    NewAst?.Invoke(this, EventArgs.Empty);
                 }
             }
             return ast;
@@ -155,9 +156,6 @@ namespace Microsoft.Python.Analysis.Documents {
                 => _diagnostics.Add(new DiagnosticsEntry(message, span, errorCode, severity));
         }
         #endregion
-
-        private TaskCompletionSource<IDocumentAnalysis> _tcs;
-        private readonly object _analysisLock = new object();
 
         #region IAnalyzable
         public int ExpectedAnalysisVersion { get; private set; }
@@ -174,6 +172,7 @@ namespace Microsoft.Python.Analysis.Documents {
             lock (_analysisLock) {
                 if (analysisVersion == ExpectedAnalysisVersion) {
                     _tcs.TrySetResult(analysis);
+                    NewAnalysis?.Invoke(this, EventArgs.Empty);
                     return true;
                 }
                 Debug.Assert(ExpectedAnalysisVersion > analysisVersion);
@@ -186,7 +185,9 @@ namespace Microsoft.Python.Analysis.Documents {
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) => _tcs?.Task;
         #endregion
 
-        public static Uri MakeDocumentUri(string filePath) {
+        protected override PythonAst GetAst() => _ast;
+
+        private static Uri MakeDocumentUri(string filePath) {
             Uri u;
             if (!Path.IsPathRooted(filePath)) {
                 u = new Uri("file:///LOCAL-PATH/{0}".FormatInvariant(filePath.Replace('\\', '/')));
@@ -195,5 +196,8 @@ namespace Microsoft.Python.Analysis.Documents {
             }
             return u;
         }
+
+        private static bool IsPackageCheck(string path)
+            => ModulePath.IsImportable(PathUtils.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
     }
 }

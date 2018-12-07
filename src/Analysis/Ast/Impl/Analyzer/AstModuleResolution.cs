@@ -23,6 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
@@ -395,7 +396,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
-            return PythonModuleLoader.FromFile(_interpreter, moduleImport.ModulePath, _configuration.Version.ToLanguageVersion(), moduleImport.FullName);
+            return Document.FromFile(_interpreter, moduleImport.ModulePath, moduleImport.FullName);
         }
 
         /// <summary>

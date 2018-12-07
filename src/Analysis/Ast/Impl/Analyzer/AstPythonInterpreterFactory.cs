@@ -18,6 +18,7 @@ using System.IO;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -25,7 +26,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public AstPythonInterpreterFactory(
             InterpreterConfiguration config,
             InterpreterFactoryCreationOptions options,
-            ILogger log
+            IServiceContainer services
         ) {
             Configuration = config ?? throw new ArgumentNullException(nameof(config));
             CreationOptions = options ?? new InterpreterFactoryCreationOptions();
@@ -35,7 +36,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 throw new ArgumentException(ex.Message, ex);
             }
 
-            Log = log;
+            Services = services;
+            Log = services.GetService<ILogger>();
             DatabasePath = CreationOptions.DatabasePath;
 
             UseDefaultDatabase = string.IsNullOrEmpty(options?.DatabasePath);
@@ -53,6 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public PythonLanguageVersion LanguageVersion { get; }
 
+        public IServiceContainer Services { get; }
         public ILogger Log { get; }
         public string TypeshedPath => CreationOptions.TypeshedPath;
         public string SearchPathCachePath => Path.Combine(DatabasePath, "database.path");

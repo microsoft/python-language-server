@@ -40,11 +40,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public FunctionDefinition Target { get; } 
 
-        private void GetMethodType(FunctionDefinition node, out bool classmethod, out bool staticmethod) {
+        private void GetMethodType(out bool classmethod, out bool staticmethod) {
             classmethod = false;
             staticmethod = false;
 
-            if (node.IsLambda) {
+            if (Target.IsLambda) {
                 staticmethod = true;
                 return;
             }
@@ -197,7 +197,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IMember GetSelf() {
-            GetMethodType(Target, out var classmethod, out var staticmethod);
+            GetMethodType(out var classmethod, out var staticmethod);
             var self = _scope.LookupNameInScopes("__class__", NameLookupContext.LookupOptions.Local);
             if (!staticmethod && !classmethod) {
                 if (!(self is IPythonType cls)) {

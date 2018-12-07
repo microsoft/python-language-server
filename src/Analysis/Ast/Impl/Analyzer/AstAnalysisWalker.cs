@@ -14,127 +14,84 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AstAnalysisWalker : PythonWalker {
-        private readonly IPythonModule _module;
-        private readonly ConcurrentDictionary<string, IMember> _members;
-        private readonly ConcurrentDictionary<string, IMember> _typingScope = new ConcurrentDictionary<string, IMember>();
-        private readonly ILogger _log;
-        private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
-        private readonly NameLookupContext _scope;
+        private readonly IDocument _document;
         private readonly PythonAst _ast;
-        private readonly IPythonInterpreter _interpreter;
-        private readonly PathResolverSnapshot _pathResolver;
+        private readonly NameLookupContext _lookup;
+        private readonly Scope _scope = Scope.CreateGlobalScope();
+        private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
 
-        public AstAnalysisWalker(
-            IPythonInterpreter interpreter,
-            PathResolverSnapshot pathResolver,
-            PythonAst ast,
-            IPythonModule module,
-            string filePath,
-            Uri documentUri,
-            ConcurrentDictionary<string, IMember> members,
-            bool includeLocationInfo,
-            bool warnAboutUndefinedValues,
-            bool suppressBuiltinLookup,
-            ILogger log = null
-        ) {
-            _log = log;
-            _module = module ?? throw new ArgumentNullException(nameof(module));
-            _members = members ?? throw new ArgumentNullException(nameof(members));
-            _scope = new NameLookupContext(
-                interpreter ?? throw new ArgumentNullException(nameof(interpreter)),
-                ast ?? throw new ArgumentNullException(nameof(ast)),
-                _module,
-                filePath,
-                documentUri,
-                includeLocationInfo,
-                _functionWalkers,
-                log: warnAboutUndefinedValues ? _log : null
-            );
+        private IPythonInterpreter Interpreter => _document.Interpreter;
+        private ILogger Log => Interpreter.Log;
+
+        public AstAnalysisWalker(IDocument document, PythonAst ast, bool suppressBuiltinLookup) {
+            _document = document;
             _ast = ast;
-            _interpreter = interpreter;
-            _pathResolver = pathResolver;
-            _scope.SuppressBuiltinLookup = suppressBuiltinLookup;
-            _scope.PushScope(_typingScope);
-            WarnAboutUndefinedValues = warnAboutUndefinedValues;
+            _lookup = new NameLookupContext(Interpreter, _ast, _document, _scope, _functionWalkers) {
+                SuppressBuiltinLookup = suppressBuiltinLookup
+            };
+            // TODO: handle typing module
         }
 
+        public IScope GlobalScope => _scope;
         public bool CreateBuiltinTypes { get; set; }
-        public bool WarnAboutUndefinedValues { get; }
 
         public override bool Walk(PythonAst node) {
-            if (_ast != node) {
-                throw new InvalidOperationException("walking wrong AST");
-            }
-
+            Check.InvalidOperation(() => _ast == node, "walking wrong AST");
             CollectTopLevelDefinitions();
-            _scope.PushScope(_members);
-
             return base.Walk(node);
         }
 
-        public override void PostWalk(PythonAst node) {
-            _scope.PopScope();
-            base.PostWalk(node);
-        }
-
-        public void Complete() {
-            _functionWalkers.ProcessSet();
-
-            if (_module.Name != "typing" && _scope.FilePath.EndsWithOrdinal(".pyi", ignoreCase: true)) {
-                // Do not expose members directly imported from typing
-                _typingScope.Clear();
-            }
-        }
+        public void Complete() => _functionWalkers.ProcessSet();
 
         internal LocationInfo GetLoc(ClassDefinition node) {
-            if (!_scope.IncludeLocationInfo) {
-                return null;
-            }
             if (node == null || node.StartIndex >= node.EndIndex) {
                 return null;
             }
 
             var start = node.NameExpression?.GetStart(_ast) ?? node.GetStart(_ast);
             var end = node.GetEnd(_ast);
-            return new LocationInfo(_scope.FilePath, _scope.DocumentUri, start.Line, start.Column, end.Line, end.Column);
+            return new LocationInfo(_document.FilePath, _document.Uri, start.Line, start.Column, end.Line, end.Column);
         }
 
-        private LocationInfo GetLoc(Node node) => _scope.GetLoc(node);
+        private LocationInfo GetLoc(Node node) => _lookup.GetLoc(node);
 
         private IMember Clone(IMember member) =>
             member is IPythonMultipleMembers mm ? AstPythonMultipleMembers.Create(mm.GetMembers()) :
             member;
 
         public override bool Walk(AssignmentStatement node) {
-            var value = _scope.GetValueFromExpression(node.Right);
-            if ((value == null || value.MemberType == PythonMemberType.Unknown) && WarnAboutUndefinedValues) {
-                _log?.Log(TraceEventType.Warning, $"Undefined value: ${node.Right.ToCodeString(_ast).Trim()}");
+            var value = _lookup.GetValueFromExpression(node.Right);
+
+            if (value == null || value.MemberType == PythonMemberType.Unknown) {
+                Log?.Log(TraceEventType.Verbose, $"Undefined value: ${node.Right.ToCodeString(_ast).Trim()}");
             }
+
             if ((value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Ellipsis) {
-                value = _scope.UnknownType;
+                value = _lookup.UnknownType;
             }
 
             foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                 AssignFromAnnotation(expr);
-                if (value != _scope.UnknownType && expr.Expression is NameExpression ne) {
-                    _scope.SetInScope(ne.Name, Clone(value));
+                if (value != _lookup.UnknownType && expr.Expression is NameExpression ne) {
+                    _lookup.DeclareVariable(ne.Name, Clone(value));
                 }
             }
 
             foreach (var ne in node.Left.OfType<NameExpression>()) {
-                _scope.SetInScope(ne.Name, Clone(value));
+                _lookup.DeclareVariable(ne.Name, Clone(value));
             }
 
             return base.Walk(node);
@@ -152,12 +109,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (expr.Expression is NameExpression ne) {
                 var any = false;
-                foreach (var annType in _scope.GetTypesFromAnnotation(expr.Annotation)) {
-                    _scope.SetInScope(ne.Name, new AstPythonConstant(annType, GetLoc(expr.Expression)));
+                foreach (var annType in _lookup.GetTypesFromAnnotation(expr.Annotation)) {
+                    _lookup.DeclareVariable(ne.Name, new AstPythonConstant(annType, GetLoc(expr.Expression)));
                     any = true;
                 }
                 if (!any) {
-                    _scope.SetInScope(ne.Name, _scope.UnknownType);
+                    _lookup.DeclareVariable(ne.Name, _lookup.UnknownType);
                 }
             }
         }
@@ -174,24 +131,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberReference = node.AsNames[i] ?? moduleImportExpression.Names[0];
                 var memberName = memberReference.Name;
 
-                if (importNames.Length == 1 && importNames[0] == "typing") {
-                    _scope.SetInScope(memberName, new AstTypingModule(_interpreter), scope: _typingScope);
-                } else {
-                    var imports = _pathResolver.GetImportsFromAbsoluteName(_scope.FilePath, importNames, node.ForceAbsolute);
-                    switch (imports) {
-                        case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
-                            _scope.SetInScope(memberName, _module);
-                            break;
-                        case ModuleImport moduleImport:
-                            _scope.SetInScope(memberName, new AstNestedPythonModule(_interpreter, moduleImport.FullName));
-                            break;
-                        case PossibleModuleImport possibleModuleImport:
-                            _scope.SetInScope(memberName, new AstNestedPythonModule(_interpreter, possibleModuleImport.PossibleModuleFullName));
-                            break;
-                        default:
-                            _scope.SetInScope(memberName, new AstPythonConstant(_scope.UnknownType, GetLoc(memberReference)));
-                            break;
-                    }
+                var imports = Interpreter.ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(_document.FilePath, importNames, node.ForceAbsolute);
+                switch (imports) {
+                    case ModuleImport moduleImport when moduleImport.FullName == _document.Name:
+                        _lookup.DeclareVariable(memberName, _document);
+                        break;
+                    case ModuleImport moduleImport:
+                        _lookup.DeclareVariable(memberName, new AstNestedPythonModule(Interpreter, moduleImport.FullName));
+                        break;
+                    case PossibleModuleImport possibleModuleImport:
+                        _lookup.DeclareVariable(memberName, new AstNestedPythonModule(Interpreter, possibleModuleImport.PossibleModuleFullName));
+                        break;
+                    default:
+                        _lookup.DeclareVariable(memberName, new AstPythonConstant(_lookup.UnknownType, GetLoc(memberReference)));
+                        break;
                 }
             }
 
@@ -221,15 +174,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 switch (rootNames[0].Name) {
                     case "__future__":
                         return false;
-                    case "typing":
-                        ImportMembersFromTyping(node);
-                        return false;
+                    //case "typing":
+                    //    ImportMembersFromTyping(node);
+                    //    return false;
                 }
             }
 
-            var importSearchResult = _pathResolver.FindImports(_scope.FilePath, node);
+            var importSearchResult = Interpreter.ModuleResolution.CurrentPathResolver.FindImports(_document.FilePath, node);
             switch (importSearchResult) {
-                case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
+                case ModuleImport moduleImport when moduleImport.FullName == _document.Name:
                     ImportMembersFromSelf(node);
                     return false;
                 case ModuleImport moduleImport:
@@ -243,39 +196,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return false;
                 default:
                     return false;
-            }
-        }
-
-        private void ImportMembersFromTyping(FromImportStatement node) {
-            var names = node.Names;
-            var asNames = node.AsNames;
-            var module = new AstTypingModule(_interpreter);
-
-            if (names.Count == 1 && names[0].Name == "*") {
-                foreach (var memberName in module.GetMemberNames()) {
-                    SetMember(module, memberName, memberName);
-                }
-            } else {
-                for (var i = 0; i < names.Count; i++) {
-                    var importName = names[i].Name;
-                    var memberReference = asNames[i] ?? names[i];
-
-                    SetMember(module, importName, memberReference.Name, GetLoc(memberReference));
-                }
-            }
-
-            void SetMember(IMemberContainer container, string name, string memberName, LocationInfo location = null) {
-                var member = container.GetMember(name);
-                if (member == null) {
-                    if (WarnAboutUndefinedValues) {
-                        _log?.Log(TraceEventType.Warning, "Undefined import: {module.Name}, {name}");
-                    }
-
-                    member = new AstPythonConstant(_scope.UnknownType, location != null ? new[] { location } : Array.Empty<LocationInfo>());
-                }
-
-                (member as IPythonModule)?.NotifyImported();
-                _scope.SetInScope(memberName, member, scope: _typingScope);
             }
         }
 
@@ -297,15 +217,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberReference = asNames[i];
                 var memberName = memberReference.Name;
 
-                var member = _module.GetMember(importName);
-                _scope.SetInScope(memberName, member);
+                var member = _document.GetMember(importName);
+                _scope.DeclareVariable(memberName, member);
             }
         }
 
         private void ImportMembersFromModule(FromImportStatement node, string fullModuleName) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var nestedModule = new AstNestedPythonModule(_interpreter, fullModuleName);
+            var nestedModule = new AstNestedPythonModule(Interpreter, fullModuleName);
 
             if (names.Count == 1 && names[0].Name == "*") {
                 HandleModuleImportStar(nestedModule);
@@ -318,8 +238,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
                 var location = GetLoc(memberReference);
 
-                var member = new AstNestedPythonModuleMember(importName, nestedModule, location, _interpreter);
-                _scope.SetInScope(memberName, member);
+                var member = new AstNestedPythonModuleMember(importName, nestedModule, location, Interpreter);
+                _scope.DeclareVariable(memberName, member);
             }
         }
 
@@ -329,16 +249,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             module.GetChildrenModuleNames();
             foreach (var memberName in module.GetMemberNames()) {
                 var member = module.GetMember(memberName);
-                if (WarnAboutUndefinedValues) {
-                    if (member == null) {
-                        _log?.Log(TraceEventType.Warning, $"Undefined import: {module.Name}, {memberName}");
-                    } else if (member.MemberType == PythonMemberType.Unknown) {
-                        _log?.Log(TraceEventType.Warning, $"Unknown import: {module.Name}, {memberName}");
-                    }
+                if (member == null) {
+                    Log?.Log(TraceEventType.Verbose, $"Undefined import: {module.Name}, {memberName}");
+                } else if (member.MemberType == PythonMemberType.Unknown) {
+                    Log?.Log(TraceEventType.Verbose, $"Unknown import: {module.Name}, {memberName}");
                 }
 
-                member = member ?? new AstPythonConstant(_scope.UnknownType, ((module as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
-                _scope.SetInScope(memberName, member);
+                member = member ?? new AstPythonConstant(_lookup.UnknownType, ((module as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
+                _lookup.DeclareVariable(memberName, member);
                 (member as IPythonModule)?.NotifyImported();
             }
         }
@@ -349,7 +267,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: Need tracking of previous imports to determine possible imports for namespace package. For now import nothing
-                _scope.SetInScope("*", new AstPythonConstant(_scope.UnknownType, GetLoc(names[0])));
+                _lookup.DeclareVariable("*", new AstPythonConstant(_lookup.UnknownType, GetLoc(names[0])));
                 return;
             }
 
@@ -362,12 +280,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ModuleImport moduleImport;
                 IMember member;
                 if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
-                    member = new AstNestedPythonModule(_interpreter, moduleImport.FullName);
+                    member = new AstNestedPythonModule(Interpreter, moduleImport.FullName);
                 } else {
-                    member = new AstPythonConstant(_scope.UnknownType, location);
+                    member = new AstPythonConstant(_lookup.UnknownType, location);
                 }
 
-                _scope.SetInScope(memberName, member);
+                _lookup.DeclareVariable(memberName, member);
             }
         }
 
@@ -422,12 +340,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault();
             foreach (var d in dec) {
-                var obj = _scope.GetValueFromExpression(d);
+                var obj = _lookup.GetValueFromExpression(d);
 
                 var declaringType = obj as IPythonType;
                 var declaringModule = declaringType?.DeclaringModule;
 
-                if (obj == _interpreter.GetBuiltinType(BuiltinTypeId.Property)) {
+                if (obj == Interpreter.GetBuiltinType(BuiltinTypeId.Property)) {
                     AddProperty(node, declaringModule, declaringType);
                     return false;
                 }
@@ -440,7 +358,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
             foreach (var setter in dec.OfType<MemberExpression>().Where(n => n.Name == "setter")) {
                 if (setter.Target is NameExpression src) {
-                    var existingProp = _scope.LookupNameInScopes(src.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
+                    var existingProp = _lookup.LookupNameInScopes(src.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
                     if (existingProp != null) {
                         // Setter for an existing property, so don't create a function
                         existingProp.MakeSettable();
@@ -455,10 +373,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType) {
-            var existing = _scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
+            var existing = _lookup.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
             if (existing == null) {
                 existing = new AstPythonProperty(node, declaringModule, declaringType, GetLoc(node));
-                _scope.SetInScope(node.Name, existing);
+                _lookup.DeclareVariable(node.Name, existing);
             }
 
             // Treat the rest of the property as a function. "AddOverload" takes the return type
@@ -471,7 +389,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private IPythonFunctionOverload CreateFunctionOverload(NameLookupContext funcScope, FunctionDefinition node) {
             var parameters = node.Parameters
-                .Select(p => new AstPythonParameterInfo(_ast, p, _scope.GetTypesFromAnnotation(p.Annotation)))
+                .Select(p => new AstPythonParameterInfo(_ast, p, _lookup.GetTypesFromAnnotation(p.Annotation)))
                 .ToArray();
 
             var overload = new AstPythonFunctionOverload(
@@ -493,10 +411,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             node = node ?? throw new ArgumentNullException(nameof(node));
             return new AstPythonClass(
                 node,
-                _module,
+                _document,
                 GetDoc(node.Body as SuiteStatement),
                 GetLoc(node),
-                _interpreter,
+                Interpreter,
                 CreateBuiltinTypes ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
         }
 
@@ -508,61 +426,63 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             foreach (var node in s.OfType<ClassDefinition>()) {
-                _members[node.Name] = CreateClass(node);
+                _lookup.DeclareVariable(node.Name, CreateClass(node));
             }
 
             foreach (var node in s.OfType<AssignmentStatement>().Where(n => n.Right is NameExpression)) {
                 var rhs = (NameExpression)node.Right;
                 if (_members.TryGetValue(rhs.Name, out var member)) {
                     foreach (var lhs in node.Left.OfType<NameExpression>()) {
-                        _members[lhs.Name] = member;
+                        _lookup.DeclareVariable(lhs.Name, member);
                     }
                 }
             }
         }
 
         public override bool Walk(ClassDefinition node) {
-            var member = _scope.GetInScope(node.Name);
+            var member = _lookup.GetInScope(node.Name);
             var t = member as AstPythonClass;
             if (t == null && member is IPythonMultipleMembers mm) {
                 t = mm.GetMembers().OfType<AstPythonClass>().FirstOrDefault(pt => pt.ClassDefinition.StartIndex == node.StartIndex);
             }
             if (t == null) {
                 t = CreateClass(node);
-                _scope.SetInScope(node.Name, t);
+                _lookup.DeclareVariable(node.Name, t);
             }
 
             var bases = node.Bases.Where(a => string.IsNullOrEmpty(a.Name))
                 // We cheat slightly and treat base classes as annotations.
-                .SelectMany(a => _scope.GetTypesFromAnnotation(a.Expression))
+                .SelectMany(a => _lookup.GetTypesFromAnnotation(a.Expression))
                 .ToArray();
 
-            t.SetBases(_interpreter, bases);
+            t.SetBases(Interpreter, bases);
 
-            _scope.PushScope();
-            _scope.SetInScope("__class__", t);
+            _lookup.OpenScope(node);
+            _lookup.DeclareVariable("__class__", t);
 
             return true;
         }
 
         public override void PostWalk(ClassDefinition node) {
-            var cls = _scope.GetInScope("__class__") as AstPythonType; // Store before popping the scope
-            var m = _scope.PopScope();
-            if (cls != null && m != null) {
-                cls.AddMembers(m, true);
+            var cls = _lookup.GetInScope("__class__") as AstPythonType; // Store before popping the scope
+            if (cls != null) {
+                var m = _lookup.CloseScope();
+                if (m != null) {
+                    cls.AddMembers(m.Variables, true);
+                }
             }
             base.PostWalk(node);
         }
 
         public void ProcessFunctionDefinition(FunctionDefinition node) {
-            var existing = _scope.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonFunction;
+            var existing = _lookup.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonFunction;
             if (existing == null) {
-                var cls = _scope.GetInScope("__class__") as IPythonType;
-                existing = new AstPythonFunction(node, _module, cls, GetLoc(node));
-                _scope.SetInScope(node.Name, existing);
+                var cls = _lookup.GetInScope("__class__") as IPythonType;
+                existing = new AstPythonFunction(node, _document, cls, GetLoc(node));
+                _lookup.DeclareVariable(node.Name, existing);
             }
 
-            var funcScope = _scope.Clone();
+            var funcScope = _lookup.Clone();
             funcScope.SuppressBuiltinLookup = CreateBuiltinTypes;
 
             existing.AddOverload(CreateFunctionOverload(funcScope, node));

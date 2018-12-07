@@ -43,8 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             a.NotifyAnalysisPending();
             var version = a.ExpectedAnalysisVersion;
-            return Task
-                .Run(() => Analyze(document), cancellationToken)
+            return AnalyzeAsync(document, cancellationToken)
                 .ContinueWith(t => a.NotifyAnalysisComplete(t.Result, version), cancellationToken);
         }
 
@@ -69,23 +68,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private Task AnalyzeChainAsync(IDependencyChainNode node, CancellationToken cancellationToken) =>
-            Task.Run(async () => {
-                var analysis = Analyze(node.Document);
-                if (!node.Analyzable.NotifyAnalysisComplete(analysis, node.SnapshotVersion)) {
-                    // If snapshot does not match, there is no reason to continue analysis along the chain
-                    // since subsequent change that incremented the expected version will start
-                    // another analysis run.
-                    throw new OperationCanceledException();
-                }
-                cancellationToken.ThrowIfCancellationRequested();
-                foreach (var c in node.Children) {
-                    await AnalyzeChainAsync(c, cancellationToken);
-                }
-            });
-
-        private IDocumentAnalysis Analyze(IDocument document) {
-            return null;
+        private async Task AnalyzeChainAsync(IDependencyChainNode node, CancellationToken cancellationToken) {
+            var analysis = await AnalyzeAsync(node.Document, cancellationToken);
+            if (!node.Analyzable.NotifyAnalysisComplete(analysis, node.SnapshotVersion)) {
+                // If snapshot does not match, there is no reason to continue analysis along the chain
+                // since subsequent change that incremented the expected version will start
+                // another analysis run.
+                throw new OperationCanceledException();
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach (var c in node.Children) {
+                await AnalyzeChainAsync(c, cancellationToken);
+            }
         }
+
+        private Task<IDocumentAnalysis> AnalyzeAsync(IDocument document, CancellationToken cancellationToken)
+            => DocumentAnalysis.CreateAsync(document, cancellationToken);
     }
 }

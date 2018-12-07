@@ -13,15 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Parsing;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    public static class PythonModuleLoader {
-        public static IPythonModule FromTypeStub(
-            IPythonInterpreter interpreter,
-            string stubFile,
-            PythonLanguageVersion langVersion,
-            string moduleFullName
-        ) => new AstCachedPythonModule(moduleFullName, stubFile, interpreter);
+namespace Microsoft.Python.Analysis.Extensions {
+    public static class AstExtensions {
+        public static Expression FindExpression(this PythonAst ast, int index, FindExpressionOptions options) 
+            => new ExpressionFinder(ast, options).GetExpression(index) as Expression;
+        public static Expression FindExpression(this PythonAst ast, SourceLocation location, FindExpressionOptions options) 
+            => new ExpressionFinder(ast, options).GetExpression(location) as Expression;
     }
 }
