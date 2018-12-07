@@ -13,21 +13,36 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class EmptyAnalysis : IDocumentAnalysis {
-        public EmptyAnalysis(IDocument document = null) {
+    internal sealed class DocumentAnalysis : IDocumentAnalysis {
+        public DocumentAnalysis(IDocument document) {
+            Check.ArgumentNotNull(nameof(document), document);
             Document = document;
         }
 
         public IDocument Document { get; }
-        public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
-        public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
-        public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
-        public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
+
+        public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) {
+            return Enumerable.Empty<IPythonType>();
+        }
+
+        public IEnumerable<IPythonType> GetMembers(SourceLocation location) {
+            return Enumerable.Empty<IPythonType>();
+        }
+
+        public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) {
+            return Enumerable.Empty<IPythonFunctionOverload>();
+        }
+
+        public IEnumerable<IPythonType> GetValues(SourceLocation location) {
+            return Enumerable.Empty<IPythonType>();
+        }
     }
 }

@@ -17,11 +17,8 @@ using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis {
     /// <summary>
-    /// Provides the location of a member.  This should be implemented on a class
+    /// Provides the location of a member. This should be implemented on a class
     /// which also implements IMember.
-    /// Implementing this interface enables Goto Definition on the member.
-    /// 
-    /// New in v1.1.
     /// </summary>
     public interface ILocatedMember {
         /// <summary>

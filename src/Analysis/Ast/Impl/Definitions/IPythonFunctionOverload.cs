@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -21,21 +20,15 @@ namespace Microsoft.Python.Analysis {
     /// Represents a single overload of a function.
     /// </summary>
     public interface IPythonFunctionOverload {
-        string Documentation {
-            get;
-        }
+        string Documentation { get; }
 
-        string ReturnDocumentation {
-            get;
-        }
+        string ReturnDocumentation { get; }
 
         /// <summary>
         /// Shouldn't include hidden parameters (e.g. codeContext)
         /// </summary>
         IParameterInfo[] GetParameters();
 
-        IReadOnlyList<IPythonType> ReturnType {
-            get;
-        }
+        IReadOnlyList<IPythonType> ReturnType { get; }
     }
 }
