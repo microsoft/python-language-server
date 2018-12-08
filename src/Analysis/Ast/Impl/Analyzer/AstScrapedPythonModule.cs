@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         protected virtual List<string> GetScrapeArguments(IPythonInterpreter interpreter) {
             var args = new List<string> { "-B", "-E" };
 
-            var mp = Interpreter.ModuleResolution.FindModuleAsync(FilePath, CancellationToken.None).WaitAndUnwrapExceptions();
+            var mp = Interpreter.ModuleResolution.FindModule(FilePath);
             if (string.IsNullOrEmpty(mp.FullName)) {
                 return null;
             }
@@ -117,7 +117,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _scraped = true;
 
             if (needCache) {
-                if (!File.Exists(Interpreter.InterpreterPath)) {
+                if (!File.Exists(Interpreter.Configuration.InterpreterPath)) {
                     return;
                 }
 
@@ -131,9 +131,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 using (var sw = new StreamWriter(ms, Encoding.UTF8, 4096, true))
                 using (var proc = new ProcessHelper(
-                    Interpreter.InterpreterPath,
+                    Interpreter.Configuration.InterpreterPath,
                     args,
-                    Interpreter.LibraryPath
+                    Interpreter.Configuration.LibraryPath
                 )) {
                     proc.StartInfo.StandardOutputEncoding = Encoding.UTF8;
                     proc.OnOutputLine = sw.WriteLine;

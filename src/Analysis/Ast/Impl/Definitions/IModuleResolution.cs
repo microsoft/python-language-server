@@ -23,11 +23,11 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 namespace Microsoft.Python.Analysis {
     public interface IModuleResolution {
         string BuiltinModuleName { get; }
+        IReadOnlyList<string> SearchPaths { get; }
 
         Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken);
-        Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken);
         Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken);
-        Task<ModulePath> FindModuleAsync(string filePath, CancellationToken cancellationToken);
+        ModulePath FindModule(string filePath);
         IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken);
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis {
         IEnumerable<string> GetTypeShedPaths(string typeshedRootPath);
 
         /// <summary>
-        /// Derermines if directory contains Python package.
+        /// Determines if directory contains Python package.
         /// </summary>
         bool IsPackage(string directory);
 

@@ -22,14 +22,7 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis {
     /// <summary>
-    /// Interface for providing an interpreter implementation for plugging into
-    /// Python support for Visual Studio.
-    /// 
-    /// This interface provides information about Python types and modules,
-    /// which will be used for program analysis and IntelliSense.
-    /// 
-    /// An interpreter is provided by an object implementing 
-    /// <see cref="IPythonInterpreterFactory"/>.
+    /// Represents Python interpreter.
     /// </summary>
     public interface IPythonInterpreter : IDisposable {
         /// <summary>
@@ -46,16 +39,6 @@ namespace Microsoft.Python.Analysis {
         /// Python language version.
         /// </summary>
         PythonLanguageVersion LanguageVersion { get; }
-
-        /// <summary>
-        /// Path to the interpreter executable.
-        /// </summary>
-        string InterpreterPath { get; }
-
-        /// <summary>
-        /// Path to the interpreter lib folder.
-        /// </summary>
-        string LibraryPath { get; }
 
         /// <summary>
         /// Gets a well known built-in type such as int, list, dict, etc...

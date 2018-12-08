@@ -16,8 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
@@ -33,9 +31,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         
         private readonly object _userSearchPathsLock = new object();
 
-        public AstPythonInterpreter(IPythonInterpreterFactory factory) {
-            Factory = factory ?? throw new ArgumentNullException(nameof(factory));
-            ModuleResolution = new AstModuleResolution(this, factory);
+        public AstPythonInterpreter(InterpreterConfiguration configuration, IServiceContainer services) {
+            Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            Services = services ?? throw new ArgumentNullException(nameof(services));
+            ModuleResolution = new AstModuleResolution(this);
+            LanguageVersion = Configuration.Version.ToLanguageVersion();
+            Log = services.GetService<ILogger>();
         }
 
         public void Dispose() { }
@@ -45,15 +46,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         public InterpreterConfiguration Configuration { get; }
 
-        public IPythonInterpreterFactory Factory { get; }
-        public IServiceContainer Services => Factory.Services;
-        public ILogger Log => Factory.Log;
-        public PythonLanguageVersion LanguageVersion => Factory.LanguageVersion;
-        public string InterpreterPath => Factory.Configuration.InterpreterPath;
-        public string LibraryPath => Factory.Configuration.LibraryPath;
-        /// <summary>
-        /// Module resolution service.
-        /// </summary>
+        public IServiceContainer Services { get; }
+        public ILogger Log { get; }
+        public PythonLanguageVersion LanguageVersion { get; }
         public IModuleResolution ModuleResolution { get; private set; }
 
         /// <summary>
@@ -75,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     var bm = ModuleResolution.BuiltinModule;
                     res = bm.GetAnyMember("__{0}__".FormatInvariant(id)) as IPythonType;
                     if (res == null) {
-                        var name = id.GetTypeName(Factory.Configuration.Version);
+                        var name = id.GetTypeName(Configuration.Version);
                         if (string.IsNullOrEmpty(name)) {
                             Debug.Assert(id == BuiltinTypeId.Unknown, $"no name for {id}");
                             if (!_builtinTypes.TryGetValue(BuiltinTypeId.Unknown, out res)) {
@@ -91,6 +86,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return res;
         }
 
-        public void NotifyImportableModulesChanged() => ModuleResolution = new AstModuleResolution(this, Factory);
+        public void NotifyImportableModulesChanged() => ModuleResolution = new AstModuleResolution(this);
     }
 }

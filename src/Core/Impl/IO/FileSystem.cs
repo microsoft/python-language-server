@@ -34,6 +34,8 @@ namespace Microsoft.Python.Core.IO {
         public Stream FileOpen(string path, FileMode mode) => File.Open(path, mode);
         public bool DirectoryExists(string path) => Directory.Exists(path);
         public FileAttributes GetFileAttributes(string path) => File.GetAttributes(path);
+        public DateTime GetLastWriteTimeUtc(string path) => File.GetLastWriteTimeUtc(path);
+
         public Version GetFileVersion(string path) {
             var fvi = FileVersionInfo.GetVersionInfo(path);
             return new Version(fvi.FileMajorPart, fvi.FileMinorPart, fvi.FileBuildPart, fvi.FilePrivatePart);

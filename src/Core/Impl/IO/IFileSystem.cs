@@ -27,6 +27,7 @@ namespace Microsoft.Python.Core.IO {
         long FileSize(string path);
 
         FileAttributes GetFileAttributes(string fullPath);
+        DateTime GetLastWriteTimeUtc(string fullPath);
 
         string ReadAllText(string path);
         void WriteAllText(string path, string content);

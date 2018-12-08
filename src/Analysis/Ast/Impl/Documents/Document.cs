@@ -58,7 +58,13 @@ namespace Microsoft.Python.Analysis.Documents {
         }
 
         /// <summary>
-        /// Creates document from a supplied content.
+        /// Creates document from the supplied content.
+        /// </summary>
+        public static IDocument FromContent(IPythonInterpreter interpreter, string content, string moduleName)
+            => FromContent(interpreter, content, null, null, moduleName);
+
+        /// <summary>
+        /// Creates document from the supplied content.
         /// </summary>
         public static IDocument FromContent(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName) {
             filePath = filePath ?? uri?.LocalPath;
@@ -67,7 +73,7 @@ namespace Microsoft.Python.Analysis.Documents {
             return new Document(interpreter, content, uri, filePath, moduleName);
         }
 
-        private Document(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName):
+        private Document(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName) :
             base(moduleName, filePath, uri, interpreter) {
 
             _fs = Interpreter.Services.GetService<IFileSystem>();

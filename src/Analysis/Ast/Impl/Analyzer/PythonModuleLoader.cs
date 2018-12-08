@@ -13,14 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Parsing;
-
 namespace Microsoft.Python.Analysis.Analyzer {
     public static class PythonModuleLoader {
         public static IPythonModule FromTypeStub(
             IPythonInterpreter interpreter,
             string stubFile,
-            PythonLanguageVersion langVersion,
             string moduleFullName
         ) => new AstCachedPythonModule(moduleFullName, stubFile, interpreter);
     }

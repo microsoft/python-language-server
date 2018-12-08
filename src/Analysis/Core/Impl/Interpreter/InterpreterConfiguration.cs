@@ -34,7 +34,9 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             string pathVar = "",
             string libPath = null,
             string sitePackagesPath = null,
-            InterpreterArchitecture architecture = default(InterpreterArchitecture),
+            string typeshedPath = null,
+            string moduleCachePath = null,
+            InterpreterArchitecture architecture = default,
             Version version = null
         ) {
             Id = id;
@@ -45,6 +47,8 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             Version = version ?? new Version();
             LibraryPath = libPath ?? string.Empty;
             SitePackagesPath = sitePackagesPath ?? string.Empty;
+            TypeshedPath = typeshedPath ?? string.Empty;
+            ModuleCachePath = moduleCachePath ?? string.Empty;
         }
 
         private static string Read(IReadOnlyDictionary<string, object> d, string k)
@@ -56,6 +60,8 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             InterpreterPath = Read(properties, nameof(InterpreterPath));
             PathEnvironmentVariable = Read(properties, nameof(PathEnvironmentVariable));
             LibraryPath = Read(properties, nameof(LibraryPath));
+            TypeshedPath = Read(properties, nameof(TypeshedPath));
+            ModuleCachePath = Read(properties, nameof(ModuleCachePath));
             Architecture = InterpreterArchitecture.TryParse(Read(properties, nameof(Architecture)));
             try {
                 Version = Version.Parse(Read(properties, nameof(Version)));
@@ -78,6 +84,8 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             properties[nameof(InterpreterPath)] = InterpreterPath;
             properties[nameof(PathEnvironmentVariable)] = PathEnvironmentVariable;
             properties[nameof(LibraryPath)] = LibraryPath;
+            properties[nameof(TypeshedPath)] = TypeshedPath;
+            properties[nameof(ModuleCachePath)] = ModuleCachePath;
             properties[nameof(Architecture)] = Architecture.ToString();
             if (Version != null) {
                 properties[nameof(Version)] = Version.ToString();
@@ -147,8 +155,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// </summary>
         public InterpreterArchitecture Architecture { get; }
 
-        public string ArchitectureString => Architecture.ToString();
-
         /// <summary>
         /// The language version of the interpreter (e.g. 2.7).
         /// </summary>
@@ -157,7 +163,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <summary>
         /// Returns path to Python standard libraries.
         /// </summary>
-        public string LibraryPath {get; }
+        public string LibraryPath { get; }
 
         /// <summary>
         /// Returns path to Python site packages from 'import site; print(site.getsitepackages())'
@@ -167,7 +173,17 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <summary>
         /// The fixed search paths of the interpreter.
         /// </summary>
-        public List<string> SearchPaths { get; } = new List<string>();
+        public List<string> SearchPaths { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Typeshed root folder.
+        /// </summary>
+        public string TypeshedPath { get; set; }
+
+        /// <summary>
+        /// Module cache folder.
+        /// </summary>
+        public string ModuleCachePath { get; set; }
 
         public static bool operator ==(InterpreterConfiguration x, InterpreterConfiguration y)
             => x?.Equals(y) ?? ReferenceEquals(y, null);

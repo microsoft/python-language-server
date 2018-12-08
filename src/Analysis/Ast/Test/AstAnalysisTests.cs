@@ -59,18 +59,13 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
-        private AstPythonInterpreterFactory CreateInterpreterFactory(InterpreterConfiguration configuration) {
+        private AstPythonInterpreter CreateInterpreter() {
+            var configuration = PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
-            var opts = new InterpreterFactoryCreationOptions {
-                DatabasePath = TestData.GetAstAnalysisCachePath(configuration.Version, true),
-                UseExistingCache = false
-            };
-
-            Trace.TraceInformation("Cache Path: " + opts.DatabasePath);
-            return new AstPythonInterpreterFactory(configuration, opts, _sm);
+            Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
+            configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
+            return new AstPythonInterpreter(configuration, _sm);
         }
-
-        private AstPythonInterpreterFactory CreateInterpreterFactory() => CreateInterpreterFactory(PythonVersions.LatestAvailable);
 
         #region Test cases
         [TestMethod, Priority(0)]
@@ -80,14 +75,18 @@ x = 'str'
 def func(a):
     return 1
 ";
-            var f = CreateInterpreterFactory();
-            var interpreter = f.CreateInterpreter();
-            var doc = Document.FromContent(interpreter, code, null, null, "module");
+            var interpreter = CreateInterpreter();
+            var doc = Document.FromContent(interpreter, code, "module");
+
             var ast = await doc.GetAstAsync(CancellationToken.None);
+            ast.Should().NotBeNull();
 
             var analyzer = new PythonAnalyzer(interpreter, null);
-            await analyzer.AnalyzeDocumentAsync(doc, CancellationToken.None);
-            var analysis = await doc.GetAnalysisAsync(CancellationToken.None);
+            var analysis = await analyzer.AnalyzeDocumentAsync(doc, CancellationToken.None);
+
+            var analysisFromDoc = await doc.GetAnalysisAsync(CancellationToken.None);
+            analysisFromDoc.Should().Be(analysis);
+
             var member = analysis.Members;
         }
         #endregion

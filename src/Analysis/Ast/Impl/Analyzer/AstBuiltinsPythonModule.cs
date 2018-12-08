@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public AstBuiltinsPythonModule(IPythonInterpreter interpreter)
             : base(BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion), 
-                interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.InterpreterPath ?? "python.exe"),
+                interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath ?? "python.exe"),
                 interpreter) {
         }
 
@@ -40,13 +40,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
 
         protected override Stream LoadCachedCode() {
-            var path = Interpreter.InterpreterPath ?? "python.exe";
+            var path = Interpreter.Configuration.InterpreterPath ?? "python.exe";
             return ModuleCache.ReadCachedModule(path);
         }
 
         protected override void SaveCachedCode(Stream code) {
-            if (Interpreter.InterpreterPath != null) {
-                ModuleCache.WriteCachedModule(Interpreter.InterpreterPath, code);
+            if (Interpreter.Configuration.InterpreterPath != null) {
+                ModuleCache.WriteCachedModule(Interpreter.Configuration.InterpreterPath, code);
             }
         }
 

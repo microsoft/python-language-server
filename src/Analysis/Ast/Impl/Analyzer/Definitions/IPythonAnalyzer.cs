@@ -28,15 +28,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         IPythonInterpreter Interpreter { get; }
 
         /// <summary>
-        /// Gets the list of directories which should be searched for type stubs.
-        /// This property is thread safe.
-        /// </summary>
-        IEnumerable<string> TypeStubDirectories { get; }
-
-        /// <summary>
         /// Analyze single document.
         /// </summary>
-        Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken);
+        Task<IDocumentAnalysis> AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken);
 
         /// <summary>
         /// Analyze document with dependents.

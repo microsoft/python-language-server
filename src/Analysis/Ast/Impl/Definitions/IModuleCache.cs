@@ -18,7 +18,6 @@ using System.IO;
 namespace Microsoft.Python.Analysis {
     public interface IModuleCache {
         IPythonModule ImportFromCache(string name, IPythonInterpreter interpreter);
-        void Clear();
         string GetCacheFilePath(string filePath);
         Stream ReadCachedModule(string filePath);
         void WriteCachedModule(string filePath, Stream code);

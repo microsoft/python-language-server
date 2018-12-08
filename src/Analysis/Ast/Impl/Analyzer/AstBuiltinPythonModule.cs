@@ -22,7 +22,7 @@ using Microsoft.Python.Core.IO;
 namespace Microsoft.Python.Analysis.Analyzer {
     internal class AstBuiltinPythonModule : AstScrapedPythonModule {
         public AstBuiltinPythonModule(string name, IPythonInterpreter interpreter)
-            : base(name, MakeFakeFilePath(interpreter.InterpreterPath, name), interpreter) {
+            : base(name, MakeFakeFilePath(interpreter.Configuration.InterpreterPath, name), interpreter) {
         }
 
         private static string MakeFakeFilePath(string interpreterPath, string name) {

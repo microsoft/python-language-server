@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer {
@@ -31,34 +32,31 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public IPythonInterpreter Interpreter { get; }
 
-        public IEnumerable<string> TypeStubDirectories => throw new NotImplementedException();
-
         /// <summary>
         /// Analyze single document.
         /// </summary>
-        public Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken) {
+        public async Task<IDocumentAnalysis> AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken) {
             if (!(document is IAnalyzable a)) {
-                return Task.CompletedTask;
+                return null;
             }
-
             a.NotifyAnalysisPending();
             var version = a.ExpectedAnalysisVersion;
-            return AnalyzeAsync(document, cancellationToken)
-                .ContinueWith(t => a.NotifyAnalysisComplete(t.Result, version), cancellationToken);
+            var analysis = await AnalyzeAsync(document, cancellationToken);
+            return a.NotifyAnalysisComplete(analysis, version) ? analysis : null;
         }
 
         /// <summary>
         /// Analyze document with dependents.
         /// </summary>
         public async Task AnalyzeDocumentDependencyChainAsync(IDocument document, CancellationToken cancellationToken) {
-            if (!(document is IAnalyzable a)) {
-                return;
-            }
+            Check.InvalidOperation(() => _dependencyResolver != null, "Dependency resolver must be provided for the group analysis.");
 
-            var dependencyRoot = await _dependencyResolver.GetDependencyChainAsync(document, cancellationToken);
-            // Notify each dependency that the analysis is now pending
-            NotifyAnalysisPending(dependencyRoot);
-            await AnalyzeChainAsync(dependencyRoot, cancellationToken);
+            if (document is IAnalyzable) {
+                var dependencyRoot = await _dependencyResolver.GetDependencyChainAsync(document, cancellationToken);
+                // Notify each dependency that the analysis is now pending
+                NotifyAnalysisPending(dependencyRoot);
+                await AnalyzeChainAsync(dependencyRoot, cancellationToken);
+            }
         }
 
         private void NotifyAnalysisPending(IDependencyChainNode node) {
