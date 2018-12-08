@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -23,7 +24,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// Represents scope where variables can be declared.
     /// </summary>
     internal sealed class Scope : IScope {
-        private readonly Dictionary<string, IMember> _variables = new Dictionary<string, IMember>();
+        private Dictionary<string, IMember> _variables;
         private List<Scope> _childScopes;
 
         public Scope(Node node, IScope outerScope, bool visibleToChildren = true) {
@@ -41,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public bool VisibleToChildren { get; }
 
         public IReadOnlyList<IScope> Children => _childScopes ?? Array.Empty<IScope>() as IReadOnlyList<IScope>;
-        public IReadOnlyDictionary<string, IMember> Variables => _variables;
+        public IReadOnlyDictionary<string, IMember> Variables => _variables ?? EmptyDictionary<string, IMember>.Instance;
 
         public IScope GlobalScope {
             get {
@@ -64,7 +65,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IEnumerable<IScope> EnumerateFromGlobal => EnumerateTowardsGlobal.Reverse();
         #endregion
 
-        public List<Scope> ChildScopes => _childScopes ?? (_childScopes = new List<Scope>());
-        public void DeclareVariable(string name, IMember m) => _variables[name] = m;
+        public void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
+        public void DeclareVariable(string name, IMember m) => (_variables ?? (_variables = new Dictionary<string, IMember>()))[name] = m;
+        public List<Scope> ToChainTowardsGlobal() => EnumerateTowardsGlobal.OfType<Scope>().ToList();
     }
 }

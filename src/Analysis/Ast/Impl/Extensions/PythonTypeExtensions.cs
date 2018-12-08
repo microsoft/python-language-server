@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,15 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-
 namespace Microsoft.Python.Analysis {
-    /// <summary>
-    /// Represents a Python module.
-    /// </summary>
-    public interface IPythonModule : IPythonType, IPythonFile {
-        IEnumerable<string> GetChildrenModuleNames();
-
-        void NotifyImported();
+    public static class PythonTypeExtensions {
+        public static bool IsUnknown(this IMember value) =>
+            value == null ||
+            (value as IPythonType)?.TypeId == BuiltinTypeId.Unknown ||
+            (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;
     }
 }

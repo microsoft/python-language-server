@@ -13,12 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    public abstract class PythonModuleType: IPythonType {
+    public abstract class PythonModuleType: IPythonType, IPythonFile {
         protected PythonModuleType(string name) {
             Check.ArgumentNotNull(nameof(name), name);
             Name = name;
@@ -42,6 +43,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
         #region IMemberContainer
         public virtual IMember GetMember(string name) => null;
         public virtual IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
+        #endregion
+
+        #region IPythonFile
+
+        public virtual string FilePath => Uri?.LocalPath;
+
+        public virtual Uri Uri 
+            => !string.IsNullOrEmpty(FilePath) && Uri.TryCreate(FilePath, UriKind.Absolute, out var uri) ? uri : null;
+
+        public virtual IPythonInterpreter Interpreter => null;
         #endregion
     }
 }

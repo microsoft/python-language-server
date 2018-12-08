@@ -27,16 +27,6 @@ namespace Microsoft.Python.Analysis.Documents {
     /// </summary>
     public interface IDocument: IPythonModule {
         /// <summary>
-        /// File path to the module.
-        /// </summary>
-        string FilePath { get; }
-
-        /// <summary>
-        /// Module URI.
-        /// </summary>
-        Uri Uri { get; }
-
-        /// <summary>
         /// Module content version (increments after every change).
         /// </summary>
         int Version { get; }
@@ -47,9 +37,9 @@ namespace Microsoft.Python.Analysis.Documents {
         bool IsOpen { get; set; }
 
         /// <summary>
-        /// Python interpreter associated wth the document.
+        /// Returns document content as string.
         /// </summary>
-        IPythonInterpreter Interpreter { get; }
+        string GetContent();
 
         /// <summary>
         /// Returns document parse tree.
@@ -60,11 +50,6 @@ namespace Microsoft.Python.Analysis.Documents {
         /// Returns document analysis.
         /// </summary>
         Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns document content as string.
-        /// </summary>
-        string GetContent();
 
         /// <summary>
         /// Updates document content with the list of changes.

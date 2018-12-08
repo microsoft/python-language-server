@@ -24,12 +24,12 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Target.Name}")]
     class AstAnalysisFunctionWalker : PythonWalker {
-        private readonly NameLookupContext _scope;
+        private readonly ExpressionEvaluator _scope;
         private readonly AstPythonFunctionOverload _overload;
         private AstPythonType _selfType;
 
         public AstAnalysisFunctionWalker(
-            NameLookupContext scope,
+            ExpressionEvaluator scope,
             FunctionDefinition targetFunction,
             AstPythonFunctionOverload overload
         ) {
@@ -65,17 +65,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var self = GetSelf();
             _selfType = (self as AstPythonConstant)?.Type as AstPythonType;
 
-            var annotationTypes = _scope.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault();
+            var annotationTypes = _scope.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault().ToArray();
             _overload.ReturnTypes.AddRange(annotationTypes);
 
-            _scope.PushScope();
+            _scope.OpenScope(Target);
 
             // Declare self, if any
             var skip = 0;
             if (self != null) {
                 var p0 = Target.Parameters.FirstOrDefault();
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
-                    _scope.SetInScope(p0.Name, self);
+                    _scope.DeclareVariable(p0.Name, self);
                     skip++;
                 }
             }
@@ -83,14 +83,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Declare parameters in scope
             foreach(var p in Target.Parameters.Skip(skip).Where(p => !string.IsNullOrEmpty(p.Name))) {
                  var value = _scope.GetValueFromExpression(p.DefaultValue);
-                _scope.SetInScope(p.Name, value ?? _scope.UnknownType);
+                _scope.DeclareVariable(p.Name, value ?? _scope.UnknownType);
             }
 
             // return type from the annotation always wins, no need to walk the body.
             if (!annotationTypes.Any()) {
                 Target.Walk(this);
             }
-            _scope.PopScope();
+            _scope.CloseScope();
         }
 
         public override bool Walk(FunctionDefinition node) {
@@ -126,7 +126,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 // Basic assignment
                 foreach (var ne in node.Left.OfType<NameExpression>()) {
-                    _scope.SetInScope(ne.Name, value);
+                    _scope.DeclareVariable(ne.Name, value);
                 }
 
                 // Tuple = Tuple. Transfer values.
@@ -137,7 +137,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         for (var i = 0; i < Math.Min(names.Length, returnedExpressions.Length); i++) {
                             if (returnedExpressions[i] != null) {
                                 var v = _scope.GetValueFromExpression(returnedExpressions[i]);
-                                _scope.SetInScope(names[i], v);
+                                _scope.DeclareVariable(names[i], v);
                             }
                         }
                         continue;
@@ -149,7 +149,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         var names = tex.Items.Select(x => (x as NameExpression)?.Name).ToArray();
                         for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {
                             if (names[i] != null && types[i] != null) {
-                                _scope.SetInScope(names[i], new AstPythonConstant(types[i]));
+                                _scope.DeclareVariable(names[i], new AstPythonConstant(types[i]));
                             }
                         }
                     }
@@ -170,7 +170,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (name != null && typeName != null) {
                     var typeId = typeName.GetTypeId();
                     if (typeId != BuiltinTypeId.Unknown) {
-                        _scope.SetInScope(name, 
+                        _scope.DeclareVariable(name, 
                             new AstPythonConstant(new AstPythonType(typeName, typeId)));
                     }
                 }
@@ -198,7 +198,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private IMember GetSelf() {
             GetMethodType(out var classmethod, out var staticmethod);
-            var self = _scope.LookupNameInScopes("__class__", NameLookupContext.LookupOptions.Local);
+            var self = _scope.LookupNameInScopes("__class__", ExpressionEvaluator.LookupOptions.Local);
             if (!staticmethod && !classmethod) {
                 if (!(self is IPythonType cls)) {
                     self = null;

@@ -228,6 +228,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     throw new AggregateException(exceptions);
                 }
             }
+
+            #region IPythonFile
+            public string FilePath => null;
+            public Uri Uri => null;
+            public IPythonInterpreter Interpreter => null;
+            #endregion
         }
 
         class MultipleTypeMembers : AstPythonMultipleMembers, IPythonType {

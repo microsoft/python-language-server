@@ -30,20 +30,20 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal class AstScrapedPythonModule : PythonModuleType, IPythonModule {
-        private readonly string _filePath;
-        private readonly ILogger _log;
         private bool _scraped;
+        private ILogger Log => Interpreter.Log;
 
         protected ConcurrentDictionary<string, IMember> Members { get; } = new ConcurrentDictionary<string, IMember>();
-        protected IPythonInterpreter Interpreter { get; }
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
 
         public AstScrapedPythonModule(string name, string filePath, IPythonInterpreter interpreter) 
             : base(name) {
             Interpreter = interpreter;
-            _filePath = filePath;
-            _log = interpreter.Log;
+            FilePath = filePath;
         }
+
+        public override string FilePath { get; }
+        public override IPythonInterpreter Interpreter { get; }
 
         public override string Documentation
             => GetMember("__doc__") is AstPythonStringLiteral m ? m.Value : string.Empty;
@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         protected virtual List<string> GetScrapeArguments(IPythonInterpreter interpreter) {
             var args = new List<string> { "-B", "-E" };
 
-            var mp = Interpreter.ModuleResolution.FindModuleAsync(_filePath, CancellationToken.None).WaitAndUnwrapExceptions();
+            var mp = Interpreter.ModuleResolution.FindModuleAsync(FilePath, CancellationToken.None).WaitAndUnwrapExceptions();
             if (string.IsNullOrEmpty(mp.FullName)) {
                 return null;
             }
@@ -97,20 +97,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
         protected virtual PythonWalker PrepareWalker(PythonAst ast) {
 #if DEBUG
             // In debug builds we let you F12 to the scraped file
-            var filePath = string.IsNullOrEmpty(_filePath) ? null : ModuleCache.GetCacheFilePath(_filePath);
+            var filePath = string.IsNullOrEmpty(FilePath) ? null : ModuleCache.GetCacheFilePath(FilePath);
             var uri = string.IsNullOrEmpty(filePath) ? null : new Uri(filePath);
-            const bool includeLocations = true;
 #else
             const string filePath = null;
             const Uri uri = null;
             const bool includeLocations = false;
 #endif
-            return new AstAnalysisWalker(Interpreter, ast, this, filePath, uri, Members,warnAboutUndefinedValues: true, suppressBuiltinLookup: false);
+            return new AstAnalysisWalker(this, ast, suppressBuiltinLookup: false);
         }
 
         protected virtual void PostWalk(PythonWalker walker) => (walker as AstAnalysisWalker)?.Complete();
-        protected virtual Stream LoadCachedCode() => ModuleCache.ReadCachedModule(_filePath);
-        protected virtual void SaveCachedCode(Stream code) => ModuleCache.WriteCachedModule(_filePath, code);
+        protected virtual Stream LoadCachedCode() => ModuleCache.ReadCachedModule(FilePath);
+        protected virtual void SaveCachedCode(Stream code) => ModuleCache.WriteCachedModule(FilePath, code);
 
         public void NotifyImported() {
             if (_scraped) {
@@ -144,20 +143,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 )) {
                     proc.StartInfo.StandardOutputEncoding = Encoding.UTF8;
                     proc.OnOutputLine = sw.WriteLine;
-                    proc.OnErrorLine = s => _log?.Log(TraceEventType.Error, "Scrape", s);
+                    proc.OnErrorLine = s => Log?.Log(TraceEventType.Error, "Scrape", s);
 
-                    _log?.Log(TraceEventType.Information, "Scrape", proc.FileName, proc.Arguments);
+                    Log?.Log(TraceEventType.Information, "Scrape", proc.FileName, proc.Arguments);
 
                     proc.Start();
                     var exitCode = proc.Wait(60000);
 
                     if (exitCode == null) {
                         proc.Kill();
-                        _log?.Log(TraceEventType.Error, "ScrapeTimeout", proc.FileName, proc.Arguments);
+                        Log?.Log(TraceEventType.Error, "ScrapeTimeout", proc.FileName, proc.Arguments);
                         return;
                     }
                     if (exitCode != 0) {
-                        _log?.Log(TraceEventType.Error, "Scrape", "ExitCode", exitCode);
+                        Log?.Log(TraceEventType.Error, "Scrape", "ExitCode", exitCode);
                         return;
                     }
                 }
@@ -173,11 +172,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     ast = parser.ParseFile();
                 }
 
-                ParseErrors = sink.Errors.Select(e => "{0} ({1}): {2}".FormatUI(_filePath ?? "(builtins)", e.Span, e.Message)).ToArray();
+                ParseErrors = sink.Errors.Select(e => "{0} ({1}): {2}".FormatUI(FilePath ?? "(builtins)", e.Span, e.Message)).ToArray();
                 if (ParseErrors.Any()) {
-                    _log?.Log(TraceEventType.Error, "Parse", _filePath ?? "(builtins)");
+                    Log?.Log(TraceEventType.Error, "Parse", FilePath ?? "(builtins)");
                     foreach (var e in ParseErrors) {
-                        _log?.Log(TraceEventType.Error, "Parse", e);
+                        Log?.Log(TraceEventType.Error, "Parse", e);
                     }
                 }
 

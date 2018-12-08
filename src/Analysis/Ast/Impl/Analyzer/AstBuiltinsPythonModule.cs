@@ -31,6 +31,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             : base(BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion), null, interpreter) {
         }
 
+        public override string FilePath => ModuleCache.GetCacheFilePath(Interpreter.InterpreterPath ?? "python.exe");
+
         public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 
         public IMember GetAnyMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
@@ -54,8 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 : new List<string> { "-B", "-E", sb };
 
         protected override PythonWalker PrepareWalker(PythonAst ast) {
-            var filePath = ModuleCache.GetCacheFilePath(Interpreter.InterpreterPath ?? "python.exe");
-            var walker = new AstAnalysisWalker(Interpreter, ast, this, filePath, null, Members, warnAboutUndefinedValues: true, suppressBuiltinLookup: true) {
+            var walker = new AstAnalysisWalker(this, ast, suppressBuiltinLookup: true) {
                 CreateBuiltinTypes = true
             };
             return walker;

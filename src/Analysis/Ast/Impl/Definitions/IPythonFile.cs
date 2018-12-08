@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,15 +13,23 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using System;
 
 namespace Microsoft.Python.Analysis {
-    /// <summary>
-    /// Represents a Python module.
-    /// </summary>
-    public interface IPythonModule : IPythonType, IPythonFile {
-        IEnumerable<string> GetChildrenModuleNames();
+    public interface IPythonFile {
+        /// <summary>
+        /// File path to the module.
+        /// </summary>
+        string FilePath { get; }
 
-        void NotifyImported();
+        /// <summary>
+        /// Module URI.
+        /// </summary>
+        Uri Uri { get; }
+
+        /// <summary>
+        /// Python interpreter associated wth the file.
+        /// </summary>
+        IPythonInterpreter Interpreter { get; }
     }
 }

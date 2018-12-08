@@ -57,15 +57,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private async Task AnalyzeAsync(CancellationToken cancellationToken) {
-            var ast = await _document.GetAstAsync(cancellationToken);
-            var walker = new AstAnalysisWalker(
-                document,
-                ast,
-                _members,
-                warnAboutUndefinedValues: true,
-                suppressBuiltinLookup: false
-            );
-
+            var ast = await Document.GetAstAsync(cancellationToken);
+            var walker = new AstAnalysisWalker(Document, ast, suppressBuiltinLookup: false);
             ast.Walk(walker);
             walker.Complete();
         }

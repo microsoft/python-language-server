@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Logging;
@@ -27,25 +26,27 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AstAnalysisWalker : PythonWalker {
-        private readonly IDocument _document;
+        private readonly IPythonModule _module;
         private readonly PythonAst _ast;
-        private readonly NameLookupContext _lookup;
-        private readonly Scope _scope = Scope.CreateGlobalScope();
+        private readonly ExpressionEvaluator _lookup;
+        private readonly Scope _globalScope = Scope.CreateGlobalScope();
         private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
+        private Scope _currentScope;
 
-        private IPythonInterpreter Interpreter => _document.Interpreter;
+        private IPythonInterpreter Interpreter => _module.Interpreter;
         private ILogger Log => Interpreter.Log;
 
-        public AstAnalysisWalker(IDocument document, PythonAst ast, bool suppressBuiltinLookup) {
-            _document = document;
+        public AstAnalysisWalker(IPythonModule module, PythonAst ast, bool suppressBuiltinLookup) {
+            _module = module;
             _ast = ast;
-            _lookup = new NameLookupContext(Interpreter, _ast, _document, _scope, _functionWalkers) {
+            _lookup = new ExpressionEvaluator(module, ast, _globalScope, _functionWalkers) {
                 SuppressBuiltinLookup = suppressBuiltinLookup
             };
             // TODO: handle typing module
+            _currentScope = _globalScope;
         }
 
-        public IScope GlobalScope => _scope;
+        public IScope GlobalScope => _globalScope;
         public bool CreateBuiltinTypes { get; set; }
 
         public override bool Walk(PythonAst node) {
@@ -63,12 +64,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var start = node.NameExpression?.GetStart(_ast) ?? node.GetStart(_ast);
             var end = node.GetEnd(_ast);
-            return new LocationInfo(_document.FilePath, _document.Uri, start.Line, start.Column, end.Line, end.Column);
+            return new LocationInfo(_module.FilePath, _module.Uri, start.Line, start.Column, end.Line, end.Column);
         }
 
         private LocationInfo GetLoc(Node node) => _lookup.GetLoc(node);
 
-        private IMember Clone(IMember member) =>
+        private static IMember Clone(IMember member) =>
             member is IPythonMultipleMembers mm ? AstPythonMultipleMembers.Create(mm.GetMembers()) :
             member;
 
@@ -85,7 +86,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                 AssignFromAnnotation(expr);
-                if (value != _lookup.UnknownType && expr.Expression is NameExpression ne) {
+                if (!value.IsUnknown() && expr.Expression is NameExpression ne) {
                     _lookup.DeclareVariable(ne.Name, Clone(value));
                 }
             }
@@ -131,10 +132,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberReference = node.AsNames[i] ?? moduleImportExpression.Names[0];
                 var memberName = memberReference.Name;
 
-                var imports = Interpreter.ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(_document.FilePath, importNames, node.ForceAbsolute);
+                var imports = Interpreter.ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(_module.FilePath, importNames, node.ForceAbsolute);
                 switch (imports) {
-                    case ModuleImport moduleImport when moduleImport.FullName == _document.Name:
-                        _lookup.DeclareVariable(memberName, _document);
+                    case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
+                        _lookup.DeclareVariable(memberName, _module);
                         break;
                     case ModuleImport moduleImport:
                         _lookup.DeclareVariable(memberName, new AstNestedPythonModule(Interpreter, moduleImport.FullName));
@@ -180,9 +181,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            var importSearchResult = Interpreter.ModuleResolution.CurrentPathResolver.FindImports(_document.FilePath, node);
+            var importSearchResult = Interpreter.ModuleResolution.CurrentPathResolver.FindImports(_module.FilePath, node);
             switch (importSearchResult) {
-                case ModuleImport moduleImport when moduleImport.FullName == _document.Name:
+                case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
                     ImportMembersFromSelf(node);
                     return false;
                 case ModuleImport moduleImport:
@@ -217,8 +218,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberReference = asNames[i];
                 var memberName = memberReference.Name;
 
-                var member = _document.GetMember(importName);
-                _scope.DeclareVariable(memberName, member);
+                var member = _module.GetMember(importName);
+                _lookup.DeclareVariable(memberName, member);
             }
         }
 
@@ -239,7 +240,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var location = GetLoc(memberReference);
 
                 var member = new AstNestedPythonModuleMember(importName, nestedModule, location, Interpreter);
-                _scope.DeclareVariable(memberName, member);
+                _lookup.DeclareVariable(memberName, member);
             }
         }
 
@@ -338,14 +339,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return false;
             }
 
-            var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault();
+            var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().ToArray();
             foreach (var d in dec) {
                 var obj = _lookup.GetValueFromExpression(d);
 
                 var declaringType = obj as IPythonType;
                 var declaringModule = declaringType?.DeclaringModule;
 
-                if (obj == Interpreter.GetBuiltinType(BuiltinTypeId.Property)) {
+                if (declaringType?.TypeId == BuiltinTypeId.Property) {
                     AddProperty(node, declaringModule, declaringType);
                     return false;
                 }
@@ -358,8 +359,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
             foreach (var setter in dec.OfType<MemberExpression>().Where(n => n.Name == "setter")) {
                 if (setter.Target is NameExpression src) {
-                    var existingProp = _lookup.LookupNameInScopes(src.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
-                    if (existingProp != null) {
+                    if (_lookup.LookupNameInScopes(src.Name, ExpressionEvaluator.LookupOptions.Local) is AstPythonProperty existingProp) {
                         // Setter for an existing property, so don't create a function
                         existingProp.MakeSettable();
                         return false;
@@ -373,7 +373,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType) {
-            var existing = _lookup.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonProperty;
+            var existing = _lookup.LookupNameInScopes(node.Name, ExpressionEvaluator.LookupOptions.Local) as AstPythonProperty;
             if (existing == null) {
                 existing = new AstPythonProperty(node, declaringModule, declaringType, GetLoc(node));
                 _lookup.DeclareVariable(node.Name, existing);
@@ -381,13 +381,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             // Treat the rest of the property as a function. "AddOverload" takes the return type
             // and sets it as the property type.
-            var funcScope = _scope.Clone();
+            var funcScope = _lookup.Clone();
             funcScope.SuppressBuiltinLookup = CreateBuiltinTypes;
 
             existing.AddOverload(CreateFunctionOverload(funcScope, node));
         }
 
-        private IPythonFunctionOverload CreateFunctionOverload(NameLookupContext funcScope, FunctionDefinition node) {
+        private IPythonFunctionOverload CreateFunctionOverload(ExpressionEvaluator funcScope, FunctionDefinition node) {
             var parameters = node.Parameters
                 .Select(p => new AstPythonParameterInfo(_ast, p, _lookup.GetTypesFromAnnotation(p.Annotation)))
                 .ToArray();
@@ -411,7 +411,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             node = node ?? throw new ArgumentNullException(nameof(node));
             return new AstPythonClass(
                 node,
-                _document,
+                _module,
                 GetDoc(node.Body as SuiteStatement),
                 GetLoc(node),
                 Interpreter,
@@ -419,7 +419,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void CollectTopLevelDefinitions() {
-            var s = (_ast.Body as SuiteStatement).Statements.ToArray();
+            var s = (_ast.Body as SuiteStatement)?.Statements.ToArray() ?? Array.Empty<Statement>();
 
             foreach (var node in s.OfType<FunctionDefinition>()) {
                 ProcessFunctionDefinition(node);
@@ -431,7 +431,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             foreach (var node in s.OfType<AssignmentStatement>().Where(n => n.Right is NameExpression)) {
                 var rhs = (NameExpression)node.Right;
-                if (_members.TryGetValue(rhs.Name, out var member)) {
+                if (_lookup.CurrentScope.Variables.TryGetValue(rhs.Name, out var member)) {
                     foreach (var lhs in node.Left.OfType<NameExpression>()) {
                         _lookup.DeclareVariable(lhs.Name, member);
                     }
@@ -464,8 +464,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override void PostWalk(ClassDefinition node) {
-            var cls = _lookup.GetInScope("__class__") as AstPythonType; // Store before popping the scope
-            if (cls != null) {
+            if (_lookup.GetInScope("__class__") is AstPythonType cls) {
                 var m = _lookup.CloseScope();
                 if (m != null) {
                     cls.AddMembers(m.Variables, true);
@@ -475,10 +474,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public void ProcessFunctionDefinition(FunctionDefinition node) {
-            var existing = _lookup.LookupNameInScopes(node.Name, NameLookupContext.LookupOptions.Local) as AstPythonFunction;
+            var existing = _lookup.LookupNameInScopes(node.Name, ExpressionEvaluator.LookupOptions.Local) as AstPythonFunction;
             if (existing == null) {
                 var cls = _lookup.GetInScope("__class__") as IPythonType;
-                existing = new AstPythonFunction(node, _document, cls, GetLoc(node));
+                existing = new AstPythonFunction(node, _module, cls, GetLoc(node));
                 _lookup.DeclareVariable(node.Name, existing);
             }
 
