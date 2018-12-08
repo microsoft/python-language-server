@@ -44,12 +44,12 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <summary>
         /// Returns document parse tree.
         /// </summary>
-        Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default);
+        Task<PythonAst> GetAstAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Returns document analysis.
         /// </summary>
-        Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default);
+        Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Updates document content with the list of changes.

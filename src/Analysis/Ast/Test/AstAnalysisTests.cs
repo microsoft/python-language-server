@@ -81,10 +81,13 @@ def func(a):
     return 1
 ";
             var f = CreateInterpreterFactory();
-            var interp = f.CreateInterpreter();
-            var doc = Document.FromContent(interp, code, null, null, "module");
-            var ast = await doc.GetAstAsync();
-            var analysis = await doc.GetAnalysisAsync();
+            var interpreter = f.CreateInterpreter();
+            var doc = Document.FromContent(interpreter, code, null, null, "module");
+            var ast = await doc.GetAstAsync(CancellationToken.None);
+
+            var analyzer = new PythonAnalyzer(interpreter, null);
+            await analyzer.AnalyzeDocumentAsync(doc, CancellationToken.None);
+            var analysis = await doc.GetAnalysisAsync(CancellationToken.None);
             var member = analysis.Members;
         }
         #endregion
