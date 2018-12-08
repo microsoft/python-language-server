@@ -33,18 +33,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private string _documentation = string.Empty;
 
         internal AstPythonModule() : base(string.Empty) {
-            FilePath = string.Empty;
             _foundChildModules = true;
         }
 
         protected AstPythonModule(string moduleName, IPythonInterpreter interpreter, string filePath, Uri uri) :
-            base(moduleName) {
+            base(moduleName, filePath, uri) {
             Check.ArgumentNotNull(nameof(filePath), filePath);
             Check.ArgumentNotNull(nameof(interpreter), interpreter);
             Check.ArgumentNotNull(nameof(uri), uri);
 
-            FilePath = filePath;
-            Uri = uri;
             Locations = new[] { new LocationInfo(filePath, uri, 1, 1) };
             _interpreter = interpreter;
 
@@ -71,12 +68,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return _documentation;
             }
         }
-        public string FilePath { get; }
-        public Uri Uri { get; }
-        public Dictionary<object, object> Properties { get; } = new Dictionary<object, object>();
         public IEnumerable<LocationInfo> Locations { get; } = Enumerable.Empty<LocationInfo>();
-
-        public IEnumerable<string> ParseErrors { get; }
 
         private static IEnumerable<string> GetChildModuleNames(string filePath, string prefix, IPythonInterpreter interpreter) {
             if (interpreter == null || string.IsNullOrEmpty(filePath)) {
@@ -113,9 +105,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override IMember GetMember(string name) {
             IMember member = null;
-            lock (_members) {
-                _members.TryGetValue(name, out member);
-            }
+            _members.TryGetValue(name, out member);
             if (member is ILazyMember lm) {
                 member = lm.Get();
                 lock (_members) {

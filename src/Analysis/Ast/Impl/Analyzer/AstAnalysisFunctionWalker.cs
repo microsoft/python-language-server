@@ -24,12 +24,12 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Target.Name}")]
     class AstAnalysisFunctionWalker : PythonWalker {
-        private readonly ExpressionEvaluator _scope;
+        private readonly ExpressionLookup _scope;
         private readonly AstPythonFunctionOverload _overload;
         private AstPythonType _selfType;
 
         public AstAnalysisFunctionWalker(
-            ExpressionEvaluator scope,
+            ExpressionLookup scope,
             FunctionDefinition targetFunction,
             AstPythonFunctionOverload overload
         ) {
@@ -198,7 +198,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private IMember GetSelf() {
             GetMethodType(out var classmethod, out var staticmethod);
-            var self = _scope.LookupNameInScopes("__class__", ExpressionEvaluator.LookupOptions.Local);
+            var self = _scope.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local);
             if (!staticmethod && !classmethod) {
                 if (!(self is IPythonType cls)) {
                     self = null;

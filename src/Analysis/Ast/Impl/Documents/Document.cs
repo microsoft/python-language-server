@@ -24,16 +24,13 @@ using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Documents {
-    /// </inheritdoc>
     public sealed class Document : AstPythonModule, IDocument, IAnalyzable {
         private readonly object _analysisLock = new object();
         private readonly IFileSystem _fs;
@@ -74,8 +71,6 @@ namespace Microsoft.Python.Analysis.Documents {
         private Document(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName):
             base(moduleName, interpreter, filePath, uri) {
 
-            Interpreter = interpreter;
-
             _fs = Interpreter.Services.GetService<IFileSystem>();
             _idleTimeService = Interpreter.Services.GetService<IIdleTimeService>();
 
@@ -86,8 +81,7 @@ namespace Microsoft.Python.Analysis.Documents {
         public event EventHandler<EventArgs> NewAst;
         public event EventHandler<EventArgs> NewAnalysis;
 
-        public IPythonInterpreter Interpreter { get; }
-        public int Version { get; private set; }
+        public int Version => _buffer.Version;
         public bool IsOpen { get; set; }
 
         #region Parsing
@@ -100,7 +94,6 @@ namespace Microsoft.Python.Analysis.Documents {
                     break;
                 } catch (OperationCanceledException) {
                     // Parsing as canceled, try next task.
-                    continue;
                 }
             }
             return _ast;
@@ -130,7 +123,7 @@ namespace Microsoft.Python.Analysis.Documents {
             lock (_lock) {
                 version = _buffer.Version;
                 parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, new ParserOptions {
-                    StubFile = Path.GetExtension(FilePath).Equals(".pyi", _fs.StringComparison),
+                    StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", _fs.StringComparison),
                     ErrorSink = sink
                 });
             }
@@ -182,20 +175,20 @@ namespace Microsoft.Python.Analysis.Documents {
         #endregion
 
         #region Analysis
-        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) => _tcs?.Task;
+
+        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
+            lock (_analysisLock) {
+                return _tcs?.Task;
+            }
+        }
         #endregion
 
         protected override PythonAst GetAst() => _ast;
 
-        private static Uri MakeDocumentUri(string filePath) {
-            Uri u;
-            if (!Path.IsPathRooted(filePath)) {
-                u = new Uri("file:///LOCAL-PATH/{0}".FormatInvariant(filePath.Replace('\\', '/')));
-            } else {
-                u = new Uri(filePath);
-            }
-            return u;
-        }
+        private static Uri MakeDocumentUri(string filePath)
+            => !Path.IsPathRooted(filePath) 
+                ? new Uri("file:///LOCAL-PATH/{0}".FormatInvariant(filePath.Replace('\\', '/'))) 
+                : new Uri(filePath);
 
         private static bool IsPackageCheck(string path)
             => ModulePath.IsImportable(PathUtils.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));

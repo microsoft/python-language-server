@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Documents {
         private readonly StringBuilder _sb = new StringBuilder();
         private readonly int _ownerThreadId = Thread.CurrentThread.ManagedThreadId;
 
-        public int Version { get; private set; } = -1;
+        public int Version { get; private set; }
         public string Text => _sb.ToString();
 
         public void Reset(int version, string content) {

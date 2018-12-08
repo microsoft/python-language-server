@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AstAnalysisWalker : PythonWalker {
         private readonly IPythonModule _module;
         private readonly PythonAst _ast;
-        private readonly ExpressionEvaluator _lookup;
+        private readonly ExpressionLookup _lookup;
         private readonly Scope _globalScope = Scope.CreateGlobalScope();
         private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
         private Scope _currentScope;
@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public AstAnalysisWalker(IPythonModule module, PythonAst ast, bool suppressBuiltinLookup) {
             _module = module;
             _ast = ast;
-            _lookup = new ExpressionEvaluator(module, ast, _globalScope, _functionWalkers) {
+            _lookup = new ExpressionLookup(module, ast, _globalScope, _functionWalkers) {
                 SuppressBuiltinLookup = suppressBuiltinLookup
             };
             // TODO: handle typing module
@@ -55,7 +55,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return base.Walk(node);
         }
 
-        public void Complete() => _functionWalkers.ProcessSet();
+        public IScope Complete() {
+            _functionWalkers.ProcessSet();
+            return GlobalScope;
+        }
 
         internal LocationInfo GetLoc(ClassDefinition node) {
             if (node == null || node.StartIndex >= node.EndIndex) {
@@ -359,7 +362,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
             foreach (var setter in dec.OfType<MemberExpression>().Where(n => n.Name == "setter")) {
                 if (setter.Target is NameExpression src) {
-                    if (_lookup.LookupNameInScopes(src.Name, ExpressionEvaluator.LookupOptions.Local) is AstPythonProperty existingProp) {
+                    if (_lookup.LookupNameInScopes(src.Name, ExpressionLookup.LookupOptions.Local) is AstPythonProperty existingProp) {
                         // Setter for an existing property, so don't create a function
                         existingProp.MakeSettable();
                         return false;
@@ -373,7 +376,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType) {
-            var existing = _lookup.LookupNameInScopes(node.Name, ExpressionEvaluator.LookupOptions.Local) as AstPythonProperty;
+            var existing = _lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) as AstPythonProperty;
             if (existing == null) {
                 existing = new AstPythonProperty(node, declaringModule, declaringType, GetLoc(node));
                 _lookup.DeclareVariable(node.Name, existing);
@@ -387,7 +390,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             existing.AddOverload(CreateFunctionOverload(funcScope, node));
         }
 
-        private IPythonFunctionOverload CreateFunctionOverload(ExpressionEvaluator funcScope, FunctionDefinition node) {
+        private IPythonFunctionOverload CreateFunctionOverload(ExpressionLookup funcScope, FunctionDefinition node) {
             var parameters = node.Parameters
                 .Select(p => new AstPythonParameterInfo(_ast, p, _lookup.GetTypesFromAnnotation(p.Annotation)))
                 .ToArray();
@@ -474,7 +477,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public void ProcessFunctionDefinition(FunctionDefinition node) {
-            var existing = _lookup.LookupNameInScopes(node.Name, ExpressionEvaluator.LookupOptions.Local) as AstPythonFunction;
+            var existing = _lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) as AstPythonFunction;
             if (existing == null) {
                 var cls = _lookup.GetInScope("__class__") as IPythonType;
                 existing = new AstPythonFunction(node, _module, cls, GetLoc(node));

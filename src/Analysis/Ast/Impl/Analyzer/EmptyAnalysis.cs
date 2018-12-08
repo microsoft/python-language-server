@@ -13,9 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -26,7 +28,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public IDocument Document { get; }
         public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
-        public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
+        public IReadOnlyDictionary<string, IMember> Members => EmptyDictionary<string, IMember>.Instance;
+        public IEnumerable<IMember> GetMembers(SourceLocation location) => Enumerable.Empty<IMember>();
         public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
         public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
     }

@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -25,7 +24,7 @@ using Microsoft.Python.Core.Text;
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class DocumentAnalysis : IDocumentAnalysis {
         /// <summary>Top-level module members: global functions, variables and classes.</summary>
-        private readonly ConcurrentDictionary<string, IMember> _members = new ConcurrentDictionary<string, IMember>();
+        private IScope _globalScope = Scope.Empty;
 
         public DocumentAnalysis(IDocument document) {
             Check.ArgumentNotNull(nameof(document), document);
@@ -40,12 +39,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public IDocument Document { get; }
 
+        public IReadOnlyDictionary<string, IMember> Members => _globalScope.GlobalScope.Variables;
+
         public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) {
             return Enumerable.Empty<IPythonType>();
         }
 
-        public IEnumerable<IPythonType> GetMembers(SourceLocation location) {
-            return Enumerable.Empty<IPythonType>();
+        public IEnumerable<IMember> GetMembers(SourceLocation location) {
+            return Enumerable.Empty<IMember>();
         }
 
         public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) {
@@ -60,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var ast = await Document.GetAstAsync(cancellationToken);
             var walker = new AstAnalysisWalker(Document, ast, suppressBuiltinLookup: false);
             ast.Walk(walker);
-            walker.Complete();
+            _globalScope = walker.Complete();
         }
     }
 }

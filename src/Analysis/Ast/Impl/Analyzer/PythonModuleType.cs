@@ -25,6 +25,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Name = name;
         }
 
+        protected PythonModuleType(string name, string filePath, Uri uri): this(name) {
+            if (uri == null && !string.IsNullOrEmpty(filePath)) {
+                Uri.TryCreate(filePath, UriKind.Absolute, out uri);
+            }
+            Uri = uri;
+            FilePath = filePath ?? uri?.LocalPath;
+        }
+
         #region IPythonType
         public string Name { get; }
         public virtual string Documentation { get; } = string.Empty;
@@ -47,11 +55,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         #region IPythonFile
 
-        public virtual string FilePath => Uri?.LocalPath;
-
-        public virtual Uri Uri 
-            => !string.IsNullOrEmpty(FilePath) && Uri.TryCreate(FilePath, UriKind.Absolute, out var uri) ? uri : null;
-
+        public virtual string FilePath { get; }
+        public virtual Uri Uri { get; }
         public virtual IPythonInterpreter Interpreter => null;
         #endregion
     }

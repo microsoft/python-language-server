@@ -28,6 +28,11 @@ namespace Microsoft.Python.Analysis {
         IDocument Document { get; }
 
         /// <summary>
+        /// All module members
+        /// </summary>
+        IReadOnlyDictionary<string, IMember> Members { get; }
+
+        /// <summary>
         /// Evaluates a given expression and returns a list of members which
         /// exist in the expression.
         /// 
@@ -35,7 +40,7 @@ namespace Microsoft.Python.Analysis {
         /// at that location.
         /// </summary>
         /// <param name="location">The location in the file where the expression should be evaluated.</param>
-        IEnumerable<IPythonType> GetMembers(SourceLocation location);
+        IEnumerable<IMember> GetMembers(SourceLocation location);
 
         /// <summary>
         /// Evaluates the given expression in at the provided line number and returns the values

@@ -71,9 +71,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public IEnumerable<string> ParseErrors { get; private set; } = Enumerable.Empty<string>();
 
-        internal static bool KeepAst { get; set; }
-        internal PythonAst Ast { get; private set; }
-
         protected virtual List<string> GetScrapeArguments(IPythonInterpreter interpreter) {
             var args = new List<string> { "-B", "-E" };
 
@@ -118,7 +115,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Debugger.NotifyOfCrossThreadDependency();
 
             var code = LoadCachedCode();
-            bool needCache = code == null;
+            var needCache = code == null;
 
             _scraped = true;
 
@@ -185,10 +182,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     code.Seek(0, SeekOrigin.Begin);
                     SaveCachedCode(code);
                 }
-            }
-
-            if (KeepAst) {
-                Ast = ast;
             }
 
             var walker = PrepareWalker(ast);

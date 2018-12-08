@@ -29,14 +29,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed class ExpressionEvaluator {
+    internal sealed class ExpressionLookup {
         private readonly AstAnalysisFunctionWalkerSet _functionWalkers;
         private readonly Lazy<IPythonModule> _builtinModule;
 
         private ILogger Log => Module.Interpreter.Log;
         internal IPythonType UnknownType { get; }
 
-        public ExpressionEvaluator(
+        public ExpressionLookup(
             IPythonModule module,
             PythonAst ast,
             Scope moduleScope,
@@ -492,11 +492,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (expr is SetExpression || expr is SetComprehension) {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Set);
             }
-            if (expr is LambdaExpression) {
-                return Interpreter.GetBuiltinType(BuiltinTypeId.Function);
-            }
-
-            return null;
+            return expr is LambdaExpression ? Interpreter.GetBuiltinType(BuiltinTypeId.Function) : null;
         }
 
         public IMember GetInScope(string name)
@@ -579,5 +575,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             CurrentScope = s.OuterScope as Scope;
             return s;
         }
+
+        public ExpressionLookup Clone()
+            => new ExpressionLookup(Module, Ast, CurrentScope, _functionWalkers, _builtinModule.Value);
     }
 }

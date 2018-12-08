@@ -22,9 +22,9 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AstTypeAnnotationConverter : TypeAnnotationConverter<IPythonType> {
-        private readonly ExpressionEvaluator _scope;
+        private readonly ExpressionLookup _scope;
 
-        public AstTypeAnnotationConverter(ExpressionEvaluator scope) {
+        public AstTypeAnnotationConverter(ExpressionLookup scope) {
             _scope = scope ?? throw new ArgumentNullException(nameof(scope));
         }
 
@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override IPythonType LookupName(string name) {
-            var m = _scope.LookupNameInScopes(name, ExpressionEvaluator.LookupOptions.Global | ExpressionEvaluator.LookupOptions.Builtins);
+            var m = _scope.LookupNameInScopes(name, ExpressionLookup.LookupOptions.Global | ExpressionLookup.LookupOptions.Builtins);
             if (m is IPythonMultipleMembers mm) {
                 m = (IMember)AstPythonMultipleMembers.CreateAs<IPythonType>(mm.GetMembers()) ??
                     AstPythonMultipleMembers.CreateAs<IPythonModule>(mm.GetMembers());

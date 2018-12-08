@@ -24,6 +24,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// Represents scope where variables can be declared.
     /// </summary>
     internal sealed class Scope : IScope {
+        public static readonly IScope Empty = new EmptyScope();
+
         private Dictionary<string, IMember> _variables;
         private List<Scope> _childScopes;
 
@@ -68,5 +70,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
         public void DeclareVariable(string name, IMember m) => (_variables ?? (_variables = new Dictionary<string, IMember>()))[name] = m;
         public List<Scope> ToChainTowardsGlobal() => EnumerateTowardsGlobal.OfType<Scope>().ToList();
+    }
+
+    internal sealed class EmptyScope : IScope {
+        public string Name => string.Empty;
+        public Node Node => null;
+        public IScope OuterScope => null;
+        public IScope GlobalScope => this;
+        public bool VisibleToChildren => true;
+        public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
+        public IReadOnlyDictionary<string, IMember> Variables => EmptyDictionary<string, IMember>.Instance;
+        public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Repeat(this, 1);
+        public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Repeat(this, 1);
     }
 }
