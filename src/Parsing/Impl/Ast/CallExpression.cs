@@ -32,15 +32,23 @@ namespace Microsoft.Python.Parsing.Ast {
         public IList<Arg> Args => _args;
 
         public bool NeedsLocalsDictionary() {
-            NameExpression nameExpr = Target as NameExpression;
-            if (nameExpr == null) return false;
+            var nameExpr = Target as NameExpression;
+            if (nameExpr == null) {
+                return false;
+            }
 
             if (_args.Length == 0) {
-                if (nameExpr.Name == "locals") return true;
-                if (nameExpr.Name == "vars") return true;
-                if (nameExpr.Name == "dir") return true;
-                return false;
-            } else if (_args.Length == 1 && (nameExpr.Name == "dir" || nameExpr.Name == "vars")) {
+                switch (nameExpr.Name) {
+                    case "locals":
+                    case "vars":
+                    case "dir":
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
+            if (_args.Length == 1 && (nameExpr.Name == "dir" || nameExpr.Name == "vars")) {
                 if (_args[0].Name == "*" || _args[0].Name == "**") {
                     // could be splatting empty list or dict resulting in 0-param call which needs context
                     return true;
@@ -51,8 +59,11 @@ namespace Microsoft.Python.Parsing.Ast {
                     return true;
                 }
             } else {
-                if (nameExpr.Name == "eval") return true;
-                if (nameExpr.Name == "execfile") return true;
+                switch (nameExpr.Name) {
+                    case "eval":
+                    case "execfile":
+                        return true;
+                }
             }
             return false;
         }
@@ -71,7 +82,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     Target.Walk(walker);
                 }
                 if (_args != null) {
-                    foreach (Arg arg in _args) {
+                    foreach (var arg in _args) {
                         arg.Walk(walker);
                     }
                 }
@@ -87,7 +98,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 " ",
                 "",
                 this.GetPreceedingWhiteSpaceDefaultNull(ast)
-            ); 
+            );
 
             res.Append('(');
 
@@ -98,7 +109,7 @@ namespace Microsoft.Python.Parsing.Ast {
             } else {
                 var listWhiteSpace = format.SpaceBeforeComma == null ? this.GetListWhiteSpace(ast) : null;
                 var spaceAfterComma = format.SpaceAfterComma.HasValue ? (format.SpaceAfterComma.Value ? " " : "") : (string)null;
-                for (int i = 0; i < _args.Length; i++) {
+                for (var i = 0; i < _args.Length; i++) {
                     if (i > 0) {
                         if (format.SpaceBeforeComma == true) {
                             res.Append(' ');
@@ -120,9 +131,9 @@ namespace Microsoft.Python.Parsing.Ast {
                     res.Append(",");
                 }
             }
-            
+
             if (!this.IsMissingCloseGrouping(ast)) {
-                if (Args.Count != 0 || 
+                if (Args.Count != 0 ||
                     format.SpaceWithinEmptyCallArgumentList == null ||
                     !String.IsNullOrWhiteSpace(this.GetSecondWhiteSpaceDefaultNull(ast))) {
                     format.Append(
@@ -151,7 +162,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 return true;
             }
 
-            for (int i = 0; i < Args.Count; ++i) {
+            for (var i = 0; i < Args.Count; ++i) {
                 var a = Args[i];
                 if (index <= a.EndIndexIncludingWhitespace) {
                     argIndex = i;

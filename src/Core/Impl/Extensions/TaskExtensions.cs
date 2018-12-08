@@ -90,17 +90,13 @@ namespace Microsoft.Python.Core {
         /// will be raised without being wrapped in a
         /// <see cref="AggregateException"/>.
         /// </summary>
-        public static void WaitAndUnwrapExceptions(this Task task) {
-            task.GetAwaiter().GetResult();
-        }
+        public static void WaitAndUnwrapExceptions(this Task task) => task.GetAwaiter().GetResult();
 
         /// <summary>
         /// Waits for a task to complete. If an exception occurs, the exception
         /// will be raised without being wrapped in a
         /// <see cref="AggregateException"/>.
         /// </summary>
-        public static T WaitAndUnwrapExceptions<T>(this Task<T> task) {
-            return task.GetAwaiter().GetResult();
-        }
+        public static T WaitAndUnwrapExceptions<T>(this Task<T> task) => task.GetAwaiter().GetResult();
     }
 }

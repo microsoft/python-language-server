@@ -127,9 +127,8 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 return capacity;
             }
 
-            private bool Equals(ImmutableArray<T> other) {
-                return Equals(_items, other._items) && _size == other._size && Count == other.Count;
-            }
+            private bool Equals(ImmutableArray<T> other) 
+                => Equals(_items, other._items) && _size == other._size && Count == other.Count;
 
             public override bool Equals(object obj) => obj is ImmutableArray<T> other && Equals(other);
 

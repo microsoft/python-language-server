@@ -38,24 +38,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public IDocument Document { get; }
-
         public IReadOnlyDictionary<string, IMember> Members => _globalScope.GlobalScope.Variables;
-
-        public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) {
-            return Enumerable.Empty<IPythonType>();
-        }
-
-        public IEnumerable<IMember> GetMembers(SourceLocation location) {
-            return Enumerable.Empty<IMember>();
-        }
-
-        public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) {
-            return Enumerable.Empty<IPythonFunctionOverload>();
-        }
-
-        public IEnumerable<IPythonType> GetValues(SourceLocation location) {
-            return Enumerable.Empty<IPythonType>();
-        }
+        public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
+        public IEnumerable<IMember> GetMembers(SourceLocation location) => Enumerable.Empty<IMember>();
+        public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
+        public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
 
         private async Task AnalyzeAsync(CancellationToken cancellationToken) {
             var ast = await Document.GetAstAsync(cancellationToken);

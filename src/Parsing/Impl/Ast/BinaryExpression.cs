@@ -21,7 +21,9 @@ using System.Text;
 namespace Microsoft.Python.Parsing.Ast {
     public partial class BinaryExpression : Expression {
         public BinaryExpression(PythonOperator op, Expression left, Expression right, int operatorIndex) {
-            if (op == PythonOperator.None) throw new ArgumentException("bad operator");
+            if (op == PythonOperator.None) {
+                throw new ArgumentException("bad operator");
+            }
 
             Operator = op;
             Left = left ?? throw new ArgumentNullException(nameof(left));
@@ -71,8 +73,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            Expression left = Left;
-            Expression right = Right;
+            var left = Left;
+            var right = Right;
             string op1, op2;
 
             if (Operator == PythonOperator.NotIn) {

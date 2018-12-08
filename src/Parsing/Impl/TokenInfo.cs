@@ -34,11 +34,8 @@ namespace Microsoft.Python.Parsing {
         }
 
         #region IEquatable<TokenInfo> Members
-
-        public bool Equals(TokenInfo other) {
-            return Category == other.Category && Trigger == other.Trigger && SourceSpan == other.SourceSpan;
-        }
-
+        public bool Equals(TokenInfo other) 
+            => Category == other.Category && Trigger == other.Trigger && SourceSpan == other.SourceSpan;
         #endregion
 
         public override string ToString() => "TokenInfo: {0}, {1}, {2}".FormatInvariant(SourceSpan, Category, Trigger);

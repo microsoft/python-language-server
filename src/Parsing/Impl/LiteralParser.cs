@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -36,14 +35,15 @@ namespace Microsoft.Python.Parsing {
                 throw new ArgumentNullException("text");
             }
 
-            if (isRaw && !isUni && !normalizeLineEndings) return new String(text, start, length);
+            if (isRaw && !isUni && !normalizeLineEndings) {
+                return new String(text, start, length);
+            }
 
             StringBuilder buf = null;
-            int i = start;
-            int l = start + length;
-            int val;
+            var i = start;
+            var l = start + length;
             while (i < l) {
-                char ch = text[i++];
+                var ch = text[i++];
                 if ((!isRaw || isUni) && ch == '\\') {
                     if (buf == null) {
                         buf = new StringBuilder(length);
@@ -54,15 +54,15 @@ namespace Microsoft.Python.Parsing {
                         if (isRaw) {
                             buf.Append('\\');
                             break;
-                        } else {
-                            throw new ArgumentException("Trailing \\ in string");
                         }
+                        throw new ArgumentException("Trailing \\ in string");
                     }
                     ch = text[i++];
 
+                    int val;
                     if (ch == 'u' || ch == 'U') {
-                        int len = (ch == 'u') ? 4 : 8;
-                        int max = 16;
+                        var len = (ch == 'u') ? 4 : 8;
+                        var max = 16;
                         if (isUni && !isRaw) {
                             if (TryParseInt(text, i, len, max, out val)) {
                                 buf.Append((char)val);
@@ -91,7 +91,7 @@ namespace Microsoft.Python.Parsing {
                             case '\\': buf.Append('\\'); continue;
                             case '\'': buf.Append('\''); continue;
                             case '\"': buf.Append('\"'); continue;
-                            case '\r': if (i < l && text[i] == '\n') i++; continue;
+                            case '\r': if (i < l && text[i] == '\n') { i++; } continue;
                             case '\n': continue;
                             case 'x': //hex
                                 if (!TryParseInt(text, i, 2, 16, out val)) {
@@ -108,9 +108,8 @@ namespace Microsoft.Python.Parsing {
                             case '5':
                             case '6':
                             case '7': {
-                                    int onechar;
                                     val = ch - '0';
-                                    if (i < l && HexValue(text[i], out onechar) && onechar < 8) {
+                                    if (i < l && HexValue(text[i], out var onechar) && onechar < 8) {
                                         val = val * 8 + onechar;
                                         i++;
                                         if (i < l && HexValue(text[i], out onechar) && onechar < 8) {
@@ -153,13 +152,13 @@ namespace Microsoft.Python.Parsing {
         internal static List<char> ParseBytes(char[] text, int start, int length, bool isRaw, bool normalizeLineEndings) {
             Debug.Assert(text != null);
 
-            List<char> buf = new List<char>(length);
+            var buf = new List<char>(length);
 
-            int i = start;
-            int l = start + length;
+            var i = start;
+            var l = start + length;
             int val;
             while (i < l) {
-                char ch = text[i++];
+                var ch = text[i++];
                 if (!isRaw && ch == '\\') {
                     if (i >= l) {
                         throw new ArgumentException("Trailing \\ in string");
@@ -176,7 +175,7 @@ namespace Microsoft.Python.Parsing {
                         case '\\': buf.Add('\\'); continue;
                         case '\'': buf.Add('\''); continue;
                         case '\"': buf.Add('\"'); continue;
-                        case '\r': if (i < l && text[i] == '\n') i++; continue;
+                        case '\r': if (i < l && text[i] == '\n') { i++; } continue;
                         case '\n': continue;
                         case 'x': //hex
                             if (!TryParseInt(text, i, 2, 16, out val)) {
@@ -193,9 +192,8 @@ namespace Microsoft.Python.Parsing {
                         case '5':
                         case '6':
                         case '7': {
-                                int onechar;
                                 val = ch - '0';
-                                if (i < l && HexValue(text[i], out onechar) && onechar < 8) {
+                                if (i < l && HexValue(text[i], out var onechar) && onechar < 8) {
                                     val = val * 8 + onechar;
                                     i++;
                                     if (i < l && HexValue(text[i], out onechar) && onechar < 8) {
@@ -263,15 +261,14 @@ namespace Microsoft.Python.Parsing {
         }
 
         private static int HexValue(char ch) {
-            int value;
-            if (!HexValue(ch, out value)) {
+            if (!HexValue(ch, out var value)) {
                 throw new ArgumentException("bad char for integer value: " + ch);
             }
             return value;
         }
 
         private static int CharValue(char ch, int b) {
-            int val = HexValue(ch);
+            var val = HexValue(ch);
             if (val >= b) {
                 throw new ArgumentException("bad char for the integer value: '{0}' (base {1})".FormatUI(ch, b));
             }
@@ -281,15 +278,15 @@ namespace Microsoft.Python.Parsing {
         private static bool ParseInt(string text, int b, out int ret) {
             ret = 0;
             long m = 1;
-            for (int i = text.Length - 1; i >= 0; i--) {
+            for (var i = text.Length - 1; i >= 0; i--) {
                 // avoid the exception here.  Not only is throwing it expensive,
                 // but loading the resources for it is also expensive 
-                char c = text[i];
+                var c = text[i];
                 if (c == '_') {
                     continue;
                 }
 
-                long lret = (long)ret + m * CharValue(c, b);
+                var lret = (long)ret + m * CharValue(c, b);
                 if (Int32.MinValue <= lret && lret <= Int32.MaxValue) {
                     ret = (int)lret;
                 } else {
@@ -310,11 +307,10 @@ namespace Microsoft.Python.Parsing {
                 return false;
             }
             for (int i = start, end = start + length; i < end; i++) {
-                int onechar;
-                char c = text[i];
+                var c = text[i];
                 if (c == '_') {
                     continue;
-                } else if (HexValue(c, out onechar) && onechar < b) {
+                } else if (HexValue(c, out var onechar) && onechar < b) {
                     value = value * b + onechar;
                 } else {
                     return false;
@@ -325,10 +321,9 @@ namespace Microsoft.Python.Parsing {
 
         public static object ParseInteger(string text, int b) {
             Debug.Assert(b != 0);
-            int iret;
-            if (!ParseInt(text, b, out iret)) {
-                BigInteger ret = ParseBigInteger(text, b);
-                if (ret >= Int32.MinValue && ret <= Int32.MaxValue) {
+            if (!ParseInt(text, b, out var iret)) {
+                var ret = ParseBigInteger(text, b);
+                if (ret >= int.MinValue && ret <= int.MaxValue) {
                     return (int)ret;
                 }
                 return ret;
@@ -346,9 +341,9 @@ namespace Microsoft.Python.Parsing {
 
             ParseIntegerStart(text, ref b, ref start, end, ref sign);
 
-            int ret = 0;
+            var ret = 0;
             try {
-                int saveStart = start;
+                var saveStart = start;
                 for (; ; ) {
                     int digit;
                     if (start >= end) {
@@ -357,9 +352,12 @@ namespace Microsoft.Python.Parsing {
                         }
                         break;
                     }
-                    char c = text[start];
+                    var c = text[start];
                     if (c != '_') {
-                        if (!HexValue(c, out digit)) break;
+                        if (!HexValue(c, out digit)) {
+                            break;
+                        }
+
                         if (!(digit < b)) {
                             if (c == 'l' || c == 'L') {
                                 break;
@@ -385,7 +383,9 @@ namespace Microsoft.Python.Parsing {
 
         private static void ParseIntegerStart(string text, ref int b, ref int start, int end, ref short sign) {
             //  Skip whitespace
-            while (start < end && Char.IsWhiteSpace(text, start)) start++;
+            while (start < end && Char.IsWhiteSpace(text, start)) {
+                start++;
+            }
             //  Sign?
             if (start < end) {
                 switch (text[start]) {
@@ -398,7 +398,9 @@ namespace Microsoft.Python.Parsing {
                 }
             }
             //  Skip whitespace
-            while (start < end && Char.IsWhiteSpace(text, start)) start++;
+            while (start < end && Char.IsWhiteSpace(text, start)) {
+                start++;
+            }
 
             //  Determine base
             if (b == 0) {
@@ -437,7 +439,9 @@ namespace Microsoft.Python.Parsing {
 
         private static void ParseIntegerEnd(string text, int start, int end) {
             //  Skip whitespace
-            while (start < end && Char.IsWhiteSpace(text, start)) start++;
+            while (start < end && Char.IsWhiteSpace(text, start)) {
+                start++;
+            }
 
             if (start < end) {
                 throw new ArgumentException("invalid integer number literal");
@@ -446,24 +450,28 @@ namespace Microsoft.Python.Parsing {
 
         public static BigInteger ParseBigInteger(string text, int b) {
             Debug.Assert(b != 0);
-            BigInteger ret = BigInteger.Zero;
-            BigInteger m = BigInteger.One;
+            var ret = BigInteger.Zero;
+            var m = BigInteger.One;
 
             if (text.Length != 0) {
 
-                int i = text.Length - 1;
-                if (text[i] == 'l' || text[i] == 'L') i -= 1;
+                var i = text.Length - 1;
+                if (text[i] == 'l' || text[i] == 'L') {
+                    i -= 1;
+                }
 
-                int groupMax = 7;
-                if (b <= 10) groupMax = 9;// 2 147 483 647
+                var groupMax = 7;
+                if (b <= 10) {
+                    groupMax = 9;// 2 147 483 647
+                }
 
                 while (i >= 0) {
                     // extract digits in a batch
-                    int smallMultiplier = 1;
+                    var smallMultiplier = 1;
                     uint uval = 0;
 
-                    for (int j = 0; j < groupMax && i >= 0; j++) {
-                        char c = text[i--];
+                    for (var j = 0; j < groupMax && i >= 0; j++) {
+                        var c = text[i--];
                         if (c != '_') {
                             uval = (uint)(CharValue(c, b) * smallMultiplier + uval);
                             smallMultiplier *= b;
@@ -472,7 +480,9 @@ namespace Microsoft.Python.Parsing {
 
                     // this is more generous than needed
                     ret += m * (BigInteger)uval;
-                    if (i >= 0) m = m * (smallMultiplier);
+                    if (i >= 0) {
+                        m = m * (smallMultiplier);
+                    }
                 }
             }
 
@@ -489,19 +499,21 @@ namespace Microsoft.Python.Parsing {
 
             ParseIntegerStart(text, ref b, ref start, end, ref sign);
 
-            BigInteger ret = BigInteger.Zero;
-            int saveStart = start;
+            var ret = BigInteger.Zero;
+            var saveStart = start;
             for (; ; ) {
-                int digit;
                 if (start >= end) {
                     if (start == saveStart) {
                         throw new ArgumentException("Invalid integer literal");
                     }
                     break;
                 }
-                char c = text[start];
+                var c = text[start];
                 if (c != '_') {
-                    if (!HexValue(c, out digit)) break;
+                    if (!HexValue(c, out var digit)) {
+                        break;
+                    }
+
                     if (!(digit < b)) {
                         if (c == 'l' || c == 'L') {
                             break;
@@ -540,7 +552,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private static double ParseFloatNoCatch(string text) {
-            string s = ReplaceUnicodeDigits(text);
+            var s = ReplaceUnicodeDigits(text);
             switch (s.ToLowerInvariant().TrimStart()) {
                 case "nan":
                 case "+nan":
@@ -553,7 +565,7 @@ namespace Microsoft.Python.Parsing {
                     return double.NegativeInfinity;
                 default:
                     // pass NumberStyles to disallow ,'s in float strings.
-                    double res = double.Parse(s.Replace("_", ""), NumberStyles.Float, CultureInfo.InvariantCulture);
+                    var res = double.Parse(s.Replace("_", ""), NumberStyles.Float, CultureInfo.InvariantCulture);
                     return (res == 0.0 && text.TrimStart().StartsWithOrdinal("-")) ? NegativeZero : res;
             }
         }
@@ -562,9 +574,12 @@ namespace Microsoft.Python.Parsing {
 
         private static string ReplaceUnicodeDigits(string text) {
             StringBuilder replacement = null;
-            for (int i = 0; i < text.Length; i++) {
+            for (var i = 0; i < text.Length; i++) {
                 if (text[i] >= '\x660' && text[i] <= '\x669') {
-                    if (replacement == null) replacement = new StringBuilder(text);
+                    if (replacement == null) {
+                        replacement = new StringBuilder(text);
+                    }
+
                     replacement[i] = (char)(text[i] - '\x660' + '0');
                 }
             }
@@ -575,10 +590,6 @@ namespace Microsoft.Python.Parsing {
         }
 
         // ParseComplex helpers
-        private static char[] signs = new char[] { '+', '-' };
-        private static Exception ExnMalformed() {
-            return new ArgumentException("complex() arg is a malformed string");
-        }
 
         public static Complex ParseImaginary(string text) {
             try {

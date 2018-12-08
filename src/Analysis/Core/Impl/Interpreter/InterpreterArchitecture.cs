@@ -22,9 +22,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         IEquatable<InterpreterArchitecture> {
         protected abstract bool Equals(string value);
 
-        public virtual string ToString(string format, IFormatProvider formatProvider, string defaultString) {
-            return defaultString;
-        }
+        public virtual string ToString(string format, IFormatProvider formatProvider, string defaultString) => defaultString;
 
         public static readonly InterpreterArchitecture Unknown = new UnknownArchitecture();
         public static readonly InterpreterArchitecture x86 = new X86Architecture();
@@ -95,9 +93,9 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         }
 
         public static bool operator ==(InterpreterArchitecture x, InterpreterArchitecture y)
-            => x?.Equals(y) ?? object.ReferenceEquals(y, null);
+            => x?.Equals(y) ?? ReferenceEquals(y, null);
         public static bool operator !=(InterpreterArchitecture x, InterpreterArchitecture y)
-            => !(x?.Equals(y) ?? object.ReferenceEquals(y, null));
+            => !(x?.Equals(y) ?? ReferenceEquals(y, null));
         public override bool Equals(object obj) => Equals(obj as InterpreterArchitecture);
         public bool Equals(InterpreterArchitecture other) => other != null && GetType().IsEquivalentTo(other.GetType());
         public override int GetHashCode() => GetType().GetHashCode();

@@ -47,7 +47,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     _dest.Walk(walker);
                 }
                 if (_expressions != null) {
-                    foreach (Expression expression in _expressions) {
+                    foreach (var expression in _expressions) {
                         expression.Walk(walker);
                     }
                 }

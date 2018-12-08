@@ -33,7 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 if (_statements != null) {
-                    foreach (Statement s in _statements) {
+                    foreach (var s in _statements) {
                         s.Walk(walker);
                     }
                 }
@@ -57,8 +57,8 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <param name="end"></param>
         /// <returns></returns>
         public SuiteStatement CloneSubset(PythonAst ast, int start, int end) {
-            Statement[] statements = new Statement[end - start + 1];
-            for (int i = start; i <= end; i++) {
+            var statements = new Statement[end - start + 1];
+            for (var i = start; i <= end; i++) {
                 statements[i - start] = Statements[i];
             }
 
@@ -93,16 +93,16 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             } else if (itemWhiteSpace != null) {
                 if (format.BreakMultipleStatementsPerLine) {
-                    string leadingWhiteSpace = "";
-                    for (int i = 0; i < _statements.Length; i++) {
+                    var leadingWhiteSpace = "";
+                    for (var i = 0; i < _statements.Length; i++) {
                         if (i == 0) {
-                            StringBuilder tmp = new StringBuilder();
+                            var tmp = new StringBuilder();
                             _statements[i].AppendCodeString(tmp, ast, format);  
                             var stmt = tmp.ToString();
                             res.Append(stmt);
 
                             // figure out the whitespace needed for the next statement based upon the current statement
-                            for (int curChar = 0; curChar < stmt.Length; curChar++) {
+                            for (var curChar = 0; curChar < stmt.Length; curChar++) {
                                 if (!char.IsWhiteSpace(stmt[curChar])) {
                                     leadingWhiteSpace = format.GetNextLineProceedingText(stmt.Substring(0, curChar));
                                     break;
@@ -114,7 +114,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     }
                 } else {
                     // form 2, semi-colon seperated list.
-                    for (int i = 0; i < _statements.Length; i++) {
+                    for (var i = 0; i < _statements.Length; i++) {
                         if (i > 0) {
                             if (i - 1 < itemWhiteSpace.Length) {
                                 res.Append(itemWhiteSpace[i - 1]);

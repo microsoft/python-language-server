@@ -547,12 +547,12 @@ def f ( ):
                 
                 foreach (var testCase in allSnippets) {
                     var exprText = testCase.Text;
-                    string code = preceedingText + exprText;
+                    var code = preceedingText + exprText;
                     Console.WriteLine(code);
 
                     var parser = Parser.CreateParser(new StringReader(code), testCase.Version, new ParserOptions() { Verbatim = true });
                     var ast = parser.ParseFile();
-                    Statement stmt = ((SuiteStatement)ast.Body).Statements[0];
+                    var stmt = ((SuiteStatement)ast.Body).Statements[0];
                     if (stmt is ExpressionStatement) {
                         var expr = ((ExpressionStatement)stmt).Expression;
 

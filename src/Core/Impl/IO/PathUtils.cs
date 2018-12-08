@@ -35,16 +35,17 @@ namespace Microsoft.Python.Core.IO {
             Path.AltDirectorySeparatorChar
         };
 
-        public static bool IsValidWindowsDriveChar(char value) => (value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z');
+        public static bool IsValidWindowsDriveChar(char value)
+            => (value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z');
 
-        public static bool IsValidFileNameCharacter(char character) => Array.BinarySearch(InvalidFileNameChars, character) < 0;
+        public static bool IsValidFileNameCharacter(char character)
+            => Array.BinarySearch(InvalidFileNameChars, character) < 0;
 
         /// <summary>
         /// Returns true if the path has a directory separator character at the end.
         /// </summary>
-        public static bool HasEndSeparator(string path) {
-            return !string.IsNullOrEmpty(path) && DirectorySeparators.Contains(path[path.Length - 1]);
-        }
+        public static bool HasEndSeparator(string path)
+            => !string.IsNullOrEmpty(path) && DirectorySeparators.Contains(path[path.Length - 1]);
 
         /// <summary>
         /// Removes up to one directory separator character from the end of path.
@@ -129,12 +130,12 @@ namespace Microsoft.Python.Core.IO {
             dirQueue.Enqueue(new KeyValuePair<string, int>(root, 0));
             while (dirQueue.Any()) {
                 var dirDepth = dirQueue.Dequeue();
-                string dir = dirDepth.Key;
+                var dir = dirDepth.Key;
                 var result = EnumerateFiles(dir, file, recurse: false).FirstOrDefault();
                 if (result != null) {
                     return result;
                 }
-                int depth = dirDepth.Value;
+                var depth = dirDepth.Value;
                 if (depth < depthLimit) {
                     foreach (var subDir in EnumerateDirectories(dir, recurse: false)) {
                         dirQueue.Enqueue(new KeyValuePair<string, int>(subDir, depth + 1));
@@ -211,7 +212,7 @@ namespace Microsoft.Python.Core.IO {
                 return string.Empty;
             }
 
-            int last = path.Length - 1;
+            var last = path.Length - 1;
             if (DirectorySeparators.Contains(path[last])) {
                 last -= 1;
             }
@@ -238,7 +239,7 @@ namespace Microsoft.Python.Core.IO {
                 return string.Empty;
             }
 
-            int i = filePath.LastIndexOfAny(DirectorySeparators);
+            var i = filePath.LastIndexOfAny(DirectorySeparators);
             return filePath.Substring(i + 1);
         }
 
@@ -314,7 +315,7 @@ namespace Microsoft.Python.Core.IO {
         /// <param name="path">The full path of the file to delete.</param>
         /// <returns>True if the file was successfully deleted.</returns>
         public static bool DeleteFile(string path) {
-            for (int retries = 5; retries > 0; --retries) {
+            for (var retries = 5; retries > 0; --retries) {
                 try {
                     if (File.Exists(path)) {
                         File.SetAttributes(path, FileAttributes.Normal);
@@ -336,7 +337,7 @@ namespace Microsoft.Python.Core.IO {
         /// <param name="path">The full path of the directory to delete.</param>
         /// <returns>True if the directory was successfully deleted.</returns>
         public static bool DeleteDirectory(string path) {
-            for (int retries = 2; retries > 0; --retries) {
+            for (var retries = 2; retries > 0; --retries) {
                 try {
                     Directory.Delete(path, true);
                     return true;
@@ -366,8 +367,8 @@ namespace Microsoft.Python.Core.IO {
 
         public static FileStream OpenWithRetry(string file, FileMode mode, FileAccess access, FileShare share) {
             // Retry for up to one second
-            bool create = mode != FileMode.Open;
-            for (int retries = 100; retries > 0; --retries) {
+            var create = mode != FileMode.Open;
+            for (var retries = 100; retries > 0; --retries) {
                 try {
                     return new FileStream(file, mode, access, share);
                 } catch (FileNotFoundException) when (!create) {
@@ -468,8 +469,8 @@ namespace Microsoft.Python.Core.IO {
                 }
 
                 if (parts[i] == "..") {
-                    bool found = false;
-                    for (int j = i - 1; j >= 0; --j) {
+                    var found = false;
+                    for (var j = i - 1; j >= 0; --j) {
                         if (!string.IsNullOrEmpty(parts[j])) {
                             parts[i] = null;
                             parts[j] = null;

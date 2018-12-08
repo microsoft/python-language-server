@@ -70,9 +70,8 @@ namespace Microsoft.Python.Core.Text {
         }
 
         [DebuggerStepThrough]
-        private static Exception ErrorOutOfRange(object p0, object p1) {
-            return new ArgumentOutOfRangeException("{0} must be greater than or equal to {1}".FormatInvariant(p0, p1));
-        }
+        private static Exception ErrorOutOfRange(object p0, object p1)
+            => new ArgumentOutOfRangeException("{0} must be greater than or equal to {1}".FormatInvariant(p0, p1));
 
         [SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters")]
         private SourceLocation(int index, int line, int column, bool noChecks) {
@@ -84,7 +83,7 @@ namespace Microsoft.Python.Core.Text {
         /// <summary>
         /// The index in the source stream the location represents (0-based).
         /// </summary>
-        public int Index => _index >= 0 ? _index: throw new InvalidOperationException("Index is not valid");
+        public int Index => _index >= 0 ? _index : throw new InvalidOperationException("Index is not valid");
 
         /// <summary>
         /// The line in the source stream the location represents (1-based).
@@ -163,8 +162,13 @@ namespace Microsoft.Python.Core.Text {
         /// <param name="right">The other location to compare.</param>
         /// <returns>0 if the locations are equal, -1 if the left one is less than the right one, 1 otherwise.</returns>
         public static int Compare(SourceLocation left, SourceLocation right) {
-            if (left < right) return -1;
-            if (left > right) return 1;
+            if (left < right) {
+                return -1;
+            }
+
+            if (left > right) {
+                return 1;
+            }
 
             return 0;
         }
@@ -200,23 +204,23 @@ namespace Microsoft.Python.Core.Text {
                 return Invalid;
             }
 
-            int newIndex = this._index, newCol = this.Column;
+            int newIndex = _index, newCol = Column;
 
             // These comparisons have been arranged to allow columns to
             // be int.MaxValue without the arithmetic overflowing.
             // The naive version is shown as a comment.
 
             // if (this.Column + columns > int.MaxValue)
-            if (columns > int.MaxValue - this.Column) {
+            if (columns > int.MaxValue - Column) {
                 newCol = int.MaxValue;
                 if (newIndex >= 0) {
                     newIndex = int.MaxValue;
                 }
-            // if (this.Column + columns <= 0)
-            } else if (columns == int.MinValue || (columns < 0 && this.Column <= -columns)) {
+                // if (this.Column + columns <= 0)
+            } else if (columns == int.MinValue || (columns < 0 && Column <= -columns)) {
                 newCol = 1;
                 if (newIndex >= 0) {
-                    newIndex += 1 - this.Column;
+                    newIndex += 1 - Column;
                 }
             } else {
                 newCol += columns;
@@ -224,34 +228,27 @@ namespace Microsoft.Python.Core.Text {
                     newIndex += columns;
                 }
             }
-            return newIndex >= 0 ? new SourceLocation(newIndex, this.Line, newCol) : new SourceLocation(this.Line, newCol);
+            return newIndex >= 0 ? new SourceLocation(newIndex, Line, newCol) : new SourceLocation(Line, newCol);
         }
 
         public override bool Equals(object obj) {
-            if (!(obj is SourceLocation)) return false;
+            if (!(obj is SourceLocation)) {
+                return false;
+            }
 
-            SourceLocation other = (SourceLocation)obj;
+            var other = (SourceLocation)obj;
             return other.Line == Line && other.Column == Column;
         }
 
-        public override int GetHashCode() {
-            return (Line << 16) ^ Column;
-        }
+        public override int GetHashCode() => (Line << 16) ^ Column;
 
-        public override string ToString() {
-            return "(" + Line + ", " + Column + ")";
-        }
+        public override string ToString() => $"({Line}, {Column})";
 
-        public bool Equals(SourceLocation other) {
-            return other.Line == Line && other.Column == Column;
-        }
+        public bool Equals(SourceLocation other) => other.Line == Line && other.Column == Column;
 
         public int CompareTo(SourceLocation other) {
-            int c = Line.CompareTo(other.Line);
-            if (c == 0) {
-                return Column.CompareTo(other.Column);
-            }
-            return c;
+            var c = Line.CompareTo(other.Line);
+            return c == 0 ? Column.CompareTo(other.Column) : c;
         }
     }
 }

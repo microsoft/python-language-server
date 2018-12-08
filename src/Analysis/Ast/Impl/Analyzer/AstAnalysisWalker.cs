@@ -31,7 +31,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly ExpressionLookup _lookup;
         private readonly Scope _globalScope = Scope.CreateGlobalScope();
         private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
-        private Scope _currentScope;
 
         private IPythonInterpreter Interpreter => _module.Interpreter;
         private ILogger Log => Interpreter.Log;
@@ -43,7 +42,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 SuppressBuiltinLookup = suppressBuiltinLookup
             };
             // TODO: handle typing module
-            _currentScope = _globalScope;
         }
 
         public IScope GlobalScope => _globalScope;
@@ -380,8 +378,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType) {
-            var existing = _lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) as AstPythonProperty;
-            if (existing == null) {
+            if (!(_lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is AstPythonProperty existing)) {
                 existing = new AstPythonProperty(node, declaringModule, declaringType, GetLoc(node));
                 _lookup.DeclareVariable(node.Name, existing);
             }
@@ -481,8 +478,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public void ProcessFunctionDefinition(FunctionDefinition node) {
-            var existing = _lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) as AstPythonFunction;
-            if (existing == null) {
+            if (!(_lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is AstPythonFunction existing)) {
                 var cls = _lookup.GetInScope("__class__") as IPythonType;
                 existing = new AstPythonFunction(node, _module, cls, GetLoc(node));
                 _lookup.DeclareVariable(node.Name, existing);

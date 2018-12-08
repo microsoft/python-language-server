@@ -44,7 +44,7 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     internal class DefineBinder : PythonWalkerNonRecursive {
-        private PythonNameBinder _binder;
+        private readonly PythonNameBinder _binder;
         public DefineBinder(PythonNameBinder binder) {
             _binder = binder;
         }
@@ -83,8 +83,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         private void WalkTuple(TupleExpression tuple) {
-            foreach (Expression innerNode in tuple.Items) {
-                NameExpression name = innerNode as NameExpression;
+            foreach (var innerNode in tuple.Items) {
+                var name = innerNode as NameExpression;
                 if (name != null) {
                     _binder.DefineName(name.Name);
                     name.AddVariableReference(_binder.GlobalScope, _binder.BindReferences, _binder.Reference(name.Name));
@@ -99,7 +99,7 @@ namespace Microsoft.Python.Parsing.Ast {
     }
 
     class DeleteBinder : PythonWalkerNonRecursive {
-        private PythonNameBinder _binder;
+        private readonly PythonNameBinder _binder;
         public DeleteBinder(PythonNameBinder binder) {
             _binder = binder;
         }
@@ -119,9 +119,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
         #region Recursive binders
 
-        private DefineBinder _define;
-        private DeleteBinder _delete;
-        private ParameterBinder _parameter;
+        private readonly DefineBinder _define;
+        private readonly DeleteBinder _delete;
+        private readonly ParameterBinder _parameter;
 
         #endregion
 
@@ -140,7 +140,7 @@ namespace Microsoft.Python.Parsing.Ast {
         #region Public surface
 
         internal static void BindAst(PythonLanguageVersion langVersion, PythonAst ast, ErrorSink context, bool bindReferences) {
-            PythonNameBinder binder = new PythonNameBinder(langVersion, ast, context, bindReferences);
+            var binder = new PythonNameBinder(langVersion, ast, context, bindReferences);
             binder.Bind(ast);
         }
 
@@ -156,7 +156,7 @@ namespace Microsoft.Python.Parsing.Ast {
             unboundAst.Walk(this);
 
             // Bind
-            foreach (ScopeStatement scope in _scopes) {
+            foreach (var scope in _scopes) {
                 scope.Bind(this);
             }
 
@@ -164,7 +164,7 @@ namespace Microsoft.Python.Parsing.Ast {
             unboundAst.Bind(this);
 
             // Finish Binding w/ outer most scopes first.
-            for (int i = _scopes.Count - 1; i >= 0; i--) {
+            for (var i = _scopes.Count - 1; i >= 0; i--) {
                 _scopes[i].FinishBind(this);
             }
 
@@ -208,7 +208,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // AssignmentStatement
         public override bool Walk(AssignmentStatement node) {
-            foreach (Expression e in node.Left) {
+            foreach (var e in node.Left) {
                 e.Walk(_define);
             }
             return true;
@@ -267,7 +267,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // DelStatement
         public override bool Walk(DelStatement node) {
-            foreach (Expression e in node.Expressions) {
+            foreach (var e in node.Expressions) {
                 e.Walk(_delete);
             }
             return true;
@@ -330,7 +330,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override bool Walk(WithStatement node) {
             _currentScope.ContainsExceptionHandling = true;
 
-            for (int i = 0; i < node.Items.Count; i++) {
+            for (var i = 0; i < node.Items.Count; i++) {
                 if (node.Items[i].Variable != null) {
                     node.Items[i].Variable.Walk(_define);
                 }
@@ -341,12 +341,12 @@ namespace Microsoft.Python.Parsing.Ast {
         // FromImportStatement
         public override bool Walk(FromImportStatement node) {
             if (node.Names.Count != 1 || node.Names[0].Name != "*") {
-                PythonVariable[] variables = new PythonVariable[node.Names.Count];
+                var variables = new PythonVariable[node.Names.Count];
                 PythonReference[] references = null;
                 if (BindReferences) {
                     references = new PythonReference[node.Names.Count];
                 }
-                for (int i = 0; i < node.Names.Count; i++) {
+                for (var i = 0; i < node.Names.Count; i++) {
                     variables[i] = DefineName(node.AsNames[i] != null ? node.AsNames[i].Name : node.Names[i].Name);
                     if (references != null) {
                         references[i] = Reference(variables[i].Name);
@@ -404,15 +404,15 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // GlobalStatement
         public override bool Walk(GlobalStatement node) {
-            foreach (NameExpression nameNode in node.Names) {
-                string n = nameNode.Name;
+            foreach (var nameNode in node.Names) {
+                var n = nameNode.Name;
                 if (n == null) {
                     continue;
                 }
 
                 PythonVariable conflict;
                 // Check current scope for conflicting variable
-                bool assignedGlobal = false;
+                var assignedGlobal = false;
                 if (_currentScope.TryGetVariable(n, out conflict)) {
                     // conflict?
                     switch (conflict.Kind) {
@@ -442,7 +442,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
 
                 // Create the variable in the global context and mark it as global
-                PythonVariable variable = GlobalScope.EnsureGlobalVariable(n);
+                var variable = GlobalScope.EnsureGlobalVariable(n);
                 variable.Kind = VariableKind.Global;
 
                 if (conflict == null) {
@@ -456,15 +456,15 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override bool Walk(NonlocalStatement node) {
-            foreach (NameExpression nameNode in node.Names) {
-                string n = nameNode.Name;
+            foreach (var nameNode in node.Names) {
+                var n = nameNode.Name;
                 if (n == null) {
                     continue;
                 }
 
                 PythonVariable conflict;
                 // Check current scope for conflicting variable
-                bool assignedLocal = false;
+                var assignedLocal = false;
                 if (_currentScope.TryGetVariable(n, out conflict)) {
                     // conflict?
                     switch (conflict.Kind) {
@@ -509,22 +509,8 @@ namespace Microsoft.Python.Parsing.Ast {
             return true;
         }
 
-        public override bool Walk(PrintStatement node) {
-            return base.Walk(node);
-        }
-
-        public override bool Walk(IfStatement node) {
-            return base.Walk(node);
-        }
-
-        public override bool Walk(AssertStatement node) {
-            return base.Walk(node);
-        }
-
         // PythonAst
-        public override bool Walk(PythonAst node) {
-            return true;
-        }
+        public override bool Walk(PythonAst node) => true;
 
         // PythonAst
         public override void PostWalk(PythonAst node) {
@@ -573,7 +559,7 @@ namespace Microsoft.Python.Parsing.Ast {
             node.Body.Walk(this);
 
             if (node.Handlers != null) {
-                foreach (TryStatementHandler tsh in node.Handlers) {
+                foreach (var tsh in node.Handlers) {
                     if (tsh.Target != null) {
                         tsh.Target.Walk(_define);
                     }

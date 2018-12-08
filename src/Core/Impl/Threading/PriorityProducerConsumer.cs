@@ -71,7 +71,10 @@ namespace Microsoft.Python.Core.Threading {
         }
 
         public void Produce(T value, int priority = 0) {
-            if (priority < 0 || priority >= _maxPriority) throw new ArgumentOutOfRangeException(nameof(priority));
+            if (priority < 0 || priority >= _maxPriority) {
+                throw new ArgumentOutOfRangeException(nameof(priority));
+            }
+
             _disposeToken.ThrowIfDisposed();
 
             TaskCompletionSource<T> pendingTcs = null;
@@ -109,7 +112,7 @@ namespace Microsoft.Python.Core.Threading {
             }
         }
 
-        public Task<T> ConsumeAsync(CancellationToken cancellationToken = default(CancellationToken)) {
+        public Task<T> ConsumeAsync(CancellationToken cancellationToken = default) {
             if (cancellationToken.IsCancellationRequested) {
                 return Task.FromCanceled<T>(cancellationToken);
             }

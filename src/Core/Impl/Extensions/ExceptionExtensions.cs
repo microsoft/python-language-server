@@ -21,11 +21,9 @@ namespace Microsoft.Python.Core {
         /// <summary>
         /// Returns true if an exception should not be handled by logging code.
         /// </summary>
-        public static bool IsCriticalException(this Exception ex) {
-            return ex is StackOverflowException ||
-                ex is OutOfMemoryException ||
-                ex is ThreadAbortException ||
-                ex is AccessViolationException;
-        }
+        public static bool IsCriticalException(this Exception ex) => ex is StackOverflowException ||
+                                                                     ex is OutOfMemoryException ||
+                                                                     ex is ThreadAbortException ||
+                                                                     ex is AccessViolationException;
     }
 }

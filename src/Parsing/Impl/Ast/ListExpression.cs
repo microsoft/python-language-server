@@ -33,7 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 if (Items != null) {
-                    foreach (Expression e in Items) {
+                    foreach (var e in Items) {
                         e.Walk(walker);
                     }
                 }
@@ -79,7 +79,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 res.Append(start);
             }
             var listWhiteSpace = node.GetListWhiteSpace(ast);
-            for (int i = 0; i < itemCount; i++) {
+            for (var i = 0; i < itemCount; i++) {
                 if (i > 0) {
                     format.Append(res, format.SpaceBeforeComma, " ", "", listWhiteSpace?[i - 1]);
                     res.Append(",");

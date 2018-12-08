@@ -39,7 +39,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (Expression e in _left) {
+                foreach (var e in _left) {
                     e.Walk(walker);
                 }
                 _right.Walk(walker);
@@ -49,7 +49,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             var lhs = this.GetListWhiteSpace(ast);
-            for (int i = 0; i < Left.Count; i++) {
+            for (var i = 0; i < Left.Count; i++) {
                 if (lhs != null && i != 0) {
                     format.Append(
                         res,

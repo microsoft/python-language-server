@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             // Set an "unknown" value to prevent recursion
-            var locs = ImportLocation == null ? LocationInfo.Empty : ImportLocation;
+            var locs = ImportLocation ?? LocationInfo.Empty;
             var sentinel = new AstPythonConstant(_interpreter.GetBuiltinType(BuiltinTypeId.Unknown), locs);
             m = Interlocked.CompareExchange(ref _realMember, sentinel, null);
             if (m != null) {

@@ -40,7 +40,7 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format, string leadingWhiteSpace) {
-            string kwOnlyText = this.GetExtraVerbatimText(ast);
+            var kwOnlyText = this.GetExtraVerbatimText(ast);
             if (kwOnlyText != null) {
                 if (leadingWhiteSpace != null) {
                     res.Append(leadingWhiteSpace);

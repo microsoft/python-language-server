@@ -51,7 +51,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
                 res.Append(paramStr.ToString());
             }
-            string namedOnlyText = this.GetExtraVerbatimText(ast);
+            var namedOnlyText = this.GetExtraVerbatimText(ast);
             if (namedOnlyText != null) {
                 res.Append(namedOnlyText);
             }

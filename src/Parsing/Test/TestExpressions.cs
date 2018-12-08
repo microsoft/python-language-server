@@ -21,11 +21,7 @@ using System.Text;
 
 namespace Microsoft.Python.Parsing.Tests {
     public static class TestExpressions {
-        public static IEnumerable<string> Snippets2x {
-            get {
-                return Expressions.Concat(Statements2x);
-            }
-        }
+        public static IEnumerable<string> Snippets2x => Expressions.Concat(Statements2x);
 
         public static readonly string[] Expressions = new[] { 
                 // expressions

@@ -335,9 +335,7 @@ namespace Microsoft.Python.Parsing.Ast {
             return variable;
         }
 
-        internal PythonVariable DefineParameter(string name) {
-            return CreateVariable(name, VariableKind.Parameter);
-        }
+        internal PythonVariable DefineParameter(string name) => CreateVariable(name, VariableKind.Parameter);
 
         struct ClosureInfo {
             public PythonVariable Variable;

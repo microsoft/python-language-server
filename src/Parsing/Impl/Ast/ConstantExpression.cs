@@ -60,7 +60,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (verbatimPieces != null) {
                 // string+ / bytes+, such as "abc" "abc", which can spawn multiple lines, and 
                 // have comments in between the peices.
-                for (int i = 0; i < verbatimPieces.Length; i++) {
+                for (var i = 0; i < verbatimPieces.Length; i++) {
                     if (verbatimComments != null && i < verbatimComments.Length) {
                         format.ReflowComment(res, verbatimComments[i]);
                     }
@@ -91,7 +91,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     case '\'': res.Append("\\'"); break;
                     case '\\': res.Append("\\\\"); break;
                     default:
-                        ushort cp = (ushort)c;
+                        var cp = (ushort)c;
                         if (cp > 0xFF) {
                             res.AppendFormat(CultureInfo.InvariantCulture, "\\u{0:x04}", cp);
                         } else if (cp < 0x20 || (escape8bitStrings && cp >= 0x7F)) {
@@ -109,23 +109,23 @@ namespace Microsoft.Python.Parsing.Ast {
             if (_value == null) {
                 return "None";
             } else if (_value is AsciiString) {
-                StringBuilder res = new StringBuilder();
+                var res = new StringBuilder();
                 if (!version.Is2x()) {
                     res.Append("b");
                 }
                 AppendEscapedString(res, ((AsciiString)_value).String, escape8bitStrings);
                 return res.ToString();
             } else if (_value is string) {
-                StringBuilder res = new StringBuilder();
+                var res = new StringBuilder();
                 if (!version.Is3x()) {
                     res.Append("u");
                 }
                 AppendEscapedString(res, (string)_value, escape8bitStrings);
                 return res.ToString();
             } else if (_value is Complex) {
-                Complex n = (Complex)_value;
-                string real = NegativeZeroAwareToString(n.Real);
-                string imag =  NegativeZeroAwareToString(n.Imaginary);
+                var n = (Complex)_value;
+                var real = NegativeZeroAwareToString(n.Real);
+                var imag =  NegativeZeroAwareToString(n.Imaginary);
                 if (n.Real != 0) {
                     if (!imag.StartsWithOrdinal("-")) {
                         imag = "+" + imag;
@@ -139,8 +139,8 @@ namespace Microsoft.Python.Parsing.Ast {
                     return "{0}L".FormatInvariant(_value);
                 }
             } else if (_value is double) {
-                double n = (double)_value;
-                string s = NegativeZeroAwareToString(n);
+                var n = (double)_value;
+                var s = NegativeZeroAwareToString(n);
                 // If there's no fractional part, and this is not NaN or +-Inf, G format will not include the decimal
                 // point. This is okay if we're using scientific notation as this implies float, but if not, add the
                 // decimal point to indicate the type, just like Python repr() does.
@@ -161,7 +161,7 @@ namespace Microsoft.Python.Parsing.Ast {
         private static NumberFormatInfo nfi {
             get {
                 if (_nfi == null) {
-                    NumberFormatInfo numberFormatInfo = ((CultureInfo)CultureInfo.InvariantCulture.Clone()).NumberFormat;
+                    var numberFormatInfo = ((CultureInfo)CultureInfo.InvariantCulture.Clone()).NumberFormat;
                     // The CLI formats as "Infinity", but CPython formats differently
                     numberFormatInfo.PositiveInfinitySymbol = "inf";
                     numberFormatInfo.NegativeInfinitySymbol = "-inf";

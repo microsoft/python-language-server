@@ -40,9 +40,9 @@ namespace Microsoft.Python.Core.IO {
                 .EnumerateFileSystemInfos()
                 .Select(CreateFileSystemInfoProxy);
 
-        private static IFileSystemInfo CreateFileSystemInfoProxy(FileSystemInfo fileSystemInfo) {
-            var directoryInfo = fileSystemInfo as DirectoryInfo;
-            return directoryInfo != null ? (IFileSystemInfo)new DirectoryInfoProxy(directoryInfo) : new FileInfoProxy((FileInfo)fileSystemInfo);
-        }
+        private static IFileSystemInfo CreateFileSystemInfoProxy(FileSystemInfo fileSystemInfo)
+            => fileSystemInfo is DirectoryInfo directoryInfo
+                ? (IFileSystemInfo)new DirectoryInfoProxy(directoryInfo)
+                : new FileInfoProxy((FileInfo)fileSystemInfo);
     }
 }

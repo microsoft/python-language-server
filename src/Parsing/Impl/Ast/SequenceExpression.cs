@@ -29,8 +29,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override string CheckAssign() {
-            for (int i = 0; i < Items.Count; i++) {
-                Expression e = Items[i];
+            for (var i = 0; i < Items.Count; i++) {
+                var e = Items[i];
                 if (e is StarredExpression se && se.StarCount == 1) {
                     continue;
                 }
@@ -47,8 +47,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override string CheckDelete() {
-            for (int i = 0; i < Items.Count; i++) {
-                Expression e = Items[i];
+            for (var i = 0; i < Items.Count; i++) {
+                var e = Items[i];
                 if (e.CheckDelete() != null) {
                     // we don't return the same message here as CPython doesn't seem to either, 
                     // for example ((yield a), 2,3) = (2,3,4) gives a different error than

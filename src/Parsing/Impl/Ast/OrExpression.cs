@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -47,16 +46,10 @@ namespace Microsoft.Python.Parsing.Ast {
             walker.PostWalk(this);
         }
 
-        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            BinaryExpression.BinaryToCodeString(res, ast, format, this, Left, Right, "or");
-        }
+        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) => BinaryExpression.BinaryToCodeString(res, ast, format, this, Left, Right, "or");
 
-        public override string GetLeadingWhiteSpace(PythonAst ast) {
-            return Left.GetLeadingWhiteSpace(ast);
-        }
+        public override string GetLeadingWhiteSpace(PythonAst ast) => Left.GetLeadingWhiteSpace(ast);
 
-        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) {
-            Left.SetLeadingWhiteSpace(ast, whiteSpace);
-        }
+        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) => Left.SetLeadingWhiteSpace(ast, whiteSpace);
     }
 }

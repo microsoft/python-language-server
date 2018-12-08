@@ -21,27 +21,15 @@ namespace Microsoft.Python.Parsing.Ast {
         public static readonly NameExpression[] EmptyArray = new NameExpression[0];
         public static readonly NameExpression Empty = new NameExpression("");
 
-        private readonly string _name;
-
         public NameExpression(string name) {
-            _name = name ?? "";
+            Name = name ?? "";
         }
 
-        public string/*!*/ Name {
-            get { return _name; }
-        }
+        public string/*!*/ Name { get; }
 
-        public override string ToString() {
-            return base.ToString() + ":" + _name;
-        }
-
-        internal override string CheckAssign() {
-            return null;
-        }
-
-        internal override string CheckDelete() {
-            return null;
-        }
+        public override string ToString() => base.ToString() + ":" + Name;
+        internal override string CheckAssign() => null;
+        internal override string CheckDelete() => null;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -49,20 +37,17 @@ namespace Microsoft.Python.Parsing.Ast {
             walker.PostWalk(this);
         }
 
-        public PythonReference GetVariableReference(PythonAst ast) {
-            return GetVariableReference(this, ast);
-        }
+        public PythonReference GetVariableReference(PythonAst ast) => GetVariableReference(this, ast);
 
-        public void AddPreceedingWhiteSpace(PythonAst ast, string whiteSpace) {
-            ast.SetAttribute(this, NodeAttributes.PreceedingWhiteSpace, whiteSpace);
-        }
+        public void AddPreceedingWhiteSpace(PythonAst ast, string whiteSpace) 
+            => ast.SetAttribute(this, NodeAttributes.PreceedingWhiteSpace, whiteSpace);
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpaceDefaultNull(ast));
             if (format.UseVerbatimImage) {
-                res.Append(this.GetVerbatimImage(ast) ?? _name);
+                res.Append(this.GetVerbatimImage(ast) ?? Name);
             } else {
-                res.Append(_name);
+                res.Append(Name);
             }
         }
     }

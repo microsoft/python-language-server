@@ -29,7 +29,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             var whitespace = this.GetListWhiteSpace(ast);
-            for (int i = 0; i < DotCount; i++) {
+            for (var i = 0; i < DotCount; i++) {
                 if (whitespace != null) {
                     res.Append(whitespace[i]);
                 }

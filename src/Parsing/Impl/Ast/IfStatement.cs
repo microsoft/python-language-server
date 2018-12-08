@@ -43,7 +43,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 if (_tests != null) {
-                    foreach (IfStatementTest test in _tests) {
+                    foreach (var test in _tests) {
                         test.Walk(walker);
                     }
                 }
@@ -55,7 +55,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             var itemWhiteSpace = this.GetListWhiteSpace(ast);
-            for (int i = 0; i < _tests.Length; i++) {
+            for (var i = 0; i < _tests.Length; i++) {
                 if (itemWhiteSpace != null) {
                     format.ReflowComment(res, itemWhiteSpace[i]);
                 }

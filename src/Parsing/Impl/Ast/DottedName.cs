@@ -28,10 +28,12 @@ namespace Microsoft.Python.Parsing.Ast {
         public IList<NameExpression> Names => _names;
 
         public virtual string MakeString() {
-            if (_names.Length == 0) return string.Empty;
+            if (_names.Length == 0) {
+                return string.Empty;
+            }
 
-            StringBuilder ret = new StringBuilder(_names[0].Name);
-            for (int i = 1; i < _names.Length; i++) {
+            var ret = new StringBuilder(_names[0].Name);
+            for (var i = 1; i < _names.Length; i++) {
                 ret.Append('.');
                 ret.Append(_names[i].Name);
             }

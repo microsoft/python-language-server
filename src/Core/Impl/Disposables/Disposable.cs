@@ -71,7 +71,7 @@ namespace Microsoft.Python.Core.Disposables {
             /// Calls the disposal action if and only if the current instance hasn't been disposed yet.
             /// </summary>
             public void Dispose() {
-                Action action = Interlocked.Exchange(ref _dispose, null);
+                var action = Interlocked.Exchange(ref _dispose, null);
                 action?.Invoke();
             }
         }

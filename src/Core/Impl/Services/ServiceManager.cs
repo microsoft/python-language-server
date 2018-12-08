@@ -76,14 +76,14 @@ namespace Microsoft.Python.Core.Services {
             }
 
             type = type ?? typeof(T);
-            if (!_s.TryGetValue(type, out object value)) {
+            if (!_s.TryGetValue(type, out var value)) {
                 value = _s.FirstOrDefault(kvp => type.GetTypeInfo().IsAssignableFrom(kvp.Key)).Value;
             }
 
             return (T)CheckDisposed(value as T ?? (value as Lazy<object>)?.Value);
         }
 
-        public void RemoveService(object service) => _s.TryRemove(service.GetType(), out object dummy);
+        public void RemoveService(object service) => _s.TryRemove(service.GetType(), out var dummy);
 
         public IEnumerable<Type> AllServices => _s.Keys.ToList();
 

@@ -250,7 +250,7 @@ namespace Microsoft.Python.Parsing.Ast {
                         );
                     }
 
-                    string namedOnly = this.GetExtraVerbatimText(ast);
+                    var namedOnly = this.GetExtraVerbatimText(ast);
                     if (namedOnly != null) {
                         res.Append(namedOnly);
                     }
@@ -294,7 +294,7 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal void ParamsToString(StringBuilder res, PythonAst ast, string[] commaWhiteSpace, CodeFormattingOptions format, string initialLeadingWhiteSpace = null) {
-            for (int i = 0; i < Parameters.Length; i++) {
+            for (var i = 0; i < Parameters.Length; i++) {
                 if (i > 0) {
                     if (commaWhiteSpace != null) {
                         res.Append(commaWhiteSpace[i - 1]);

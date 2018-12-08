@@ -262,17 +262,17 @@ namespace Microsoft.Python.Parsing {
             //     # which will be wrapped
             //  2,
             //
-            int charsOnCurrentLine = GetCharsOnLastLine(res);
+            var charsOnCurrentLine = GetCharsOnLastLine(res);
 
             var lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-            int lineCount = lines.Length;
+            var lineCount = lines.Length;
             if (text.EndsWithOrdinal("\r") || text.EndsWithOrdinal("\n")) {
                 // split will give us an extra entry, but there's not really an extra line
                 lineCount = lines.Length - 1;
             }
             int reflowStartingLine = 0, curLine = 0;
             do { 
-                string commentPrefix = GetCommentPrefix(lines[curLine]);
+                var commentPrefix = GetCommentPrefix(lines[curLine]);
                 if (commentPrefix == null) {
                     // non-commented line (empty?), just append it and continue
                     // to the next comment prefix if we have one
@@ -296,7 +296,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private static int GetCharsOnLastLine(StringBuilder res) {
-            for (int i = res.Length - 1; i >= 0; i--) {
+            for (var i = res.Length - 1; i >= 0; i--) {
                 if (res[i] == '\n' || res[i] == '\r') {
                     return res.Length - i - 1;
                 }
@@ -314,12 +314,12 @@ namespace Microsoft.Python.Parsing {
 
         internal static string ReflowText(string prefix, string additionalLinePrefix, string newLine, int maxLength, string[] lines) {
             int curLine = 0, curOffset = prefix.Length, linesWritten = 0;
-            int columnCutoff = maxLength - prefix.Length;
-            int defaultColumnCutoff = columnCutoff;
-            StringBuilder newText = new StringBuilder();
+            var columnCutoff = maxLength - prefix.Length;
+            var defaultColumnCutoff = columnCutoff;
+            var newText = new StringBuilder();
             while (curLine < lines.Length) {
-                string curLineText = lines[curLine];
-                int lastSpace = curLineText.Length;
+                var curLineText = lines[curLine];
+                var lastSpace = curLineText.Length;
 
                 // skip leading white space
                 while (curOffset < curLineText.Length && Char.IsWhiteSpace(curLineText[curOffset])) {
@@ -327,14 +327,14 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 // find next word
-                for (int i = curOffset; i < curLineText.Length; i++) {
+                for (var i = curOffset; i < curLineText.Length; i++) {
                     if (Char.IsWhiteSpace(curLineText[i])) {
                         lastSpace = i;
                         break;
                     }
                 }
 
-                bool startNewLine = lastSpace - curOffset >= columnCutoff &&    // word won't fit in remaining space
+                var startNewLine = lastSpace - curOffset >= columnCutoff &&    // word won't fit in remaining space
                                     columnCutoff != defaultColumnCutoff;        // we're not already at the start of a new line
 
                 if (!startNewLine) {

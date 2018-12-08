@@ -75,8 +75,8 @@ namespace Microsoft.Python.Parsing.Ast {
             }
             res.Append("with");
             var itemWhiteSpace = this.GetListWhiteSpace(ast);
-            int whiteSpaceIndex = 0;
-            for (int i = 0; i < _items.Length; i++) {
+            var whiteSpaceIndex = 0;
+            for (var i = 0; i < _items.Length; i++) {
                 var item = _items[i];
                 if (i != 0) {
                     if (itemWhiteSpace != null) {

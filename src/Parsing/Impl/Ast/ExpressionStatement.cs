@@ -40,7 +40,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override string Documentation {
             get {
-                ConstantExpression ce = _expression as ConstantExpression;
+                var ce = _expression as ConstantExpression;
                 if (ce != null) {
                     if (ce.Value is string) {
                         return ce.Value as string;

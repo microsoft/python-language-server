@@ -33,9 +33,7 @@ namespace Microsoft.Python.Core.Threading {
             _workAvailable.Set();
         }
 
-        public void Dispose() {
-            _cts.Cancel();
-        }
+        public void Dispose() => _cts.Cancel();
 
         private void QueueWorker() {
             while (true) {

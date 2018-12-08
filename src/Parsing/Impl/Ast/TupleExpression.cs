@@ -18,11 +18,9 @@ using System.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class TupleExpression : SequenceExpression {
-        private bool _expandable;
-
         public TupleExpression(bool expandable, params Expression[] items)
             : base(items) {
-            _expandable = expandable;
+            IsExpandable = expandable;
         }
 
         internal override string CheckAssign() {
@@ -35,7 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 if (Items != null) {
-                    foreach (Expression e in Items) {
+                    foreach (var e in Items) {
                         e.Walk(walker);
                     }
                 }
@@ -43,11 +41,7 @@ namespace Microsoft.Python.Parsing.Ast {
             walker.PostWalk(this);
         }
 
-        public bool IsExpandable {
-            get {
-                return _expandable;
-            }
-        }
+        public bool IsExpandable { get; }
 
         /// <summary>
         /// Marks this tuple expression as having no parenthesis for the purposes of round tripping.

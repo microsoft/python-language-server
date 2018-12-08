@@ -28,9 +28,7 @@ namespace Microsoft.Python.Core.IO {
 
         private static readonly char[] InvalidPathChars = GetInvalidPathChars();
 
-        private static char[] GetInvalidPathChars() {
-            return Path.GetInvalidPathChars().Concat(new[] { '*', '?' }).ToArray();
-        }
+        private static char[] GetInvalidPathChars() => Path.GetInvalidPathChars().Concat(new[] { '*', '?' }).ToArray();
 
         // This is just a small cache to deal with the same keys being used
         // frequently in a loop.
@@ -156,7 +154,7 @@ namespace Microsoft.Python.Core.IO {
         }
 
         private string GetCompareKey(string path) {
-            var item = GetOrCreateCacheItem(path, out bool created);
+            var item = GetOrCreateCacheItem(path, out var created);
 
             string result;
             lock (item) {

@@ -32,7 +32,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         public override bool Equals(object obj) {
-            AsciiString other = obj as AsciiString;
+            var other = obj as AsciiString;
             if (other != null) {
                 return String == other.String;
             }

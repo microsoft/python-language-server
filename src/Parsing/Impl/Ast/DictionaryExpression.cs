@@ -39,7 +39,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 if (_items != null) {
-                    foreach (SliceExpression s in _items) {
+                    foreach (var s in _items) {
                         s.Walk(walker);
                     }
                 }

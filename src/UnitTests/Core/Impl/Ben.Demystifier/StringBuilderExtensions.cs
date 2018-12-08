@@ -119,7 +119,7 @@ namespace TestUtilities.Ben.Demystifier {
                 if (method.IsLambda) {
                     builder.Append(" => { }");
 
-                    if (method.Ordinal.HasValue){
+                    if (method.Ordinal.HasValue) {
                         builder.Append(" [");
                         builder.Append(method.Ordinal);
                         builder.Append("]");
@@ -131,8 +131,9 @@ namespace TestUtilities.Ben.Demystifier {
         public static StringBuilder AppendMethodName(this StringBuilder stringBuilder, string name, string declaringTypeName, bool isSubMethodOrLambda) {
             if (!string.IsNullOrEmpty(declaringTypeName)) {
                 if (name == ".ctor") {
-                    if (!isSubMethodOrLambda)
+                    if (!isSubMethodOrLambda) {
                         stringBuilder.Append("new ");
+                    }
 
                     stringBuilder.Append(declaringTypeName);
                 } else if (name == ".cctor") {
@@ -188,7 +189,7 @@ namespace TestUtilities.Ben.Demystifier {
 
             return stringBuilder;
         }
-        
+
         private static bool ShowInStackTrace(MethodBase method) {
             try {
                 var type = method.DeclaringType;
@@ -411,7 +412,10 @@ namespace TestUtilities.Ben.Demystifier {
             switch (kind) {
                 case GeneratedNameKind.LocalFunction: {
                         var localNameStart = generatedName.IndexOf((char)kind, closeBracketOffset + 1);
-                        if (localNameStart < 0) break;
+                        if (localNameStart < 0) {
+                            break;
+                        }
+
                         localNameStart += 3;
 
                         if (localNameStart < generatedName.Length) {
@@ -436,10 +440,14 @@ namespace TestUtilities.Ben.Demystifier {
             var matchName = methodName;
 
             var candidateMethods = dt.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(m => m.Name == matchName);
-            if (TryResolveSourceMethod(candidateMethods, kind, matchHint, ref method, ref type, out ordinal)) return true;
+            if (TryResolveSourceMethod(candidateMethods, kind, matchHint, ref method, ref type, out ordinal)) {
+                return true;
+            }
 
             var candidateConstructors = dt.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(m => m.Name == matchName);
-            if (TryResolveSourceMethod(candidateConstructors, kind, matchHint, ref method, ref type, out ordinal)) return true;
+            if (TryResolveSourceMethod(candidateConstructors, kind, matchHint, ref method, ref type, out ordinal)) {
+                return true;
+            }
 
             const int MaxResolveDepth = 10;
             for (var i = 0; i < MaxResolveDepth; i++) {
@@ -449,15 +457,18 @@ namespace TestUtilities.Ben.Demystifier {
                 }
 
                 candidateMethods = dt.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(m => m.Name == matchName);
-                if (TryResolveSourceMethod(candidateMethods, kind, matchHint, ref method, ref type, out ordinal)) return true;
+                if (TryResolveSourceMethod(candidateMethods, kind, matchHint, ref method, ref type, out ordinal)) {
+                    return true;
+                }
 
                 candidateConstructors = dt.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(m => m.Name == matchName);
-                if (TryResolveSourceMethod(candidateConstructors, kind, matchHint, ref method, ref type, out ordinal)) return true;
+                if (TryResolveSourceMethod(candidateConstructors, kind, matchHint, ref method, ref type, out ordinal)) {
+                    return true;
+                }
 
                 if (methodName == ".cctor") {
                     candidateConstructors = dt.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly).Where(m => m.Name == matchName);
-                    foreach (var cctor in candidateConstructors)
-                    {
+                    foreach (var cctor in candidateConstructors) {
                         method = cctor;
                         type = dt;
                         return true;
@@ -559,9 +570,14 @@ namespace TestUtilities.Ben.Demystifier {
             switch (kind) {
                 case GeneratedNameKind.LocalFunction:
                     var start = methodName.IndexOf("|", StringComparison.Ordinal);
-                    if (start < 1) return null;
+                    if (start < 1) {
+                        return null;
+                    }
+
                     var end = methodName.IndexOf("_", start, StringComparison.Ordinal) + 1;
-                    if (end <= start) return null;
+                    if (end <= start) {
+                        return null;
+                    }
 
                     return methodName.Substring(start, end - start);
                 default:
@@ -587,7 +603,7 @@ namespace TestUtilities.Ben.Demystifier {
                 if (closeBracketOffset >= 0 && closeBracketOffset + 1 < name.Length) {
                     int c = name[closeBracketOffset + 1];
                     // Note '0' is not special.
-                    if ((c >= '1' && c <= '9') || (c >= 'a' && c <= 'z'))  {
+                    if ((c >= '1' && c <= '9') || (c >= 'a' && c <= 'z')) {
                         kind = (GeneratedNameKind)c;
                         return true;
                     }
@@ -599,7 +615,7 @@ namespace TestUtilities.Ben.Demystifier {
             closeBracketOffset = -1;
             return false;
         }
-        
+
         private static int IndexOfBalancedParenthesis(string str, int openingOffset, char closing) {
             var opening = str[openingOffset];
 

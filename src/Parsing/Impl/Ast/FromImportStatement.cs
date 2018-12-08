@@ -80,14 +80,14 @@ namespace Microsoft.Python.Parsing.Ast {
                 throw new ArgumentNullException("ast");
             }
 
-            NameExpression[] names = new NameExpression[Names.Count - 1];
-            NameExpression[] asNames = AsNames == null ? null : new NameExpression[AsNames.Count - 1];
+            var names = new NameExpression[Names.Count - 1];
+            var asNames = AsNames == null ? null : new NameExpression[AsNames.Count - 1];
             var asNameWhiteSpace = this.GetNamesWhiteSpace(ast);
-            List<string> newAsNameWhiteSpace = new List<string>();
-            int importIndex = ImportIndex;
-            int asIndex = 0;
+            var newAsNameWhiteSpace = new List<string>();
+            var importIndex = ImportIndex;
+            var asIndex = 0;
             for (int i = 0, write = 0; i < Names.Count; i++) {
-                bool includingCurrentName = i != index;
+                var includingCurrentName = i != index;
 
                 // track the white space, this needs to be kept in sync w/ ToCodeString and how the
                 // parser creates the white space.
@@ -177,8 +177,8 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
 
                 var asNameWhiteSpace = this.GetNamesWhiteSpace(ast);
-                int asIndex = 0;
-                for (int i = 0; i < Names.Count; i++) {
+                var asIndex = 0;
+                for (var i = 0; i < Names.Count; i++) {
                     if (i > 0) {
                         if (asNameWhiteSpace != null && asIndex < asNameWhiteSpace.Length) {
                             res.Append(asNameWhiteSpace[asIndex++]);

@@ -58,7 +58,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 Body?.Walk(walker);
-                foreach (TryStatementHandler handler in _handlers.MaybeEnumerate()) {
+                foreach (var handler in _handlers.MaybeEnumerate()) {
                     handler.Walk(walker);
                 }
                 Else?.Walk(walker);

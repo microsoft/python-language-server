@@ -70,15 +70,15 @@ namespace Microsoft.Python.Parsing.Ast {
                 throw new ArgumentNullException("ast");
             }
 
-            ModuleName[] names = new ModuleName[_names.Length - 1];
-            NameExpression[] asNames = _asNames == null ? null : new NameExpression[_asNames.Length - 1];
+            var names = new ModuleName[_names.Length - 1];
+            var asNames = _asNames == null ? null : new NameExpression[_asNames.Length - 1];
             var asNameWhiteSpace = this.GetNamesWhiteSpace(ast);
             var itemWhiteSpace = this.GetListWhiteSpace(ast);
-            List<string> newAsNameWhiteSpace = new List<string>();
-            List<string> newListWhiteSpace = new List<string>();
-            int asIndex = 0;
+            var newAsNameWhiteSpace = new List<string>();
+            var newListWhiteSpace = new List<string>();
+            var asIndex = 0;
             for (int i = 0, write = 0; i < _names.Length; i++) {
-                bool includingCurrentName = i != index;
+                var includingCurrentName = i != index;
 
                 // track the white space, this needs to be kept in sync w/ ToCodeString and how the
                 // parser creates the white space.

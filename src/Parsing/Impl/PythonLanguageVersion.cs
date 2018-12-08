@@ -41,17 +41,9 @@ namespace Microsoft.Python.Parsing {
     }
 
     public static class PythonLanguageVersionExtensions {
-        public static bool Is2x(this PythonLanguageVersion version) {
-            return (((int)version >> 8) & 0xff) == 2;
-        }
-
-        public static bool Is3x(this PythonLanguageVersion version) {
-            return (((int)version >> 8) & 0xff) == 3;
-        }
-
-        public static bool IsNone(this PythonLanguageVersion version) {
-            return version == PythonLanguageVersion.None;
-        }
+        public static bool Is2x(this PythonLanguageVersion version) => (((int)version >> 8) & 0xff) == 2;
+        public static bool Is3x(this PythonLanguageVersion version) => (((int)version >> 8) & 0xff) == 3;
+        public static bool IsNone(this PythonLanguageVersion version) => version == PythonLanguageVersion.None;
 
         public static bool IsImplicitNamespacePackagesSupported(this PythonLanguageVersion version) 
             => version >= PythonLanguageVersion.V33;
@@ -61,7 +53,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         public static PythonLanguageVersion ToLanguageVersion(this Version version) {
-            int value = (version.Major << 8) + version.Minor;
+            var value = (version.Major << 8) + version.Minor;
             if (Enum.IsDefined(typeof(PythonLanguageVersion), value)) {
                 return (PythonLanguageVersion)value;
             }

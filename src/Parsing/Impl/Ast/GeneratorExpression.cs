@@ -58,7 +58,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
 
                 if (_iterators != null) {
-                    foreach (ComprehensionIterator ci in _iterators) {
+                    foreach (var ci in _iterators) {
                         ci.Walk(walker);
                     }
                 }

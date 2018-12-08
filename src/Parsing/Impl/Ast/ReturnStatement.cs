@@ -45,7 +45,7 @@ namespace Microsoft.Python.Parsing.Ast {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
             res.Append("return");
             if (_expression != null) {
-                int len = res.Length;
+                var len = res.Length;
 
                 _expression.AppendCodeString(res, ast, format);
                 if (this.IsAltForm(ast)) {

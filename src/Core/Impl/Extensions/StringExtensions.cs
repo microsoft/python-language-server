@@ -32,7 +32,7 @@ namespace Microsoft.Python.Core {
 
         private static void ValidateFormatString(string str, int argCount) {
             foreach (Match m in SubstitutionRegex.Matches(str)) {
-                int index = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+                var index = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
                 if (index >= argCount) {
                     Debug.Fail(string.Format(CultureInfo.InvariantCulture, "Format string expects more than {0} args.\n\n{1}", argCount, str));
                 }
@@ -72,24 +72,22 @@ namespace Microsoft.Python.Core {
             ValidateFormatString(str, args.Length);
             return string.Format(CultureInfo.InvariantCulture, str, args);
         }
-        
+
         public static int IndexOfEnd(this string s, string substring, StringComparison comparisonType = StringComparison.Ordinal) {
             var i = s.IndexOf(substring, comparisonType);
             return i < 0 ? i : i + substring.Length;
         }
 
         public static bool IsTrue(this string str) {
-            bool asBool;
             return !string.IsNullOrWhiteSpace(str) && (
                 str.Equals("1", StringComparison.Ordinal) ||
                 str.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
-                (bool.TryParse(str, out asBool) && asBool)
+                (bool.TryParse(str, out var asBool) && asBool)
             );
         }
 
-        public static string AsQuotedArguments(this IEnumerable<string> args) {
-            return string.Join(" ", args.Select(QuoteArgument).Where(a => !string.IsNullOrEmpty(a)));
-        }
+        public static string AsQuotedArguments(this IEnumerable<string> args)
+            => string.Join(" ", args.Select(QuoteArgument).Where(a => !string.IsNullOrEmpty(a)));
 
         private static IEnumerable<int> FindUnescapedChar(string s, char c, int start = 0, int end = int.MaxValue) {
             start -= 1;
@@ -134,7 +132,7 @@ namespace Microsoft.Python.Core {
                 arg += '\\';
             }
 
-            foreach (int i in FindUnescapedChar(arg, '"').Reverse().ToArray()) {
+            foreach (var i in FindUnescapedChar(arg, '"').Reverse().ToArray()) {
                 // We are going to quote with double quotes, so escape any
                 // inline double quotes first
                 arg = arg.Insert(i, "\\");
@@ -143,17 +141,15 @@ namespace Microsoft.Python.Core {
             return "\"{0}\"".FormatInvariant(arg);
         }
 
-        public static bool StartsWithOrdinal(this string s, string prefix, bool ignoreCase = false) {
-            return s?.StartsWith(prefix, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? false;
-        }
+        public static bool StartsWithOrdinal(this string s, string prefix, bool ignoreCase = false)
+            => s?.StartsWith(prefix, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? false;
 
-        public static bool EndsWithOrdinal(this string s, string suffix, bool ignoreCase = false) {
-            return s?.EndsWith(suffix, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? false;
-        }
+        public static bool EndsWithOrdinal(this string s, string suffix, bool ignoreCase = false)
+            => s?.EndsWith(suffix, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? false;
 
         public static bool EndsWithAnyOrdinal(this string s, params string[] values)
             => s.EndsWithAnyOrdinal(values, false);
-        
+
         public static bool EndsWithAnyOrdinalIgnoreCase(this string s, params string[] values)
             => s.EndsWithAnyOrdinal(values, true);
 
@@ -185,9 +181,8 @@ namespace Microsoft.Python.Core {
             return true;
         }
 
-        public static int IndexOfOrdinal(this string s, string value, int startIndex = 0, bool ignoreCase = false) {
-            return s?.IndexOf(value, startIndex, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? -1;
-        }
+        public static int IndexOfOrdinal(this string s, string value, int startIndex = 0, bool ignoreCase = false) 
+            => s?.IndexOf(value, startIndex, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? -1;
 
         public static bool EqualsIgnoreCase(this string s, string other)
             => string.Equals(s, other, StringComparison.OrdinalIgnoreCase);
@@ -241,7 +236,7 @@ namespace Microsoft.Python.Core {
         }
 
         public static StringSpan Slice(this string s, int start, int length)
-            => new StringSpan(s, start, length); 
+            => new StringSpan(s, start, length);
 
         public static StringSpanSplitSequence SplitIntoSpans(this string s, char separator)
             => s.SplitIntoSpans(separator, 0, s.Length);

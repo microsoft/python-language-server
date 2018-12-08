@@ -104,7 +104,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 CheckAst(
                     ParseFile("GenUnpack.py", ErrorSink.Null, version),
                     CheckSuite(
-                        CheckCallStmt(Fob, 
+                        CheckCallStmt(Fob,
                             CheckNamedArg("*", CheckListExpr(One)),
                             CheckNamedArg("*", CheckListExpr(Two)),
                             PositionalArg(Three)
@@ -629,7 +629,7 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in V26AndUp) {
                 ParseErrors("InvalidUnicodeLiteral26Up.py",
                     version,
-                    new ErrorInfo($"'unicodeescape' codec can't decode bytes in position {position}: truncated \\uXXXX escape", 
+                    new ErrorInfo($"'unicodeescape' codec can't decode bytes in position {position}: truncated \\uXXXX escape",
                         39 + Environment.NewLine.Length, 2, 1, 47 + Environment.NewLine.Length, 2, 9)
                 );
             }
@@ -1049,7 +1049,7 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             foreach (var version in V3Versions) {
-                ParseErrors("BinaryOperatorsV2.py", version, new[] { 
+                ParseErrors("BinaryOperatorsV2.py", version, new[] {
                     new ErrorInfo("unexpected token '>'", 3, 1, 4, 4, 1, 5),
                     new ErrorInfo("invalid syntax", 5, 1, 6, 6, 1, 7)
                 });
@@ -1068,7 +1068,7 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             foreach (var version in V3Versions.Except(V35AndUp)) {
-                ParseErrors("MatMulOperator.py", version, new[] { 
+                ParseErrors("MatMulOperator.py", version, new[] {
                     new ErrorInfo("unexpected token '@'", 2, 1, 3, 3, 1, 4)
                 });
             }
@@ -1265,7 +1265,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 ParseErrors(
                     "DelimitersV2.py",
                     version,
-                    new[] { 
+                    new[] {
                         new ErrorInfo("unexpected token '`'", 0, 1, 1, 1, 1, 2),
                         new ErrorInfo("unexpected token 'fob'", 1, 1, 2, 4, 1, 5),
                         new ErrorInfo("unexpected token '`'", 4, 1, 5, 5, 1, 6)
@@ -1432,9 +1432,9 @@ namespace Microsoft.Python.Parsing.Tests {
             ParseErrors("YieldExpr.py", PythonLanguageVersion.V24,
                 new ErrorInfo("invalid syntax", 19, 2, 10, 21, 3, 1),
                 new ErrorInfo("unexpected token 'yield'", 43, 5, 11, 48, 5, 16)
-                // [(yield oar) for ...] should be an error, but it is not raised.
-                // V24 is not supported by PTVS, so don't fail the test because of this.
-                //new ErrorInfo("unexpected token 'yield'", 74, 8, 13, 79, 8, 18)
+            // [(yield oar) for ...] should be an error, but it is not raised.
+            // V24 is not supported by PTVS, so don't fail the test because of this.
+            //new ErrorInfo("unexpected token 'yield'", 74, 8, 13, 79, 8, 18)
             );
         }
 
@@ -2791,7 +2791,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 CheckAst(
                     ParseFile("VarAnnotation.py", ErrorSink.Null, version),
                     CheckSuite(
-                        CheckExprStmt(FobWithOar), 
+                        CheckExprStmt(FobWithOar),
                         CheckAssignment(FobWithOar, One),
                         CheckExprStmt(Fob1WithOar),
                         CheckExprStmt(FobOarWithBaz),
@@ -2873,7 +2873,7 @@ namespace Microsoft.Python.Parsing.Tests {
             var errorSink = new CollectingErrorSink();
             var errors = new Dictionary<string, List<ErrorResult>>();
             foreach (var file in files) {
-                string filename = Path.GetFileName(file);
+                var filename = Path.GetFileName(file);
                 if (skippedFiles.Contains(filename) || filename.StartsWith("badsyntax_") || filename.StartsWith("bad_coding") || file.IndexOf("\\lib2to3\\tests\\") != -1) {
                     continue;
                 }
@@ -2908,7 +2908,7 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             if (errors.Count != 0) {
-                StringBuilder errorList = new StringBuilder();
+                var errorList = new StringBuilder();
                 foreach (var keyValue in errors) {
                     errorList.Append(keyValue.Key + " :" + Environment.NewLine);
                     foreach (var error in keyValue.Value) {
@@ -2926,7 +2926,7 @@ namespace Microsoft.Python.Parsing.Tests {
             Assert.AreEqual(0, new SourceLocation().Index);
             Assert.AreEqual(100, new SourceLocation(100, 1, 1).Index);
             try {
-                int i = new SourceLocation(1, 1).Index;
+                var i = new SourceLocation(1, 1).Index;
                 Assert.Fail("Expected InvalidOperationException");
             } catch (InvalidOperationException) {
             }
@@ -2986,7 +2986,7 @@ namespace Microsoft.Python.Parsing.Tests {
             var tree = parser.ParseTopExpression();
             if (Statement.GetExpression(tree.Body) is CallExpression ce) {
                 return (index, expected) => {
-                    int? actual = ce.GetArgumentAtIndex(tree, index, out int i) ? i : (int?)null;
+                    var actual = ce.GetArgumentAtIndex(tree, index, out var i) ? i : (int?)null;
                     Assert.AreEqual(expected, actual);
                 };
             }
@@ -3057,8 +3057,8 @@ pass
             var sink = new CollectingErrorSink();
             ParseFile(filename, sink, version, indentationInconsistencySeverity);
 
-            StringBuilder foundErrors = new StringBuilder();
-            for (int i = 0; i < sink.Errors.Count; i++) {
+            var foundErrors = new StringBuilder();
+            for (var i = 0; i < sink.Errors.Count; i++) {
                 foundErrors.AppendFormat("{0}{1}{2}",
                     FormatError(sink.Errors[i]),
                     i == sink.Errors.Count - 1 ? "" : ",",
@@ -3066,10 +3066,10 @@ pass
                 );
             }
 
-            string finalErrors = foundErrors.ToString();
+            var finalErrors = foundErrors.ToString();
             Console.WriteLine(finalErrors);
 
-            for (int i = 0; i < errors.Length; i++) {
+            for (var i = 0; i < errors.Length; i++) {
                 if (sink.Errors.Count <= i) {
                     Assert.Fail("No error {0}: {1}", i, FormatError(errors[i]));
                 }
@@ -3117,34 +3117,34 @@ pass
             checkBody(ast.Body);
         }
 
-        private static Action<Expression> Zero = CheckConstant(0);
-        private static Action<Expression> One = CheckConstant(1);
-        private static Action<Expression> Two = CheckConstant(2);
-        private static Action<Expression> Three = CheckConstant(3);
-        private static Action<Expression> Four = CheckConstant(4);
-        private static Action<Expression> None = CheckConstant(null);
-        private static Action<Expression> Fob = CheckNameExpr("fob");
-        private static Action<Expression> Ellipsis = CheckConstant(Microsoft.Python.Parsing.Ellipsis.Value);
-        private static Action<Expression> Oar = CheckNameExpr("oar");
-        private static Action<Expression> Baz = CheckNameExpr("baz");
-        private static Action<Expression> Quox = CheckNameExpr("quox");
-        private static Action<Expression> Exception = CheckNameExpr("Exception");
-        private static Action<Statement> Pass = CheckEmptyStmt();
-        private static Action<Statement> Break = CheckBreakStmt();
-        private static Action<Statement> Continue = CheckContinueStmt();
+        private static readonly Action<Expression> Zero = CheckConstant(0);
+        private static readonly Action<Expression> One = CheckConstant(1);
+        private static readonly Action<Expression> Two = CheckConstant(2);
+        private static readonly Action<Expression> Three = CheckConstant(3);
+        private static readonly Action<Expression> Four = CheckConstant(4);
+        private static readonly Action<Expression> None = CheckConstant(null);
+        private static readonly Action<Expression> Fob = CheckNameExpr("fob");
+        private static readonly Action<Expression> Ellipsis = CheckConstant(Microsoft.Python.Parsing.Ellipsis.Value);
+        private static readonly Action<Expression> Oar = CheckNameExpr("oar");
+        private static readonly Action<Expression> Baz = CheckNameExpr("baz");
+        private static readonly Action<Expression> Quox = CheckNameExpr("quox");
+        private static readonly Action<Expression> Exception = CheckNameExpr("Exception");
+        private static readonly Action<Statement> Pass = CheckEmptyStmt();
+        private static readonly Action<Statement> Break = CheckBreakStmt();
+        private static readonly Action<Statement> Continue = CheckContinueStmt();
 
 
         private static Action<Statement> CheckSuite(params Action<Statement>[] statements) {
             return stmt => {
                 Assert.AreEqual(typeof(SuiteStatement), stmt.GetType());
-                SuiteStatement suite = (SuiteStatement)stmt;
+                var suite = (SuiteStatement)stmt;
                 Assert.AreEqual(statements.Length, suite.Statements.Count);
-                for (int i = 0; i < suite.Statements.Count; i++) {
+                for (var i = 0; i < suite.Statements.Count; i++) {
                     try {
                         statements[i](suite.Statements[i]);
                     } catch (AssertFailedException e) {
                         Trace.TraceError(e.ToString());
-                        throw new AssertFailedException(String.Format("Suite Item {0}: {1}", i, e.Message), e);
+                        throw new AssertFailedException(string.Format("Suite Item {0}: {1}", i, e.Message), e);
                     }
                 }
             };
@@ -3153,7 +3153,7 @@ pass
         private static Action<Statement> CheckForStmt(Action<Expression> left, Action<Expression> list, Action<Statement> body, Action<Statement> _else = null) {
             return stmt => {
                 Assert.AreEqual(typeof(ForStatement), stmt.GetType());
-                ForStatement forStmt = (ForStatement)stmt;
+                var forStmt = (ForStatement)stmt;
 
                 left(forStmt.Left);
                 list(forStmt.List);
@@ -3218,7 +3218,7 @@ pass
                 body(tryStmt.Body);
 
                 Assert.AreEqual(handlers.Length, tryStmt.Handlers.Count);
-                for (int i = 0; i < handlers.Length; i++) {
+                for (var i = 0; i < handlers.Length; i++) {
                     handlers[i](tryStmt.Handlers[i]);
                 }
 
@@ -3270,7 +3270,7 @@ pass
                 Assert.AreEqual(expressions.Length, printStmt.Expressions.Count);
                 Assert.AreEqual(printStmt.TrailingComma, trailingComma);
 
-                for (int i = 0; i < expressions.Length; i++) {
+                for (var i = 0; i < expressions.Length; i++) {
                     expressions[i](printStmt.Expressions[i]);
                 }
 
@@ -3309,7 +3309,7 @@ pass
         private static Action<IList<IfStatementTest>> IfTests(params Action<IfStatementTest>[] expectedTests) {
             return tests => {
                 Assert.AreEqual(expectedTests.Length, tests.Count);
-                for (int i = 0; i < expectedTests.Length; i++) {
+                for (var i = 0; i < expectedTests.Length; i++) {
                     expectedTests[i](tests[i]);
                 }
             };
@@ -3348,19 +3348,19 @@ pass
 
                 Assert.AreEqual(fiStmt.Root.MakeString(), fromName);
                 Assert.AreEqual(names.Length, fiStmt.Names.Count);
-                for (int i = 0; i < names.Length; i++) {
+                for (var i = 0; i < names.Length; i++) {
                     Assert.AreEqual(names[i], fiStmt.Names[i].Name);
                 }
 
                 if (asNames == null) {
                     if (fiStmt.AsNames != null) {
-                        for (int i = 0; i < fiStmt.AsNames.Count; i++) {
+                        for (var i = 0; i < fiStmt.AsNames.Count; i++) {
                             Assert.AreEqual(null, fiStmt.AsNames[i]);
                         }
                     }
                 } else {
                     Assert.AreEqual(asNames.Length, fiStmt.AsNames.Count);
-                    for (int i = 0; i < asNames.Length; i++) {
+                    for (var i = 0; i < asNames.Length; i++) {
                         Assert.AreEqual(asNames[i], fiStmt.AsNames[i].Name);
                     }
                 }
@@ -3373,19 +3373,19 @@ pass
                 var fiStmt = (ImportStatement)stmt;
 
                 Assert.AreEqual(names.Length, fiStmt.Names.Count);
-                for (int i = 0; i < names.Length; i++) {
+                for (var i = 0; i < names.Length; i++) {
                     Assert.AreEqual(names[i], fiStmt.Names[i].MakeString());
                 }
 
                 if (asNames == null) {
                     if (fiStmt.AsNames != null) {
-                        for (int i = 0; i < fiStmt.AsNames.Count; i++) {
+                        for (var i = 0; i < fiStmt.AsNames.Count; i++) {
                             Assert.AreEqual(null, fiStmt.AsNames[i]);
                         }
                     }
                 } else {
                     Assert.AreEqual(asNames.Length, fiStmt.AsNames.Count);
-                    for (int i = 0; i < asNames.Length; i++) {
+                    for (var i = 0; i < asNames.Length; i++) {
                         Assert.AreEqual(asNames[i], fiStmt.AsNames[i].Name);
                     }
                 }
@@ -3395,7 +3395,7 @@ pass
         private static Action<Statement> CheckExprStmt(Action<Expression> expr) {
             return stmt => {
                 Assert.AreEqual(typeof(ExpressionStatement), stmt.GetType());
-                ExpressionStatement exprStmt = (ExpressionStatement)stmt;
+                var exprStmt = (ExpressionStatement)stmt;
                 expr(exprStmt.Expression);
             };
         }
@@ -3445,7 +3445,7 @@ pass
                 }
 
                 Assert.AreEqual(args?.Length ?? 0, funcDef.Parameters.Length);
-                for (int i = 0; i < (args?.Length ?? 0); i++) {
+                for (var i = 0; i < (args?.Length ?? 0); i++) {
                     args[i](funcDef.Parameters[i]);
                 }
 
@@ -3474,7 +3474,7 @@ pass
         private static void CheckDecorators(Action<Expression>[] decorators, DecoratorStatement foundDecorators) {
             if (decorators != null) {
                 Assert.AreEqual(decorators.Length, foundDecorators.Decorators.Length);
-                for (int i = 0; i < decorators.Length; i++) {
+                for (var i = 0; i < decorators.Length; i++) {
                     decorators[i](foundDecorators.Decorators[i]);
                 }
             } else {
@@ -3493,7 +3493,7 @@ pass
 
                 if (bases != null) {
                     Assert.AreEqual(bases.Length, classDef.Bases.Length);
-                    for (int i = 0; i < bases.Length; i++) {
+                    for (var i = 0; i < bases.Length; i++) {
                         bases[i](classDef.Bases[i]);
                     }
                 } else {
@@ -3531,7 +3531,7 @@ pass
                 var sublistParam = (SublistParameter)param;
 
                 Assert.AreEqual(names.Length, sublistParam.Tuple.Items.Count);
-                for (int i = 0; i < names.Length; i++) {
+                for (var i = 0; i < names.Length; i++) {
                     Assert.AreEqual(names[i], ((NameExpression)sublistParam.Tuple.Items[i]).Name);
                 }
             };
@@ -3544,7 +3544,7 @@ pass
         private static Action<Expression> CheckBinaryExpression(Action<Expression> lhs, PythonOperator op, Action<Expression> rhs) {
             return expr => {
                 Assert.AreEqual(typeof(BinaryExpression), expr.GetType());
-                BinaryExpression bin = (BinaryExpression)expr;
+                var bin = (BinaryExpression)expr;
                 Assert.AreEqual(bin.Operator, op);
                 lhs(bin.Left);
                 rhs(bin.Right);
@@ -3586,7 +3586,7 @@ pass
         private static Action<Expression> CheckAndExpression(Action<Expression> lhs, Action<Expression> rhs) {
             return expr => {
                 Assert.AreEqual(typeof(AndExpression), expr.GetType());
-                AndExpression bin = (AndExpression)expr;
+                var bin = (AndExpression)expr;
                 lhs(bin.Left);
                 rhs(bin.Right);
             };
@@ -3595,7 +3595,7 @@ pass
         private static Action<Expression> CheckOrExpression(Action<Expression> lhs, Action<Expression> rhs) {
             return expr => {
                 Assert.AreEqual(typeof(OrExpression), expr.GetType());
-                OrExpression bin = (OrExpression)expr;
+                var bin = (OrExpression)expr;
                 lhs(bin.Left);
                 rhs(bin.Right);
             };
@@ -3612,7 +3612,7 @@ pass
                 target(call.Target);
 
                 Assert.AreEqual(args.Length, call.Args.Count);
-                for (int i = 0; i < args.Length; i++) {
+                for (var i = 0; i < args.Length; i++) {
                     args[i](call.Args[i]);
                 }
             };
@@ -3692,7 +3692,7 @@ pass
 
         private static Action<Arg> PositionalArg(Action<Expression> value) {
             return arg => {
-                Assert.AreEqual(true, String.IsNullOrEmpty(arg.Name));
+                Assert.AreEqual(true, string.IsNullOrEmpty(arg.Name));
                 value(arg.Expression);
             };
         }
@@ -3735,7 +3735,7 @@ pass
                 var dictExpr = (DictionaryExpression)expr;
                 Assert.AreEqual(items.Length, dictExpr.Items.Count);
 
-                for (int i = 0; i < dictExpr.Items.Count; i++) {
+                for (var i = 0; i < dictExpr.Items.Count; i++) {
                     items[i](dictExpr.Items[i]);
                 }
             };
@@ -3765,7 +3765,7 @@ pass
                 var tupleExpr = (TupleExpression)expr;
                 Assert.AreEqual(items.Length, tupleExpr.Items.Count);
 
-                for (int i = 0; i < tupleExpr.Items.Count; i++) {
+                for (var i = 0; i < tupleExpr.Items.Count; i++) {
                     items[i](tupleExpr.Items[i]);
                 }
             };
@@ -3777,7 +3777,7 @@ pass
                 var listExpr = (ListExpression)expr;
                 Assert.AreEqual(items.Length, listExpr.Items.Count);
 
-                for (int i = 0; i < listExpr.Items.Count; i++) {
+                for (var i = 0; i < listExpr.Items.Count; i++) {
                     items[i](listExpr.Items[i]);
                 }
             };
@@ -3793,7 +3793,7 @@ pass
                 var assign = (AssignmentStatement)expr;
 
                 Assert.AreEqual(assign.Left.Count, lhs.Length);
-                for (int i = 0; i < lhs.Length; i++) {
+                for (var i = 0; i < lhs.Length; i++) {
                     lhs[i](assign.Left[i]);
                 }
                 rhs(assign.Right);
@@ -3880,7 +3880,7 @@ pass
                 var with = (WithStatement)stmt;
 
                 Assert.AreEqual(expr.Length, with.Items.Count);
-                for (int i = 0; i < with.Items.Count; i++) {
+                for (var i = 0; i < with.Items.Count; i++) {
                     expr[i](with.Items[i].ContextManager);
 
                     if (target[i] != null) {
@@ -3911,11 +3911,11 @@ pass
 
                 if (value is byte[]) {
                     Assert.AreEqual(typeof(AsciiString), ((ConstantExpression)expr).Value.GetType());
-                    byte[] b1 = (byte[])value;
-                    byte[] b2 = ((AsciiString)((ConstantExpression)expr).Value).Bytes.ToArray();
+                    var b1 = (byte[])value;
+                    var b2 = ((AsciiString)((ConstantExpression)expr).Value).Bytes.ToArray();
                     Assert.AreEqual(b1.Length, b2.Length);
 
-                    for (int i = 0; i < b1.Length; i++) {
+                    for (var i = 0; i < b1.Length; i++) {
                         Assert.AreEqual(b1[i], b2[i]);
                     }
                 } else {
@@ -3934,7 +3934,7 @@ pass
                 var del = (DelStatement)stmt;
 
                 Assert.AreEqual(deletes.Length, del.Expressions.Count);
-                for (int i = 0; i < deletes.Length; i++) {
+                for (var i = 0; i < deletes.Length; i++) {
                     deletes[i](del.Expressions[i]);
                 }
             };
@@ -3965,7 +3965,7 @@ pass
                 var global = (GlobalStatement)stmt;
 
                 Assert.AreEqual(names.Length, global.Names.Count);
-                for (int i = 0; i < names.Length; i++) {
+                for (var i = 0; i < names.Length; i++) {
                     Assert.AreEqual(names[i], global.Names[i].Name);
                 }
             };
@@ -3977,15 +3977,14 @@ pass
                 var nonlocal = (NonlocalStatement)stmt;
 
                 Assert.AreEqual(names.Length, nonlocal.Names.Count);
-                for (int i = 0; i < names.Length; i++) {
+                for (var i = 0; i < names.Length; i++) {
                     Assert.AreEqual(names[i], nonlocal.Names[i].Name);
                 }
             };
         }
 
-        private Action<Statement> CheckStrOrBytesStmt(PythonLanguageVersion version, string str) {
-            return CheckExprStmt(CheckStrOrBytes(version, str));
-        }
+        private Action<Statement> CheckStrOrBytesStmt(PythonLanguageVersion version, string str)
+            => CheckExprStmt(CheckStrOrBytes(version, str));
 
         private Action<Expression> CheckStrOrBytes(PythonLanguageVersion version, string str) {
             return expr => {
@@ -4031,7 +4030,7 @@ pass
                 Assert.AreEqual(iterators.Length, listComp.Iterators.Count);
 
                 item(listComp.Item);
-                for (int i = 0; i < iterators.Length; i++) {
+                for (var i = 0; i < iterators.Length; i++) {
                     iterators[i](listComp.Iterators[i]);
                 }
             };
@@ -4045,7 +4044,7 @@ pass
                 Assert.AreEqual(iterators.Length, listComp.Iterators.Count);
 
                 item(listComp.Item);
-                for (int i = 0; i < iterators.Length; i++) {
+                for (var i = 0; i < iterators.Length; i++) {
                     iterators[i](listComp.Iterators[i]);
                 }
             };
@@ -4061,7 +4060,7 @@ pass
                 key(dictComp.Key);
                 value(dictComp.Value);
 
-                for (int i = 0; i < iterators.Length; i++) {
+                for (var i = 0; i < iterators.Length; i++) {
                     iterators[i](dictComp.Iterators[i]);
                 }
             };
@@ -4076,7 +4075,7 @@ pass
 
                 item(setComp.Item);
 
-                for (int i = 0; i < iterators.Length; i++) {
+                for (var i = 0; i < iterators.Length; i++) {
                     iterators[i](setComp.Iterators[i]);
                 }
             };
@@ -4088,7 +4087,7 @@ pass
                 var setLiteral = (SetExpression)expr;
 
                 Assert.AreEqual(values.Length, setLiteral.Items.Count);
-                for (int i = 0; i < values.Length; i++) {
+                for (var i = 0; i < values.Length; i++) {
                     values[i](setLiteral.Items[i]);
                 }
             };
@@ -4126,8 +4125,8 @@ pass
         }
 
         private byte[] ToBytes(string str) {
-            byte[] res = new byte[str.Length];
-            for (int i = 0; i < str.Length; i++) {
+            var res = new byte[str.Length];
+            for (var i = 0; i < str.Length; i++) {
                 res[i] = (byte)str[i];
             }
             return res;
@@ -4141,15 +4140,15 @@ pass
             return stmt => { };
         }
 
-        private static Action<Parameter>[] NoParameters = new Action<Parameter>[0];
+        private static readonly Action<Parameter>[] NoParameters = new Action<Parameter>[0];
 
         private static void CollectFiles(string dir, List<string> files, IEnumerable<string> exceptions = null) {
-            foreach (string file in Directory.GetFiles(dir)) {
+            foreach (var file in Directory.GetFiles(dir)) {
                 if (file.EndsWithOrdinal(".py", ignoreCase: true)) {
                     files.Add(file);
                 }
             }
-            foreach (string nestedDir in Directory.GetDirectories(dir)) {
+            foreach (var nestedDir in Directory.GetDirectories(dir)) {
                 if (exceptions == null || !exceptions.Contains(Path.GetFileName(nestedDir))) {
                     CollectFiles(nestedDir, files, exceptions);
                 }

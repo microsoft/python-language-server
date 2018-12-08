@@ -36,7 +36,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
             item.AppendCodeString(res, ast, format);
 
-            for (int i = 0; i < Iterators.Count; i++) {
+            for (var i = 0; i < Iterators.Count; i++) {
                 Iterators[i].AppendCodeString(res, ast, format);
             }
 
@@ -76,7 +76,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     _item.Walk(walker);
                 }
                 if (_iterators != null) {
-                    foreach (ComprehensionIterator ci in _iterators) {
+                    foreach (var ci in _iterators) {
                         ci.Walk(walker);
                     }
                 }
@@ -118,7 +118,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     _item.Walk(walker);
                 }
                 if (_iterators != null) {
-                    foreach (ComprehensionIterator ci in _iterators) {
+                    foreach (var ci in _iterators) {
                         ci.Walk(walker);
                     }
                 }
@@ -165,7 +165,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
 
                 if (_iterators != null) {
-                    foreach (ComprehensionIterator ci in _iterators) {
+                    foreach (var ci in _iterators) {
                         ci.Walk(walker);
                     }
                 }

@@ -46,9 +46,7 @@ namespace Microsoft.Python.Core.Text {
         public bool Equals(StringSpan other) 
             => Length == other.Length && string.CompareOrdinal(Source, Start, other.Source, other.Start, Length) == 0;
 
-        public override int GetHashCode() {
-            throw new NotSupportedException();
-        }
+        public override int GetHashCode() => throw new NotSupportedException();
 
         public void Deconstruct(out string source, out int start, out int length) {
             source = Source;
@@ -117,8 +115,6 @@ namespace Microsoft.Python.Core.Text {
 
         public void Dispose() { }
         object IEnumerator.Current => Current;
-        public void Reset() {
-            Current = new StringSpan(_source, 0, _start);
-        }
+        public void Reset() => Current = new StringSpan(_source, 0, _start);
     }
 }

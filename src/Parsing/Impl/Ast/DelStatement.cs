@@ -33,7 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 if (_expressions != null) {
-                    foreach (Expression expression in _expressions) {
+                    foreach (var expression in _expressions) {
                         expression.Walk(walker);
                     }
                 }

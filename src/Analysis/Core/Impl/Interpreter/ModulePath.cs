@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         public string ModuleName {
             get {
                 if (Name.Equals("__init__", StringComparison.OrdinalIgnoreCase)) {
-                    int lastDot = FullName.LastIndexOf('.');
+                    var lastDot = FullName.LastIndexOf('.');
                     if (lastDot < 0) {
                         return string.Empty;
                     } else {
@@ -198,7 +198,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 var dirname = PathUtils.GetFileName(dir);
                 var match = PythonPackageRegex.Match(dirname);
                 if (match.Success && !match.Groups["stubs"].Success) {
-                    bool hasInitPy = true;
+                    var hasInitPy = true;
                     var modulePath = dir;
                     if (requireInitPy) {
                         modulePath = GetPackageInitPy(dir);
@@ -319,9 +319,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// 
         /// The original directories are not included in the result.
         /// </summary>
-        public static IEnumerable<string> ExpandPathFiles(params string[] paths) {
-            return ExpandPathFiles(paths.AsEnumerable());
-        }
+        public static IEnumerable<string> ExpandPathFiles(params string[] paths) => ExpandPathFiles(paths.AsEnumerable());
 
         /// <summary>
         /// Returns a sequence of ModulePaths for all modules importable from
@@ -395,13 +393,8 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <summary>
         /// Returns a sequence of ModulePaths for all modules importable by the provided factory.
         /// </summary>
-        public static IEnumerable<ModulePath> GetModulesInLib(InterpreterConfiguration config) {
-            return GetModulesInLib(
-                config.LibraryPath,
-                config.SitePackagesPath,
-                PythonVersionRequiresInitPyFiles(config.Version)
-            );
-        }
+        public static IEnumerable<ModulePath> GetModulesInLib(InterpreterConfiguration config)
+            => GetModulesInLib(config.LibraryPath, config.SitePackagesPath, PythonVersionRequiresInitPyFiles(config.Version));
 
         /// <summary>
         /// Returns true if the provided path references an importable Python
@@ -519,9 +512,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <exception cref="ArgumentException">
         /// path is not a valid Python module.
         /// </exception>
-        public static ModulePath FromFullPath(string path) {
-            return FromFullPath(path, null, null);
-        }
+        public static ModulePath FromFullPath(string path) => FromFullPath(path, null, null);
 
         /// <summary>
         /// Returns a new ModulePath value determined from the provided full
@@ -539,9 +530,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// path is not a valid Python module.
         /// </exception>
         /// <remarks>This overload </remarks>
-        public static ModulePath FromFullPath(string path, string topLevelPath) {
-            return FromFullPath(path, topLevelPath, null);
-        }
+        public static ModulePath FromFullPath(string path, string topLevelPath) => FromFullPath(path, topLevelPath, null);
 
         /// <summary>
         /// Returns a new ModulePath value determined from the provided full
@@ -638,19 +627,16 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             Func<string, bool> isPackage = null,
             Func<string, string, string> getModule = null
         ) {
-            ModulePath module;
-            string errorParameter;
-            bool isInvalid, isMissing;
             if (FromBasePathAndName_NoThrow(
                 basePath,
                 moduleName,
                 isPackage,
                 getModule,
                 requireInitPy,
-                out module,
-                out isInvalid,
-                out isMissing,
-                out errorParameter
+                out var module,
+                out var isInvalid,
+                out var isMissing,
+                out var errorParameter
             )) {
                 return module;
             }
@@ -709,7 +695,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             out bool isMissing,
             out string errorParameter
         ) {
-            modulePath = default(ModulePath);
+            modulePath = default;
             isInvalid = false;
             isMissing = false;
             errorParameter = null;
@@ -737,7 +723,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             }
 
             var path = basePath;
-            bool allowStub = true;
+            var allowStub = true;
             Match m;
 
             foreach (var bit in bits.Take(bits.Length - 1)) {
@@ -786,7 +772,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             out bool isInvalid,
             out bool isMissing
         ) {
-            modulePath = default(ModulePath);
+            modulePath = default;
             isInvalid = false;
             isMissing = false;
 

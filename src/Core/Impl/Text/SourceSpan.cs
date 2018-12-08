@@ -108,7 +108,9 @@ namespace Microsoft.Python.Core.Text {
             => left.Start != right.Start || left.End != right.End;
 
         public override bool Equals(object obj) {
-            if (!(obj is SourceSpan)) return false;
+            if (!(obj is SourceSpan)) {
+                return false;
+            }
 
             var other = (SourceSpan)obj;
             return Start == other.Start && End == other.End;

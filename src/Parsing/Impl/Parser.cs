@@ -146,9 +146,7 @@ namespace Microsoft.Python.Parsing {
         //single_input: Newline | simple_stmt | compound_stmt Newline
         //eval_input: testlist Newline* ENDMARKER
         //file_input: (Newline | stmt)* ENDMARKER
-        public PythonAst ParseFile() {
-            return ParseFileWorker();
-        }
+        public PythonAst ParseFile() => ParseFileWorker();
 
         //[stmt_list] Newline | compound_stmt Newline
         //stmt_list ::= simple_stmt (";" simple_stmt)* [";"]
@@ -237,18 +235,14 @@ namespace Microsoft.Python.Parsing {
         }
 
         internal ErrorSink ErrorSink {
-            get {
-                return _errors;
-            }
+            get => _errors;
             set {
                 Contract.Assert(value != null);
                 _errors = value;
             }
         }
 
-        public int ErrorCode {
-            get { return _errorCode; }
-        }
+        public int ErrorCode => _errorCode;
 
         public void Reset(FutureOptions languageFeatures) {
             _languageFeatures = languageFeatures;
@@ -1105,7 +1099,7 @@ namespace Microsoft.Python.Parsing {
             return ret;
         }
 
-        private static NameExpression[] EmptyNames = new NameExpression[0];
+        private static readonly NameExpression[] EmptyNames = new NameExpression[0];
 
         // relative_module: "."* module | "."+
         private ModuleName ParseRelativeModuleName() {
@@ -1357,7 +1351,9 @@ namespace Microsoft.Python.Parsing {
                     asNamesWhiteSpace.Add(_tokenWhiteSpace);
                 }
 
-                if (PeekToken(TokenKind.RightParenthesis)) return;  // the list is allowed to end with a ,
+                if (PeekToken(TokenKind.RightParenthesis)) {
+                    return;  // the list is allowed to end with a ,
+                }
 
                 if (MaybeEat(TokenKind.Multiply)) {
                     nameExpr = new NameExpression("*");
@@ -2948,7 +2944,9 @@ namespace Microsoft.Python.Parsing {
                     t = Tokens.MatMultiplyToken;
                 }
                 var ot = t as OperatorToken;
-                if (ot == null) return ret;
+                if (ot == null) {
+                    return ret;
+                }
 
                 var prec = ot.Precedence;
                 if (prec >= precedence) {
@@ -3319,7 +3317,9 @@ namespace Microsoft.Python.Parsing {
                 while (true) {
                     switch (PeekToken().Kind) {
                         case TokenKind.LeftParenthesis:
-                            if (!allowGeneratorExpression) return ret;
+                            if (!allowGeneratorExpression) {
+                                return ret;
+                            }
 
                             NextToken();
                             var whitespace = _tokenWhiteSpace;
@@ -3699,7 +3699,10 @@ namespace Microsoft.Python.Parsing {
             itemWhiteSpace = MakeWhiteSpaceList();
             trailingComma = false;
             while (true) {
-                if (NeverTestToken(PeekToken())) break;
+                if (NeverTestToken(PeekToken())) {
+                    break;
+                }
+
                 l.Add(ParseOldExpression());
                 if (!MaybeEat(TokenKind.Comma)) {
                     trailingComma = false;
@@ -3720,7 +3723,10 @@ namespace Microsoft.Python.Parsing {
             whitespace = MakeWhiteSpaceList();
 
             while (true) {
-                if (NeverTestToken(PeekToken())) break;
+                if (NeverTestToken(PeekToken())) {
+                    break;
+                }
+
                 l.Add(ParseStarExpression());
                 if (!MaybeEat(TokenKind.Comma)) {
                     trailingComma = false;
@@ -3789,7 +3795,10 @@ namespace Microsoft.Python.Parsing {
 
             trailingComma = true;
             while (true) {
-                if (NeverTestToken(PeekToken())) break;
+                if (NeverTestToken(PeekToken())) {
+                    break;
+                }
+
                 var e = ParseExpression();
                 l.Add(e);
 
@@ -3833,7 +3842,9 @@ namespace Microsoft.Python.Parsing {
             l.Add(expr);
 
             while (true) {
-                if (NeverTestToken(PeekToken())) break;
+                if (NeverTestToken(PeekToken())) {
+                    break;
+                }
 
                 expr = ParseExpression();
                 l.Add(expr);
@@ -4465,7 +4476,9 @@ namespace Microsoft.Python.Parsing {
         }
 
         private Expression MakeTupleOrExpr(List<Expression> l, List<string> itemWhiteSpace, bool trailingComma, bool expandable, bool parenFreeTuple = false) {
-            if (l.Count == 1 && !trailingComma) return l[0];
+            if (l.Count == 1 && !trailingComma) {
+                return l[0];
+            }
 
             var exprs = l.ToArray();
             var te = new TupleExpression(expandable && !trailingComma, exprs);
@@ -4642,8 +4655,13 @@ namespace Microsoft.Python.Parsing {
             _fromFutureAllowed = false;
 
             while (true) {
-                if (MaybeEatEof()) break;
-                if (MaybeEatNewLine()) continue;
+                if (MaybeEatEof()) {
+                    break;
+                }
+
+                if (MaybeEatNewLine()) {
+                    continue;
+                }
 
                 var s = ParseStmt();
                 l.Add(s);
@@ -4809,8 +4827,9 @@ namespace Microsoft.Python.Parsing {
         }
 
         private void StartParsing() {
-            if (_parsingStarted)
+            if (_parsingStarted) {
                 throw new InvalidOperationException("Parsing already started. Use Restart to start again.");
+            }
 
             _parsingStarted = true;
 
@@ -5113,8 +5132,13 @@ namespace Microsoft.Python.Parsing {
             // minimum length is 18
             encName = null;
             index = 0;
-            if (line.Length < 10) return false;
-            if (line[0] != '#') return false;
+            if (line.Length < 10) {
+                return false;
+            }
+
+            if (line[0] != '#') {
+                return false;
+            }
 
             // we have magic comment line
             if (_codingRegex == null) {
@@ -5268,16 +5292,12 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        class EncodingInfoWrapper {
+        private class EncodingInfoWrapper {
             private EncodingInfo _info;
-            private Encoding _encoding;
-            private byte[] _preamble;
+            private readonly Encoding _encoding;
+            private readonly byte[] _preamble;
 
-            public EncodingInfoWrapper(Encoding enc) {
-                _encoding = enc;
-            }
-
-            public EncodingInfoWrapper(EncodingInfo info) {
+            protected EncodingInfoWrapper(EncodingInfo info) {
                 _info = info;
             }
 
@@ -5287,13 +5307,13 @@ namespace Microsoft.Python.Parsing {
             }
 
             public virtual Encoding GetEncoding() {
-                if (_encoding != null) return _encoding;
-
-                if (_preamble == null) {
-                    return _info.GetEncoding();
+                if (_encoding != null) {
+                    return _encoding;
                 }
 
-                return new EncodingWrapper(_info.GetEncoding(), _preamble);
+                return _preamble == null
+                    ? _info.GetEncoding()
+                    : new EncodingWrapper(_info.GetEncoding(), _preamble);
             }
 
             public static implicit operator EncodingInfoWrapper(EncodingInfo info) {
@@ -5310,7 +5330,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         class EncodingWrapper : Encoding {
-            private byte[] _preamble;
+            private readonly byte[] _preamble;
             private Encoding _encoding;
 
             public EncodingWrapper(Encoding encoding, byte[] preamable) {
@@ -5318,31 +5338,11 @@ namespace Microsoft.Python.Parsing {
                 _encoding = encoding;
             }
 
-            private void SetEncoderFallback() {
-                _encoding.EncoderFallback = EncoderFallback;
-            }
-
-            private void SetDecoderFallback() {
-                _encoding.DecoderFallback = DecoderFallback;
-            }
-
-            public override int CodePage {
-                get {
-                    return _encoding.CodePage;
-                }
-            }
-
-            public override string EncodingName {
-                get {
-                    return _encoding.EncodingName;
-                }
-            }
-
-            public override string WebName {
-                get {
-                    return _encoding.WebName;
-                }
-            }
+            private void SetEncoderFallback() => _encoding.EncoderFallback = EncoderFallback;
+            private void SetDecoderFallback() => _encoding.DecoderFallback = DecoderFallback;
+            public override int CodePage => _encoding.CodePage;
+            public override string EncodingName => _encoding.EncodingName;
+            public override string WebName => _encoding.WebName;
 
             public override int GetByteCount(char[] chars, int index, int count) {
                 SetEncoderFallback();
@@ -5374,9 +5374,7 @@ namespace Microsoft.Python.Parsing {
                 return _encoding.GetMaxCharCount(byteCount);
             }
 
-            public override byte[] GetPreamble() {
-                return _preamble;
-            }
+            public override byte[] GetPreamble() => _preamble;
 
             public override Encoder GetEncoder() {
                 SetEncoderFallback();
@@ -5396,12 +5394,8 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        internal static string NormalizeEncodingName(string name) {
-            if (name == null) {
-                return null;
-            }
-            return name.ToLowerInvariant().Replace('-', '_').Replace(' ', '_');
-        }
+        internal static string NormalizeEncodingName(string name)
+            => name?.ToLowerInvariant().Replace('-', '_').Replace(' ', '_');
 
         /// <summary>
         /// Reads one line keeping track of the # of bytes read and saving the bytes that were read
@@ -5463,13 +5457,10 @@ namespace Microsoft.Python.Parsing {
 
         #region Verbatim AST support
 
-        private void AddPreceedingWhiteSpace(Node ret) {
-            AddPreceedingWhiteSpace(ret, _tokenWhiteSpace);
-        }
+        private void AddPreceedingWhiteSpace(Node ret) => AddPreceedingWhiteSpace(ret, _tokenWhiteSpace);
 
         private Dictionary<object, object> GetNodeAttributes(Node node) {
-            Dictionary<object, object> attrs;
-            if (!_attributes.TryGetValue(node, out attrs)) {
+            if (!_attributes.TryGetValue(node, out var attrs)) {
                 _attributes[node] = attrs = new Dictionary<object, object>();
             }
             return attrs;
@@ -5487,9 +5478,7 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        private List<string> MakeWhiteSpaceList() {
-            return _verbatim ? new List<string>() : null;
-        }
+        private List<string> MakeWhiteSpaceList() => _verbatim ? new List<string>() : null;
 
         private void AddPreceedingWhiteSpace(Node ret, string whiteSpace) {
             Debug.Assert(_verbatim);
