@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using Microsoft.Python.Core;
@@ -30,20 +31,16 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal class AstScrapedPythonModule : PythonModuleType, IPythonModule {
+        private readonly Dictionary<string, IMember> _members = new Dictionary<string, IMember>();
         private bool _scraped;
         private ILogger Log => Interpreter.Log;
 
-        protected ConcurrentDictionary<string, IMember> Members { get; } = new ConcurrentDictionary<string, IMember>();
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
+        protected IDictionary<string, IMember> Members => _members;
 
         public AstScrapedPythonModule(string name, string filePath, IPythonInterpreter interpreter) 
-            : base(name) {
-            Interpreter = interpreter;
-            FilePath = filePath;
+            : base(name, filePath, null, interpreter) {
         }
-
-        public override string FilePath { get; }
-        public override IPythonInterpreter Interpreter { get; }
 
         public override string Documentation
             => GetMember("__doc__") is AstPythonStringLiteral m ? m.Value : string.Empty;

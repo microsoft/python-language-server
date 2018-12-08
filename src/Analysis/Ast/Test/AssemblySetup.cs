@@ -13,14 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using Microsoft.Python.Core.Testing;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestUtilities;
 
-namespace Microsoft.Python.Analysis {
-    /// <summary>
-    /// Represents a Python module.
-    /// </summary>
-    public interface IPythonModule : IPythonType, IPythonFile {
-        IEnumerable<string> GetChildrenModuleNames();
-        void NotifyImported();
+namespace Microsoft.Python.Analysis.Tests {
+    [TestClass]
+    public sealed class AssemblySetup {
+        [AssemblyInitialize]
+        public static void Initialize(TestContext testContext) => AnalysisTestEnvironment.Initialize();
+
+        private class AnalysisTestEnvironment : TestEnvironmentImpl, ITestEnvironment {
+            public static void Initialize() {
+                var instance = new AnalysisTestEnvironment();
+                Instance = instance;
+                TestEnvironment.Current = instance;
+            }
+        }
     }
 }

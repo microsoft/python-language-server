@@ -16,11 +16,10 @@
 using System;
 using System.Diagnostics;
 using System.Text;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
 using TestUtilities;
 
-namespace AnalysisTests {
+namespace Microsoft.Python.Core.Tests {
     public sealed class TestLogger : ILogger {
         public TraceEventType LogLevel { get; set; } = TraceEventType.Verbose;
         public void Log(TraceEventType eventType, IFormattable message) => Log(eventType, message.ToString());

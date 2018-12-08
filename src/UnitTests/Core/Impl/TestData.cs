@@ -27,7 +27,7 @@ namespace TestUtilities {
         private static readonly AsyncLocal<TestRunScope> TestRunScopeAsyncLocal = new AsyncLocal<TestRunScope>();
 
         private static string GetRootDir() {
-            var dir = PathUtils.GetParent((typeof(TestData)).Assembly.Location);
+            var dir = PathUtils.GetParent(typeof(TestData).Assembly.Location);
             while (!string.IsNullOrEmpty(dir) &&
                 Directory.Exists(dir) &&
                 !File.Exists(PathUtils.GetAbsoluteFilePath(dir, "build.root"))) {

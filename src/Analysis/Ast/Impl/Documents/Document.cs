@@ -34,14 +34,14 @@ namespace Microsoft.Python.Analysis.Documents {
     public sealed class Document : AstPythonModule, IDocument, IAnalyzable {
         private readonly object _analysisLock = new object();
         private readonly IFileSystem _fs;
-        private readonly IIdleTimeService _idleTimeService;
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly object _lock = new object();
 
-        private TaskCompletionSource<IDocumentAnalysis> _tcs;
-        private IReadOnlyList<DiagnosticsEntry> _diagnostics;
+        private TaskCompletionSource<IDocumentAnalysis> _tcs = new TaskCompletionSource<IDocumentAnalysis>();
+        private IReadOnlyList<DiagnosticsEntry> _diagnostics = Array.Empty<DiagnosticsEntry>();
         private CancellationTokenSource _cts;
         private Task<PythonAst> _parsingTask;
+        private IDocumentAnalysis _analysis;
         private PythonAst _ast;
 
         /// <summary>
@@ -61,18 +61,17 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <summary>
         /// Creates document from a supplied content.
         /// </summary>
-        public static IDocument FromContent(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName) { 
+        public static IDocument FromContent(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName) {
+            filePath = filePath ?? uri?.LocalPath;
             uri = uri ?? MakeDocumentUri(filePath);
-            filePath = filePath ?? uri.LocalPath;
             moduleName = moduleName ?? ModulePath.FromFullPath(filePath, isPackage: IsPackageCheck).FullName;
             return new Document(interpreter, content, uri, filePath, moduleName);
         }
 
         private Document(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName):
-            base(moduleName, interpreter, filePath, uri) {
+            base(moduleName, filePath, uri, interpreter) {
 
             _fs = Interpreter.Services.GetService<IFileSystem>();
-            _idleTimeService = Interpreter.Services.GetService<IIdleTimeService>();
 
             _buffer.Reset(0, content);
             ParseAsync().DoNotWait();
@@ -164,6 +163,7 @@ namespace Microsoft.Python.Analysis.Documents {
         public bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion) {
             lock (_analysisLock) {
                 if (analysisVersion == ExpectedAnalysisVersion) {
+                    _analysis = analysis;
                     _tcs.TrySetResult(analysis);
                     NewAnalysis?.Invoke(this, EventArgs.Empty);
                     return true;
@@ -185,10 +185,14 @@ namespace Microsoft.Python.Analysis.Documents {
 
         protected override PythonAst GetAst() => _ast;
 
-        private static Uri MakeDocumentUri(string filePath)
-            => !Path.IsPathRooted(filePath) 
-                ? new Uri("file:///LOCAL-PATH/{0}".FormatInvariant(filePath.Replace('\\', '/'))) 
+        private static Uri MakeDocumentUri(string filePath) {
+            if (string.IsNullOrEmpty(filePath)) {
+                return null;
+            }
+            return !Path.IsPathRooted(filePath)
+                ? new Uri("file:///LOCAL-PATH/{0}".FormatInvariant(filePath.Replace('\\', '/')))
                 : new Uri(filePath);
+        }
 
         private static bool IsPackageCheck(string path)
             => ModulePath.IsImportable(PathUtils.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));

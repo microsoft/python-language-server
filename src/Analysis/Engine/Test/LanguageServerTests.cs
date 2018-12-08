@@ -26,6 +26,7 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Shell;
+using Microsoft.Python.Core.Tests;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Extensions;

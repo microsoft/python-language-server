@@ -1,15 +1,14 @@
 ﻿<Project>
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RootNamespace>AnalysisTests</RootNamespace>
-    <AssemblyName>Microsoft.Python.Analysis.Engine.Tests</AssemblyName>
+    <RootNamespace>Microsoft.Python.Analysis.Tests</RootNamespace>
+    <AssemblyName>Microsoft.Python.Analysis.Tests</AssemblyName>
   </PropertyGroup>
   <PropertyGroup>
     <!-- 
       1701, 1702 - "You may need to supply assembly policy"
-      1998 - "This async method lacks 'await'"
     -->
-    <NoWarn>1701;1702;1998;$(NoWarn)</NoWarn>
+    <NoWarn>1701;1702$(NoWarn)</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <CodeAnalysisRuleSet>..\..\..\PLS.ruleset</CodeAnalysisRuleSet>
@@ -40,12 +39,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Core\Impl\Microsoft.Python.Core.csproj" />
     <ProjectReference Include="..\..\..\Core\Test\Microsoft.Python.Core.Tests.csproj" />
-    <ProjectReference Include="..\..\..\LanguageServer\Impl\Microsoft.Python.LanguageServer.csproj" />
     <ProjectReference Include="..\..\..\Parsing\Impl\Microsoft.Python.Parsing.csproj" />
     <ProjectReference Include="..\..\..\Parsing\Test\Microsoft.Python.Parsing.Tests.csproj" />
     <ProjectReference Include="..\..\..\UnitTests\Core\Impl\UnitTests.Core.csproj" />
     <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
-    <ProjectReference Include="..\Impl\Microsoft.Python.Analysis.Engine.csproj" />
+    <ProjectReference Include="..\Impl\Microsoft.Python.Analysis.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <Import Project="..\..\..\..\build\NetStandard.targets" />

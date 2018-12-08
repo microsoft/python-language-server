@@ -28,10 +28,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly ConcurrentBag<string> _hiddenNames = new ConcurrentBag<string>();
 
         public AstBuiltinsPythonModule(IPythonInterpreter interpreter)
-            : base(BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion), null, interpreter) {
+            : base(BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion), 
+                interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.InterpreterPath ?? "python.exe"),
+                interpreter) {
         }
-
-        public override string FilePath => ModuleCache.GetCacheFilePath(Interpreter.InterpreterPath ?? "python.exe");
 
         public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 

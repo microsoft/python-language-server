@@ -57,6 +57,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public IScope Complete() {
             _functionWalkers.ProcessSet();
+            foreach (var childModuleName in _module.GetChildrenModuleNames()) {
+                var name = $"{_module.Name}.{childModuleName}";
+                _globalScope.DeclareVariable(name, new AstNestedPythonModule(name, Interpreter));
+            }
             return GlobalScope;
         }
 
@@ -141,10 +145,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         _lookup.DeclareVariable(memberName, _module);
                         break;
                     case ModuleImport moduleImport:
-                        _lookup.DeclareVariable(memberName, new AstNestedPythonModule(Interpreter, moduleImport.FullName));
+                        _lookup.DeclareVariable(memberName, new AstNestedPythonModule(moduleImport.FullName, Interpreter));
                         break;
                     case PossibleModuleImport possibleModuleImport:
-                        _lookup.DeclareVariable(memberName, new AstNestedPythonModule(Interpreter, possibleModuleImport.PossibleModuleFullName));
+                        _lookup.DeclareVariable(memberName, new AstNestedPythonModule(possibleModuleImport.PossibleModuleFullName, Interpreter));
                         break;
                     default:
                         _lookup.DeclareVariable(memberName, new AstPythonConstant(_lookup.UnknownType, GetLoc(memberReference)));
@@ -229,7 +233,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void ImportMembersFromModule(FromImportStatement node, string fullModuleName) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var nestedModule = new AstNestedPythonModule(Interpreter, fullModuleName);
+            var nestedModule = new AstNestedPythonModule(fullModuleName, Interpreter);
 
             if (names.Count == 1 && names[0].Name == "*") {
                 HandleModuleImportStar(nestedModule);
@@ -284,7 +288,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ModuleImport moduleImport;
                 IMember member;
                 if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
-                    member = new AstNestedPythonModule(Interpreter, moduleImport.FullName);
+                    member = new AstNestedPythonModule(moduleImport.FullName, Interpreter);
                 } else {
                     member = new AstPythonConstant(_lookup.UnknownType, location);
                 }

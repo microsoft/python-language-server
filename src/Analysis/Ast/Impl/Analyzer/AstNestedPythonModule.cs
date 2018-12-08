@@ -21,11 +21,10 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AstNestedPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
-        private readonly IPythonInterpreter _interpreter;
         private IPythonModule _module;
 
-        public AstNestedPythonModule(IPythonInterpreter interpreter, string fullName) : base(fullName) {
-            _interpreter = interpreter ?? throw new ArgumentNullException(nameof(interpreter));
+        public AstNestedPythonModule(string fullName, IPythonInterpreter interpreter)
+            : base(fullName, interpreter) {
         }
 
         public override string Documentation => MaybeModule?.Documentation ?? string.Empty;
@@ -40,7 +39,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return module;
             }
 
-            module = _interpreter.ModuleResolution.ImportModule(Name);
+            module = Interpreter.ModuleResolution.ImportModule(Name);
             if (module != null) {
                 Debug.Assert(!(module is AstNestedPythonModule), "ImportModule should not return nested module");
             }
@@ -50,9 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public IEnumerable<string> GetChildrenModuleNames() => GetModule().GetChildrenModuleNames();
-
-        public override IMember GetMember(string name)
-            => GetModule().GetMember(name);
+        public override IMember GetMember(string name) => GetModule().GetMember(name);
 
         public override IEnumerable<string> GetMemberNames() =>
             // TODO: Make GetMemberNames() faster than NotifyImported()

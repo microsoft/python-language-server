@@ -19,13 +19,20 @@ using System.Linq;
 using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    public abstract class PythonModuleType: IPythonType, IPythonFile {
+    public abstract class PythonModuleType : IPythonType, IPythonFile {
         protected PythonModuleType(string name) {
             Check.ArgumentNotNull(nameof(name), name);
             Name = name;
         }
 
-        protected PythonModuleType(string name, string filePath, Uri uri): this(name) {
+        protected PythonModuleType(string name, IPythonInterpreter interpreter)
+            : this(name) {
+            Check.ArgumentNotNull(nameof(interpreter), interpreter);
+            Interpreter = interpreter;
+        }
+
+        protected PythonModuleType(string name, string filePath, Uri uri, IPythonInterpreter interpreter)
+            : this(name, interpreter) {
             if (uri == null && !string.IsNullOrEmpty(filePath)) {
                 Uri.TryCreate(filePath, UriKind.Absolute, out uri);
             }
@@ -57,7 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public virtual string FilePath { get; }
         public virtual Uri Uri { get; }
-        public virtual IPythonInterpreter Interpreter => null;
-        #endregion
+        public virtual IPythonInterpreter Interpreter { get; }
     }
+    #endregion
 }
