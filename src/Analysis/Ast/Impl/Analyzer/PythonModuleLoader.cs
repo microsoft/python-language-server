@@ -13,6 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Analyzer.Modules;
+
 namespace Microsoft.Python.Analysis.Analyzer {
     public static class PythonModuleLoader {
         public static IPythonModule FromTypeStub(

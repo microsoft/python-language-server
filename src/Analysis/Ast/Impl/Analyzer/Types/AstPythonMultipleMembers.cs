@@ -19,7 +19,7 @@ using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal class AstPythonMultipleMembers : IPythonMultipleMembers, ILocatedMember {
         private readonly IMember[] _members;
         private IReadOnlyList<IMember> _resolvedMembers;

@@ -374,7 +374,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             if (value == null) {
-                _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
+                _log?.Log(TraceLevel.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
             }
             return value;
         }

@@ -17,10 +17,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal sealed class AstPythonClass : AstPythonType, IPythonClass {
         private static readonly IPythonModule NoDeclModule = new AstPythonModule();
 

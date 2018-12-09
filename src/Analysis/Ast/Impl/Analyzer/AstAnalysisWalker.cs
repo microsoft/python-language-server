@@ -17,6 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Modules;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
@@ -82,7 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var value = _lookup.GetValueFromExpression(node.Right);
 
             if (value == null || value.MemberType == PythonMemberType.Unknown) {
-                Log?.Log(TraceEventType.Verbose, $"Undefined value: ${node.Right.ToCodeString(_ast).Trim()}");
+                Log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(_ast).Trim()}");
             }
 
             if ((value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Ellipsis) {
@@ -383,12 +385,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _lookup.DeclareVariable(node.Name, existing);
             }
 
-            // Treat the rest of the property as a function. "AddOverload" takes the return type
-            // and sets it as the property type.
-            var funcScope = _lookup.Clone();
-            funcScope.SuppressBuiltinLookup = CreateBuiltinTypes;
-
-            existing.AddOverload(CreateFunctionOverload(funcScope, node));
+            if (!_functionWalkers.Contains(node)) {
+                // Treat the rest of the property as a function. "AddOverload" takes the return type
+                // and sets it as the property type.
+                var funcScope = _lookup.Clone();
+                funcScope.SuppressBuiltinLookup = CreateBuiltinTypes;
+                existing.AddOverload(CreateFunctionOverload(funcScope, node));
+            }
         }
 
         private IPythonFunctionOverload CreateFunctionOverload(ExpressionLookup funcScope, FunctionDefinition node) {
@@ -484,10 +487,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _lookup.DeclareVariable(node.Name, existing);
             }
 
-            var funcScope = _lookup.Clone();
-            funcScope.SuppressBuiltinLookup = CreateBuiltinTypes;
-
-            existing.AddOverload(CreateFunctionOverload(funcScope, node));
+            if (!_functionWalkers.Contains(node)) {
+                var funcScope = _lookup.Clone();
+                funcScope.SuppressBuiltinLookup = CreateBuiltinTypes;
+                existing.AddOverload(CreateFunctionOverload(funcScope, node));
+            }
         }
     }
 }

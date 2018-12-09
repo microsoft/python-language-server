@@ -14,14 +14,12 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
-using System.Threading;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
@@ -29,7 +27,7 @@ using Microsoft.Python.Core.OS;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal class AstScrapedPythonModule : PythonModuleType, IPythonModule {
         private readonly Dictionary<string, IMember> _members = new Dictionary<string, IMember>();
         private bool _scraped;
@@ -76,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return null;
             }
 
-            if (!InstallPath.TryGetFile("scrape_module.py", out string sm)) {
+            if (!InstallPath.TryGetFile("scrape_module.py", out var sm)) {
                 return null;
             }
 

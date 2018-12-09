@@ -15,8 +15,9 @@
 
 using System;
 using System.Threading;
+using Microsoft.Python.Analysis.Analyzer.Types;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class AstNestedPythonModuleMember : ILazyMember {
         private volatile IMember _realMember;
         private readonly IPythonInterpreter _interpreter;

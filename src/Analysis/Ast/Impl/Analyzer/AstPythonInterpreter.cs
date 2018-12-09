@@ -16,6 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Python.Analysis.Analyzer.Modules;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;

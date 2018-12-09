@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     /// <summary>
     /// Delegates most of the methods to the wrapped/inner class.
     /// </summary>

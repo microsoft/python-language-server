@@ -16,9 +16,8 @@
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Core.Logging;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class AstTypingModule : AstCachedPythonModule {
         public AstTypingModule(IPythonInterpreter interpreter)
             : base("typing", FindTypingStub(), interpreter) { }

@@ -13,19 +13,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Core.Interpreter;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal class AstPythonConstant : AstPythonTypeWrapper, IPythonConstant {
-        public AstPythonConstant(IPythonType type, params LocationInfo[] locations) :
-            base(type, type.DeclaringModule) {
-            Type = type;
-            Locations = locations.ToArray();
-        }
-
-        public override IEnumerable<LocationInfo> Locations { get; }
-        public override PythonMemberType MemberType => PythonMemberType.Constant;
-        public IPythonType Type { get; }
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
+    public sealed class TryImportModuleContext {
+        public IPythonInterpreter Interpreter { get; set; }
+        public ConcurrentDictionary<string, IPythonModule> ModuleCache { get; set; }
+        public IPythonModule BuiltinModule { get; set; }
+        public Func<string, CancellationToken, Task<ModulePath?>> FindModuleInUserSearchPathAsync { get; set; }
+        public IReadOnlyList<string> TypeStubPaths { get; set; }
+        public bool MergeTypeStubPackages { get; set; }
     }
 }

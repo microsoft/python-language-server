@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Core.Diagnostics;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     public abstract class PythonModuleType : IPythonType, IPythonFile {
         protected PythonModuleType(string name) {
             Check.ArgumentNotNull(nameof(name), name);
@@ -49,9 +49,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public bool IsBuiltin => true;
         public bool IsTypeFactory => false;
         public IPythonFunction GetConstructor() => null;
-        #endregion
-
-        #region IMember
         public PythonMemberType MemberType => PythonMemberType.Module;
         #endregion
 

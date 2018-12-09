@@ -13,30 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Tests;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
-using Microsoft.Python.Tests.Utilities;
-using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
-using Ast = Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
@@ -69,11 +58,19 @@ namespace Microsoft.Python.Analysis.Tests {
 
         #region Test cases
         [TestMethod, Priority(0)]
-        public async Task AstBasic() {
-            var code = @"
+        public async Task SmokeTest() {
+            const string code = @"
 x = 'str'
-def func(a):
-    return 1
+
+class C:
+    def method(self):
+        return func()
+
+def func():
+    return 2.0
+
+c = C()
+y = c.method()
 ";
             var interpreter = CreateInterpreter();
             var doc = Document.FromContent(interpreter, code, "module");
@@ -87,7 +84,18 @@ def func(a):
             var analysisFromDoc = await doc.GetAnalysisAsync(CancellationToken.None);
             analysisFromDoc.Should().Be(analysis);
 
-            var member = analysis.Members;
+            analysis.Members.Count.Should().Be(5);
+            analysis.Members.Keys.Should().Contain("x", "C", "func", "c", "y");
+
+            var t = analysis.Members["x"] as IPythonType;
+            t.Should().NotBeNull();
+
+            t?.TypeId.Should().Be(BuiltinTypeId.Unicode);
+            analysis.Members["C"].MemberType.Should().Be(PythonMemberType.Class);
+            (analysis.Members["func"] as IPythonFunction).Should().NotBeNull();
+
+            t = analysis.Members["y"] as IPythonType;
+            t?.TypeId.Should().Be(BuiltinTypeId.Float);
         }
         #endregion
     }

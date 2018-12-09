@@ -13,12 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class AstPythonStringLiteral : AstPythonConstant {
-        public AstPythonStringLiteral(string value, IPythonType type, params LocationInfo[] locations)
-            : base(type, locations) {
-            Value = value;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Microsoft.Python.Analysis.Analyzer.Types {
+    internal class AstPythonConstant : AstPythonTypeWrapper, IPythonConstant {
+        public AstPythonConstant(IPythonType type, params LocationInfo[] locations) :
+            base(type, type.DeclaringModule) {
+            Type = type;
+            Locations = locations.ToArray();
         }
-        public string Value { get; }
+
+        public override IEnumerable<LocationInfo> Locations { get; }
+        public override PythonMemberType MemberType => PythonMemberType.Constant;
+        public IPythonType Type { get; }
     }
 }

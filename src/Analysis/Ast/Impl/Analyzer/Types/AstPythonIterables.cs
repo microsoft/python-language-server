@@ -17,7 +17,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     class AstPythonIterable : AstPythonTypeWrapper, IPythonIterableType {
         public AstPythonIterable(
             IPythonType iterableType,

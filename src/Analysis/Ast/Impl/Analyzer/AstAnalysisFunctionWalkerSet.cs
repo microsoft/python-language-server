@@ -29,6 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     class AstAnalysisFunctionWalkerSet {
         private readonly Dictionary<FunctionDefinition, AstAnalysisFunctionWalker> _functionWalkers
             = new Dictionary<FunctionDefinition, AstAnalysisFunctionWalker>();
+        private readonly HashSet<FunctionDefinition> _processed = new HashSet<FunctionDefinition>();
 
         public void Add(AstAnalysisFunctionWalker walker)
             => _functionWalkers[walker.Target] = walker;
@@ -57,10 +58,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ProcessWalker(w);
             }
         }
+        public bool Contains(FunctionDefinition node)
+            => _functionWalkers.ContainsKey(node) || _processed.Contains(node);
 
         private void ProcessWalker(AstAnalysisFunctionWalker walker) {
             // Remove walker before processing as to prevent reentrancy.
             _functionWalkers.Remove(walker.Target);
+            _processed.Add(walker.Target);
             walker.Walk();
         }
     }

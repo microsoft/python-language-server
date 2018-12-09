@@ -56,15 +56,15 @@ namespace Microsoft.Python.Core.IO {
                     // The slash at the end of a drive specifier is not actually
                     // a separator.
                     return path;
-                } else if (path.Length > 3 && path[path.Length - 2] == path[path.Length - 1] && path[path.Length - 3] == ':') {
+                }
+                if (path.Length > 3 && path[path.Length - 2] == path[path.Length - 1] && path[path.Length - 3] == ':') {
                     // The double slash at the end of a schema is not actually a
                     // separator.
                     return path;
                 }
                 return path.Remove(path.Length - 1);
-            } else {
-                return path;
             }
+            return path;
         }
 
         /// <summary>
@@ -73,11 +73,11 @@ namespace Microsoft.Python.Core.IO {
         public static string EnsureEndSeparator(string path) {
             if (string.IsNullOrEmpty(path)) {
                 return string.Empty;
-            } else if (!HasEndSeparator(path)) {
-                return path + Path.DirectorySeparatorChar;
-            } else {
-                return path;
             }
+            if (!HasEndSeparator(path)) {
+                return path + Path.DirectorySeparatorChar;
+            }
+            return path;
         }
 
         /// <summary>

@@ -18,11 +18,12 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class AstBuiltinsPythonModule : AstScrapedPythonModule, IBuiltinPythonModule {
         // protected by lock(_members)
         private readonly ConcurrentBag<string> _hiddenNames = new ConcurrentBag<string>();
@@ -51,7 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         protected override List<string> GetScrapeArguments(IPythonInterpreter interpreter)
-            => !InstallPath.TryGetFile("scrape_module.py", out string sb)
+            => !InstallPath.TryGetFile("scrape_module.py", out var sb)
                 ? null
                 : new List<string> { "-B", "-E", sb };
 

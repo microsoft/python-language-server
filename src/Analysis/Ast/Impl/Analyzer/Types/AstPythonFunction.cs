@@ -18,7 +18,7 @@ using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal class AstPythonFunction : AstPythonType, IPythonFunction {
         private readonly List<IPythonFunctionOverload> _overloads = new List<IPythonFunctionOverload>();
         private readonly string _doc;

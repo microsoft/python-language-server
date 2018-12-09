@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal class AstPythonType : IPythonType, ILocatedMember, IHasQualifiedName {
         private readonly string _name;
         private readonly object _lock = new object();

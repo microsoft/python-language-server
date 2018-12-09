@@ -19,7 +19,7 @@ using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal sealed class AstPythonParameterInfo : IParameterInfo {
         public AstPythonParameterInfo(PythonAst ast, Parameter p, IEnumerable<IPythonType> types) {
             Name = p?.Name ?? throw new ArgumentNullException(nameof(p));

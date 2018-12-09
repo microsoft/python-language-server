@@ -19,7 +19,7 @@ using System.IO;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal class AstBuiltinPythonModule : AstScrapedPythonModule {
         public AstBuiltinPythonModule(string name, IPythonInterpreter interpreter)
             : base(name, MakeFakeFilePath(interpreter.Configuration.InterpreterPath, name), interpreter) {

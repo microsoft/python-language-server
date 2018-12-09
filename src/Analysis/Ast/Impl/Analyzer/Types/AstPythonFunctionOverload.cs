@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     class AstPythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
         private readonly IReadOnlyList<IParameterInfo> _parameters;
 

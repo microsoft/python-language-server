@@ -22,7 +22,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class AstModuleCache: IModuleCache {
         private readonly IPythonInterpreter _interpreter;
         private readonly IFileSystem _fs;

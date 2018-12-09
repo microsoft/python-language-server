@@ -15,22 +15,22 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Parsing;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class FallbackBuiltinModule : PythonModuleType, IBuiltinPythonModule {
         public readonly PythonLanguageVersion LanguageVersion;
-        private readonly Dictionary<BuiltinTypeId, IMember> _cachedInstances;
+        private readonly Dictionary<BuiltinTypeId, IPythonType> _cachedInstances;
 
         public FallbackBuiltinModule(PythonLanguageVersion version)
             : base(BuiltinTypeId.Unknown.GetModuleName(version)) {
             LanguageVersion = version;
-            _cachedInstances = new Dictionary<BuiltinTypeId, IMember>();
+            _cachedInstances = new Dictionary<BuiltinTypeId, IPythonType>();
         }
 
-        private IMember GetOrCreate(BuiltinTypeId typeId) {
+        private IPythonType GetOrCreate(BuiltinTypeId typeId) {
             if (typeId.IsVirtualId()) {
                 switch (typeId) {
                     case BuiltinTypeId.Str:

@@ -17,6 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Modules;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 

@@ -16,7 +16,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 

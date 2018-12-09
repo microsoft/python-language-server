@@ -19,7 +19,7 @@ using System.Diagnostics;
 using System.Threading;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class AstNestedPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
         private IPythonModule _module;
 

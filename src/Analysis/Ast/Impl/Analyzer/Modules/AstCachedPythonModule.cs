@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Python.Core.IO;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     class AstCachedPythonModule : AstScrapedPythonModule {
         private readonly string _cachePath;
 

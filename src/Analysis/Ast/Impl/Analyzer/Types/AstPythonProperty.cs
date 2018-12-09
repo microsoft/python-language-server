@@ -17,7 +17,7 @@ using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     class AstPythonProperty : AstPythonType, IPythonProperty {
         private IPythonFunctionOverload _getter;
 

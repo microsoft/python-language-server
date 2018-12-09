@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal class AstPythonSequence : AstPythonTypeWrapper, IPythonSequenceType, IPythonIterableType {
         public AstPythonSequence(
             IPythonType sequenceType,

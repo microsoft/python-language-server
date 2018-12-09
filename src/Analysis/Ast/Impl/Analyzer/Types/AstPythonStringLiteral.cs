@@ -1,5 +1,4 @@
-// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,18 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-
-namespace Microsoft.Python.Analysis {
-    public interface IPythonEvent : IMember, IMemberContainer {
-        IPythonType EventHandlerType {
-            get;
+namespace Microsoft.Python.Analysis.Analyzer.Types {
+    internal sealed class AstPythonStringLiteral : AstPythonConstant {
+        public AstPythonStringLiteral(string value, IPythonType type, params LocationInfo[] locations)
+            : base(type, locations) {
+            Value = value;
         }
-
-        IList<IPythonType> GetEventParameterTypes();
-
-        string Documentation {
-            get;
-        }
+        public string Value { get; }
     }
 }

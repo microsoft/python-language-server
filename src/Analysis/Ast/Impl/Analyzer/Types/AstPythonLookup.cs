@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     class AstPythonLookup : AstPythonTypeWrapper, IPythonLookupType, IPythonIterableType {
         private readonly IReadOnlyDictionary<IPythonType, IReadOnlyList<IPythonType>> _mapping;
 
