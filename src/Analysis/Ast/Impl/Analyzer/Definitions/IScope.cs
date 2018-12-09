@@ -20,14 +20,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents scope where variables can be declared.
     /// </summary>
-    public interface IScope {
+    public interface IScope: IVariableCollection {
         string Name { get; }
         Node Node { get; }
         IScope OuterScope { get; }
         IScope GlobalScope { get; }
         bool VisibleToChildren { get; }
         IReadOnlyList<IScope> Children { get; }
-        IReadOnlyDictionary<string, IMember> Variables { get; }
         IEnumerable<IScope> EnumerateTowardsGlobal { get; }
         IEnumerable<IScope> EnumerateFromGlobal { get; }
     }

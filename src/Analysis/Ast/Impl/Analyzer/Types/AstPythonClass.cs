@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -42,8 +41,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             ClassDefinition = classDefinition;
             _interpreter = interpreter;
         }
-
-        internal AstPythonClass(string name) : base(name, BuiltinTypeId.Type) { }
 
         #region IPythonType
         public override PythonMemberType MemberType => PythonMemberType.Class;

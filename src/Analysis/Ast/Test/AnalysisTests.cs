@@ -72,17 +72,7 @@ def func():
 c = C()
 y = c.method()
 ";
-            var interpreter = CreateInterpreter();
-            var doc = Document.FromContent(interpreter, code, "module");
-
-            var ast = await doc.GetAstAsync(CancellationToken.None);
-            ast.Should().NotBeNull();
-
-            var analyzer = new PythonAnalyzer(interpreter, null);
-            var analysis = await analyzer.AnalyzeDocumentAsync(doc, CancellationToken.None);
-
-            var analysisFromDoc = await doc.GetAnalysisAsync(CancellationToken.None);
-            analysisFromDoc.Should().Be(analysis);
+            var analysis = await GetAnalysisAsync(code);
 
             analysis.Members.Count.Should().Be(5);
             analysis.Members.Keys.Should().Contain("x", "C", "func", "c", "y");
@@ -97,6 +87,38 @@ y = c.method()
             t = analysis.Members["y"] as IPythonType;
             t?.TypeId.Should().Be(BuiltinTypeId.Float);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ImportTest() {
+            const string code = @"
+import sys
+x = sys.path
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Members.Count.Should().Be(2);
+            analysis.Members.Keys.Should().Contain("sys", "x");
+
+            var t = analysis.Members["x"] as IPythonType;
+            t.Should().NotBeNull();
+            t?.TypeId.Should().Be(BuiltinTypeId.List);
+        }
         #endregion
+
+        private async Task<IDocumentAnalysis> GetAnalysisAsync(string code) {
+            var interpreter = CreateInterpreter();
+            var doc = Document.FromContent(interpreter, code, "module");
+
+            var ast = await doc.GetAstAsync(CancellationToken.None);
+            ast.Should().NotBeNull();
+
+            var analyzer = new PythonAnalyzer(interpreter, null);
+            var analysis = await analyzer.AnalyzeDocumentAsync(doc, CancellationToken.None);
+
+            var analysisFromDoc = await doc.GetAnalysisAsync(CancellationToken.None);
+            analysisFromDoc.Should().Be(analysis);
+
+            return analysis;
+        }
     }
 }

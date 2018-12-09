@@ -5294,7 +5294,7 @@ namespace Microsoft.Python.Parsing {
 
         private class EncodingInfoWrapper {
             private EncodingInfo _info;
-            private readonly Encoding _encoding;
+            private Encoding _encoding;
             private readonly byte[] _preamble;
 
             protected EncodingInfoWrapper(EncodingInfo info) {
@@ -5306,15 +5306,10 @@ namespace Microsoft.Python.Parsing {
                 _preamble = preamble;
             }
 
-            public virtual Encoding GetEncoding() {
-                if (_encoding != null) {
-                    return _encoding;
-                }
-
-                return _preamble == null
-                    ? _info.GetEncoding()
-                    : new EncodingWrapper(_info.GetEncoding(), _preamble);
-            }
+            public virtual Encoding GetEncoding() 
+                => _encoding ?? (_encoding = _preamble == null
+                             ? _info.GetEncoding()
+                             : new EncodingWrapper(_info.GetEncoding(), _preamble));
 
             public static implicit operator EncodingInfoWrapper(EncodingInfo info) {
                 return new EncodingInfoWrapper(info);
@@ -5322,8 +5317,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         class AsciiEncodingInfoWrapper : EncodingInfoWrapper {
-            public AsciiEncodingInfoWrapper()
-                : base((EncodingInfo)null) {
+            public AsciiEncodingInfoWrapper() : base(null) {
             }
 
             public override Encoding GetEncoding() => Encoding.ASCII;
@@ -5333,8 +5327,8 @@ namespace Microsoft.Python.Parsing {
             private readonly byte[] _preamble;
             private Encoding _encoding;
 
-            public EncodingWrapper(Encoding encoding, byte[] preamable) {
-                _preamble = preamable;
+            public EncodingWrapper(Encoding encoding, byte[] preamble) {
+                _preamble = preamble;
                 _encoding = encoding;
             }
 

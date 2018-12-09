@@ -18,12 +18,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Microsoft.Python.Analysis.Analyzer.Types;
+using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer.Modules {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     public class AstPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
         private string _documentation = string.Empty;
 

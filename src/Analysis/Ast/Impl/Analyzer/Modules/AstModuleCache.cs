@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 }
             }
 
-            return PythonModuleLoader.FromTypeStub(interpreter, cache, name);
+            return AstStubPythonModule.FromTypeStub(interpreter, cache, name);
         }
 
         public string GetCacheFilePath(string filePath) {
@@ -131,7 +131,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             file.Dispose();
             Log?.Log(TraceEventType.Verbose, "Invalidate cached module", path);
 
-            PathUtils.DeleteFile(path);
+            _fs.DeleteFileWithRetries(path);
             return null;
         }
 

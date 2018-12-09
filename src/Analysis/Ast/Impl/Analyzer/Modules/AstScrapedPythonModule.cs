@@ -29,15 +29,16 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal class AstScrapedPythonModule : PythonModuleType, IPythonModule {
-        private readonly Dictionary<string, IMember> _members = new Dictionary<string, IMember>();
         private bool _scraped;
         private ILogger Log => Interpreter.Log;
 
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
-        protected IDictionary<string, IMember> Members => _members;
+        protected IDictionary<string, IMember> Members { get; private set; } = new Dictionary<string, IMember>();
+        protected IFileSystem FileSystem { get; }
 
         public AstScrapedPythonModule(string name, string filePath, IPythonInterpreter interpreter) 
             : base(name, filePath, null, interpreter) {
+            FileSystem = interpreter.Services.GetService<IFileSystem>();
         }
 
         public override string Documentation
@@ -66,7 +67,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public IEnumerable<string> ParseErrors { get; private set; } = Enumerable.Empty<string>();
 
-        protected virtual List<string> GetScrapeArguments(IPythonInterpreter interpreter) {
+        protected virtual IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter) {
             var args = new List<string> { "-B", "-E" };
 
             var mp = Interpreter.ModuleResolution.FindModule(FilePath);
@@ -86,7 +87,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return args;
         }
 
-        protected virtual PythonWalker PrepareWalker(PythonAst ast) {
+        protected virtual AstAnalysisWalker PrepareWalker(PythonAst ast) {
 #if DEBUG
             // In debug builds we let you F12 to the scraped file
             var filePath = string.IsNullOrEmpty(FilePath) ? null : ModuleCache.GetCacheFilePath(FilePath);
@@ -103,11 +104,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         protected virtual Stream LoadCachedCode() => ModuleCache.ReadCachedModule(FilePath);
         protected virtual void SaveCachedCode(Stream code) => ModuleCache.WriteCachedModule(FilePath, code);
 
-        public void NotifyImported() {
+        public virtual void NotifyImported() {
             if (_scraped) {
                 return;
             }
-            Debugger.NotifyOfCrossThreadDependency();
 
             var code = LoadCachedCode();
             var needCache = code == null;
@@ -115,7 +115,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             _scraped = true;
 
             if (needCache) {
-                if (!File.Exists(Interpreter.Configuration.InterpreterPath)) {
+                if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {
                     return;
                 }
 
@@ -181,6 +181,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             var walker = PrepareWalker(ast);
             ast.Walk(walker);
+
+            Members = walker.GlobalScope.Variables.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             PostWalk(walker);
         }
     }

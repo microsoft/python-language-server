@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,13 +23,17 @@ using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
+    /// <summary>
+    /// Represents builtins module. Typically generated for a given Python interpreter
+    /// by running special 'scraper' Python script that generates Python code via
+    /// introspection of the compiled built-in language types.
+    /// </summary>
     internal sealed class AstBuiltinsPythonModule : AstScrapedPythonModule, IBuiltinPythonModule {
-        // protected by lock(_members)
-        private readonly ConcurrentBag<string> _hiddenNames = new ConcurrentBag<string>();
+        private readonly HashSet<string> _hiddenNames = new HashSet<string>();
 
-        public AstBuiltinsPythonModule(IPythonInterpreter interpreter)
+        public AstBuiltinsPythonModule(IPythonInterpreter interpreter, IModuleCache moduleCache)
             : base(BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion), 
-                interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath ?? "python.exe"),
+                moduleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath ?? "python.exe"),
                 interpreter) {
         }
 
@@ -51,12 +54,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
         }
 
-        protected override List<string> GetScrapeArguments(IPythonInterpreter interpreter)
-            => !InstallPath.TryGetFile("scrape_module.py", out var sb)
-                ? null
-                : new List<string> { "-B", "-E", sb };
+        protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter)
+            => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new List<string> { "-B", "-E", sb };
 
-        protected override PythonWalker PrepareWalker(PythonAst ast) {
+        protected override AstAnalysisWalker PrepareWalker(PythonAst ast) {
             var walker = new AstAnalysisWalker(this, ast, suppressBuiltinLookup: true) {
                 CreateBuiltinTypes = true
             };

@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Core.Diagnostics;
 
-namespace Microsoft.Python.Analysis.Analyzer.Modules {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     public abstract class PythonModuleType : IPythonType, IPythonFile {
         protected PythonModuleType(string name) {
             Check.ArgumentNotNull(nameof(name), name);

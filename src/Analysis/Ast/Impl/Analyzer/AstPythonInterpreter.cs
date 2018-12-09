@@ -36,9 +36,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public AstPythonInterpreter(InterpreterConfiguration configuration, IServiceContainer services) {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             Services = services ?? throw new ArgumentNullException(nameof(services));
-            ModuleResolution = new AstModuleResolution(this);
             LanguageVersion = Configuration.Version.ToLanguageVersion();
             Log = services.GetService<ILogger>();
+
+            var resolution = new AstModuleResolution(this);
+            ModuleResolution = resolution;
+            resolution.InitializeBuiltins();
         }
 
         public void Dispose() { }

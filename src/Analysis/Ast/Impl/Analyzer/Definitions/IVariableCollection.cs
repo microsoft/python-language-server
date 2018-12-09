@@ -13,14 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Analyzer.Modules;
+using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    public static class PythonModuleLoader {
-        public static IPythonModule FromTypeStub(
-            IPythonInterpreter interpreter,
-            string stubFile,
-            string moduleFullName
-        ) => new AstCachedPythonModule(moduleFullName, stubFile, interpreter);
+    public interface IVariableCollection {
+        IReadOnlyDictionary<string, IMember> Variables { get; }
     }
 }

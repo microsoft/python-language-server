@@ -14,18 +14,18 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
+    [DebuggerDisplay("({MemberType}, {TypeId})")]
     internal class AstPythonConstant : AstPythonTypeWrapper, IPythonConstant {
         public AstPythonConstant(IPythonType type, params LocationInfo[] locations) :
             base(type, type.DeclaringModule) {
-            Type = type;
             Locations = locations.ToArray();
         }
 
         public override IEnumerable<LocationInfo> Locations { get; }
-        public override PythonMemberType MemberType => PythonMemberType.Constant;
-        public IPythonType Type { get; }
+        public IPythonType Type => InnerType;
     }
 }

@@ -15,32 +15,39 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    class AstCachedPythonModule : AstScrapedPythonModule {
+    /// <summary>
+    /// Represents module that contains stub code such as from typeshed.
+    /// </summary>
+    internal class AstStubPythonModule : AstScrapedPythonModule {
         private readonly string _cachePath;
 
-        public AstCachedPythonModule(string name, string cachePath, IPythonInterpreter interpreter)
+        public static IPythonModule FromTypeStub(
+            IPythonInterpreter interpreter,
+            string stubFile,
+            string moduleFullName
+        ) => new AstStubPythonModule(moduleFullName, stubFile, interpreter);
+
+        public AstStubPythonModule(string name, string cachePath, IPythonInterpreter interpreter)
             : base(name, null, interpreter) {
             _cachePath = cachePath;
         }
 
         protected override Stream LoadCachedCode() {
             var filePath = _cachePath;
-            if(Directory.Exists(_cachePath)) {
+            if(FileSystem.DirectoryExists(_cachePath)) {
                 filePath = Path.Combine(_cachePath, Name);
-                if(!File.Exists(filePath)) {
+                if(!FileSystem.FileExists(filePath)) {
                     return new MemoryStream();
                 }
             }
             return PathUtils.OpenWithRetry(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
 
-        protected override List<string> GetScrapeArguments(IPythonInterpreter factory) => null;
-
-        protected override void SaveCachedCode(Stream code) {
-            // Cannot save
-        }
+        protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter factory) => Enumerable.Empty<string>();
+        protected override void SaveCachedCode(Stream code) { }
     }
 }

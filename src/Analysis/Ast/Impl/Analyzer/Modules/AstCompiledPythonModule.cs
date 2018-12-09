@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -20,8 +19,11 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal class AstBuiltinPythonModule : AstScrapedPythonModule {
-        public AstBuiltinPythonModule(string name, IPythonInterpreter interpreter)
+    /// <summary>
+    /// Represents compiled module that is built into the language.
+    /// </summary>
+    internal class AstCompiledPythonModule : AstScrapedPythonModule {
+        public AstCompiledPythonModule(string name, IPythonInterpreter interpreter)
             : base(name, MakeFakeFilePath(interpreter.Configuration.InterpreterPath, name), interpreter) {
         }
 
@@ -36,9 +38,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return $"{interpreterPath}.{name}.exe"; // Fake the extension
         }
 
-        protected override List<string> GetScrapeArguments(IPythonInterpreter interpreter)
+        protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter)
             => !InstallPath.TryGetFile("scrape_module.py", out var sm)
-                ? null
-                : new List<string> { "-B", "-E", sm, "-u8", Name };
+                ? null : new List<string> { "-B", "-E", sm, "-u8", Name };
     }
 }

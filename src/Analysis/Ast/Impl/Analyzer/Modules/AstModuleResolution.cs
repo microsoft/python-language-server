@@ -30,15 +30,15 @@ using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class AstModuleResolution: IModuleResolution {
+    internal sealed class AstModuleResolution : IModuleResolution {
         private static readonly IReadOnlyDictionary<string, string> _emptyModuleSet = EmptyDictionary<string, string>.Instance;
         private readonly ConcurrentDictionary<string, IPythonModule> _modules = new ConcurrentDictionary<string, IPythonModule>();
         private readonly IPythonInterpreter _interpreter;
+        private readonly PathResolver _pathResolver;
         private readonly IFileSystem _fs;
         private readonly bool _requireInitPy;
 
         private IReadOnlyDictionary<string, string> _searchPathPackages;
-        private AstBuiltinsPythonModule _builtinModule;
 
         private ILogger Log => _interpreter.Log;
         private InterpreterConfiguration Configuration => _interpreter.Configuration;
@@ -49,7 +49,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             _fs = interpreter.Services.GetService<IFileSystem>();
 
             ModuleCache = new AstModuleCache(interpreter);
-            CurrentPathResolver = new PathResolverSnapshot(_interpreter.LanguageVersion);
+
+            _pathResolver = new PathResolver(_interpreter.LanguageVersion);
+            _pathResolver.SetInterpreterSearchPaths(new[] {
+                _interpreter.Configuration.LibraryPath,
+                _interpreter.Configuration.SitePackagesPath,
+            });
+            _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
+            _modules[BuiltinModuleName] = BuiltinModule = new AstBuiltinsPythonModule(_interpreter, ModuleCache);
+        }
+
+        public void InitializeBuiltins() {
+            BuiltinModule.NotifyImported();
+            var builtinModuleNamesMember = BuiltinModule.GetAnyMember("__builtin_module_names__");
+            if (builtinModuleNamesMember is AstPythonStringLiteral builtinModuleNamesLiteral && builtinModuleNamesLiteral.Value != null) {
+                var builtinModuleNames = builtinModuleNamesLiteral.Value.Split(',').Select(n => n.Trim());
+                _pathResolver.SetBuiltins(builtinModuleNames);
+            }
         }
 
         public IModuleCache ModuleCache { get; }
@@ -58,13 +74,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         /// <summary>
         /// Path resolver providing file resolution in module imports.
         /// </summary>
-        public PathResolverSnapshot CurrentPathResolver { get; }
+        public PathResolverSnapshot CurrentPathResolver => _pathResolver.CurrentSnapshot;
 
         /// <summary>
         /// Builtins module.
         /// </summary>
-        public IBuiltinPythonModule BuiltinModule 
-            => _builtinModule ?? (_builtinModule = ImportModule(BuiltinModuleName) as AstBuiltinsPythonModule);
+        public IBuiltinPythonModule BuiltinModule { get; }
 
         public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken) {
             if (_searchPathPackages != null) {
@@ -90,7 +105,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 if (_fs.FileExists(searchPath)) {
                     packages = GetPackagesFromZipFile(searchPath, cancellationToken);
                 } else if (_fs.DirectoryExists(searchPath)) {
-                    packages = await Task.Run(() 
+                    packages = await Task.Run(()
                         => GetPackagesFromDirectory(searchPath, cancellationToken), cancellationToken).ConfigureAwait(false);
                 }
                 foreach (var package in packages.MaybeEnumerate()) {
@@ -209,10 +224,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public async Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token) {
             if (name == BuiltinModuleName) {
-                if (_builtinModule == null) {
-                    _modules[BuiltinModuleName] = _builtinModule = new AstBuiltinsPythonModule(_interpreter);
-                }
-                return _builtinModule;
+                return BuiltinModule;
             }
 
             for (var retries = 5; retries > 0; --retries) {
@@ -299,7 +311,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
                 foreach (var stubPath in CurrentPathResolver.GetPossibleModuleStubPaths(name)) {
                     if (_fs.FileExists(stubPath)) {
-                        return PythonModuleLoader.FromTypeStub(_interpreter, stubPath, name);
+                        return AstStubPythonModule.FromTypeStub(_interpreter, stubPath, name);
                     }
                 }
             }
@@ -318,11 +330,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             Log?.Log(TraceEventType.Verbose, "Import type stub", mp.Value.FullName, mp.Value.SourceFile);
-            return PythonModuleLoader.FromTypeStub(_interpreter, mp.Value.SourceFile, mp.Value.FullName);
+            return AstStubPythonModule.FromTypeStub(_interpreter, mp.Value.SourceFile, mp.Value.FullName);
         }
 
         public IEnumerable<string> GetTypeShedPaths(string typeshedRootPath) {
-            if(string.IsNullOrEmpty(typeshedRootPath)) {
+            if (string.IsNullOrEmpty(typeshedRootPath)) {
                 yield break;
             }
 
@@ -348,7 +360,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             if (moduleImport.IsBuiltin) {
                 Log?.Log(TraceEventType.Verbose, "Import builtins: ", name, Configuration.InterpreterPath);
-                return new AstBuiltinPythonModule(name, _interpreter);
+                return new AstCompiledPythonModule(name, _interpreter);
             }
 
             if (moduleImport.IsCompiled) {
@@ -363,7 +375,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         /// <summary>
         /// Determines whether the specified directory is an importable package.
         /// </summary>
-        public bool IsPackage(string directory) 
+        public bool IsPackage(string directory)
             => ModulePath.PythonVersionRequiresInitPyFiles(Configuration.Version) ?
                 !string.IsNullOrEmpty(ModulePath.GetPackageInitPy(directory)) :
                 _fs.DirectoryExists(directory);

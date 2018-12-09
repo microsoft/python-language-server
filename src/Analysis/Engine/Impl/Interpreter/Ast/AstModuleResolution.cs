@@ -31,7 +31,7 @@ using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     internal sealed class AstModuleResolution {
-        private static IReadOnlyDictionary<string, string> _emptyModuleSet = new Dictionary<string, string>();
+        private static readonly IReadOnlyDictionary<string, string> _emptyModuleSet = new Dictionary<string, string>();
         private readonly IPythonInterpreter _interpreter;
         private readonly ConcurrentDictionary<string, IPythonModule> _modules;
         private readonly AstModuleCache _astModuleCache;

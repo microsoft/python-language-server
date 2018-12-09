@@ -21,7 +21,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Analyzer.Modules;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
