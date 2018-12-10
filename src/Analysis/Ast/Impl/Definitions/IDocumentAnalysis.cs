@@ -28,6 +28,11 @@ namespace Microsoft.Python.Analysis {
         IDocument Document { get; }
 
         /// <summary>
+        /// Document/module global scope.
+        /// </summary>
+        IGlobalScope GlobalScope { get; }
+
+        /// <summary>
         /// All module members
         /// </summary>
         IReadOnlyDictionary<string, IMember> Members { get; }

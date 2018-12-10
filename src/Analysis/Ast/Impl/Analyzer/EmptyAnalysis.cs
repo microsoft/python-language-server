@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
@@ -24,9 +23,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class EmptyAnalysis : IDocumentAnalysis {
         public EmptyAnalysis(IDocument document = null) {
             Document = document;
+            GlobalScope = new EmptyGlobalScope(document);
         }
 
         public IDocument Document { get; }
+        public IGlobalScope GlobalScope { get; }
         public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
         public IReadOnlyDictionary<string, IMember> Members => EmptyDictionary<string, IMember>.Instance;
         public IEnumerable<IMember> GetMembers(SourceLocation location) => Enumerable.Empty<IMember>();

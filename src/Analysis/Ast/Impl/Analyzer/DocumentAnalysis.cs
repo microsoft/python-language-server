@@ -23,12 +23,10 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class DocumentAnalysis : IDocumentAnalysis {
-        /// <summary>Top-level module members: global functions, variables and classes.</summary>
-        private IScope _globalScope = Scope.Empty;
-
         public DocumentAnalysis(IDocument document) {
             Check.ArgumentNotNull(nameof(document), document);
             Document = document;
+            GlobalScope = new EmptyGlobalScope(document);
         }
 
         public static async Task<IDocumentAnalysis> CreateAsync(IDocument document, CancellationToken cancellationToken) {
@@ -38,7 +36,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public IDocument Document { get; }
-        public IReadOnlyDictionary<string, IMember> Members => _globalScope.GlobalScope.Variables;
+        public IGlobalScope GlobalScope { get; private set; }
+        public IReadOnlyDictionary<string, IMember> Members => GlobalScope.Variables;
         public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
         public IEnumerable<IMember> GetMembers(SourceLocation location) => Enumerable.Empty<IMember>();
         public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
@@ -48,7 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var ast = await Document.GetAstAsync(cancellationToken);
             var walker = new AstAnalysisWalker(Document, ast, suppressBuiltinLookup: false);
             ast.Walk(walker);
-            _globalScope = walker.Complete();
+            GlobalScope = walker.Complete();
         }
     }
 }

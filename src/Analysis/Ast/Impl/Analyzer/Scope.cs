@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -23,9 +24,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents scope where variables can be declared.
     /// </summary>
-    internal sealed class Scope : IScope {
-        public static readonly IScope Empty = new EmptyScope();
-
+    internal class Scope : IScope {
         private Dictionary<string, IMember> _variables;
         private List<Scope> _childScopes;
 
@@ -34,8 +33,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             OuterScope = outerScope;
             VisibleToChildren = visibleToChildren;
         }
-
-        public static Scope CreateGlobalScope() => new Scope(null, null);
 
         #region IScope
         public string Name => Node?.NodeName ?? "<global>";
@@ -46,13 +43,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IReadOnlyList<IScope> Children => _childScopes ?? Array.Empty<IScope>() as IReadOnlyList<IScope>;
         public IReadOnlyDictionary<string, IMember> Variables => _variables ?? EmptyDictionary<string, IMember>.Instance;
 
-        public IScope GlobalScope {
+        public IGlobalScope GlobalScope {
             get {
                 IScope scope = this;
                 while (scope.OuterScope != null) {
                     scope = scope.OuterScope;
                 }
-                return scope;
+                Debug.Assert(scope is IGlobalScope);
+                return scope as IGlobalScope;
             }
         }
 
@@ -72,11 +70,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public List<Scope> ToChainTowardsGlobal() => EnumerateTowardsGlobal.OfType<Scope>().ToList();
     }
 
-    internal sealed class EmptyScope : IScope {
+    internal sealed class EmptyGlobalScope : IGlobalScope {
+        public EmptyGlobalScope(IPythonModule module) {
+            GlobalScope = this;
+            Module = module;
+        }
+        public IPythonModule Module { get; }
         public string Name => string.Empty;
         public Node Node => null;
         public IScope OuterScope => null;
-        public IScope GlobalScope => this;
+        public IGlobalScope GlobalScope { get; protected set; }
         public bool VisibleToChildren => true;
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
         public IReadOnlyDictionary<string, IMember> Variables => EmptyDictionary<string, IMember>.Instance;

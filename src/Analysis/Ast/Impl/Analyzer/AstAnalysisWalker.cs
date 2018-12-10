@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly IPythonModule _module;
         private readonly PythonAst _ast;
         private readonly ExpressionLookup _lookup;
-        private readonly Scope _globalScope = Scope.CreateGlobalScope();
+        private readonly GlobalScope _globalScope;
         private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
 
         private IPythonInterpreter Interpreter => _module.Interpreter;
@@ -40,13 +40,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public AstAnalysisWalker(IPythonModule module, PythonAst ast, bool suppressBuiltinLookup) {
             _module = module;
             _ast = ast;
+            _globalScope = new GlobalScope(module);
             _lookup = new ExpressionLookup(module, ast, _globalScope, _functionWalkers) {
                 SuppressBuiltinLookup = suppressBuiltinLookup
             };
             // TODO: handle typing module
         }
 
-        public IScope GlobalScope => _globalScope;
+        public IGlobalScope GlobalScope => _globalScope;
         public bool CreateBuiltinTypes { get; set; }
 
         public override bool Walk(PythonAst node) {
@@ -55,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return base.Walk(node);
         }
 
-        public IScope Complete() {
+        public IGlobalScope Complete() {
             _functionWalkers.ProcessSet();
             foreach (var childModuleName in _module.GetChildrenModuleNames()) {
                 var name = $"{_module.Name}.{childModuleName}";

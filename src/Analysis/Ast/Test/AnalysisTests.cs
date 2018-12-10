@@ -13,48 +13,24 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Diagnostics;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Core.IO;
-using Microsoft.Python.Core.OS;
-using Microsoft.Python.Core.Services;
-using Microsoft.Python.Core.Tests;
-using Microsoft.Python.Parsing.Tests;
+using Microsoft.Python.Analysis.Analyzer.Types;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class AnalysisTests {
+    public class BasicTests: AnalysisTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void TestInitialize() 
             => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
 
-        private readonly ServiceManager _sm = new ServiceManager();
-        public AnalysisTests() {
-            var platform = new OSPlatform();
-            _sm
-                .AddService(new TestLogger())
-                .AddService(platform)
-                .AddService(new FileSystem(platform));
-        }
-
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
-
-        private AstPythonInterpreter CreateInterpreter() {
-            var configuration = PythonVersions.LatestAvailable;
-            configuration.AssertInstalled();
-            Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
-            configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
-            return new AstPythonInterpreter(configuration, _sm);
-        }
 
         #region Test cases
         [TestMethod, Priority(0)]
@@ -77,15 +53,20 @@ y = c.method()
             analysis.Members.Count.Should().Be(5);
             analysis.Members.Keys.Should().Contain("x", "C", "func", "c", "y");
 
-            var t = analysis.Members["x"] as IPythonType;
-            t.Should().NotBeNull();
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Unicode);
 
-            t?.TypeId.Should().Be(BuiltinTypeId.Unicode);
-            analysis.Members["C"].MemberType.Should().Be(PythonMemberType.Class);
-            (analysis.Members["func"] as IPythonFunction).Should().NotBeNull();
+            analysis.Should().HaveVariable("C")
+                .Which.Should().BeAssignableTo<IPythonClass>()
+                .Which.MemberType.Should().Be(PythonMemberType.Class);
 
-            t = analysis.Members["y"] as IPythonType;
-            t?.TypeId.Should().Be(BuiltinTypeId.Float);
+            analysis.Should().HaveVariable("func")
+                .Which.Should().BeAssignableTo<IPythonFunction>();
+
+            analysis.Should().HaveVariable("c")
+                .Which.Should().BeAssignableTo<IPythonConstant>()
+                .Which.MemberType.Should().Be(PythonMemberType.Class);
+
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Float);
         }
 
         [TestMethod, Priority(0)]
@@ -97,28 +78,13 @@ x = sys.path
             var analysis = await GetAnalysisAsync(code);
 
             analysis.Members.Count.Should().Be(2);
-            analysis.Members.Keys.Should().Contain("sys", "x");
 
-            var t = analysis.Members["x"] as IPythonType;
-            t.Should().NotBeNull();
-            t?.TypeId.Should().Be(BuiltinTypeId.List);
+            analysis.Should().HaveVariable("sys")
+                .Which.Should().BeAssignableTo<IPythonModule>();
+
+            analysis.Should()
+                .HaveVariable("x").OfType(BuiltinTypeId.List);
         }
         #endregion
-
-        private async Task<IDocumentAnalysis> GetAnalysisAsync(string code) {
-            var interpreter = CreateInterpreter();
-            var doc = Document.FromContent(interpreter, code, "module");
-
-            var ast = await doc.GetAstAsync(CancellationToken.None);
-            ast.Should().NotBeNull();
-
-            var analyzer = new PythonAnalyzer(interpreter, null);
-            var analysis = await analyzer.AnalyzeDocumentAsync(doc, CancellationToken.None);
-
-            var analysisFromDoc = await doc.GetAnalysisAsync(CancellationToken.None);
-            analysisFromDoc.Should().Be(analysis);
-
-            return analysis;
-        }
     }
 }
