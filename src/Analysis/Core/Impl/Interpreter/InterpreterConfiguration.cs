@@ -69,12 +69,13 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 Version = new Version();
             }
             if (properties.TryGetValue(nameof(SearchPaths), out object o)) {
-                SearchPaths.Clear();
+                var sp = new List<string>();
                 if (o is string s) {
-                    SearchPaths.AddRange(s.Split(';'));
+                    sp.AddRange(s.Split(';'));
                 } else if (o is IEnumerable<string> ss) {
-                    SearchPaths.AddRange(ss);
+                    sp.AddRange(ss);
                 }
+                SearchPaths = sp.ToArray();
             }
         }
 
@@ -173,7 +174,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <summary>
         /// The fixed search paths of the interpreter.
         /// </summary>
-        public List<string> SearchPaths { get; set; } = new List<string>();
+        public IReadOnlyList<string> SearchPaths { get; set; } = Array.Empty<string>();
 
         /// <summary>
         /// Typeshed root folder.

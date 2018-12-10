@@ -56,7 +56,9 @@ namespace Microsoft.PythonTools.Interpreter {
                 sitePackagesPath: null,
                 version: languageVersion
             );
-            config.SearchPaths.AddRange(searchPaths.MaybeEnumerate());
+            var list = new List<string>(config.SearchPaths);
+            list.AddRange(searchPaths.MaybeEnumerate());
+            config.SearchPaths = list;
 
             var opts = new InterpreterFactoryCreationOptions {
                 WatchFileSystem = false

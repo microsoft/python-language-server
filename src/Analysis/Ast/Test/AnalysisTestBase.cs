@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -42,17 +43,23 @@ namespace Microsoft.Python.Analysis.Tests {
                 .AddService(new FileSystem(platform));
         }
 
-        internal AstPythonInterpreter CreateInterpreter() {
+        internal AstPythonInterpreter CreateInterpreter(string searchPath = null) {
             var configuration = PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
             configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
+            configuration.SearchPaths = new[] { searchPath ?? TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) };
             return new AstPythonInterpreter(configuration, ServiceManager);
         }
 
-        internal async Task<IDocumentAnalysis> GetAnalysisAsync(string code) {
+        internal async Task<IDocumentAnalysis> GetAnalysisAsync(string code, string moduleName = null, string modulePath = null) {
             var interpreter = CreateInterpreter();
-            var doc = Document.FromContent(interpreter, code, "module");
+
+            var moduleUri = TestData.GetDefaultModuleUri();
+            modulePath = modulePath ?? TestData.GetDefaultModulePath();
+            moduleName = !string.IsNullOrEmpty(modulePath) ? Path.GetFileNameWithoutExtension(modulePath) : "module";
+
+            var doc = Document.FromContent(interpreter, code, moduleUri, modulePath, moduleName);
 
             var ast = await doc.GetAstAsync(CancellationToken.None);
             ast.Should().NotBeNull();
