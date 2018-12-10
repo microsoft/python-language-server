@@ -586,10 +586,11 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal BuiltinInstanceInfo GetInstance(IPythonType type) => GetBuiltinType(type).Instance;
 
-        internal BuiltinClassInfo GetBuiltinType(IPythonType type) =>
-            (BuiltinClassInfo)GetCached(type,
-                () => MakeBuiltinType(type)
-            ) ?? ClassInfos[BuiltinTypeId.Object];
+        internal BuiltinClassInfo GetBuiltinType(IPythonType type)
+            // Cached value may or may not be a class info. Previous calls to GetAnalysisValueFromObjects
+            // may have cached a different object for the type. For example, IPythonFunction would cache
+            // BuiltinFunctionInfo and not BuiltinClassInfo. Therefore, don't use direct cast.
+            => GetCached(type, () => MakeBuiltinType(type)) as BuiltinClassInfo ?? MakeBuiltinType(type);
 
         private BuiltinClassInfo MakeBuiltinType(IPythonType type) {
             switch (type.TypeId) {
