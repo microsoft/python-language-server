@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
         }
 
-        public IMember GetAnyMember(string name) {
+        public IPythonType GetAnyMember(string name) {
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
                 if (typeId.GetTypeName(LanguageVersion) == name) {
                     return GetOrCreate(typeId);

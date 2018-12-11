@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// Represents scope where variables can be declared.
     /// </summary>
     internal class Scope : IScope {
-        private Dictionary<string, IMember> _variables;
+        private Dictionary<string, IPythonType> _variables;
         private List<Scope> _childScopes;
 
         public Scope(Node node, IScope outerScope, bool visibleToChildren = true) {
@@ -41,7 +41,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public bool VisibleToChildren { get; }
 
         public IReadOnlyList<IScope> Children => _childScopes ?? Array.Empty<IScope>() as IReadOnlyList<IScope>;
-        public IReadOnlyDictionary<string, IMember> Variables => _variables ?? EmptyDictionary<string, IMember>.Instance;
+        public IReadOnlyDictionary<string, IPythonType> Variables 
+            => _variables ?? EmptyDictionary<string, IPythonType>.Instance;
 
         public IGlobalScope GlobalScope {
             get {
@@ -66,7 +67,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         #endregion
 
         public void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
-        public void DeclareVariable(string name, IMember m) => (_variables ?? (_variables = new Dictionary<string, IMember>()))[name] = m;
+        public void DeclareVariable(string name, IPythonType type) 
+            => (_variables ?? (_variables = new Dictionary<string, IPythonType>()))[name] = type;
         public List<Scope> ToChainTowardsGlobal() => EnumerateTowardsGlobal.OfType<Scope>().ToList();
     }
 
@@ -82,7 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IGlobalScope GlobalScope { get; protected set; }
         public bool VisibleToChildren => true;
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
-        public IReadOnlyDictionary<string, IMember> Variables => EmptyDictionary<string, IMember>.Instance;
+        public IReadOnlyDictionary<string, IPythonType> Variables => EmptyDictionary<string, IPythonType>.Instance;
         public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Repeat(this, 1);
         public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Repeat(this, 1);
     }

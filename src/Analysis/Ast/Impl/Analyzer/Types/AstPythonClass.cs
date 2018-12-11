@@ -45,8 +45,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #region IPythonType
         public override PythonMemberType MemberType => PythonMemberType.Class;
 
-        public override IMember GetMember(string name) {
-            IMember member;
+        public override IPythonType GetMember(string name) {
+            IPythonType member;
             lock (_lock) {
                 if (Members.TryGetValue(name, out member)) {
                     return member;

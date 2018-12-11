@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             DeclaringType = declaringType;
         }
 
-        #region IMember
+        #region IPythonType
         public override PythonMemberType MemberType => PythonMemberType.Property;
         #endregion
 

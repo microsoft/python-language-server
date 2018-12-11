@@ -14,43 +14,37 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Linq;
 using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class AstNestedPythonModuleMember : ILazyMember {
-        private volatile IMember _realMember;
+    internal sealed class AstNestedPythonModuleMember : AstPythonType, ILazyType {
+        private volatile IPythonType _realType;
         private readonly IPythonInterpreter _interpreter;
 
         public AstNestedPythonModuleMember(
-            string memberName,
+            string name,
             AstNestedPythonModule module,
             LocationInfo importLocation,
             IPythonInterpreter interpreter
 
-        ) {
-            Name = memberName ?? throw new ArgumentNullException(nameof(memberName));
-            Module = module ?? throw new ArgumentNullException(nameof(module));
-            ImportLocation = importLocation;
+        ): base(name, module, string.Empty, importLocation) {
             _interpreter = interpreter;
         }
 
-        public string Name { get; }
-        public AstNestedPythonModule Module { get; }
-        public LocationInfo ImportLocation { get; }
+        public AstNestedPythonModule Module => DeclaringModule as AstNestedPythonModule;
 
-        public PythonMemberType MemberType => PythonMemberType.Unknown;
-
-        public IMember Get() {
-            var m = _realMember;
+        public IPythonType Get() {
+            var m = _realType;
             if (m != null) {
                 return m;
             }
 
             // Set an "unknown" value to prevent recursion
-            var locs = ImportLocation ?? LocationInfo.Empty;
+            var locs = Locations.FirstOrDefault() ?? LocationInfo.Empty;
             var sentinel = new AstPythonConstant(_interpreter.GetBuiltinType(BuiltinTypeId.Unknown), locs);
-            m = Interlocked.CompareExchange(ref _realMember, sentinel, null);
+            m = Interlocked.CompareExchange(ref _realType, sentinel, null);
             if (m != null) {
                 // We raced and someone else set a value, so just return that
                 return m;
@@ -60,7 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             m = Module.GetMember(Name) ?? _interpreter.ModuleResolution.ImportModule(Module.Name + "." + Name);
             if (m != null) {
                 (m as IPythonModule)?.LoadAndAnalyze();
-                var current = Interlocked.CompareExchange(ref _realMember, m, sentinel);
+                var current = Interlocked.CompareExchange(ref _realType, m, sentinel);
                 if (current == sentinel) {
                     return m;
                 }

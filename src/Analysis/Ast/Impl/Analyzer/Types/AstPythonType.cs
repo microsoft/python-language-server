@@ -21,13 +21,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal class AstPythonType : IPythonType, ILocatedMember, IHasQualifiedName {
         private readonly string _name;
         private readonly object _lock = new object();
-        private Dictionary<string, IMember> _members;
+        private Dictionary<string, IPythonType> _members;
         private BuiltinTypeId _typeId;
 
-        protected IReadOnlyDictionary<string, IMember> Members => WritableMembers;
+        protected IReadOnlyDictionary<string, IPythonType> Members => WritableMembers;
 
-        private Dictionary<string, IMember> WritableMembers =>
-            _members ?? (_members = new Dictionary<string, IMember>());
+        private Dictionary<string, IPythonType> WritableMembers =>
+            _members ?? (_members = new Dictionary<string, IPythonType>());
 
         public AstPythonType(
             string name,
@@ -76,7 +76,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name) => Members.TryGetValue(name, out var member) ? member : null;
+        public virtual IPythonType GetMember(string name) => Members.TryGetValue(name, out var member) ? member : null;
         public virtual IEnumerable<string> GetMemberNames() => Members.Keys;
         #endregion
 
@@ -88,7 +88,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             return true;
         }
 
-        internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
+        internal void AddMembers(IEnumerable<KeyValuePair<string, IPythonType>> members, bool overwrite) {
             lock (_lock) {
                 foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
                     WritableMembers[kv.Key] = kv.Value;
@@ -96,7 +96,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             }
         }
 
-        internal IMember AddMember(string name, IMember member, bool overwrite) {
+        internal IPythonType AddMember(string name, IPythonType member, bool overwrite) {
             lock (_lock) {
                 if (overwrite || !Members.ContainsKey(name)) {
                     WritableMembers[name] = member;

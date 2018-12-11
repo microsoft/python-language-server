@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             }
         }
 
-        #region IMember
+        #region IPythonType
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
         #endregion

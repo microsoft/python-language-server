@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public AndWhichConstraint<TAssertions, TMember> HaveMember<TMember>(string name,
             string because = "", params object[] reasonArgs)
-            where TMember : class, IMember {
+            where TMember : class, IPythonType {
             NotBeNull();
 
             var member = Subject.GetMember(name);

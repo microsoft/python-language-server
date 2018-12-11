@@ -33,6 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly ExpressionLookup _lookup;
         private readonly GlobalScope _globalScope;
         private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
+        private IDisposable _classScope;
 
         private IPythonInterpreter Interpreter => _module.Interpreter;
         private ILogger Log => Interpreter.Log;
@@ -75,9 +76,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private LocationInfo GetLoc(Node node) => _lookup.GetLoc(node);
 
-        private static IMember Clone(IMember member) =>
-            member is IPythonMultipleMembers mm ? AstPythonMultipleMembers.Create(mm.GetMembers()) :
-            member;
+        private static IPythonType Clone(IPythonType type) =>
+            type is IPythonMultipleMembers mm ? AstPythonMultipleMembers.Create(mm.GetMembers()) :
+            type;
 
         public override bool Walk(AssignmentStatement node) {
             var value = _lookup.GetValueFromExpression(node.Right);
@@ -181,9 +182,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 switch (rootNames[0].Name) {
                     case "__future__":
                         return false;
-                    //case "typing":
-                    //    ImportMembersFromTyping(node);
-                    //    return false;
+                        //case "typing":
+                        //    ImportMembersFromTyping(node);
+                        //    return false;
                 }
             }
 
@@ -285,7 +286,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var location = GetLoc(memberReference);
 
                 ModuleImport moduleImport;
-                IMember member;
+                IPythonType member;
                 if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
                     member = new AstNestedPythonModule(moduleImport.FullName, Interpreter);
                 } else {
@@ -461,7 +462,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             t.SetBases(Interpreter, bases);
 
-            _lookup.OpenScope(node, _lookup.CurrentScope);
+            _classScope = _lookup.CreateScope(node, _lookup.CurrentScope);
             _lookup.DeclareVariable("__class__", t);
 
             return true;
@@ -469,10 +470,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override void PostWalk(ClassDefinition node) {
             if (_lookup.GetInScope("__class__") is AstPythonType cls) {
-                var m = _lookup.CloseScope();
-                if (m != null) {
-                    cls.AddMembers(m.Variables, true);
-                }
+                cls.AddMembers(_lookup.CurrentScope.Variables, true);
+                _classScope?.Dispose();
             }
             base.PostWalk(node);
         }

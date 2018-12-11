@@ -107,9 +107,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return Enumerable.Empty<IPythonType>();
         }
 
-        public IMember GetValueFromExpression(Expression expr) => GetValueFromExpression(expr, DefaultLookupOptions);
+        [DebuggerStepThrough]
+        public IPythonType GetValueFromExpression(Expression expr) => GetValueFromExpression(expr, DefaultLookupOptions);
 
-        public IMember GetValueFromExpression(Expression expr, LookupOptions options) {
+        public IPythonType GetValueFromExpression(Expression expr, LookupOptions options) {
             if (expr is ParenthesisExpression parExpr) {
                 expr = parExpr.Expression;
             }
@@ -118,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return null;
             }
 
-            IMember m;
+            IPythonType m;
             switch (expr) {
                 case NameExpression nex:
                     m = GetValueFromName(nex, options);
@@ -148,7 +149,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return m;
         }
 
-        private IMember GetValueFromName(NameExpression expr, LookupOptions options) {
+        private IPythonType GetValueFromName(NameExpression expr, LookupOptions options) {
             if (string.IsNullOrEmpty(expr?.Name)) {
                 return null;
             }
@@ -165,24 +166,24 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return new AstPythonConstant(UnknownType, GetLoc(expr));
         }
 
-        private IMember GetValueFromMember(MemberExpression expr, LookupOptions options) {
+        private IPythonType GetValueFromMember(MemberExpression expr, LookupOptions options) {
             if (expr?.Target == null || string.IsNullOrEmpty(expr?.Name)) {
                 return null;
             }
 
             var e = GetValueFromExpression(expr.Target);
-            IMember value = null;
+            IPythonType value = null;
             switch (e) {
-                case IMemberContainer mc:
-                    value = mc.GetMember(expr.Name);
-                    // If container is class rather than the instance, then method is an unbound function.
-                    value = mc is IPythonClass c && value is AstPythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
-                    break;
                 case IPythonMultipleMembers mm:
                     value = mm.GetMembers().OfType<IMemberContainer>()
                         .Select(x => x.GetMember(expr.Name))
                         .ExcludeDefault()
                         .FirstOrDefault();
+                    break;
+                case IMemberContainer mc:
+                    value = mc.GetMember(expr.Name);
+                    // If container is class rather than the instance, then method is an unbound function.
+                    value = mc is IPythonClass c && value is AstPythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
                     break;
                 default:
                     value = GetValueFromPropertyOrFunction(e, expr);
@@ -198,7 +199,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return value;
         }
 
-        private IMember GetValueFromUnaryOp(UnaryExpression expr, LookupOptions options) {
+        private IPythonType GetValueFromUnaryOp(UnaryExpression expr, LookupOptions options) {
             if (expr?.Expression == null) {
                 return null;
             }
@@ -206,7 +207,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return GetValueFromExpression(expr.Expression);
         }
 
-        private IMember GetValueFromBinaryOp(Expression expr, LookupOptions options) {
+        private IPythonType GetValueFromBinaryOp(Expression expr, LookupOptions options) {
             if (expr is AndExpression || expr is OrExpression) {
                 return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Bool), GetLoc(expr));
             }
@@ -241,7 +242,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return null;
         }
 
-        private IMember GetValueFromIndex(IndexExpression expr, LookupOptions options) {
+        private IPythonType GetValueFromIndex(IndexExpression expr, LookupOptions options) {
             if (expr?.Target == null) {
                 return null;
             }
@@ -279,7 +280,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return null;
         }
 
-        private IMember GetValueFromConditional(ConditionalExpression expr, LookupOptions options) {
+        private IPythonType GetValueFromConditional(ConditionalExpression expr, LookupOptions options) {
             if (expr == null) {
                 return null;
             }
@@ -292,13 +293,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 : null;
         }
 
-        private IMember GetValueFromCallable(CallExpression expr, LookupOptions options) {
+        private IPythonType GetValueFromCallable(CallExpression expr, LookupOptions options) {
             if (expr?.Target == null) {
                 return null;
             }
 
             var m = GetValueFromExpression(expr.Target);
-            IMember value = null;
+            IPythonType value = null;
             switch (m) {
                 case IPythonFunction pf:
                     value = GetValueFromPropertyOrFunction(pf, expr);
@@ -317,7 +318,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return value;
         }
 
-        private IMember GetValueFromPropertyOrFunction(IMember fn, Expression expr) {
+        private IPythonType GetValueFromPropertyOrFunction(IPythonType fn, Expression expr) {
             switch (fn) {
                 case IPythonProperty p:
                     return GetPropertyReturnType(p, expr);
@@ -329,7 +330,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return null;
         }
 
-        private IMember GetValueFromFunction(IPythonFunction fn, Expression expr) {
+        private IPythonType GetValueFromFunction(IPythonFunction fn, Expression expr) {
             var returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
             if (returnType.IsUnknown()) {
                 // Function may not have been walked yet. Do it now.
@@ -342,7 +343,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private IPythonType GetFunctionReturnType(IPythonFunctionOverload o)
             => o != null && o.ReturnType.Count > 0 ? o.ReturnType[0] : UnknownType;
 
-        private IMember GetPropertyReturnType(IPythonProperty p, Expression expr) {
+        private IPythonType GetPropertyReturnType(IPythonProperty p, Expression expr) {
             if (p.Type.IsUnknown()) {
                 // Function may not have been walked yet. Do it now.
                 _functionWalkers.ProcessFunction(p.FunctionDefinition);
@@ -364,7 +365,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return type != null ? new AstPythonConstant(type, GetLoc(expr)) : null;
         }
 
-        public IEnumerable<IPythonType> GetTypesFromValue(IMember value) {
+        public IEnumerable<IPythonType> GetTypesFromValue(IPythonType value) {
             if (value is IPythonMultipleMembers mm) {
                 return mm.GetMembers().Select(GetTypeFromValue).Distinct();
             }
@@ -372,7 +373,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return t != null ? Enumerable.Repeat(t, 1) : Enumerable.Empty<IPythonType>();
         }
 
-        public IPythonType GetTypeFromValue(IMember value) {
+        public IPythonType GetTypeFromValue(IPythonType value) {
             if (value == null) {
                 return null;
             }
@@ -486,21 +487,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return expr is LambdaExpression ? Interpreter.GetBuiltinType(BuiltinTypeId.Function) : null;
         }
 
-        public IMember GetInScope(string name)
+        public IPythonType GetInScope(string name)
             => CurrentScope.Variables.TryGetValue(name, out var m) ? m : null;
 
-        public void DeclareVariable(string name, IMember value, bool mergeWithExisting = true, ConcurrentDictionary<string, IMember> scope = null) {
-            if (value == null) {
+        public void DeclareVariable(string name, IPythonType type, bool mergeWithExisting = true) {
+            if (type == null) {
                 return;
             }
             if (mergeWithExisting && CurrentScope.Variables.TryGetValue(name, out var existing) && existing != null) {
                 if (existing.IsUnknown()) {
-                    CurrentScope.DeclareVariable(name, value);
-                } else if (!value.IsUnknown()) {
-                    CurrentScope.DeclareVariable(name, AstPythonMultipleMembers.Combine(existing, value));
+                    CurrentScope.DeclareVariable(name, type);
+                } else if (!type.IsUnknown()) {
+                    CurrentScope.DeclareVariable(name, AstPythonMultipleMembers.Combine(existing, type));
                 }
             } else {
-                CurrentScope.DeclareVariable(name, value);
+                CurrentScope.DeclareVariable(name, type);
             }
         }
 
@@ -514,9 +515,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Normal = Local | Nonlocal | Global | Builtins
         }
 
-        public IMember LookupNameInScopes(string name) => LookupNameInScopes(name, DefaultLookupOptions);
+        [DebuggerStepThrough]
+        public IPythonType LookupNameInScopes(string name) => LookupNameInScopes(name, DefaultLookupOptions);
 
-        public IMember LookupNameInScopes(string name, LookupOptions options) {
+        public IPythonType LookupNameInScopes(string name, LookupOptions options) {
             var scopes = CurrentScope.ToChainTowardsGlobal();
             if (scopes.Count == 1) {
                 if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
@@ -539,7 +541,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (scopes != null) {
                 foreach (var scope in scopes) {
                     if (scope.Variables.TryGetValue(name, out var value) && value != null) {
-                        if (value is ILazyMember lm) {
+                        if (value is ILazyType lm) {
                             value = lm.Get();
                             scope.DeclareVariable(name, value);
                         }
@@ -554,18 +556,40 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return null;
         }
 
-        public void OpenScope(Node node, Scope fromScope, bool visibleToChildren = true) {
-            var s = new Scope(node, fromScope, visibleToChildren);
-            fromScope.AddChildScope(s);
+        /// <summary>
+        /// Moves current scope to the specified scope.
+        /// New scope is pushed on the stack and will be removed 
+        /// upon call to the <see cref="CloseScope"/>.
+        /// </summary>
+        /// <param name="scope"></param>
+        public IDisposable OpenScope(Scope scope) {
             _openScopes.Push(CurrentScope);
-            CurrentScope = s;
+            CurrentScope = scope;
+            return new ScopeTracker(this);
         }
 
-        public Scope CloseScope() {
-            Debug.Assert(_openScopes.Count > 0, "Attempt to close global scope");
-            var s = CurrentScope;
-            CurrentScope = _openScopes.Pop();
-            return s;
+        /// <summary>
+        /// Creates new scope as a child of the specified scope.
+        /// New scope is pushed on the stack and will be removed 
+        /// upon call to the <see cref="CloseScope"/>.
+        /// </summary>
+        public IDisposable CreateScope(Node node, Scope fromScope, bool visibleToChildren = true) {
+            var s = new Scope(node, fromScope, visibleToChildren);
+            fromScope.AddChildScope(s);
+            return OpenScope(s);
+        }
+
+        private class ScopeTracker: IDisposable {
+            private readonly ExpressionLookup _lookup;
+            public ScopeTracker(ExpressionLookup lookup) {
+                _lookup = lookup;
+            }
+
+            public void Dispose() {
+                Debug.Assert(_lookup._openScopes.Count > 0, "Attempt to close global scope");
+                var s = _lookup.CurrentScope;
+                _lookup.CurrentScope = _lookup._openScopes.Pop();
+            }
         }
     }
 }

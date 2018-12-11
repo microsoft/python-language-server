@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         }
 
         public override IEnumerable<string> GetChildrenModuleNames() => GetModule().GetChildrenModuleNames();
-        public override IMember GetMember(string name) => GetModule().GetMember(name);
+        public override IPythonType GetMember(string name) => GetModule().GetMember(name);
 
         public override IEnumerable<string> GetMemberNames() => GetModule().GetMemberNames();
         public override void LoadAndAnalyze() => GetModule().LoadAndAnalyze();

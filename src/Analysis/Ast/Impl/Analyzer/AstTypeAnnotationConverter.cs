@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Soft-casts a member to a type, extracting the type from
         /// a multi-member object if possible.
         /// </summary>
-        private static IPythonType AsIPythonType(IMember m) {
+        private static IPythonType AsIPythonType(IPythonType m) {
             if (m is IPythonType t) {
                 return t;
             }
@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override IPythonType LookupName(string name) {
             var m = _scope.LookupNameInScopes(name, ExpressionLookup.LookupOptions.Global | ExpressionLookup.LookupOptions.Builtins);
             if (m is IPythonMultipleMembers mm) {
-                m = (IMember)AstPythonMultipleMembers.CreateAs<IPythonType>(mm.GetMembers()) ??
+                m = (IPythonType)AstPythonMultipleMembers.CreateAs<IPythonType>(mm.GetMembers()) ??
                     AstPythonMultipleMembers.CreateAs<IPythonModule>(mm.GetMembers());
             }
             if (m is IPythonModule mod) {
@@ -215,7 +215,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             public override BuiltinTypeId TypeId => BuiltinTypeId.Module;
             public override PythonMemberType MemberType => PythonMemberType.Module;
 
-            public override  IMember GetMember(string name) => DeclaringModule.GetMember(name);
+            public override  IPythonType GetMember(string name) => DeclaringModule.GetMember(name);
             public override IEnumerable<string> GetMemberNames() => DeclaringModule.GetMemberNames();
         }
 
@@ -227,9 +227,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             public IReadOnlyList<IPythonType> Types { get; }
 
-            public IReadOnlyList<IMember> GetMembers() => Types.OfType<IMember>().ToArray();
+            public IReadOnlyList<IPythonType> GetMembers() => Types.OfType<IPythonType>().ToArray();
 
-            public override IMember GetMember(string name) => new UnionType(
+            public override IPythonType GetMember(string name) => new UnionType(
                 Types.Select(t => t.GetMember(name)).OfType<IPythonType>().ToArray()
             );
 

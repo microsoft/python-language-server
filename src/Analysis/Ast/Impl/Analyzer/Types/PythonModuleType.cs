@@ -28,7 +28,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
     public abstract class PythonModuleType : IPythonModule {
-        protected IDictionary<string, IMember> Members { get; set; } = new Dictionary<string, IMember>();
+        protected IDictionary<string, IPythonType> Members { get; set; } = new Dictionary<string, IPythonType>();
         protected ILogger Log => Interpreter.Log;
         protected IFileSystem FileSystem { get; }
 
@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
+        public virtual IPythonType GetMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
         public virtual IEnumerable<string> GetMemberNames() => Members.Keys.ToArray();
         #endregion
 

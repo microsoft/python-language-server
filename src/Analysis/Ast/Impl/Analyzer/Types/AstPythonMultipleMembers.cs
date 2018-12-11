@@ -21,17 +21,17 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal class AstPythonMultipleMembers : IPythonMultipleMembers, ILocatedMember {
-        private readonly IMember[] _members;
-        private IReadOnlyList<IMember> _resolvedMembers;
+        private readonly IPythonType[] _members;
+        private IReadOnlyList<IPythonType> _resolvedMembers;
         private readonly object _lock = new object();
 
-        private AstPythonMultipleMembers(IMember[] members) {
-            _members = members ?? Array.Empty<IMember>();
+        private AstPythonMultipleMembers(IPythonType[] members) {
+            _members = members ?? Array.Empty<IPythonType>();
         }
 
-        public static IMember Create(IEnumerable<IMember> members) => Create(members.Where(m => m != null).Distinct().ToArray(), null);
+        public static IPythonType Create(IEnumerable<IPythonType> members) => Create(members.Where(m => m != null).Distinct().ToArray(), null);
 
-        private static IMember Create(IMember[] members, IMember single) {
+        private static IPythonType Create(IPythonType[] members, IPythonType single) {
             if (single != null && !members.Contains(single)) {
                 members = members.Concat(Enumerable.Repeat(single, 1)).ToArray();
             }
@@ -56,14 +56,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             return new AstPythonMultipleMembers(members);
         }
 
-        public static IMember Combine(IMember x, IMember y) {
+        public static IPythonType Combine(IPythonType x, IPythonType y) {
             if (x == null && y == null) {
                 throw new InvalidOperationException("Cannot add two null members");
             }
-            if (x == null || (x.MemberType == PythonMemberType.Unknown && !(x is ILazyMember))) {
+            if (x == null || (x.MemberType == PythonMemberType.Unknown && !(x is ILazyType))) {
                 return y;
             }
-            if (y == null || (y.MemberType == PythonMemberType.Unknown && !(y is ILazyMember))) {
+            if (y == null || (y.MemberType == PythonMemberType.Unknown && !(y is ILazyType))) {
                 return x;
             }
             if (x == y) {
@@ -85,10 +85,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             return Create(new[] { x }, y);
         }
 
-        public static T CreateAs<T>(IEnumerable<IMember> members) => As<T>(Create(members));
-        public static T CombineAs<T>(IMember x, IMember y) => As<T>(Combine(x, y));
+        public static T CreateAs<T>(IEnumerable<IPythonType> members) => As<T>(Create(members));
+        public static T CombineAs<T>(IPythonType x, IPythonType y) => As<T>(Combine(x, y));
 
-        public static T As<T>(IMember member) {
+        public static T As<T>(IPythonType member) {
             if (member is T t) {
                 return t;
             }
@@ -105,17 +105,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         }
 
         #region IMemberContainer
-        public IReadOnlyList<IMember> GetMembers() {
+        public virtual IEnumerable<string> GetMemberNames() => GetMembers().Select(m => m.Name);
+        public virtual IPythonType GetMember(string name) => GetMembers().FirstOrDefault(m => m.Name == name);
+
+        public IReadOnlyList<IPythonType> GetMembers() {
             lock (_lock) {
                 if (_resolvedMembers != null) {
                     return _resolvedMembers;
                 }
 
-                var unresolved = _members.OfType<ILazyMember>().ToArray();
+                var unresolved = _members.OfType<ILazyType>().ToArray();
                 if (unresolved.Length > 0) {
                     // Publish non-lazy members immediately. This will prevent recursion
                     // into EnsureMembers while we are resolving lazy values.
-                    var resolved = _members.Where(m => !(m is ILazyMember)).ToList();
+                    var resolved = _members.Where(m => !(m is ILazyType)).ToList();
                     _resolvedMembers = resolved.ToArray();
 
                     foreach (var lm in unresolved) {
@@ -132,21 +135,38 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                 return _resolvedMembers;
             }
         }
-
-        public virtual PythonMemberType MemberType => PythonMemberType.Multiple;
         #endregion
 
         #region ILocatedMember
-        public IEnumerable<LocationInfo> Locations => GetMembers().OfType<ILocatedMember>().SelectMany(m => m.Locations.MaybeEnumerate());
+        public IEnumerable<LocationInfo> Locations
+            => GetMembers().OfType<ILocatedMember>().SelectMany(m => m.Locations.MaybeEnumerate());
+        #endregion
+
+        #region IPythonType
+        public virtual PythonMemberType MemberType => PythonMemberType.Multiple;
+
+        public virtual string Name
+            => ChooseName(GetMembers().Select(m => m.Name)) ?? "<multiple>";
+        public virtual string Documentation
+            => ChooseDocumentation(GetMembers().Select(m => m.Documentation)) ?? string.Empty;
+        public virtual bool IsBuiltin
+            => GetMembers().Any(m => m.IsBuiltin);
+        public virtual IPythonModule DeclaringModule
+            => CreateAs<IPythonModule>(GetMembers().Select(f => f.DeclaringModule));
+        public virtual BuiltinTypeId TypeId => GetMembers().FirstOrDefault()?.TypeId ?? BuiltinTypeId.Unknown;
+        public virtual bool IsTypeFactory => false;
+        public virtual IPythonFunction GetConstructor() => null;
         #endregion
 
         #region Comparison
         // Equality deliberately uses unresolved members
-        public override bool Equals(object obj) => GetType() == obj?.GetType() && obj is AstPythonMultipleMembers mm && new HashSet<IMember>(_members).SetEquals(mm._members);
+        public override bool Equals(object obj) => GetType() == obj?.GetType() && obj is AstPythonMultipleMembers mm && new HashSet<IPythonType>(_members).SetEquals(mm._members);
         public override int GetHashCode() => _members.Aggregate(GetType().GetHashCode(), (hc, m) => hc ^ (m?.GetHashCode() ?? 0));
         #endregion
 
-        protected static string ChooseName(IEnumerable<string> names) => names.FirstOrDefault(n => !string.IsNullOrEmpty(n));
+        protected static string ChooseName(IEnumerable<string> names)
+            => names.FirstOrDefault(n => !string.IsNullOrEmpty(n));
+
         protected static string ChooseDocumentation(IEnumerable<string> docs) {
             // TODO: Combine distinct documentation
             return docs.FirstOrDefault(d => !string.IsNullOrEmpty(d));
@@ -157,20 +177,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         /// or method, such as when some definitions come from code and some from stubs.
         /// </summary>
         private sealed class MultipleFunctionMembers : AstPythonMultipleMembers, IPythonFunction {
-            public MultipleFunctionMembers(IMember[] members) : base(members) { }
+            public MultipleFunctionMembers(IPythonType[] members) : base(members) { }
 
             private IEnumerable<IPythonFunction> Functions => GetMembers().OfType<IPythonFunction>();
 
-            #region IMember
-            public override PythonMemberType MemberType => PythonMemberType.Function;
-            #endregion
-
             #region IPythonType
-            public string Name => ChooseName(Functions.Select(f => f.Name)) ?? "<function>";
-            public string Documentation => ChooseDocumentation(Functions.Select(f => f.Documentation));
-            public bool IsBuiltin => Functions.Any(f => f.IsBuiltin);
-            public IPythonModule DeclaringModule => CreateAs<IPythonModule>(Functions.Select(f => f.DeclaringModule));
-            public BuiltinTypeId TypeId {
+            public override PythonMemberType MemberType => PythonMemberType.Function;
+            public override string Name => ChooseName(Functions.Select(f => f.Name)) ?? "<function>";
+            public override string Documentation => ChooseDocumentation(Functions.Select(f => f.Documentation));
+            public override bool IsBuiltin => Functions.Any(f => f.IsBuiltin);
+            public override IPythonModule DeclaringModule => CreateAs<IPythonModule>(Functions.Select(f => f.DeclaringModule));
+            public override BuiltinTypeId TypeId {
                 get {
                     if (IsClassMethod) {
                         return BuiltinTypeId.ClassMethod;
@@ -181,8 +198,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                     return DeclaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function;
                 }
             }
-            public bool IsTypeFactory => false;
-            public IPythonFunction GetConstructor() => null;
             #endregion
 
             #region IPythonFunction
@@ -191,33 +206,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             public IPythonType DeclaringType => CreateAs<IPythonType>(Functions.Select(f => f.DeclaringType));
             public IReadOnlyList<IPythonFunctionOverload> Overloads => Functions.SelectMany(f => f.Overloads).ToArray();
             public FunctionDefinition FunctionDefinition => Functions.FirstOrDefault(f => f.FunctionDefinition != null)?.FunctionDefinition;
-            public IMember GetMember(string name) => null;
-            public IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
+            public override IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
             #endregion
         }
 
         private sealed class MultipleModuleMembers : AstPythonMultipleMembers, IPythonModule {
-            public MultipleModuleMembers(IMember[] members) : base(members) { }
+            public MultipleModuleMembers(IPythonType[] members) : base(members) { }
 
             private IEnumerable<IPythonModule> Modules => GetMembers().OfType<IPythonModule>();
 
-            #region IMember
+            #region IPythonType
             public override PythonMemberType MemberType => PythonMemberType.Module;
             #endregion
 
             #region IMemberContainer
-            public IMember GetMember(string name) => Create(Modules.Select(m => m.GetMember(name)));
-            public IEnumerable<string> GetMemberNames() => Modules.SelectMany(m => m.GetMemberNames()).Distinct();
+            public override IPythonType GetMember(string name) => Create(Modules.Select(m => m.GetMember(name)));
+            public override IEnumerable<string> GetMemberNames() => Modules.SelectMany(m => m.GetMemberNames()).Distinct();
             #endregion
 
             #region IPythonType
-            public string Name => ChooseName(Modules.Select(m => m.Name)) ?? "<module>";
-            public string Documentation => ChooseDocumentation(Modules.Select(m => m.Documentation));
-            public IPythonModule DeclaringModule => null;
-            public BuiltinTypeId TypeId => BuiltinTypeId.Module;
-            public bool IsBuiltin => true;
-            public bool IsTypeFactory => false;
-            public IPythonFunction GetConstructor() => null;
+            public override string Name => ChooseName(Modules.Select(m => m.Name)) ?? "<module>";
+            public override string Documentation => ChooseDocumentation(Modules.Select(m => m.Documentation));
+            public override IPythonModule DeclaringModule => null;
+            public override BuiltinTypeId TypeId => BuiltinTypeId.Module;
+            public override bool IsBuiltin => true;
             #endregion
 
             #region IPythonModule
@@ -247,20 +259,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         }
 
         class MultipleTypeMembers : AstPythonMultipleMembers, IPythonType {
-            public MultipleTypeMembers(IMember[] members) : base(members) { }
+            public MultipleTypeMembers(IPythonType[] members) : base(members) { }
 
             private IEnumerable<IPythonType> Types => GetMembers().OfType<IPythonType>();
 
-            public string Name => ChooseName(Types.Select(t => t.Name)) ?? "<type>";
-            public string Documentation => ChooseDocumentation(Types.Select(t => t.Documentation));
-            public BuiltinTypeId TypeId => Types.GroupBy(t => t.TypeId).OrderByDescending(g => g.Count()).FirstOrDefault()?.Key ?? BuiltinTypeId.Unknown;
-            public IPythonModule DeclaringModule => CreateAs<IPythonModule>(Types.Select(t => t.DeclaringModule));
-            public bool IsBuiltin => Types.All(t => t.IsBuiltin);
-            public bool IsTypeFactory => Types.All(t => t.IsTypeFactory);
-            public IMember GetMember(string name) => Create(Types.Select(t => t.GetMember(name)));
-            public IEnumerable<string> GetMemberNames() => Types.SelectMany(t => t.GetMemberNames()).Distinct();
+            public override string Name => ChooseName(Types.Select(t => t.Name)) ?? "<type>";
+            public override string Documentation => ChooseDocumentation(Types.Select(t => t.Documentation));
+            public override BuiltinTypeId TypeId => Types.GroupBy(t => t.TypeId).OrderByDescending(g => g.Count()).FirstOrDefault()?.Key ?? BuiltinTypeId.Unknown;
+            public override IPythonModule DeclaringModule => CreateAs<IPythonModule>(Types.Select(t => t.DeclaringModule));
+            public override bool IsBuiltin => Types.All(t => t.IsBuiltin);
+            public override bool IsTypeFactory => Types.All(t => t.IsTypeFactory);
+            public override IPythonType GetMember(string name) => Create(Types.Select(t => t.GetMember(name)));
+            public override IEnumerable<string> GetMemberNames() => Types.SelectMany(t => t.GetMemberNames()).Distinct();
             public override PythonMemberType MemberType => PythonMemberType.Class;
-            public IPythonFunction GetConstructor() => CreateAs<IPythonFunction>(Types.Select(t => t.GetConstructor()));
+            public override IPythonFunction GetConstructor() => CreateAs<IPythonFunction>(Types.Select(t => t.GetConstructor()));
         }
     }
 }

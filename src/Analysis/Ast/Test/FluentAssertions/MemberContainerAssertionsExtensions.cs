@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class MemberContainerAssertionsExtensions {
         public static AndWhichConstraint<TAssertions, TMember> OfMemberType<TMember, TAssertions> (this AndWhichConstraint<TAssertions, TMember> constraint, PythonMemberType memberType, string because = "", params object[] reasonArgs)
-            where TMember : IMember {
+            where TMember : IPythonType {
 
             Execute.Assertion.ForCondition(constraint.Which.MemberType == memberType)
                 .BecauseOf(because, reasonArgs)

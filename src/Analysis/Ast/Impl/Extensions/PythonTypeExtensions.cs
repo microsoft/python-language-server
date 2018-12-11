@@ -15,7 +15,7 @@
 
 namespace Microsoft.Python.Analysis {
     public static class PythonTypeExtensions {
-        public static bool IsUnknown(this IMember value) =>
+        public static bool IsUnknown(this IPythonType value) =>
             value == null ||
             (value as IPythonType)?.TypeId == BuiltinTypeId.Unknown ||
             (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;

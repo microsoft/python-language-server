@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis {
     /// <summary>
     /// Represents a collection of multiple members which can appear under a single name.
     /// </summary>
-    public interface IPythonMultipleMembers : IMember {
-        IReadOnlyList<IMember> GetMembers();
+    public interface IPythonMultipleMembers : IPythonType {
+        IReadOnlyList<IPythonType> GetMembers();
     }
 }

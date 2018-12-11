@@ -37,9 +37,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public IDocument Document { get; }
         public IGlobalScope GlobalScope { get; private set; }
-        public IReadOnlyDictionary<string, IMember> Members => GlobalScope.Variables;
+        public IReadOnlyDictionary<string, IPythonType> Members => GlobalScope.Variables;
         public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
-        public IEnumerable<IMember> GetMembers(SourceLocation location) => Enumerable.Empty<IMember>();
+        public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
         public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
         public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
 

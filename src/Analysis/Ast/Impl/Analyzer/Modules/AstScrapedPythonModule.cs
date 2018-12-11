@@ -40,12 +40,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public override IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
 
-        public override IMember GetMember(string name) {
+        public override IPythonType GetMember(string name) {
             if (!_scraped) {
                 LoadAndAnalyze();
             }
             Members.TryGetValue(name, out var m);
-            if (m is ILazyMember lm) {
+            if (m is ILazyType lm) {
                 m = lm.Get();
                 Members[name] = m;
             }

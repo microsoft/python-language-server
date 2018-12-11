@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             throw new FileNotFoundException("typing-stub.pyi");
         }
 
-        public static bool IsTypingType(IMember type) {
+        public static bool IsTypingType(IPythonType type) {
             if (type is IPythonType pyType) {
                 return pyType.DeclaringModule is AstTypingModule;
             }

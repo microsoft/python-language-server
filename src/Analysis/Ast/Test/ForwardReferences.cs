@@ -36,7 +36,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var analysis = await GetAnalysisAsync(@"
 from ForwardRefGlobalFunc import *
 x = func1()
-", TestData.GetDefaultModulePath());
+");
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
 

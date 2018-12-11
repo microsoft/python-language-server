@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         /// All module members
         /// </summary>
-        IReadOnlyDictionary<string, IMember> Members { get; }
+        IReadOnlyDictionary<string, IPythonType> Members { get; }
 
         /// <summary>
         /// Evaluates a given expression and returns a list of members which
@@ -45,7 +45,7 @@ namespace Microsoft.Python.Analysis {
         /// at that location.
         /// </summary>
         /// <param name="location">The location in the file where the expression should be evaluated.</param>
-        IEnumerable<IMember> GetMembers(SourceLocation location);
+        IEnumerable<IPythonType> GetMembers(SourceLocation location);
 
         /// <summary>
         /// Evaluates the given expression in at the provided line number and returns the values

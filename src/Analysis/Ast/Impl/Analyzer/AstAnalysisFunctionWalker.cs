@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly ExpressionLookup _lookup;
         private readonly Scope _parentScope;
         private readonly AstPythonFunctionOverload _overload;
-        private AstPythonType _selfType;
+        private IPythonClass _self;
 
         public AstAnalysisFunctionWalker(
             ExpressionLookup lookup,
@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _parentScope = _lookup.CurrentScope;
         }
 
-        public FunctionDefinition Target { get; } 
+        public FunctionDefinition Target { get; }
 
         private void GetMethodType(out bool classMethod, out bool staticMethod) {
             classMethod = false;
@@ -65,35 +65,35 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public void Walk() {
-            var self = GetSelf();
-            _selfType = (self as AstPythonConstant)?.Type as AstPythonType;
+            using (_lookup.OpenScope(_parentScope)) {
+                _self = GetSelf();
+                using (_lookup.CreateScope(Target, _parentScope)) {
 
-            var annotationTypes = _lookup.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault().ToArray();
-            _overload.ReturnTypes.AddRange(annotationTypes);
+                    var annotationTypes = _lookup.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault().ToArray();
+                    _overload.ReturnTypes.AddRange(annotationTypes);
 
-            _lookup.OpenScope(Target, _parentScope);
+                    // Declare self, if any
+                    var skip = 0;
+                    if (_self != null) {
+                        var p0 = Target.Parameters.FirstOrDefault();
+                        if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
+                            _lookup.DeclareVariable(p0.Name, _self);
+                            skip++;
+                        }
+                    }
 
-            // Declare self, if any
-            var skip = 0;
-            if (self != null) {
-                var p0 = Target.Parameters.FirstOrDefault();
-                if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
-                    _lookup.DeclareVariable(p0.Name, self);
-                    skip++;
-                }
-            }
+                    // Declare parameters in scope
+                    foreach (var p in Target.Parameters.Skip(skip).Where(p => !string.IsNullOrEmpty(p.Name))) {
+                        var value = _lookup.GetValueFromExpression(p.DefaultValue);
+                        _lookup.DeclareVariable(p.Name, value ?? _lookup.UnknownType);
+                    }
 
-            // Declare parameters in scope
-            foreach(var p in Target.Parameters.Skip(skip).Where(p => !string.IsNullOrEmpty(p.Name))) {
-                 var value = _lookup.GetValueFromExpression(p.DefaultValue);
-                _lookup.DeclareVariable(p.Name, value ?? _lookup.UnknownType);
-            }
-
-            // return type from the annotation always wins, no need to walk the body.
-            if (!annotationTypes.Any()) {
-                Target.Walk(this);
-            }
-            _lookup.CloseScope();
+                    // return type from the annotation always wins, no need to walk the body.
+                    if (!annotationTypes.Any()) {
+                        Target.Walk(this);
+                    }
+                } // Function scope
+            } // Restore original scope at the entry
         }
 
         public override bool Walk(FunctionDefinition node) {
@@ -117,8 +117,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var value = _lookup.GetValueFromExpression(node.Right);
             foreach (var lhs in node.Left) {
                 if (lhs is MemberExpression memberExp && memberExp.Target is NameExpression nameExp1) {
-                    if (_selfType != null && nameExp1.Name == "self") {
-                        _selfType.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, true);
+                    if (_self is AstPythonType t && nameExp1.Name == "self") {
+                        t.AddMembers(new[] { new KeyValuePair<string, IPythonType>(memberExp.Name, value) }, true);
                     }
                     continue;
                 }
@@ -173,7 +173,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (name != null && typeName != null) {
                     var typeId = typeName.GetTypeId();
                     if (typeId != BuiltinTypeId.Unknown) {
-                        _lookup.DeclareVariable(name, 
+                        _lookup.DeclareVariable(name,
                             new AstPythonConstant(new AstPythonType(typeName, typeId)));
                     }
                 }
@@ -183,33 +183,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override bool Walk(ReturnStatement node) {
             var types = _lookup.GetTypesFromValue(_lookup.GetValueFromExpression(node.Expression)).ExcludeDefault();
-            foreach (var type in types) {
-                _overload.ReturnTypes.Add(type);
-            }
-            
+
             // Clean up: if there are None or Unknown types along with real ones, remove them.
-            var realTypes = _overload.ReturnTypes
+            var realTypes = types
                 .Where(t => t.TypeId != BuiltinTypeId.Unknown && t.TypeId != BuiltinTypeId.NoneType)
                 .ToList();
 
-            if (realTypes.Count > 0) {
-                _overload.ReturnTypes.Clear();
-                _overload.ReturnTypes.AddRange(realTypes);
-            }
+            _overload.ReturnTypes.AddRange(realTypes.Count > 0 ? realTypes : types);
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
 
-        private IMember GetSelf() {
+        private IPythonClass GetSelf() {
             GetMethodType(out var classMethod, out var staticMethod);
             var self = _lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local);
-            if (!staticMethod && !classMethod) {
-                if (!(self is IPythonType cls)) {
-                    self = null;
-                } else {
-                    self = new AstPythonConstant(cls, ((cls as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
-                }
-            }
-            return self;
+            return !staticMethod && !classMethod
+                 ? self as IPythonClass
+                 : null;
         }
     }
 }

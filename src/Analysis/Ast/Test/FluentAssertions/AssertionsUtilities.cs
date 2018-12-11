@@ -204,7 +204,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             .FailWith($"Expected {subjectName} to have {itemName} of type `{typeof(T).Name}` at index {index}{{reason}}, but its type is `{collection[index].GetType().Name}`.");
 
         [CustomAssertion]
-        public static Continuation AssertHasMember(this AssertionScope assertionScope, IPythonType type, IScope scope, string memberName, string analysisValueName, string memberPrintName, out IMember member) {
+        public static Continuation AssertHasMember(this AssertionScope assertionScope, IPythonType type, IScope scope, string memberName, string analysisValueName, string memberPrintName, out IPythonType member) {
             try {
                 member = type.GetMember(memberName);
             } catch (Exception e) {

@@ -16,7 +16,7 @@
 
 
 namespace Microsoft.Python.Analysis {
-    public interface IPythonConstant : IMember {
+    public interface IPythonConstant : IPythonType {
         IPythonType Type {
             get;
         }

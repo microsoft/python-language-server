@@ -14,7 +14,7 @@
 // permissions and limitations under the License.
 
 namespace Microsoft.Python.Analysis {
-    public interface IPythonType : IMemberContainer, IMember {
+    public interface IPythonType : IMemberContainer {
         // Python __name__.
         string Name { get; }
 
@@ -28,6 +28,11 @@ namespace Microsoft.Python.Analysis {
         /// or 'type' for user-defined entities.
         /// </summary>
         BuiltinTypeId TypeId { get; }
+
+        /// <summary>
+        /// Extended type information for the analyzer.
+        /// </summary>
+        PythonMemberType MemberType { get; }
 
         /// <summary>
         /// Human-readable documentation that may be displayed in the editor hover tooltip.

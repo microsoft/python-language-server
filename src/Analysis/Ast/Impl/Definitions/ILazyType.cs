@@ -1,5 +1,4 @@
-// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,12 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-
 namespace Microsoft.Python.Analysis {
     /// <summary>
-    /// Represents a member that appears in a module, type, etc...
+    /// Represents a type that is lazily created. It subclasses
+    /// <see cref="IPythonType"/> to allow for ease of storing in containers,
+    /// but should appear as Unknown if used directly.
     /// </summary>
-    public interface IMember {
-        PythonMemberType MemberType { get; }
+    public interface ILazyType : IPythonType {
+        IPythonType Get();
     }
 }

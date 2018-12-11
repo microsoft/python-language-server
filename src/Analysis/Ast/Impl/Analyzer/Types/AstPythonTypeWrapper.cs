@@ -36,7 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
 
         public override BuiltinTypeId TypeId => InnerType?.TypeId ?? BuiltinTypeId.Unknown;
         public override PythonMemberType MemberType => InnerType?.MemberType ?? PythonMemberType.Unknown;
-        public override IMember GetMember(string name) => InnerType?.GetMember(name);
+        public override IPythonType GetMember(string name) => InnerType?.GetMember(name);
         public override IEnumerable<string> GetMemberNames() => InnerType?.GetMemberNames();
 
     }

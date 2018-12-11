@@ -37,9 +37,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 interpreter) {
         }
 
-        public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
+        public override IPythonType GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 
-        public IMember GetAnyMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
+        public IPythonType GetAnyMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
 
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
 

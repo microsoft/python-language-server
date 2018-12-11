@@ -20,11 +20,11 @@ using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilitie
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     internal sealed class VariableDefTestInfo {
-        private readonly IMember _variableDef;
+        private readonly IPythonType _variableDef;
         private readonly IScope _scope;
         public string Name { get; }
 
-        public VariableDefTestInfo(IMember variableDef, string name, IScope scope) {
+        public VariableDefTestInfo(IPythonType variableDef, string name, IScope scope) {
             _variableDef = variableDef;
             Name = name;
             _scope = scope;
@@ -33,19 +33,19 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public VariableDefAssertions Should() => new VariableDefAssertions(_variableDef, Name, _scope);
     }
 
-    internal sealed class VariableDefAssertions : ReferenceTypeAssertions<IMember, VariableDefAssertions> {
+    internal sealed class VariableDefAssertions : ReferenceTypeAssertions<IPythonType, VariableDefAssertions> {
         private readonly string _moduleName;
         private readonly string _name;
         private readonly IScope _scope;
 
-        public VariableDefAssertions(IMember variableDef, string name, IScope scope) {
+        public VariableDefAssertions(IPythonType variableDef, string name, IScope scope) {
             Subject = variableDef;
             _name = name;
             _scope = scope;
             _moduleName = scope.Name;
         }
 
-        protected override string Identifier => nameof(IMember);
+        protected override string Identifier => nameof(IPythonType);
 
         public AndConstraint<VariableDefAssertions> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
             var languageVersionIs3X = Is3X(_scope);
@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         public AndConstraint<VariableDefAssertions> HaveMemberType(PythonMemberType memberType, string because = "", params object[] reasonArgs) {
-            Execute.Assertion.ForCondition(Subject is IMember av && av.MemberType == memberType)
+            Execute.Assertion.ForCondition(Subject is IPythonType av && av.MemberType == memberType)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {_moduleName}.{_name} to be {memberType} {{reason}}.");
 

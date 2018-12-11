@@ -16,52 +16,51 @@
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
-using Microsoft.Python.Analysis.Analyzer;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     internal sealed class MemberTestInfo {
-        private readonly IMember _member;
+        private readonly IPythonType _member;
         private readonly IScope _scope;
         public string Name { get; }
 
-        public MemberTestInfo(IMember member, string name, IScope scope) {
+        public MemberTestInfo(IPythonType member, string name, IScope scope) {
             _member = member;
             Name = name;
             _scope = scope;
         }
 
-        public MemberAssertions Should() => new MemberAssertions(_member, Name, _scope);
+        public PythonTypeAssertions Should() => new PythonTypeAssertions(_member, Name, _scope);
     }
 
-    internal sealed class MemberAssertions : ReferenceTypeAssertions<IMember, MemberAssertions> {
+    internal sealed class PythonTypeAssertions : ReferenceTypeAssertions<IPythonType, PythonTypeAssertions> {
         private readonly string _moduleName;
         private readonly string _name;
         private readonly IScope _scope;
 
-        public MemberAssertions(IMember member, string name, IScope scope) {
+        public PythonTypeAssertions(IPythonType member, string name, IScope scope) {
             Subject = member;
             _name = name;
             _scope = scope;
             _moduleName = scope.Name;
         }
 
-        protected override string Identifier => nameof(IMember);
+        protected override string Identifier => nameof(IPythonType);
 
-        public AndConstraint<MemberAssertions> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
+        public AndConstraint<PythonTypeAssertions> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
             var languageVersionIs3X = Is3X(_scope);
             var type = Subject as IPythonType;
             AssertTypeIds(type.TypeId, typeId, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
 
-            return new AndConstraint<MemberAssertions>(this);
+            return new AndConstraint<PythonTypeAssertions>(this);
         }
 
-        public AndConstraint<MemberAssertions> HaveMemberType(PythonMemberType memberType, string because = "", params object[] reasonArgs) {
-            Execute.Assertion.ForCondition(Subject is IMember m && m.MemberType == memberType)
+        public AndConstraint<PythonTypeAssertions> HaveMemberType(PythonMemberType memberType, string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(Subject is IPythonType m && m.MemberType == memberType)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {_moduleName}.{_name} to be {memberType} {{reason}}.");
 
-            return new AndConstraint<MemberAssertions>(this);
+            return new AndConstraint<PythonTypeAssertions>(this);
         }
     }
 }
