@@ -15,11 +15,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
     public abstract class PythonModuleType : IPythonType, IPythonFile {
+        protected IDictionary<string, IMember> Members { get; set; } = new Dictionary<string, IMember>();
+        protected ILogger Log => Interpreter.Log;
+
         protected PythonModuleType(string name) {
             Check.ArgumentNotNull(nameof(name), name);
             Name = name;
@@ -53,8 +62,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name) => null;
-        public virtual IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
+        public abstract IMember GetMember(string name);
+        public abstract IEnumerable<string> GetMemberNames();
         #endregion
 
         #region IPythonFile
@@ -62,6 +71,37 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         public virtual string FilePath { get; }
         public virtual Uri Uri { get; }
         public virtual IPythonInterpreter Interpreter { get; }
+        #endregion
+
+        public IEnumerable<string> ParseErrors { get; private set; } = Enumerable.Empty<string>();
+
+        protected void LoadAndAnalyze(Stream code) {
+            PythonAst ast;
+            using (code) {
+                var sink = new CollectingErrorSink();
+                using (var sr = new StreamReader(code, Encoding.UTF8, true, 4096, true)) {
+                    var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, new ParserOptions { ErrorSink = sink, StubFile = true });
+                    ast = parser.ParseFile();
+                }
+
+                ParseErrors = sink.Errors.Select(e => "{0} ({1}): {2}".FormatUI(FilePath ?? "(builtins)", e.Span, e.Message)).ToArray();
+                if (ParseErrors.Any()) {
+                    Log?.Log(TraceEventType.Error, "Parse", FilePath ?? "(builtins)");
+                    foreach (var e in ParseErrors) {
+                        Log?.Log(TraceEventType.Error, "Parse", e);
+                    }
+                }
+            }
+
+            var walker = PrepareWalker(ast);
+            ast.Walk(walker);
+
+            Members = walker.GlobalScope.Variables.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            PostWalk(walker);
+        }
+
+        protected virtual AstAnalysisWalker PrepareWalker(PythonAst ast) => new AstAnalysisWalker(this, ast, suppressBuiltinLookup: false);
+
+        protected virtual void PostWalk(PythonWalker walker) => (walker as AstAnalysisWalker)?.Complete();
     }
-    #endregion
 }

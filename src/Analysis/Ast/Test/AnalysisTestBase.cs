@@ -43,22 +43,23 @@ namespace Microsoft.Python.Analysis.Tests {
                 .AddService(new FileSystem(platform));
         }
 
-        internal AstPythonInterpreter CreateInterpreter(string searchPath = null) {
+        internal AstPythonInterpreter CreateInterpreter(string moduleFolder) {
             var configuration = PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
             configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
-            configuration.SearchPaths = new[] { searchPath ?? TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) };
+            configuration.SearchPaths = new[] { moduleFolder, TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) };
             return new AstPythonInterpreter(configuration, ServiceManager);
         }
 
         internal async Task<IDocumentAnalysis> GetAnalysisAsync(string code, string moduleName = null, string modulePath = null) {
-            var interpreter = CreateInterpreter();
 
             var moduleUri = TestData.GetDefaultModuleUri();
             modulePath = modulePath ?? TestData.GetDefaultModulePath();
-            moduleName = !string.IsNullOrEmpty(modulePath) ? Path.GetFileNameWithoutExtension(modulePath) : "module";
+            moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var moduleDirectory = Path.GetDirectoryName(modulePath);
 
+            var interpreter = CreateInterpreter(moduleDirectory);
             var doc = Document.FromContent(interpreter, code, moduleUri, modulePath, moduleName);
 
             var ast = await doc.GetAstAsync(CancellationToken.None);

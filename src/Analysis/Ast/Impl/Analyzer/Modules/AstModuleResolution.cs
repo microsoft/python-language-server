@@ -59,12 +59,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             _modules[BuiltinModuleName] = BuiltinModule = new AstBuiltinsPythonModule(_interpreter, ModuleCache);
         }
 
-        public void InitializeBuiltins() {
+        public void BuildModuleList() {
+            // Initialize built-in
             BuiltinModule.NotifyImported();
+            // Add built-in module names
             var builtinModuleNamesMember = BuiltinModule.GetAnyMember("__builtin_module_names__");
             if (builtinModuleNamesMember is AstPythonStringLiteral builtinModuleNamesLiteral && builtinModuleNamesLiteral.Value != null) {
                 var builtinModuleNames = builtinModuleNamesLiteral.Value.Split(',').Select(n => n.Trim());
                 _pathResolver.SetBuiltins(builtinModuleNames);
+            }
+
+            // Add names from search paths
+            var paths = _interpreter.Configuration.SearchPaths;
+            // TODO: how to remove?
+            foreach (var modulePath in paths.Where(_fs.DirectoryExists).SelectMany(p => _fs.GetFiles(p))) {
+                _pathResolver.TryAddModulePath(modulePath, out _);
             }
         }
 

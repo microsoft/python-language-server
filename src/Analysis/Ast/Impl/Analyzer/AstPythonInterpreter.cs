@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var resolution = new AstModuleResolution(this);
             ModuleResolution = resolution;
-            resolution.InitializeBuiltins();
+            resolution.BuildModuleList();
         }
 
         public void Dispose() { }

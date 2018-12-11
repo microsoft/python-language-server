@@ -15,12 +15,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
@@ -75,7 +78,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
 
         public IEnumerable<string> GetChildrenModuleNames() => GetChildModuleNames(FilePath, Name, Interpreter);
 
-        public void NotifyImported() { }
+        public void NotifyImported() {
+        }
 
         private static string TryGetDocFromModuleInitFile(string filePath) {
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) {
