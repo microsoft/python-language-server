@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public void BuildModuleList() {
             // Initialize built-in
-            BuiltinModule.NotifyImported();
+            BuiltinModule.LoadAndAnalyze();
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinModule.GetAnyMember("__builtin_module_names__");
             if (builtinModuleNamesMember is AstPythonStringLiteral builtinModuleNamesLiteral && builtinModuleNamesLiteral.Value != null) {

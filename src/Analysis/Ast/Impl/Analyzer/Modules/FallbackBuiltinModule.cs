@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Parsing;
@@ -61,9 +62,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
             return GetOrCreate(BuiltinTypeId.Unknown);
         }
-
-        public IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
-        public void NotifyImported() { }
     }
 
     class FallbackBuiltinPythonType : AstPythonType {

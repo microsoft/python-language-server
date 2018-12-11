@@ -41,9 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _module = module;
             _ast = ast;
             _globalScope = new GlobalScope(module);
-            _lookup = new ExpressionLookup(module, ast, _globalScope, _functionWalkers) {
-                SuppressBuiltinLookup = suppressBuiltinLookup
-            };
+            _lookup = new ExpressionLookup(module, ast, _globalScope, _functionWalkers);
             // TODO: handle typing module
         }
 
@@ -253,7 +251,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void HandleModuleImportStar(IPythonModule module) {
-            module.NotifyImported();
+            module.LoadAndAnalyze();
             // Ensure child modules have been loaded
             module.GetChildrenModuleNames();
             foreach (var memberName in module.GetMemberNames()) {
@@ -266,7 +264,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 member = member ?? new AstPythonConstant(_lookup.UnknownType, ((module as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
                 _lookup.DeclareVariable(memberName, member);
-                (member as IPythonModule)?.NotifyImported();
+                (member as IPythonModule)?.LoadAndAnalyze();
             }
         }
 
@@ -387,25 +385,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (!_functionWalkers.Contains(node)) {
-                // Treat the rest of the property as a function. "AddOverload" takes the return type
-                // and sets it as the property type.
-                var funcScope = _lookup.Clone();
-                funcScope.SuppressBuiltinLookup = CreateBuiltinTypes;
-                existing.AddOverload(CreateFunctionOverload(funcScope, node));
+                // Treat the rest of the property as a function. "AddOverload"
+                // takes the return type and sets it as the property type.
+                existing.AddOverload(CreateFunctionOverload(_lookup, node));
             }
         }
 
-        private IPythonFunctionOverload CreateFunctionOverload(ExpressionLookup funcScope, FunctionDefinition node) {
+        private IPythonFunctionOverload CreateFunctionOverload(ExpressionLookup lookup, FunctionDefinition node) {
             var parameters = node.Parameters
                 .Select(p => new AstPythonParameterInfo(_ast, p, _lookup.GetTypesFromAnnotation(p.Annotation)))
                 .ToArray();
 
             var overload = new AstPythonFunctionOverload(
                 parameters,
-                funcScope.GetLocOfName(node, node.NameExpression),
+                lookup.GetLocOfName(node, node.NameExpression),
                 node.ReturnAnnotation?.ToCodeString(_ast));
-            _functionWalkers.Add(new AstAnalysisFunctionWalker(funcScope, node, overload));
 
+            _functionWalkers.Add(new AstAnalysisFunctionWalker(lookup, node, overload));
             return overload;
         }
 
@@ -465,7 +461,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             t.SetBases(Interpreter, bases);
 
-            _lookup.OpenScope(node);
+            _lookup.OpenScope(node, _lookup.CurrentScope);
             _lookup.DeclareVariable("__class__", t);
 
             return true;
@@ -489,9 +485,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (!_functionWalkers.Contains(node)) {
-                var funcScope = _lookup.Clone();
-                funcScope.SuppressBuiltinLookup = CreateBuiltinTypes;
-                existing.AddOverload(CreateFunctionOverload(funcScope, node));
+                existing.AddOverload(CreateFunctionOverload(_lookup, node));
             }
         }
     }

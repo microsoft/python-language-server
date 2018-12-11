@@ -21,6 +21,7 @@ namespace Microsoft.Python.Analysis {
     /// </summary>
     public interface IPythonModule : IPythonType, IPythonFile {
         IEnumerable<string> GetChildrenModuleNames();
-        void NotifyImported();
+        void LoadAndAnalyze();
+        IEnumerable<string> ParseErrors { get; }
     }
 }

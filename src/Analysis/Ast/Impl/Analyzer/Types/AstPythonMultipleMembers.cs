@@ -201,24 +201,32 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
 
             private IEnumerable<IPythonModule> Modules => GetMembers().OfType<IPythonModule>();
 
-            public string Name => ChooseName(Modules.Select(m => m.Name)) ?? "<module>";
-            public string Documentation => ChooseDocumentation(Modules.Select(m => m.Documentation));
-            public IEnumerable<string> GetChildrenModuleNames() => Modules.SelectMany(m => m.GetChildrenModuleNames());
+            #region IMember
+            public override PythonMemberType MemberType => PythonMemberType.Module;
+            #endregion
+
+            #region IMemberContainer
             public IMember GetMember(string name) => Create(Modules.Select(m => m.GetMember(name)));
             public IEnumerable<string> GetMemberNames() => Modules.SelectMany(m => m.GetMemberNames()).Distinct();
-            public override PythonMemberType MemberType => PythonMemberType.Module;
+            #endregion
 
+            #region IPythonType
+            public string Name => ChooseName(Modules.Select(m => m.Name)) ?? "<module>";
+            public string Documentation => ChooseDocumentation(Modules.Select(m => m.Documentation));
             public IPythonModule DeclaringModule => null;
             public BuiltinTypeId TypeId => BuiltinTypeId.Module;
             public bool IsBuiltin => true;
             public bool IsTypeFactory => false;
             public IPythonFunction GetConstructor() => null;
+            #endregion
 
-            public void NotifyImported() {
+            #region IPythonModule
+            public IEnumerable<string> GetChildrenModuleNames() => Modules.SelectMany(m => m.GetChildrenModuleNames());
+            public void LoadAndAnalyze() {
                 List<Exception> exceptions = null;
                 foreach (var m in Modules) {
                     try {
-                        m.NotifyImported();
+                        m.LoadAndAnalyze();
                     } catch (Exception ex) {
                         exceptions = exceptions ?? new List<Exception>();
                         exceptions.Add(ex);
@@ -228,6 +236,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                     throw new AggregateException(exceptions);
                 }
             }
+            public IEnumerable<string> ParseErrors { get; private set; } = Enumerable.Empty<string>();
+            #endregion
 
             #region IPythonFile
             public string FilePath => null;

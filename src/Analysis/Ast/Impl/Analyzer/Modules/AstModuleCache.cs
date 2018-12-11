@@ -23,7 +23,7 @@ using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class AstModuleCache: IModuleCache {
+    internal sealed class AstModuleCache : IModuleCache {
         private readonly IPythonInterpreter _interpreter;
         private readonly IFileSystem _fs;
         private readonly bool _skipCache;
@@ -96,19 +96,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             ), ".pyi");
         }
 
-        public Stream ReadCachedModule(string filePath) {
+        public string ReadCachedModule(string filePath) {
             if (_skipCache) {
-                return null;
+                return string.Empty;
             }
 
             var path = GetCacheFilePath(filePath);
             if (string.IsNullOrEmpty(path)) {
-                return null;
-            }
-
-            var file = PathUtils.OpenWithRetry(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            if (file == null) {
-                return null;
+                return string.Empty;
             }
 
             var fileIsOkay = false;
@@ -125,17 +120,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             if (fileIsOkay) {
-                return file;
+                try {
+                    return _fs.ReadAllText(filePath);
+                } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
 
-            file.Dispose();
             Log?.Log(TraceEventType.Verbose, "Invalidate cached module", path);
-
             _fs.DeleteFileWithRetries(path);
-            return null;
+            return string.Empty;
         }
 
-        public void WriteCachedModule(string filePath, Stream code) {
+        public void WriteCachedModule(string filePath, string code) {
             var cache = GetCacheFilePath(filePath);
             if (string.IsNullOrEmpty(cache)) {
                 return;
@@ -143,11 +138,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             Log?.Log(TraceEventType.Verbose, "Write cached module: ", cache);
             try {
-                using (var stream = PathUtils.OpenWithRetry(cache, FileMode.Create, FileAccess.Write, FileShare.Read)) {
-                    if (stream != null) {
-                        code.CopyTo(stream);
-                    }
-                }
+                _fs.WriteAllText(cache, code);
             } catch (Exception ex) when (!ex.IsCriticalException()) {
                 PathUtils.DeleteFile(cache);
             }

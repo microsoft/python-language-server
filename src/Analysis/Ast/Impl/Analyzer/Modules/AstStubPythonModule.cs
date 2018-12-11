@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -36,18 +37,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             _cachePath = cachePath;
         }
 
-        protected override Stream LoadCachedCode() {
+        protected override string LoadCachedCode() {
             var filePath = _cachePath;
             if(FileSystem.DirectoryExists(_cachePath)) {
                 filePath = Path.Combine(_cachePath, Name);
                 if(!FileSystem.FileExists(filePath)) {
-                    return new MemoryStream();
+                    return string.Empty;
                 }
             }
-            return PathUtils.OpenWithRetry(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            try {
+                return FileSystem.ReadAllText(filePath);
+            } catch (IOException) { } catch(UnauthorizedAccessException) { }
+
+            return string.Empty;
         }
 
         protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter factory) => Enumerable.Empty<string>();
-        protected override void SaveCachedCode(Stream code) { }
+        protected override void SaveCachedCode(string code) { }
     }
 }

@@ -43,12 +43,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
 
-        protected override Stream LoadCachedCode() {
+        protected override string LoadCachedCode() {
             var path = Interpreter.Configuration.InterpreterPath ?? "python.exe";
             return ModuleCache.ReadCachedModule(path);
         }
 
-        protected override void SaveCachedCode(Stream code) {
+        protected override void SaveCachedCode(string code) {
             if (Interpreter.Configuration.InterpreterPath != null) {
                 ModuleCache.WriteCachedModule(Interpreter.Configuration.InterpreterPath, code);
             }
@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter)
             => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new List<string> { "-B", "-E", sb };
 
-        protected override AstAnalysisWalker PrepareWalker(PythonAst ast) {
+        internal override AstAnalysisWalker PrepareWalker(PythonAst ast) {
             var walker = new AstAnalysisWalker(this, ast, suppressBuiltinLookup: true) {
                 CreateBuiltinTypes = true
             };

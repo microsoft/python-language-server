@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class SentinelModule : PythonModuleType, IPythonModule {
+    internal sealed class SentinelModule : PythonModuleType {
         private readonly SemaphoreSlim _semaphore;
         private volatile IPythonModule _realModule;
 
@@ -58,7 +58,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
         }
 
-        public void NotifyImported() { }
-        public IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
+        public override void LoadAndAnalyze() { }
     }
 }

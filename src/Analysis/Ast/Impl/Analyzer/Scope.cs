@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public List<Scope> ToChainTowardsGlobal() => EnumerateTowardsGlobal.OfType<Scope>().ToList();
     }
 
-    internal sealed class EmptyGlobalScope : IGlobalScope {
+    internal class EmptyGlobalScope : IGlobalScope {
         public EmptyGlobalScope(IPythonModule module) {
             GlobalScope = this;
             Module = module;

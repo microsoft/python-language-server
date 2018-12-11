@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// </summary>
     internal sealed class ExpressionLookup {
         private readonly AstAnalysisFunctionWalkerSet _functionWalkers;
-        private readonly Lazy<IPythonModule> _builtinModule;
+        private readonly Stack<Scope> _openScopes = new Stack<Scope>();
 
         private ILogger Log => Module.Interpreter.Log;
         internal IPythonType UnknownType { get; }
@@ -42,40 +42,29 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IPythonModule module,
             PythonAst ast,
             Scope moduleScope,
-            AstAnalysisFunctionWalkerSet functionWalkers,
-            IPythonModule builtinModule = null
+            AstAnalysisFunctionWalkerSet functionWalkers
         ) {
             Ast = ast ?? throw new ArgumentNullException(nameof(ast));
-            Module = module;
+            Module = module ?? throw new ArgumentNullException(nameof(module));
+            CurrentScope = moduleScope ?? throw new ArgumentNullException(nameof(moduleScope));
 
-            _functionWalkers = functionWalkers;
+            _functionWalkers = functionWalkers ?? throw new ArgumentNullException(nameof(functionWalkers));
+
             DefaultLookupOptions = LookupOptions.Normal;
 
             UnknownType = Interpreter.GetBuiltinType(BuiltinTypeId.Unknown) ??
                 new FallbackBuiltinPythonType(new FallbackBuiltinModule(Ast.LanguageVersion), BuiltinTypeId.Unknown);
-
-            _builtinModule = builtinModule == null ? new Lazy<IPythonModule>(ImportBuiltinModule) : new Lazy<IPythonModule>(() => builtinModule);
-            CurrentScope = moduleScope;
         }
 
         public PythonAst Ast { get; }
         public IPythonModule Module { get; }
         public LookupOptions DefaultLookupOptions { get; set; }
-        public bool SuppressBuiltinLookup { get; set; }
         public Scope CurrentScope { get; private set; }
         public IPythonInterpreter Interpreter => Module.Interpreter;
 
-        private IPythonModule ImportBuiltinModule() {
-            var modName = BuiltinTypeId.Unknown.GetModuleName(Ast.LanguageVersion);
-            var mod = Interpreter.ModuleResolution.ImportModule(modName);
-            Debug.Assert(mod != null, $"Failed to import {modName}");
-            mod?.NotifyImported();
-            return mod;
-        }
-
         public LocationInfo GetLoc(Node node) {
             if (node == null || node.StartIndex >= node.EndIndex) {
-                return null;
+                return LocationInfo.Empty;
             }
 
             var start = node.GetStart(Ast);
@@ -86,7 +75,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public LocationInfo GetLocOfName(Node node, NameExpression header) {
             var loc = GetLoc(node);
             if (loc == null || header == null) {
-                return null;
+                return LocationInfo.Empty;
             }
 
             var nameStart = header.GetStart(Ast);
@@ -559,26 +548,24 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            if (!SuppressBuiltinLookup && options.HasFlag(LookupOptions.Builtins)) {
-                return _builtinModule.Value.GetMember(name);
+            if (Module != Interpreter.ModuleResolution.BuiltinModule && options.HasFlag(LookupOptions.Builtins)) {
+                return Interpreter.ModuleResolution.BuiltinModule.GetMember(name);
             }
             return null;
         }
 
-        public void OpenScope(Node node, bool visibleToChildren = true) {
-            var s = new Scope(node, CurrentScope, visibleToChildren);
-            CurrentScope.AddChildScope(s);
+        public void OpenScope(Node node, Scope fromScope, bool visibleToChildren = true) {
+            var s = new Scope(node, fromScope, visibleToChildren);
+            fromScope.AddChildScope(s);
+            _openScopes.Push(CurrentScope);
             CurrentScope = s;
         }
 
         public Scope CloseScope() {
-            Debug.Assert(CurrentScope.OuterScope != null, "Attempt to close global scope");
+            Debug.Assert(_openScopes.Count > 0, "Attempt to close global scope");
             var s = CurrentScope;
-            CurrentScope = s.OuterScope as Scope;
+            CurrentScope = _openScopes.Pop();
             return s;
         }
-
-        public ExpressionLookup Clone()
-            => new ExpressionLookup(Module, Ast, CurrentScope, _functionWalkers, _builtinModule.Value);
     }
 }

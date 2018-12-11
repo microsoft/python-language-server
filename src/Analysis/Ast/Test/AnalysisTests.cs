@@ -79,9 +79,8 @@ x = sys.path
 
             analysis.Members.Count.Should().Be(2);
 
-            analysis.Should().HaveVariable("sys")
-                .Which.Should().BeAssignableTo<IPythonModule>();
-
+            analysis.Should()
+                .HaveVariable("sys").OfType(BuiltinTypeId.Module);
             analysis.Should()
                 .HaveVariable("x").OfType(BuiltinTypeId.List);
         }

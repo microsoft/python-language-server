@@ -15,33 +15,30 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    public class AstPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
+    public class AstPythonModule : PythonModuleType, ILocatedMember {
+        private readonly IFileSystem _fs;
         private string _documentation = string.Empty;
 
         internal AstPythonModule() : base(string.Empty) { }
 
         protected AstPythonModule(string moduleName, string filePath, Uri uri, IPythonInterpreter interpreter) :
             base(moduleName, filePath, uri, interpreter) {
+            _fs = interpreter.Services.GetService<IFileSystem>();
             Locations = new[] { new LocationInfo(filePath, uri, 1, 1) };
         }
 
-        protected virtual PythonAst GetAst() => null;
-
         public override string Documentation {
             get {
-                _documentation = _documentation ?? GetAst()?.Documentation;
+                _documentation = _documentation ?? Ast?.Documentation;
                 if (_documentation == null) {
                     var m = GetMember("__doc__");
                     _documentation = (m as AstPythonStringLiteral)?.Value ?? string.Empty;
@@ -49,21 +46,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                         m = GetMember($"_{Name}");
                         _documentation = (m as AstNestedPythonModule)?.Documentation;
                         if (string.IsNullOrEmpty(_documentation)) {
-                            _documentation = TryGetDocFromModuleInitFile(FilePath);
+                            _documentation = TryGetDocFromModuleInitFile();
                         }
                     }
                 }
+
                 return _documentation;
             }
         }
+
         public IEnumerable<LocationInfo> Locations { get; } = Enumerable.Empty<LocationInfo>();
 
-        private static IEnumerable<string> GetChildModuleNames(string filePath, string prefix, IPythonInterpreter interpreter) {
+        private IEnumerable<string> GetChildModuleNames(string filePath, string prefix, IPythonInterpreter interpreter) {
             if (interpreter == null || string.IsNullOrEmpty(filePath)) {
                 yield break;
             }
             var searchPath = Path.GetDirectoryName(filePath);
-            if (!Directory.Exists(searchPath)) {
+            if (!_fs.DirectoryExists(searchPath)) {
                 yield break;
             }
 
@@ -76,18 +75,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             }
         }
 
-        public IEnumerable<string> GetChildrenModuleNames() => GetChildModuleNames(FilePath, Name, Interpreter);
+        public override IEnumerable<string> GetChildrenModuleNames()
+            => GetChildModuleNames(FilePath, Name, Interpreter);
 
-        public void NotifyImported() {
-        }
+        internal override string GetCode() => _fs.ReadAllText(FilePath);
 
-        private static string TryGetDocFromModuleInitFile(string filePath) {
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) {
+        private string TryGetDocFromModuleInitFile() {
+            if (string.IsNullOrEmpty(FilePath) || !_fs.FileExists(FilePath)) {
                 return string.Empty;
             }
 
             try {
-                using (var sr = new StreamReader(filePath)) {
+                using (var sr = new StreamReader(FilePath)) {
                     string quote = null;
                     string line;
                     while (true) {

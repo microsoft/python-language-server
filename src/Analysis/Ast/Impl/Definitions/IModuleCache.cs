@@ -19,7 +19,7 @@ namespace Microsoft.Python.Analysis {
     public interface IModuleCache {
         IPythonModule ImportFromCache(string name, IPythonInterpreter interpreter);
         string GetCacheFilePath(string filePath);
-        Stream ReadCachedModule(string filePath);
-        void WriteCachedModule(string filePath, Stream code);
+        string ReadCachedModule(string filePath);
+        void WriteCachedModule(string filePath, string code);
     }
 }

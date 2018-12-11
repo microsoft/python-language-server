@@ -15,12 +15,13 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class AstNestedPythonModule : PythonModuleType, IPythonModule, ILocatedMember {
+    internal sealed class AstNestedPythonModule : PythonModuleType, ILocatedMember {
         private IPythonModule _module;
 
         public AstNestedPythonModule(string fullName, IPythonInterpreter interpreter)
@@ -30,7 +31,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         public override string Documentation => MaybeModule?.Documentation ?? string.Empty;
         public IEnumerable<LocationInfo> Locations => ((MaybeModule as ILocatedMember)?.Locations).MaybeEnumerate();
 
-        public bool IsLoaded => MaybeModule != null;
         private IPythonModule MaybeModule => Volatile.Read(ref _module);
 
         private IPythonModule GetModule() {
@@ -48,13 +48,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return Interlocked.CompareExchange(ref _module, module, null) ?? module;
         }
 
-        public IEnumerable<string> GetChildrenModuleNames() => GetModule().GetChildrenModuleNames();
+        public override IEnumerable<string> GetChildrenModuleNames() => GetModule().GetChildrenModuleNames();
         public override IMember GetMember(string name) => GetModule().GetMember(name);
 
-        public override IEnumerable<string> GetMemberNames() =>
-            // TODO: Make GetMemberNames() faster than NotifyImported()
-            GetModule().GetMemberNames();
-
-        public void NotifyImported() => GetModule().NotifyImported();
+        public override IEnumerable<string> GetMemberNames() => GetModule().GetMemberNames();
+        public override void LoadAndAnalyze() => GetModule().LoadAndAnalyze();
+        internal override string GetCode() => (GetModule() as PythonModuleType)?.GetCode() ?? string.Empty;
     }
 }

@@ -30,21 +30,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal class AstScrapedPythonModule : PythonModuleType, IPythonModule {
         private bool _scraped;
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
-        protected IFileSystem FileSystem { get; }
 
         public AstScrapedPythonModule(string name, string filePath, IPythonInterpreter interpreter)
             : base(name, filePath, null, interpreter) {
-            FileSystem = interpreter.Services.GetService<IFileSystem>();
         }
 
         public override string Documentation
             => GetMember("__doc__") is AstPythonStringLiteral m ? m.Value : string.Empty;
 
-        public IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
+        public override IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
 
         public override IMember GetMember(string name) {
             if (!_scraped) {
-                NotifyImported();
+                LoadAndAnalyze();
             }
             Members.TryGetValue(name, out var m);
             if (m is ILazyMember lm) {
@@ -56,7 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public override IEnumerable<string> GetMemberNames() {
             if (!_scraped) {
-                NotifyImported();
+                LoadAndAnalyze();
             }
             return Members.Keys.ToArray();
         }
@@ -81,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return args;
         }
 
-        protected override AstAnalysisWalker PrepareWalker(PythonAst ast) {
+        internal override AstAnalysisWalker PrepareWalker(PythonAst ast) {
 #if DEBUG
             // In debug builds we let you F12 to the scraped file
             var filePath = string.IsNullOrEmpty(FilePath) ? null : ModuleCache.GetCacheFilePath(FilePath);
@@ -94,74 +92,42 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return base.PrepareWalker(ast);
         }
 
-        protected virtual void PostWalk(PythonWalker walker) => (walker as AstAnalysisWalker)?.Complete();
-        protected virtual Stream LoadCachedCode() => ModuleCache.ReadCachedModule(FilePath);
-        protected virtual void SaveCachedCode(Stream code) => ModuleCache.WriteCachedModule(FilePath, code);
+        protected override void PostWalk(PythonWalker walker) => (walker as AstAnalysisWalker)?.Complete();
+        protected virtual string LoadCachedCode() => ModuleCache.ReadCachedModule(FilePath);
+        protected virtual void SaveCachedCode(string code) => ModuleCache.WriteCachedModule(FilePath, code);
 
-        public virtual void NotifyImported() {
+        internal override string GetCode() {
             if (_scraped) {
-                return;
+                return string.Empty;
             }
 
             var code = LoadCachedCode();
-            var scrape = code == null;
-
             _scraped = true;
 
-            if (scrape) {
+            if (string.IsNullOrEmpty(code)) {
                 if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {
-                    return;
+                    return string.Empty;
                 }
-
                 code = ScrapeModule();
-
-                PythonAst ast;
-                using (code) {
-                    var sink = new CollectingErrorSink();
-                    using (var sr = new StreamReader(code, Encoding.UTF8, true, 4096, true)) {
-                        var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, new ParserOptions { ErrorSink = sink, StubFile = true });
-                        ast = parser.ParseFile();
-                    }
-
-                    ParseErrors = sink.Errors.Select(e => "{0} ({1}): {2}".FormatUI(FilePath ?? "(builtins)", e.Span, e.Message)).ToArray();
-                    if (ParseErrors.Any()) {
-                        Log?.Log(TraceEventType.Error, "Parse", FilePath ?? "(builtins)");
-                        foreach (var e in ParseErrors) {
-                            Log?.Log(TraceEventType.Error, "Parse", e);
-                        }
-                    }
-
-                    if (scrape) {
-                        // We know we created the stream, so it's safe to seek here
-                        code.Seek(0, SeekOrigin.Begin);
-                        SaveCachedCode(code);
-                    }
-                }
-
-                var walker = PrepareWalker(ast);
-                ast.Walk(walker);
-
-                Members = walker.GlobalScope.Variables.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-                PostWalk(walker);
+                SaveCachedCode(code);
             }
+            return code;
         }
 
-        private Stream ScrapeModule() {
-            var code = new MemoryStream();
-
+        private string ScrapeModule() {
             var args = GetScrapeArguments(Interpreter);
             if (args == null) {
-                return code;
+                return string.Empty;
             }
 
-            using (var sw = new StreamWriter(code, Encoding.UTF8, 4096, true))
+            var sb = new StringBuilder();
             using (var proc = new ProcessHelper(
                 Interpreter.Configuration.InterpreterPath,
                 args,
                 Interpreter.Configuration.LibraryPath
             )) {
                 proc.StartInfo.StandardOutputEncoding = Encoding.UTF8;
-                proc.OnOutputLine = sw.WriteLine;
+                proc.OnOutputLine = s => sb.AppendLine(s);
                 proc.OnErrorLine = s => Log?.Log(TraceEventType.Error, "Scrape", s);
 
                 Log?.Log(TraceEventType.Information, "Scrape", proc.FileName, proc.Arguments);
@@ -172,16 +138,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 if (exitCode == null) {
                     proc.Kill();
                     Log?.Log(TraceEventType.Error, "ScrapeTimeout", proc.FileName, proc.Arguments);
-                    return code;
+                    return string.Empty;
                 }
+
                 if (exitCode != 0) {
                     Log?.Log(TraceEventType.Error, "Scrape", "ExitCode", exitCode);
-                    return code;
+                    return string.Empty;
                 }
             }
 
-            code.Seek(0, SeekOrigin.Begin);
-            return code;
+            return sb.ToString();
         }
     }
 }

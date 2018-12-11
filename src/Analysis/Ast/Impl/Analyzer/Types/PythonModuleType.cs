@@ -21,13 +21,16 @@ using System.Linq;
 using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    public abstract class PythonModuleType : IPythonType, IPythonFile {
+    public abstract class PythonModuleType : IPythonModule {
         protected IDictionary<string, IMember> Members { get; set; } = new Dictionary<string, IMember>();
         protected ILogger Log => Interpreter.Log;
+        protected IFileSystem FileSystem { get; }
 
         protected PythonModuleType(string name) {
             Check.ArgumentNotNull(nameof(name), name);
@@ -38,6 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             : this(name) {
             Check.ArgumentNotNull(nameof(interpreter), interpreter);
             Interpreter = interpreter;
+            FileSystem = interpreter.Services.GetService<IFileSystem>();
         }
 
         protected PythonModuleType(string name, string filePath, Uri uri, IPythonInterpreter interpreter)
@@ -62,8 +66,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #endregion
 
         #region IMemberContainer
-        public abstract IMember GetMember(string name);
-        public abstract IEnumerable<string> GetMemberNames();
+        public virtual IMember GetMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
+        public virtual IEnumerable<string> GetMemberNames() => Members.Keys.ToArray();
         #endregion
 
         #region IPythonFile
@@ -73,34 +77,41 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         public virtual IPythonInterpreter Interpreter { get; }
         #endregion
 
+        #region IPythonModule
+
+        public virtual IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
+        public virtual void LoadAndAnalyze() => LoadAndAnalyze(GetCode());
+        #endregion
+
         public IEnumerable<string> ParseErrors { get; private set; } = Enumerable.Empty<string>();
 
-        protected void LoadAndAnalyze(Stream code) {
-            PythonAst ast;
-            using (code) {
-                var sink = new CollectingErrorSink();
-                using (var sr = new StreamReader(code, Encoding.UTF8, true, 4096, true)) {
-                    var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, new ParserOptions { ErrorSink = sink, StubFile = true });
-                    ast = parser.ParseFile();
-                }
+        internal virtual PythonAst Ast { get; private set; }
 
-                ParseErrors = sink.Errors.Select(e => "{0} ({1}): {2}".FormatUI(FilePath ?? "(builtins)", e.Span, e.Message)).ToArray();
-                if (ParseErrors.Any()) {
-                    Log?.Log(TraceEventType.Error, "Parse", FilePath ?? "(builtins)");
-                    foreach (var e in ParseErrors) {
-                        Log?.Log(TraceEventType.Error, "Parse", e);
-                    }
+        internal virtual string GetCode() => string.Empty;
+
+        protected void LoadAndAnalyze(string code) {
+            var sink = new CollectingErrorSink();
+            using (var sr = new StringReader(code)) {
+                var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, new ParserOptions { ErrorSink = sink, StubFile = true });
+                Ast = parser.ParseFile();
+            }
+
+            ParseErrors = sink.Errors.Select(e => "{0} ({1}): {2}".FormatUI(FilePath ?? "(builtins)", e.Span, e.Message)).ToArray();
+            if (ParseErrors.Any()) {
+                Log?.Log(TraceEventType.Error, "Parse", FilePath ?? "(builtins)");
+                foreach (var e in ParseErrors) {
+                    Log?.Log(TraceEventType.Error, "Parse", e);
                 }
             }
 
-            var walker = PrepareWalker(ast);
-            ast.Walk(walker);
+            var walker = PrepareWalker(Ast);
+            Ast.Walk(walker);
 
             Members = walker.GlobalScope.Variables.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             PostWalk(walker);
         }
 
-        protected virtual AstAnalysisWalker PrepareWalker(PythonAst ast) => new AstAnalysisWalker(this, ast, suppressBuiltinLookup: false);
+        internal virtual AstAnalysisWalker PrepareWalker(PythonAst ast) => new AstAnalysisWalker(this, ast, suppressBuiltinLookup: false);
 
         protected virtual void PostWalk(PythonWalker walker) => (walker as AstAnalysisWalker)?.Complete();
     }

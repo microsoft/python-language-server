@@ -56,10 +56,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 return m;
             }
 
-            Module.NotifyImported();
+            Module.LoadAndAnalyze();
             m = Module.GetMember(Name) ?? _interpreter.ModuleResolution.ImportModule(Module.Name + "." + Name);
             if (m != null) {
-                (m as IPythonModule)?.NotifyImported();
+                (m as IPythonModule)?.LoadAndAnalyze();
                 var current = Interlocked.CompareExchange(ref _realMember, m, sentinel);
                 if (current == sentinel) {
                     return m;

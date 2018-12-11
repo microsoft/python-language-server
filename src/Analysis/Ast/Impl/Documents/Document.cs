@@ -189,7 +189,7 @@ namespace Microsoft.Python.Analysis.Documents {
         }
         #endregion
 
-        protected override PythonAst GetAst() => _ast;
+        internal override PythonAst Ast => _ast;
 
         private static Uri MakeDocumentUri(string filePath) {
             if (string.IsNullOrEmpty(filePath)) {
