@@ -13,9 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -72,6 +75,14 @@ namespace Microsoft.Python.Analysis.Tests {
         public async Task FromImportSpecificValues() {
             var analysis = await GetAnalysisAsync("from Values import D");
             analysis.Should().HaveVariable("D").OfType(BuiltinTypeId.Dict);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ImportNonExistingModule() {
+            var code = await File.ReadAllTextAsync(Path.Combine(GetAnalysisTestDataFilesPath(), "Imports.py"));
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.TopLevelMembers.GetMemberNames().Should().OnlyContain("version_info", "a_made_up_module");
         }
     }
 }

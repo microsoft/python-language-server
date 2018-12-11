@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
@@ -45,8 +46,8 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
 
-        internal AstPythonInterpreter CreateInterpreter(string moduleFolder) {
-            var configuration = PythonVersions.LatestAvailable;
+        internal AstPythonInterpreter CreateInterpreter(string moduleFolder, InterpreterConfiguration configuration = null) {
+            configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
             configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
@@ -54,14 +55,14 @@ namespace Microsoft.Python.Analysis.Tests {
             return new AstPythonInterpreter(configuration, ServiceManager);
         }
 
-        internal async Task<IDocumentAnalysis> GetAnalysisAsync(string code, string moduleName = null, string modulePath = null) {
+        internal async Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration = null, string moduleName = null, string modulePath = null) {
 
             var moduleUri = TestData.GetDefaultModuleUri();
             modulePath = modulePath ?? TestData.GetDefaultModulePath();
             moduleName = Path.GetFileNameWithoutExtension(modulePath);
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
-            var interpreter = CreateInterpreter(moduleDirectory);
+            var interpreter = CreateInterpreter(moduleDirectory, configuration);
             var doc = Document.FromContent(interpreter, code, moduleUri, modulePath, moduleName);
 
             var ast = await doc.GetAstAsync(CancellationToken.None);

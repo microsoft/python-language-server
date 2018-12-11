@@ -16,7 +16,5 @@
 using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis {
-    public interface IVariableCollection {
-        IReadOnlyDictionary<string, IPythonType> Variables { get; }
-    }
+    public interface IVariableCollection: IMemberContainer, IReadOnlyCollection<IVariable> { }
 }

@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis {
     /// <summary>
     /// Represents scope where variables can be declared.
     /// </summary>
-    public interface IScope: IVariableCollection {
+    public interface IScope {
         string Name { get; }
         Node Node { get; }
         IScope OuterScope { get; }
@@ -29,5 +29,6 @@ namespace Microsoft.Python.Analysis {
         IReadOnlyList<IScope> Children { get; }
         IEnumerable<IScope> EnumerateTowardsGlobal { get; }
         IEnumerable<IScope> EnumerateFromGlobal { get; }
+        IVariableCollection Variables { get; }
     }
 }

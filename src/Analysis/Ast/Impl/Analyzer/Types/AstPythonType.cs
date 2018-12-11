@@ -88,6 +88,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             return true;
         }
 
+        internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
+            lock (_lock) {
+                foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
+                    WritableMembers[v.Name] = v.Type;
+                }
+            }
+        }
+
         internal void AddMembers(IEnumerable<KeyValuePair<string, IPythonType>> members, bool overwrite) {
             lock (_lock) {
                 foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {

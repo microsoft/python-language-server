@@ -36,10 +36,10 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<DocumentAnalysisAssertions, IScope>(this, constraint.Which);
         }
 
-        public AndWhichConstraint<DocumentAnalysisAssertions, VariableDefTestInfo> HaveVariable(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<DocumentAnalysisAssertions, VariableTestInfo> HaveVariable(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
             var constraint = _scopeAssertions.HaveVariable(name, because, reasonArgs);
-            return new AndWhichConstraint<DocumentAnalysisAssertions, VariableDefTestInfo>(this, constraint.Which);
+            return new AndWhichConstraint<DocumentAnalysisAssertions, VariableTestInfo>(this, constraint.Which);
         }
 
         public AndConstraint<DocumentAnalysisAssertions> HaveClassVariables(params string[] classNames)

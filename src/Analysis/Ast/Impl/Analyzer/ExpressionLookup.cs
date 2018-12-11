@@ -487,14 +487,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return expr is LambdaExpression ? Interpreter.GetBuiltinType(BuiltinTypeId.Function) : null;
         }
 
-        public IPythonType GetInScope(string name)
-            => CurrentScope.Variables.TryGetValue(name, out var m) ? m : null;
+        public IPythonType GetInScope(string name) => CurrentScope.Variables.GetMember(name);
 
         public void DeclareVariable(string name, IPythonType type, bool mergeWithExisting = true) {
             if (type == null) {
                 return;
             }
-            if (mergeWithExisting && CurrentScope.Variables.TryGetValue(name, out var existing) && existing != null) {
+            var existing = CurrentScope.Variables.GetMember(name);
+            if (mergeWithExisting && existing != null) {
                 if (existing.IsUnknown()) {
                     CurrentScope.DeclareVariable(name, type);
                 } else if (!type.IsUnknown()) {
@@ -540,9 +540,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (scopes != null) {
                 foreach (var scope in scopes) {
-                    if (scope.Variables.TryGetValue(name, out var value) && value != null) {
-                        scope.DeclareVariable(name, value);
-                        return value;
+                    var t = scope.Variables.GetMember(name);
+                    if (t != null) {
+                        scope.DeclareVariable(name, t);
+                        return t;
                     }
                 }
             }

@@ -68,14 +68,15 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<TScopeAssertions, IScope>((TScopeAssertions)this, Subject);
         }
         
-        public AndWhichConstraint<TScopeAssertions, VariableDefTestInfo> HaveVariable(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<TScopeAssertions, VariableTestInfo> HaveVariable(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            Execute.Assertion.ForCondition(Subject.Variables.TryGetValue(name, out var member))
+            var t = Subject.Variables.GetMember(name);
+            Execute.Assertion.ForCondition(t != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected scope '{Subject.Name}' to have variable '{name}'{{reason}}.");
 
-            return new AndWhichConstraint<TScopeAssertions, VariableDefTestInfo>((TScopeAssertions)this, new VariableDefTestInfo(member, name, Subject));
+            return new AndWhichConstraint<TScopeAssertions, VariableTestInfo>((TScopeAssertions)this, new VariableTestInfo(name, t, Subject));
         }
         
         public AndConstraint<TScopeAssertions> HaveClassVariables(params string[] classNames)
@@ -107,7 +108,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public AndConstraint<TScopeAssertions> NotHaveVariable(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            Execute.Assertion.ForCondition(!Subject.Variables.TryGetValue(name, out _))
+            Execute.Assertion.ForCondition(Subject.Variables.GetMember(name) == null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected scope '{Subject.Name}' to have no variable '{name}'{{reason}}.");
 

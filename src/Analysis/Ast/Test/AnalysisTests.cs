@@ -13,10 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -50,20 +51,20 @@ y = c.method()
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Members.Count.Should().Be(5);
-            analysis.Members.Keys.Should().Contain("x", "C", "func", "c", "y");
+            var names = analysis.TopLevelMembers.GetMemberNames();
+            names.Should().OnlyContain("x", "C", "func", "c", "y");
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Unicode);
 
             analysis.Should().HaveVariable("C")
-                .Which.Should().BeAssignableTo<IPythonClass>()
+                .Which.Type.Should().BeAssignableTo<IPythonClass>()
                 .Which.MemberType.Should().Be(PythonMemberType.Class);
 
             analysis.Should().HaveVariable("func")
-                .Which.Should().BeAssignableTo<IPythonFunction>();
+                .Which.Type.Should().BeAssignableTo<IPythonFunction>();
 
             analysis.Should().HaveVariable("c")
-                .Which.Should().BeAssignableTo<IPythonConstant>()
+                .Which.Type.Should().BeAssignableTo<IPythonConstant>()
                 .Which.MemberType.Should().Be(PythonMemberType.Class);
 
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Float);
@@ -77,7 +78,7 @@ x = sys.path
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Members.Count.Should().Be(2);
+            analysis.TopLevelMembers.Count.Should().Be(2);
 
             analysis.Should()
                 .HaveVariable("sys").OfType(BuiltinTypeId.Module);

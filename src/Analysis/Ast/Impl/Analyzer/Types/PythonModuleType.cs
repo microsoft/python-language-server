@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
@@ -107,7 +106,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             var walker = PrepareWalker(Ast);
             Ast.Walk(walker);
 
-            Members = walker.GlobalScope.Variables.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            Members = walker.GlobalScope.Variables.ToDictionary(v => v.Name, v => v.Type);
             PostWalk(walker);
         }
 

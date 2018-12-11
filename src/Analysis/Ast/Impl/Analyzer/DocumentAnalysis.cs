@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
 
@@ -37,7 +38,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public IDocument Document { get; }
         public IGlobalScope GlobalScope { get; private set; }
-        public IReadOnlyDictionary<string, IPythonType> Members => GlobalScope.Variables;
+
+        public IVariableCollection TopLevelMembers => GlobalScope.Variables;
+        public IEnumerable<IVariable> AllMembers 
+            => (GlobalScope as IScope)
+                .TraverseBreadthFirst(s => s.Children)
+                .SelectMany(s => s.Variables);
+
         public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
         public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
         public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();

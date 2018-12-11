@@ -436,9 +436,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             foreach (var node in s.OfType<AssignmentStatement>().Where(n => n.Right is NameExpression)) {
                 var rhs = (NameExpression)node.Right;
-                if (_lookup.CurrentScope.Variables.TryGetValue(rhs.Name, out var member)) {
+                var t = _lookup.CurrentScope.Variables.GetMember(rhs.Name);
+                if (t != null) {
                     foreach (var lhs in node.Left.OfType<NameExpression>()) {
-                        _lookup.DeclareVariable(lhs.Name, member);
+                        _lookup.DeclareVariable(lhs.Name, t);
                     }
                 }
             }

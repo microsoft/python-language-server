@@ -1,5 +1,4 @@
-// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,15 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis {
-    /// <summary>
-    /// Represents an object which can contain other members.
-    /// </summary>
-    public interface IMemberContainer {
-        IPythonType GetMember(string name);
-        IEnumerable<string> GetMemberNames();
-
+    public interface IVariable: ILocatedMember {
+        string Name { get; }
+        IPythonType Type { get; }
     }
 }

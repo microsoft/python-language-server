@@ -33,9 +33,14 @@ namespace Microsoft.Python.Analysis {
         IGlobalScope GlobalScope { get; }
 
         /// <summary>
+        /// Module top-level members
+        /// </summary>
+        IVariableCollection TopLevelMembers { get; }
+
+        /// <summary>
         /// All module members
         /// </summary>
-        IReadOnlyDictionary<string, IPythonType> Members { get; }
+        IEnumerable<IVariable> AllMembers { get; }
 
         /// <summary>
         /// Evaluates a given expression and returns a list of members which
