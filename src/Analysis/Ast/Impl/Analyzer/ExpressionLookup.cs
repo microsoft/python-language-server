@@ -97,8 +97,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             var m = ann.GetValue(new AstTypeAnnotationConverter(this));
-            if (m is IPythonMultipleMembers mm) {
-                return mm.GetMembers().OfType<IPythonType>();
+            if (m is IPythonMultipleTypes mm) {
+                return mm.GetTypes().OfType<IPythonType>();
             }
             if (m is IPythonType type) {
                 return Enumerable.Repeat(type, 1);
@@ -174,8 +174,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var e = GetValueFromExpression(expr.Target);
             IPythonType value = null;
             switch (e) {
-                case IPythonMultipleMembers mm:
-                    value = mm.GetMembers().OfType<IMemberContainer>()
+                case IPythonMultipleTypes mm:
+                    value = mm.GetTypes().OfType<IMemberContainer>()
                         .Select(x => x.GetMember(expr.Name))
                         .ExcludeDefault()
                         .FirstOrDefault();
@@ -289,7 +289,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var falseValue = GetValueFromExpression(expr.FalseExpression);
 
             return trueValue != null || falseValue != null
-                ? AstPythonMultipleMembers.Combine(trueValue, falseValue)
+                ? PythonMultipleTypes.Combine(trueValue, falseValue)
                 : null;
         }
 
@@ -366,8 +366,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public IEnumerable<IPythonType> GetTypesFromValue(IPythonType value) {
-            if (value is IPythonMultipleMembers mm) {
-                return mm.GetMembers().Select(GetTypeFromValue).Distinct();
+            if (value is IPythonMultipleTypes mm) {
+                return mm.GetTypes().Select(GetTypeFromValue).Distinct();
             }
             var t = GetTypeFromValue(value);
             return t != null ? Enumerable.Repeat(t, 1) : Enumerable.Empty<IPythonType>();
@@ -418,8 +418,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Property);
             }
 
-            if (value is IPythonMultipleMembers mm) {
-                return AstPythonMultipleMembers.CreateAs<IPythonType>(mm.GetMembers());
+            if (value is IPythonMultipleTypes mm) {
+                return PythonMultipleTypes.CreateAs<IPythonType>(mm.GetTypes());
             }
 
             if (value is IPythonType) {
@@ -498,7 +498,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (existing.IsUnknown()) {
                     CurrentScope.DeclareVariable(name, type);
                 } else if (!type.IsUnknown()) {
-                    CurrentScope.DeclareVariable(name, AstPythonMultipleMembers.Combine(existing, type));
+                    CurrentScope.DeclareVariable(name, PythonMultipleTypes.Combine(existing, type));
                 }
             } else {
                 CurrentScope.DeclareVariable(name, type);
@@ -541,10 +541,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (scopes != null) {
                 foreach (var scope in scopes) {
                     if (scope.Variables.TryGetValue(name, out var value) && value != null) {
-                        if (value is ILazyType lm) {
-                            value = lm.Get();
-                            scope.DeclareVariable(name, value);
-                        }
+                        scope.DeclareVariable(name, value);
                         return value;
                     }
                 }

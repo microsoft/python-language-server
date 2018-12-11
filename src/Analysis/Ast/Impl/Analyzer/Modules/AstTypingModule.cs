@@ -34,8 +34,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 return pyType.DeclaringModule is AstTypingModule;
             }
 
-            if (type is IPythonMultipleMembers mm) {
-                return mm.GetMembers().Any(IsTypingType);
+            if (type is IPythonMultipleTypes mm) {
+                return mm.GetTypes().Any(IsTypingType);
             }
 
             return false;

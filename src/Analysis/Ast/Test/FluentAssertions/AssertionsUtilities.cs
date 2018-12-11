@@ -28,27 +28,32 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public static bool Is3X(IScope scope)
             => scope.GlobalScope.Module.Interpreter.LanguageVersion.Is3x();
 
-        public static void AssertTypeIds(BuiltinTypeId actualTypeId, BuiltinTypeId typeId, string name, bool languageVersionIs3X, string because, object[] reasonArgs) {
-            BuiltinTypeId expected;
-            switch (typeId) {
-                case BuiltinTypeId.Str:
-                    expected = languageVersionIs3X ? BuiltinTypeId.Unicode : BuiltinTypeId.Bytes;
-                    break;
-                case BuiltinTypeId.StrIterator:
-                    expected = languageVersionIs3X ? BuiltinTypeId.UnicodeIterator : BuiltinTypeId.BytesIterator;
-                    break;
-                default:
-                    expected = typeId;
-                    break;
-            }
-            var errorMessage = GetAssertMessage(actualTypeId, expected, name);
+        public static void AssertTypeIds(
+            IEnumerable<BuiltinTypeId> actualTypeIds, 
+            IEnumerable<BuiltinTypeId> typeIds, 
+            string name, bool languageVersionIs3X, string because, 
+            object[] reasonArgs, string itemNameSingle = "type", string itemNamePlural = "types") {
+            var expected = typeIds.Select(t => {
+                switch (t) {
+                    case BuiltinTypeId.Str:
+                        return languageVersionIs3X ? BuiltinTypeId.Unicode : BuiltinTypeId.Bytes;
+                    case BuiltinTypeId.StrIterator:
+                        return languageVersionIs3X ? BuiltinTypeId.UnicodeIterator : BuiltinTypeId.BytesIterator;
+                    default:
+                        return t;
+                }
+            }).ToArray();
+
+            var actual = actualTypeIds.ToArray();
+            var errorMessage = GetAssertCollectionOnlyContainsMessage(actual, expected, name, itemNameSingle, itemNamePlural);
 
             Execute.Assertion.ForCondition(errorMessage == null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith(errorMessage);
         }
 
-        public static string GetAssertMessage<T>(T actual, T expected, string name) 
+
+        public static string GetAssertMessage<T>(T actual, T expected, string name)
             => !actual.Equals(expected) ? $"Expected {name} to have '{expected}'{{reason}}, but it has {actual}." : null;
 
         public static string GetAssertCollectionContainsMessage<T>(T[] actual, T[] expected, string name, string itemNameSingle, string itemNamePlural, Func<T[], string> itemsFormatter = null) {

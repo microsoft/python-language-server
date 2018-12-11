@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                     _documentation = (m as AstPythonStringLiteral)?.Value ?? string.Empty;
                     if (string.IsNullOrEmpty(_documentation)) {
                         m = GetMember($"_{Name}");
-                        _documentation = (m as AstNestedPythonModule)?.Documentation;
+                        _documentation = (m as LazyPythonModule)?.Documentation;
                         if (string.IsNullOrEmpty(_documentation)) {
                             _documentation = TryGetDocFromModuleInitFile();
                         }

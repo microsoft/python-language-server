@@ -192,7 +192,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             if (module != null && typeStubPaths.Length > 0 && module.Name != "typing") {
                 var tsModule = ImportFromTypeStubs(module.Name, typeStubPaths);
                 if (tsModule != null) {
-                    module = AstPythonMultipleMembers.CombineAs<IPythonModule>(module, tsModule);
+                    module = PythonMultipleTypes.CombineAs<IPythonModule>(module, tsModule);
                 }
             }
 

@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _functionWalkers.ProcessSet();
             foreach (var childModuleName in _module.GetChildrenModuleNames()) {
                 var name = $"{_module.Name}.{childModuleName}";
-                _globalScope.DeclareVariable(name, new AstNestedPythonModule(name, Interpreter));
+                _globalScope.DeclareVariable(name, new LazyPythonModule(name, Interpreter));
             }
             return GlobalScope;
         }
@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private LocationInfo GetLoc(Node node) => _lookup.GetLoc(node);
 
         private static IPythonType Clone(IPythonType type) =>
-            type is IPythonMultipleMembers mm ? AstPythonMultipleMembers.Create(mm.GetMembers()) :
+            type is IPythonMultipleTypes mm ? PythonMultipleTypes.Create(mm.GetTypes()) :
             type;
 
         public override bool Walk(AssignmentStatement node) {
@@ -145,10 +145,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         _lookup.DeclareVariable(memberName, _module);
                         break;
                     case ModuleImport moduleImport:
-                        _lookup.DeclareVariable(memberName, new AstNestedPythonModule(moduleImport.FullName, Interpreter));
+                        _lookup.DeclareVariable(memberName, new LazyPythonModule(moduleImport.FullName, Interpreter));
                         break;
                     case PossibleModuleImport possibleModuleImport:
-                        _lookup.DeclareVariable(memberName, new AstNestedPythonModule(possibleModuleImport.PossibleModuleFullName, Interpreter));
+                        _lookup.DeclareVariable(memberName, new LazyPythonModule(possibleModuleImport.PossibleModuleFullName, Interpreter));
                         break;
                     default:
                         _lookup.DeclareVariable(memberName, new AstPythonConstant(_lookup.UnknownType, GetLoc(memberReference)));
@@ -233,7 +233,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void ImportMembersFromModule(FromImportStatement node, string fullModuleName) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var nestedModule = new AstNestedPythonModule(fullModuleName, Interpreter);
+            var nestedModule = new LazyPythonModule(fullModuleName, Interpreter);
 
             if (names.Count == 1 && names[0].Name == "*") {
                 HandleModuleImportStar(nestedModule);
@@ -246,7 +246,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
                 var location = GetLoc(memberReference);
 
-                var member = new AstNestedPythonModuleMember(importName, nestedModule, location, Interpreter);
+                var member = new LazyPythonModuleMember(importName, nestedModule, location, Interpreter);
                 _lookup.DeclareVariable(memberName, member);
             }
         }
@@ -288,7 +288,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ModuleImport moduleImport;
                 IPythonType member;
                 if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
-                    member = new AstNestedPythonModule(moduleImport.FullName, Interpreter);
+                    member = new LazyPythonModule(moduleImport.FullName, Interpreter);
                 } else {
                     member = new AstPythonConstant(_lookup.UnknownType, location);
                 }
@@ -447,8 +447,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override bool Walk(ClassDefinition node) {
             var member = _lookup.GetInScope(node.Name);
             var t = member as AstPythonClass;
-            if (t == null && member is IPythonMultipleMembers mm) {
-                t = mm.GetMembers().OfType<AstPythonClass>().FirstOrDefault(pt => pt.ClassDefinition.StartIndex == node.StartIndex);
+            if (t == null && member is IPythonMultipleTypes mm) {
+                t = mm.GetTypes().OfType<AstPythonClass>().FirstOrDefault(pt => pt.ClassDefinition.StartIndex == node.StartIndex);
             }
             if (t == null) {
                 t = CreateClass(node);

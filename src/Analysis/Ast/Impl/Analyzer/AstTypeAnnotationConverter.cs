@@ -35,14 +35,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// a multi-member object if possible.
         /// </summary>
         private static IPythonType AsIPythonType(IPythonType m) {
+            if (m is IPythonMultipleTypes mm) {
+                return PythonMultipleTypes.CreateAs<IPythonType>(mm.GetTypes());
+            }
             if (m is IPythonType t) {
                 return t;
             }
-
-            if (m is IPythonMultipleMembers mm) {
-                return AstPythonMultipleMembers.CreateAs<IPythonType>(mm.GetMembers());
-            }
-
             return null;
         }
 
@@ -76,9 +74,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override IPythonType LookupName(string name) {
             var m = _scope.LookupNameInScopes(name, ExpressionLookup.LookupOptions.Global | ExpressionLookup.LookupOptions.Builtins);
-            if (m is IPythonMultipleMembers mm) {
-                m = (IPythonType)AstPythonMultipleMembers.CreateAs<IPythonType>(mm.GetMembers()) ??
-                    AstPythonMultipleMembers.CreateAs<IPythonModule>(mm.GetMembers());
+            if (m is IPythonMultipleTypes mm) {
+                m = PythonMultipleTypes.CreateAs<IPythonType>(mm.GetTypes()) ??
+                    PythonMultipleTypes.CreateAs<IPythonModule>(mm.GetTypes());
             }
             if (m is IPythonModule mod) {
                 // Wrap the module in an IPythonType interface
@@ -98,8 +96,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType type) =>
             type is UnionType unionType
                 ? unionType.Types
-                : type is IPythonMultipleMembers multipleMembers
-                    ? multipleMembers.GetMembers().OfType<IPythonType>().ToArray()
+                : type is IPythonMultipleTypes multipleMembers
+                    ? multipleMembers.GetTypes().OfType<IPythonType>().ToArray()
                     : null;
 
         public override IPythonType MakeGeneric(IPythonType baseType, IReadOnlyList<IPythonType> args) {
@@ -219,7 +217,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             public override IEnumerable<string> GetMemberNames() => DeclaringModule.GetMemberNames();
         }
 
-        private sealed class UnionType : AstPythonType, IPythonMultipleMembers {
+        private sealed class UnionType : AstPythonType, IPythonMultipleTypes {
             public UnionType(IReadOnlyList<IPythonType> types):
                 base("Any", types.Select(t => t.DeclaringModule).ExcludeDefault().FirstOrDefault(), null, null) {
                 Types = types;
@@ -227,7 +225,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             public IReadOnlyList<IPythonType> Types { get; }
 
-            public IReadOnlyList<IPythonType> GetMembers() => Types.OfType<IPythonType>().ToArray();
+            public IReadOnlyList<IPythonType> GetTypes() => Types.OfType<IPythonType>().ToArray();
 
             public override IPythonType GetMember(string name) => new UnionType(
                 Types.Select(t => t.GetMember(name)).OfType<IPythonType>().ToArray()

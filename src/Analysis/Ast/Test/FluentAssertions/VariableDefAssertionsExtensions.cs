@@ -13,14 +13,32 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class VariableDefAssertionsExtensions {
-        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> OfType<TAssertion>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
+        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> OfType<TAssertion>(
+            this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint,
+            BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
             andWhichConstraint.Which.Should().HaveType(typeId, because, reasonArgs);
+            return andWhichConstraint;
+        }
+
+        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> OfTypes<TAssertion>(
+            this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, params BuiltinTypeId[] typeIds)
+            => andWhichConstraint.OfTypes(typeIds, string.Empty);
+
+        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> OfTypes<TAssertion>(this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
+            andWhichConstraint.Which.Should().HaveTypes(typeIds, because, reasonArgs);
+            return andWhichConstraint;
+        }
+
+        public static AndWhichConstraint<TAssertion, VariableDefTestInfo> WithNoTypes<TAssertion>(
+            this AndWhichConstraint<TAssertion, VariableDefTestInfo> andWhichConstraint, string because = "", params object[] reasonArgs) {
+            andWhichConstraint.Which.Should().HaveNoTypes(because, reasonArgs);
             return andWhichConstraint;
         }
     }

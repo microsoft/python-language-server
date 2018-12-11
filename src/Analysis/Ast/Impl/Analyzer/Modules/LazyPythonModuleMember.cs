@@ -19,13 +19,18 @@ using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class AstNestedPythonModuleMember : AstPythonType, ILazyType {
+    /// <summary>
+    /// Represents type that is lazy-loaded for efficiency. Typically used when code
+    /// imports specific values such as 'from A import B' so we don't have to load
+    /// and analyze the entired A until B value is actually needed.
+    /// </summary>
+    internal sealed class LazyPythonModuleMember : AstPythonType, ILazyType {
         private volatile IPythonType _realType;
         private readonly IPythonInterpreter _interpreter;
 
-        public AstNestedPythonModuleMember(
+        public LazyPythonModuleMember(
             string name,
-            AstNestedPythonModule module,
+            LazyPythonModule module,
             LocationInfo importLocation,
             IPythonInterpreter interpreter
 
@@ -33,7 +38,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             _interpreter = interpreter;
         }
 
-        public AstNestedPythonModule Module => DeclaringModule as AstNestedPythonModule;
+        public LazyPythonModule Module => DeclaringModule as LazyPythonModule;
+
+        #region IPythonType
+        public override BuiltinTypeId TypeId => Get()?.TypeId ?? base.TypeId;
+        public override PythonMemberType MemberType => Get()?.MemberType ?? base.MemberType;
+        public override string Documentation => Get()?.Documentation ?? string.Empty;
+        #endregion
 
         public IPythonType Get() {
             var m = _realType;

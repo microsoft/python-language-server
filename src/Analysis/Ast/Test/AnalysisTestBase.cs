@@ -43,12 +43,14 @@ namespace Microsoft.Python.Analysis.Tests {
                 .AddService(new FileSystem(platform));
         }
 
+        protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
+
         internal AstPythonInterpreter CreateInterpreter(string moduleFolder) {
             var configuration = PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
             configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
-            configuration.SearchPaths = new[] { moduleFolder, TestData.GetPath(Path.Combine("TestData", "AstAnalysis")) };
+            configuration.SearchPaths = new[] { moduleFolder, GetAnalysisTestDataFilesPath() };
             return new AstPythonInterpreter(configuration, ServiceManager);
         }
 

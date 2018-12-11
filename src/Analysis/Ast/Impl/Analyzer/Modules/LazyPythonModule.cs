@@ -21,10 +21,10 @@ using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class AstNestedPythonModule : PythonModuleType, ILocatedMember {
+    internal sealed class LazyPythonModule : PythonModuleType, ILocatedMember {
         private IPythonModule _module;
 
-        public AstNestedPythonModule(string fullName, IPythonInterpreter interpreter)
+        public LazyPythonModule(string fullName, IPythonInterpreter interpreter)
             : base(fullName, interpreter) {
         }
 
@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             module = Interpreter.ModuleResolution.ImportModule(Name);
             if (module != null) {
-                Debug.Assert(!(module is AstNestedPythonModule), "ImportModule should not return nested module");
+                Debug.Assert(!(module is LazyPythonModule), "ImportModule should not return nested module");
             }
 
             module = module ?? new SentinelModule(Name, false);

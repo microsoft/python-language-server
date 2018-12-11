@@ -40,14 +40,14 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         protected override string Identifier => nameof(IMemberContainer);
 
-        public AndWhichConstraint<TAssertions, AstPythonMultipleMembers> HaveMultipleTypesMember(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<AstPythonMultipleMembers>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
+        public AndWhichConstraint<TAssertions, PythonMultipleTypes> HaveMultipleTypesMember(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<PythonMultipleTypes>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
 
         public AndWhichConstraint<TAssertions, AstPythonType> HaveClass(string name, string because = "", params object[] reasonArgs)
             => HaveMember<AstPythonType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
 
-        public AndWhichConstraint<TAssertions, AstNestedPythonModule> HaveNestedModule(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<AstNestedPythonModule>(name, because, reasonArgs).OfMemberType(PythonMemberType.Module);
+        public AndWhichConstraint<TAssertions, LazyPythonModule> HaveNestedModule(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<LazyPythonModule>(name, because, reasonArgs).OfMemberType(PythonMemberType.Module);
 
         public AndWhichConstraint<TAssertions, AstPythonProperty> HaveProperty(string name, string because = "", params object[] reasonArgs)
             => HaveMember<AstPythonProperty>(name, because, reasonArgs).OfMemberType(PythonMemberType.Property);

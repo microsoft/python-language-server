@@ -13,6 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
@@ -49,8 +51,16 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public AndConstraint<VariableDefAssertions> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
             var languageVersionIs3X = Is3X(_scope);
-            AssertTypeIds((Subject as IPythonType).TypeId, typeId, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
+            AssertTypeIds(new[] { Subject.TypeId }, new[] { typeId }, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
 
+            return new AndConstraint<VariableDefAssertions>(this);
+        }
+
+        public AndConstraint<VariableDefAssertions> HaveTypes(IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
+            var languageVersionIs3X = Is3X(_scope);
+            var actualTypeIds = (Subject as IPythonMultipleTypes).GetTypes().Select(t => t.TypeId);
+
+            AssertTypeIds(actualTypeIds, typeIds, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
             return new AndConstraint<VariableDefAssertions>(this);
         }
 
@@ -58,6 +68,14 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             Execute.Assertion.ForCondition(Subject is IPythonType av && av.MemberType == memberType)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {_moduleName}.{_name} to be {memberType} {{reason}}.");
+
+            return new AndConstraint<VariableDefAssertions>(this);
+        }
+
+        public AndConstraint<VariableDefAssertions> HaveNoTypes(string because = "", params object[] reasonArgs) {
+            var languageVersionIs3X = Is3X(_scope);
+            var types = Subject is IPythonMultipleTypes mt ? mt.GetTypes().Select(t => t.TypeId) : new[] { Subject.TypeId };
+            AssertTypeIds(types, new BuiltinTypeId[0], $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
 
             return new AndConstraint<VariableDefAssertions>(this);
         }
