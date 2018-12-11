@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 
 namespace Microsoft.PythonTools.Analysis {
-    internal class LocationInfo : ILocationInfo, IEquatable<LocationInfo> {
+    public class LocationInfo : ILocationInfo, IEquatable<LocationInfo> {
         internal static readonly LocationInfo[] Empty = new LocationInfo[0];
 
         public LocationInfo(string path, Uri documentUri, int line, int column) :

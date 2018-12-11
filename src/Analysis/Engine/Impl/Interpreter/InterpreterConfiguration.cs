@@ -48,29 +48,6 @@ namespace Microsoft.PythonTools.Interpreter {
             SitePackagesPath = sitePackagesPath ?? string.Empty;
         }
 
-        [Obsolete]
-        public InterpreterConfiguration(
-            string id,
-            string description,
-            string prefixPath = null,
-            string path = null,
-            string winPath = "",
-            string pathVar = "",
-            InterpreterArchitecture arch = default(InterpreterArchitecture),
-            Version version = null,
-            InterpreterUIMode uiMode = InterpreterUIMode.Normal
-        ) {
-            Id = id;
-            _description = description ?? "";
-            PrefixPath = prefixPath;
-            InterpreterPath = path;
-            WindowsInterpreterPath = string.IsNullOrEmpty(winPath) ? path : winPath;
-            PathEnvironmentVariable = pathVar;
-            Architecture = arch ?? InterpreterArchitecture.Unknown;
-            Version = version ?? new Version();
-            UIMode = uiMode;
-        }
-
         private static string Read(Dictionary<string, object> d, string k)
             => d.TryGetValue(k, out var o) ? o as string : null;
 
@@ -155,22 +132,12 @@ namespace Microsoft.PythonTools.Interpreter {
             }
         }
 
-        [Obsolete("Prefix path only applies to Windows.")]
-        public string PrefixPath { get; }
-
         /// <summary>
         /// Returns the path to the interpreter executable for launching Python
         /// applications.
         /// </summary>
         public string InterpreterPath { get; }
-
-        /// <summary>
-        /// Returns the path to the interpreter executable for launching Python
-        /// applications which are windows applications (pythonw.exe, ipyw.exe).
-        /// </summary>
-        [Obsolete("Python Language Server is platform-agnostic and does not use Windows-specific settings.")]
-        public string WindowsInterpreterPath { get; }
-
+        
         /// <summary>
         /// Gets the environment variable which should be used to set sys.path.
         /// </summary>
@@ -197,12 +164,6 @@ namespace Microsoft.PythonTools.Interpreter {
         /// Returns path to Python site packages from 'import site; print(site.getsitepackages())'
         /// </summary>
         public string SitePackagesPath { get; }
-
-        /// <summary>
-        /// The UI behavior of the interpreter.
-        /// </summary>
-        [Obsolete("Language Server does not support UI features related to the interpreter.")]
-        public InterpreterUIMode UIMode { get; }
 
         /// <summary>
         /// The fixed search paths of the interpreter.

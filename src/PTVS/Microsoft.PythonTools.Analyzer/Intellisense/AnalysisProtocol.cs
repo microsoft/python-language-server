@@ -833,8 +833,6 @@ namespace Microsoft.PythonTools.Intellisense {
             public string[] typeStubPaths;
         }
 
-
-
         public class AnalysisReference {
             public string kind; // definition, reference, value
             public string expr;
