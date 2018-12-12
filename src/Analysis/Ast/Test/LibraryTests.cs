@@ -49,9 +49,11 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var dtVar = analysis.Should().HaveVariable("datetime").Which;
             dtVar.Name.Should().Be("datetime");
-            dtVar.Type.Should().BeAssignableTo<IPythonModule>();
 
-            dtVar.Type.Should().HaveReadOnlyProperty("day").And.HaveMethod("now")
+            var c = dtVar.Type.Should().BeAssignableTo<IPythonModule>().
+                And.HaveMember<IPythonClass>("datetime").Which;
+
+            c.Should().HaveReadOnlyProperty("day").And.HaveMethod("now")
                 .Which.Should().BeClassMethod().And.HaveSingleOverload()
                 .Which.Should().HaveSingleReturnType()
                 .Which.Should().BeSameAs(dtVar.Type);

@@ -14,8 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Types;
@@ -58,6 +57,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
         }
 
-        public override void LoadAndAnalyze() { }
+        public override void LoadAndAnalyze() => Log?.Log(TraceEventType.Verbose, "Trying to analyze sentinel module");
     }
 }

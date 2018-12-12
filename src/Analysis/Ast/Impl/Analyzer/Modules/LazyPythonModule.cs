@@ -15,7 +15,6 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
@@ -42,6 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             module = Interpreter.ModuleResolution.ImportModule(Name);
             if (module != null) {
                 Debug.Assert(!(module is LazyPythonModule), "ImportModule should not return nested module");
+                module.LoadAndAnalyze();
             }
 
             module = module ?? new SentinelModule(Name, false);
@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         public override IPythonType GetMember(string name) => GetModule().GetMember(name);
 
         public override IEnumerable<string> GetMemberNames() => GetModule().GetMemberNames();
-        public override void LoadAndAnalyze() => GetModule().LoadAndAnalyze();
+        public override void LoadAndAnalyze() { }
         internal override string GetCode() => (GetModule() as PythonModuleType)?.GetCode() ?? string.Empty;
     }
 }
