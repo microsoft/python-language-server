@@ -70,7 +70,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             // Add names from search paths
-            var paths = _interpreter.Configuration.SearchPaths;
+            var paths = _interpreter.Configuration.SearchPaths
+                        .Concat(Enumerable.Repeat(_interpreter.Configuration.LibraryPath, 1)
+                        .Concat(Enumerable.Repeat(_interpreter.Configuration.SitePackagesPath, 1)));
             // TODO: how to remove?
             foreach (var modulePath in paths.Where(_fs.DirectoryExists).SelectMany(p => _fs.GetFiles(p))) {
                 _pathResolver.TryAddModulePath(modulePath, out _);

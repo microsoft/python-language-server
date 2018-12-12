@@ -52,6 +52,7 @@ namespace Microsoft.Python.Analysis.Tests {
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
             configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
             configuration.SearchPaths = new[] { moduleFolder, GetAnalysisTestDataFilesPath() };
+            configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
             return new AstPythonInterpreter(configuration, ServiceManager);
         }
 

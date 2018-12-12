@@ -77,14 +77,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #endregion
 
         #region IPythonModule
-
         public virtual IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
         public virtual void LoadAndAnalyze() => LoadAndAnalyze(GetCode());
         #endregion
 
         public IEnumerable<string> ParseErrors { get; private set; } = Enumerable.Empty<string>();
 
-        internal virtual PythonAst Ast { get; private set; }
+        protected PythonAst Ast { get; private set; }
 
         internal virtual string GetCode() => string.Empty;
 

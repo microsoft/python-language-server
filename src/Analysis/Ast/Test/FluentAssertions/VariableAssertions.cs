@@ -98,5 +98,57 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
             return new AndConstraint<VariableAssertions>(this);
         }
+
+        public AndWhichConstraint<VariableAssertions, TMember> HaveMember<TMember>(string name, string because = "", params object[] reasonArgs)
+            where TMember : class, IPythonType {
+            NotBeNull(because, reasonArgs);
+
+            Execute.Assertion.BecauseOf(because, reasonArgs)
+                .AssertHasMemberOfType(Subject.Type, name, Subject.Name, $"member '{name}'", out TMember typedMember);
+            return new AndWhichConstraint<VariableAssertions, TMember>(this, typedMember);
+        }
+
+        public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveOverloadWithParametersAt(int index, string because = "", params object[] reasonArgs) {
+            var constraint = HaveOverloadAt(index);
+            var overload = constraint.Which;
+            var function = Subject.Type as IPythonFunction;
+
+            Execute.Assertion.ForCondition(overload.GetParameters().Length > 0)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected overload at index {index} of {function.DeclaringModule.Name}.{function.Name} to have parameters{{reason}}, but it has none.");
+
+            return constraint;
+        }
+
+        public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveOverloadAt(int index, string because = "", params object[] reasonArgs) {
+            var f = Subject.Type as IPythonFunction;
+            Execute.Assertion.ForCondition(f != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject.Name} to be a function, but it is {Subject.Type}.");
+
+            var overloads = f.Overloads.ToArray();
+            Execute.Assertion.ForCondition(overloads.Length > index)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {f.Name} to have overload at index {index}{{reason}}, but it {GetOverloadsString(overloads.Length)}.");
+
+            return new AndWhichConstraint<VariableAssertions, IPythonFunctionOverload>(this, f.Overloads[index]);
+        }
+
+        private static string GetOverloadsString(int overloadsCount)
+            => overloadsCount > 1
+                ? $"has {overloadsCount} overloads"
+                : overloadsCount > 0
+                    ? "has only one overload"
+                    : "has no overloads";
+
+        public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveSingleOverload(string because = "", params object[] reasonArgs) {
+            var f = Subject.Type as IPythonFunction;
+            var overloads = f.Overloads.ToArray();
+            Execute.Assertion.ForCondition(overloads.Length == 1)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject.Name} to have single overload{{reason}}, but it {GetOverloadsString(overloads.Length)}.");
+
+            return new AndWhichConstraint<VariableAssertions, IPythonFunctionOverload>(this, overloads[0]);
+        }
     }
 }

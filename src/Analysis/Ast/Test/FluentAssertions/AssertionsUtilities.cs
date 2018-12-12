@@ -209,7 +209,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             .FailWith($"Expected {subjectName} to have {itemName} of type `{typeof(T).Name}` at index {index}{{reason}}, but its type is `{collection[index].GetType().Name}`.");
 
         [CustomAssertion]
-        public static Continuation AssertHasMember(this AssertionScope assertionScope, IPythonType type, IScope scope, string memberName, string analysisValueName, string memberPrintName, out IPythonType member) {
+        public static Continuation AssertHasMember(this AssertionScope assertionScope, IPythonType type, string memberName, string analysisValueName, string memberPrintName, out IPythonType member) {
             try {
                 member = type.GetMember(memberName);
             } catch (Exception e) {
@@ -222,9 +222,9 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         [CustomAssertion]
-        public static Continuation AssertHasMemberOfType<TMember>(this AssertionScope assertionScope, IPythonType type, IScope scope, string memberName, string analysisValueName, string memberPrintName, out TMember typedMember)
+        public static Continuation AssertHasMemberOfType<TMember>(this AssertionScope assertionScope, IPythonType type, string memberName, string analysisValueName, string memberPrintName, out TMember typedMember)
             where TMember : class, IPythonType {
-            var continuation = assertionScope.AssertHasMember(type, scope, memberName, analysisValueName, memberPrintName, out var member)
+            var continuation = assertionScope.AssertHasMember(type, memberName, analysisValueName, memberPrintName, out var member)
                 .Then
                 .ForCondition(member is TMember)
                 .FailWith($"Expected {analysisValueName} to have a {memberPrintName} of type {typeof(TMember)}{{reason}}, but its type is {member.GetType()}.");
