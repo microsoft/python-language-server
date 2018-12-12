@@ -15,7 +15,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal sealed class Variable : IVariable {
         public Variable(KeyValuePair<string, IPythonType> kvp, LocationInfo location = null) 
             : this(kvp.Key, kvp.Value, location) { }

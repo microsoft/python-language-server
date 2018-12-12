@@ -274,8 +274,8 @@ namespace Microsoft.Python.Parsing.Ast {
     }
 
     public abstract class TypeAnnotationConverter<T> where T : class {
-        #region Convert Type Hint to Type
 
+        #region Convert Type Hint to Type
         /// <summary>
         /// Returns the type or module object for the specified name.
         /// </summary>
@@ -319,9 +319,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         #endregion
 
-
         #region Convert Type to Type Hint
-
         /// <summary>
         /// Returns the name of the provided type. This should always
         /// be the name of the base type, omitting any generic arguments.

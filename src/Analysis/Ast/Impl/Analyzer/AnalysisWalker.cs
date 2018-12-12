@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private LocationInfo GetLoc(Node node) => _lookup.GetLoc(node);
 
         private static IPythonType Clone(IPythonType type) =>
-            type is IPythonMultipleTypes mm ? PythonMultipleTypes.Create(mm.GetTypes()) :
+            type is IPythonMultipleTypes mm ? PythonMultipleTypes.Create(mm.Types) :
             type;
 
         public override bool Walk(AssignmentStatement node) {
@@ -449,7 +449,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var member = _lookup.GetInScope(node.Name);
             var t = member as PythonClass;
             if (t == null && member is IPythonMultipleTypes mm) {
-                t = mm.GetTypes().OfType<PythonClass>().FirstOrDefault(pt => pt.ClassDefinition.StartIndex == node.StartIndex);
+                t = mm.Types.OfType<PythonClass>().FirstOrDefault(pt => pt.ClassDefinition.StartIndex == node.StartIndex);
             }
             if (t == null) {
                 t = CreateClass(node);

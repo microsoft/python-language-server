@@ -17,14 +17,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    internal class PythonMultipleTypes : IPythonMultipleTypes, ILocatedMember {
+    internal partial class PythonMultipleTypes : IPythonMultipleTypes, ILocatedMember {
         private readonly IPythonType[] _types;
         private readonly object _lock = new object();
 
-        private PythonMultipleTypes(IPythonType[] types) {
+        protected PythonMultipleTypes(IPythonType[] types) {
             _types = types ?? Array.Empty<IPythonType>();
         }
 
@@ -91,7 +90,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             if (member is T t) {
                 return t;
             }
-            var types = (member as IPythonMultipleTypes)?.GetTypes();
+            var types = (member as IPythonMultipleTypes).Types;
             if (types != null) {
                 member = Create(types.Where(m => m is T));
                 if (member is T t2) {
@@ -104,27 +103,27 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         }
 
         #region IMemberContainer
-        public virtual IEnumerable<string> GetMemberNames() => GetTypes().Select(m => m.Name);
-        public virtual IPythonType GetMember(string name) => GetTypes().FirstOrDefault(m => m.Name == name);
+        public virtual IEnumerable<string> GetMemberNames() => Types.Select(m => m.Name);
+        public virtual IPythonType GetMember(string name) => Types.FirstOrDefault(m => m.Name == name);
         #endregion
 
         #region ILocatedMember
         public IEnumerable<LocationInfo> Locations
-            => GetTypes().OfType<ILocatedMember>().SelectMany(m => m.Locations.MaybeEnumerate());
+            => Types.OfType<ILocatedMember>().SelectMany(m => m.Locations.MaybeEnumerate());
         #endregion
 
         #region IPythonType
         public virtual PythonMemberType MemberType => PythonMemberType.Multiple;
 
         public virtual string Name
-            => ChooseName(GetTypes().Select(m => m.Name)) ?? "<multiple>";
+            => ChooseName(Types.Select(m => m.Name)) ?? "<multiple>";
         public virtual string Documentation
-            => ChooseDocumentation(GetTypes().Select(m => m.Documentation)) ?? string.Empty;
+            => ChooseDocumentation(Types.Select(m => m.Documentation)) ?? string.Empty;
         public virtual bool IsBuiltin
-            => GetTypes().Any(m => m.IsBuiltin);
+            => Types.Any(m => m.IsBuiltin);
         public virtual IPythonModule DeclaringModule
-            => CreateAs<IPythonModule>(GetTypes().Select(f => f.DeclaringModule));
-        public virtual BuiltinTypeId TypeId => GetTypes().FirstOrDefault()?.TypeId ?? BuiltinTypeId.Unknown;
+            => CreateAs<IPythonModule>(Types.Select(f => f.DeclaringModule));
+        public virtual BuiltinTypeId TypeId => Types.FirstOrDefault()?.TypeId ?? BuiltinTypeId.Unknown;
         public virtual bool IsTypeFactory => false;
         public virtual IPythonFunction GetConstructor() => null;
         #endregion
@@ -135,7 +134,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         public override int GetHashCode() => _types.Aggregate(GetType().GetHashCode(), (hc, m) => hc ^ (m?.GetHashCode() ?? 0));
         #endregion
 
-        public IReadOnlyList<IPythonType> GetTypes() => _types;
+        public IReadOnlyList<IPythonType> Types => _types;
 
         protected static string ChooseName(IEnumerable<string> names)
             => names.FirstOrDefault(n => !string.IsNullOrEmpty(n));
@@ -143,109 +142,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         protected static string ChooseDocumentation(IEnumerable<string> docs) {
             // TODO: Combine distinct documentation
             return docs.FirstOrDefault(d => !string.IsNullOrEmpty(d));
-        }
-
-        /// <summary>
-        /// Represent multiple functions that effectively represent a single function
-        /// or method, such as when some definitions come from code and some from stubs.
-        /// </summary>
-        private sealed class MultipleFunctionTypes : PythonMultipleTypes, IPythonFunction {
-            public MultipleFunctionTypes(IPythonType[] members) : base(members) { }
-
-            private IEnumerable<IPythonFunction> Functions => GetTypes().OfType<IPythonFunction>();
-
-            #region IPythonType
-            public override PythonMemberType MemberType => PythonMemberType.Function;
-            public override string Name => ChooseName(Functions.Select(f => f.Name)) ?? "<function>";
-            public override string Documentation => ChooseDocumentation(Functions.Select(f => f.Documentation));
-            public override bool IsBuiltin => Functions.Any(f => f.IsBuiltin);
-            public override IPythonModule DeclaringModule => CreateAs<IPythonModule>(Functions.Select(f => f.DeclaringModule));
-            public override BuiltinTypeId TypeId {
-                get {
-                    if (IsClassMethod) {
-                        return BuiltinTypeId.ClassMethod;
-                    }
-                    if (IsStatic) {
-                        return BuiltinTypeId.StaticMethod;
-                    }
-                    return DeclaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function;
-                }
-            }
-            #endregion
-
-            #region IPythonFunction
-            public bool IsStatic => Functions.Any(f => f.IsStatic);
-            public bool IsClassMethod => Functions.Any(f => f.IsClassMethod);
-            public IPythonType DeclaringType => CreateAs<IPythonType>(Functions.Select(f => f.DeclaringType));
-            public IReadOnlyList<IPythonFunctionOverload> Overloads => Functions.SelectMany(f => f.Overloads).ToArray();
-            public FunctionDefinition FunctionDefinition => Functions.FirstOrDefault(f => f.FunctionDefinition != null)?.FunctionDefinition;
-            public override IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
-            #endregion
-        }
-
-        private sealed class MultipleModuleTypes : PythonMultipleTypes, IPythonModule {
-            public MultipleModuleTypes(IPythonType[] members) : base(members) { }
-
-            private IEnumerable<IPythonModule> Modules => GetTypes().OfType<IPythonModule>();
-
-            #region IPythonType
-            public override PythonMemberType MemberType => PythonMemberType.Module;
-            #endregion
-
-            #region IMemberContainer
-            public override IPythonType GetMember(string name) => Create(Modules.Select(m => m.GetMember(name)));
-            public override IEnumerable<string> GetMemberNames() => Modules.SelectMany(m => m.GetMemberNames()).Distinct();
-            #endregion
-
-            #region IPythonType
-            public override string Name => ChooseName(Modules.Select(m => m.Name)) ?? "<module>";
-            public override string Documentation => ChooseDocumentation(Modules.Select(m => m.Documentation));
-            public override IPythonModule DeclaringModule => null;
-            public override BuiltinTypeId TypeId => BuiltinTypeId.Module;
-            public override bool IsBuiltin => true;
-            #endregion
-
-            #region IPythonModule
-            public IEnumerable<string> GetChildrenModuleNames() => Modules.SelectMany(m => m.GetChildrenModuleNames());
-            public void LoadAndAnalyze() {
-                List<Exception> exceptions = null;
-                foreach (var m in Modules) {
-                    try {
-                        m.LoadAndAnalyze();
-                    } catch (Exception ex) {
-                        exceptions = exceptions ?? new List<Exception>();
-                        exceptions.Add(ex);
-                    }
-                }
-                if (exceptions != null) {
-                    throw new AggregateException(exceptions);
-                }
-            }
-            public IEnumerable<string> ParseErrors { get; private set; } = Enumerable.Empty<string>();
-            #endregion
-
-            #region IPythonFile
-            public string FilePath => null;
-            public Uri Uri => null;
-            public IPythonInterpreter Interpreter => null;
-            #endregion
-        }
-
-        class MultipleTypeTypes : PythonMultipleTypes, IPythonType {
-            public MultipleTypeTypes(IPythonType[] members) : base(members) { }
-
-            private IEnumerable<IPythonType> Types => GetTypes().OfType<IPythonType>();
-
-            public override string Name => ChooseName(Types.Select(t => t.Name)) ?? "<type>";
-            public override string Documentation => ChooseDocumentation(Types.Select(t => t.Documentation));
-            public override BuiltinTypeId TypeId => Types.GroupBy(t => t.TypeId).OrderByDescending(g => g.Count()).FirstOrDefault()?.Key ?? BuiltinTypeId.Unknown;
-            public override IPythonModule DeclaringModule => CreateAs<IPythonModule>(Types.Select(t => t.DeclaringModule));
-            public override bool IsBuiltin => Types.All(t => t.IsBuiltin);
-            public override bool IsTypeFactory => Types.All(t => t.IsTypeFactory);
-            public override IPythonType GetMember(string name) => Create(Types.Select(t => t.GetMember(name)));
-            public override IEnumerable<string> GetMemberNames() => Types.SelectMany(t => t.GetMemberNames()).Distinct();
-            public override PythonMemberType MemberType => PythonMemberType.Class;
-            public override IPythonFunction GetConstructor() => CreateAs<IPythonFunction>(Types.Select(t => t.GetConstructor()));
         }
     }
 }

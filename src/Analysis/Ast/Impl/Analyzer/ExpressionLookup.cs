@@ -98,7 +98,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             var m = ann.GetValue(new TypeAnnotationConverter(this));
             if (m is IPythonMultipleTypes mm) {
-                return mm.GetTypes().OfType<IPythonType>();
+                return mm.Types.OfType<IPythonType>();
             }
             if (m is IPythonType type) {
                 return Enumerable.Repeat(type, 1);
@@ -175,7 +175,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IPythonType value = null;
             switch (e) {
                 case IPythonMultipleTypes mm:
-                    value = mm.GetTypes().OfType<IMemberContainer>()
+                    value = mm.Types.OfType<IMemberContainer>()
                         .Select(x => x.GetMember(expr.Name))
                         .ExcludeDefault()
                         .FirstOrDefault();
@@ -367,7 +367,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public IEnumerable<IPythonType> GetTypesFromValue(IPythonType value) {
             if (value is IPythonMultipleTypes mm) {
-                return mm.GetTypes().Select(GetTypeFromValue).Distinct();
+                return mm.Types.Select(GetTypeFromValue).Distinct();
             }
             var t = GetTypeFromValue(value);
             return t != null ? Enumerable.Repeat(t, 1) : Enumerable.Empty<IPythonType>();
@@ -419,7 +419,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (value is IPythonMultipleTypes mm) {
-                return PythonMultipleTypes.CreateAs<IPythonType>(mm.GetTypes());
+                return PythonMultipleTypes.CreateAs<IPythonType>(mm.Types);
             }
 
             if (value is IPythonType) {

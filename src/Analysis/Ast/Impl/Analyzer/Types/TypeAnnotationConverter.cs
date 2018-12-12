@@ -22,7 +22,7 @@ using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal sealed class TypeAnnotationConverter : TypeAnnotationConverter<IPythonType> {
         private readonly ExpressionLookup _scope;
 
@@ -36,7 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         private static IPythonType AsIPythonType(IPythonType m) {
             if (m is IPythonMultipleTypes mm) {
-                return PythonMultipleTypes.CreateAs<IPythonType>(mm.GetTypes());
+                return PythonMultipleTypes.CreateAs<IPythonType>(mm.Types);
             }
             if (m is IPythonType t) {
                 return t;
@@ -75,8 +75,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override IPythonType LookupName(string name) {
             var m = _scope.LookupNameInScopes(name, ExpressionLookup.LookupOptions.Global | ExpressionLookup.LookupOptions.Builtins);
             if (m is IPythonMultipleTypes mm) {
-                m = PythonMultipleTypes.CreateAs<IPythonType>(mm.GetTypes()) ??
-                    PythonMultipleTypes.CreateAs<IPythonModule>(mm.GetTypes());
+                m = PythonMultipleTypes.CreateAs<IPythonType>(mm.Types) ??
+                    PythonMultipleTypes.CreateAs<IPythonModule>(mm.Types);
             }
             if (m is IPythonModule mod) {
                 // Wrap the module in an IPythonType interface
@@ -96,9 +96,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override IReadOnlyList<IPythonType> GetUnionTypes(IPythonType type) =>
             type is UnionType unionType
                 ? unionType.Types
-                : type is IPythonMultipleTypes multipleMembers
-                    ? multipleMembers.GetTypes().OfType<IPythonType>().ToArray()
-                    : null;
+                : type is IPythonMultipleTypes multipleMembers ? multipleMembers.Types : null;
 
         public override IPythonType MakeGeneric(IPythonType baseType, IReadOnlyList<IPythonType> args) {
             if (args == null || args.Count == 0 || baseType == null) {

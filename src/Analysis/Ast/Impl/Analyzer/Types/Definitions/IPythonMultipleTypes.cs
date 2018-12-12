@@ -1,4 +1,4 @@
-﻿// Python Tools for Visual Studio
+// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -14,17 +14,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis {
-    public interface IPythonInterpreterFactoryWithLog {
-        /// <summary>
-        /// Returns logged information from the interpreter.
-        /// 
-        /// May return null if no information is available, or a string containing error
-        /// text if an error occurs.
-        /// </summary>
-        /// <remarks>New in 3.3</remarks>
-        string GetAnalysisLogContent(IFormatProvider culture);
+    /// <summary>
+    /// Represents a collection of multiple members which can appear under a single name.
+    /// </summary>
+    public interface IPythonMultipleTypes : IPythonType {
+        IReadOnlyList<IPythonType> Types { get; }
     }
 }

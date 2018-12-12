@@ -18,7 +18,7 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
-using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public AndConstraint<VariableAssertions> HaveTypes(IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
             var languageVersionIs3X = Is3X(_scope);
-            var actualTypeIds = Subject.Type is IPythonMultipleTypes mt ? mt.GetTypes().Select(t => t.TypeId) : new[] { Subject.Type.TypeId };
+            var actualTypeIds = Subject.Type is IPythonMultipleTypes mt ? mt.Types.Select(t => t.TypeId) : new[] { Subject.Type.TypeId };
 
             AssertTypeIds(actualTypeIds, typeIds, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
             return new AndConstraint<VariableAssertions>(this);
@@ -75,14 +75,14 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public AndConstraint<VariableAssertions> HaveNoTypes(string because = "", params object[] reasonArgs) {
             var languageVersionIs3X = Is3X(_scope);
-            var types = Subject.Type is IPythonMultipleTypes mt ? mt.GetTypes().Select(t => t.TypeId) : new[] { Subject.Type.TypeId };
+            var types = Subject.Type is IPythonMultipleTypes mt ? mt.Types.Select(t => t.TypeId) : new[] { Subject.Type.TypeId };
             AssertTypeIds(types, new BuiltinTypeId[0], $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
 
             return new AndConstraint<VariableAssertions>(this);
         }
 
         public AndConstraint<VariableAssertions> HaveClassNames(IEnumerable<string> classNames, string because = "", params object[] reasonArgs) {
-            var types = Subject.Type is IPythonMultipleTypes mt ? mt.GetTypes().ToArray() : new[] { Subject.Type };
+            var types = Subject.Type is IPythonMultipleTypes mt ? mt.Types.ToArray() : new[] { Subject.Type };
 
             var actualMemberTypes = types.Select(av => av.MemberType).ToArray();
             var expectedMemberTypes = new[] { PythonMemberType.Class };

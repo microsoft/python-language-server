@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             if (type is IPythonMultipleTypes mm) {
-                return mm.GetTypes().Any(IsTypingType);
+                return mm.Types.Any(IsTypingType);
             }
 
             return false;
