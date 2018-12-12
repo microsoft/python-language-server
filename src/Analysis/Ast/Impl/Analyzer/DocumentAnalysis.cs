@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private async Task AnalyzeAsync(CancellationToken cancellationToken) {
             var ast = await Document.GetAstAsync(cancellationToken);
-            var walker = new AstAnalysisWalker(Document, ast, suppressBuiltinLookup: false);
+            var walker = new AnalysisWalker(Document, ast, suppressBuiltinLookup: false);
             ast.Walk(walker);
             GlobalScope = walker.Complete();
         }

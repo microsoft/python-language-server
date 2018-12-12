@@ -109,8 +109,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             PostWalk(walker);
         }
 
-        internal virtual AstAnalysisWalker PrepareWalker(PythonAst ast) => new AstAnalysisWalker(this, ast, suppressBuiltinLookup: false);
+        internal virtual AnalysisWalker PrepareWalker(PythonAst ast) => new AnalysisWalker(this, ast, suppressBuiltinLookup: false);
 
-        protected virtual void PostWalk(PythonWalker walker) => (walker as AstAnalysisWalker)?.Complete();
+        protected virtual void PostWalk(PythonWalker walker) => (walker as AnalysisWalker)?.Complete();
     }
 }

@@ -30,7 +30,7 @@ using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class AstModuleResolution : IModuleResolution {
+    internal sealed class ModuleResolution : IModuleResolution {
         private static readonly IReadOnlyDictionary<string, string> _emptyModuleSet = EmptyDictionary<string, string>.Instance;
         private readonly ConcurrentDictionary<string, IPythonModule> _modules = new ConcurrentDictionary<string, IPythonModule>();
         private readonly IPythonInterpreter _interpreter;
@@ -43,12 +43,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         private ILogger Log => _interpreter.Log;
         private InterpreterConfiguration Configuration => _interpreter.Configuration;
 
-        public AstModuleResolution(IPythonInterpreter interpreter) {
+        public ModuleResolution(IPythonInterpreter interpreter) {
             _interpreter = interpreter;
             _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_interpreter.Configuration.Version);
             _fs = interpreter.Services.GetService<IFileSystem>();
 
-            ModuleCache = new AstModuleCache(interpreter);
+            ModuleCache = new ModuleCache(interpreter);
 
             _pathResolver = new PathResolver(_interpreter.LanguageVersion);
             _pathResolver.SetInterpreterSearchPaths(new[] {
@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 _interpreter.Configuration.SitePackagesPath,
             });
             _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
-            _modules[BuiltinModuleName] = BuiltinModule = new AstBuiltinsPythonModule(_interpreter, ModuleCache);
+            _modules[BuiltinModuleName] = BuiltinModule = new BuiltinsPythonModule(_interpreter, ModuleCache);
         }
 
         public void BuildModuleList() {
@@ -322,7 +322,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
                 foreach (var stubPath in CurrentPathResolver.GetPossibleModuleStubPaths(name)) {
                     if (_fs.FileExists(stubPath)) {
-                        return AstStubPythonModule.FromTypeStub(_interpreter, stubPath, name);
+                        return StubPythonModule.FromTypeStub(_interpreter, stubPath, name);
                     }
                 }
             }
@@ -341,7 +341,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             Log?.Log(TraceEventType.Verbose, "Import type stub", mp.Value.FullName, mp.Value.SourceFile);
-            return AstStubPythonModule.FromTypeStub(_interpreter, mp.Value.SourceFile, mp.Value.FullName);
+            return StubPythonModule.FromTypeStub(_interpreter, mp.Value.SourceFile, mp.Value.FullName);
         }
 
         public IEnumerable<string> GetTypeShedPaths(string typeshedRootPath) {
@@ -371,7 +371,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             if (moduleImport.IsBuiltin) {
                 Log?.Log(TraceEventType.Verbose, "Import builtins: ", name, Configuration.InterpreterPath);
-                return new AstCompiledPythonModule(name, _interpreter);
+                return new CompiledPythonModule(name, _interpreter);
             }
 
             if (moduleImport.IsCompiled) {

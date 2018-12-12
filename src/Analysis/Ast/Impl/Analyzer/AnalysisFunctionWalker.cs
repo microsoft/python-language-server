@@ -24,13 +24,13 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Target.Name}")]
-    class AstAnalysisFunctionWalker : PythonWalker {
+    class AnalysisFunctionWalker : PythonWalker {
         private readonly ExpressionLookup _lookup;
         private readonly Scope _parentScope;
         private readonly AstPythonFunctionOverload _overload;
         private IPythonClass _self;
 
-        public AstAnalysisFunctionWalker(
+        public AnalysisFunctionWalker(
             ExpressionLookup lookup,
             FunctionDefinition targetFunction,
             AstPythonFunctionOverload overload

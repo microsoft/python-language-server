@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return args;
         }
 
-        internal override AstAnalysisWalker PrepareWalker(PythonAst ast) {
+        internal override AnalysisWalker PrepareWalker(PythonAst ast) {
 #if DEBUG
             // In debug builds we let you F12 to the scraped file
             var filePath = string.IsNullOrEmpty(FilePath) ? null : ModuleCache.GetCacheFilePath(FilePath);
@@ -92,7 +92,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return base.PrepareWalker(ast);
         }
 
-        protected override void PostWalk(PythonWalker walker) => (walker as AstAnalysisWalker)?.Complete();
+        protected override void PostWalk(PythonWalker walker) => (walker as AnalysisWalker)?.Complete();
         protected virtual string LoadCachedCode() => ModuleCache.ReadCachedModule(FilePath);
         protected virtual void SaveCachedCode(string code) => ModuleCache.WriteCachedModule(FilePath, code);
 

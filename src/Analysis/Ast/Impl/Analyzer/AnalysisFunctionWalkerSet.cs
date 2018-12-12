@@ -26,12 +26,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// it can be walked, and so on recursively, until return type is determined
     /// or there is nothing left to walk.
     /// </summary>
-    class AstAnalysisFunctionWalkerSet {
-        private readonly Dictionary<FunctionDefinition, AstAnalysisFunctionWalker> _functionWalkers
-            = new Dictionary<FunctionDefinition, AstAnalysisFunctionWalker>();
+    class AnalysisFunctionWalkerSet {
+        private readonly Dictionary<FunctionDefinition, AnalysisFunctionWalker> _functionWalkers
+            = new Dictionary<FunctionDefinition, AnalysisFunctionWalker>();
         private readonly HashSet<FunctionDefinition> _processed = new HashSet<FunctionDefinition>();
 
-        public void Add(AstAnalysisFunctionWalker walker)
+        public void Add(AnalysisFunctionWalker walker)
             => _functionWalkers[walker.Target] = walker;
 
         public void ProcessSet() {
@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public bool Contains(FunctionDefinition node)
             => _functionWalkers.ContainsKey(node) || _processed.Contains(node);
 
-        private void ProcessWalker(AstAnalysisFunctionWalker walker) {
+        private void ProcessWalker(AnalysisFunctionWalker walker) {
             // Remove walker before processing as to prevent reentrancy.
             _functionWalkers.Remove(walker.Target);
             _processed.Add(walker.Target);

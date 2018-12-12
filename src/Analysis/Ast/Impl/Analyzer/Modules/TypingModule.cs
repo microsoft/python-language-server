@@ -18,7 +18,7 @@ using System.Linq;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class AstTypingModule : AstStubPythonModule {
+    internal sealed class AstTypingModule : StubPythonModule {
         public AstTypingModule(IPythonInterpreter interpreter)
             : base("typing", FindTypingStub(), interpreter) { }
 

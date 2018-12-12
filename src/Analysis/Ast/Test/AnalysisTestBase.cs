@@ -46,14 +46,14 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
 
-        internal AstPythonInterpreter CreateInterpreter(string moduleFolder, InterpreterConfiguration configuration = null) {
+        internal PythonInterpreter CreateInterpreter(string moduleFolder, InterpreterConfiguration configuration = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
             configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
             configuration.SearchPaths = new[] { moduleFolder, GetAnalysisTestDataFilesPath() };
             configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
-            return new AstPythonInterpreter(configuration, ServiceManager);
+            return new PythonInterpreter(configuration, ServiceManager);
         }
 
         internal async Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration = null, string moduleName = null, string modulePath = null) {

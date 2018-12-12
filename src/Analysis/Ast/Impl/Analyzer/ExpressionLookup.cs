@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// and types in a chain of scopes during analysis.
     /// </summary>
     internal sealed class ExpressionLookup {
-        private readonly AstAnalysisFunctionWalkerSet _functionWalkers;
+        private readonly AnalysisFunctionWalkerSet _functionWalkers;
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
 
         private ILogger Log => Module.Interpreter.Log;
@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IPythonModule module,
             PythonAst ast,
             Scope moduleScope,
-            AstAnalysisFunctionWalkerSet functionWalkers
+            AnalysisFunctionWalkerSet functionWalkers
         ) {
             Ast = ast ?? throw new ArgumentNullException(nameof(ast));
             Module = module ?? throw new ArgumentNullException(nameof(module));
@@ -96,7 +96,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
-            var m = ann.GetValue(new AstTypeAnnotationConverter(this));
+            var m = ann.GetValue(new TypeAnnotationConverter(this));
             if (m is IPythonMultipleTypes mm) {
                 return mm.GetTypes().OfType<IPythonType>();
             }

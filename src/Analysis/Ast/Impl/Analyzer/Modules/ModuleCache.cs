@@ -23,7 +23,7 @@ using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class AstModuleCache : IModuleCache {
+    internal sealed class ModuleCache : IModuleCache {
         private readonly IPythonInterpreter _interpreter;
         private readonly IFileSystem _fs;
         private readonly bool _skipCache;
@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         private ILogger Log => _interpreter.Log;
         private string ModuleCachePath => _interpreter.Configuration.ModuleCachePath;
 
-        public AstModuleCache(IPythonInterpreter interpreter) {
+        public ModuleCache(IPythonInterpreter interpreter) {
             _interpreter = interpreter;
             _fs = interpreter.Services.GetService<IFileSystem>();
             _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.ModuleCachePath);
@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 }
             }
 
-            return AstStubPythonModule.FromTypeStub(interpreter, cache, name);
+            return StubPythonModule.FromTypeStub(interpreter, cache, name);
         }
 
         public string GetCacheFilePath(string filePath) {

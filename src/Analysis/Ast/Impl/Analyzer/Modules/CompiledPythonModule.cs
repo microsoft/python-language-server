@@ -22,8 +22,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// <summary>
     /// Represents compiled module that is built into the language.
     /// </summary>
-    internal class AstCompiledPythonModule : AstScrapedPythonModule {
-        public AstCompiledPythonModule(string name, IPythonInterpreter interpreter)
+    internal class CompiledPythonModule : AstScrapedPythonModule {
+        public CompiledPythonModule(string name, IPythonInterpreter interpreter)
             : base(name, MakeFakeFilePath(interpreter.Configuration.InterpreterPath, name), interpreter) {
         }
 

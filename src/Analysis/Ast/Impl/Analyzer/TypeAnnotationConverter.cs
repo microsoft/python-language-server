@@ -23,10 +23,10 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class AstTypeAnnotationConverter : TypeAnnotationConverter<IPythonType> {
+    internal sealed class TypeAnnotationConverter : TypeAnnotationConverter<IPythonType> {
         private readonly ExpressionLookup _scope;
 
-        public AstTypeAnnotationConverter(ExpressionLookup scope) {
+        public TypeAnnotationConverter(ExpressionLookup scope) {
             _scope = scope ?? throw new ArgumentNullException(nameof(scope));
         }
 

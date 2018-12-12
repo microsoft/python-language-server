@@ -25,7 +25,7 @@ using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class AstPythonInterpreter : IPythonInterpreter {
+    internal sealed class PythonInterpreter : IPythonInterpreter {
         private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>() {
             { BuiltinTypeId.NoneType, new AstPythonType("NoneType", BuiltinTypeId.NoneType) },
             { BuiltinTypeId.Unknown, new AstPythonType("Unknown", BuiltinTypeId.Unknown) }
@@ -33,13 +33,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         
         private readonly object _userSearchPathsLock = new object();
 
-        public AstPythonInterpreter(InterpreterConfiguration configuration, IServiceContainer services) {
+        public PythonInterpreter(InterpreterConfiguration configuration, IServiceContainer services) {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             Services = services ?? throw new ArgumentNullException(nameof(services));
             LanguageVersion = Configuration.Version.ToLanguageVersion();
             Log = services.GetService<ILogger>();
 
-            var resolution = new AstModuleResolution(this);
+            var resolution = new ModuleResolution(this);
             ModuleResolution = resolution;
             resolution.BuildModuleList();
         }
@@ -91,6 +91,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return res;
         }
 
-        public void NotifyImportableModulesChanged() => ModuleResolution = new AstModuleResolution(this);
+        public void NotifyImportableModulesChanged() => ModuleResolution = new ModuleResolution(this);
     }
 }

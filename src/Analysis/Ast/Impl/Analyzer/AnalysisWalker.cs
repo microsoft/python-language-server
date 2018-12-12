@@ -27,18 +27,18 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class AstAnalysisWalker : PythonWalker {
+    internal sealed class AnalysisWalker : PythonWalker {
         private readonly IPythonModule _module;
         private readonly PythonAst _ast;
         private readonly ExpressionLookup _lookup;
         private readonly GlobalScope _globalScope;
-        private readonly AstAnalysisFunctionWalkerSet _functionWalkers = new AstAnalysisFunctionWalkerSet();
+        private readonly AnalysisFunctionWalkerSet _functionWalkers = new AnalysisFunctionWalkerSet();
         private IDisposable _classScope;
 
         private IPythonInterpreter Interpreter => _module.Interpreter;
         private ILogger Log => Interpreter.Log;
 
-        public AstAnalysisWalker(IPythonModule module, PythonAst ast, bool suppressBuiltinLookup) {
+        public AnalysisWalker(IPythonModule module, PythonAst ast, bool suppressBuiltinLookup) {
             _module = module;
             _ast = ast;
             _globalScope = new GlobalScope(module);
@@ -402,7 +402,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 lookup.GetLocOfName(node, node.NameExpression),
                 node.ReturnAnnotation?.ToCodeString(_ast));
 
-            _functionWalkers.Add(new AstAnalysisFunctionWalker(lookup, node, overload));
+            _functionWalkers.Add(new AnalysisFunctionWalker(lookup, node, overload));
             return overload;
         }
 

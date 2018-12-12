@@ -23,16 +23,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// <summary>
     /// Represents module that contains stub code such as from typeshed.
     /// </summary>
-    internal class AstStubPythonModule : AstScrapedPythonModule {
+    internal class StubPythonModule : AstScrapedPythonModule {
         private readonly string _cachePath;
 
         public static IPythonModule FromTypeStub(
             IPythonInterpreter interpreter,
             string stubFile,
             string moduleFullName
-        ) => new AstStubPythonModule(moduleFullName, stubFile, interpreter);
+        ) => new StubPythonModule(moduleFullName, stubFile, interpreter);
 
-        public AstStubPythonModule(string name, string cachePath, IPythonInterpreter interpreter)
+        public StubPythonModule(string name, string cachePath, IPythonInterpreter interpreter)
             : base(name, null, interpreter) {
             _cachePath = cachePath;
         }
