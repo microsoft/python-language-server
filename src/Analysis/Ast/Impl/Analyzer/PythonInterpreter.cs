@@ -27,8 +27,8 @@ using Microsoft.Python.Parsing;
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class PythonInterpreter : IPythonInterpreter {
         private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>() {
-            { BuiltinTypeId.NoneType, new AstPythonType("NoneType", BuiltinTypeId.NoneType) },
-            { BuiltinTypeId.Unknown, new AstPythonType("Unknown", BuiltinTypeId.Unknown) }
+            { BuiltinTypeId.NoneType, new PythonType("NoneType", BuiltinTypeId.NoneType) },
+            { BuiltinTypeId.Unknown, new PythonType("Unknown", BuiltinTypeId.Unknown) }
         };
         
         private readonly object _userSearchPathsLock = new object();
@@ -79,10 +79,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         if (string.IsNullOrEmpty(name)) {
                             Debug.Assert(id == BuiltinTypeId.Unknown, $"no name for {id}");
                             if (!_builtinTypes.TryGetValue(BuiltinTypeId.Unknown, out res)) {
-                                _builtinTypes[BuiltinTypeId.Unknown] = res = new AstPythonType("<unknown>", bm, null, null, BuiltinTypeId.Unknown);
+                                _builtinTypes[BuiltinTypeId.Unknown] = res = new PythonType("<unknown>", bm, null, null, BuiltinTypeId.Unknown);
                             }
                         } else {
-                            res = new AstPythonType(name, bm, null, null, id);
+                            res = new PythonType(name, bm, null, null, id);
                         }
                     }
                     _builtinTypes[id] = res;

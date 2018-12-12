@@ -18,10 +18,10 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    class AstPythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
+    class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
         private readonly IReadOnlyList<IParameterInfo> _parameters;
 
-        public AstPythonFunctionOverload(
+        public PythonFunctionOverload(
             IEnumerable<IParameterInfo> parameters,
             LocationInfo loc,
             string returnDocumentation = null

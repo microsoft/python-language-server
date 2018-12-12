@@ -18,10 +18,10 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    class AstPythonProperty : AstPythonType, IPythonProperty {
+    class PythonProperty : PythonType, IPythonProperty {
         private IPythonFunctionOverload _getter;
 
-        public AstPythonProperty(FunctionDefinition fd, IPythonModule declaringModule, IPythonType declaringType, LocationInfo location)
+        public PythonProperty(FunctionDefinition fd, IPythonModule declaringModule, IPythonType declaringType, LocationInfo location)
             : base(fd.Name, declaringModule, null, location) {
             FunctionDefinition = fd;
             DeclaringType = declaringType;

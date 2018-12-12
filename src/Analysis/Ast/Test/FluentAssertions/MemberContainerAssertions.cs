@@ -43,16 +43,16 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public AndWhichConstraint<TAssertions, PythonMultipleTypes> HaveMultipleTypesMember(string name, string because = "", params object[] reasonArgs)
             => HaveMember<PythonMultipleTypes>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
 
-        public AndWhichConstraint<TAssertions, AstPythonType> HaveClass(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<AstPythonType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
+        public AndWhichConstraint<TAssertions, PythonType> HaveClass(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<PythonType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
 
         public AndWhichConstraint<TAssertions, LazyPythonModule> HaveNestedModule(string name, string because = "", params object[] reasonArgs)
             => HaveMember<LazyPythonModule>(name, because, reasonArgs).OfMemberType(PythonMemberType.Module);
 
-        public AndWhichConstraint<TAssertions, AstPythonProperty> HaveProperty(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<AstPythonProperty>(name, because, reasonArgs).OfMemberType(PythonMemberType.Property);
+        public AndWhichConstraint<TAssertions, PythonProperty> HaveProperty(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<PythonProperty>(name, because, reasonArgs).OfMemberType(PythonMemberType.Property);
 
-        public AndWhichConstraint<TAssertions, AstPythonProperty> HaveReadOnlyProperty(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<TAssertions, PythonProperty> HaveReadOnlyProperty(string name, string because = "", params object[] reasonArgs) {
             var constraint = HaveProperty(name, because, reasonArgs);
             Execute.Assertion.ForCondition(constraint.Which.IsReadOnly)
                 .BecauseOf(because, reasonArgs)
@@ -61,8 +61,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return constraint;
         }
 
-        public AndWhichConstraint<TAssertions, AstPythonFunction> HaveMethod(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<AstPythonFunction>(name, because, reasonArgs).OfMemberType(PythonMemberType.Method);
+        public AndWhichConstraint<TAssertions, PythonFunction> HaveMethod(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<PythonFunction>(name, because, reasonArgs).OfMemberType(PythonMemberType.Method);
 
         public AndWhichConstraint<TAssertions, TMember> HaveMember<TMember>(string name,
             string because = "", params object[] reasonArgs)

@@ -27,13 +27,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
     class AnalysisFunctionWalker : PythonWalker {
         private readonly ExpressionLookup _lookup;
         private readonly Scope _parentScope;
-        private readonly AstPythonFunctionOverload _overload;
+        private readonly PythonFunctionOverload _overload;
         private IPythonClass _self;
 
         public AnalysisFunctionWalker(
             ExpressionLookup lookup,
             FunctionDefinition targetFunction,
-            AstPythonFunctionOverload overload
+            PythonFunctionOverload overload
         ) {
             _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
             Target = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
@@ -117,7 +117,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var value = _lookup.GetValueFromExpression(node.Right);
             foreach (var lhs in node.Left) {
                 if (lhs is MemberExpression memberExp && memberExp.Target is NameExpression nameExp1) {
-                    if (_self is AstPythonType t && nameExp1.Name == "self") {
+                    if (_self is PythonType t && nameExp1.Name == "self") {
                         t.AddMembers(new[] { new KeyValuePair<string, IPythonType>(memberExp.Name, value) }, true);
                     }
                     continue;
@@ -147,7 +147,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
 
                     // Tuple = 'tuple value' (such as from callable). Transfer values.
-                    if (value is AstPythonConstant c && c.Type is AstPythonSequence seq) {
+                    if (value is AstPythonConstant c && c.Type is PythonSequence seq) {
                         var types = seq.IndexTypes.ToArray();
                         var names = tex.Items.Select(x => (x as NameExpression)?.Name).ToArray();
                         for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {
@@ -174,7 +174,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     var typeId = typeName.GetTypeId();
                     if (typeId != BuiltinTypeId.Unknown) {
                         _lookup.DeclareVariable(name,
-                            new AstPythonConstant(new AstPythonType(typeName, typeId)));
+                            new AstPythonConstant(new PythonType(typeName, typeId)));
                     }
                 }
             }

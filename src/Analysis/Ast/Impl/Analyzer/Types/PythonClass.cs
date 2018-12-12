@@ -21,8 +21,8 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    internal sealed class AstPythonClass : AstPythonType, IPythonClass {
-        private static readonly IPythonModule NoDeclModule = new AstPythonModule();
+    internal sealed class PythonClass : PythonType, IPythonClass {
+        private static readonly IPythonModule NoDeclModule = new PythonModule();
 
         private readonly IPythonInterpreter _interpreter;
         private readonly object _lock = new object();
@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         private IReadOnlyList<IPythonType> _mro;
         private readonly AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
 
-        public AstPythonClass(
+        public PythonClass(
             ClassDefinition classDefinition,
             IPythonModule declaringModule,
             string doc,
@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                 // Special case names that we want to add to our own Members dict
                 switch (name) {
                     case "__mro__":
-                        member = AddMember(name, new AstPythonSequence(_interpreter.GetBuiltinType(BuiltinTypeId.Tuple),
+                        member = AddMember(name, new PythonSequence(_interpreter.GetBuiltinType(BuiltinTypeId.Tuple),
                             DeclaringModule,
                             Mro, _interpreter.GetBuiltinType(BuiltinTypeId.TupleIterator)
                         ), true);
@@ -111,7 +111,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                     AddMember("__base__", Bases[0], true);
                 }
 
-                AddMember("__bases__", new AstPythonSequence(
+                AddMember("__bases__", new PythonSequence(
                     interpreter?.GetBuiltinType(BuiltinTypeId.Tuple),
                     DeclaringModule,
                     Bases,
@@ -134,7 +134,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                 var mergeList = new List<List<IPythonType>> { new List<IPythonType>() };
                 var finalMro = new List<IPythonType> { cls };
 
-                var bases = (cls as AstPythonClass)?.Bases ??
+                var bases = (cls as PythonClass)?.Bases ??
                     (cls.GetMember("__bases__") as IPythonSequenceType)?.IndexTypes ??
                     Array.Empty<IPythonType>();
 

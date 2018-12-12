@@ -147,7 +147,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var res = _scope.Interpreter.GetBuiltinType(typeId);
             if (types.Count > 0) {
                 var iterRes = _scope.Interpreter.GetBuiltinType(iterTypeId);
-                res = new AstPythonSequence(res, _scope.Module, types.Select(Finalize), new AstPythonIterator(iterRes, types, _scope.Module));
+                res = new PythonSequence(res, _scope.Module, types.Select(Finalize), new AstPythonIterator(iterRes, types, _scope.Module));
             }
             return res;
         }
@@ -164,7 +164,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     break;
             }
 
-            return new AstPythonIterable(_scope.Interpreter.GetBuiltinType(bti), types, iterator, _scope.Module);
+            return new PythonIterable(_scope.Interpreter.GetBuiltinType(bti), types, iterator, _scope.Module);
         }
 
         private IPythonType MakeIteratorType(IReadOnlyList<IPythonType> types) {
@@ -182,7 +182,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var res = _scope.Interpreter.GetBuiltinType(typeId);
             if (types.Count > 0) {
                 var keys = FinalizeList(types.ElementAtOrDefault(0));
-                res = new AstPythonLookup(
+                res = new PythonLookup(
                     res,
                     _scope.Module,
                     keys,
@@ -196,16 +196,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private IPythonType MakeGenericClassType(IPythonType typeArg) {
             if (typeArg.IsBuiltin) {
-                if (_scope.Interpreter.GetBuiltinType(typeArg.TypeId) is AstPythonType type) {
+                if (_scope.Interpreter.GetBuiltinType(typeArg.TypeId) is PythonType type) {
                     return type.TypeId == BuiltinTypeId.Unknown
                         ? _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type)
                         : type.GetTypeFactory();
                 }
             }
-            return new AstPythonType(typeArg.Name, _scope.Module, typeArg.Documentation, null, BuiltinTypeId.Type, isTypeFactory: true);
+            return new PythonType(typeArg.Name, _scope.Module, typeArg.Documentation, null, BuiltinTypeId.Type, isTypeFactory: true);
         }
 
-        private sealed class ModuleType : AstPythonType {
+        private sealed class ModuleType : PythonType {
             public ModuleType(IPythonModule module):
                 base(module.Name, module, module.Documentation, null) {
              }
@@ -217,7 +217,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             public override IEnumerable<string> GetMemberNames() => DeclaringModule.GetMemberNames();
         }
 
-        private sealed class UnionType : AstPythonType, IPythonMultipleTypes {
+        private sealed class UnionType : PythonType, IPythonMultipleTypes {
             public UnionType(IReadOnlyList<IPythonType> types):
                 base("Any", types.Select(t => t.DeclaringModule).ExcludeDefault().FirstOrDefault(), null, null) {
                 Types = types;
@@ -234,7 +234,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             public override IEnumerable<string> GetMemberNames() => Types.SelectMany(t => t.GetMemberNames());
         }
 
-        private sealed class NameType : AstPythonType {
+        private sealed class NameType : PythonType {
             public NameType(string name): base(name, BuiltinTypeId.Unknown) { }
          }
     }

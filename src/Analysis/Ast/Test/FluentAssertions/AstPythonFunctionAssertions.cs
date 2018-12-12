@@ -22,12 +22,12 @@ using Microsoft.Python.Analysis.Analyzer.Types;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
-    internal class AstPythonFunctionAssertions : ReferenceTypeAssertions<AstPythonFunction, AstPythonFunctionAssertions> {
-        public AstPythonFunctionAssertions(AstPythonFunction pythonFunction) {
+    internal class AstPythonFunctionAssertions : ReferenceTypeAssertions<PythonFunction, AstPythonFunctionAssertions> {
+        public AstPythonFunctionAssertions(PythonFunction pythonFunction) {
             Subject = pythonFunction;
         }
 
-        protected override string Identifier => nameof(AstPythonFunction);
+        protected override string Identifier => nameof(PythonFunction);
 
         public AndConstraint<AstPythonFunctionAssertions> BeClassMethod(string because = "", params object[] reasonArgs) {
             Execute.Assertion.ForCondition(Subject.IsClassMethod)

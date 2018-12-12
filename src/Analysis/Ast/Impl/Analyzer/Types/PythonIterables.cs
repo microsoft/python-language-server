@@ -18,8 +18,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    class AstPythonIterable : AstPythonTypeWrapper, IPythonIterableType {
-        public AstPythonIterable(
+    class PythonIterable : PythonTypeWrapper, IPythonIterableType {
+        public PythonIterable(
             IPythonType iterableType,
             IEnumerable<IPythonType> types,
             IPythonType iteratorBase,
@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         public IPythonIteratorType IteratorType { get; }
     }
 
-    class AstPythonIterator : AstPythonTypeWrapper, IPythonIteratorType, IPythonIterableType {
+    class AstPythonIterator : PythonTypeWrapper, IPythonIteratorType, IPythonIterableType {
         private readonly IPythonType _type;
 
         public AstPythonIterator(IPythonType iterableType, IEnumerable<IPythonType> nextType, IPythonModule declaringModule):

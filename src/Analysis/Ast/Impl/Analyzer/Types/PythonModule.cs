@@ -24,13 +24,13 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    public class AstPythonModule : PythonModuleType, ILocatedMember {
+    public class PythonModule : PythonModuleType, ILocatedMember {
         private readonly IFileSystem _fs;
         private string _documentation = string.Empty;
 
-        internal AstPythonModule() : base(string.Empty) { }
+        internal PythonModule() : base(string.Empty) { }
 
-        protected AstPythonModule(string moduleName, string filePath, Uri uri, IPythonInterpreter interpreter) :
+        protected PythonModule(string moduleName, string filePath, Uri uri, IPythonInterpreter interpreter) :
             base(moduleName, filePath, uri, interpreter) {
             _fs = interpreter.Services.GetService<IFileSystem>();
             Locations = new[] { new LocationInfo(filePath, uri, 1, 1) };

@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    internal class AstPythonType : IPythonType, ILocatedMember, IHasQualifiedName {
+    internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName {
         private readonly string _name;
         private readonly object _lock = new object();
         private Dictionary<string, IPythonType> _members;
@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         private Dictionary<string, IPythonType> WritableMembers =>
             _members ?? (_members = new Dictionary<string, IPythonType>());
 
-        public AstPythonType(
+        public PythonType(
             string name,
             IPythonModule declaringModule,
             string doc,
@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             IsTypeFactory = isTypeFactory;
         }
 
-        public AstPythonType(string name, BuiltinTypeId typeId, bool isTypeFactory = false) {
+        public PythonType(string name, BuiltinTypeId typeId, bool isTypeFactory = false) {
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId == BuiltinTypeId.Unknown && isTypeFactory ? BuiltinTypeId.Type : typeId;
         }
@@ -122,8 +122,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         /// can be called as a T constructor so func() constructs class instance rather than invoking
         /// call on an existing instance. See also collections/namedtuple typing in the Typeshed.
         /// </summary>
-        internal AstPythonType GetTypeFactory() {
-            var clone = new AstPythonType(
+        internal PythonType GetTypeFactory() {
+            var clone = new PythonType(
                 Name,
                 DeclaringModule,
                 Documentation,

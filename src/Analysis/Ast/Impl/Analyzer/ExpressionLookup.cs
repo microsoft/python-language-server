@@ -183,7 +183,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case IMemberContainer mc:
                     value = mc.GetMember(expr.Name);
                     // If container is class rather than the instance, then method is an unbound function.
-                    value = mc is IPythonClass c && value is AstPythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
+                    value = mc is IPythonClass c && value is PythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
                     break;
                 default:
                     value = GetValueFromPropertyOrFunction(e, expr);
@@ -477,7 +477,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var res = Interpreter.GetBuiltinType(BuiltinTypeId.Tuple);
                 if (types.Length > 0) {
                     var iterRes = Interpreter.GetBuiltinType(BuiltinTypeId.TupleIterator);
-                    res = new AstPythonSequence(res, Module, types, iterRes);
+                    res = new PythonSequence(res, Module, types, iterRes);
                 }
                 return res;
             }

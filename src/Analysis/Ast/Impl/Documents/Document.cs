@@ -31,7 +31,7 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Documents {
-    public sealed class Document : AstPythonModule, IDocument, IAnalyzable {
+    public sealed class Document : PythonModule, IDocument, IAnalyzable {
         private readonly object _analysisLock = new object();
         private readonly IFileSystem _fs;
         private readonly DocumentBuffer _buffer = new DocumentBuffer();

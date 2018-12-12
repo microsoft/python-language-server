@@ -20,8 +20,8 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    internal sealed class AstPythonParameterInfo : IParameterInfo {
-        public AstPythonParameterInfo(PythonAst ast, Parameter p, IEnumerable<IPythonType> types) {
+    internal sealed class ParameterInfo : IParameterInfo {
+        public ParameterInfo(PythonAst ast, Parameter p, IEnumerable<IPythonType> types) {
             Name = p?.Name ?? throw new ArgumentNullException(nameof(p));
             Documentation = string.Empty;
             DefaultValue = p.DefaultValue?.ToCodeString(ast).Trim();

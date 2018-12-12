@@ -366,7 +366,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
             foreach (var setter in dec.OfType<MemberExpression>().Where(n => n.Name == "setter")) {
                 if (setter.Target is NameExpression src) {
-                    if (_lookup.LookupNameInScopes(src.Name, ExpressionLookup.LookupOptions.Local) is AstPythonProperty existingProp) {
+                    if (_lookup.LookupNameInScopes(src.Name, ExpressionLookup.LookupOptions.Local) is PythonProperty existingProp) {
                         // Setter for an existing property, so don't create a function
                         existingProp.MakeSettable();
                         return false;
@@ -380,8 +380,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType) {
-            if (!(_lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is AstPythonProperty existing)) {
-                existing = new AstPythonProperty(node, declaringModule, declaringType, GetLoc(node));
+            if (!(_lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonProperty existing)) {
+                existing = new PythonProperty(node, declaringModule, declaringType, GetLoc(node));
                 _lookup.DeclareVariable(node.Name, existing);
             }
 
@@ -394,10 +394,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private IPythonFunctionOverload CreateFunctionOverload(ExpressionLookup lookup, FunctionDefinition node) {
             var parameters = node.Parameters
-                .Select(p => new AstPythonParameterInfo(_ast, p, _lookup.GetTypesFromAnnotation(p.Annotation)))
+                .Select(p => new ParameterInfo(_ast, p, _lookup.GetTypesFromAnnotation(p.Annotation)))
                 .ToArray();
 
-            var overload = new AstPythonFunctionOverload(
+            var overload = new PythonFunctionOverload(
                 parameters,
                 lookup.GetLocOfName(node, node.NameExpression),
                 node.ReturnAnnotation?.ToCodeString(_ast));
@@ -412,9 +412,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return ce?.Value as string;
         }
 
-        private AstPythonClass CreateClass(ClassDefinition node) {
+        private PythonClass CreateClass(ClassDefinition node) {
             node = node ?? throw new ArgumentNullException(nameof(node));
-            return new AstPythonClass(
+            return new PythonClass(
                 node,
                 _module,
                 GetDoc(node.Body as SuiteStatement),
@@ -447,9 +447,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override bool Walk(ClassDefinition node) {
             var member = _lookup.GetInScope(node.Name);
-            var t = member as AstPythonClass;
+            var t = member as PythonClass;
             if (t == null && member is IPythonMultipleTypes mm) {
-                t = mm.GetTypes().OfType<AstPythonClass>().FirstOrDefault(pt => pt.ClassDefinition.StartIndex == node.StartIndex);
+                t = mm.GetTypes().OfType<PythonClass>().FirstOrDefault(pt => pt.ClassDefinition.StartIndex == node.StartIndex);
             }
             if (t == null) {
                 t = CreateClass(node);
@@ -470,7 +470,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override void PostWalk(ClassDefinition node) {
-            if (_lookup.GetInScope("__class__") is AstPythonType cls) {
+            if (_lookup.GetInScope("__class__") is PythonType cls) {
                 cls.AddMembers(_lookup.CurrentScope.Variables, true);
                 _classScope?.Dispose();
             }
@@ -478,9 +478,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public void ProcessFunctionDefinition(FunctionDefinition node) {
-            if (!(_lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is AstPythonFunction existing)) {
+            if (!(_lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonFunction existing)) {
                 var cls = _lookup.GetInScope("__class__") as IPythonType;
-                existing = new AstPythonFunction(node, _module, cls, GetLoc(node));
+                existing = new PythonFunction(node, _module, cls, GetLoc(node));
                 _lookup.DeclareVariable(node.Name, existing);
             }
 

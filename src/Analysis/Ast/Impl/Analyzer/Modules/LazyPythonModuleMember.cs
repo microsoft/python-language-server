@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// imports specific values such as 'from A import B' so we don't have to load
     /// and analyze the entired A until B value is actually needed.
     /// </summary>
-    internal sealed class LazyPythonModuleMember : AstPythonType, ILazyType {
+    internal sealed class LazyPythonModuleMember : PythonType, ILazyType {
         private volatile IPythonType _realType;
         private readonly IPythonInterpreter _interpreter;
 

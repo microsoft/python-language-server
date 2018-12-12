@@ -19,7 +19,7 @@ using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
     [DebuggerDisplay("({MemberType}, {TypeId})")]
-    internal class AstPythonConstant : AstPythonTypeWrapper, IPythonConstant {
+    internal class AstPythonConstant : PythonTypeWrapper, IPythonConstant {
         public AstPythonConstant(IPythonType type, params LocationInfo[] locations) :
             base(type, type.DeclaringModule) {
             Locations = locations.ToArray();

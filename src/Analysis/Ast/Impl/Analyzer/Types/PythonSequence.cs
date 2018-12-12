@@ -18,8 +18,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    internal class AstPythonSequence : AstPythonTypeWrapper, IPythonSequenceType, IPythonIterableType {
-        public AstPythonSequence(
+    internal class PythonSequence : PythonTypeWrapper, IPythonSequenceType, IPythonIterableType {
+        public PythonSequence(
             IPythonType sequenceType,
             IPythonModule declaringModule,
             IEnumerable<IPythonType> contents,

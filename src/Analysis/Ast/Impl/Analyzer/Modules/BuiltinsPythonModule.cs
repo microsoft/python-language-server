@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             IPythonType noneType = null;
 
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
-                if (Members.TryGetValue("__{0}__".FormatInvariant(typeId), out var m) && m is AstPythonType biType && biType.IsBuiltin) {
+                if (Members.TryGetValue("__{0}__".FormatInvariant(typeId), out var m) && m is PythonType biType && biType.IsBuiltin) {
                     if (typeId != BuiltinTypeId.Str && typeId != BuiltinTypeId.StrIterator) {
                         biType.TrySetTypeId(typeId);
                     }

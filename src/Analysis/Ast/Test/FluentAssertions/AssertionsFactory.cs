@@ -20,7 +20,7 @@ using Microsoft.Python.Core.Text;
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class AssertionsFactory {
-        public static AstPythonFunctionAssertions Should(this AstPythonFunction pythonFunction)
+        public static AstPythonFunctionAssertions Should(this PythonFunction pythonFunction)
             => new AstPythonFunctionAssertions(pythonFunction);
 
         public static ScopeAssertions Should(this IScope scope)

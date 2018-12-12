@@ -19,10 +19,10 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    class AstPythonLookup : AstPythonTypeWrapper, IPythonLookupType, IPythonIterableType {
+    class PythonLookup : PythonTypeWrapper, IPythonLookupType, IPythonIterableType {
         private readonly IReadOnlyDictionary<IPythonType, IReadOnlyList<IPythonType>> _mapping;
 
-        public AstPythonLookup(
+        public PythonLookup(
             IPythonType lookupType,
             IPythonModule declaringModule,
             IEnumerable<IPythonType> keys,

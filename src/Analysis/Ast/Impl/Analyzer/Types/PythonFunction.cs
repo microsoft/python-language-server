@@ -19,12 +19,12 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    internal class AstPythonFunction : AstPythonType, IPythonFunction {
+    internal class PythonFunction : PythonType, IPythonFunction {
         private readonly List<IPythonFunctionOverload> _overloads = new List<IPythonFunctionOverload>();
         private readonly string _doc;
         private readonly object _lock = new object();
 
-        public AstPythonFunction(
+        public PythonFunction(
             FunctionDefinition fd,
             IPythonModule declaringModule,
             IPythonType declaringType,
@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         /// <summary>
         /// Represents unbound method, such in C.f where C is class rather than the instance.
         /// </summary>
-        private sealed class AstPythonUnboundMethod : AstPythonTypeWrapper, IPythonFunction {
+        private sealed class AstPythonUnboundMethod : PythonTypeWrapper, IPythonFunction {
             private readonly IPythonFunction _pf;
 
             public AstPythonUnboundMethod(IPythonFunction function) : base(function, function.DeclaringModule) {
