@@ -13,27 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Core.Interpreter;
-using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis {
     /// <summary>
     /// Represents Python interpreter.
     /// </summary>
-    public interface IPythonInterpreter : IDisposable {
+    public interface IPythonInterpreter  {
         /// <summary>
         /// Interpreter configuration.
         /// </summary>
         InterpreterConfiguration Configuration { get; }
-
-        /// <summary>
-        /// Application services.
-        /// </summary>
-        IServiceContainer Services { get; }
 
         /// <summary>
         /// Python language version.
@@ -54,11 +46,6 @@ namespace Microsoft.Python.Analysis {
         /// Module resolution service.
         /// </summary>
         IModuleResolution ModuleResolution { get; }
-
-        /// <summary>
-        /// Application logger.
-        /// </summary>
-        ILogger Log { get; }
 
         /// <summary>
         /// Tells analyzer that module set has changed. Client application that tracks changes

@@ -28,27 +28,32 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class ModuleResolution : IModuleResolution {
         private static readonly IReadOnlyDictionary<string, string> _emptyModuleSet = EmptyDictionary<string, string>.Instance;
         private readonly ConcurrentDictionary<string, IPythonModule> _modules = new ConcurrentDictionary<string, IPythonModule>();
+        private readonly IServiceContainer _services;
         private readonly IPythonInterpreter _interpreter;
         private readonly PathResolver _pathResolver;
         private readonly IFileSystem _fs;
+        private readonly ILogger _log;
         private readonly bool _requireInitPy;
 
         private IReadOnlyDictionary<string, string> _searchPathPackages;
 
-        private ILogger Log => _interpreter.Log;
+        private ILogger Log { get; }
         private InterpreterConfiguration Configuration => _interpreter.Configuration;
 
-        public ModuleResolution(IPythonInterpreter interpreter) {
-            _interpreter = interpreter;
-            _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_interpreter.Configuration.Version);
-            _fs = interpreter.Services.GetService<IFileSystem>();
+        public ModuleResolution(IServiceContainer services) {
+            _services = services;
+            _interpreter = services.GetService<IPythonInterpreter>();
+            _fs = services.GetService<IFileSystem>();
+            _log = services.GetService<ILogger>();
 
-            ModuleCache = new ModuleCache(interpreter);
+            _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_interpreter.Configuration.Version);
+            ModuleCache = new ModuleCache(services);
 
             _pathResolver = new PathResolver(_interpreter.LanguageVersion);
             _pathResolver.SetInterpreterSearchPaths(new[] {
@@ -57,9 +62,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             });
             _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
             _modules[BuiltinModuleName] = BuiltinModule = new BuiltinsPythonModule(_interpreter, ModuleCache);
+
+            BuildModuleList();
         }
 
-        public void BuildModuleList() {
+        private void BuildModuleList() {
             // Initialize built-in
             BuiltinModule.LoadAndAnalyze();
             // Add built-in module names
@@ -151,12 +158,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                     try {
                         module = await sentinelModule.WaitForImportAsync(cancellationToken);
                     } catch (OperationCanceledException) {
-                        Log?.Log(TraceEventType.Warning, $"Import timeout: {name}");
+                        _log?.Log(TraceEventType.Warning, $"Import timeout: {name}");
                         return TryImportModuleResult.Timeout;
                     }
 
                     if (module is SentinelModule) {
-                        Log?.Log(TraceEventType.Warning, $"Recursive import: {name}");
+                        _log?.Log(TraceEventType.Warning, $"Recursive import: {name}");
                     }
                 }
                 return new TryImportModuleResult(module);
@@ -171,16 +178,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 }
                 // If we reach here, the race is too complicated to recover
                 // from. Signal the caller to try importing again.
-                Log?.Log(TraceEventType.Warning, $"Retry import: {name}");
+                _log?.Log(TraceEventType.Warning, $"Retry import: {name}");
                 return TryImportModuleResult.NeedRetry;
             }
 
             // Do normal searches
             if (!string.IsNullOrEmpty(Configuration?.InterpreterPath)) {
                 try {
-                    module = ImportFromSearchPaths(name);
+                    module = await ImportFromSearchPathsAsync(name, cancellationToken);
                 } catch (OperationCanceledException) {
-                    Log?.Log(TraceEventType.Error, $"Import timeout {name}");
+                    _log?.Log(TraceEventType.Error, $"Import timeout {name}");
                     return TryImportModuleResult.Timeout;
                 }
             }
@@ -207,7 +214,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 }
                 // If we reach here, the race is too complicated to recover
                 // from. Signal the caller to try importing again.
-                Log?.Log(TraceEventType.Warning, $"Retry import: {name}");
+                _log?.Log(TraceEventType.Warning, $"Retry import: {name}");
                 return TryImportModuleResult.NeedRetry;
             }
             sentinelValue.Complete(module);
@@ -249,7 +256,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 try {
                     result = await TryImportModuleAsync(name, token);
                 } catch (OperationCanceledException) {
-                    Log?.Log(TraceEventType.Error, $"Import timeout: {name}");
+                    _log?.Log(TraceEventType.Error, $"Import timeout: {name}");
                     Debug.Fail("Import timeout");
                     return null;
                 }
@@ -258,18 +265,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                     case TryImportModuleResultCode.Success:
                         return result.Module;
                     case TryImportModuleResultCode.ModuleNotFound:
-                        Log?.Log(TraceEventType.Information, $"Import not found: {name}");
+                        _log?.Log(TraceEventType.Information, $"Import not found: {name}");
                         return null;
                     case TryImportModuleResultCode.NeedRetry:
                     case TryImportModuleResultCode.Timeout:
                         break;
                     case TryImportModuleResultCode.NotSupported:
-                        Log?.Log(TraceEventType.Error, $"Import not supported: {name}");
+                        _log?.Log(TraceEventType.Error, $"Import not supported: {name}");
                         return null;
                 }
             }
             // Never succeeded, so just log the error and fail
-            Log?.Log(TraceEventType.Error, $"Retry import failed: {name}");
+            _log?.Log(TraceEventType.Error, $"Retry import failed: {name}");
             return null;
         }
 
@@ -278,7 +285,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 return null;
             }
 
-            Log?.Log(TraceEventType.Verbose, "FindModule", name, "system", string.Join(", ", searchPaths));
+            _log?.Log(TraceEventType.Verbose, "FindModule", name, "system", string.Join(", ", searchPaths));
 
             var i = name.IndexOf('.');
             var firstBit = i < 0 ? name : name.Remove(i);
@@ -340,7 +347,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 return null;
             }
 
-            Log?.Log(TraceEventType.Verbose, "Import type stub", mp.Value.FullName, mp.Value.SourceFile);
+            _log?.Log(TraceEventType.Verbose, "Import type stub", mp.Value.FullName, mp.Value.SourceFile);
             return StubPythonModule.FromTypeStub(_interpreter, mp.Value.SourceFile, mp.Value.FullName);
         }
 
@@ -362,25 +369,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
         }
 
-        private IPythonModule ImportFromSearchPaths(string name) {
+        private async Task<IPythonModule> ImportFromSearchPathsAsync(string name, CancellationToken cancellationToken) {
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (moduleImport == null) {
-                Log?.Log(TraceEventType.Verbose, "Import not found: ", name);
+                _log?.Log(TraceEventType.Verbose, "Import not found: ", name);
                 return null;
             }
 
             if (moduleImport.IsBuiltin) {
-                Log?.Log(TraceEventType.Verbose, "Import builtins: ", name, Configuration.InterpreterPath);
+                _log?.Log(TraceEventType.Verbose, "Import builtins: ", name, Configuration.InterpreterPath);
                 return new CompiledPythonModule(name, _interpreter);
             }
 
             if (moduleImport.IsCompiled) {
-                Log?.Log(TraceEventType.Verbose, "Import scraped: ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                return new AstScrapedPythonModule(moduleImport.FullName, moduleImport.ModulePath, _interpreter);
+                _log?.Log(TraceEventType.Verbose, "Import scraped: ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
+                return new ScrapedPythonModule(moduleImport.FullName, moduleImport.ModulePath, _interpreter);
             }
 
-            Log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
-            return Document.FromFile(_interpreter, moduleImport.ModulePath, moduleImport.FullName);
+            _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
+
+            var doc = Document.FromFile(_services, moduleImport.ModulePath, moduleImport.FullName, DocumentCreationOptions.Analyze);
+            await doc.GetAnalysisAsync(cancellationToken);
+            return doc;
         }
 
         /// <summary>

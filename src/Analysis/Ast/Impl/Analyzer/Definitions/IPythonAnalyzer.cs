@@ -13,20 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Documents;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis {
     public interface IPythonAnalyzer {
-        /// <summary>
-        /// Returns the interpreter that the analyzer is using.
-        /// This property is thread safe.
-        /// </summary>
-        IPythonInterpreter Interpreter { get; }
-
         /// <summary>
         /// Analyze single document.
         /// </summary>

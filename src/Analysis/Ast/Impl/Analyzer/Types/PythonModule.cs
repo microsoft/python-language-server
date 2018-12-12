@@ -25,14 +25,12 @@ using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
     public class PythonModule : PythonModuleType, ILocatedMember {
-        private readonly IFileSystem _fs;
         private string _documentation = string.Empty;
 
         internal PythonModule() : base(string.Empty) { }
 
-        protected PythonModule(string moduleName, string filePath, Uri uri, IPythonInterpreter interpreter) :
-            base(moduleName, filePath, uri, interpreter) {
-            _fs = interpreter.Services.GetService<IFileSystem>();
+        protected PythonModule(string moduleName, string filePath, Uri uri, IServiceContainer services) :
+            base(moduleName, filePath, uri, services) {
             Locations = new[] { new LocationInfo(filePath, uri, 1, 1) };
         }
 
@@ -62,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                 yield break;
             }
             var searchPath = Path.GetDirectoryName(filePath);
-            if (!_fs.DirectoryExists(searchPath)) {
+            if (!FileSystem.DirectoryExists(searchPath)) {
                 yield break;
             }
 
@@ -78,10 +76,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         public override IEnumerable<string> GetChildrenModuleNames()
             => GetChildModuleNames(FilePath, Name, Interpreter);
 
-        internal override string GetCode() => _fs.ReadAllText(FilePath);
+        internal override string GetCode() => FileSystem.ReadAllText(FilePath);
 
         private string TryGetDocFromModuleInitFile() {
-            if (string.IsNullOrEmpty(FilePath) || !_fs.FileExists(FilePath)) {
+            if (string.IsNullOrEmpty(FilePath) || !FileSystem.FileExists(FilePath)) {
                 return string.Empty;
             }
 

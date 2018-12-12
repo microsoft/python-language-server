@@ -16,8 +16,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public abstract class ServerBase {

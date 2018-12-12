@@ -15,11 +15,34 @@
 
 using System;
 
-namespace Microsoft.Python.Core {
-    public interface IServiceContainer {
+namespace Microsoft.Python.Analysis.Documents {
+    [Flags]
+    public enum DocumentCreationOptions {
+        Default = Open | Analyze,
+
         /// <summary>
-        /// Provides access to global application services
+        /// Just load the document, do not parse or analyze.
         /// </summary>
-        T GetService<T>(Type type = null) where T : class;
+        Load,
+
+        /// <summary>
+        /// Load and parse. Do not analyze.
+        /// </summary>
+        Ast = 1,
+
+        /// <summary>
+        /// Load, parse and analyze.
+        /// </summary>
+        Analyze = 2,
+
+        /// <summary>
+        /// Document is a library module.
+        /// </summary>
+        LibraryModule = Analyze,
+
+        /// <summary>
+        /// Document is open in the editor.
+        /// </summary>
+        Open = 8
     }
 }

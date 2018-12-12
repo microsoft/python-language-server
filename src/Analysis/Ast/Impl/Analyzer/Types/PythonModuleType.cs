@@ -15,36 +15,34 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
     public abstract class PythonModuleType : IPythonModule {
         protected IDictionary<string, IPythonType> Members { get; set; } = new Dictionary<string, IPythonType>();
-        protected ILogger Log => Interpreter.Log;
+        protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
+        protected IServiceContainer Services { get; }
 
         protected PythonModuleType(string name) {
             Check.ArgumentNotNull(nameof(name), name);
             Name = name;
         }
 
-        protected PythonModuleType(string name, IPythonInterpreter interpreter)
+        protected PythonModuleType(string name, IServiceContainer services)
             : this(name) {
-            Check.ArgumentNotNull(nameof(interpreter), interpreter);
-            Interpreter = interpreter;
-            FileSystem = interpreter.Services.GetService<IFileSystem>();
+            Check.ArgumentNotNull(nameof(services), services);
+            Services = services;
+            FileSystem = services.GetService<IFileSystem>();
+            Log = services.GetService<ILogger>();
         }
 
-        protected PythonModuleType(string name, string filePath, Uri uri, IPythonInterpreter interpreter)
-            : this(name, interpreter) {
+        protected PythonModuleType(string name, string filePath, Uri uri, IServiceContainer services)
+            : this(name, services) {
             if (uri == null && !string.IsNullOrEmpty(filePath)) {
                 Uri.TryCreate(filePath, UriKind.Absolute, out uri);
             }
@@ -78,39 +76,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
 
         #region IPythonModule
         public virtual IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
-        public virtual void LoadAndAnalyze() => LoadAndAnalyze(GetCode());
         #endregion
 
-        public IEnumerable<string> ParseErrors { get; private set; } = Enumerable.Empty<string>();
-
-        protected PythonAst Ast { get; private set; }
-
-        internal virtual string GetCode() => string.Empty;
-
-        protected void LoadAndAnalyze(string code) {
-            var sink = new CollectingErrorSink();
-            using (var sr = new StringReader(code)) {
-                var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, new ParserOptions { ErrorSink = sink, StubFile = true });
-                Ast = parser.ParseFile();
-            }
-
-            ParseErrors = sink.Errors.Select(e => "{0} ({1}): {2}".FormatUI(FilePath ?? "(builtins)", e.Span, e.Message)).ToArray();
-            if (ParseErrors.Any()) {
-                Log?.Log(TraceEventType.Error, "Parse", FilePath ?? "(builtins)");
-                foreach (var e in ParseErrors) {
-                    Log?.Log(TraceEventType.Error, "Parse", e);
-                }
-            }
-
-            var walker = PrepareWalker(Ast);
-            Ast.Walk(walker);
-
-            Members = walker.GlobalScope.Variables.ToDictionary(v => v.Name, v => v.Type);
-            PostWalk(walker);
-        }
-
-        internal virtual AnalysisWalker PrepareWalker(PythonAst ast) => new AnalysisWalker(this, ast, suppressBuiltinLookup: false);
-
-        protected virtual void PostWalk(PythonWalker walker) => (walker as AnalysisWalker)?.Complete();
+        #region IDisposable
+        public void Dispose() => Dispose(true);
+        protected virtual void Dispose(bool disposing) { }
+        #endregion
     }
 }

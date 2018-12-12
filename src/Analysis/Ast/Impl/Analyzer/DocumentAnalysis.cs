@@ -25,14 +25,18 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class DocumentAnalysis : IDocumentAnalysis {
-        public DocumentAnalysis(IDocument document) {
+        private readonly IServiceContainer _services;
+
+        public DocumentAnalysis(IDocument document, IServiceContainer services) {
             Check.ArgumentNotNull(nameof(document), document);
+            Check.ArgumentNotNull(nameof(services), services);
+            _services = services;
             Document = document;
             GlobalScope = new EmptyGlobalScope(document);
         }
 
-        public static async Task<IDocumentAnalysis> CreateAsync(IDocument document, CancellationToken cancellationToken) {
-            var da = new DocumentAnalysis(document);
+        public static async Task<IDocumentAnalysis> CreateAsync(IDocument document, IServiceContainer services, CancellationToken cancellationToken) {
+            var da = new DocumentAnalysis(document, services);
             await da.AnalyzeAsync(cancellationToken);
             return da;
         }
@@ -53,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private async Task AnalyzeAsync(CancellationToken cancellationToken) {
             var ast = await Document.GetAstAsync(cancellationToken);
-            var walker = new AnalysisWalker(Document, ast, suppressBuiltinLookup: false);
+            var walker = new AnalysisWalker(_services, Document, ast, suppressBuiltinLookup: false);
             ast.Walk(walker);
             GlobalScope = walker.Complete();
         }

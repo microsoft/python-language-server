@@ -90,13 +90,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             if (member is T t) {
                 return t;
             }
-            var types = (member as IPythonMultipleTypes).Types;
-            if (types != null) {
-                member = Create(types.Where(m => m is T));
+            if (member is IPythonMultipleTypes mt) {
+                member = Create(mt.Types.Where(m => m is T));
                 if (member is T t2) {
                     return t2;
                 }
-                return types.OfType<T>().FirstOrDefault();
+                return mt.Types.OfType<T>().FirstOrDefault();
             }
 
             return default;

@@ -16,7 +16,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Core.Shell;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     internal sealed class DependencyResolver : IDependencyResolver {

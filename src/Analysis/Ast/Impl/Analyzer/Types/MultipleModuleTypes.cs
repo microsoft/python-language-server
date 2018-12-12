@@ -64,5 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         public Uri Uri => null;
         public IPythonInterpreter Interpreter => null;
         #endregion
+
+        public void Dispose() { }
     }
 }

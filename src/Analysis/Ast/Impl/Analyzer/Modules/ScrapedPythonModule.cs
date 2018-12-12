@@ -16,22 +16,19 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.Python.Analysis.Analyzer.Types;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal class AstScrapedPythonModule : PythonModuleType, IPythonModule {
+    internal class ScrapedPythonModule : PythonModuleType, IPythonModule {
         private bool _scraped;
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
 
-        public AstScrapedPythonModule(string name, string filePath, IPythonInterpreter interpreter)
+        public ScrapedPythonModule(string name, string filePath, IPythonInterpreter interpreter)
             : base(name, filePath, null, interpreter) {
         }
 

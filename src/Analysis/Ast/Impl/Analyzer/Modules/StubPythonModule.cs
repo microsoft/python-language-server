@@ -23,7 +23,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// <summary>
     /// Represents module that contains stub code such as from typeshed.
     /// </summary>
-    internal class StubPythonModule : AstScrapedPythonModule {
+    internal class StubPythonModule : ScrapedPythonModule {
         private readonly string _cachePath;
 
         public static IPythonModule FromTypeStub(

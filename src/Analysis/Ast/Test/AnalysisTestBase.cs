@@ -19,14 +19,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Tests;
 using Microsoft.Python.Parsing.Tests;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
@@ -46,14 +48,27 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
 
-        internal PythonInterpreter CreateInterpreter(string moduleFolder, InterpreterConfiguration configuration = null) {
+        internal IServiceContainer CreateServices(string root, InterpreterConfiguration configuration = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
             configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
-            configuration.SearchPaths = new[] { moduleFolder, GetAnalysisTestDataFilesPath() };
+            configuration.SearchPaths = new[] { root, GetAnalysisTestDataFilesPath() };
             configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
-            return new PythonInterpreter(configuration, ServiceManager);
+
+            var interpreter = new PythonInterpreter(configuration, ServiceManager);
+            ServiceManager.AddService(interpreter);
+
+            var dependencyResolver = new TestDependencyResolver();
+            ServiceManager.AddService(dependencyResolver);
+
+            var analyzer = new PythonAnalyzer(ServiceManager);
+            ServiceManager.AddService(analyzer);
+
+            var documentTable = new DocumentTable(root, ServiceManager);
+            ServiceManager.AddService(documentTable);
+
+            return ServiceManager;
         }
 
         internal async Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration = null, string moduleName = null, string modulePath = null) {
@@ -63,19 +78,21 @@ namespace Microsoft.Python.Analysis.Tests {
             moduleName = Path.GetFileNameWithoutExtension(modulePath);
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
-            var interpreter = CreateInterpreter(moduleDirectory, configuration);
-            var doc = Document.FromContent(interpreter, code, moduleUri, modulePath, moduleName);
+            var services = CreateServices(moduleDirectory, configuration);
+            var doc = Document.FromContent(services, code, moduleUri, modulePath, moduleName, DocumentCreationOptions.Analyze);
 
             var ast = await doc.GetAstAsync(CancellationToken.None);
             ast.Should().NotBeNull();
 
-            var analyzer = new PythonAnalyzer(interpreter, null);
-            var analysis = await analyzer.AnalyzeDocumentAsync(doc, CancellationToken.None);
-
-            var analysisFromDoc = await doc.GetAnalysisAsync(CancellationToken.None);
-            analysisFromDoc.Should().Be(analysis);
+            var analysis = await doc.GetAnalysisAsync(CancellationToken.None);
+            analysis.Should().NotBeNull();
 
             return analysis;
+        }
+
+        private sealed class TestDependencyResolver : IDependencyResolver {
+            public Task<IDependencyChainNode> GetDependencyChainAsync(IDocument document, CancellationToken cancellationToken)
+                => Task.FromResult<IDependencyChainNode>(new DependencyChainNode(document));
         }
     }
 }

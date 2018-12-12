@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Diagnostics;
@@ -32,9 +31,14 @@ namespace Microsoft.Python.Analysis.Documents {
         int Version { get; }
 
         /// <summary>
-        /// Indicates if module is open in the editor.
+        /// Indicates that the document is open in the editor.
         /// </summary>
         bool IsOpen { get; set; }
+
+        /// <summary>
+        /// Document represents loaded library module.
+        /// </summary>
+        bool IsLibraryModule { get; }
 
         /// <summary>
         /// Returns document content as string.

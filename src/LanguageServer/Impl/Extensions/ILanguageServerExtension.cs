@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Core.Shell;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.LanguageServer.Extensions {
     public interface ILanguageServerExtension: IDisposable {

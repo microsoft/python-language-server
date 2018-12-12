@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -34,11 +33,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class ExpressionLookup {
         private readonly AnalysisFunctionWalkerSet _functionWalkers;
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
+        private readonly ILogger _log;
 
-        private ILogger Log => Module.Interpreter.Log;
         internal IPythonType UnknownType { get; }
 
         public ExpressionLookup(
+            IServiceContainer services,
             IPythonModule module,
             PythonAst ast,
             Scope moduleScope,
@@ -48,6 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Module = module ?? throw new ArgumentNullException(nameof(module));
             CurrentScope = moduleScope ?? throw new ArgumentNullException(nameof(moduleScope));
 
+            _log = services.GetService<ILogger>();
             _functionWalkers = functionWalkers ?? throw new ArgumentNullException(nameof(functionWalkers));
 
             DefaultLookupOptions = LookupOptions.Normal;
@@ -144,7 +145,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     break;
             }
             if (m == null) {
-                Log?.Log(TraceEventType.Verbose, $"Unknown expression: {expr.ToCodeString(Ast).Trim()}");
+                _log?.Log(TraceEventType.Verbose, $"Unknown expression: {expr.ToCodeString(Ast).Trim()}");
             }
             return m;
         }
@@ -162,7 +163,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (expr.Name == Module.Name) {
                 return Module;
             }
-            Log?.Log(TraceEventType.Verbose, $"Unknown name: {expr.Name}");
+            _log?.Log(TraceEventType.Verbose, $"Unknown name: {expr.Name}");
             return new AstPythonConstant(UnknownType, GetLoc(expr));
         }
 
@@ -193,7 +194,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (value is IPythonProperty p) {
                 value = GetPropertyReturnType(p, expr);
             } else if (value == null) {
-                Log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
+                _log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
                 return new AstPythonConstant(UnknownType, GetLoc(expr));
             }
             return value;
@@ -273,9 +274,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return type;
                 }
 
-                Log?.Log(TraceEventType.Verbose, $"Unknown index: {type.TypeId}, {expr.ToCodeString(Ast, CodeFormattingOptions.Traditional).Trim()}");
+                _log?.Log(TraceEventType.Verbose, $"Unknown index: {type.TypeId}, {expr.ToCodeString(Ast, CodeFormattingOptions.Traditional).Trim()}");
             } else {
-                Log?.Log(TraceEventType.Verbose, $"Unknown index: ${expr.ToCodeString(Ast, CodeFormattingOptions.Traditional).Trim()}");
+                _log?.Log(TraceEventType.Verbose, $"Unknown index: ${expr.ToCodeString(Ast, CodeFormattingOptions.Traditional).Trim()}");
             }
             return null;
         }
@@ -313,7 +314,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (value == null) {
-                Log?.Log(TraceEventType.Verbose, "Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
+                _log?.Log(TraceEventType.Verbose, "Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
             }
             return value;
         }

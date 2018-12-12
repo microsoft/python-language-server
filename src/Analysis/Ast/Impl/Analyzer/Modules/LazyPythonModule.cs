@@ -18,13 +18,16 @@ using System.Diagnostics;
 using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class LazyPythonModule : PythonModuleType, ILocatedMember {
         private IPythonModule _module;
+        private IModuleResolution _moduleResolution;
 
-        public LazyPythonModule(string fullName, IPythonInterpreter interpreter)
-            : base(fullName, interpreter) {
+        public LazyPythonModule(string fullName, IServiceContainer services)
+            : base(fullName, services) {
+            _moduleResolution = services.GetService<IModuleResolution>();
         }
 
         public override string Documentation => MaybeModule?.Documentation ?? string.Empty;
@@ -41,7 +44,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             module = Interpreter.ModuleResolution.ImportModule(Name);
             if (module != null) {
                 Debug.Assert(!(module is LazyPythonModule), "ImportModule should not return nested module");
-                module.LoadAndAnalyze();
             }
 
             module = module ?? new SentinelModule(Name, false);

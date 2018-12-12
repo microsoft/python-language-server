@@ -16,8 +16,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
-using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Core.IO {
     public static class IOExtensions {
@@ -77,6 +77,52 @@ namespace Microsoft.Python.Core.IO {
             // If we get to this point and the directory still exists, there's
             // likely nothing we can do.
             return !fs.DirectoryExists(path);
+        }
+
+        public static FileStream OpenWithRetry(this IFileSystem fs, string file, FileMode mode, FileAccess access, FileShare share) {
+            // Retry for up to one second
+            var create = mode != FileMode.Open;
+            for (var retries = 100; retries > 0; --retries) {
+                try {
+                    return new FileStream(file, mode, access, share);
+                } catch (FileNotFoundException) when (!create) {
+                    return null;
+                } catch (DirectoryNotFoundException) when (!create) {
+                    return null;
+                } catch (UnauthorizedAccessException) {
+                    Thread.Sleep(10);
+                } catch (IOException) {
+                    if (create) {
+                        var dir = Path.GetDirectoryName(file);
+                        try {
+                            fs.CreateDirectory(dir);
+                        } catch (IOException) {
+                            // Cannot create directory for DB, so just bail out
+                            return null;
+                        }
+                    }
+                    Thread.Sleep(10);
+                } catch (NotSupportedException) {
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        public static void WriteTextWithRetry(this IFileSystem fs, string filePath, string text) {
+            try {
+                using (var stream = fs.OpenWithRetry(filePath, FileMode.Create, FileAccess.Write, FileShare.Read)) {
+                    if (stream != null) {
+                        var bytes = Encoding.UTF8.GetBytes(text);
+                        stream.Write(bytes, 0, bytes.Length);
+                        return;
+                    }
+                }
+            } catch (IOException) { } catch (UnauthorizedAccessException) { }
+
+            try {
+                fs.DeleteFile(filePath);
+            } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
     }
 }

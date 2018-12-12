@@ -26,15 +26,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class ModuleCache : IModuleCache {
         private readonly IPythonInterpreter _interpreter;
         private readonly IFileSystem _fs;
+        private readonly ILogger _log;
         private readonly bool _skipCache;
         private bool _loggedBadDbPath;
 
-        private ILogger Log => _interpreter.Log;
         private string ModuleCachePath => _interpreter.Configuration.ModuleCachePath;
 
-        public ModuleCache(IPythonInterpreter interpreter) {
-            _interpreter = interpreter;
-            _fs = interpreter.Services.GetService<IFileSystem>();
+        public ModuleCache(IServiceContainer services) {
+            _fs = services.GetService<IFileSystem>();
+            _log = services.GetService<ILogger>();
+            _interpreter = services.GetService<IPythonInterpreter>();
             _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.ModuleCachePath);
         }
 
@@ -62,14 +63,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             if (string.IsNullOrEmpty(filePath) || !PathEqualityComparer.IsValidPath(ModuleCachePath)) {
                 if (!_loggedBadDbPath) {
                     _loggedBadDbPath = true;
-                    _interpreter.Log?.Log(TraceEventType.Warning, $"Invalid module cache path: {ModuleCachePath}");
+                    _log?.Log(TraceEventType.Warning, $"Invalid module cache path: {ModuleCachePath}");
                 }
                 return null;
             }
 
             var name = PathUtils.GetFileName(filePath);
             if (!PathEqualityComparer.IsValidPath(name)) {
-                Log?.Log(TraceEventType.Warning, $"Invalid cache name: {name}");
+                _log?.Log(TraceEventType.Warning, $"Invalid cache name: {name}");
                 return null;
             }
             try {
@@ -125,22 +126,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
 
-            Log?.Log(TraceEventType.Verbose, "Invalidate cached module", path);
+            _log?.Log(TraceEventType.Verbose, "Invalidate cached module", path);
             _fs.DeleteFileWithRetries(path);
             return string.Empty;
         }
 
         public void WriteCachedModule(string filePath, string code) {
             var cache = GetCacheFilePath(filePath);
-            if (string.IsNullOrEmpty(cache)) {
-                return;
-            }
-
-            Log?.Log(TraceEventType.Verbose, "Write cached module: ", cache);
-            try {
-                _fs.WriteAllText(cache, code);
-            } catch (Exception ex) when (!ex.IsCriticalException()) {
-                PathUtils.DeleteFile(cache);
+            if (!string.IsNullOrEmpty(cache)) {
+                _log?.Log(TraceEventType.Verbose, "Write cached module: ", cache);
+                _fs.WriteTextWithRetry(cache, code);
             }
         }
     }

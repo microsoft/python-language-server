@@ -28,6 +28,8 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AnalysisWalker : PythonWalker {
+        private readonly IServiceContainer _services;
+        private readonly ILogger _log;
         private readonly IPythonModule _module;
         private readonly PythonAst _ast;
         private readonly ExpressionLookup _lookup;
@@ -36,13 +38,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private IDisposable _classScope;
 
         private IPythonInterpreter Interpreter => _module.Interpreter;
-        private ILogger Log => Interpreter.Log;
 
-        public AnalysisWalker(IPythonModule module, PythonAst ast, bool suppressBuiltinLookup) {
-            _module = module;
-            _ast = ast;
+        public AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast, bool suppressBuiltinLookup) {
+            _services = services ?? throw new ArgumentNullException(nameof(services));
+            _module = module ?? throw new ArgumentNullException(nameof(module));
+            _ast = ast ?? throw new ArgumentNullException(nameof(ast));
+
+            _log = services.GetService<ILogger>();
             _globalScope = new GlobalScope(module);
-            _lookup = new ExpressionLookup(module, ast, _globalScope, _functionWalkers);
+            _lookup = new ExpressionLookup(_services, module, ast, _globalScope, _functionWalkers);
             // TODO: handle typing module
         }
 
@@ -59,7 +63,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _functionWalkers.ProcessSet();
             foreach (var childModuleName in _module.GetChildrenModuleNames()) {
                 var name = $"{_module.Name}.{childModuleName}";
-                _globalScope.DeclareVariable(name, new LazyPythonModule(name, Interpreter));
+                _globalScope.DeclareVariable(name, new LazyPythonModule(name, _services));
             }
             return GlobalScope;
         }
@@ -84,7 +88,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var value = _lookup.GetValueFromExpression(node.Right);
 
             if (value == null || value.MemberType == PythonMemberType.Unknown) {
-                Log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(_ast).Trim()}");
+                _log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(_ast).Trim()}");
             }
 
             if ((value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Ellipsis) {
@@ -145,10 +149,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         _lookup.DeclareVariable(memberName, _module);
                         break;
                     case ModuleImport moduleImport:
-                        _lookup.DeclareVariable(memberName, new LazyPythonModule(moduleImport.FullName, Interpreter));
+                        _lookup.DeclareVariable(memberName, new LazyPythonModule(moduleImport.FullName, _services));
                         break;
                     case PossibleModuleImport possibleModuleImport:
-                        _lookup.DeclareVariable(memberName, new LazyPythonModule(possibleModuleImport.PossibleModuleFullName, Interpreter));
+                        _lookup.DeclareVariable(memberName, new LazyPythonModule(possibleModuleImport.PossibleModuleFullName, _services));
                         break;
                     default:
                         _lookup.DeclareVariable(memberName, new AstPythonConstant(_lookup.UnknownType, GetLoc(memberReference)));
@@ -233,7 +237,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void ImportMembersFromModule(FromImportStatement node, string fullModuleName) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var nestedModule = new LazyPythonModule(fullModuleName, Interpreter);
+            var nestedModule = new LazyPythonModule(fullModuleName, _services);
 
             if (names.Count == 1 && names[0].Name == "*") {
                 HandleModuleImportStar(nestedModule);
@@ -258,9 +262,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             foreach (var memberName in module.GetMemberNames()) {
                 var member = module.GetMember(memberName);
                 if (member == null) {
-                    Log?.Log(TraceEventType.Verbose, $"Undefined import: {module.Name}, {memberName}");
+                    _log?.Log(TraceEventType.Verbose, $"Undefined import: {module.Name}, {memberName}");
                 } else if (member.MemberType == PythonMemberType.Unknown) {
-                    Log?.Log(TraceEventType.Verbose, $"Unknown import: {module.Name}, {memberName}");
+                    _log?.Log(TraceEventType.Verbose, $"Unknown import: {module.Name}, {memberName}");
                 }
 
                 member = member ?? new AstPythonConstant(_lookup.UnknownType, ((module as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
@@ -288,7 +292,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ModuleImport moduleImport;
                 IPythonType member;
                 if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
-                    member = new LazyPythonModule(moduleImport.FullName, Interpreter);
+                    member = new LazyPythonModule(moduleImport.FullName, _services);
                 } else {
                     member = new AstPythonConstant(_lookup.UnknownType, location);
                 }

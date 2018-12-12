@@ -32,14 +32,15 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Documents {
     public sealed class Document : PythonModule, IDocument, IAnalyzable {
-        private readonly object _analysisLock = new object();
-        private readonly IFileSystem _fs;
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
-        private readonly object _lock = new object();
+        private readonly object _analysisLock = new object();
+        private readonly object _parseLock = new object();
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private readonly DocumentCreationOptions _options;
 
         private TaskCompletionSource<IDocumentAnalysis> _tcs = new TaskCompletionSource<IDocumentAnalysis>();
         private IReadOnlyList<DiagnosticsEntry> _diagnostics = Array.Empty<DiagnosticsEntry>();
-        private CancellationTokenSource _cts;
+        private CancellationTokenSource _parseCts;
         private Task<PythonAst> _parsingTask;
         private IDocumentAnalysis _analysis;
         private PythonAst _ast;
@@ -47,49 +48,66 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <summary>
         /// Creates document from a disk file. Module name is determined automatically from the file name.
         /// </summary>
-        public static IDocument FromFile(IPythonInterpreter interpreter, string filePath)
-            => FromFile(interpreter, filePath, null);
+        public static IDocument FromFile(IServiceContainer services, string filePath, DocumentCreationOptions options)
+            => FromFile(services, filePath, null, options);
 
         /// <summary>
         /// Creates document from a disk file.
         /// </summary>
-        public static IDocument FromFile(IPythonInterpreter interpreter, string filePath, string moduleName) {
-            var fs = interpreter.Services.GetService<IFileSystem>();
-            return FromContent(interpreter, fs.ReadAllText(filePath), null, filePath, moduleName);
+        public static IDocument FromFile(IServiceContainer services, string filePath, string moduleName, DocumentCreationOptions options) {
+            var fs = services.GetService<IFileSystem>();
+            return FromContent(services, fs.ReadAllText(filePath), null, filePath, moduleName, options);
         }
 
         /// <summary>
         /// Creates document from the supplied content.
         /// </summary>
-        public static IDocument FromContent(IPythonInterpreter interpreter, string content, string moduleName)
-            => FromContent(interpreter, content, null, null, moduleName);
+        public static IDocument FromContent(IServiceContainer services, string content, string moduleName, DocumentCreationOptions options)
+            => FromContent(services, content, null, null, moduleName, options);
 
         /// <summary>
         /// Creates document from the supplied content.
         /// </summary>
-        public static IDocument FromContent(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName) {
+        public static IDocument FromContent(IServiceContainer services, string content, Uri uri, string filePath, string moduleName, DocumentCreationOptions options) {
             filePath = filePath ?? uri?.LocalPath;
             uri = uri ?? MakeDocumentUri(filePath);
             moduleName = moduleName ?? ModulePath.FromFullPath(filePath, isPackage: IsPackageCheck).FullName;
-            return new Document(interpreter, content, uri, filePath, moduleName);
+            return new Document(services, content, uri, filePath, moduleName, options);
         }
 
-        private Document(IPythonInterpreter interpreter, string content, Uri uri, string filePath, string moduleName) :
-            base(moduleName, filePath, uri, interpreter) {
+        private Document(IServiceContainer services, string content, Uri uri, string filePath, string moduleName, DocumentCreationOptions options) :
+            base(moduleName, filePath, uri, services) {
 
-            _fs = Interpreter.Services.GetService<IFileSystem>();
-
+            _options = options;
             _buffer.Reset(0, content);
-            ParseAsync().DoNotWait();
+
+            if ((options & DocumentCreationOptions.Ast) == DocumentCreationOptions.Ast) {
+                ParseAsync().DoNotWait();
+            }
         }
 
         public event EventHandler<EventArgs> NewAst;
         public event EventHandler<EventArgs> NewAnalysis;
 
+        /// <summary>
+        /// Module content version (increments after every change).
+        /// </summary>
         public int Version => _buffer.Version;
+
+        /// <summary>
+        /// Indicates that the document is open in the editor.
+        /// </summary>
         public bool IsOpen { get; set; }
+        
+        /// <summary>
+        /// Document represents loaded library module.
+        /// </summary>
+        public bool IsLibraryModule => (_options & DocumentCreationOptions.LibraryModule) == DocumentCreationOptions.LibraryModule;
 
         #region Parsing
+        /// <summary>
+        /// Returns document parse tree.
+        /// </summary>
         public async Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default) {
             Task t = null;
             while (t != _parsingTask && !cancellationToken.IsCancellationRequested) {
@@ -103,20 +121,28 @@ namespace Microsoft.Python.Analysis.Documents {
             }
             return _ast;
         }
+        /// <summary>
+        /// Returns document content as string.
+        /// </summary>
         public string GetContent() => _buffer.Text;
+
+        /// <summary>
+        /// Provides collection of parsing errors, if any.
+        /// </summary>
         public IEnumerable<DiagnosticsEntry> GetDiagnostics() => _diagnostics.ToArray();
 
         public void Update(IEnumerable<DocumentChangeSet> changes) {
-            lock (_lock) {
+            lock (_parseLock) {
                 _buffer.Update(changes);
+                ParseAsync().DoNotWait();
             }
-            ParseAsync().DoNotWait();
         }
 
         private Task ParseAsync() {
-            _cts?.Cancel();
-            _cts = new CancellationTokenSource();
-            _parsingTask = Task.Run(() => Parse(_cts.Token));
+            _parseCts?.Cancel();
+            _parseCts = new CancellationTokenSource();
+            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token, _parseCts.Token);
+            _parsingTask = Task.Run(() => Parse(linkedCts.Token));
             return _parsingTask;
         }
 
@@ -125,23 +151,30 @@ namespace Microsoft.Python.Analysis.Documents {
             int version;
             Parser parser;
 
-            lock (_lock) {
+            lock (_parseLock) {
                 version = _buffer.Version;
                 parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, new ParserOptions {
-                    StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", _fs.StringComparison),
+                    StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison),
                     ErrorSink = sink
                 });
             }
 
             var ast = parser.ParseFile();
+            var astUpdated = false;
 
-            lock (_lock) {
+            lock (_parseLock) {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (version == _buffer.Version) {
                     _ast = ast;
                     _diagnostics = sink.Diagnostics;
+                    astUpdated = true;
                     NewAst?.Invoke(this, EventArgs.Empty);
                 }
+            }
+
+            if (astUpdated && (_options & DocumentCreationOptions.Analyze) == DocumentCreationOptions.Analyze) {
+                var analyzer = Services.GetService<IPythonAnalyzer>();
+                analyzer.AnalyzeDocumentDependencyChainAsync(this, cancellationToken).DoNotWait();
             }
             return ast;
         }
@@ -187,6 +220,10 @@ namespace Microsoft.Python.Analysis.Documents {
                 return _tcs?.Task;
             }
         }
+        #endregion
+
+        #region IDisposable
+        protected override void Dispose(bool disposing) => _cts.Cancel();
         #endregion
 
         private static Uri MakeDocumentUri(string filePath) {

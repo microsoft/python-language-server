@@ -16,21 +16,20 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.Analysis.Documents {
     /// <inheritdoc />
-    internal sealed class DocumentTable : IDocumentTable {
+    internal sealed class DocumentTable : IDocumentTable, IDisposable {
         private readonly Dictionary<Uri, IDocument> _documentsByUri = new Dictionary<Uri, IDocument>();
         private readonly Dictionary<string, IDocument> _documentsByName = new Dictionary<string, IDocument>();
         private readonly IServiceContainer _services;
         private readonly IFileSystem _fs;
         private readonly string _workspaceRoot;
 
-        public DocumentTable(IServiceManager services, string workspaceRoot) {
-            services.AddService(this);
+        public DocumentTable(string workspaceRoot, IServiceContainer services) {
             _workspaceRoot = workspaceRoot;
             _services = services;
             _fs = services.GetService<IFileSystem>();
@@ -39,7 +38,7 @@ namespace Microsoft.Python.Analysis.Documents {
         public event EventHandler<DocumentEventArgs> Opened;
         public event EventHandler<DocumentEventArgs> Closed;
 
-        public IDocument AddDocument(IPythonInterpreter interpreter, string moduleName, string filePath, Uri uri = null) {
+        public IDocument AddDocument(string moduleName, string filePath, Uri uri = null, DocumentCreationOptions options = DocumentCreationOptions.Default) {
             if (uri != null && _documentsByUri.TryGetValue(uri, out var document)) {
                 return document;
             }
@@ -47,16 +46,16 @@ namespace Microsoft.Python.Analysis.Documents {
                 return document;
             }
             if (uri == null && !Uri.TryCreate(filePath, UriKind.Absolute, out uri)) {
-                throw new ArgumentException("Unable to determine file path from URI");
+                throw new ArgumentException("Unable to determine URI from the file path.");
             }
-            return CreateDocument(interpreter, moduleName, filePath, uri, null);
+            return CreateDocument(moduleName, filePath, uri, null, options);
         }
 
-        public IDocument AddDocument(IPythonInterpreter interpreter, Uri uri, string content) {
+        public IDocument AddDocument(Uri uri, string content, DocumentCreationOptions options = DocumentCreationOptions.Default) {
             if (uri != null && _documentsByUri.TryGetValue(uri, out var document)) {
                 return document;
             }
-            return CreateDocument(interpreter, null, null, uri, content);
+            return CreateDocument(null, null, uri, content, options);
         }
 
         public IDocument GetDocument(Uri documentUri)
@@ -78,12 +77,18 @@ namespace Microsoft.Python.Analysis.Documents {
 
         IEnumerator IEnumerable.GetEnumerator() => _documentsByUri.Values.GetEnumerator();
 
-        private IDocument CreateDocument(IPythonInterpreter interpreter, string moduleName, string filePath, Uri uri, string content) {
-            var document = Document.FromContent(interpreter, content, uri, filePath, moduleName);
+        public void Dispose() {
+            foreach(var d in _documentsByUri.Values.OfType<IDisposable>()) {
+                d.Dispose();
+            }
+        }
+
+        private IDocument CreateDocument(string moduleName, string filePath, Uri uri, string content, DocumentCreationOptions options) {
+            var document = Document.FromContent(_services, content, uri, filePath, moduleName, options);
 
             _documentsByUri[document.Uri] = document;
             _documentsByName[moduleName] = document;
-            document.IsOpen = true;
+            document.IsOpen = (options & DocumentCreationOptions.Open) == DocumentCreationOptions.Open;
 
             Opened?.Invoke(this, new DocumentEventArgs(document));
             return document;

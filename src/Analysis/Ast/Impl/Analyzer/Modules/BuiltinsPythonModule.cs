@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// by running special 'scraper' Python script that generates Python code via
     /// introspection of the compiled built-in language types.
     /// </summary>
-    internal sealed class BuiltinsPythonModule : AstScrapedPythonModule, IBuiltinPythonModule {
+    internal sealed class BuiltinsPythonModule : ScrapedPythonModule, IBuiltinPythonModule {
         private readonly HashSet<string> _hiddenNames = new HashSet<string>();
 
         public BuiltinsPythonModule(IPythonInterpreter interpreter, IModuleCache moduleCache)
@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new List<string> { "-B", "-E", sb };
 
         internal override AnalysisWalker PrepareWalker(PythonAst ast) {
-            var walker = new AnalysisWalker(this, ast, suppressBuiltinLookup: true) {
+            var walker = new AnalysisWalker(Services, this, ast, suppressBuiltinLookup: true) {
                 CreateBuiltinTypes = true
             };
             return walker;

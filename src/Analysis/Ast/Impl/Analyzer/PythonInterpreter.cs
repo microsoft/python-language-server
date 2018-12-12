@@ -20,7 +20,6 @@ using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Parsing;
 
@@ -30,31 +29,36 @@ namespace Microsoft.Python.Analysis.Analyzer {
             { BuiltinTypeId.NoneType, new PythonType("NoneType", BuiltinTypeId.NoneType) },
             { BuiltinTypeId.Unknown, new PythonType("Unknown", BuiltinTypeId.Unknown) }
         };
-        
+
+        private readonly IServiceContainer _services;
         private readonly object _userSearchPathsLock = new object();
 
         public PythonInterpreter(InterpreterConfiguration configuration, IServiceContainer services) {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            Services = services ?? throw new ArgumentNullException(nameof(services));
+            _services = services ?? throw new ArgumentNullException(nameof(services));
             LanguageVersion = Configuration.Version.ToLanguageVersion();
-            Log = services.GetService<ILogger>();
-
-            var resolution = new ModuleResolution(this);
-            ModuleResolution = resolution;
-            resolution.BuildModuleList();
+            ModuleResolution = new ModuleResolution(services);
         }
 
-        public void Dispose() { }
-        
         /// <summary>
         /// Interpreter configuration.
         /// </summary>
         public InterpreterConfiguration Configuration { get; }
 
-        public IServiceContainer Services { get; }
-        public ILogger Log { get; }
+        /// <summary>
+        /// Python language version.
+        /// </summary>
         public PythonLanguageVersion LanguageVersion { get; }
+        
+        /// <summary>
+        /// Module resolution service.
+        /// </summary>
         public IModuleResolution ModuleResolution { get; private set; }
+
+        /// <summary>
+        /// Python static code analyzer associated with this interpreter.
+        /// </summary>
+        public IPythonAnalyzer Analyzer { get; }
 
         /// <summary>
         /// Gets a well known built-in type such as int, list, dict, etc...
@@ -91,6 +95,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return res;
         }
 
-        public void NotifyImportableModulesChanged() => ModuleResolution = new ModuleResolution(this);
+        public void NotifyImportableModulesChanged() => ModuleResolution = new ModuleResolution(_services);
     }
 }
