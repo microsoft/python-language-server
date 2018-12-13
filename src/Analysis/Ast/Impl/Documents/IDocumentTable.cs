@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Analyzer.Types;
 
 namespace Microsoft.Python.Analysis.Documents {
     /// <summary>
@@ -25,17 +26,19 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <summary>
         /// Adds file to the list of available documents.
         /// </summary>
-        /// <param name="moduleName">The name of the module; used to associate with imports</param>
-        /// <param name="filePath">The path to the file on disk</param>
-        /// <param name="documentUri">Document URI. Can be null if module is not a user document.</param>
-        IDocument AddDocument(string moduleName, string filePath, Uri uri = null, DocumentCreationOptions options = DocumentCreationOptions.Default);
+        /// <param name="uri">Document URI.</param>
+        /// <param name="content">Document content</param>
+        IDocument AddDocument(Uri uri, string content);
 
         /// <summary>
-        /// Adds file to the list of available documents.
+        /// Adds library module to the list of available documents.
         /// </summary>
-        /// <param name="documentUri">Document URI. Can be null if module is not a user document.</param>
-        /// <param name="content">Document content</param>
-        IDocument AddDocument(Uri uri, string content, DocumentCreationOptions options = DocumentCreationOptions.Default);
+        /// <param name="moduleName">The name of the module; used to associate with imports</param>
+        /// <param name="moduleType">Module type (library or stub).</param>
+        /// <param name="filePath">The path to the file on disk</param>
+        /// <param name="uri">Document URI. Can be null if module is not a user document.</param>
+        /// <param name="options">Document creation options.</param>
+        IDocument AddModule(string moduleName, ModuleType moduleType, string filePath, Uri uri, DocumentCreationOptions options);
 
         /// <summary>
         /// Removes document from the table.

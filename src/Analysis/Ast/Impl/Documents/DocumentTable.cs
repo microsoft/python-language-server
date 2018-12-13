@@ -17,11 +17,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Documents;
+using Microsoft.Python.Analysis.Analyzer.Modules;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Documents {
-    /// <inheritdoc />
     internal sealed class DocumentTable : IDocumentTable, IDisposable {
         private readonly Dictionary<Uri, IDocument> _documentsByUri = new Dictionary<Uri, IDocument>();
         private readonly Dictionary<string, IDocument> _documentsByName = new Dictionary<string, IDocument>();
@@ -38,24 +40,30 @@ namespace Microsoft.Python.Analysis.Documents {
         public event EventHandler<DocumentEventArgs> Opened;
         public event EventHandler<DocumentEventArgs> Closed;
 
-        public IDocument AddDocument(string moduleName, string filePath, Uri uri = null, DocumentCreationOptions options = DocumentCreationOptions.Default) {
-            if (uri != null && _documentsByUri.TryGetValue(uri, out var document)) {
-                return document;
-            }
-            if (moduleName != null && _documentsByName.TryGetValue(moduleName, out document)) {
-                return document;
-            }
-            if (uri == null && !Uri.TryCreate(filePath, UriKind.Absolute, out uri)) {
-                throw new ArgumentException("Unable to determine URI from the file path.");
-            }
-            return CreateDocument(moduleName, filePath, uri, null, options);
-        }
+        /// <summary>
+        /// Adds file to the list of available documents.
+        /// </summary>
+        /// <param name="uri">Document URI.</param>
+        /// <param name="content">Document content</param>
+        public IDocument AddDocument(Uri uri, string content)
+            => FindDocument(null, uri) ?? CreateDocument(null, null, uri, null, DocumentCreationOptions.Open);
 
-        public IDocument AddDocument(Uri uri, string content, DocumentCreationOptions options = DocumentCreationOptions.Default) {
-            if (uri != null && _documentsByUri.TryGetValue(uri, out var document)) {
-                return document;
+        /// <summary>
+        /// Adds library module to the list of available documents.
+        /// </summary>
+        /// <param name="moduleName">The name of the module; used to associate with imports</param>
+        /// <param name="moduleType">Module type (library or stub).</param>
+        /// <param name="filePath">The path to the file on disk</param>
+        /// <param name="uri">Document URI. Can be null if module is not a user document.</param>
+        /// <param name="options">Document creation options.</param>
+        public IDocument AddModule(string moduleName, ModuleType moduleType, string filePath, Uri uri, DocumentCreationOptions options) {
+            if (uri == null) {
+                filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
+                if (!Uri.TryCreate(filePath, UriKind.Absolute, out uri)) {
+                    throw new ArgumentException("Unable to determine URI from the file path.");
+                }
             }
-            return CreateDocument(null, null, uri, content, options);
+            return FindDocument(filePath, uri) ?? CreateDocument(moduleName, moduleType, filePath, uri, null, options);
         }
 
         public IDocument GetDocument(Uri documentUri)
@@ -78,13 +86,23 @@ namespace Microsoft.Python.Analysis.Documents {
         IEnumerator IEnumerable.GetEnumerator() => _documentsByUri.Values.GetEnumerator();
 
         public void Dispose() {
-            foreach(var d in _documentsByUri.Values.OfType<IDisposable>()) {
+            foreach (var d in _documentsByUri.Values.OfType<IDisposable>()) {
                 d.Dispose();
             }
         }
 
-        private IDocument CreateDocument(string moduleName, string filePath, Uri uri, string content, DocumentCreationOptions options) {
-            var document = Document.FromContent(_services, content, uri, filePath, moduleName, options);
+        private IDocument FindDocument(string moduleName, Uri uri) {
+            if (uri != null && _documentsByUri.TryGetValue(uri, out var document)) {
+                return document;
+            }
+            if (!string.IsNullOrEmpty(moduleName) && _documentsByName.TryGetValue(moduleName, out document)) {
+                return document;
+            }
+            return null;
+        }
+
+        private IDocument CreateDocument(string moduleName, ModuleType moduleType, string filePath, Uri uri, string content, DocumentCreationOptions options) {
+            var document = Document.Create(moduleName, moduleType, filePath, uri, content, options, _services);
 
             _documentsByUri[document.Uri] = document;
             _documentsByName[moduleName] = document;

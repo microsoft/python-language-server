@@ -21,7 +21,7 @@ using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class FallbackBuiltinModule : PythonModuleType, IBuiltinPythonModule {
+    internal sealed class FallbackBuiltinModule : PythonModule, IBuiltinPythonModule {
         public readonly PythonLanguageVersion LanguageVersion;
         private readonly Dictionary<BuiltinTypeId, IPythonType> _cachedInstances;
 

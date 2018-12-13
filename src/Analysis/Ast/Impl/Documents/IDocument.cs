@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
@@ -36,14 +37,14 @@ namespace Microsoft.Python.Analysis.Documents {
         bool IsOpen { get; set; }
 
         /// <summary>
-        /// Document represents loaded library module.
+        /// Module type (user, library, stub).
         /// </summary>
-        bool IsLibraryModule { get; }
+        ModuleType ModuleType { get; }
 
         /// <summary>
-        /// Returns document content as string.
+        /// Returns module content (code).
         /// </summary>
-        string GetContent();
+        string Content { get; }
 
         /// <summary>
         /// Returns document parse tree.

@@ -24,7 +24,7 @@ using Microsoft.Python.Core.OS;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal class ScrapedPythonModule : PythonModuleType, IPythonModule {
+    internal class ScrapedPythonModule : PythonModule, IPythonModule {
         private bool _scraped;
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
 

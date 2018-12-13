@@ -15,28 +15,32 @@
 
 using System;
 
-namespace Microsoft.Python.Analysis.Documents {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
     [Flags]
-    public enum DocumentCreationOptions {
+    public enum ModuleType {
         /// <summary>
-        /// Just load the document, do not parse or analyze.
+        /// Module is user file in the workspace.
         /// </summary>
-        Load,
+        User,
 
         /// <summary>
-        /// Load and parse. Do not analyze.
+        /// Module is library module in Python.
         /// </summary>
-        Ast = 1,
+        Library,
 
         /// <summary>
-        /// Load, parse and analyze.
+        /// Module is a stub module.
         /// </summary>
-        Analyze = Ast | 2,
+        Stub,
 
         /// <summary>
-        /// The document is opened in the editor.
-        /// This implies Ast and Analysis.
+        /// Module source was scraped from compiled module.
         /// </summary>
-        Open = 4 | Analyze
+        Scraped,
+
+        /// <summary>
+        /// Module is the Python 'builtins' module.
+        /// </summary>
+        Builtins
     }
 }

@@ -21,7 +21,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class LazyPythonModule : PythonModuleType, ILocatedMember {
+    internal sealed class LazyPythonModule : PythonModule, ILocatedMember {
         private IPythonModule _module;
         private IModuleResolution _moduleResolution;
 
@@ -55,6 +55,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public override IEnumerable<string> GetMemberNames() => GetModule().GetMemberNames();
         public override void LoadAndAnalyze() { }
-        internal override string GetCode() => (GetModule() as PythonModuleType)?.GetCode() ?? string.Empty;
+        internal override string GetCode() => (GetModule() as PythonModule)?.GetCode() ?? string.Empty;
     }
 }

@@ -15,45 +15,73 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
-    public class PythonModule : PythonModuleType, ILocatedMember {
-        private string _documentation = string.Empty;
+    public abstract class PythonModule : IPythonModule, ILocatedMember {
+        protected IDictionary<string, IPythonType> Members { get; set; } = new Dictionary<string, IPythonType>();
+        protected ILogger Log { get; }
+        protected IFileSystem FileSystem { get; }
+        protected IServiceContainer Services { get; }
 
-        internal PythonModule() : base(string.Empty) { }
+        protected PythonModule(string name) {
+            Check.ArgumentNotNull(nameof(name), name);
+            Name = name;
+        }
 
-        protected PythonModule(string moduleName, string filePath, Uri uri, IServiceContainer services) :
-            base(moduleName, filePath, uri, services) {
+        protected PythonModule(string name, IServiceContainer services)
+            : this(name) {
+            Check.ArgumentNotNull(nameof(services), services);
+            Services = services;
+            FileSystem = services.GetService<IFileSystem>();
+            Log = services.GetService<ILogger>();
+            Locations = Array.Empty<LocationInfo>();
+        }
+
+        protected PythonModule(string name, string filePath, Uri uri, IServiceContainer services)
+            : this(name, services) {
+            if (uri == null && !string.IsNullOrEmpty(filePath)) {
+                Uri.TryCreate(filePath, UriKind.Absolute, out uri);
+            }
+            Uri = uri;
+            FilePath = filePath ?? uri?.LocalPath;
             Locations = new[] { new LocationInfo(filePath, uri, 1, 1) };
         }
 
-        public override string Documentation {
-            get {
-                _documentation = _documentation ?? Ast?.Documentation;
-                if (_documentation == null) {
-                    var m = GetMember("__doc__");
-                    _documentation = (m as AstPythonStringLiteral)?.Value ?? string.Empty;
-                    if (string.IsNullOrEmpty(_documentation)) {
-                        m = GetMember($"_{Name}");
-                        _documentation = (m as LazyPythonModule)?.Documentation;
-                        if (string.IsNullOrEmpty(_documentation)) {
-                            _documentation = TryGetDocFromModuleInitFile();
-                        }
-                    }
-                }
+        #region IPythonType
+        public string Name { get; }
+        public virtual string Documentation { get; } = string.Empty;
 
-                return _documentation;
-            }
-        }
+        public virtual IPythonModule DeclaringModule => null;
+        public BuiltinTypeId TypeId => BuiltinTypeId.Module;
+        public bool IsBuiltin => true;
+        public bool IsTypeFactory => false;
+        public IPythonFunction GetConstructor() => null;
+        public PythonMemberType MemberType => PythonMemberType.Module;
+        #endregion
 
-        public IEnumerable<LocationInfo> Locations { get; } = Enumerable.Empty<LocationInfo>();
+        #region IMemberContainer
+        public virtual IPythonType GetMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
+        public virtual IEnumerable<string> GetMemberNames() => Members.Keys.ToArray();
+        #endregion
+
+        #region IPythonFile
+
+        public virtual string FilePath { get; }
+        public virtual Uri Uri { get; }
+        public virtual IPythonInterpreter Interpreter { get; }
+        #endregion
+
+        #region IPythonModule
+        [DebuggerStepThrough]
+        public virtual IEnumerable<string> GetChildrenModuleNames() => GetChildModuleNames(FilePath, Name, Interpreter);
 
         private IEnumerable<string> GetChildModuleNames(string filePath, string prefix, IPythonInterpreter interpreter) {
             if (interpreter == null || string.IsNullOrEmpty(filePath)) {
@@ -72,55 +100,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                 yield return n;
             }
         }
+        #endregion
 
-        public override IEnumerable<string> GetChildrenModuleNames()
-            => GetChildModuleNames(FilePath, Name, Interpreter);
-
-        internal override string GetCode() => FileSystem.ReadAllText(FilePath);
-
-        private string TryGetDocFromModuleInitFile() {
-            if (string.IsNullOrEmpty(FilePath) || !FileSystem.FileExists(FilePath)) {
-                return string.Empty;
-            }
-
-            try {
-                using (var sr = new StreamReader(FilePath)) {
-                    string quote = null;
-                    string line;
-                    while (true) {
-                        line = sr.ReadLine()?.Trim();
-                        if (line == null) {
-                            break;
-                        }
-                        if (line.Length == 0 || line.StartsWithOrdinal("#")) {
-                            continue;
-                        }
-                        if (line.StartsWithOrdinal("\"\"\"") || line.StartsWithOrdinal("r\"\"\"")) {
-                            quote = "\"\"\"";
-                        } else if (line.StartsWithOrdinal("'''") || line.StartsWithOrdinal("r'''")) {
-                            quote = "'''";
-                        }
-                        break;
-                    }
-
-                    if (quote != null) {
-                        // Check if it is a single-liner
-                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote) < line.LastIndexOf(quote)) {
-                            return line.Substring(quote.Length, line.Length - 2 * quote.Length).Trim();
-                        }
-                        var sb = new StringBuilder();
-                        while (true) {
-                            line = sr.ReadLine();
-                            if (line == null || line.EndsWithOrdinal(quote)) {
-                                break;
-                            }
-                            sb.AppendLine(line);
-                        }
-                        return sb.ToString();
-                    }
-                }
-            } catch (IOException) { } catch (UnauthorizedAccessException) { }
-            return string.Empty;
-        }
+        #region ILocatedMember
+        public IEnumerable<LocationInfo> Locations { get; }
+        #endregion
     }
 }

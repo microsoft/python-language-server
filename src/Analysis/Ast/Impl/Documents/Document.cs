@@ -18,26 +18,29 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Documents {
-    public sealed class Document : PythonModule, IDocument, IAnalyzable {
+namespace Microsoft.Python.Analysis.Analyzer.Documents {
+    public class Document : PythonModule, IDocument, IAnalyzable {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly object _analysisLock = new object();
         private readonly object _parseLock = new object();
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private readonly DocumentCreationOptions _options;
 
+        private string _documentation = string.Empty;
         private TaskCompletionSource<IDocumentAnalysis> _tcs = new TaskCompletionSource<IDocumentAnalysis>();
         private IReadOnlyList<DiagnosticsEntry> _diagnostics = Array.Empty<DiagnosticsEntry>();
         private CancellationTokenSource _parseCts;
@@ -45,47 +48,69 @@ namespace Microsoft.Python.Analysis.Documents {
         private IDocumentAnalysis _analysis;
         private PythonAst _ast;
 
-        /// <summary>
-        /// Creates document from a disk file. Module name is determined automatically from the file name.
-        /// </summary>
-        public static IDocument FromFile(IServiceContainer services, string filePath, DocumentCreationOptions options)
-            => FromFile(services, filePath, null, options);
+        protected Document() : base(string.Empty) { }
 
-        /// <summary>
-        /// Creates document from a disk file.
-        /// </summary>
-        public static IDocument FromFile(IServiceContainer services, string filePath, string moduleName, DocumentCreationOptions options) {
-            var fs = services.GetService<IFileSystem>();
-            return FromContent(services, fs.ReadAllText(filePath), null, filePath, moduleName, options);
-        }
-
-        /// <summary>
-        /// Creates document from the supplied content.
-        /// </summary>
-        public static IDocument FromContent(IServiceContainer services, string content, string moduleName, DocumentCreationOptions options)
-            => FromContent(services, content, null, null, moduleName, options);
-
-        /// <summary>
-        /// Creates document from the supplied content.
-        /// </summary>
-        public static IDocument FromContent(IServiceContainer services, string content, Uri uri, string filePath, string moduleName, DocumentCreationOptions options) {
-            filePath = filePath ?? uri?.LocalPath;
-            uri = uri ?? MakeDocumentUri(filePath);
-            moduleName = moduleName ?? ModulePath.FromFullPath(filePath, isPackage: IsPackageCheck).FullName;
-            return new Document(services, content, uri, filePath, moduleName, options);
-        }
-
-        private Document(IServiceContainer services, string content, Uri uri, string filePath, string moduleName, DocumentCreationOptions options) :
-            base(moduleName, filePath, uri, services) {
+        protected Document(string moduleName, string content, string filePath, Uri uri, ModuleType moduleType, DocumentCreationOptions options, IServiceContainer services)
+            : base(moduleName, filePath, uri, services) {
+            ModuleType = moduleType;
+            Content = content;
 
             _options = options;
             _buffer.Reset(0, content);
+
+            IsOpen = (_options & DocumentCreationOptions.Open) == DocumentCreationOptions.Open;
+            _options = _options | (IsOpen ? DocumentCreationOptions.Analyze : 0);
 
             if ((options & DocumentCreationOptions.Ast) == DocumentCreationOptions.Ast) {
                 ParseAsync().DoNotWait();
             }
         }
 
+        #region Construction
+        /// <summary>
+        /// Creates document from the supplied content.
+        /// </summary>
+        public static IDocument Create(string moduleName, ModuleType moduleType, string filePath, Uri uri, string content, DocumentCreationOptions options, IServiceContainer services) {
+            filePath = filePath ?? uri?.LocalPath;
+            uri = uri ?? MakeDocumentUri(filePath);
+            moduleName = moduleName ?? ModulePath.FromFullPath(filePath, isPackage: IsPackageCheck).FullName;
+            switch (moduleType) {
+                case ModuleType.User:
+                    return new Document(moduleName, content, filePath, uri, ModuleType.User, options, services);
+                case ModuleType.Library:
+                    return new Document(moduleName, content, filePath, uri, ModuleType.Library, options, services);
+                case ModuleType.Stub:
+                    return new StubPythonModule(moduleName, )
+                case ModuleType.Scraped:
+                    return new ScrapedPythonModule(moduleName, )
+                case ModuleType.Builtins:
+                    return new BuiltinsPythonModule(moduleName, );
+            }
+        }
+        #endregion
+
+        #region IPythonType
+        public override string Documentation {
+            get {
+                _documentation = _documentation ?? Ast?.Documentation;
+                if (_documentation == null) {
+                    var m = GetMember("__doc__");
+                    _documentation = (m as AstPythonStringLiteral)?.Value ?? string.Empty;
+                    if (string.IsNullOrEmpty(_documentation)) {
+                        m = GetMember($"_{Name}");
+                        _documentation = (m as LazyPythonModule)?.Documentation;
+                        if (string.IsNullOrEmpty(_documentation)) {
+                            _documentation = TryGetDocFromModuleInitFile();
+                        }
+                    }
+                }
+
+                return _documentation;
+            }
+        }
+        #endregion
+
+        #region IDocument
         public event EventHandler<EventArgs> NewAst;
         public event EventHandler<EventArgs> NewAnalysis;
 
@@ -98,11 +123,55 @@ namespace Microsoft.Python.Analysis.Documents {
         /// Indicates that the document is open in the editor.
         /// </summary>
         public bool IsOpen { get; set; }
-        
+
         /// <summary>
-        /// Document represents loaded library module.
+        /// Module type (user, library, stub).
         /// </summary>
-        public bool IsLibraryModule => (_options & DocumentCreationOptions.LibraryModule) == DocumentCreationOptions.LibraryModule;
+        public ModuleType ModuleType { get; }
+
+        /// <summary>
+        /// Returns module content (code).
+        /// </summary>
+        public virtual string Content { get; }
+        #endregion
+
+        #region IDisposable
+        public void Dispose() => Dispose(true);
+        protected virtual void Dispose(bool disposing) => _cts.Cancel();
+        #endregion
+
+        #region IAnalyzable
+        public int ExpectedAnalysisVersion { get; private set; }
+
+        public void NotifyAnalysisPending() {
+            lock (_analysisLock) {
+                ExpectedAnalysisVersion++;
+                if (_tcs == null || _tcs.Task.IsCanceled || _tcs.Task.IsCompleted || _tcs.Task.IsFaulted) {
+                    _tcs = new TaskCompletionSource<IDocumentAnalysis>();
+                }
+            }
+        }
+        public bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion) {
+            lock (_analysisLock) {
+                if (analysisVersion == ExpectedAnalysisVersion) {
+                    _analysis = analysis;
+                    _tcs.TrySetResult(analysis);
+                    NewAnalysis?.Invoke(this, EventArgs.Empty);
+                    return true;
+                }
+                Debug.Assert(ExpectedAnalysisVersion > analysisVersion);
+                return false;
+            }
+        }
+        #endregion
+
+        #region Analysis
+        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
+            lock (_analysisLock) {
+                return _tcs?.Task;
+            }
+        }
+        #endregion
 
         #region Parsing
         /// <summary>
@@ -154,7 +223,7 @@ namespace Microsoft.Python.Analysis.Documents {
             lock (_parseLock) {
                 version = _buffer.Version;
                 parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, new ParserOptions {
-                    StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison),
+                    StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", Python.Core.IO.FileSystem.StringComparison),
                     ErrorSink = sink
                 });
             }
@@ -188,43 +257,50 @@ namespace Microsoft.Python.Analysis.Documents {
         }
         #endregion
 
-        #region IAnalyzable
-        public int ExpectedAnalysisVersion { get; private set; }
+        private string TryGetDocFromModuleInitFile() {
+            if (string.IsNullOrEmpty(FilePath) || !FileSystem.FileExists(FilePath)) {
+                return string.Empty;
+            }
 
-        public void NotifyAnalysisPending() {
-            lock (_analysisLock) {
-                ExpectedAnalysisVersion++;
-                if (_tcs == null || _tcs.Task.IsCanceled || _tcs.Task.IsCompleted || _tcs.Task.IsFaulted) {
-                    _tcs = new TaskCompletionSource<IDocumentAnalysis>();
+            try {
+                using (var sr = new StreamReader(FilePath)) {
+                    string quote = null;
+                    string line;
+                    while (true) {
+                        line = sr.ReadLine()?.Trim();
+                        if (line == null) {
+                            break;
+                        }
+                        if (line.Length == 0 || line.StartsWithOrdinal("#")) {
+                            continue;
+                        }
+                        if (line.StartsWithOrdinal("\"\"\"") || line.StartsWithOrdinal("r\"\"\"")) {
+                            quote = "\"\"\"";
+                        } else if (line.StartsWithOrdinal("'''") || line.StartsWithOrdinal("r'''")) {
+                            quote = "'''";
+                        }
+                        break;
+                    }
+
+                    if (quote != null) {
+                        // Check if it is a single-liner
+                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote) < line.LastIndexOf(quote)) {
+                            return line.Substring(quote.Length, line.Length - 2 * quote.Length).Trim();
+                        }
+                        var sb = new StringBuilder();
+                        while (true) {
+                            line = sr.ReadLine();
+                            if (line == null || line.EndsWithOrdinal(quote)) {
+                                break;
+                            }
+                            sb.AppendLine(line);
+                        }
+                        return sb.ToString();
+                    }
                 }
-            }
+            } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            return string.Empty;
         }
-        public bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion) {
-            lock (_analysisLock) {
-                if (analysisVersion == ExpectedAnalysisVersion) {
-                    _analysis = analysis;
-                    _tcs.TrySetResult(analysis);
-                    NewAnalysis?.Invoke(this, EventArgs.Empty);
-                    return true;
-                }
-                Debug.Assert(ExpectedAnalysisVersion > analysisVersion);
-                return false;
-            }
-        }
-        #endregion
-
-        #region Analysis
-
-        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
-            lock (_analysisLock) {
-                return _tcs?.Task;
-            }
-        }
-        #endregion
-
-        #region IDisposable
-        protected override void Dispose(bool disposing) => _cts.Cancel();
-        #endregion
 
         private static Uri MakeDocumentUri(string filePath) {
             if (string.IsNullOrEmpty(filePath)) {
@@ -237,5 +313,6 @@ namespace Microsoft.Python.Analysis.Documents {
 
         private static bool IsPackageCheck(string path)
             => ModulePath.IsImportable(PathUtils.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
+
     }
 }

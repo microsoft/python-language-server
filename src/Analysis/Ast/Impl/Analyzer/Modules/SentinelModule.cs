@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class SentinelModule : PythonModuleType {
+    internal sealed class SentinelModule : PythonModule {
         private readonly SemaphoreSlim _semaphore;
         private volatile IPythonModule _realModule;
 
