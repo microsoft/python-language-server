@@ -15,12 +15,13 @@
 
 using System.IO;
 using System.Linq;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class AstTypingModule : StubPythonModule {
-        public AstTypingModule(IPythonInterpreter interpreter)
-            : base("typing", FindTypingStub(), interpreter) { }
+        public AstTypingModule(IServiceContainer services)
+            : base("typing", FindTypingStub(), services) { }
 
         private static string FindTypingStub() {
             if (InstallPath.TryGetFile("typing-stub.pyi", out var fullPath)) {
@@ -30,14 +31,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         }
 
         public static bool IsTypingType(IPythonType type) {
-            if (type is IPythonType pyType) {
-                return pyType.DeclaringModule is AstTypingModule;
-            }
-
             if (type is IPythonMultipleTypes mm) {
                 return mm.Types.Any(IsTypingType);
             }
-
+            if (type is IPythonType pyType) {
+                return pyType.DeclaringModule is AstTypingModule;
+            }
             return false;
         }
     }

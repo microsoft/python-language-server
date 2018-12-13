@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 _interpreter.Configuration.SitePackagesPath,
             });
             _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
-            _modules[BuiltinModuleName] = BuiltinModule = new BuiltinsPythonModule(_interpreter, ModuleCache);
+            _modules[BuiltinModuleName] = BuiltinModule = new BuiltinsPythonModule(_interpreter, services);
 
             BuildModuleList();
         }
@@ -378,12 +378,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             if (moduleImport.IsBuiltin) {
                 _log?.Log(TraceEventType.Verbose, "Import builtins: ", name, Configuration.InterpreterPath);
-                return new CompiledPythonModule(name, _interpreter);
+                return new CompiledPythonModule(name, _services);
             }
 
             if (moduleImport.IsCompiled) {
                 _log?.Log(TraceEventType.Verbose, "Import scraped: ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                return new ScrapedPythonModule(moduleImport.FullName, moduleImport.ModulePath, _interpreter);
+                return new ScrapedPythonModule(moduleImport.FullName, moduleImport.ModulePath, _services);
             }
 
             _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);

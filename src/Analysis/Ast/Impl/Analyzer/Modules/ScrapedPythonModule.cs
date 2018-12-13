@@ -13,23 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.Python.Analysis.Analyzer.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal class ScrapedPythonModule : PythonModule, IPythonModule {
-        private bool _scraped;
+    internal class ScrapedPythonModule : PythonModule {
+        protected IPythonInterpreter Interpreter { get; }
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
-
-        public ScrapedPythonModule(string name, string filePath, IPythonInterpreter interpreter)
-            : base(name, filePath, null, interpreter) {
+        public ScrapedPythonModule(string name, string filePath, IServiceContainer services)
+            : base(name, filePath, null, services) {
+            Interpreter = services.GetService<IPythonInterpreter>();
         }
 
         public override string Documentation
@@ -37,10 +36,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public override IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
 
+        #region IMemberContainer
         public override IPythonType GetMember(string name) {
-            if (!_scraped) {
-                LoadAndAnalyze();
-            }
             Members.TryGetValue(name, out var m);
             if (m is ILazyType lm) {
                 m = lm.Get();
@@ -49,12 +46,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return m;
         }
 
-        public override IEnumerable<string> GetMemberNames() {
-            if (!_scraped) {
-                LoadAndAnalyze();
-            }
-            return Members.Keys.ToArray();
-        }
+        public override IEnumerable<string> GetMemberNames() => Members.Keys.ToArray();
+        #endregion
 
         protected virtual IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter) {
             var args = new List<string> { "-B", "-E" };
@@ -76,31 +69,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return args;
         }
 
-        internal override AnalysisWalker PrepareWalker(PythonAst ast) {
-#if DEBUG
-            // In debug builds we let you F12 to the scraped file
-            var filePath = string.IsNullOrEmpty(FilePath) ? null : ModuleCache.GetCacheFilePath(FilePath);
-            var uri = string.IsNullOrEmpty(filePath) ? null : new Uri(filePath);
-#else
-            const string filePath = null;
-            const Uri uri = null;
-            const bool includeLocations = false;
-#endif
-            return base.PrepareWalker(ast);
-        }
-
-        protected override void PostWalk(PythonWalker walker) => (walker as AnalysisWalker)?.Complete();
-        protected virtual string LoadCachedCode() => ModuleCache.ReadCachedModule(FilePath);
-        protected virtual void SaveCachedCode(string code) => ModuleCache.WriteCachedModule(FilePath, code);
-
-        internal override string GetCode() {
-            if (_scraped) {
-                return string.Empty;
-            }
-
-            var code = LoadCachedCode();
-            _scraped = true;
-
+        protected override string LoadFile() {
+            var code = ModuleCache.ReadCachedModule(FilePath);
             if (string.IsNullOrEmpty(code)) {
                 if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {
                     return string.Empty;
@@ -110,6 +80,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
             return code;
         }
+
+        protected virtual void SaveCachedCode(string code) => ModuleCache.WriteCachedModule(FilePath, code);
 
         private string ScrapeModule() {
             var args = GetScrapeArguments(Interpreter);

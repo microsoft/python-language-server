@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis {
     /// <summary>
     /// Represents a Python module.
     /// </summary>
-    public interface IPythonModule : IPythonType, IPythonFile {
+    public interface IPythonModule : IPythonType, IPythonFile, ILocatedMember {
         IEnumerable<string> GetChildrenModuleNames();
     }
 }

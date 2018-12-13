@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
@@ -27,13 +28,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         private readonly string _cachePath;
 
         public static IPythonModule FromTypeStub(
-            IPythonInterpreter interpreter,
+            string moduleFullName,
             string stubFile,
-            string moduleFullName
-        ) => new StubPythonModule(moduleFullName, stubFile, interpreter);
+            IServiceContainer services
+        ) => new StubPythonModule(moduleFullName, stubFile, services);
 
-        public StubPythonModule(string name, string cachePath, IPythonInterpreter interpreter)
-            : base(name, null, interpreter) {
+        public StubPythonModule(string name, string cachePath, IServiceContainer services)
+            : base(name, null, services) {
             _cachePath = cachePath;
         }
 

@@ -26,10 +26,5 @@ namespace Microsoft.Python.Analysis {
         /// Module URI.
         /// </summary>
         Uri Uri { get; }
-
-        /// <summary>
-        /// Python interpreter associated wth the file.
-        /// </summary>
-        IPythonInterpreter Interpreter { get; }
     }
 }

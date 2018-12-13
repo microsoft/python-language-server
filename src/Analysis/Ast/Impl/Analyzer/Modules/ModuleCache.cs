@@ -24,6 +24,7 @@ using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class ModuleCache : IModuleCache {
+        private readonly IServiceContainer _services;
         private readonly IPythonInterpreter _interpreter;
         private readonly IFileSystem _fs;
         private readonly ILogger _log;
@@ -33,6 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         private string ModuleCachePath => _interpreter.Configuration.ModuleCachePath;
 
         public ModuleCache(IServiceContainer services) {
+            _services = services;
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
             _interpreter = services.GetService<IPythonInterpreter>();
@@ -40,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         }
 
 
-        public IPythonModule ImportFromCache(string name, IPythonInterpreter interpreter) {
+        public IPythonModule ImportFromCache(string name) {
             if (string.IsNullOrEmpty(ModuleCachePath)) {
                 return null;
             }
@@ -56,7 +58,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 }
             }
 
-            return StubPythonModule.FromTypeStub(interpreter, cache, name);
+            return StubPythonModule.FromTypeStub(name, cache, _services);
         }
 
         public string GetCacheFilePath(string filePath) {

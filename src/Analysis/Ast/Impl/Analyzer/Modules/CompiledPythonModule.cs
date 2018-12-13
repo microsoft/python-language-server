@@ -23,11 +23,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// Represents compiled module that is built into the language.
     /// </summary>
     internal class CompiledPythonModule : ScrapedPythonModule {
-        public CompiledPythonModule(string name, IPythonInterpreter interpreter)
-            : base(name, MakeFakeFilePath(interpreter.Configuration.InterpreterPath, name), interpreter) {
+        public CompiledPythonModule(string name, IServiceContainer services)
+            : base(name, MakeFakeFilePath(name, services), services) {
         }
 
-        private static string MakeFakeFilePath(string interpreterPath, string name) {
+        private static string MakeFakeFilePath(string name, IServiceContainer services) {
+            var interpreterPath = services.GetService<IPythonInterpreter>().Configuration.InterpreterPath;
+
             if (string.IsNullOrEmpty(interpreterPath)) {
                 return "python.{0}.exe".FormatInvariant(name);
             }

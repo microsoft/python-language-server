@@ -31,10 +31,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class BuiltinsPythonModule : ScrapedPythonModule, IBuiltinPythonModule {
         private readonly HashSet<string> _hiddenNames = new HashSet<string>();
 
-        public BuiltinsPythonModule(IPythonInterpreter interpreter, IModuleCache moduleCache)
-            : base(BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion), 
-                moduleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath ?? "python.exe"),
-                interpreter) {
+        public BuiltinsPythonModule(IPythonInterpreter interpreter, IServiceContainer services)
+            : base(BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion),
+                interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath ?? "python.exe"),
+                services) {
         }
 
         public override IPythonType GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
 
-        protected override string LoadCachedCode() {
+        protected override string LoadFile() {
             var path = Interpreter.Configuration.InterpreterPath ?? "python.exe";
             return ModuleCache.ReadCachedModule(path);
         }

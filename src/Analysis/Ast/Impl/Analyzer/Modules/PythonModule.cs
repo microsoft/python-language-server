@@ -22,18 +22,19 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Modules;
-using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer.Documents {
-    public class Document : PythonModule, IDocument, IAnalyzable {
+namespace Microsoft.Python.Analysis.Analyzer.Types {
+    internal class PythonModule : IDocument, IAnalyzable {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly object _analysisLock = new object();
         private readonly object _parseLock = new object();
@@ -47,16 +48,35 @@ namespace Microsoft.Python.Analysis.Analyzer.Documents {
         private Task<PythonAst> _parsingTask;
         private IDocumentAnalysis _analysis;
         private PythonAst _ast;
+        private string _content;
 
-        protected Document() : base(string.Empty) { }
+        protected IDictionary<string, IPythonType> Members { get; set; } = new Dictionary<string, IPythonType>();
+        protected ILogger Log { get; }
+        protected IFileSystem FileSystem { get; }
+        protected IServiceContainer Services { get; }
 
-        protected Document(string moduleName, string content, string filePath, Uri uri, ModuleType moduleType, DocumentCreationOptions options, IServiceContainer services)
-            : base(moduleName, filePath, uri, services) {
+        protected PythonModule(string name) {
+            Check.ArgumentNotNull(nameof(name), name);
+            Name = name;
+        }
+
+        protected PythonModule(string moduleName, string content, string filePath, Uri uri, ModuleType moduleType, DocumentCreationOptions options, IServiceContainer services)
+            : this(moduleName) {
+            Check.ArgumentNotNull(nameof(services), services);
+            Services = services;
+            FileSystem = services.GetService<IFileSystem>();
+            Log = services.GetService<ILogger>();
+            Locations = new[] { new LocationInfo(filePath, uri, 1, 1) };
+
+            if (uri == null && !string.IsNullOrEmpty(filePath)) {
+                Uri.TryCreate(filePath, UriKind.Absolute, out uri);
+            }
+            Uri = uri;
+            FilePath = filePath ?? uri?.LocalPath;
+
             ModuleType = moduleType;
-            Content = content;
-
+            _content = content;
             _options = options;
-            _buffer.Reset(0, content);
 
             IsOpen = (_options & DocumentCreationOptions.Open) == DocumentCreationOptions.Open;
             _options = _options | (IsOpen ? DocumentCreationOptions.Analyze : 0);
@@ -76,21 +96,29 @@ namespace Microsoft.Python.Analysis.Analyzer.Documents {
             moduleName = moduleName ?? ModulePath.FromFullPath(filePath, isPackage: IsPackageCheck).FullName;
             switch (moduleType) {
                 case ModuleType.User:
-                    return new Document(moduleName, content, filePath, uri, ModuleType.User, options, services);
+                    return new PythonModule(moduleName, content, filePath, uri, ModuleType.User, options, services);
                 case ModuleType.Library:
-                    return new Document(moduleName, content, filePath, uri, ModuleType.Library, options, services);
+                    return new PythonModule(moduleName, content, filePath, uri, ModuleType.Library, options, services);
                 case ModuleType.Stub:
-                    return new StubPythonModule(moduleName, )
+                    return new StubPythonModule(moduleName, services);
                 case ModuleType.Scraped:
-                    return new ScrapedPythonModule(moduleName, )
+                    return new ScrapedPythonModule(moduleName, filePath, services);
                 case ModuleType.Builtins:
-                    return new BuiltinsPythonModule(moduleName, );
+                    return new BuiltinsPythonModule(services);
             }
         }
         #endregion
 
         #region IPythonType
-        public override string Documentation {
+        public string Name { get; }
+        public virtual IPythonModule DeclaringModule => null;
+        public BuiltinTypeId TypeId => BuiltinTypeId.Module;
+        public bool IsBuiltin => true;
+        public bool IsTypeFactory => false;
+        public IPythonFunction GetConstructor() => null;
+        public PythonMemberType MemberType => PythonMemberType.Module;
+
+        public virtual string Documentation {
             get {
                 _documentation = _documentation ?? Ast?.Documentation;
                 if (_documentation == null) {
@@ -104,10 +132,53 @@ namespace Microsoft.Python.Analysis.Analyzer.Documents {
                         }
                     }
                 }
-
                 return _documentation;
             }
         }
+
+        #endregion
+
+        #region IMemberContainer
+        public virtual IPythonType GetMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
+        public virtual IEnumerable<string> GetMemberNames() => Members.Keys.ToArray();
+        #endregion
+
+        #region IPythonFile
+        public virtual string FilePath { get; }
+        public virtual Uri Uri { get; }
+        #endregion
+
+        #region IPythonModule
+        [DebuggerStepThrough]
+        public virtual IEnumerable<string> GetChildrenModuleNames() => GetChildModuleNames(FilePath, Name, Interpreter);
+
+        private IEnumerable<string> GetChildModuleNames(string filePath, string prefix, IPythonInterpreter interpreter) {
+            if (interpreter == null || string.IsNullOrEmpty(filePath)) {
+                yield break;
+            }
+            var searchPath = Path.GetDirectoryName(filePath);
+            if (!FileSystem.DirectoryExists(searchPath)) {
+                yield break;
+            }
+
+            foreach (var n in ModulePath.GetModulesInPath(
+                searchPath,
+                recurse: false,
+                includePackages: true
+            ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n))) {
+                yield return n;
+            }
+        }
+        #endregion
+
+        #region ILocatedMember
+
+        public IEnumerable<LocationInfo> Locations { get; }
+        #endregion
+
+        #region IDisposable
+        public void Dispose() => Dispose(true);
+        protected virtual void Dispose(bool disposing) => _cts.Cancel();
         #endregion
 
         #region IDocument
@@ -132,45 +203,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Documents {
         /// <summary>
         /// Returns module content (code).
         /// </summary>
-        public virtual string Content { get; }
-        #endregion
-
-        #region IDisposable
-        public void Dispose() => Dispose(true);
-        protected virtual void Dispose(bool disposing) => _cts.Cancel();
-        #endregion
-
-        #region IAnalyzable
-        public int ExpectedAnalysisVersion { get; private set; }
-
-        public void NotifyAnalysisPending() {
-            lock (_analysisLock) {
-                ExpectedAnalysisVersion++;
-                if (_tcs == null || _tcs.Task.IsCanceled || _tcs.Task.IsCompleted || _tcs.Task.IsFaulted) {
-                    _tcs = new TaskCompletionSource<IDocumentAnalysis>();
+        public virtual string Content {
+            get {
+                if (_content == null) {
+                    _content = LoadFile();
+                    _buffer.Reset(0, _content);
                 }
+                return _content;
             }
         }
-        public bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion) {
-            lock (_analysisLock) {
-                if (analysisVersion == ExpectedAnalysisVersion) {
-                    _analysis = analysis;
-                    _tcs.TrySetResult(analysis);
-                    NewAnalysis?.Invoke(this, EventArgs.Empty);
-                    return true;
-                }
-                Debug.Assert(ExpectedAnalysisVersion > analysisVersion);
-                return false;
-            }
-        }
-        #endregion
 
-        #region Analysis
-        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
-            lock (_analysisLock) {
-                return _tcs?.Task;
-            }
-        }
+        protected virtual string LoadFile() => FileSystem.ReadAllText(FilePath);
         #endregion
 
         #region Parsing
@@ -257,6 +300,39 @@ namespace Microsoft.Python.Analysis.Analyzer.Documents {
         }
         #endregion
 
+        #region IAnalyzable
+        public int ExpectedAnalysisVersion { get; private set; }
+
+        public void NotifyAnalysisPending() {
+            lock (_analysisLock) {
+                ExpectedAnalysisVersion++;
+                if (_tcs == null || _tcs.Task.IsCanceled || _tcs.Task.IsCompleted || _tcs.Task.IsFaulted) {
+                    _tcs = new TaskCompletionSource<IDocumentAnalysis>();
+                }
+            }
+        }
+        public bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion) {
+            lock (_analysisLock) {
+                if (analysisVersion == ExpectedAnalysisVersion) {
+                    _analysis = analysis;
+                    _tcs.TrySetResult(analysis);
+                    NewAnalysis?.Invoke(this, EventArgs.Empty);
+                    return true;
+                }
+                Debug.Assert(ExpectedAnalysisVersion > analysisVersion);
+                return false;
+            }
+        }
+        #endregion
+
+        #region Analysis
+        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
+            lock (_analysisLock) {
+                return _tcs?.Task;
+            }
+        }
+        #endregion
+
         private string TryGetDocFromModuleInitFile() {
             if (string.IsNullOrEmpty(FilePath) || !FileSystem.FileExists(FilePath)) {
                 return string.Empty;
@@ -313,6 +389,5 @@ namespace Microsoft.Python.Analysis.Analyzer.Documents {
 
         private static bool IsPackageCheck(string path)
             => ModulePath.IsImportable(PathUtils.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
-
     }
 }
