@@ -18,37 +18,30 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// <summary>
     /// Represents module that contains stub code such as from typeshed.
     /// </summary>
-    internal class StubPythonModule : ScrapedPythonModule {
-        private readonly string _cachePath;
+    internal class StubPythonModule : CompiledPythonModule {
+        private readonly string _stubPath;
 
-        public static IPythonModule FromTypeStub(
-            string moduleFullName,
-            string stubFile,
-            IServiceContainer services
-        ) => new StubPythonModule(moduleFullName, stubFile, services);
-
-        public StubPythonModule(string name, string cachePath, IServiceContainer services)
-            : base(name, null, services) {
-            _cachePath = cachePath;
+        public StubPythonModule(string moduleName, string stubPath, IServiceContainer services)
+            : base(moduleName, ModuleType.Stub, stubPath, services) {
+            _stubPath = stubPath;
         }
 
-        protected override string LoadCachedCode() {
-            var filePath = _cachePath;
-            if(FileSystem.DirectoryExists(_cachePath)) {
-                filePath = Path.Combine(_cachePath, Name);
-                if(!FileSystem.FileExists(filePath)) {
-                    return string.Empty;
-                }
+        protected override string LoadFile() {
+            var filePath = _stubPath;
+
+            if (FileSystem.DirectoryExists(_stubPath)) {
+                filePath = Path.Combine(_stubPath, Name);
             }
 
             try {
-                return FileSystem.ReadAllText(filePath);
+                if (FileSystem.FileExists(filePath)) {
+                    return FileSystem.ReadAllText(filePath);
+                }
             } catch (IOException) { } catch(UnauthorizedAccessException) { }
 
             return string.Empty;

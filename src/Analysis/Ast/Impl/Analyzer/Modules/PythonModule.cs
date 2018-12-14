@@ -21,7 +21,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer.Modules;
+using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -33,7 +33,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer.Types {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal class PythonModule : IDocument, IAnalyzable {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly object _analysisLock = new object();
@@ -55,17 +55,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         protected IFileSystem FileSystem { get; }
         protected IServiceContainer Services { get; }
 
-        protected PythonModule(string name) {
+        protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) {
             Check.ArgumentNotNull(nameof(name), name);
             Name = name;
+            Services = services;
+            ModuleType = moduleType;
         }
 
-        protected PythonModule(string moduleName, string content, string filePath, Uri uri, ModuleType moduleType, DocumentCreationOptions options, IServiceContainer services)
-            : this(moduleName) {
+        internal PythonModule(string moduleName, string content, string filePath, Uri uri, ModuleType moduleType, DocumentCreationOptions options, IServiceContainer services)
+            : this(moduleName, moduleType, services) {
             Check.ArgumentNotNull(nameof(services), services);
-            Services = services;
+
             FileSystem = services.GetService<IFileSystem>();
             Log = services.GetService<ILogger>();
+            Interpreter = services.GetService<IPythonInterpreter>();
             Locations = new[] { new LocationInfo(filePath, uri, 1, 1) };
 
             if (uri == null && !string.IsNullOrEmpty(filePath)) {
@@ -74,7 +77,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             Uri = uri;
             FilePath = filePath ?? uri?.LocalPath;
 
-            ModuleType = moduleType;
             _content = content;
             _options = options;
 
@@ -85,29 +87,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                 ParseAsync().DoNotWait();
             }
         }
-
-        #region Construction
-        /// <summary>
-        /// Creates document from the supplied content.
-        /// </summary>
-        public static IDocument Create(string moduleName, ModuleType moduleType, string filePath, Uri uri, string content, DocumentCreationOptions options, IServiceContainer services) {
-            filePath = filePath ?? uri?.LocalPath;
-            uri = uri ?? MakeDocumentUri(filePath);
-            moduleName = moduleName ?? ModulePath.FromFullPath(filePath, isPackage: IsPackageCheck).FullName;
-            switch (moduleType) {
-                case ModuleType.User:
-                    return new PythonModule(moduleName, content, filePath, uri, ModuleType.User, options, services);
-                case ModuleType.Library:
-                    return new PythonModule(moduleName, content, filePath, uri, ModuleType.Library, options, services);
-                case ModuleType.Stub:
-                    return new StubPythonModule(moduleName, services);
-                case ModuleType.Scraped:
-                    return new ScrapedPythonModule(moduleName, filePath, services);
-                case ModuleType.Builtins:
-                    return new BuiltinsPythonModule(services);
-            }
-        }
-        #endregion
 
         #region IPythonType
         public string Name { get; }
@@ -120,7 +99,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
 
         public virtual string Documentation {
             get {
-                _documentation = _documentation ?? Ast?.Documentation;
+                _documentation = _documentation ?? _ast?.Documentation;
                 if (_documentation == null) {
                     var m = GetMember("__doc__");
                     _documentation = (m as AstPythonStringLiteral)?.Value ?? string.Empty;
@@ -149,6 +128,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #endregion
 
         #region IPythonModule
+        public IPythonInterpreter Interpreter { get; }
+
         [DebuggerStepThrough]
         public virtual IEnumerable<string> GetChildrenModuleNames() => GetChildModuleNames(FilePath, Name, Interpreter);
 
@@ -172,8 +153,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #endregion
 
         #region ILocatedMember
-
-        public IEnumerable<LocationInfo> Locations { get; }
+        public virtual IEnumerable<LocationInfo> Locations { get; }
         #endregion
 
         #region IDisposable
@@ -266,7 +246,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             lock (_parseLock) {
                 version = _buffer.Version;
                 parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, new ParserOptions {
-                    StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", Python.Core.IO.FileSystem.StringComparison),
+                    StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison),
                     ErrorSink = sink
                 });
             }
@@ -301,8 +281,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #endregion
 
         #region IAnalyzable
+        /// <summary>
+        /// Expected version of the analysis when asynchronous operations complete.
+        /// Typically every change to the document or documents that depend on it
+        /// increment the expected version. At the end of the analysis if the expected
+        /// version is still the same, the analysis is applied to the document and
+        /// becomes available to consumers.
+        /// </summary>
         public int ExpectedAnalysisVersion { get; private set; }
 
+        /// <summary>
+        /// Notifies document that analysis is now pending. Typically document increments 
+        /// the expected analysis version. The method can be called repeatedly without
+        /// calling `CompleteAnalysis` first. The method is invoked for every dependency
+        /// in the chain to ensure that objects know that their dependencies have been
+        /// modified and the current analysis is no longer up to date.
+        /// </summary>
         public void NotifyAnalysisPending() {
             lock (_analysisLock) {
                 ExpectedAnalysisVersion++;
@@ -311,7 +305,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                 }
             }
         }
-        public bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion) {
+
+        /// <summary>
+        /// Performs analysis of the document. Returns document global scope
+        /// with declared variables and inner scopes.
+        /// </summary>
+        public async Task<IGlobalScope> AnalyzeAsync(CancellationToken cancellationToken) {
+            var analysisVersion = ExpectedAnalysisVersion;
+
+            var ast = await GetAstAsync(cancellationToken);
+            var walker = new AnalysisWalker(Services, this, ast, suppressBuiltinLookup: ModuleType == ModuleType.Builtins);
+            ast.Walk(walker);
+            return walker.Complete();
+        }
+
+        public virtual bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion) {
             lock (_analysisLock) {
                 if (analysisVersion == ExpectedAnalysisVersion) {
                     _analysis = analysis;
@@ -323,6 +331,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
                 return false;
             }
         }
+
+        protected virtual void OnAnalysisComplete() { }
         #endregion
 
         #region Analysis

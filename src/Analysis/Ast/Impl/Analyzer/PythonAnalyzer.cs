@@ -37,15 +37,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Analyze single document.
         /// </summary>
-        public async Task<IDocumentAnalysis> AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken) {
+        public Task<IDocumentAnalysis> AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken) {
             if (!(document is IAnalyzable a)) {
                 return null;
             }
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
                 a.NotifyAnalysisPending();
                 var version = a.ExpectedAnalysisVersion;
-                var analysis = await AnalyzeAsync(document, cts.Token);
-                return a.NotifyAnalysisComplete(analysis, version) ? analysis : null;
+                return AnalyzeAsync(document, cts.Token);
             }
         }
 

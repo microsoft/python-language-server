@@ -15,8 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Parsing;
 
@@ -26,7 +24,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         private readonly Dictionary<BuiltinTypeId, IPythonType> _cachedInstances;
 
         public FallbackBuiltinModule(PythonLanguageVersion version)
-            : base(BuiltinTypeId.Unknown.GetModuleName(version)) {
+            : base(BuiltinTypeId.Unknown.GetModuleName(version), ModuleType.Builtins, null) {
             LanguageVersion = version;
             _cachedInstances = new Dictionary<BuiltinTypeId, IPythonType>();
         }

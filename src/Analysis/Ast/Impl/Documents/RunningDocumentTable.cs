@@ -16,22 +16,28 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using Microsoft.Python.Analysis.Analyzer.Documents;
 using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Documents {
-    internal sealed class DocumentTable : IDocumentTable, IDisposable {
+    /// <summary>
+    /// Represents set of files either opened in the editor or imported
+    /// in order to provide analysis in open file. Rough equivalent of
+    /// the running document table in Visual Studio, see
+    /// "https://docs.microsoft.com/en-us/visualstudio/extensibility/internals/running-document-table"/>
+    /// </summary>
+    internal sealed class RunningDocumentTable : IRunningDocumentTable, IDisposable {
         private readonly Dictionary<Uri, IDocument> _documentsByUri = new Dictionary<Uri, IDocument>();
         private readonly Dictionary<string, IDocument> _documentsByName = new Dictionary<string, IDocument>();
         private readonly IServiceContainer _services;
         private readonly IFileSystem _fs;
         private readonly string _workspaceRoot;
 
-        public DocumentTable(string workspaceRoot, IServiceContainer services) {
+        public RunningDocumentTable(string workspaceRoot, IServiceContainer services) {
             _workspaceRoot = workspaceRoot;
             _services = services;
             _fs = services.GetService<IFileSystem>();
@@ -45,8 +51,12 @@ namespace Microsoft.Python.Analysis.Documents {
         /// </summary>
         /// <param name="uri">Document URI.</param>
         /// <param name="content">Document content</param>
-        public IDocument AddDocument(Uri uri, string content)
-            => FindDocument(null, uri) ?? CreateDocument(null, null, uri, null, DocumentCreationOptions.Open);
+        public IDocument AddDocument(Uri uri, string content) {
+            var document = FindDocument(null, uri);
+            return document != null
+                ? OpenDocument(document, DocumentCreationOptions.Open)
+                : CreateDocument(null, ModuleType.User, null, uri, null, DocumentCreationOptions.Open);
+        }
 
         /// <summary>
         /// Adds library module to the list of available documents.
@@ -102,13 +112,36 @@ namespace Microsoft.Python.Analysis.Documents {
         }
 
         private IDocument CreateDocument(string moduleName, ModuleType moduleType, string filePath, Uri uri, string content, DocumentCreationOptions options) {
-            var document = Document.Create(moduleName, moduleType, filePath, uri, content, options, _services);
+            IDocument document;
+            switch(moduleType) {
+                case ModuleType.Stub:
+                    document = new StubPythonModule(moduleName, filePath, _services);
+                    break;
+                case ModuleType.Compiled:
+                    document = new CompiledPythonModule(moduleName, ModuleType.Compiled, filePath, _services);
+                    break;
+                case ModuleType.CompiledBuiltin:
+                    document = new CompiledBuiltinPythonModule(moduleName, _services);
+                    break;
+                case ModuleType.User:
+                case ModuleType.Library:
+                    document = CreateDocument(moduleName, moduleType, filePath, uri, content, options);
+                    break;
+                default:
+                    throw new InvalidOperationException($"CreateDocument does not suppore module type {moduleType}");
+            }
 
             _documentsByUri[document.Uri] = document;
             _documentsByName[moduleName] = document;
-            document.IsOpen = (options & DocumentCreationOptions.Open) == DocumentCreationOptions.Open;
 
-            Opened?.Invoke(this, new DocumentEventArgs(document));
+            return OpenDocument(document, options);
+        }
+
+        private IDocument OpenDocument(IDocument document, DocumentCreationOptions options) {
+            if ((options & DocumentCreationOptions.Open) == DocumentCreationOptions.Open) {
+                document.IsOpen = true;
+                Opened?.Invoke(this, new DocumentEventArgs(document));
+            }
             return document;
         }
     }

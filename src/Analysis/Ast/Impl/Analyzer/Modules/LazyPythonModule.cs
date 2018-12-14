@@ -16,22 +16,20 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class LazyPythonModule : PythonModule, ILocatedMember {
         private IPythonModule _module;
         private IModuleResolution _moduleResolution;
 
-        public LazyPythonModule(string fullName, IServiceContainer services)
-            : base(fullName, services) {
+        public LazyPythonModule(string moduleName, IServiceContainer services) : 
+            base(moduleName,  ModuleType.Library, services) {
             _moduleResolution = services.GetService<IModuleResolution>();
         }
 
         public override string Documentation => MaybeModule?.Documentation ?? string.Empty;
-        public IEnumerable<LocationInfo> Locations => ((MaybeModule as ILocatedMember)?.Locations).MaybeEnumerate();
+        public override IEnumerable<LocationInfo> Locations => ((MaybeModule as ILocatedMember)?.Locations).MaybeEnumerate();
 
         private IPythonModule MaybeModule => Volatile.Read(ref _module);
 
@@ -54,7 +52,5 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         public override IPythonType GetMember(string name) => GetModule().GetMember(name);
 
         public override IEnumerable<string> GetMemberNames() => GetModule().GetMemberNames();
-        public override void LoadAndAnalyze() { }
-        internal override string GetCode() => (GetModule() as PythonModule)?.GetCode() ?? string.Empty;
     }
 }

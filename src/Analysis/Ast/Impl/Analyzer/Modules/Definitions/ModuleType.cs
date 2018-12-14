@@ -15,7 +15,7 @@
 
 using System;
 
-namespace Microsoft.Python.Analysis.Analyzer.Types {
+namespace Microsoft.Python.Analysis.Analyzer.Modules {
     [Flags]
     public enum ModuleType {
         /// <summary>
@@ -34,13 +34,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         Stub,
 
         /// <summary>
-        /// Module source was scraped from compiled module.
+        /// Module source was scraped from a compiled module.
         /// </summary>
-        Scraped,
+        Compiled,
+
+        /// <summary>
+        /// Module source was scraped from a built-in compiled module.
+        /// </summary>
+        CompiledBuiltin,
 
         /// <summary>
         /// Module is the Python 'builtins' module.
         /// </summary>
-        Builtins
+        Builtins,
+
+        /// <summary>
+        /// Module is an empty placeholder such as fallback or sentinel.
+        /// </summary>
+        Empty
     }
 }

@@ -16,13 +16,16 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Analyzer.Types;
+using Microsoft.Python.Analysis.Analyzer.Modules;
 
 namespace Microsoft.Python.Analysis.Documents {
     /// <summary>
-    /// Represents collection of loaded modules.
+    /// Represents set of files either opened in the editor or imported
+    /// in order to provide analysis in open file. Rough equivalent of
+    /// the running document table in Visual Studio, see
+    /// "https://docs.microsoft.com/en-us/visualstudio/extensibility/internals/running-document-table"/>
     /// </summary>
-    public interface IDocumentTable: IEnumerable<IDocument> {
+    public interface IRunningDocumentTable: IEnumerable<IDocument> {
         /// <summary>
         /// Adds file to the list of available documents.
         /// </summary>

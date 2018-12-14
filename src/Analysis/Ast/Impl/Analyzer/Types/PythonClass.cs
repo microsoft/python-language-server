@@ -17,12 +17,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal sealed class PythonClass : PythonType, IPythonClass {
-        private static readonly IPythonModule NoDeclModule = new PythonModule();
+        private static readonly IPythonModule NoDeclModule = new NoDeclaringModule();
 
         private readonly IPythonInterpreter _interpreter;
         private readonly object _lock = new object();
@@ -176,5 +177,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
 
         private bool Push() => !_isProcessing.Value && (_isProcessing.Value = true);
         private void Pop() => _isProcessing.Value = false;
+
+        private sealed  class NoDeclaringModule : PythonModule {
+            public NoDeclaringModule(): base("<empty>", ModuleType.Empty, null) { }
+        }
     }
 }

@@ -13,11 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.IO;
+using Microsoft.Python.Analysis.Documents;
 
 namespace Microsoft.Python.Analysis {
     public interface IModuleCache {
-        IPythonModule ImportFromCache(string name, IPythonInterpreter interpreter);
+        IDocument ImportFromCache(string name);
         string GetCacheFilePath(string filePath);
         string ReadCachedModule(string filePath);
         void WriteCachedModule(string filePath, string code);

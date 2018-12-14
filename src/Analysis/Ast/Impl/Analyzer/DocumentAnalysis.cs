@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -56,10 +57,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
 
         private async Task AnalyzeAsync(CancellationToken cancellationToken) {
-            var ast = await Document.GetAstAsync(cancellationToken);
-            var walker = new AnalysisWalker(_services, Document, ast, suppressBuiltinLookup: false);
-            ast.Walk(walker);
-            GlobalScope = walker.Complete();
+            var a = (Document as IAnalyzable) ?? throw new InvalidOperationException("Object must implement IAnalyzable to be analyzed.");
+            GlobalScope = await a.AnalyzeAsync(cancellationToken);
         }
     }
 }

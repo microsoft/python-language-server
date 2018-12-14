@@ -13,11 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents document that can be analyzed asynchronously.
     /// </summary>
-    public interface IAnalyzable {
+    internal interface IAnalyzable {
         /// <summary>
         /// Expected version of the analysis when asynchronous operations complete.
         /// Typically every change to the document or documents that depend on it
@@ -30,9 +33,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Notifies document that analysis is now pending. Typically document increments 
         /// the expected analysis version. The method can be called repeatedly without
-        /// calling `CompleteAnalysis` first.
+        /// calling `CompleteAnalysis` first. The method is invoked for every dependency
+        /// in the chain to ensure that objects know that their dependencies have been
+        /// modified and the current analysis is no longer up to date.
         /// </summary>
         void NotifyAnalysisPending();
+
+        /// <summary>
+        /// Performs analysis of the document. Returns document global scope
+        /// with declared variables and inner scopes.
+        /// </summary>
+        Task<IGlobalScope> AnalyzeAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Notifies document that its analysis is now complete.
@@ -40,6 +51,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <param name="analysis">Document analysis</param>
         /// <param name="analysisVersion">Expected version of the analysis
         /// (version of the snapshot in the beginning of analysis).</param>
+        /// <param name="walker">AST walker created in <see cref="CreateAnalysisWalker"/></param>
         /// <returns>True if analysis was accepted, false if is is out of date.</returns>
         bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion);
     }

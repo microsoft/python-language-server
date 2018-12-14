@@ -65,7 +65,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var analyzer = new PythonAnalyzer(ServiceManager);
             ServiceManager.AddService(analyzer);
 
-            var documentTable = new DocumentTable(root, ServiceManager);
+            var documentTable = new RunningDocumentTable(root, ServiceManager);
             ServiceManager.AddService(documentTable);
 
             return ServiceManager;
@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
             var services = CreateServices(moduleDirectory, configuration);
-            var doc = Document.FromContent(services, code, moduleUri, modulePath, moduleName, DocumentCreationOptions.Analyze);
+            var doc = new PythonModule(moduleName, code, modulePath, moduleUri, ModuleType.User, DocumentCreationOptions.Analyze, services);
 
             var ast = await doc.GetAstAsync(CancellationToken.None);
             ast.Should().NotBeNull();

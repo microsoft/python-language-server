@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis {
@@ -21,6 +20,15 @@ namespace Microsoft.Python.Analysis {
     /// Represents a Python module.
     /// </summary>
     public interface IPythonModule : IPythonType, IPythonFile, ILocatedMember {
+        /// <summary>
+        /// Interpreter associated with the module.
+        /// </summary>
+        IPythonInterpreter Interpreter { get; }
+
+        /// <summary>
+        /// Modules imported by this module.
+        /// </summary>
+        /// <returns></returns>
         IEnumerable<string> GetChildrenModuleNames();
     }
 }

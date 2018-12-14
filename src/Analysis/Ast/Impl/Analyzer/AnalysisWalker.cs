@@ -20,6 +20,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Logging;
@@ -29,29 +30,30 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AnalysisWalker : PythonWalker {
         private readonly IServiceContainer _services;
+        private readonly IPythonInterpreter _interpreter;
         private readonly ILogger _log;
         private readonly IPythonModule _module;
         private readonly PythonAst _ast;
         private readonly ExpressionLookup _lookup;
         private readonly GlobalScope _globalScope;
         private readonly AnalysisFunctionWalkerSet _functionWalkers = new AnalysisFunctionWalkerSet();
+        private readonly bool _suppressBuiltinLookup;
         private IDisposable _classScope;
-
-        private IPythonInterpreter Interpreter => _module.Interpreter;
 
         public AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast, bool suppressBuiltinLookup) {
             _services = services ?? throw new ArgumentNullException(nameof(services));
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _ast = ast ?? throw new ArgumentNullException(nameof(ast));
 
+            _interpreter = services.GetService<IPythonInterpreter>();
             _log = services.GetService<ILogger>();
             _globalScope = new GlobalScope(module);
             _lookup = new ExpressionLookup(_services, module, ast, _globalScope, _functionWalkers);
+            _suppressBuiltinLookup = suppressBuiltinLookup;
             // TODO: handle typing module
         }
 
         public IGlobalScope GlobalScope => _globalScope;
-        public bool CreateBuiltinTypes { get; set; }
 
         public override bool Walk(PythonAst node) {
             Check.InvalidOperation(() => _ast == node, "walking wrong AST");
@@ -143,7 +145,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberReference = node.AsNames[i] ?? moduleImportExpression.Names[0];
                 var memberName = memberReference.Name;
 
-                var imports = Interpreter.ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(_module.FilePath, importNames, node.ForceAbsolute);
+                var imports = _interpreter.ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(_module.FilePath, importNames, node.ForceAbsolute);
                 switch (imports) {
                     case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
                         _lookup.DeclareVariable(memberName, _module);
@@ -192,7 +194,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            var importSearchResult = Interpreter.ModuleResolution.CurrentPathResolver.FindImports(_module.FilePath, node);
+            var importSearchResult = _interpreter.ModuleResolution.CurrentPathResolver.FindImports(_module.FilePath, node);
             switch (importSearchResult) {
                 case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
                     ImportMembersFromSelf(node);
@@ -237,6 +239,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void ImportMembersFromModule(FromImportStatement node, string fullModuleName) {
             var names = node.Names;
             var asNames = node.AsNames;
+            var rdt = _services.GetService<IRunningDocumentTable>();
             var nestedModule = new LazyPythonModule(fullModuleName, _services);
 
             if (names.Count == 1 && names[0].Name == "*") {
@@ -250,13 +253,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
                 var location = GetLoc(memberReference);
 
-                var member = new LazyPythonModuleMember(importName, nestedModule, location, Interpreter);
+                var member = new LazyPythonModuleMember(importName, nestedModule, location, _interpreter);
                 _lookup.DeclareVariable(memberName, member);
             }
         }
 
         private void HandleModuleImportStar(IPythonModule module) {
-            module.LoadAndAnalyze();
             // Ensure child modules have been loaded
             module.GetChildrenModuleNames();
             foreach (var memberName in module.GetMemberNames()) {
@@ -269,7 +271,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 member = member ?? new AstPythonConstant(_lookup.UnknownType, ((module as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
                 _lookup.DeclareVariable(memberName, member);
-                (member as IPythonModule)?.LoadAndAnalyze();
             }
         }
 
@@ -423,8 +424,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _module,
                 GetDoc(node.Body as SuiteStatement),
                 GetLoc(node),
-                Interpreter,
-                CreateBuiltinTypes ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
+                _interpreter,
+                _suppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
         }
 
         private void CollectTopLevelDefinitions() {
@@ -465,7 +466,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 .SelectMany(a => _lookup.GetTypesFromAnnotation(a.Expression))
                 .ToArray();
 
-            t.SetBases(Interpreter, bases);
+            t.SetBases(_interpreter, bases);
 
             _classScope = _lookup.CreateScope(node, _lookup.CurrentScope);
             _lookup.DeclareVariable("__class__", t);

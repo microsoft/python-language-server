@@ -17,6 +17,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Types;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// <summary>
@@ -30,11 +31,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public LazyPythonModuleMember(
             string name,
-            LazyPythonModule module,
+            IPythonModule module,
             LocationInfo importLocation,
             IPythonInterpreter interpreter
-
-        ): base(name, module, string.Empty, importLocation) {
+        ) : base(name, module, string.Empty, importLocation) {
             _interpreter = interpreter;
         }
 
@@ -61,10 +61,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 return m;
             }
 
-            Module.LoadAndAnalyze();
             m = Module.GetMember(Name) ?? _interpreter.ModuleResolution.ImportModule(Module.Name + "." + Name);
             if (m != null) {
-                (m as IPythonModule)?.LoadAndAnalyze();
                 var current = Interlocked.CompareExchange(ref _realType, m, sentinel);
                 if (current == sentinel) {
                     return m;

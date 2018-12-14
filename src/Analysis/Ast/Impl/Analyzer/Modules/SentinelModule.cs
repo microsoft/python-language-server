@@ -14,17 +14,15 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class SentinelModule : PythonModule {
         private readonly SemaphoreSlim _semaphore;
         private volatile IPythonModule _realModule;
 
-        public SentinelModule(string name, bool importing): base(name) {
+        public SentinelModule(string name, bool importing): base(name, ModuleType.Empty, null) {
             if (importing) {
                 _semaphore = new SemaphoreSlim(0, 1000);
             } else {
@@ -56,7 +54,5 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 _semaphore.Release(1000);
             }
         }
-
-        public override void LoadAndAnalyze() => Log?.Log(TraceEventType.Verbose, "Trying to analyze sentinel module");
     }
 }

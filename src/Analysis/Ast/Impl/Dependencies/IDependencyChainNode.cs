@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// <summary>
     /// Represents a node in a chain of a document dependencies.
     /// </summary>
-    public interface IDependencyChainNode {
+    internal interface IDependencyChainNode {
         /// <summary>
         /// Analyzable object (usually the document itself).
         /// </summary>

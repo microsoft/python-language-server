@@ -15,12 +15,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// <summary>
@@ -28,14 +26,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// by running special 'scraper' Python script that generates Python code via
     /// introspection of the compiled built-in language types.
     /// </summary>
-    internal sealed class BuiltinsPythonModule : ScrapedPythonModule, IBuiltinPythonModule {
+    internal sealed class BuiltinsPythonModule : CompiledPythonModule, IBuiltinPythonModule {
         private readonly HashSet<string> _hiddenNames = new HashSet<string>();
 
         public BuiltinsPythonModule(IPythonInterpreter interpreter, IServiceContainer services)
-            : base(BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion),
-                interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath ?? "python.exe"),
-                services) {
-        }
+            : base(
+                  moduleName: BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion),
+                  moduleType: ModuleType.Builtins,
+                  filePath: interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath ?? "python.exe"),
+                  services: services
+               ) { }
 
         public override IPythonType GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 
@@ -57,14 +57,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter)
             => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new List<string> { "-B", "-E", sb };
 
-        internal override AnalysisWalker PrepareWalker(PythonAst ast) {
-            var walker = new AnalysisWalker(Services, this, ast, suppressBuiltinLookup: true) {
-                CreateBuiltinTypes = true
-            };
-            return walker;
-        }
 
-        protected override void PostWalk(PythonWalker walker) {
+        protected override void OnAnalysisComplete() {
             IPythonType boolType = null;
             IPythonType noneType = null;
 
@@ -98,8 +92,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             if (noneType != null) {
                 Members["None"] = new AstPythonConstant(noneType);
             }
-
-            base.PostWalk(walker);
         }
     }
 }

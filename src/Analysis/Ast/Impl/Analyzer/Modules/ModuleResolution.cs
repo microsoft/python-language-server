@@ -68,7 +68,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         private void BuildModuleList() {
             // Initialize built-in
-            BuiltinModule.LoadAndAnalyze();
+            ((IAnalyzable)BuiltinModule).AnalyzeAsync(new CancellationTokenSource(12000).Token).Wait(10000);
+
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinModule.GetAnyMember("__builtin_module_names__");
             if (builtinModuleNamesMember is AstPythonStringLiteral builtinModuleNamesLiteral && builtinModuleNamesLiteral.Value != null) {
@@ -193,7 +194,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             if (module == null) {
-                module = ModuleCache.ImportFromCache(name, _interpreter);
+                var document = ModuleCache.ImportFromCache(name);
+                await document.GetAnalysisAsync(cancellationToken);
+                module = document;
             }
 
             var typeStubPaths = GetTypeShedPaths(Configuration?.TypeshedPath).ToArray();
@@ -320,6 +323,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         private IPythonModule ImportFromTypeStubs(string name, IReadOnlyList<string> typeStubPaths) {
             var mp = FindModuleInSearchPath(typeStubPaths, null, name);
 
+            var rdt = _services.GetService<IRunningDocumentTable>();
             if (mp == null) {
                 var i = name.IndexOf('.');
                 if (i == 0) {
@@ -329,7 +333,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
                 foreach (var stubPath in CurrentPathResolver.GetPossibleModuleStubPaths(name)) {
                     if (_fs.FileExists(stubPath)) {
-                        return StubPythonModule.FromTypeStub(_interpreter, stubPath, name);
+                        return rdt.AddModule(name, ModuleType.Stub, stubPath, null, DocumentCreationOptions.Analyze);
                     }
                 }
             }
@@ -348,7 +352,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             _log?.Log(TraceEventType.Verbose, "Import type stub", mp.Value.FullName, mp.Value.SourceFile);
-            return StubPythonModule.FromTypeStub(_interpreter, mp.Value.SourceFile, mp.Value.FullName);
+            return rdt.AddModule(mp.Value.FullName, ModuleType.Stub, mp.Value.SourceFile, null, DocumentCreationOptions.Analyze);
         }
 
         public IEnumerable<string> GetTypeShedPaths(string typeshedRootPath) {
@@ -376,21 +380,27 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 return null;
             }
 
+            IDocument document;
             if (moduleImport.IsBuiltin) {
                 _log?.Log(TraceEventType.Verbose, "Import builtins: ", name, Configuration.InterpreterPath);
-                return new CompiledPythonModule(name, _services);
-            }
-
-            if (moduleImport.IsCompiled) {
+                document = new CompiledBuiltinPythonModule(name, _services);
+            } else if (moduleImport.IsCompiled) {
                 _log?.Log(TraceEventType.Verbose, "Import scraped: ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                return new ScrapedPythonModule(moduleImport.FullName, moduleImport.ModulePath, _services);
+                document = new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, _services);
+            } else {
+                _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
+                var rdt = _services.GetService<IRunningDocumentTable>();
+                // TODO: handle user code and library module separately.
+                document = rdt.AddModule(moduleImport.FullName, ModuleType.Library, moduleImport.ModulePath, null, DocumentCreationOptions.Analyze);
             }
 
-            _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
-
-            var doc = Document.FromFile(_services, moduleImport.ModulePath, moduleImport.FullName, DocumentCreationOptions.Analyze);
-            await doc.GetAnalysisAsync(cancellationToken);
-            return doc;
+            var analyzer = _services.GetService<IPythonAnalyzer>();
+            if (document.ModuleType == ModuleType.Library || document.ModuleType == ModuleType.User) {
+                await analyzer.AnalyzeDocumentDependencyChainAsync(document, cancellationToken);
+            } else {
+                await analyzer.AnalyzeDocumentAsync(document, cancellationToken);
+            }
+            return document;
         }
 
         /// <summary>

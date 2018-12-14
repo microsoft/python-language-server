@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
@@ -42,7 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         }
 
 
-        public IPythonModule ImportFromCache(string name) {
+        public IDocument ImportFromCache(string name) {
             if (string.IsNullOrEmpty(ModuleCachePath)) {
                 return null;
             }
@@ -58,7 +59,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 }
             }
 
-            return StubPythonModule.FromTypeStub(name, cache, _services);
+            var rdt = _services.GetService<IRunningDocumentTable>();
+            return rdt.AddModule(name, ModuleType.Stub, cache, null, DocumentCreationOptions.Analyze);
         }
 
         public string GetCacheFilePath(string filePath) {
