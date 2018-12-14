@@ -13,11 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
@@ -26,39 +23,67 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class DocumentAnalysis : IDocumentAnalysis {
-        private readonly IServiceContainer _services;
+        public static readonly IDocumentAnalysis Empty = new EmptyAnalysis();
 
-        public DocumentAnalysis(IDocument document, IServiceContainer services) {
+        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope) {
             Check.ArgumentNotNull(nameof(document), document);
-            Check.ArgumentNotNull(nameof(services), services);
-            _services = services;
+            Check.ArgumentNotNull(nameof(globalScope), globalScope);
             Document = document;
-            GlobalScope = new EmptyGlobalScope(document);
+            Version = version;
+            GlobalScope = globalScope;
         }
 
-        public static async Task<IDocumentAnalysis> CreateAsync(IDocument document, IServiceContainer services, CancellationToken cancellationToken) {
-            var da = new DocumentAnalysis(document, services);
-            await da.AnalyzeAsync(cancellationToken);
-            return da;
-        }
-
+        #region IDocumentAnalysis
+        /// <summary>
+        /// Analyzed document.
+        /// </summary>
         public IDocument Document { get; }
+
+        /// <summary>
+        /// Version of the analysis. Usually matches document version,
+        /// but can be lower when document or its dependencies were
+        /// updated since.
+        /// </summary>
+        public int Version { get; }
+
+        /// <summary>
+        /// Document/module global scope.
+        /// </summary>
         public IGlobalScope GlobalScope { get; private set; }
 
+        /// <summary>
+        /// Module top-level members
+        /// </summary>
         public IVariableCollection TopLevelMembers => GlobalScope.Variables;
+
+        /// <summary>
+        /// All module members from all scopes.
+        /// </summary>
         public IEnumerable<IVariable> AllMembers 
-            => (GlobalScope as IScope)
-                .TraverseBreadthFirst(s => s.Children)
-                .SelectMany(s => s.Variables);
+            => (GlobalScope as IScope).TraverseBreadthFirst(s => s.Children).SelectMany(s => s.Variables);
 
         public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
         public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
         public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
         public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
+        #endregion
 
-        private async Task AnalyzeAsync(CancellationToken cancellationToken) {
-            var a = (Document as IAnalyzable) ?? throw new InvalidOperationException("Object must implement IAnalyzable to be analyzed.");
-            GlobalScope = await a.AnalyzeAsync(cancellationToken);
+        private sealed class EmptyAnalysis : IDocumentAnalysis {
+            public EmptyAnalysis(IDocument document = null) {
+                Document = document;
+                GlobalScope = new EmptyGlobalScope(document);
+            }
+
+            public IDocument Document { get; }
+            public int Version { get; } = -1;
+            public IGlobalScope GlobalScope { get; }
+            public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
+            public IVariableCollection TopLevelMembers => VariableCollection.Empty;
+            public IEnumerable<IVariable> AllMembers => Enumerable.Empty<IVariable>();
+            public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
+            public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
+            public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
         }
+
     }
 }

@@ -23,9 +23,16 @@ namespace Microsoft.Python.Analysis {
     /// </summary>
     public interface IDocumentAnalysis {
         /// <summary>
-        /// Module document/file URI. Can be null if there is no associated document.
+        /// Analyzed document.
         /// </summary>
         IDocument Document { get; }
+
+        /// <summary>
+        /// Version of the analysis. Usually matches document version,
+        /// but can be lower when document or its dependencies were
+        /// updated since.
+        /// </summary>
+        int Version { get; }
 
         /// <summary>
         /// Document/module global scope.
@@ -38,7 +45,7 @@ namespace Microsoft.Python.Analysis {
         IVariableCollection TopLevelMembers { get; }
 
         /// <summary>
-        /// All module members
+        /// All module members from all scopes.
         /// </summary>
         IEnumerable<IVariable> AllMembers { get; }
 

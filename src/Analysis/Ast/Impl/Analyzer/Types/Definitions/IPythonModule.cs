@@ -30,5 +30,13 @@ namespace Microsoft.Python.Analysis {
         /// </summary>
         /// <returns></returns>
         IEnumerable<string> GetChildrenModuleNames();
+
+        /// <summary>
+        /// Ensures that module content is loaded and analysis has started.
+        /// Typically module content is loaded at the creation time, but delay
+        /// loaded (lazy) modules may choose to defer content retrieval and
+        /// analysis until later time, when module members are actually needed.
+        /// </summary>
+        void Load();
     }
 }

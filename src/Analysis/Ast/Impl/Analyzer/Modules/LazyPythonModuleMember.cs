@@ -13,17 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Linq;
 using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Types;
-using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// <summary>
     /// Represents type that is lazy-loaded for efficiency. Typically used when code
     /// imports specific values such as 'from A import B' so we don't have to load
-    /// and analyze the entired A until B value is actually needed.
+    /// and analyze the entire A until B value is actually needed.
     /// </summary>
     internal sealed class LazyPythonModuleMember : PythonType, ILazyType {
         private volatile IPythonType _realType;
@@ -61,8 +59,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 return m;
             }
 
+            Module.Load();
             m = Module.GetMember(Name) ?? _interpreter.ModuleResolution.ImportModule(Module.Name + "." + Name);
             if (m != null) {
+                (m as IPythonModule)?.Load();
                 var current = Interlocked.CompareExchange(ref _realType, m, sentinel);
                 if (current == sentinel) {
                     return m;

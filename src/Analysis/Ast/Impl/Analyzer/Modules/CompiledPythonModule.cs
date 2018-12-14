@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return args;
         }
 
-        protected override string LoadFile() {
+        protected override string LoadContent() {
             var code = ModuleCache.ReadCachedModule(FilePath);
             if (string.IsNullOrEmpty(code)) {
                 if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {

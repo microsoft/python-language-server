@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             _stubPath = stubPath;
         }
 
-        protected override string LoadFile() {
+        protected override string LoadContent() {
             var filePath = _stubPath;
 
             if (FileSystem.DirectoryExists(_stubPath)) {

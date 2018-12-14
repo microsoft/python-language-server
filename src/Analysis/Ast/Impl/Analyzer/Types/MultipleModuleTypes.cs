@@ -42,11 +42,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
 
         #region IPythonModule
         public IEnumerable<string> GetChildrenModuleNames() => Modules.SelectMany(m => m.GetChildrenModuleNames());
-        public void LoadAndAnalyze() {
+        public void Load() {
             List<Exception> exceptions = null;
             foreach (var m in Modules) {
                 try {
-                    m.LoadAndAnalyze();
+                    m.Load();
                 } catch (Exception ex) {
                     exceptions = exceptions ?? new List<Exception>();
                     exceptions.Add(ex);

@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
 
-        protected override string LoadFile() {
+        protected override string LoadContent() {
             var path = Interpreter.Configuration.InterpreterPath ?? "python.exe";
             return ModuleCache.ReadCachedModule(path);
         }

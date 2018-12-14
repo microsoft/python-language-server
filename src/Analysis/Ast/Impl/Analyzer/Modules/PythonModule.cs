@@ -34,21 +34,29 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal class PythonModule : IDocument, IAnalyzable {
+    /// <summary>
+    /// Primary base for all modules and user documents. Provides access
+    /// to AST and the module analysis.
+    /// </summary>
+    internal class PythonModule : IDocument, IAnalyzable, IDisposable {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
-        private readonly object _analysisLock = new object();
-        private readonly object _parseLock = new object();
-        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private readonly DocumentCreationOptions _options;
-
-        private string _documentation = string.Empty;
-        private TaskCompletionSource<IDocumentAnalysis> _tcs = new TaskCompletionSource<IDocumentAnalysis>();
         private IReadOnlyList<DiagnosticsEntry> _diagnostics = Array.Empty<DiagnosticsEntry>();
+        private string _documentation = string.Empty;
+
+        private readonly object _analysisLock = new object();
+        private readonly IPythonAnalyzer _analyzer;
+        private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
+        private CancellationTokenSource _linkedAnalysisCts; // cancellation token combined with the 'dispose' cts
+        private IDocumentAnalysis _analysis = DocumentAnalysis.Empty;
+
+        private readonly object _parseLock = new object();
         private CancellationTokenSource _parseCts;
+        private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
         private Task<PythonAst> _parsingTask;
-        private IDocumentAnalysis _analysis;
         private PythonAst _ast;
-        private string _content;
+        private bool _loaded;
 
         protected IDictionary<string, IPythonType> Members { get; set; } = new Dictionary<string, IPythonType>();
         protected ILogger Log { get; }
@@ -77,15 +85,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             Uri = uri;
             FilePath = filePath ?? uri?.LocalPath;
 
-            _content = content;
             _options = options;
+            _analyzer = services.GetService<IPythonAnalyzer>();
 
             IsOpen = (_options & DocumentCreationOptions.Open) == DocumentCreationOptions.Open;
             _options = _options | (IsOpen ? DocumentCreationOptions.Analyze : 0);
 
-            if ((options & DocumentCreationOptions.Ast) == DocumentCreationOptions.Ast) {
-                ParseAsync().DoNotWait();
-            }
+            InitializeContent(content);
         }
 
         #region IPythonType
@@ -150,6 +156,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 yield return n;
             }
         }
+
+        /// <summary>
+        /// Ensures that module content is loaded and analysis has started.
+        /// Typically module content is loaded at the creation time, but delay
+        /// loaded (lazy) modules may choose to defer content retrieval and
+        /// analysis until later time, when module members are actually needed.
+        /// </summary>
+        public void Load() {
+            if (!_loaded) {
+                InitializeContent(null);
+            }
+        }
+
+        protected virtual string LoadContent() => FileSystem.ReadAllText(FilePath);
+
+        private void InitializeContent(string content) {
+            content = content ?? LoadContent();
+            _buffer.Reset(0, content);
+
+            _loaded = true;
+            if ((_options & DocumentCreationOptions.Ast) == DocumentCreationOptions.Ast) {
+                ParseAsync().DoNotWait();
+            }
+        }
         #endregion
 
         #region ILocatedMember
@@ -158,7 +188,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         #region IDisposable
         public void Dispose() => Dispose(true);
-        protected virtual void Dispose(bool disposing) => _cts.Cancel();
+
+        protected virtual void Dispose(bool disposing) {
+            _allProcessingCts.Cancel();
+            _allProcessingCts.Dispose();
+        }
         #endregion
 
         #region IDocument
@@ -183,17 +217,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         /// <summary>
         /// Returns module content (code).
         /// </summary>
-        public virtual string Content {
-            get {
-                if (_content == null) {
-                    _content = LoadFile();
-                    _buffer.Reset(0, _content);
-                }
-                return _content;
-            }
-        }
-
-        protected virtual string LoadFile() => FileSystem.ReadAllText(FilePath);
+        public string Content => _buffer.Text;
         #endregion
 
         #region Parsing
@@ -202,7 +226,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         /// </summary>
         public async Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default) {
             Task t = null;
-            while (t != _parsingTask && !cancellationToken.IsCancellationRequested) {
+            while (t != _parsingTask) {
+                cancellationToken.ThrowIfCancellationRequested();
                 t = _parsingTask;
                 try {
                     await t;
@@ -211,12 +236,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                     // Parsing as canceled, try next task.
                 }
             }
+            cancellationToken.ThrowIfCancellationRequested();
             return _ast;
         }
-        /// <summary>
-        /// Returns document content as string.
-        /// </summary>
-        public string GetContent() => _buffer.Text;
 
         /// <summary>
         /// Provides collection of parsing errors, if any.
@@ -225,6 +247,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public void Update(IEnumerable<DocumentChangeSet> changes) {
             lock (_parseLock) {
+                ExpectedAnalysisVersion++;
+
+                _parseCts?.Cancel();
+                _parseCts = new CancellationTokenSource();
+
+                _linkedParseCts?.Dispose();
+                _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, _parseCts.Token);
+
                 _buffer.Update(changes);
                 ParseAsync().DoNotWait();
             }
@@ -233,8 +263,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         private Task ParseAsync() {
             _parseCts?.Cancel();
             _parseCts = new CancellationTokenSource();
-            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token, _parseCts.Token);
-            _parsingTask = Task.Run(() => Parse(linkedCts.Token));
+            _linkedParseCts?.Dispose();
+            _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, _parseCts.Token);
+            _parsingTask = Task.Run(() => Parse(_linkedParseCts.Token), _linkedParseCts.Token);
             return _parsingTask;
         }
 
@@ -252,22 +283,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             var ast = parser.ParseFile();
-            var astUpdated = false;
 
             lock (_parseLock) {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (version == _buffer.Version) {
                     _ast = ast;
                     _diagnostics = sink.Diagnostics;
-                    astUpdated = true;
+                    _parsingTask = null;
+
                     NewAst?.Invoke(this, EventArgs.Empty);
+
+                    if ((_options & DocumentCreationOptions.Analyze) == DocumentCreationOptions.Analyze) {
+                        var analyzer = Services.GetService<IPythonAnalyzer>();
+                        analyzer.AnalyzeDocumentDependencyChainAsync(this, cancellationToken).DoNotWait();
+                    }
                 }
             }
 
-            if (astUpdated && (_options & DocumentCreationOptions.Analyze) == DocumentCreationOptions.Analyze) {
-                var analyzer = Services.GetService<IPythonAnalyzer>();
-                analyzer.AnalyzeDocumentDependencyChainAsync(this, cancellationToken).DoNotWait();
-            }
             return ast;
         }
 
@@ -299,31 +331,51 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         /// </summary>
         public void NotifyAnalysisPending() {
             lock (_analysisLock) {
+                // The notification comes from the analyzer when it needs to invalidate
+                // current analysis since one of the dependencies changed. Upon text
+                // buffer change the version may be incremented twice - once in Update()
+                // and then here. This is normal.
                 ExpectedAnalysisVersion++;
-                if (_tcs == null || _tcs.Task.IsCanceled || _tcs.Task.IsCompleted || _tcs.Task.IsFaulted) {
-                    _tcs = new TaskCompletionSource<IDocumentAnalysis>();
-                }
+                _analysisTcs = null;
             }
         }
 
         /// <summary>
         /// Performs analysis of the document. Returns document global scope
-        /// with declared variables and inner scopes.
+        /// with declared variables and inner scopes. Does not analyze chain
+        /// of dependencies, it is intended for the single file analysis.
         /// </summary>
-        public async Task<IGlobalScope> AnalyzeAsync(CancellationToken cancellationToken) {
+        public async Task<IDocumentAnalysis> AnalyzeAsync(CancellationToken cancellationToken) {
+            // Store current expected version so we can see if it still 
+            // the same at the time the analysis completes.
             var analysisVersion = ExpectedAnalysisVersion;
 
+            // Make sure the file is parsed ans the AST is up to date.
             var ast = await GetAstAsync(cancellationToken);
+
+            // Now run the analysis.
             var walker = new AnalysisWalker(Services, this, ast, suppressBuiltinLookup: ModuleType == ModuleType.Builtins);
             ast.Walk(walker);
-            return walker.Complete();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Note that we do not set the new analysis here and rather let
+            // Python analyzer to call NotifyAnalysisComplete.
+            var gs = walker.Complete();
+            return new DocumentAnalysis(this, analysisVersion, gs);
         }
 
         public virtual bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion) {
             lock (_analysisLock) {
                 if (analysisVersion == ExpectedAnalysisVersion) {
                     _analysis = analysis;
-                    _tcs.TrySetResult(analysis);
+                    _analysisTcs.TrySetResult(analysis);
+                    _analysisTcs = null;
+
+                    // Derived classes can override if they want to perform
+                    // additional actions on the completed analysis such as
+                    // declared additional variables, etc.
+                    OnAnalysisComplete();
+
                     NewAnalysis?.Invoke(this, EventArgs.Empty);
                     return true;
                 }
@@ -336,9 +388,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         #endregion
 
         #region Analysis
+        public IDocumentAnalysis GetAnyAnalysis() => _analysis;
+
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
             lock (_analysisLock) {
-                return _tcs?.Task;
+                if (_analysis.Version == ExpectedAnalysisVersion) {
+                    return Task.FromResult(_analysis);
+                }
+                // If task is already running, return it.
+                if (_analysisTcs == null) {
+                    _linkedAnalysisCts?.Dispose();
+                    _linkedAnalysisCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
+                    _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
+                    _analyzer.AnalyzeDocumentDependencyChainAsync(this, _linkedAnalysisCts.Token).DoNotWait();
+                }
+                return _analysisTcs.Task;
             }
         }
         #endregion
@@ -387,17 +451,5 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             } catch (IOException) { } catch (UnauthorizedAccessException) { }
             return string.Empty;
         }
-
-        private static Uri MakeDocumentUri(string filePath) {
-            if (string.IsNullOrEmpty(filePath)) {
-                return null;
-            }
-            return !Path.IsPathRooted(filePath)
-                ? new Uri("file:///LOCAL-PATH/{0}".FormatInvariant(filePath.Replace('\\', '/')))
-                : new Uri(filePath);
-        }
-
-        private static bool IsPackageCheck(string path)
-            => ModulePath.IsImportable(PathUtils.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
     }
 }

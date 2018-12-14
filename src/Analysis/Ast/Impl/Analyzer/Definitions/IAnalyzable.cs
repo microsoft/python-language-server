@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Performs analysis of the document. Returns document global scope
         /// with declared variables and inner scopes.
         /// </summary>
-        Task<IGlobalScope> AnalyzeAsync(CancellationToken cancellationToken);
+        Task<IDocumentAnalysis> AnalyzeAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Notifies document that its analysis is now complete.
@@ -51,7 +51,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <param name="analysis">Document analysis</param>
         /// <param name="analysisVersion">Expected version of the analysis
         /// (version of the snapshot in the beginning of analysis).</param>
-        /// <param name="walker">AST walker created in <see cref="CreateAnalysisWalker"/></param>
         /// <returns>True if analysis was accepted, false if is is out of date.</returns>
         bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion);
     }

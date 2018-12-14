@@ -157,25 +157,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         _lookup.DeclareVariable(memberName, new LazyPythonModule(possibleModuleImport.PossibleModuleFullName, _services));
                         break;
                     default:
-                        _lookup.DeclareVariable(memberName, new AstPythonConstant(_lookup.UnknownType, GetLoc(memberReference)));
+                        _lookup.DeclareVariable(memberName, _lookup.UnknownType);
                         break;
                 }
             }
 
             return false;
-        }
-
-        private static IEnumerable<KeyValuePair<string, NameExpression>> GetImportNames(IEnumerable<NameExpression> names, IEnumerable<NameExpression> asNames) {
-            if (names == null) {
-                return Enumerable.Empty<KeyValuePair<string, NameExpression>>();
-            }
-            if (asNames == null) {
-                return names.Select(n => new KeyValuePair<string, NameExpression>(n.Name, n)).Where(k => !string.IsNullOrEmpty(k.Key));
-            }
-            return names
-                .Zip(asNames.Concat(Enumerable.Repeat((NameExpression)null, int.MaxValue)),
-                     (n1, n2) => new KeyValuePair<string, NameExpression>(n1?.Name, string.IsNullOrEmpty(n2?.Name) ? n1 : n2))
-                .Where(k => !string.IsNullOrEmpty(k.Key));
         }
 
         public override bool Walk(FromImportStatement node) {
@@ -259,6 +246,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void HandleModuleImportStar(IPythonModule module) {
+            module.Load();
             // Ensure child modules have been loaded
             module.GetChildrenModuleNames();
             foreach (var memberName in module.GetMemberNames()) {
@@ -271,6 +259,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 member = member ?? new AstPythonConstant(_lookup.UnknownType, ((module as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
                 _lookup.DeclareVariable(memberName, member);
+                (member as IPythonModule)?.Load();
             }
         }
 

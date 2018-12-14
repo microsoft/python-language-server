@@ -38,14 +38,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Analyze single document.
         /// </summary>
         public Task<IDocumentAnalysis> AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken) {
-            if (!(document is IAnalyzable a)) {
-                return null;
-            }
-            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
+            if (document is IAnalyzable a) {
                 a.NotifyAnalysisPending();
-                var version = a.ExpectedAnalysisVersion;
-                return AnalyzeAsync(document, cts.Token);
+                return a.AnalyzeAsync(cancellationToken);
             }
+            return Task.FromResult(DocumentAnalysis.Empty);
         }
 
         /// <summary>
@@ -54,15 +51,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public async Task AnalyzeDocumentDependencyChainAsync(IDocument document, CancellationToken cancellationToken) {
             Check.InvalidOperation(() => _dependencyResolver != null, "Dependency resolver must be provided for the group analysis.");
 
-            if (document is IAnalyzable) {
-                using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
-                    var dependencyRoot = await _dependencyResolver.GetDependencyChainAsync(document, cts.Token);
-                    // Notify each dependency that the analysis is now pending
-                    NotifyAnalysisPending(dependencyRoot);
+            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
+                var dependencyRoot = await _dependencyResolver.GetDependencyChainAsync(document, cts.Token);
+                // Notify each dependency that the analysis is now pending
+                NotifyAnalysisPending(dependencyRoot);
 
-                    cts.Token.ThrowIfCancellationRequested();
-                    await AnalyzeChainAsync(dependencyRoot, cts.Token);
-                }
+                cts.Token.ThrowIfCancellationRequested();
+                await AnalyzeChainAsync(dependencyRoot, cts.Token);
             }
         }
 
@@ -75,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private async Task AnalyzeChainAsync(IDependencyChainNode node, CancellationToken cancellationToken) {
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
-                var analysis = await AnalyzeAsync(node.Document, cts.Token);
+                var analysis = await node.Analyzable.AnalyzeAsync(cts.Token);
                 if (!node.Analyzable.NotifyAnalysisComplete(analysis, node.SnapshotVersion)) {
                     // If snapshot does not match, there is no reason to continue analysis along the chain
                     // since subsequent change that incremented the expected version will start
@@ -88,8 +83,5 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
         }
-
-        private Task<IDocumentAnalysis> AnalyzeAsync(IDocument document, CancellationToken cancellationToken)
-            => DocumentAnalysis.CreateAsync(document, _services, cancellationToken);
     }
 }

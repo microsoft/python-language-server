@@ -57,6 +57,11 @@ namespace Microsoft.Python.Analysis.Documents {
         Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken);
 
         /// <summary>
+        /// Returns last known document analysis. The analysis may be out of date.
+        /// </summary>
+        IDocumentAnalysis GetAnyAnalysis();
+
+        /// <summary>
         /// Updates document content with the list of changes.
         /// </summary>
         /// <param name="changes"></param>
