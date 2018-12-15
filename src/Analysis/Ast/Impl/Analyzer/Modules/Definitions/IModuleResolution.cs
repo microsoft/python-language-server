@@ -66,5 +66,7 @@ namespace Microsoft.Python.Analysis {
         IBuiltinPythonModule BuiltinModule { get; }
 
         IModuleCache ModuleCache { get; }
+
+        void Reload();
     }
 }

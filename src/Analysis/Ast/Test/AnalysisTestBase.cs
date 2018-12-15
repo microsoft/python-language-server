@@ -48,16 +48,13 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
 
-        internal IServiceContainer CreateServices(string root, InterpreterConfiguration configuration = null) {
+        internal async Task<IServiceContainer> CreateServicesAsync(string root, InterpreterConfiguration configuration = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
             configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
             configuration.SearchPaths = new[] { root, GetAnalysisTestDataFilesPath() };
             configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
-
-            var interpreter = new PythonInterpreter(configuration, ServiceManager);
-            ServiceManager.AddService(interpreter);
 
             var dependencyResolver = new TestDependencyResolver();
             ServiceManager.AddService(dependencyResolver);
@@ -67,6 +64,9 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var documentTable = new RunningDocumentTable(root, ServiceManager);
             ServiceManager.AddService(documentTable);
+
+            var interpreter = await PythonInterpreter.CreateAsync(configuration, ServiceManager);
+            ServiceManager.AddService(interpreter);
 
             return ServiceManager;
         }
@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Tests {
             moduleName = Path.GetFileNameWithoutExtension(modulePath);
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
-            var services = CreateServices(moduleDirectory, configuration);
+            var services = await CreateServicesAsync(moduleDirectory, configuration);
             var doc = new PythonModule(moduleName, code, modulePath, moduleUri, ModuleType.User, DocumentCreationOptions.Analyze, services);
 
             var ast = await doc.GetAstAsync(CancellationToken.None);

@@ -36,14 +36,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         private readonly ConcurrentDictionary<string, IPythonModule> _modules = new ConcurrentDictionary<string, IPythonModule>();
         private readonly IServiceContainer _services;
         private readonly IPythonInterpreter _interpreter;
-        private readonly PathResolver _pathResolver;
         private readonly IFileSystem _fs;
         private readonly ILogger _log;
         private readonly bool _requireInitPy;
 
+        private PathResolver _pathResolver;
         private IReadOnlyDictionary<string, string> _searchPathPackages;
 
-        private ILogger Log { get; }
         private InterpreterConfiguration Configuration => _interpreter.Configuration;
 
         public ModuleResolution(IServiceContainer services) {
@@ -53,22 +52,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             _log = services.GetService<ILogger>();
 
             _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_interpreter.Configuration.Version);
-            ModuleCache = new ModuleCache(services);
-
-            _pathResolver = new PathResolver(_interpreter.LanguageVersion);
-            _pathResolver.SetInterpreterSearchPaths(new[] {
-                _interpreter.Configuration.LibraryPath,
-                _interpreter.Configuration.SitePackagesPath,
-            });
-            _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
-            _modules[BuiltinModuleName] = BuiltinModule = new BuiltinsPythonModule(_interpreter, services);
-
-            BuildModuleList();
+            Reload();
         }
 
-        private void BuildModuleList() {
+        internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
             // Initialize built-in
-            ((IAnalyzable)BuiltinModule).AnalyzeAsync(new CancellationTokenSource(12000).Token).Wait(10000);
+            var moduleName = BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
+            var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath ?? "python.exe");
+
+            var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
+            _modules[BuiltinModuleName] = BuiltinModule = b;
+            await b.GetAnalysisAsync(cancellationToken);
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinModule.GetAnyMember("__builtin_module_names__");
@@ -82,12 +76,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                         .Concat(Enumerable.Repeat(_interpreter.Configuration.LibraryPath, 1)
                         .Concat(Enumerable.Repeat(_interpreter.Configuration.SitePackagesPath, 1)));
             // TODO: how to remove?
-            foreach (var modulePath in paths.Where(_fs.DirectoryExists).SelectMany(p => _fs.GetFiles(p))) {
-                _pathResolver.TryAddModulePath(modulePath, out _);
+            foreach (var mp in paths.Where(_fs.DirectoryExists).SelectMany(p => _fs.GetFiles(p))) {
+                _pathResolver.TryAddModulePath(mp, out _);
             }
         }
 
-        public IModuleCache ModuleCache { get; }
+        public IModuleCache ModuleCache { get; private set; }
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
 
         /// <summary>
@@ -98,7 +92,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         /// <summary>
         /// Builtins module.
         /// </summary>
-        public IBuiltinPythonModule BuiltinModule { get; }
+        public IBuiltinPythonModule BuiltinModule { get; private set; }
 
         public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken) {
             if (_searchPathPackages != null) {
@@ -186,7 +180,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             // Do normal searches
             if (!string.IsNullOrEmpty(Configuration?.InterpreterPath)) {
                 try {
-                    module = await ImportFromSearchPathsAsync(name, cancellationToken);
+                    module = await ImportFromSearchPathsAsync(name, cancellationToken).ConfigureAwait(false);
                 } catch (OperationCanceledException) {
                     _log?.Log(TraceEventType.Error, $"Import timeout {name}");
                     return TryImportModuleResult.Timeout;
@@ -195,7 +189,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             if (module == null) {
                 var document = ModuleCache.ImportFromCache(name);
-                await document.GetAnalysisAsync(cancellationToken);
+                await document.GetAnalysisAsync(cancellationToken).ConfigureAwait(false);
                 module = document;
             }
 
@@ -281,6 +275,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             // Never succeeded, so just log the error and fail
             _log?.Log(TraceEventType.Error, $"Retry import failed: {name}");
             return null;
+        }
+
+        public void Reload() {
+            ModuleCache = new ModuleCache(_interpreter, _services);
+
+            _pathResolver = new PathResolver(_interpreter.LanguageVersion);
+            _pathResolver.SetInterpreterSearchPaths(new[] {
+                _interpreter.Configuration.LibraryPath,
+                _interpreter.Configuration.SitePackagesPath,
+            });
+            _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
         }
 
         private ModulePath? FindModuleInSearchPath(IReadOnlyList<string> searchPaths, IReadOnlyDictionary<string, string> packages, string name) {
@@ -396,9 +401,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             var analyzer = _services.GetService<IPythonAnalyzer>();
             if (document.ModuleType == ModuleType.Library || document.ModuleType == ModuleType.User) {
-                await analyzer.AnalyzeDocumentDependencyChainAsync(document, cancellationToken);
+                await analyzer.AnalyzeDocumentDependencyChainAsync(document, cancellationToken).ConfigureAwait(false);
             } else {
-                await analyzer.AnalyzeDocumentAsync(document, cancellationToken);
+                await analyzer.AnalyzeDocumentAsync(document, cancellationToken).ConfigureAwait(false);
             }
             return document;
         }

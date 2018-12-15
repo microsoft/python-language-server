@@ -23,6 +23,5 @@ namespace Microsoft.Python.Analysis {
     public interface IMemberContainer {
         IPythonType GetMember(string name);
         IEnumerable<string> GetMemberNames();
-
     }
 }

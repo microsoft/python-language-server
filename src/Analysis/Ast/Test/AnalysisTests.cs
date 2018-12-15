@@ -51,7 +51,7 @@ y = c.method()
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            var names = analysis.TopLevelMembers.GetMemberNames();
+            var names = analysis.TopLevelMembers.Select(v => v.Name);
             names.Should().OnlyContain("x", "C", "func", "c", "y");
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Unicode);

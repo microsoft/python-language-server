@@ -46,19 +46,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         private string _documentation = string.Empty;
 
         private readonly object _analysisLock = new object();
-        private readonly IPythonAnalyzer _analyzer;
         private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
         private CancellationTokenSource _linkedAnalysisCts; // cancellation token combined with the 'dispose' cts
         private IDocumentAnalysis _analysis = DocumentAnalysis.Empty;
 
-        private readonly object _parseLock = new object();
         private CancellationTokenSource _parseCts;
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
-        private Task<PythonAst> _parsingTask;
+        private Task _parsingTask;
         private PythonAst _ast;
         private bool _loaded;
 
-        protected IDictionary<string, IPythonType> Members { get; set; } = new Dictionary<string, IPythonType>();
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
         protected IServiceContainer Services { get; }
@@ -86,8 +83,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             FilePath = filePath ?? uri?.LocalPath;
 
             _options = options;
-            _analyzer = services.GetService<IPythonAnalyzer>();
-
             IsOpen = (_options & DocumentCreationOptions.Open) == DocumentCreationOptions.Open;
             _options = _options | (IsOpen ? DocumentCreationOptions.Analyze : 0);
 
@@ -124,8 +119,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         #endregion
 
         #region IMemberContainer
-        public virtual IPythonType GetMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
-        public virtual IEnumerable<string> GetMemberNames() => Members.Keys.ToArray();
+        public virtual IPythonType GetMember(string name) => _analysis.TopLevelMembers.GetMember(name);
+        public virtual IEnumerable<string> GetMemberNames() => _analysis.TopLevelMembers.GetMemberNames();
         #endregion
 
         #region IPythonFile
@@ -176,8 +171,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             _buffer.Reset(0, content);
 
             _loaded = true;
+
+            if ((_options & DocumentCreationOptions.Analyze) == DocumentCreationOptions.Analyze) {
+                _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
+            }
             if ((_options & DocumentCreationOptions.Ast) == DocumentCreationOptions.Ast) {
-                ParseAsync().DoNotWait();
+                Parse();
             }
         }
         #endregion
@@ -246,8 +245,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         public IEnumerable<DiagnosticsEntry> GetDiagnostics() => _diagnostics.ToArray();
 
         public void Update(IEnumerable<DocumentChangeSet> changes) {
-            lock (_parseLock) {
+            lock (_analysisLock) {
                 ExpectedAnalysisVersion++;
+
+                _linkedAnalysisCts?.Cancel();
+                _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
 
                 _parseCts?.Cancel();
                 _parseCts = new CancellationTokenSource();
@@ -256,25 +258,24 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, _parseCts.Token);
 
                 _buffer.Update(changes);
-                ParseAsync().DoNotWait();
+                Parse();
             }
         }
 
-        private Task ParseAsync() {
+        private void Parse() {
             _parseCts?.Cancel();
             _parseCts = new CancellationTokenSource();
             _linkedParseCts?.Dispose();
             _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, _parseCts.Token);
             _parsingTask = Task.Run(() => Parse(_linkedParseCts.Token), _linkedParseCts.Token);
-            return _parsingTask;
         }
 
-        private PythonAst Parse(CancellationToken cancellationToken) {
+        private void Parse(CancellationToken cancellationToken) {
             var sink = new CollectingErrorSink();
             int version;
             Parser parser;
 
-            lock (_parseLock) {
+            lock (_analysisLock) {
                 version = _buffer.Version;
                 parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, new ParserOptions {
                     StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison),
@@ -284,23 +285,29 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             var ast = parser.ParseFile();
 
-            lock (_parseLock) {
+            lock (_analysisLock) {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (version == _buffer.Version) {
-                    _ast = ast;
-                    _diagnostics = sink.Diagnostics;
-                    _parsingTask = null;
-
-                    NewAst?.Invoke(this, EventArgs.Empty);
-
-                    if ((_options & DocumentCreationOptions.Analyze) == DocumentCreationOptions.Analyze) {
-                        var analyzer = Services.GetService<IPythonAnalyzer>();
-                        analyzer.AnalyzeDocumentDependencyChainAsync(this, cancellationToken).DoNotWait();
-                    }
+                if (version != _buffer.Version) {
+                    throw new OperationCanceledException();
                 }
+                _ast = ast;
+                _diagnostics = sink.Diagnostics;
+                _parsingTask = null;
             }
 
-            return ast;
+            NewAst?.Invoke(this, EventArgs.Empty);
+
+            if ((_options & DocumentCreationOptions.Analyze) == DocumentCreationOptions.Analyze) {
+                _linkedAnalysisCts?.Dispose();
+                _linkedAnalysisCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
+
+                var analyzer = Services.GetService<IPythonAnalyzer>();
+                if (ModuleType == ModuleType.User || ModuleType == ModuleType.Library) {
+                    analyzer.AnalyzeDocumentDependencyChainAsync(this, _linkedAnalysisCts.Token).DoNotWait();
+                } else {
+                    analyzer.AnalyzeDocumentAsync(this, _linkedAnalysisCts.Token).DoNotWait();
+                }
+            }
         }
 
         private class CollectingErrorSink : ErrorSink {
@@ -336,7 +343,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 // buffer change the version may be incremented twice - once in Update()
                 // and then here. This is normal.
                 ExpectedAnalysisVersion++;
-                _analysisTcs = null;
+                _analysisTcs = _analysisTcs ?? new TaskCompletionSource<IDocumentAnalysis>();
             }
         }
 
@@ -364,27 +371,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return new DocumentAnalysis(this, analysisVersion, gs);
         }
 
-        public virtual bool NotifyAnalysisComplete(IDocumentAnalysis analysis, int analysisVersion) {
+        public virtual bool NotifyAnalysisComplete(IDocumentAnalysis analysis) {
             lock (_analysisLock) {
-                if (analysisVersion == ExpectedAnalysisVersion) {
+                if (analysis.Version == ExpectedAnalysisVersion) {
                     _analysis = analysis;
+                    // Derived classes can override OnAnalysisComplete if they want
+                    // to perform additional actions on the completed analysis such
+                    // as declare additional variables, etc.
+                    OnAnalysisComplete(analysis.GlobalScope as GlobalScope);
                     _analysisTcs.TrySetResult(analysis);
                     _analysisTcs = null;
-
-                    // Derived classes can override if they want to perform
-                    // additional actions on the completed analysis such as
-                    // declared additional variables, etc.
-                    OnAnalysisComplete();
 
                     NewAnalysis?.Invoke(this, EventArgs.Empty);
                     return true;
                 }
-                Debug.Assert(ExpectedAnalysisVersion > analysisVersion);
+                Debug.Assert(ExpectedAnalysisVersion > analysis.Version);
                 return false;
             }
         }
 
-        protected virtual void OnAnalysisComplete() { }
+        protected virtual void OnAnalysisComplete(GlobalScope gs) { }
         #endregion
 
         #region Analysis
@@ -392,17 +398,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
             lock (_analysisLock) {
-                if (_analysis.Version == ExpectedAnalysisVersion) {
-                    return Task.FromResult(_analysis);
+                if ((_options & DocumentCreationOptions.Analyze) != DocumentCreationOptions.Analyze) {
+                    return Task.FromResult(DocumentAnalysis.Empty);
                 }
-                // If task is already running, return it.
-                if (_analysisTcs == null) {
-                    _linkedAnalysisCts?.Dispose();
-                    _linkedAnalysisCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
-                    _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
-                    _analyzer.AnalyzeDocumentDependencyChainAsync(this, _linkedAnalysisCts.Token).DoNotWait();
-                }
-                return _analysisTcs.Task;
+                return _analysis.Version == ExpectedAnalysisVersion ? Task.FromResult(_analysis) : _analysisTcs.Task;
             }
         }
         #endregion

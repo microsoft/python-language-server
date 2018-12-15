@@ -29,41 +29,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class BuiltinsPythonModule : CompiledPythonModule, IBuiltinPythonModule {
         private readonly HashSet<string> _hiddenNames = new HashSet<string>();
 
-        public BuiltinsPythonModule(IPythonInterpreter interpreter, IServiceContainer services)
-            : base(
-                  moduleName: BuiltinTypeId.Unknown.GetModuleName(interpreter.LanguageVersion),
-                  moduleType: ModuleType.Builtins,
-                  filePath: interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath ?? "python.exe"),
-                  services: services
-               ) { }
+        public BuiltinsPythonModule(string moduleName, string filePath, IServiceContainer services)
+            : base(moduleName, ModuleType.Builtins, filePath, services) { }
 
         public override IPythonType GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 
-        public IPythonType GetAnyMember(string name) => Members.TryGetValue(name, out var m) ? m : null;
+        public IPythonType GetAnyMember(string name) => base.GetMember(name);
 
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
-
-        protected override string LoadContent() {
-            var path = Interpreter.Configuration.InterpreterPath ?? "python.exe";
-            return ModuleCache.ReadCachedModule(path);
-        }
-
-        protected override void SaveCachedCode(string code) {
-            if (Interpreter.Configuration.InterpreterPath != null) {
-                ModuleCache.WriteCachedModule(Interpreter.Configuration.InterpreterPath, code);
-            }
-        }
 
         protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter)
             => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new List<string> { "-B", "-E", sb };
 
 
-        protected override void OnAnalysisComplete() {
+        protected override void OnAnalysisComplete(GlobalScope gs) {
             IPythonType boolType = null;
             IPythonType noneType = null;
 
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
-                if (Members.TryGetValue("__{0}__".FormatInvariant(typeId), out var m) && m is PythonType biType && biType.IsBuiltin) {
+                var m = GetMember("__{0}__".FormatInvariant(typeId));
+                if (m is PythonType biType && biType.IsBuiltin) {
                     if (typeId != BuiltinTypeId.Str && typeId != BuiltinTypeId.StrIterator) {
                         biType.TrySetTypeId(typeId);
                     }
@@ -86,11 +71,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             _hiddenNames.Add("__builtin_module_names__");
 
             if (boolType != null) {
-                Members["True"] = Members["False"] = new AstPythonConstant(boolType);
+                gs.DeclareVariable("True", boolType);
+                gs.DeclareVariable("False", boolType);
             }
 
             if (noneType != null) {
-                Members["None"] = new AstPythonConstant(noneType);
+                gs.DeclareVariable("None", noneType);
             }
         }
     }

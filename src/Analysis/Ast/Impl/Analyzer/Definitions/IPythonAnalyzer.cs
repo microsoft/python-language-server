@@ -22,7 +22,7 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         /// Analyze single document.
         /// </summary>
-        Task<IDocumentAnalysis> AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken);
+        Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken);
 
         /// <summary>
         /// Analyze document with dependents.

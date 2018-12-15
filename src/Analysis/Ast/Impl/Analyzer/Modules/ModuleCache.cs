@@ -34,11 +34,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
         private string ModuleCachePath => _interpreter.Configuration.ModuleCachePath;
 
-        public ModuleCache(IServiceContainer services) {
+        public ModuleCache(IPythonInterpreter interpreter, IServiceContainer services) {
+            _interpreter = interpreter;
             _services = services;
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
-            _interpreter = services.GetService<IPythonInterpreter>();
             _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.ModuleCachePath);
         }
 

@@ -26,27 +26,14 @@ using Microsoft.Python.Core.OS;
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal class CompiledPythonModule : PythonModule {
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
+
         public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IServiceContainer services)
-            : base(moduleName, null, filePath, null, moduleType, DocumentCreationOptions.Analyze, services) {
-        }
+            : base(moduleName, null, filePath, null, moduleType, DocumentCreationOptions.Analyze, services) { }
 
         public override string Documentation
             => GetMember("__doc__") is AstPythonStringLiteral m ? m.Value : string.Empty;
 
         public override IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
-
-        #region IMemberContainer
-        public override IPythonType GetMember(string name) {
-            Members.TryGetValue(name, out var m);
-            if (m is ILazyType lm) {
-                m = lm.Get();
-                Members[name] = m;
-            }
-            return m;
-        }
-
-        public override IEnumerable<string> GetMemberNames() => Members.Keys.ToArray();
-        #endregion
 
         protected virtual IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter) {
             var args = new List<string> { "-B", "-E" };

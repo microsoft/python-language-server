@@ -16,6 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
@@ -25,19 +27,23 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class PythonInterpreter : IPythonInterpreter {
+        private ModuleResolution _moduleResolution;
         private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>() {
             { BuiltinTypeId.NoneType, new PythonType("NoneType", BuiltinTypeId.NoneType) },
             { BuiltinTypeId.Unknown, new PythonType("Unknown", BuiltinTypeId.Unknown) }
         };
 
-        private readonly IServiceContainer _services;
-        private readonly object _userSearchPathsLock = new object();
-
-        public PythonInterpreter(InterpreterConfiguration configuration, IServiceContainer services) {
+        private PythonInterpreter(InterpreterConfiguration configuration) {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _services = services ?? throw new ArgumentNullException(nameof(services));
             LanguageVersion = Configuration.Version.ToLanguageVersion();
-            ModuleResolution = new ModuleResolution(services);
+        }
+
+        public static async Task<IPythonInterpreter> CreateAsync(InterpreterConfiguration configuration, IServiceManager sm, CancellationToken cancellationToken = default) {
+            var pi = new PythonInterpreter(configuration);
+            sm.AddService(pi);
+            pi._moduleResolution = new ModuleResolution(sm);
+            await pi._moduleResolution.LoadBuiltinTypesAsync(cancellationToken);
+            return pi;
         }
 
         /// <summary>
@@ -49,16 +55,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Python language version.
         /// </summary>
         public PythonLanguageVersion LanguageVersion { get; }
-        
+
         /// <summary>
         /// Module resolution service.
         /// </summary>
-        public IModuleResolution ModuleResolution { get; private set; }
-
-        /// <summary>
-        /// Python static code analyzer associated with this interpreter.
-        /// </summary>
-        public IPythonAnalyzer Analyzer { get; }
+        public IModuleResolution ModuleResolution => _moduleResolution;
 
         /// <summary>
         /// Gets a well known built-in type such as int, list, dict, etc...
@@ -95,6 +96,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return res;
         }
 
-        public void NotifyImportableModulesChanged() => ModuleResolution = new ModuleResolution(_services);
+        public void NotifyImportableModulesChanged() => ModuleResolution.Reload();
     }
 }

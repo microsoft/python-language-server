@@ -24,8 +24,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
     /// </summary>
     internal sealed class CompiledBuiltinPythonModule : CompiledPythonModule {
         public CompiledBuiltinPythonModule(string name, IServiceContainer services)
-            : base(name, ModuleType.Compiled, MakeFakeFilePath(name, services), services) {
-        }
+            : base(name, ModuleType.Compiled, MakeFakeFilePath(name, services), services) { }
 
         protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter)
             => !InstallPath.TryGetFile("scrape_module.py", out var sm)

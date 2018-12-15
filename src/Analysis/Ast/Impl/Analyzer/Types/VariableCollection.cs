@@ -14,14 +14,14 @@
 // permissions and limitations under the License.
 
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal sealed class VariableCollection : IVariableCollection {
         public static readonly IVariableCollection Empty = new VariableCollection();
-
-        private readonly Dictionary<string, IPythonType> _variables = new Dictionary<string, IPythonType>();
+        private readonly ConcurrentDictionary<string, IPythonType> _variables = new ConcurrentDictionary<string, IPythonType>();
 
         #region ICollection
         public int Count => _variables.Count;
@@ -30,7 +30,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #endregion
 
         #region IMemberContainer
-        public IPythonType GetMember(string name) => _variables.TryGetValue(name, out var t) ? t : null;
+
+        public IPythonType GetMember(string name) {
+            if (_variables.TryGetValue(name, out var t)) {
+                if (t is ILazyType lt) {
+                    _variables[name] = lt.Get();
+                }
+            }
+            return t;
+        }
+
         public IEnumerable<string> GetMemberNames() => _variables.Keys;
         public bool Remove(IVariable item) => throw new System.NotImplementedException();
         #endregion
