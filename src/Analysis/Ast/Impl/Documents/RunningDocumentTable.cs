@@ -123,10 +123,10 @@ namespace Microsoft.Python.Analysis.Documents {
                     break;
                 case ModuleType.User:
                 case ModuleType.Library:
-                    document = CreateDocument(moduleName, moduleType, filePath, uri, content, options);
+                    document = new PythonModule(moduleName, content, filePath, uri, moduleType, options, _services);
                     break;
                 default:
-                    throw new InvalidOperationException($"CreateDocument does not suppore module type {moduleType}");
+                    throw new InvalidOperationException($"CreateDocument does not support module type {moduleType}");
             }
 
             _documentsByUri[document.Uri] = document;

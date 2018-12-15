@@ -16,6 +16,8 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -34,7 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public void Add(AnalysisFunctionWalker walker)
             => _functionWalkers[walker.Target] = walker;
 
-        public void ProcessSet() {
+        public async Task ProcessSetAsync(CancellationToken cancellationToken = default) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             var constructors = _functionWalkers
@@ -44,28 +46,28 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 .ToArray();
 
             foreach (var ctor in constructors) {
-                ProcessWalker(ctor);
+                await ProcessWalkerAsync(ctor, cancellationToken);
             }
 
             while (_functionWalkers.Count > 0) {
                 var walker = _functionWalkers.First().Value;
-                ProcessWalker(walker);
+                await ProcessWalkerAsync(walker, cancellationToken);
             }
         }
 
-        public void ProcessFunction(FunctionDefinition fn) {
+        public async Task ProcessFunctionAsync(FunctionDefinition fn, CancellationToken cancellationToken = default) {
             if (_functionWalkers.TryGetValue(fn, out var w)) {
-                ProcessWalker(w);
+                await ProcessWalkerAsync(w, cancellationToken);
             }
         }
         public bool Contains(FunctionDefinition node)
             => _functionWalkers.ContainsKey(node) || _processed.Contains(node);
 
-        private void ProcessWalker(AnalysisFunctionWalker walker) {
+        private Task ProcessWalkerAsync(AnalysisFunctionWalker walker, CancellationToken cancellationToken = default) {
             // Remove walker before processing as to prevent reentrancy.
             _functionWalkers.Remove(walker.Target);
             _processed.Add(walker.Target);
-            walker.Walk();
+            return walker.WalkAsync(cancellationToken);
         }
     }
 }

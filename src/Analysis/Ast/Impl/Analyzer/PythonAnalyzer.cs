@@ -14,21 +14,26 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer, IDisposable {
         private readonly IServiceContainer _services;
         private readonly IDependencyResolver _dependencyResolver;
         private readonly CancellationTokenSource _globalCts = new CancellationTokenSource();
+        private readonly ILogger _log;
 
         public PythonAnalyzer(IServiceContainer services) {
             _services = services;
+            _log = services.GetService<ILogger>();
             _dependencyResolver = services.GetService<IDependencyResolver>();
         }
 
@@ -38,12 +43,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Analyze single document.
         /// </summary>
         public async Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken) {
-            if (document is IAnalyzable a) {
-                using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
-                    a.NotifyAnalysisPending();
-                    var analysis = await a.AnalyzeAsync(cts.Token).ConfigureAwait(false);
-                    a.NotifyAnalysisComplete(analysis);
-                }
+            var node = new DependencyChainNode(document);
+            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
+                node.Analyzable.NotifyAnalysisPending();
+                var analysis = await AnalyzeAsync(node, cts.Token).ConfigureAwait(false);
+                node.Analyzable.NotifyAnalysisComplete(analysis);
             }
         }
 
@@ -72,7 +76,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private async Task AnalyzeChainAsync(IDependencyChainNode node, CancellationToken cancellationToken) {
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
-                var analysis = await node.Analyzable.AnalyzeAsync(cts.Token).ConfigureAwait(false);
+                var analysis = await AnalyzeAsync(node, cts.Token).ConfigureAwait(false);
 
                 NotifyAnalysisComplete(node, analysis);
                 cts.Token.ThrowIfCancellationRequested();
@@ -91,5 +95,37 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 throw new OperationCanceledException();
             }
         }
+
+        /// <summary>
+        /// Performs analysis of the document. Returns document global scope
+        /// with declared variables and inner scopes. Does not analyze chain
+        /// of dependencies, it is intended for the single file analysis.
+        /// </summary>
+        private async Task<IDocumentAnalysis> AnalyzeAsync(IDependencyChainNode node, CancellationToken cancellationToken) {
+            _log?.Log(TraceEventType.Verbose, $"Analysis begins: {node.Document.Name}");
+            // Store current expected version so we can see if it still 
+            // the same at the time the analysis completes.
+            var analysisVersion = node.Analyzable.ExpectedAnalysisVersion;
+
+            // Make sure the file is parsed ans the AST is up to date.
+            var ast = await node.Document.GetAstAsync(cancellationToken);
+            _log?.Log(TraceEventType.Verbose, $"Analysis AST obtained: {node.Document.Name}");
+
+            // Now run the analysis.
+            var walker = new AnalysisWalker(_services, node.Document, ast,
+                suppressBuiltinLookup: node.Document.ModuleType == ModuleType.Builtins);
+
+            _log?.Log(TraceEventType.Verbose, $"Analysis walk begins: {node.Document.Name}");
+            await ast.WalkAsync(walker, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            _log?.Log(TraceEventType.Verbose, $"Analysis walk completed: {node.Document.Name}");
+
+            // Note that we do not set the new analysis here and rather let
+            // Python analyzer to call NotifyAnalysisComplete.
+            var gs = await walker.CompleteAsync(cancellationToken);
+            _log?.Log(TraceEventType.Verbose, $"Analysis returned: {node.Document.Name}");
+            return new DocumentAnalysis(node.Document, analysisVersion, gs);
+        }
+
     }
 }

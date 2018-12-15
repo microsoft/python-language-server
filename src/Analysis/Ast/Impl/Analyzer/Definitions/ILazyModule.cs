@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,15 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Python.Analysis {
-    /// <summary>
-    /// Represents an object which can contain other members.
-    /// </summary>
-    public interface IMemberContainer {
-        IPythonType GetMember(string name);
-        IEnumerable<string> GetMemberNames();
+namespace Microsoft.Python.Analysis.Analyzer {
+    internal interface ILazyModule {
+        Task LoadAsync(CancellationToken cancellationToken = default);
     }
 }

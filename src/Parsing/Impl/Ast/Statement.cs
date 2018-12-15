@@ -21,11 +21,7 @@ namespace Microsoft.Python.Parsing.Ast {
         internal Statement() {
         }
 
-        public virtual string Documentation {
-            get {
-                return null;
-            }
-        }
+        public virtual string Documentation => null;
 
         /// <summary>
         /// Returns the length of the keywords (including internal whitespace), such
@@ -37,27 +33,23 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public virtual int KeywordEndIndex => StartIndex + KeywordLength;
 
-        internal override sealed void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            AppendCodeStringStmt(res, ast, format);
-        }
+        internal sealed override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) 
+            => AppendCodeStringStmt(res, ast, format);
 
         internal abstract void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format);
 
         /// <summary>
         /// Returns the expression contained by the statement.
-        /// 
         /// Returns null if it's not an expression statement or return statement.
-        /// 
-        /// New in 1.1.
         /// </summary>
         public static Expression GetExpression(Statement statement) {
             if (statement is ExpressionStatement exprStmt) {
                 return exprStmt.Expression;
-            } else if (statement is ReturnStatement retStmt) {
-                return retStmt.Expression;
-            } else {
-                return null;
             }
+            if (statement is ReturnStatement retStmt) {
+                return retStmt.Expression;
+            }
+            return null;
         }
     }
 }

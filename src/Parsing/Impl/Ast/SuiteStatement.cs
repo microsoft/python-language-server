@@ -16,9 +16,10 @@
 
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
-
     public sealed class SuiteStatement : Statement {
         private readonly Statement[] _statements;
 
@@ -26,9 +27,7 @@ namespace Microsoft.Python.Parsing.Ast {
             _statements = statements;
         }
 
-        public IList<Statement> Statements {
-            get { return _statements; }
-        }
+        public IList<Statement> Statements => _statements;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -39,6 +38,22 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (_statements != null) {
+                    foreach (var s in _statements) {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (PythonWalkerAsync.IsNodeWalkAsync(s)) {
+                            await s.WalkAsync(walker, cancellationToken);
+                        } else {
+                            s.Walk(walker);
+                        }
+                    }
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         public override string Documentation {

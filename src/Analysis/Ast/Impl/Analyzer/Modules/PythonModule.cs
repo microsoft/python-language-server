@@ -65,6 +65,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             Name = name;
             Services = services;
             ModuleType = moduleType;
+
+            Log = services?.GetService<ILogger>();
+            Interpreter = services?.GetService<IPythonInterpreter>();
         }
 
         internal PythonModule(string moduleName, string content, string filePath, Uri uri, ModuleType moduleType, DocumentCreationOptions options, IServiceContainer services)
@@ -72,8 +75,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             Check.ArgumentNotNull(nameof(services), services);
 
             FileSystem = services.GetService<IFileSystem>();
-            Log = services.GetService<ILogger>();
-            Interpreter = services.GetService<IPythonInterpreter>();
             Locations = new[] { new LocationInfo(filePath, uri, 1, 1) };
 
             if (uri == null && !string.IsNullOrEmpty(filePath)) {
@@ -275,6 +276,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             int version;
             Parser parser;
 
+            Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
+
             lock (_analysisLock) {
                 version = _buffer.Version;
                 parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, new ParserOptions {
@@ -284,6 +287,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             var ast = parser.ParseFile();
+
+            Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
 
             lock (_analysisLock) {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -298,6 +303,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             NewAst?.Invoke(this, EventArgs.Empty);
 
             if ((_options & DocumentCreationOptions.Analyze) == DocumentCreationOptions.Analyze) {
+                Log?.Log(TraceEventType.Verbose, $"Analysis queued: {Name}");
+
                 _linkedAnalysisCts?.Dispose();
                 _linkedAnalysisCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
 
@@ -344,35 +351,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 // and then here. This is normal.
                 ExpectedAnalysisVersion++;
                 _analysisTcs = _analysisTcs ?? new TaskCompletionSource<IDocumentAnalysis>();
+                Log?.Log(TraceEventType.Verbose, $"Analysis pending: {Name}");
             }
-        }
-
-        /// <summary>
-        /// Performs analysis of the document. Returns document global scope
-        /// with declared variables and inner scopes. Does not analyze chain
-        /// of dependencies, it is intended for the single file analysis.
-        /// </summary>
-        public async Task<IDocumentAnalysis> AnalyzeAsync(CancellationToken cancellationToken) {
-            // Store current expected version so we can see if it still 
-            // the same at the time the analysis completes.
-            var analysisVersion = ExpectedAnalysisVersion;
-
-            // Make sure the file is parsed ans the AST is up to date.
-            var ast = await GetAstAsync(cancellationToken);
-
-            // Now run the analysis.
-            var walker = new AnalysisWalker(Services, this, ast, suppressBuiltinLookup: ModuleType == ModuleType.Builtins);
-            ast.Walk(walker);
-            cancellationToken.ThrowIfCancellationRequested();
-
-            // Note that we do not set the new analysis here and rather let
-            // Python analyzer to call NotifyAnalysisComplete.
-            var gs = walker.Complete();
-            return new DocumentAnalysis(this, analysisVersion, gs);
         }
 
         public virtual bool NotifyAnalysisComplete(IDocumentAnalysis analysis) {
             lock (_analysisLock) {
+                Log?.Log(TraceEventType.Verbose, $"Analysis complete: {Name}, Version: {analysis.Version}, Expected: {ExpectedAnalysisVersion}");
                 if (analysis.Version == ExpectedAnalysisVersion) {
                     _analysis = analysis;
                     // Derived classes can override OnAnalysisComplete if they want

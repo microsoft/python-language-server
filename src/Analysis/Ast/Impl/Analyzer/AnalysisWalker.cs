@@ -16,6 +16,8 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
@@ -27,7 +29,7 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class AnalysisWalker : PythonWalker {
+    internal sealed class AnalysisWalker : PythonWalkerAsync {
         private readonly IServiceContainer _services;
         private readonly IPythonInterpreter _interpreter;
         private readonly ILogger _log;
@@ -60,8 +62,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return base.Walk(node);
         }
 
-        public IGlobalScope Complete() {
-            _functionWalkers.ProcessSet();
+        public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
+            await _functionWalkers.ProcessSetAsync(cancellationToken);
             foreach (var childModuleName in _module.GetChildrenModuleNames()) {
                 var name = $"{_module.Name}.{childModuleName}";
                 _globalScope.DeclareVariable(name, new LazyPythonModule(name, _services));
@@ -85,8 +87,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             type is IPythonMultipleTypes mm ? PythonMultipleTypes.Create(mm.Types) :
             type;
 
-        public override bool Walk(AssignmentStatement node) {
-            var value = _lookup.GetValueFromExpression(node.Right);
+        public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
+            var value = await _lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
 
             if (value == null || value.MemberType == PythonMemberType.Unknown) {
                 _log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(_ast).Trim()}");
@@ -334,14 +336,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return !allValidComparisons;
         }
 
-        public override bool Walk(FunctionDefinition node) {
+        public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
             if (node.IsLambda) {
                 return false;
             }
 
             var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().ToArray();
             foreach (var d in dec) {
-                var obj = _lookup.GetValueFromExpression(d);
+                var obj = await _lookup.GetValueFromExpressionAsync(d, cancellationToken);
 
                 var declaringType = obj as IPythonType;
                 var declaringModule = declaringType?.DeclaringModule;

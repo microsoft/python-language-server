@@ -16,6 +16,8 @@
 using System;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 
@@ -194,6 +196,29 @@ namespace Microsoft.Python.Parsing.Ast {
                 ReturnAnnotation?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (NameExpression != null) {
+                    await NameExpression?.WalkAsync(walker, cancellationToken);
+                }
+
+                foreach (var p in _parameters.MaybeEnumerate()) {
+                    await p.WalkAsync(walker, cancellationToken);
+                }
+
+                if (Decorators != null) {
+                    await Decorators?.WalkAsync(walker, cancellationToken);
+                }
+                if (_body != null) {
+                    await _body?.WalkAsync(walker, cancellationToken);
+                }
+                if (ReturnAnnotation != null) {
+                    await ReturnAnnotation?.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         public SourceLocation Header => GlobalParent.IndexToLocation(HeaderIndex);

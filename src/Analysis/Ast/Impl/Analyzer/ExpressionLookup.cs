@@ -18,6 +18,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
@@ -109,9 +111,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         [DebuggerStepThrough]
-        public IPythonType GetValueFromExpression(Expression expr) => GetValueFromExpression(expr, DefaultLookupOptions);
+        public Task<IPythonType> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default) 
+            => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
 
-        public IPythonType GetValueFromExpression(Expression expr, LookupOptions options) {
+        public async Task<IPythonType> GetValueFromExpressionAsync(Expression expr, LookupOptions options, CancellationToken cancellationToken = default) {
             if (expr is ParenthesisExpression parExpr) {
                 expr = parExpr.Expression;
             }
@@ -126,22 +129,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     m = GetValueFromName(nex, options);
                     break;
                 case MemberExpression mex:
-                    m = GetValueFromMember(mex, options);
+                    m = await GetValueFromMemberAsync(mex, options, cancellationToken);
                     break;
                 case CallExpression cex:
-                    m = GetValueFromCallable(cex, options);
+                    m = await GetValueFromCallableAsync(cex, options, cancellationToken);
                     break;
                 case UnaryExpression uex:
-                    m = GetValueFromUnaryOp(uex, options);
+                    m = await GetValueFromUnaryOpAsync(uex, options, cancellationToken);
                     break;
                 case IndexExpression iex:
-                    m = GetValueFromIndex(iex, options);
+                    m = await GetValueFromIndexAsync(iex, options, cancellationToken);
                     break;
                 case ConditionalExpression coex:
-                    m = GetValueFromConditional(coex, options);
+                    m = await GetValueFromConditionalAsync(coex, options, cancellationToken);
                     break;
                 default:
-                    m = GetValueFromBinaryOp(expr, options) ?? GetConstantFromLiteral(expr, options);
+                    m = await GetValueFromBinaryOpAsync(expr, options, cancellationToken) 
+                        ?? GetConstantFromLiteral(expr, options);
                     break;
             }
             if (m == null) {
@@ -167,13 +171,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return new AstPythonConstant(UnknownType, GetLoc(expr));
         }
 
-        private IPythonType GetValueFromMember(MemberExpression expr, LookupOptions options) {
+        private async Task<IPythonType> GetValueFromMemberAsync(MemberExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
             if (expr?.Target == null || string.IsNullOrEmpty(expr?.Name)) {
                 return null;
             }
 
-            var e = GetValueFromExpression(expr.Target);
+            var e = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             IPythonType value = null;
+            if (e is ILazyModule lm) {
+                await lm.LoadAsync(cancellationToken);
+            }
             switch (e) {
                 case IPythonMultipleTypes mm:
                     value = mm.Types.OfType<IMemberContainer>()
@@ -187,12 +194,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     value = mc is IPythonClass c && value is PythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
                     break;
                 default:
-                    value = GetValueFromPropertyOrFunction(e, expr);
+                    value = await GetValueFromPropertyOrFunctionAsync(e, expr, cancellationToken);
                     break;
             }
 
             if (value is IPythonProperty p) {
-                value = GetPropertyReturnType(p, expr);
+                value = await GetPropertyReturnTypeAsync(p, expr, cancellationToken);
             } else if (value == null) {
                 _log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
                 return new AstPythonConstant(UnknownType, GetLoc(expr));
@@ -200,15 +207,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return value;
         }
 
-        private IPythonType GetValueFromUnaryOp(UnaryExpression expr, LookupOptions options) {
+        private Task<IPythonType> GetValueFromUnaryOpAsync(UnaryExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
             if (expr?.Expression == null) {
                 return null;
             }
             // Assume that the type after the op is the same as before
-            return GetValueFromExpression(expr.Expression);
+            return GetValueFromExpressionAsync(expr.Expression, cancellationToken);
         }
 
-        private IPythonType GetValueFromBinaryOp(Expression expr, LookupOptions options) {
+        private async Task<IPythonType> GetValueFromBinaryOpAsync(Expression expr, LookupOptions options, CancellationToken cancellationToken = default) {
             if (expr is AndExpression || expr is OrExpression) {
                 return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Bool), GetLoc(expr));
             }
@@ -236,24 +243,25 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 // Try LHS, then, if unknown, try RHS. Example: y = 1 when y is not declared by the walker yet.
-                var value = GetValueFromExpression(binop.Left);
-                return value.IsUnknown() ? GetValueFromExpression(binop.Right) : value;
+                var value = await GetValueFromExpressionAsync(binop.Left, cancellationToken);
+                return value.IsUnknown() ? await GetValueFromExpressionAsync(binop.Right, cancellationToken) : value;
             }
 
             return null;
         }
 
-        private IPythonType GetValueFromIndex(IndexExpression expr, LookupOptions options) {
+        private async Task<IPythonType> GetValueFromIndexAsync(IndexExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
             if (expr?.Target == null) {
                 return null;
             }
 
             if (expr.Index is SliceExpression || expr.Index is TupleExpression) {
                 // When slicing, assume result is the same type
-                return GetValueFromExpression(expr.Target);
+                return await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             }
 
-            var type = GetTypeFromValue(GetValueFromExpression(expr.Target));
+            var value = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
+            var type = GetTypeFromValue(value);
             if (!type.IsUnknown()) {
                 if (AstTypingModule.IsTypingType(type)) {
                     return type;
@@ -281,32 +289,33 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return null;
         }
 
-        private IPythonType GetValueFromConditional(ConditionalExpression expr, LookupOptions options) {
+        private async Task<IPythonType> GetValueFromConditionalAsync(ConditionalExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
             if (expr == null) {
                 return null;
             }
 
-            var trueValue = GetValueFromExpression(expr.TrueExpression);
-            var falseValue = GetValueFromExpression(expr.FalseExpression);
+            var trueValue = await GetValueFromExpressionAsync(expr.TrueExpression, cancellationToken);
+            var falseValue = await GetValueFromExpressionAsync(expr.FalseExpression, cancellationToken);
 
             return trueValue != null || falseValue != null
                 ? PythonMultipleTypes.Combine(trueValue, falseValue)
                 : null;
         }
 
-        private IPythonType GetValueFromCallable(CallExpression expr, LookupOptions options) {
+        private async Task<IPythonType> GetValueFromCallableAsync(CallExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
             if (expr?.Target == null) {
                 return null;
             }
 
-            var m = GetValueFromExpression(expr.Target);
+            var m = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             IPythonType value = null;
             switch (m) {
                 case IPythonFunction pf:
-                    value = GetValueFromPropertyOrFunction(pf, expr);
+                    value = await GetValueFromPropertyOrFunctionAsync(pf, expr, cancellationToken);
                     break;
                 case IPythonType type when type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1:
-                    value = GetTypeFromValue(GetValueFromExpression(expr.Args[0].Expression, options));
+                    value = await GetValueFromExpressionAsync(expr.Args[0].Expression, options, cancellationToken);
+                    value = GetTypeFromValue(value);
                     break;
                 case IPythonType type:
                     value = new AstPythonConstant(type, GetLoc(expr));
@@ -319,23 +328,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return value;
         }
 
-        private IPythonType GetValueFromPropertyOrFunction(IPythonType fn, Expression expr) {
+        private Task<IPythonType> GetValueFromPropertyOrFunctionAsync(IPythonType fn, Expression expr, CancellationToken cancellationToken = default) {
             switch (fn) {
                 case IPythonProperty p:
-                    return GetPropertyReturnType(p, expr);
+                    return GetPropertyReturnTypeAsync(p, expr, cancellationToken);
                 case IPythonFunction f:
-                    return GetValueFromFunction(f, expr);
+                    return GetValueFromFunctionAsync(f, expr, cancellationToken);
                 case IPythonConstant c when c.Type?.MemberType == PythonMemberType.Class:
-                    return c.Type; // typically cls()
+                    return Task.FromResult(c.Type); // typically cls()
             }
-            return null;
+            return Task.FromResult<IPythonType>(null);
         }
 
-        private IPythonType GetValueFromFunction(IPythonFunction fn, Expression expr) {
+        private async Task<IPythonType> GetValueFromFunctionAsync(IPythonFunction fn, Expression expr, CancellationToken cancellationToken = default) {
             var returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
             if (returnType.IsUnknown()) {
                 // Function may not have been walked yet. Do it now.
-                _functionWalkers.ProcessFunction(fn.FunctionDefinition);
+                await _functionWalkers.ProcessFunctionAsync(fn.FunctionDefinition, cancellationToken);
                 returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
             }
             return !returnType.IsUnknown() ? new AstPythonConstant(returnType, GetLoc(expr)) : null;
@@ -344,10 +353,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private IPythonType GetFunctionReturnType(IPythonFunctionOverload o)
             => o != null && o.ReturnType.Count > 0 ? o.ReturnType[0] : UnknownType;
 
-        private IPythonType GetPropertyReturnType(IPythonProperty p, Expression expr) {
+        private async Task<IPythonType> GetPropertyReturnTypeAsync(IPythonProperty p, Expression expr, CancellationToken cancellationToken = default) {
             if (p.Type.IsUnknown()) {
                 // Function may not have been walked yet. Do it now.
-                _functionWalkers.ProcessFunction(p.FunctionDefinition);
+                await _functionWalkers.ProcessFunctionAsync(p.FunctionDefinition, cancellationToken);
             }
             return !p.Type.IsUnknown() ? new AstPythonConstant(p.Type, GetLoc(expr)) : null;
         }

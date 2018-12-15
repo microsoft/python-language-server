@@ -16,35 +16,44 @@
 
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class AssignmentStatement : Statement {
         // _left.Length is 1 for simple assignments like "x = 1"
         // _left.Length will be 3 for "x = y = z = 1"
         private readonly Expression[] _left;
-        private readonly Expression _right;
 
         public AssignmentStatement(Expression[] left, Expression right) {
             _left = left;
-            _right = right;
+            Right = right;
         }
 
-        public IList<Expression> Left {
-            get { return _left; }
-        }
+        public IList<Expression> Left => _left;
 
-        public Expression Right {
-            get { return _right; }
-        }
+        public Expression Right { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 foreach (var e in _left) {
                     e.Walk(walker);
                 }
-                _right.Walk(walker);
+                Right?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                foreach (var e in _left) {
+                    await e.WalkAsync(walker, cancellationToken);
+                }
+                if (Right != null) {
+                    await Right.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
@@ -61,8 +70,8 @@ namespace Microsoft.Python.Parsing.Ast {
                     res.Append("=");
                 }
                 Left[i].AppendCodeString(
-                    res, 
-                    ast, 
+                    res,
+                    ast,
                     format,
                     i != 0 && format.SpacesAroundAssignmentOperator != null ?
                         format.SpacesAroundAssignmentOperator.Value ? " " : "" :
@@ -72,8 +81,8 @@ namespace Microsoft.Python.Parsing.Ast {
             if (lhs != null) {
                 format.Append(
                     res,
-                    format.SpacesAroundAssignmentOperator, 
-                    " ", 
+                    format.SpacesAroundAssignmentOperator,
+                    " ",
                     "",
                     lhs[lhs.Length - 1]
                 );
@@ -81,11 +90,11 @@ namespace Microsoft.Python.Parsing.Ast {
             res.Append("=");
 
             Right.AppendCodeString(
-                res, 
-                ast, 
-                format, 
-                format.SpacesAroundAssignmentOperator != null ? 
-                    format.SpacesAroundAssignmentOperator.Value ? " " : "" : 
+                res,
+                ast,
+                format,
+                format.SpacesAroundAssignmentOperator != null ?
+                    format.SpacesAroundAssignmentOperator.Value ? " " : "" :
                     null
             );
         }

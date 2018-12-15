@@ -13,45 +13,29 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class SentinelModule : PythonModule {
-        private readonly SemaphoreSlim _semaphore;
+        private readonly TaskCompletionSource<IPythonModule> _tcs;
         private volatile IPythonModule _realModule;
 
         public SentinelModule(string name, bool importing): base(name, ModuleType.Empty, null) {
             if (importing) {
-                _semaphore = new SemaphoreSlim(0, 1000);
+                _tcs = new TaskCompletionSource<IPythonModule>();
             } else {
                 _realModule = this;
             }
         }
 
-        public async Task<IPythonModule> WaitForImportAsync(CancellationToken cancellationToken) {
-            var mod = _realModule;
-            if (mod != null) {
-                return mod;
-            }
+        public Task<IPythonModule> WaitForImportAsync(CancellationToken cancellationToken) 
+            => _realModule != null ? Task.FromResult(_realModule) : _tcs.Task;
 
-            try {
-                await _semaphore.WaitAsync(cancellationToken);
-                _semaphore.Release();
-            } catch (ObjectDisposedException) {
-                throw new OperationCanceledException();
-            }
-            return _realModule;
-        }
-
-        public void Complete(IPythonModule module) {
+        public void Complete(IPythonModule module) { 
             if (_realModule == null) {
                 _realModule = module;
-                // Release all the waiters at once (unless we have more
-                // than than 1000 threads trying to import at once, which
-                // should never happen)
-                _semaphore.Release(1000);
+                _tcs.TrySetResult(module);
             }
         }
     }

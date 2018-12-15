@@ -18,6 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
@@ -77,6 +79,13 @@ namespace Microsoft.Python.Parsing.Ast {
                 _body.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                await _body.WalkAsync(walker, cancellationToken);
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         public override Statement Body => _body;

@@ -151,7 +151,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                     // importing on the current thread or the module is not
                     // really being imported.
                     try {
-                        module = await sentinelModule.WaitForImportAsync(cancellationToken);
+                        module = await sentinelModule.WaitForImportAsync(cancellationToken).ConfigureAwait(false);
                     } catch (OperationCanceledException) {
                         _log?.Log(TraceEventType.Warning, $"Import timeout: {name}");
                         return TryImportModuleResult.Timeout;
@@ -195,7 +195,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             var typeStubPaths = GetTypeShedPaths(Configuration?.TypeshedPath).ToArray();
             // Also search for type stub packages if enabled and we are not a blacklisted module
-            if (module != null && typeStubPaths.Length > 0 && module.Name != "typing") {
+            if (typeStubPaths.Length > 0 && module.Name != "typing") {
                 var tsModule = ImportFromTypeStubs(module.Name, typeStubPaths);
                 if (tsModule != null) {
                     module = PythonMultipleTypes.CombineAs<IPythonModule>(module, tsModule);
@@ -399,12 +399,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 document = rdt.AddModule(moduleImport.FullName, ModuleType.Library, moduleImport.ModulePath, null, DocumentCreationOptions.Analyze);
             }
 
-            var analyzer = _services.GetService<IPythonAnalyzer>();
-            if (document.ModuleType == ModuleType.Library || document.ModuleType == ModuleType.User) {
-                await analyzer.AnalyzeDocumentDependencyChainAsync(document, cancellationToken).ConfigureAwait(false);
-            } else {
-                await analyzer.AnalyzeDocumentAsync(document, cancellationToken).ConfigureAwait(false);
-            }
+            var analysis = await document.GetAnalysisAsync(cancellationToken).ConfigureAwait(false);
             return document;
         }
 

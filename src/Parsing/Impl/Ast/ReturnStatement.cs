@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,42 +14,46 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ReturnStatement : Statement {
-        private readonly Expression _expression;
-
         public ReturnStatement(Expression expression) {
-            _expression = expression;
+            Expression = expression;
         }
 
-        public Expression Expression {
-            get { return _expression; }
-        }
+        public Expression Expression { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_expression != null) {
-                    _expression.Walk(walker);
-                }
+                Expression?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
-        public void RoundTripRemoveValueWhiteSpace(PythonAst ast) {
-            ast.SetAttribute(this, NodeAttributes.IsAltFormValue, NodeAttributes.IsAltFormValue);
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Expression != null) {
+                    await Expression.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
+
+        public void RoundTripRemoveValueWhiteSpace(PythonAst ast)
+            => ast.SetAttribute(this, NodeAttributes.IsAltFormValue, NodeAttributes.IsAltFormValue);
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
             res.Append("return");
-            if (_expression != null) {
+            if (Expression != null) {
                 var len = res.Length;
 
-                _expression.AppendCodeString(res, ast, format);
+                Expression.AppendCodeString(res, ast, format);
                 if (this.IsAltForm(ast)) {
                     // remove the leading white space and insert a single space
-                    res.Remove(len, _expression.GetLeadingWhiteSpace(ast).Length);
+                    res.Remove(len, Expression.GetLeadingWhiteSpace(ast).Length);
                     res.Insert(len, ' ');
                 }
             }

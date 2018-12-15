@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -21,51 +20,27 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class ScopeStatement : Statement {
-        private bool _importStar;                   // from module import *
-        private bool _unqualifiedExec;              // exec "code"
-        private bool _nestedFreeVariables;          // nested function with free variable
         // due to "exec" or call to dir, locals, eval, vars...
-        private bool _hasLateboundVarSets;          // calls code which can assign to variables
-        private bool _containsExceptionHandling;    // true if this block contains a try/with statement
 
-        private Dictionary<string, PythonVariable> _variables;          // mapping of string to variables
         private ClosureInfo[] _closureVariables;                        // closed over variables, bool indicates if we accessed it in this scope.
         private List<PythonVariable> _freeVars;                         // list of variables accessed from outer scopes
         private List<string> _globalVars;                               // global variables accessed from this scope
         private List<string> _cellVars;                                 // variables accessed from nested scopes
         private List<NameExpression> _nonLocalVars;                             // variables declared as nonlocal within this scope
         private Dictionary<string, List<PythonReference>> _references;        // names of all variables referenced, null after binding completes
-        private ScopeStatement _parent;
 
         internal const string NameForExec = "module: <exec>";
 
-        public ScopeStatement Parent {
-            get { return _parent; }
-            set { _parent = value; }
-        }
+        public ScopeStatement Parent { get; set; }
 
         public abstract Statement Body {
             get;
         }
 
-        internal bool ContainsImportStar {
-            get { return _importStar; }
-            set { _importStar = value; }
-        }
+        internal bool ContainsImportStar { get; set; }
+        internal bool ContainsExceptionHandling { get; set; }
 
-        internal bool ContainsExceptionHandling {
-            get {
-                return _containsExceptionHandling;
-            }
-            set {
-                _containsExceptionHandling = value;
-            }
-        }
-
-        internal bool ContainsUnqualifiedExec {
-            get { return _unqualifiedExec; }
-            set { _unqualifiedExec = value; }
-        }
+        internal bool ContainsUnqualifiedExec { get; set; }
 
         /// <summary>
         /// True if this scope accesses a variable from an outer scope.
@@ -75,10 +50,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <summary>
         /// True if an inner scope is accessing a variable defined in this scope.
         /// </summary>
-        public bool ContainsNestedFreeVariables {
-            get { return _nestedFreeVariables; }
-            set { _nestedFreeVariables = value; }
-        }
+        public bool ContainsNestedFreeVariables { get; set; }
 
         /// <summary>
         /// True if we are forcing the creation of a dictionary for storing locals.
@@ -96,24 +68,15 @@ namespace Microsoft.Python.Parsing.Ast {
         /// 
         /// This is tracked independently of the ContainsUnqualifiedExec/NeedsLocalsDictionary
         /// </summary>
-        internal virtual bool HasLateBoundVariableSets {
-            get {
-                return _hasLateboundVarSets;
-            }
-            set {
-                _hasLateboundVarSets = value;
-            }
-        }
+        internal virtual bool HasLateBoundVariableSets { get; set; }
 
-        internal Dictionary<string, PythonVariable> Variables {
-            get { return _variables; }
-        }
+        internal Dictionary<string, PythonVariable> Variables { get; private set; }
 
         /// <summary>
         /// Gets the variables for this scope.
         /// </summary>
         public ICollection<PythonVariable> ScopeVariables 
-            => _variables?.Values ?? Array.Empty<PythonVariable>() as ICollection<PythonVariable>;
+            => Variables?.Values ?? Array.Empty<PythonVariable>() as ICollection<PythonVariable>;
 
         public virtual bool IsGlobal => false;
         public virtual bool NeedsLocalContext => NeedsLocalsDictionary || ContainsNestedFreeVariables;
@@ -186,8 +149,8 @@ namespace Microsoft.Python.Parsing.Ast {
         internal abstract bool ExposesLocalVariable(PythonVariable variable);
 
         public bool TryGetVariable(string name, out PythonVariable variable) {
-            if (_variables != null && name != null) {
-                return _variables.TryGetValue(name, out variable);
+            if (Variables != null && name != null) {
+                return Variables.TryGetValue(name, out variable);
             } else {
                 variable = null;
                 return false;
@@ -231,9 +194,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 foreach (var variableName in _nonLocalVars) {
                     var bound = false;
                     for (var parent = Parent; parent != null; parent = parent.Parent) {
-                        PythonVariable variable;
-
-                        if (parent.TryBindOuter(this, variableName.Name, false, out variable)) {
+                        if (parent.TryBindOuter(this, variableName.Name, false, out var variable)) {
                             bound = !variable.IsGlobal;
                             break;
                         }
@@ -293,14 +254,14 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         private void EnsureVariables() {
-            if (_variables == null) {
-                _variables = new Dictionary<string, PythonVariable>(StringComparer.Ordinal);
+            if (Variables == null) {
+                Variables = new Dictionary<string, PythonVariable>(StringComparer.Ordinal);
             }
         }
 
         internal void AddVariable(PythonVariable variable) {
             EnsureVariables();
-            _variables[variable.Name] = variable;
+            Variables[variable.Name] = variable;
         }
 
         internal PythonReference Reference(string/*!*/ name) {
@@ -323,13 +284,12 @@ namespace Microsoft.Python.Parsing.Ast {
         internal PythonVariable/*!*/ CreateVariable(string name, VariableKind kind) {
             EnsureVariables();
             PythonVariable variable;
-            _variables[name] = variable = new PythonVariable(name, kind, this);
+            Variables[name] = variable = new PythonVariable(name, kind, this);
             return variable;
         }
 
         internal PythonVariable/*!*/ EnsureVariable(string/*!*/ name) {
-            PythonVariable variable;
-            if (!TryGetVariable(name, out variable)) {
+            if (!TryGetVariable(name, out var variable)) {
                 return CreateVariable(name, VariableKind.Local);
             }
             return variable;

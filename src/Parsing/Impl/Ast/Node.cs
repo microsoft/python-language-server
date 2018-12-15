@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,28 +14,29 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class Node {
-        private IndexSpan _span;
-
         internal Node() {
         }
 
         #region Public API
 
         public int EndIndex {
-            get => _span.End;
-            set => _span = new IndexSpan(_span.Start, value - _span.Start);
+            get => IndexSpan.End;
+            set => IndexSpan = new IndexSpan(IndexSpan.Start, value - IndexSpan.Start);
         }
 
         public int StartIndex {
-            get => _span.Start;
-            set => _span = new IndexSpan(value, 0);
+            get => IndexSpan.Start;
+            set => IndexSpan = new IndexSpan(value, 0);
         }
 
         public abstract void Walk(PythonWalker walker);
+        public virtual Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public virtual string NodeName => GetType().Name;
 
@@ -58,7 +58,7 @@ namespace Microsoft.Python.Parsing.Ast {
             => parentNode.SetAttribute(toNode, NodeAttributes.PreceedingWhiteSpace, fromNode.GetLeadingWhiteSpace(parentNode));
 
         /// <summary>
-        /// Returns the proceeeding whitespace (newlines and comments) that
+        /// Returns the proceeding whitespace (newlines and comments) that
         /// shows up before this node.
         /// 
         /// New in 1.1.
@@ -119,13 +119,10 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        public void SetLoc(int start, int end) => _span = new IndexSpan(start, end >= start ? end - start : start);
-        public void SetLoc(IndexSpan span) => _span = span;
+        public void SetLoc(int start, int end) => IndexSpan = new IndexSpan(start, end >= start ? end - start : start);
+        public void SetLoc(IndexSpan span) => IndexSpan = span;
 
-        public IndexSpan IndexSpan {
-            get => _span;
-            set => _span = value;
-        }
+        public IndexSpan IndexSpan { get; set; }
 
         internal virtual string GetDocumentation(Statement/*!*/ stmt) => stmt.Documentation;
 

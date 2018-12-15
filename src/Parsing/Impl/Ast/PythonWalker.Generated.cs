@@ -21,7 +21,6 @@ namespace Microsoft.Python.Parsing.Ast {
     /// PythonWalker class - The Python AST Walker (default result is true)
     /// </summary>
     public class PythonWalker {
-
         // AndExpression
         public virtual bool Walk(AndExpression node) { return true; }
         public virtual void PostWalk(AndExpression node) { }

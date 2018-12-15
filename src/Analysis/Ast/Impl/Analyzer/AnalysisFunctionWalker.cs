@@ -18,13 +18,15 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Target.Name}")]
-    class AnalysisFunctionWalker : PythonWalker {
+    class AnalysisFunctionWalker : PythonWalkerAsync {
         private readonly ExpressionLookup _lookup;
         private readonly Scope _parentScope;
         private readonly PythonFunctionOverload _overload;
@@ -43,30 +45,35 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public FunctionDefinition Target { get; }
 
-        private void GetMethodType(out bool classMethod, out bool staticMethod) {
-            classMethod = false;
-            staticMethod = false;
+        private struct MethodInfo {
+            public bool isClassMethod;
+            public bool isStaticMethod;
+        }
+
+        private async Task<MethodInfo> GetMethodInfoAsync(CancellationToken cancellationToken = default) {
+            var info = new MethodInfo();
 
             if (Target.IsLambda) {
-                staticMethod = true;
-                return;
+                info.isStaticMethod = true;
+                return info;
             }
 
             var classMethodObj = _lookup.Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
             var staticMethodObj = _lookup.Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
             foreach (var d in (Target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
-                var m = _lookup.GetValueFromExpression(d);
+                var m = await _lookup.GetValueFromExpressionAsync(d, cancellationToken);
                 if (m.Equals(classMethodObj)) {
-                    classMethod = true;
+                    info.isClassMethod = true;
                 } else if (m.Equals(staticMethodObj)) {
-                    staticMethod = true;
+                    info.isStaticMethod = true;
                 }
             }
+            return info;
         }
 
-        public void Walk() {
+        public async Task WalkAsync(CancellationToken cancellationToken = default) {
             using (_lookup.OpenScope(_parentScope)) {
-                _self = GetSelf();
+                _self = await GetSelfAsync(cancellationToken);
                 using (_lookup.CreateScope(Target, _parentScope)) {
 
                     var annotationTypes = _lookup.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault().ToArray();
@@ -84,7 +91,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                     // Declare parameters in scope
                     foreach (var p in Target.Parameters.Skip(skip).Where(p => !string.IsNullOrEmpty(p.Name))) {
-                        var value = _lookup.GetValueFromExpression(p.DefaultValue);
+                        var value = await _lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken);
                         _lookup.DeclareVariable(p.Name, value ?? _lookup.UnknownType);
                     }
 
@@ -113,8 +120,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return true;
         }
 
-        public override bool Walk(AssignmentStatement node) {
-            var value = _lookup.GetValueFromExpression(node.Right);
+        public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
+            var value = await _lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
             foreach (var lhs in node.Left) {
                 if (lhs is MemberExpression memberExp && memberExp.Target is NameExpression nameExp1) {
                     if (_self is PythonType t && nameExp1.Name == "self") {
@@ -139,7 +146,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         var names = tex.Items.Select(x => (x as NameExpression)?.Name).ToArray();
                         for (var i = 0; i < Math.Min(names.Length, returnedExpressions.Length); i++) {
                             if (returnedExpressions[i] != null) {
-                                var v = _lookup.GetValueFromExpression(returnedExpressions[i]);
+                                var v = await _lookup.GetValueFromExpressionAsync(returnedExpressions[i], cancellationToken);
                                 _lookup.DeclareVariable(names[i], v);
                             }
                         }
@@ -181,8 +188,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return base.Walk(node);
         }
 
-        public override bool Walk(ReturnStatement node) {
-            var types = _lookup.GetTypesFromValue(_lookup.GetValueFromExpression(node.Expression)).ExcludeDefault();
+        public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
+            var value = await _lookup.GetValueFromExpressionAsync(node.Expression, cancellationToken);
+            var types = _lookup.GetTypesFromValue(value).ExcludeDefault().ToList();
 
             // Clean up: if there are None or Unknown types along with real ones, remove them.
             var realTypes = types
@@ -193,10 +201,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
 
-        private IPythonClass GetSelf() {
-            GetMethodType(out var classMethod, out var staticMethod);
+        private async Task<IPythonClass> GetSelfAsync(CancellationToken cancellationToken = default) {
+            var info = await GetMethodInfoAsync(cancellationToken);
             var self = _lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local);
-            return !staticMethod && !classMethod
+            return !info.isStaticMethod && !info.isClassMethod
                  ? self as IPythonClass
                  : null;
         }

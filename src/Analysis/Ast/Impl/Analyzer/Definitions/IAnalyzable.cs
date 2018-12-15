@@ -40,12 +40,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         void NotifyAnalysisPending();
 
         /// <summary>
-        /// Performs analysis of the document. Returns document global scope
-        /// with declared variables and inner scopes.
-        /// </summary>
-        Task<IDocumentAnalysis> AnalyzeAsync(CancellationToken cancellationToken);
-
-        /// <summary>
         /// Notifies document that its analysis is now complete.
         /// </summary>
         /// <param name="analysis">Document analysis</param>

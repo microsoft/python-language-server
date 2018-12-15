@@ -20,11 +20,11 @@ using System.Threading.Tasks;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
-    internal sealed class LazyPythonModule : PythonModule {
+    internal sealed class LazyPythonModule : PythonModule, ILazyModule {
         private IPythonModule _module;
 
-        public LazyPythonModule(string moduleName, IServiceContainer services) : 
-            base(moduleName,  ModuleType.Library, services) { }
+        public LazyPythonModule(string moduleName, IServiceContainer services) :
+            base(moduleName, ModuleType.Library, services) { }
 
         public override string Documentation => MaybeModule?.Documentation ?? string.Empty;
         public override IEnumerable<LocationInfo> Locations => MaybeModule?.Locations.MaybeEnumerate();
@@ -38,16 +38,27 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             module = Interpreter.ModuleResolution.ImportModule(Name);
-            if (module != null) {
-                Debug.Assert(!(module is LazyPythonModule), "ImportModule should not return nested module");
-            }
-
-            module = module ?? new SentinelModule(Name, false);
-            return Interlocked.CompareExchange(ref _module, module, null) ?? module;
+            return SetModule(module);
         }
 
         public override IEnumerable<string> GetChildrenModuleNames() => GetModule().GetChildrenModuleNames();
         public override IPythonType GetMember(string name) => GetModule().GetMember(name);
         public override IEnumerable<string> GetMemberNames() => GetModule().GetMemberNames();
+
+        public async Task LoadAsync(CancellationToken cancellationToken = default) {
+            var module = Volatile.Read(ref _module);
+            if (module == null) {
+                module = await Interpreter.ModuleResolution.ImportModuleAsync(Name, cancellationToken);
+                SetModule(module);
+            }
+        }
+
+        private IPythonModule SetModule(IPythonModule module) {
+            if (module != null) {
+                Debug.Assert(!(module is LazyPythonModule), "ImportModule should not return lazy module.");
+            }
+            module = module ?? new SentinelModule(Name, false);
+            return Interlocked.CompareExchange(ref _module, module, null) ?? module;
+        }
     }
 }
