@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             if (module != null) {
                 Debug.Assert(!(module is LazyPythonModule), "ImportModule should not return lazy module.");
             }
-            module = module ?? new SentinelModule(Name, false);
+            module = module ?? new SentinelModule(Name);
             return Interlocked.CompareExchange(ref _module, module, null) ?? module;
         }
     }

@@ -165,7 +165,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
         }
 
-        protected virtual string LoadContent() => FileSystem.ReadAllText(FilePath);
+        protected virtual string LoadContent() {
+            if ((_options & DocumentCreationOptions.Load) == DocumentCreationOptions.Load && ModuleType != ModuleType.Empty) {
+                return FileSystem.ReadAllText(FilePath);
+            }
+            return string.Empty;
+        }
 
         private void InitializeContent(string content) {
             content = content ?? LoadContent();

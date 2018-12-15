@@ -19,24 +19,29 @@ namespace Microsoft.Python.Analysis.Documents {
     [Flags]
     public enum DocumentCreationOptions {
         /// <summary>
+        /// Do nothing. Typically this is a placeholder or empty module.
+        /// </summary>
+        None,
+
+        /// <summary>
         /// Just load the document, do not parse or analyze.
         /// </summary>
-        Load,
+        Load = 1,
 
         /// <summary>
         /// Load and parse. Do not analyze.
         /// </summary>
-        Ast = 1,
+        Ast = Load | 2,
 
         /// <summary>
         /// Load, parse and analyze.
         /// </summary>
-        Analyze = Ast | 2,
+        Analyze = Ast | 4,
 
         /// <summary>
         /// The document is opened in the editor.
         /// This implies Ast and Analysis.
         /// </summary>
-        Open = 4 | Analyze
+        Open = Analyze | 8
     }
 }

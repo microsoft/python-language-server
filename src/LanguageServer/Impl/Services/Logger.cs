@@ -41,8 +41,8 @@ namespace Microsoft.Python.LanguageServer.Services {
                 sb.Append('{');
                 sb.Append(i.ToString());
                 sb.Append("} ");
-                Log(eventType, sb.ToString().FormatUI(parameters));
             }
+            Log(eventType, sb.ToString().FormatUI(parameters));
         }
 
         public Task LogMessageAsync(string message, TraceEventType eventType) {

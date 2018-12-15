@@ -18,6 +18,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -43,7 +45,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         }
 
 
-        public IDocument ImportFromCache(string name) {
+        public async Task<IDocument> ImportFromCacheAsync(string name, CancellationToken cancellationToken) {
             if (string.IsNullOrEmpty(ModuleCachePath)) {
                 return null;
             }
@@ -60,7 +62,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             var rdt = _services.GetService<IRunningDocumentTable>();
-            return rdt.AddModule(name, ModuleType.Stub, cache, null, DocumentCreationOptions.Analyze);
+            var document = rdt.AddModule(name, ModuleType.Stub, cache, null, DocumentCreationOptions.Analyze);
+
+            await document.GetAnalysisAsync(cancellationToken).ConfigureAwait(false);
+            return document;
         }
 
         public string GetCacheFilePath(string filePath) {

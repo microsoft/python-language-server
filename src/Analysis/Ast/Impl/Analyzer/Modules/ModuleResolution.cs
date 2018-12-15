@@ -134,38 +134,25 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             if (string.IsNullOrEmpty(name)) {
                 return TryImportModuleResult.ModuleNotFound;
             }
-
-            Debug.Assert(!name.EndsWithOrdinal("."), $"{name} should not end with '.'");
-
-            // Handle builtins explicitly
             if (name == BuiltinModuleName) {
-                Debug.Fail($"Interpreters must handle import {name} explicitly");
-                return TryImportModuleResult.NotSupported;
+                return new TryImportModuleResult(BuiltinModule);
             }
 
+            Debug.Assert(!name.EndsWithOrdinal("."), $"{name} should not end with '.'");
             // Return any existing module
             if (_modules.TryGetValue(name, out var module) && module != null) {
-                if (module is SentinelModule sentinelModule) {
-                    // If we are importing this module on another thread, allow
-                    // time for it to complete. This does not block if we are
-                    // importing on the current thread or the module is not
-                    // really being imported.
-                    try {
-                        module = await sentinelModule.WaitForImportAsync(cancellationToken).ConfigureAwait(false);
-                    } catch (OperationCanceledException) {
-                        _log?.Log(TraceEventType.Warning, $"Import timeout: {name}");
-                        return TryImportModuleResult.Timeout;
-                    }
-
-                    if (module is SentinelModule) {
-                        _log?.Log(TraceEventType.Warning, $"Recursive import: {name}");
-                    }
+                if (module is SentinelModule) {
+                    // TODO: we can't just wait here or we hang. There are two cases:
+                    //   a. Recursion on the same analysis chain (A -> B -> A)
+                    //   b. Call from another chain (A -> B -> C and D -> B -> E).
+                    // TODO: Both should be resolved at the dependency chain level.
+                    _log?.Log(TraceEventType.Warning, $"Recursive import: {name}");
                 }
                 return new TryImportModuleResult(module);
             }
 
             // Set up a sentinel so we can detect recursive imports
-            var sentinelValue = new SentinelModule(name, true);
+            var sentinelValue = new SentinelModule(name);
             if (!_modules.TryAdd(name, sentinelValue)) {
                 // Try to get the new module, in case we raced with a .Clear()
                 if (_modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
@@ -178,32 +165,25 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             // Do normal searches
-            if (!string.IsNullOrEmpty(Configuration?.InterpreterPath)) {
-                try {
-                    module = await ImportFromSearchPathsAsync(name, cancellationToken).ConfigureAwait(false);
-                } catch (OperationCanceledException) {
-                    _log?.Log(TraceEventType.Error, $"Import timeout {name}");
-                    return TryImportModuleResult.Timeout;
-                }
+            try {
+                module = await ImportFromSearchPathsAsync(name, cancellationToken).ConfigureAwait(false);
+            } catch (OperationCanceledException) {
+                _log?.Log(TraceEventType.Error, $"Import timeout {name}");
+                return TryImportModuleResult.Timeout;
             }
 
-            if (module == null) {
-                var document = ModuleCache.ImportFromCache(name);
-                await document.GetAnalysisAsync(cancellationToken).ConfigureAwait(false);
-                module = document;
-            }
+            module = module ?? await ModuleCache.ImportFromCacheAsync(name, cancellationToken);
 
             var typeStubPaths = GetTypeShedPaths(Configuration?.TypeshedPath).ToArray();
             // Also search for type stub packages if enabled and we are not a blacklisted module
-            if (typeStubPaths.Length > 0 && module.Name != "typing") {
+            if (module != null && typeStubPaths.Length > 0 && module.Name != "typing") {
                 var tsModule = ImportFromTypeStubs(module.Name, typeStubPaths);
                 if (tsModule != null) {
                     module = PythonMultipleTypes.CombineAs<IPythonModule>(module, tsModule);
                 }
             }
 
-            // Replace our sentinel, or if we raced, get the current
-            // value and abandon the one we just created.
+            // Replace our sentinel
             if (!_modules.TryUpdate(name, module, sentinelValue)) {
                 // Try to get the new module, in case we raced
                 if (_modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
@@ -214,7 +194,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 _log?.Log(TraceEventType.Warning, $"Retry import: {name}");
                 return TryImportModuleResult.NeedRetry;
             }
-            sentinelValue.Complete(module);
 
             return new TryImportModuleResult(module);
         }
@@ -387,10 +366,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             IDocument document;
             if (moduleImport.IsBuiltin) {
-                _log?.Log(TraceEventType.Verbose, "Import builtins: ", name, Configuration.InterpreterPath);
+                _log?.Log(TraceEventType.Verbose, "Import built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
                 document = new CompiledBuiltinPythonModule(name, _services);
             } else if (moduleImport.IsCompiled) {
-                _log?.Log(TraceEventType.Verbose, "Import scraped: ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
+                _log?.Log(TraceEventType.Verbose, "Import compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
                 document = new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, _services);
             } else {
                 _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);

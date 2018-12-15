@@ -48,8 +48,8 @@ namespace Microsoft.Python.Core.Tests {
                 sb.Append('{');
                 sb.Append(i.ToString());
                 sb.Append("} ");
-                Log(eventType, sb.ToString().FormatUI(parameters));
             }
+            Log(eventType, sb.ToString().FormatUI(parameters));
         }
     }
 }
