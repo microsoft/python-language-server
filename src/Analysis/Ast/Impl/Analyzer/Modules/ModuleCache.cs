@@ -62,10 +62,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             }
 
             var rdt = _services.GetService<IRunningDocumentTable>();
-            var document = rdt.AddModule(name, ModuleType.Stub, cache, null, DocumentCreationOptions.Analyze);
+            var module = rdt.AddModule(name, ModuleType.Stub, cache, null, DocumentCreationOptions.Analyze);
 
-            await document.GetAnalysisAsync(cancellationToken).ConfigureAwait(false);
-            return document;
+            await module.LoadAndAnalyzeAsync(cancellationToken).ConfigureAwait(false);
+            return module;
         }
 
         public string GetCacheFilePath(string filePath) {

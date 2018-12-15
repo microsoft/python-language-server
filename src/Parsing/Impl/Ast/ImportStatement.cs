@@ -18,12 +18,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ImportStatement : Statement {
         private readonly ModuleName[] _names;
         private readonly NameExpression[] _asNames;
-        private PythonVariable[] _variables;
 
         public ImportStatement(ModuleName[] names, NameExpression[] asNames, bool forceAbsolute) {
             _names = names;
@@ -36,10 +37,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override int KeywordLength => 6;
 
         [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays", Justification = "breaking change")]
-        public PythonVariable[] Variables {
-            get { return _variables; }
-            set { _variables = value; }
-        }
+        public PythonVariable[] Variables { get; set; }
 
         public PythonReference[] GetReferences(PythonAst ast) {
             return GetVariableReferences(this, ast);
@@ -52,6 +50,13 @@ namespace Microsoft.Python.Parsing.Ast {
             if (walker.Walk(this)) {
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (await walker.WalkAsync(this, cancellationToken)) {
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         /// <summary>

@@ -15,9 +15,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
+    [DebuggerDisplay("{Name}")]
     internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName {
         private readonly string _name;
         private readonly object _lock = new object();

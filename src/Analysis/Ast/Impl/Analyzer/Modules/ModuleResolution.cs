@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
 
             var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
             _modules[BuiltinModuleName] = BuiltinModule = b;
-            await b.GetAnalysisAsync(cancellationToken);
+            await b.LoadAndAnalyzeAsync(cancellationToken);
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinModule.GetAnyMember("__builtin_module_names__");
@@ -378,7 +378,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 document = rdt.AddModule(moduleImport.FullName, ModuleType.Library, moduleImport.ModulePath, null, DocumentCreationOptions.Analyze);
             }
 
-            var analysis = await document.GetAnalysisAsync(cancellationToken).ConfigureAwait(false);
+            await document.LoadAndAnalyzeAsync(cancellationToken).ConfigureAwait(false);
             return document;
         }
 

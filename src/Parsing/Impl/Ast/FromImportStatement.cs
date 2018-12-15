@@ -18,13 +18,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
 
     public class FromImportStatement : Statement {
-        private static readonly string[] _star = new[] { "*" };
-        private PythonVariable[] _variables;
-
         public FromImportStatement(ModuleName/*!*/ root, NameExpression/*!*/[] names, NameExpression/*!*/[] asNames, bool fromFuture, bool forceAbsolute, int importIndex) {
             Root = root;
             Names = names;
@@ -48,19 +47,21 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays",
             Justification = "breaking change")]
-        public PythonVariable[] Variables {
-            get { return _variables; }
-            set { _variables = value; }
-        }
+        public PythonVariable[] Variables { get; set; }
 
-        public PythonReference[] GetReferences(PythonAst ast) {
-            return GetVariableReferences(this, ast);
-        }
+        public PythonReference[] GetReferences(PythonAst ast) => GetVariableReferences(this, ast);
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (await walker.WalkAsync(this, cancellationToken)) {
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         /// <summary>

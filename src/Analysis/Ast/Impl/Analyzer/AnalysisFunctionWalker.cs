@@ -97,16 +97,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                     // return type from the annotation always wins, no need to walk the body.
                     if (!annotationTypes.Any()) {
-                        Target.Walk(this);
+                        await Target.WalkAsync(this, cancellationToken);
                     }
                 } // Function scope
             } // Restore original scope at the entry
         }
 
-        public override bool Walk(FunctionDefinition node) {
+        public override Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
             if (node != Target) {
                 // Do not walk nested functions (yet)
-                return false;
+                return Task.FromResult(false);
             }
 
             if (_overload.Documentation == null) {
@@ -117,7 +117,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            return true;
+            return Task.FromResult(true);
         }
 
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
@@ -165,7 +165,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 }
             }
-            return base.Walk(node);
+            return await base.WalkAsync(node, cancellationToken);
         }
 
         public override bool Walk(IfStatement node) {

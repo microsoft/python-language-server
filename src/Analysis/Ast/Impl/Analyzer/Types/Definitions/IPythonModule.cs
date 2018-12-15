@@ -14,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Analysis {
     /// <summary>
@@ -32,11 +34,11 @@ namespace Microsoft.Python.Analysis {
         IEnumerable<string> GetChildrenModuleNames();
 
         /// <summary>
-        /// Ensures that module content is loaded and analysis has started.
+        /// Ensures that module content is loaded and analysis has completed.
         /// Typically module content is loaded at the creation time, but delay
         /// loaded (lazy) modules may choose to defer content retrieval and
         /// analysis until later time, when module members are actually needed.
         /// </summary>
-        void Load();
+        Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default);
     }
 }

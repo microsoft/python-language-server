@@ -46,9 +46,6 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public AndWhichConstraint<TAssertions, PythonType> HaveClass(string name, string because = "", params object[] reasonArgs)
             => HaveMember<PythonType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
 
-        public AndWhichConstraint<TAssertions, LazyPythonModule> HaveNestedModule(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<LazyPythonModule>(name, because, reasonArgs).OfMemberType(PythonMemberType.Module);
-
         public AndWhichConstraint<TAssertions, PythonProperty> HaveProperty(string name, string because = "", params object[] reasonArgs)
             => HaveMember<PythonProperty>(name, because, reasonArgs).OfMemberType(PythonMemberType.Property);
 

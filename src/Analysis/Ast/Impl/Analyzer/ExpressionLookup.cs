@@ -178,9 +178,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var e = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             IPythonType value = null;
-            if (e is ILazyModule lm) {
-                await lm.LoadAsync(cancellationToken);
-            }
             switch (e) {
                 case IPythonMultipleTypes mm:
                     value = mm.Types.OfType<IMemberContainer>()

@@ -47,21 +47,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
             if (types.All(m => m is IPythonModule)) {
                 return new MultipleModuleTypes(types);
             }
-            if (types.All(m => m is IPythonType)) {
-                return new MultipleTypeTypes(types);
-            }
-
-            return new PythonMultipleTypes(types);
+            return new MultipleTypeTypes(types);
         }
 
         public static IPythonType Combine(IPythonType x, IPythonType y) {
             if (x == null && y == null) {
                 throw new InvalidOperationException("Cannot add two null types");
             }
-            if (x == null || (x.MemberType == PythonMemberType.Unknown && !(x is ILazyType))) {
+            if (x == null || x.MemberType == PythonMemberType.Unknown) {
                 return y;
             }
-            if (y == null || (y.MemberType == PythonMemberType.Unknown && !(y is ILazyType))) {
+            if (y == null || y.MemberType == PythonMemberType.Unknown) {
                 return x;
             }
             if (x == y) {

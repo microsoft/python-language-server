@@ -16,6 +16,9 @@
 
 using System;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
@@ -25,7 +28,7 @@ namespace Microsoft.Python.Parsing.Ast {
         private readonly Arg[] _bases;
         private DecoratorStatement _decorators;
 
-        public ClassDefinition(NameExpression/*!*/ name, Arg[] bases, Statement body) {           
+        public ClassDefinition(NameExpression/*!*/ name, Arg[] bases, Statement body) {
             _name = name;
             _bases = bases;
             _body = body;
@@ -143,6 +146,25 @@ namespace Microsoft.Python.Parsing.Ast {
             walker.PostWalk(this);
         }
 
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (_name != null) {
+                    await _name.WalkAsync(walker, cancellationToken);
+                }
+
+                if (_decorators != null) {
+                    await _decorators.WalkAsync(walker, cancellationToken);
+                }
+                foreach (var b in _bases.MaybeEnumerate()) {
+                    await b.WalkAsync(walker, cancellationToken);
+                }
+                if (_body != null) {
+                    await _body.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
+        }
+
         public SourceLocation Header => GlobalParent.IndexToLocation(HeaderIndex);
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
@@ -177,7 +199,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     this,
                     Bases.Length,
                     (i, sb) => {
-                        if(format.SpaceWithinClassDeclarationParens != null && i == 0) {
+                        if (format.SpaceWithinClassDeclarationParens != null && i == 0) {
                             // need to remove any leading whitespace which was preserved for
                             // the 1st param, and then force the correct whitespace.
                             Bases[i].AppendCodeString(sb, ast, format, format.SpaceWithinClassDeclarationParens.Value ? " " : "");
@@ -191,9 +213,9 @@ namespace Microsoft.Python.Parsing.Ast {
                     res.Append(' ');
                 }
             }
-            
+
             if (!this.IsAltForm(ast) && !this.IsMissingCloseGrouping(ast)) {
-                if (Bases.Length != 0 || 
+                if (Bases.Length != 0 ||
                     format.SpaceWithinEmptyBaseClassList == null ||
                     !string.IsNullOrWhiteSpace(this.GetFourthWhiteSpace(ast))) {
                     format.Append(

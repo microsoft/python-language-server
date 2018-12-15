@@ -14,6 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -29,9 +30,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// or there is nothing left to walk.
     /// </summary>
     class AnalysisFunctionWalkerSet {
-        private readonly Dictionary<FunctionDefinition, AnalysisFunctionWalker> _functionWalkers
-            = new Dictionary<FunctionDefinition, AnalysisFunctionWalker>();
-        private readonly HashSet<FunctionDefinition> _processed = new HashSet<FunctionDefinition>();
+        private readonly ConcurrentDictionary<FunctionDefinition, AnalysisFunctionWalker> _functionWalkers
+            = new ConcurrentDictionary<FunctionDefinition, AnalysisFunctionWalker>();
+        private readonly ConcurrentBag<FunctionDefinition> _processed = new ConcurrentBag<FunctionDefinition>();
 
         public void Add(AnalysisFunctionWalker walker)
             => _functionWalkers[walker.Target] = walker;
@@ -60,13 +61,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 await ProcessWalkerAsync(w, cancellationToken);
             }
         }
+
         public bool Contains(FunctionDefinition node)
             => _functionWalkers.ContainsKey(node) || _processed.Contains(node);
 
         private Task ProcessWalkerAsync(AnalysisFunctionWalker walker, CancellationToken cancellationToken = default) {
             // Remove walker before processing as to prevent reentrancy.
-            _functionWalkers.Remove(walker.Target);
+            // NOTE: first add then remove so we don't get moment when
+            // walker is missing from either set.
             _processed.Add(walker.Target);
+            _functionWalkers.TryRemove(walker.Target, out _);
             return walker.WalkAsync(cancellationToken);
         }
     }

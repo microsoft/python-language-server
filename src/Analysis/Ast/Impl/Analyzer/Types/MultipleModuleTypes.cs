@@ -16,6 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Analysis.Analyzer.Types {
     internal sealed class MultipleModuleTypes : PythonMultipleTypes, IPythonModule {
@@ -42,18 +44,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
 
         #region IPythonModule
         public IEnumerable<string> GetChildrenModuleNames() => Modules.SelectMany(m => m.GetChildrenModuleNames());
-        public void Load() {
-            List<Exception> exceptions = null;
+        public async Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) {
             foreach (var m in Modules) {
-                try {
-                    m.Load();
-                } catch (Exception ex) {
-                    exceptions = exceptions ?? new List<Exception>();
-                    exceptions.Add(ex);
-                }
-            }
-            if (exceptions != null) {
-                throw new AggregateException(exceptions);
+                cancellationToken.ThrowIfCancellationRequested();
+                await m.LoadAndAnalyzeAsync(cancellationToken);
             }
         }
         public IEnumerable<string> ParseErrors { get; private set; } = Enumerable.Empty<string>();

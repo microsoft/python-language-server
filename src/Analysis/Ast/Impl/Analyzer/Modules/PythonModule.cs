@@ -107,7 +107,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                     _documentation = (m as AstPythonStringLiteral)?.Value ?? string.Empty;
                     if (string.IsNullOrEmpty(_documentation)) {
                         m = GetMember($"_{Name}");
-                        _documentation = (m as LazyPythonModule)?.Documentation;
+                        _documentation = m?.Documentation;
                         if (string.IsNullOrEmpty(_documentation)) {
                             _documentation = TryGetDocFromModuleInitFile();
                         }
@@ -159,10 +159,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
         /// loaded (lazy) modules may choose to defer content retrieval and
         /// analysis until later time, when module members are actually needed.
         /// </summary>
-        public void Load() {
+        public virtual Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) {
             if (!_loaded) {
                 InitializeContent(null);
             }
+            return GetAnalysisAsync(cancellationToken);
         }
 
         protected virtual string LoadContent() {

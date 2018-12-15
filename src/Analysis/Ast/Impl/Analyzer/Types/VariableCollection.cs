@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -30,18 +31,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Types {
         #endregion
 
         #region IMemberContainer
-
-        public IPythonType GetMember(string name) {
-            if (_variables.TryGetValue(name, out var t)) {
-                if (t is ILazyType lt) {
-                    _variables[name] = lt.Get();
-                }
-            }
-            return t;
-        }
+        public IPythonType GetMember(string name) 
+            => _variables.TryGetValue(name, out var t) ? t : null;
 
         public IEnumerable<string> GetMemberNames() => _variables.Keys;
-        public bool Remove(IVariable item) => throw new System.NotImplementedException();
+        public bool Remove(IVariable item) => throw new NotImplementedException();
         #endregion
 
         internal void DeclareVariable(string name, IPythonType type) => _variables[name] = type;

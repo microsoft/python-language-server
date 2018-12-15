@@ -21,7 +21,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Analyzer.Types;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Logging;
@@ -56,17 +55,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public IGlobalScope GlobalScope => _globalScope;
 
-        public override bool Walk(PythonAst node) {
+        public override Task<bool> WalkAsync(PythonAst node, CancellationToken cancellationToken = default) {
             Check.InvalidOperation(() => _ast == node, "walking wrong AST");
             CollectTopLevelDefinitions();
-            return base.Walk(node);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            return base.WalkAsync(node, cancellationToken);
         }
 
         public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
             await _functionWalkers.ProcessSetAsync(cancellationToken);
             foreach (var childModuleName in _module.GetChildrenModuleNames()) {
                 var name = $"{_module.Name}.{childModuleName}";
-                _globalScope.DeclareVariable(name, new LazyPythonModule(name, _services));
+                _globalScope.DeclareVariable(name, _module);
             }
             return GlobalScope;
         }
@@ -88,6 +89,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             type;
 
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
             var value = await _lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
 
             if (value == null || value.MemberType == PythonMemberType.Unknown) {
@@ -109,7 +111,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _lookup.DeclareVariable(ne.Name, Clone(value));
             }
 
-            return base.Walk(node);
+            return await base.WalkAsync(node, cancellationToken);
         }
 
         public override bool Walk(ExpressionStatement node) {
@@ -134,7 +136,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public override bool Walk(ImportStatement node) {
+        public override async Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
             if (node.Names == null) {
                 return false;
             }
@@ -152,13 +155,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         _lookup.DeclareVariable(memberName, _module);
                         break;
                     case ModuleImport moduleImport:
-                        _lookup.DeclareVariable(memberName, new LazyPythonModule(moduleImport.FullName, _services));
+                        var m1 = await _interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
+                        _lookup.DeclareVariable(memberName, m1 ?? new SentinelModule(moduleImport.FullName));
                         break;
                     case PossibleModuleImport possibleModuleImport:
-                        _lookup.DeclareVariable(memberName, new LazyPythonModule(possibleModuleImport.PossibleModuleFullName, _services));
+                        var m2 = await _interpreter.ModuleResolution.ImportModuleAsync(possibleModuleImport.PossibleModuleFullName, cancellationToken);
+                        _lookup.DeclareVariable(memberName, m2 ?? new SentinelModule(possibleModuleImport.PossibleModuleFullName));
                         break;
                     default:
-                        _lookup.DeclareVariable(memberName, _lookup.UnknownType);
+                        _lookup.DeclareVariable(memberName, new SentinelModule(memberName));
                         break;
                 }
             }
@@ -166,7 +171,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return false;
         }
 
-        public override bool Walk(FromImportStatement node) {
+        public override async Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
             if (node.Root == null || node.Names == null) {
                 return false;
             }
@@ -188,13 +194,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     ImportMembersFromSelf(node);
                     return false;
                 case ModuleImport moduleImport:
-                    ImportMembersFromModule(node, moduleImport.FullName);
+                    await ImportMembersFromModuleAsync(node, moduleImport.FullName, cancellationToken);
                     return false;
                 case PossibleModuleImport possibleModuleImport:
-                    ImportMembersFromModule(node, possibleModuleImport.PossibleModuleFullName);
+                    await ImportMembersFromModuleAsync(node, possibleModuleImport.PossibleModuleFullName, cancellationToken);
                     return false;
                 case PackageImport packageImports:
-                    ImportMembersFromPackage(node, packageImports);
+                    await ImportMembersFromPackageAsync(node, packageImports, cancellationToken);
                     return false;
                 default:
                     return false;
@@ -224,33 +230,34 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void ImportMembersFromModule(FromImportStatement node, string fullModuleName) {
+        private async Task ImportMembersFromModuleAsync(FromImportStatement node, string moduleName, CancellationToken cancellationToken = default) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var rdt = _services.GetService<IRunningDocumentTable>();
-            var nestedModule = new LazyPythonModule(fullModuleName, _services);
+            var module = await _interpreter.ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
 
             if (names.Count == 1 && names[0].Name == "*") {
-                HandleModuleImportStar(nestedModule);
+                await HandleModuleImportStarAsync(module, cancellationToken);
                 return;
             }
 
             for (var i = 0; i < names.Count; i++) {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var importName = names[i].Name;
                 var memberReference = asNames[i] ?? names[i];
                 var memberName = memberReference.Name;
-                var location = GetLoc(memberReference);
 
-                var member = new LazyPythonModuleMember(importName, nestedModule, location, _interpreter);
-                _lookup.DeclareVariable(memberName, member);
+                _lookup.DeclareVariable(memberName, module ?? new SentinelModule(importName));
             }
         }
 
-        private void HandleModuleImportStar(IPythonModule module) {
-            module.Load();
+        private async Task HandleModuleImportStarAsync(IPythonModule module, CancellationToken cancellationToken = default) {
             // Ensure child modules have been loaded
             module.GetChildrenModuleNames();
+
             foreach (var memberName in module.GetMemberNames()) {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var member = module.GetMember(memberName);
                 if (member == null) {
                     _log?.Log(TraceEventType.Verbose, $"Undefined import: {module.Name}, {memberName}");
@@ -258,13 +265,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     _log?.Log(TraceEventType.Verbose, $"Unknown import: {module.Name}, {memberName}");
                 }
 
-                member = member ?? new AstPythonConstant(_lookup.UnknownType, ((module as ILocatedMember)?.Locations).MaybeEnumerate().ToArray());
+                member = member ?? new AstPythonConstant(_lookup.UnknownType, module.Locations.MaybeEnumerate().ToArray());
+                if (member is IPythonModule m) {
+                    await _interpreter.ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
+                }
                 _lookup.DeclareVariable(memberName, member);
-                (member as IPythonModule)?.Load();
             }
         }
 
-        private void ImportMembersFromPackage(FromImportStatement node, PackageImport packageImport) {
+        private async Task ImportMembersFromPackageAsync(FromImportStatement node, PackageImport packageImport, CancellationToken cancellationToken = default) {
             var names = node.Names;
             var asNames = node.AsNames;
 
@@ -283,7 +292,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ModuleImport moduleImport;
                 IPythonType member;
                 if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
-                    member = new LazyPythonModule(moduleImport.FullName, _services);
+                    member = await _interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
                 } else {
                     member = new AstPythonConstant(_lookup.UnknownType, location);
                 }
@@ -343,22 +352,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().ToArray();
             foreach (var d in dec) {
-                var obj = await _lookup.GetValueFromExpressionAsync(d, cancellationToken);
+                var declaringType = await _lookup.GetValueFromExpressionAsync(d, cancellationToken);
+                if (declaringType != null) {
+                    var declaringModule = declaringType.DeclaringModule;
 
-                var declaringType = obj as IPythonType;
-                var declaringModule = declaringType?.DeclaringModule;
+                    if (declaringType.TypeId == BuiltinTypeId.Property) {
+                        AddProperty(node, declaringModule, declaringType);
+                        return false;
+                    }
 
-                if (declaringType?.TypeId == BuiltinTypeId.Property) {
-                    AddProperty(node, declaringModule, declaringType);
-                    return false;
-                }
-
-                var name = declaringType?.Name;
-                if (declaringModule?.Name == "abc" && name == "abstractproperty") {
-                    AddProperty(node, declaringModule, declaringType);
-                    return false;
+                    var name = declaringType.Name;
+                    if (declaringModule?.Name == "abc" && name == "abstractproperty") {
+                        AddProperty(node, declaringModule, declaringType);
+                        return false;
+                    }
                 }
             }
+
             foreach (var setter in dec.OfType<MemberExpression>().Where(n => n.Name == "setter")) {
                 if (setter.Target is NameExpression src) {
                     if (_lookup.LookupNameInScopes(src.Name, ExpressionLookup.LookupOptions.Local) is PythonProperty existingProp) {
@@ -440,7 +450,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public override bool Walk(ClassDefinition node) {
+        public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var member = _lookup.GetInScope(node.Name);
             var t = member as PythonClass;
             if (t == null && member is IPythonMultipleTypes mm) {
@@ -461,15 +473,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _classScope = _lookup.CreateScope(node, _lookup.CurrentScope);
             _lookup.DeclareVariable("__class__", t);
 
-            return true;
+            return Task.FromResult(true);
         }
 
-        public override void PostWalk(ClassDefinition node) {
+        public override Task PostWalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
             if (_lookup.GetInScope("__class__") is PythonType cls) {
                 cls.AddMembers(_lookup.CurrentScope.Variables, true);
                 _classScope?.Dispose();
             }
-            base.PostWalk(node);
+            return base.PostWalkAsync(node, cancellationToken);
         }
 
         public void ProcessFunctionDefinition(FunctionDefinition node) {

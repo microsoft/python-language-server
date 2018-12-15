@@ -24,10 +24,13 @@ namespace Microsoft.Python.Parsing.Ast {
     public class PythonWalkerAsync: PythonWalker {
         public static bool IsNodeWalkAsync(Node node) {
             switch (node) {
-                case SuiteStatement s:
-                case AssignmentStatement a:
-                case FunctionDefinition f:
-                case ReturnStatement r:
+                case SuiteStatement sst:
+                case AssignmentStatement ast:
+                case ClassDefinition cd:
+                case FunctionDefinition fd:
+                case ReturnStatement rst:
+                case ImportStatement ist:
+                case FromImportStatement fist:
                     return true;
             }
             return false;
@@ -44,6 +47,10 @@ namespace Microsoft.Python.Parsing.Ast {
         public virtual Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public virtual Task PostWalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
+        // ClassDefinition
+        public virtual Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public virtual Task PostWalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
         // FunctionDefinition
         public virtual Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public virtual Task PostWalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) => Task.CompletedTask;
@@ -51,5 +58,14 @@ namespace Microsoft.Python.Parsing.Ast {
         // ReturnStatement
         public virtual Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public virtual Task PostWalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        
+        // ImportStatement
+        public virtual Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public virtual Task PostWalkAsync(ImportStatement node, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        
+        // FromImportStatement
+        public virtual Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public virtual Task PostWalkAsync(FromImportStatement node, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
     }
 }
