@@ -19,6 +19,7 @@ using System.Linq;
 using System.Text;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;

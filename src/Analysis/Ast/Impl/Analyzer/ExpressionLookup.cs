@@ -20,8 +20,8 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer.Modules;
-using Microsoft.Python.Analysis.Analyzer.Types;
+using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
@@ -100,9 +100,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             var m = ann.GetValue(new TypeAnnotationConverter(this));
-            if (m is IPythonMultipleTypes mm) {
-                return mm.Types.OfType<IPythonType>();
-            }
             if (m is IPythonType type) {
                 return Enumerable.Repeat(type, 1);
             }
@@ -111,7 +108,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         [DebuggerStepThrough]
-        public Task<IPythonType> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default) 
+        public Task<IPythonType> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default)
             => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
 
         public async Task<IPythonType> GetValueFromExpressionAsync(Expression expr, LookupOptions options, CancellationToken cancellationToken = default) {
@@ -144,7 +141,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     m = await GetValueFromConditionalAsync(coex, options, cancellationToken);
                     break;
                 default:
-                    m = await GetValueFromBinaryOpAsync(expr, options, cancellationToken) 
+                    m = await GetValueFromBinaryOpAsync(expr, options, cancellationToken)
                         ?? GetConstantFromLiteral(expr, options);
                     break;
             }
@@ -179,12 +176,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var e = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             IPythonType value = null;
             switch (e) {
-                case IPythonMultipleTypes mm:
-                    value = mm.Types.OfType<IMemberContainer>()
-                        .Select(x => x.GetMember(expr.Name))
-                        .ExcludeDefault()
-                        .FirstOrDefault();
-                    break;
                 case IMemberContainer mc:
                     value = mc.GetMember(expr.Name);
                     // If container is class rather than the instance, then method is an unbound function.
@@ -266,8 +257,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 switch (type.TypeId) {
                     case BuiltinTypeId.Bytes:
-                        return Ast.LanguageVersion.Is3x() 
-                            ? new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Int), GetLoc(expr)) 
+                        return Ast.LanguageVersion.Is3x()
+                            ? new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Int), GetLoc(expr))
                             : new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Bytes), GetLoc(expr));
                     case BuiltinTypeId.Unicode:
                         return new AstPythonConstant(Interpreter.GetBuiltinType(BuiltinTypeId.Unicode), GetLoc(expr));
@@ -294,9 +285,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var trueValue = await GetValueFromExpressionAsync(expr.TrueExpression, cancellationToken);
             var falseValue = await GetValueFromExpressionAsync(expr.FalseExpression, cancellationToken);
 
-            return trueValue != null || falseValue != null
-                ? PythonMultipleTypes.Combine(trueValue, falseValue)
-                : null;
+            return trueValue ?? falseValue;
         }
 
         private async Task<IPythonType> GetValueFromCallableAsync(CallExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
@@ -320,7 +309,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (value == null) {
-                _log?.Log(TraceEventType.Verbose, "Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
+                _log?.Log(TraceEventType.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
             }
             return value;
         }
@@ -373,9 +362,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public IEnumerable<IPythonType> GetTypesFromValue(IPythonType value) {
-            if (value is IPythonMultipleTypes mm) {
-                return mm.Types.Select(GetTypeFromValue).Distinct();
-            }
             var t = GetTypeFromValue(value);
             return t != null ? Enumerable.Repeat(t, 1) : Enumerable.Empty<IPythonType>();
         }
@@ -425,19 +411,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Property);
             }
 
-            if (value is IPythonMultipleTypes mm) {
-                return PythonMultipleTypes.CreateAs<IPythonType>(mm.Types);
-            }
-
-            if (value is IPythonType) {
-                return Interpreter.GetBuiltinType(BuiltinTypeId.Type);
-            }
-
-#if DEBUG
-            var implements = string.Join(", ", new[] { value.GetType().FullName }.Concat(value.GetType().GetInterfaces().Select(i => i.Name)));
-            Debug.Fail("Unhandled type() value: " + implements);
-#endif
-            return null;
+            return Interpreter.GetBuiltinType(BuiltinTypeId.Type);
         }
 
         public IPythonType GetTypeFromLiteral(Expression expr) {
@@ -496,16 +470,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public IPythonType GetInScope(string name) => CurrentScope.Variables.GetMember(name);
 
-        public void DeclareVariable(string name, IPythonType type, bool mergeWithExisting = true) {
+        public void DeclareVariable(string name, IPythonType type) {
             if (type == null) {
                 return;
             }
             var existing = CurrentScope.Variables.GetMember(name);
-            if (mergeWithExisting && existing != null) {
+            if (existing != null) {
                 if (existing.IsUnknown()) {
                     CurrentScope.DeclareVariable(name, type);
-                } else if (!type.IsUnknown()) {
-                    CurrentScope.DeclareVariable(name, PythonMultipleTypes.Combine(existing, type));
                 }
             } else {
                 CurrentScope.DeclareVariable(name, type);
@@ -564,7 +536,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Moves current scope to the specified scope.
         /// New scope is pushed on the stack and will be removed 
-        /// upon call to the <see cref="CloseScope"/>.
+        /// when returned disposable is disposed.
         /// </summary>
         /// <param name="scope"></param>
         public IDisposable OpenScope(Scope scope) {
@@ -576,7 +548,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Creates new scope as a child of the specified scope.
         /// New scope is pushed on the stack and will be removed 
-        /// upon call to the <see cref="CloseScope"/>.
+        /// when returned disposable is disposed.
         /// </summary>
         public IDisposable CreateScope(Node node, Scope fromScope, bool visibleToChildren = true) {
             var s = new Scope(node, fromScope, visibleToChildren);
@@ -584,7 +556,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return OpenScope(s);
         }
 
-        private class ScopeTracker: IDisposable {
+        private class ScopeTracker : IDisposable {
             private readonly ExpressionLookup _lookup;
             public ScopeTracker(ExpressionLookup lookup) {
                 _lookup = lookup;

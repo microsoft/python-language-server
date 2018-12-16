@@ -19,8 +19,8 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
-using Microsoft.Python.Analysis.Analyzer.Modules;
-using Microsoft.Python.Analysis.Analyzer.Types;
+using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
@@ -39,9 +39,6 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         protected override string Identifier => nameof(IMemberContainer);
-
-        public AndWhichConstraint<TAssertions, PythonMultipleTypes> HaveMultipleTypesMember(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<PythonMultipleTypes>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
 
         public AndWhichConstraint<TAssertions, PythonType> HaveClass(string name, string because = "", params object[] reasonArgs)
             => HaveMember<PythonType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);

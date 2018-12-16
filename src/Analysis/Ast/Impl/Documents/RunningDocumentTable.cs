@@ -16,8 +16,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using Microsoft.Python.Analysis.Analyzer.Modules;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
@@ -51,27 +52,33 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <param name="content">Document content</param>
         public IDocument AddDocument(Uri uri, string content) {
             var document = FindDocument(null, uri);
-            return document != null
-                ? OpenDocument(document, DocumentCreationOptions.Open)
-                : CreateDocument(null, ModuleType.User, null, uri, null, DocumentCreationOptions.Open);
+            if (document != null) {
+                return OpenDocument(document, ModuleLoadOptions.Open);
+            }
+
+            var mco = new ModuleCreationOptions {
+                ModuleName = Path.GetFileNameWithoutExtension(uri.LocalPath),
+                Content = content,
+                Uri = uri,
+                ModuleType = ModuleType.User,
+                LoadOptions = ModuleLoadOptions.Open
+            };
+            return CreateDocument(mco);
         }
 
         /// <summary>
         /// Adds library module to the list of available documents.
         /// </summary>
-        /// <param name="moduleName">The name of the module; used to associate with imports</param>
-        /// <param name="moduleType">Module type (library or stub).</param>
-        /// <param name="filePath">The path to the file on disk</param>
-        /// <param name="uri">Document URI. Can be null if module is not a user document.</param>
-        /// <param name="options">Document creation options.</param>
-        public IDocument AddModule(string moduleName, ModuleType moduleType, string filePath, Uri uri, DocumentCreationOptions options) {
-            if (uri == null) {
-                filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
-                if (!Uri.TryCreate(filePath, UriKind.Absolute, out uri)) {
+        public IDocument AddModule(ModuleCreationOptions mco) {
+            if (mco.Uri == null) {
+                mco.FilePath = mco.FilePath ?? throw new ArgumentNullException(nameof(mco.FilePath));
+                if (!Uri.TryCreate(mco.FilePath, UriKind.Absolute, out var uri)) {
                     throw new ArgumentException("Unable to determine URI from the file path.");
                 }
+                mco.Uri = uri;
             }
-            return FindDocument(filePath, uri) ?? CreateDocument(moduleName, moduleType, filePath, uri, null, options);
+
+            return FindDocument(mco.FilePath, mco.Uri) ?? CreateDocument(mco);
         }
 
         public IDocument GetDocument(Uri documentUri)
@@ -109,34 +116,34 @@ namespace Microsoft.Python.Analysis.Documents {
             return null;
         }
 
-        private IDocument CreateDocument(string moduleName, ModuleType moduleType, string filePath, Uri uri, string content, DocumentCreationOptions options) {
+        private IDocument CreateDocument(ModuleCreationOptions mco) {
             IDocument document;
-            switch(moduleType) {
+            switch (mco.ModuleType) {
                 case ModuleType.Stub:
-                    document = new StubPythonModule(moduleName, filePath, _services);
+                    document = new StubPythonModule(mco.ModuleName, mco.FilePath, _services);
                     break;
                 case ModuleType.Compiled:
-                    document = new CompiledPythonModule(moduleName, ModuleType.Compiled, filePath, _services);
+                    document = new CompiledPythonModule(mco.ModuleName, ModuleType.Compiled, mco.FilePath, mco.Stub, _services);
                     break;
                 case ModuleType.CompiledBuiltin:
-                    document = new CompiledBuiltinPythonModule(moduleName, _services);
+                    document = new CompiledBuiltinPythonModule(mco.ModuleName, mco.Stub, _services);
                     break;
                 case ModuleType.User:
                 case ModuleType.Library:
-                    document = new PythonModule(moduleName, content, filePath, uri, moduleType, options, _services);
+                    document = new PythonModule(mco, _services);
                     break;
                 default:
-                    throw new InvalidOperationException($"CreateDocument does not support module type {moduleType}");
+                    throw new InvalidOperationException($"CreateDocument does not support module type {mco.ModuleType}");
             }
 
             _documentsByUri[document.Uri] = document;
-            _documentsByName[moduleName] = document;
+            _documentsByName[mco.ModuleName] = document;
 
-            return OpenDocument(document, options);
+            return OpenDocument(document, mco.LoadOptions);
         }
 
-        private IDocument OpenDocument(IDocument document, DocumentCreationOptions options) {
-            if ((options & DocumentCreationOptions.Open) == DocumentCreationOptions.Open) {
+        private IDocument OpenDocument(IDocument document, ModuleLoadOptions options) {
+            if ((options & ModuleLoadOptions.Open) == ModuleLoadOptions.Open) {
                 document.IsOpen = true;
                 Opened?.Invoke(this, new DocumentEventArgs(document));
             }

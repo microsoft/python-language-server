@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -20,7 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer.Types;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -44,32 +43,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public FunctionDefinition Target { get; }
-
-        private struct MethodInfo {
-            public bool isClassMethod;
-            public bool isStaticMethod;
-        }
-
-        private async Task<MethodInfo> GetMethodInfoAsync(CancellationToken cancellationToken = default) {
-            var info = new MethodInfo();
-
-            if (Target.IsLambda) {
-                info.isStaticMethod = true;
-                return info;
-            }
-
-            var classMethodObj = _lookup.Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
-            var staticMethodObj = _lookup.Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
-            foreach (var d in (Target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
-                var m = await _lookup.GetValueFromExpressionAsync(d, cancellationToken);
-                if (m.Equals(classMethodObj)) {
-                    info.isClassMethod = true;
-                } else if (m.Equals(staticMethodObj)) {
-                    info.isStaticMethod = true;
-                }
-            }
-            return info;
-        }
 
         public async Task WalkAsync(CancellationToken cancellationToken = default) {
             using (_lookup.OpenScope(_parentScope)) {
@@ -122,6 +95,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
             var value = await _lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
+
+            if (node.Left.FirstOrDefault() is TupleExpression tex) {
+                // Tuple = Tuple. Transfer values.
+                var texHandler = new TupleExpressionHandler(_lookup);
+                await texHandler.HandleTupleAssignmentAsync(tex, node.Right, value, cancellationToken);
+                return await base.WalkAsync(node, cancellationToken);
+            }
+
             foreach (var lhs in node.Left) {
                 if (lhs is MemberExpression memberExp && memberExp.Target is NameExpression nameExp1) {
                     if (_self is PythonType t && nameExp1.Name == "self") {
@@ -137,32 +118,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 // Basic assignment
                 foreach (var ne in node.Left.OfType<NameExpression>()) {
                     _lookup.DeclareVariable(ne.Name, value);
-                }
-
-                // Tuple = Tuple. Transfer values.
-                if (lhs is TupleExpression tex) {
-                    if (value is TupleExpression valTex) {
-                        var returnedExpressions = valTex.Items.ToArray();
-                        var names = tex.Items.Select(x => (x as NameExpression)?.Name).ToArray();
-                        for (var i = 0; i < Math.Min(names.Length, returnedExpressions.Length); i++) {
-                            if (returnedExpressions[i] != null) {
-                                var v = await _lookup.GetValueFromExpressionAsync(returnedExpressions[i], cancellationToken);
-                                _lookup.DeclareVariable(names[i], v);
-                            }
-                        }
-                        continue;
-                    }
-
-                    // Tuple = 'tuple value' (such as from callable). Transfer values.
-                    if (value is AstPythonConstant c && c.Type is PythonSequence seq) {
-                        var types = seq.IndexTypes.ToArray();
-                        var names = tex.Items.Select(x => (x as NameExpression)?.Name).ToArray();
-                        for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {
-                            if (names[i] != null && types[i] != null) {
-                                _lookup.DeclareVariable(names[i], new AstPythonConstant(types[i]));
-                            }
-                        }
-                    }
                 }
             }
             return await base.WalkAsync(node, cancellationToken);
@@ -201,12 +156,38 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
 
+        private struct MethodInfo {
+            public bool isClassMethod;
+            public bool isStaticMethod;
+        }
+
         private async Task<IPythonClass> GetSelfAsync(CancellationToken cancellationToken = default) {
             var info = await GetMethodInfoAsync(cancellationToken);
             var self = _lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local);
             return !info.isStaticMethod && !info.isClassMethod
                  ? self as IPythonClass
                  : null;
+        }
+
+        private async Task<MethodInfo> GetMethodInfoAsync(CancellationToken cancellationToken = default) {
+            var info = new MethodInfo();
+
+            if (Target.IsLambda) {
+                info.isStaticMethod = true;
+                return info;
+            }
+
+            var classMethodObj = _lookup.Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
+            var staticMethodObj = _lookup.Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
+            foreach (var d in (Target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
+                var m = await _lookup.GetValueFromExpressionAsync(d, cancellationToken);
+                if (classMethodObj.Equals(m)) {
+                    info.isClassMethod = true;
+                } else if (staticMethodObj.Equals(m)) {
+                    info.isStaticMethod = true;
+                }
+            }
+            return info;
         }
     }
 }

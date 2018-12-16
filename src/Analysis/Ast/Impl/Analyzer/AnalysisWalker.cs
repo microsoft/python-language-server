@@ -14,12 +14,13 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer.Modules;
-using Microsoft.Python.Analysis.Analyzer.Types;
+using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
@@ -28,8 +29,8 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
+    [DebuggerDisplay("{_module.Name} : {_module.ModuleType}")]
     internal sealed class AnalysisWalker : PythonWalkerAsync {
-        private readonly IServiceContainer _services;
         private readonly IPythonInterpreter _interpreter;
         private readonly ILogger _log;
         private readonly IPythonModule _module;
@@ -41,26 +42,28 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private IDisposable _classScope;
 
         public AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast, bool suppressBuiltinLookup) {
-            _services = services ?? throw new ArgumentNullException(nameof(services));
+            var services1 = services ?? throw new ArgumentNullException(nameof(services));
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _ast = ast ?? throw new ArgumentNullException(nameof(ast));
 
             _interpreter = services.GetService<IPythonInterpreter>();
             _log = services.GetService<ILogger>();
             _globalScope = new GlobalScope(module);
-            _lookup = new ExpressionLookup(_services, module, ast, _globalScope, _functionWalkers);
+            _lookup = new ExpressionLookup(services1, module, ast, _globalScope, _functionWalkers);
             _suppressBuiltinLookup = suppressBuiltinLookup;
             // TODO: handle typing module
         }
 
         public IGlobalScope GlobalScope => _globalScope;
 
-        public override Task<bool> WalkAsync(PythonAst node, CancellationToken cancellationToken = default) {
+        public override async Task<bool> WalkAsync(PythonAst node, CancellationToken cancellationToken = default) {
             Check.InvalidOperation(() => _ast == node, "walking wrong AST");
+
+            var name = _module.Name == "sys";
             CollectTopLevelDefinitions();
 
             cancellationToken.ThrowIfCancellationRequested();
-            return base.WalkAsync(node, cancellationToken);
+            return await base.WalkAsync(node, cancellationToken);
         }
 
         public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
@@ -84,10 +87,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private LocationInfo GetLoc(Node node) => _lookup.GetLoc(node);
 
-        private static IPythonType Clone(IPythonType type) =>
-            type is IPythonMultipleTypes mm ? PythonMultipleTypes.Create(mm.Types) :
-            type;
-
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             var value = await _lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
@@ -100,15 +99,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 value = _lookup.UnknownType;
             }
 
+            if (node.Left.FirstOrDefault() is TupleExpression tex) {
+                // Tuple = Tuple. Transfer values.
+                var texHandler = new TupleExpressionHandler(_lookup);
+                await texHandler.HandleTupleAssignmentAsync(tex, node.Right, value, cancellationToken);
+                return await base.WalkAsync(node, cancellationToken);
+            }
+
             foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                 AssignFromAnnotation(expr);
                 if (!value.IsUnknown() && expr.Expression is NameExpression ne) {
-                    _lookup.DeclareVariable(ne.Name, Clone(value));
+                    _lookup.DeclareVariable(ne.Name, value);
                 }
             }
 
             foreach (var ne in node.Left.OfType<NameExpression>()) {
-                _lookup.DeclareVariable(ne.Name, Clone(value));
+                _lookup.DeclareVariable(ne.Name, value);
             }
 
             return await base.WalkAsync(node, cancellationToken);
@@ -390,15 +396,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 existing = new PythonProperty(node, declaringModule, declaringType, GetLoc(node));
                 _lookup.DeclareVariable(node.Name, existing);
             }
-
-            if (!_functionWalkers.Contains(node)) {
-                // Treat the rest of the property as a function. "AddOverload"
-                // takes the return type and sets it as the property type.
-                existing.AddOverload(CreateFunctionOverload(_lookup, node));
-            }
+            AddOverload(node, o => existing.AddOverload(o));
         }
 
-        private IPythonFunctionOverload CreateFunctionOverload(ExpressionLookup lookup, FunctionDefinition node) {
+        private PythonFunctionOverload CreateFunctionOverload(ExpressionLookup lookup, FunctionDefinition node) {
             var parameters = node.Parameters
                 .Select(p => new ParameterInfo(_ast, p, _lookup.GetTypesFromAnnotation(p.Annotation)))
                 .ToArray();
@@ -430,17 +431,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void CollectTopLevelDefinitions() {
-            var s = (_ast.Body as SuiteStatement)?.Statements.ToArray() ?? Array.Empty<Statement>();
+            var statement = (_ast.Body as SuiteStatement)?.Statements.ToArray() ?? Array.Empty<Statement>();
 
-            foreach (var node in s.OfType<FunctionDefinition>()) {
+            foreach (var node in statement.OfType<FunctionDefinition>()) {
                 ProcessFunctionDefinition(node);
             }
 
-            foreach (var node in s.OfType<ClassDefinition>()) {
+            foreach (var node in statement.OfType<ClassDefinition>()) {
                 _lookup.DeclareVariable(node.Name, CreateClass(node));
             }
 
-            foreach (var node in s.OfType<AssignmentStatement>().Where(n => n.Right is NameExpression)) {
+            foreach (var node in statement.OfType<AssignmentStatement>().Where(n => n.Right is NameExpression)) {
                 var rhs = (NameExpression)node.Right;
                 var t = _lookup.CurrentScope.Variables.GetMember(rhs.Name);
                 if (t != null) {
@@ -456,9 +457,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var member = _lookup.GetInScope(node.Name);
             var t = member as PythonClass;
-            if (t == null && member is IPythonMultipleTypes mm) {
-                t = mm.Types.OfType<PythonClass>().FirstOrDefault(pt => pt.ClassDefinition.StartIndex == node.StartIndex);
-            }
             if (t == null) {
                 t = CreateClass(node);
                 _lookup.DeclareVariable(node.Name, t);
@@ -487,14 +485,55 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void ProcessFunctionDefinition(FunctionDefinition node) {
             if (!(_lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonFunction existing)) {
-                var cls = _lookup.GetInScope("__class__") as IPythonType;
+                var cls = _lookup.GetInScope("__class__");
                 existing = new PythonFunction(node, _module, cls, GetLoc(node));
                 _lookup.DeclareVariable(node.Name, existing);
             }
+            AddOverload(node, o => existing.AddOverload(o));
+        }
+
+        private void AddOverload(FunctionDefinition node, Action<IPythonFunctionOverload> addOverload) {
+            // Check if function exists in stubs. If so, take overload from stub
+            // and the documentation from this actual module.
+            var stubFunction = GetOverloadFromStubs(node.Name);
+            if (stubFunction != null) {
+                if (!string.IsNullOrEmpty(node.Documentation)) {
+                    stubFunction.SetDocumentation(node.Documentation);
+                }
+                addOverload(stubFunction);
+                return;
+            }
 
             if (!_functionWalkers.Contains(node)) {
-                existing.AddOverload(CreateFunctionOverload(_lookup, node));
+                var overload = CreateFunctionOverload(_lookup, node);
+                if (overload != null) {
+                    addOverload(overload);
+                }
             }
+        }
+
+        private PythonFunctionOverload GetOverloadFromStubs(string name) {
+            if (_module.Stub == null) {
+                return null;
+            }
+
+            var memberNameChain = new List<string>(Enumerable.Repeat(name, 1));
+            IScope scope = _lookup.CurrentScope;
+
+            while (scope != _globalScope) {
+                memberNameChain.Add(scope.Name);
+                scope = scope.OuterScope;
+            }
+
+            IPythonType t = _module.Stub;
+            for (var i = memberNameChain.Count - 1; i >= 0; i--) {
+                t = t.GetMember(memberNameChain[i]);
+                if (t == null) {
+                    return null;
+                }
+            }
+
+            return t is IPythonFunction f ? CreateFunctionOverload(_lookup, f.FunctionDefinition) : null;
         }
     }
 }

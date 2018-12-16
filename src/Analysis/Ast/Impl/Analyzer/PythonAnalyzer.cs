@@ -17,7 +17,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer.Modules;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
@@ -102,6 +102,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// of dependencies, it is intended for the single file analysis.
         /// </summary>
         private async Task<IDocumentAnalysis> AnalyzeAsync(IDependencyChainNode node, CancellationToken cancellationToken) {
+            var _startTime = DateTime.Now;
+
             _log?.Log(TraceEventType.Verbose, $"Analysis begins: {node.Document.Name}");
             // Store current expected version so we can see if it still 
             // the same at the time the analysis completes.
@@ -109,7 +111,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             // Make sure the file is parsed ans the AST is up to date.
             var ast = await node.Document.GetAstAsync(cancellationToken);
-            _log?.Log(TraceEventType.Verbose, $"Analysis AST obtained: {node.Document.Name}");
+            _log?.Log(TraceEventType.Verbose, $"Parse of {node.Document.Name} complete in {(DateTime.Now - _startTime).TotalMilliseconds} ms.");
 
             // Now run the analysis.
             var walker = new AnalysisWalker(_services, node.Document, ast,
@@ -123,7 +125,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Note that we do not set the new analysis here and rather let
             // Python analyzer to call NotifyAnalysisComplete.
             var gs = await walker.CompleteAsync(cancellationToken);
-            _log?.Log(TraceEventType.Verbose, $"Analysis returned: {node.Document.Name}");
+            _log?.Log(TraceEventType.Verbose, $"Analysis of {node.Document.Name} complete in {(DateTime.Now - _startTime).TotalMilliseconds} ms.");
             return new DocumentAnalysis(node.Document, analysisVersion, gs);
         }
 

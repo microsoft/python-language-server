@@ -16,6 +16,7 @@
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
+using Microsoft.Python.Analysis.Types;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
@@ -49,8 +50,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public AndConstraint<PythonTypeAssertions> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
             var languageVersionIs3X = Is3X(_scope);
-            var type = Subject as IPythonType;
-            AssertTypeIds(new[] { type.TypeId }, new[] { typeId }, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
+            AssertTypeIds(new[] { Subject.TypeId }, new[] { typeId }, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
 
             return new AndConstraint<PythonTypeAssertions>(this);
         }

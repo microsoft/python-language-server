@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]

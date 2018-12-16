@@ -16,11 +16,14 @@
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class MemberContainerAssertionsExtensions {
-        public static AndWhichConstraint<TAssertions, TMember> OfMemberType<TMember, TAssertions> (this AndWhichConstraint<TAssertions, TMember> constraint, PythonMemberType memberType, string because = "", params object[] reasonArgs)
+        public static AndWhichConstraint<TAssertions, TMember> OfMemberType<TMember, TAssertions>
+            (this AndWhichConstraint<TAssertions, TMember> constraint, PythonMemberType memberType, 
+            string because = "", params object[] reasonArgs)
             where TMember : IPythonType {
 
             Execute.Assertion.ForCondition(constraint.Which.MemberType == memberType)

@@ -17,6 +17,7 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
+using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     internal class PythonFunctionOverloadAssertions : ReferenceTypeAssertions<IPythonFunctionOverload, PythonFunctionOverloadAssertions> {

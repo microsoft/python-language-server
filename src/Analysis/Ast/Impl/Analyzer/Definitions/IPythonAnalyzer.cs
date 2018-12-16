@@ -17,7 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 
-namespace Microsoft.Python.Analysis {
+namespace Microsoft.Python.Analysis.Analyzer {
     public interface IPythonAnalyzer {
         /// <summary>
         /// Analyze single document.

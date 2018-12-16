@@ -19,10 +19,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Analyzer.Modules;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
@@ -79,7 +79,15 @@ namespace Microsoft.Python.Analysis.Tests {
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
             var services = await CreateServicesAsync(moduleDirectory, configuration);
-            var doc = new PythonModule(moduleName, code, modulePath, moduleUri, ModuleType.User, DocumentCreationOptions.Analyze, services);
+            var mco = new ModuleCreationOptions {
+                ModuleName = moduleName,
+                Content = code,
+                FilePath = modulePath,
+                Uri = moduleUri,
+                ModuleType = ModuleType.User,
+                LoadOptions = ModuleLoadOptions.Analyze
+            };
+            var doc = new PythonModule(mco, services);
 
             var ast = await doc.GetAstAsync(CancellationToken.None);
             ast.Should().NotBeNull();
