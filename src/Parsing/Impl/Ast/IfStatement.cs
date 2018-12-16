@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -16,41 +15,45 @@
 
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class IfStatement : Statement {
         private readonly IfStatementTest[] _tests;
-        private readonly Statement _else;
-        private int _elseIndex;
 
         public IfStatement(IfStatementTest[] tests, Statement else_) {
             _tests = tests;
-            _else = else_;
+            ElseStatement = else_;
         }
 
         public IList<IfStatementTest> Tests => _tests;
-        public Statement ElseStatement => _else;
+        public Statement ElseStatement { get; }
 
-        public int ElseIndex {
-            get {
-                return _elseIndex;
-            }
-            set {
-                _elseIndex = value;
-            }
-        }
+        public int ElseIndex { get; set; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_tests != null) {
-                    foreach (var test in _tests) {
-                        test.Walk(walker);
-                    }
+                foreach (var test in _tests.MaybeEnumerate()) {
+                    test.Walk(walker);
                 }
 
-                _else?.Walk(walker);
+                ElseStatement?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                foreach (var test in _tests.MaybeEnumerate()) {
+                    await test.WalkAsync(walker, cancellationToken);
+                }
+                if (ElseStatement != null) {
+                    await ElseStatement.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
@@ -68,10 +71,10 @@ namespace Microsoft.Python.Parsing.Ast {
                 _tests[i].AppendCodeString(res, ast, format);
             }
 
-            if (_else != null) {
+            if (ElseStatement != null) {
                 format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
                 res.Append("else");
-                _else.AppendCodeString(res, ast, format);
+                ElseStatement.AppendCodeString(res, ast, format);
             }
         }
 

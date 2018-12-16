@@ -46,19 +46,11 @@ namespace Microsoft.Python.Analysis {
         /// </summary>
         PathResolverSnapshot CurrentPathResolver { get; }
 
-        Task<TryImportModuleResult> TryImportModuleAsync(string name, CancellationToken cancellationToken);
-
         /// <summary>
         /// Returns an IPythonModule for a given module name. Returns null if
         /// the module does not exist. The import is performed asynchronously.
         /// </summary>
         Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token);
-
-        /// <summary>
-        /// Returns an IPythonModule for a given module name. Returns null if
-        /// the module does not exist. The import is performed synchronously.
-        /// </summary>
-        IPythonModule ImportModule(string name);
 
         /// <summary>
         /// Builtins module.

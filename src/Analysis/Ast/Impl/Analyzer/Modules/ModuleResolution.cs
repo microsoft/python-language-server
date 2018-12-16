@@ -28,7 +28,6 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.Analysis.Analyzer.Modules {
     internal sealed class ModuleResolution : IModuleResolution {
@@ -130,7 +129,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
             return packageDict;
         }
 
-        public async Task<TryImportModuleResult> TryImportModuleAsync(string name, CancellationToken cancellationToken) {
+        private async Task<TryImportModuleResult> TryImportModuleAsync(string name, CancellationToken cancellationToken) {
             if (string.IsNullOrEmpty(name)) {
                 return TryImportModuleResult.ModuleNotFound;
             }
@@ -205,15 +204,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Modules {
                 includePackages: true,
                 requireInitPy: _requireInitPy
             ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
-        }
-
-        public IPythonModule ImportModule(string name) {
-            var token = new CancellationTokenSource(5000).Token;
-#if DEBUG
-            token = Debugger.IsAttached ? CancellationToken.None : token;
-#endif
-            var impTask = ImportModuleAsync(name, token);
-            return impTask.Wait(10000) ? impTask.WaitAndUnwrapExceptions() : null;
         }
 
         public async Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token) {

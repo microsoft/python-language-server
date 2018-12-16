@@ -247,7 +247,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberReference = asNames[i] ?? names[i];
                 var memberName = memberReference.Name;
 
-                _lookup.DeclareVariable(memberName, module ?? new SentinelModule(importName));
+                var type = module.GetMember(memberReference.Name) ?? _lookup.UnknownType;
+                _lookup.DeclareVariable(memberName, type);
             }
         }
 
@@ -301,7 +302,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public override bool Walk(IfStatement node) {
+        public override async Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default) {
             var allValidComparisons = true;
             foreach (var test in node.Tests) {
                 if (test.Test is BinaryExpression cmp &&
@@ -335,7 +336,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                     if (shouldWalk) {
                         // Supported comparison, so only walk the one block
-                        test.Walk(this);
+                        await test.WalkAsync(this, cancellationToken);
                         return false;
                     }
                 } else {

@@ -31,6 +31,8 @@ namespace Microsoft.Python.Parsing.Ast {
                 case ReturnStatement rst:
                 case ImportStatement ist:
                 case FromImportStatement fist:
+                case IfStatement ifst:
+                case IfStatementTest iftst:
                     return true;
             }
             return false;
@@ -67,5 +69,12 @@ namespace Microsoft.Python.Parsing.Ast {
         public virtual Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public virtual Task PostWalkAsync(FromImportStatement node, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
+        // IfStatement
+        public virtual Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public virtual Task PostWalkAsync(IfStatement node, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        // IfStatementTest
+        public virtual Task<bool> WalkAsync(IfStatementTest node, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public virtual Task PostWalkAsync(IfStatementTest node, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }
