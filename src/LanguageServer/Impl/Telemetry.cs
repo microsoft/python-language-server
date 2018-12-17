@@ -28,6 +28,26 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public static TelemetryEvent CreateEvent(string eventName) => new TelemetryEvent {
             EventName = EventPrefix + eventName,
         };
+
+        public static TelemetryEvent CreateEventWithException(string eventName, Exception e) {
+            var te = CreateEvent(eventName);
+
+            if (e is AggregateException ae && ae.InnerException != null) {
+                te.Properties["outerName"] = e.GetType().Name;
+                te.Properties["outerStackTrace"] = e.StackTrace;
+
+                e = ae.Flatten();
+
+                while (e.InnerException != null) {
+                    e = e.InnerException;
+                }
+            }
+
+            te.Properties["name"] = e.GetType().Name;
+            te.Properties["stackTrace"] = e.StackTrace;
+
+            return te;
+        }
     }
 
     internal class TelemetryRpcTraceListener : TraceListener {
@@ -73,10 +93,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return;
             }
 
-            var e = Telemetry.CreateEvent("rpc.exception");
+            var e = Telemetry.CreateEventWithException("rpc.exception", exception);
             e.Properties["method"] = method;
-            e.Properties["name"] = exception.GetType().Name;
-            e.Properties["stackTrace"] = exception.StackTrace;
 
             _telemetryService.SendTelemetryAsync(e).DoNotWait();
         }

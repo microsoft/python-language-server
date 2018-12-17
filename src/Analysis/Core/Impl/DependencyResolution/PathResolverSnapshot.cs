@@ -360,11 +360,11 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 .ToArray();
 
             var filteredInterpreterSearchPaths = interpreterSearchPaths.Select(FixPath)
-                .Except(filteredUserSearchPaths.Prepend(rootDirectory))
+                .Except(filteredUserSearchPaths.Append(rootDirectory))
                 .ToArray();
 
             userRootsCount = filteredUserSearchPaths.Length + 1;
-            nodes = AddRootsFromSearchPaths(ImmutableArray<Node>.Empty.Add(GetOrCreateRoot(rootDirectory)), filteredUserSearchPaths, filteredInterpreterSearchPaths);
+            nodes = AddRootsFromSearchPaths(rootDirectory, filteredUserSearchPaths, filteredInterpreterSearchPaths);
 
             string FixPath(string p) => Path.IsPathRooted(p) ? PathUtils.NormalizePath(p) : PathUtils.NormalizePath(Path.Combine(rootDirectory, p));
         }
@@ -382,13 +382,21 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 .ToArray();
 
             userRootsCount = filteredUserSearchPaths.Length;
-            nodes = AddRootsFromSearchPaths(ImmutableArray<Node>.Empty, filteredUserSearchPaths, filteredInterpreterSearchPaths);
+            nodes = AddRootsFromSearchPaths(filteredUserSearchPaths, filteredInterpreterSearchPaths);
         }
 
-        private ImmutableArray<Node> AddRootsFromSearchPaths(ImmutableArray<Node> roots, string[] userSearchPaths, string[] interpreterSearchPaths)
-            => roots
-            .AddRange(userSearchPaths.Select(GetOrCreateRoot).ToArray())
-            .AddRange(interpreterSearchPaths.Select(GetOrCreateRoot).ToArray());
+        private ImmutableArray<Node> AddRootsFromSearchPaths(string rootDirectory, string[] userSearchPaths, string[] interpreterSearchPaths) {
+            return ImmutableArray<Node>.Empty
+                .AddRange(userSearchPaths.Select(GetOrCreateRoot).ToArray())
+                .Add(GetOrCreateRoot(rootDirectory))
+                .AddRange(interpreterSearchPaths.Select(GetOrCreateRoot).ToArray());
+        }
+
+        private ImmutableArray<Node> AddRootsFromSearchPaths(string[] userSearchPaths, string[] interpreterSearchPaths) {
+            return ImmutableArray<Node>.Empty
+                .AddRange(userSearchPaths.Select(GetOrCreateRoot).ToArray())
+                .AddRange(interpreterSearchPaths.Select(GetOrCreateRoot).ToArray());
+        }
 
         private Node GetOrCreateRoot(string path)
             => _roots.FirstOrDefault(r => r.Name.Equals(path, PathsStringComparison)) ?? Node.CreateRoot(path);

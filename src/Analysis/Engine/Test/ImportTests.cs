@@ -97,6 +97,67 @@ package.sub_package.module2.";
             completionModule2.Should().HaveLabels("Y").And.NotContainLabels("X");
         }
 
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        public async Task Completions_ImportResolution_UserSearchPathsInsideWorkspace(Server server) {
+            var folder1 = TestData.GetTestSpecificPath("folder1");
+            var folder2 = TestData.GetTestSpecificPath("folder2");
+            var packageInFolder1 = Path.Combine(folder1, "package");
+            var packageInFolder2 = Path.Combine(folder2, "package");
+            var module1Path = Path.Combine(packageInFolder1, "module1.py");
+            var module2Path = Path.Combine(packageInFolder2, "module2.py");
+            var module1Content = @"class A():
+    @staticmethod
+    def method1():
+        pass";
+            var module2Content = @"class B():
+    @staticmethod
+    def method2():
+        pass";
+            var mainContent = @"from package import module1 as mod1, module2 as mod2
+mod1.
+mod2.
+mod1.A.
+mod2.B.";
+
+            server.Analyzer.SetSearchPaths(new[] { folder1, folder2 });
+
+            await server.OpenDocumentAndGetUriAsync(module1Path, module1Content);
+            await server.OpenDocumentAndGetUriAsync(module2Path, module2Content);
+            var uri = await server.OpenDocumentAndGetUriAsync("main.py", mainContent);
+
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+
+            var completionMod1 = await server.SendCompletion(uri, 1, 5);
+            var completionMod2 = await server.SendCompletion(uri, 2, 5);
+            var completionA = await server.SendCompletion(uri, 3, 7);
+            var completionB = await server.SendCompletion(uri, 4, 7);
+            completionMod1.Should().HaveLabels("A").And.NotContainLabels("B");
+            completionMod2.Should().HaveLabels("B").And.NotContainLabels("A");
+            completionA.Should().HaveLabels("method1");
+            completionB.Should().HaveLabels("method2");
+        }
+
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/468")]
+        public async Task Completions_ImportResolution_ModuleInWorkspaceAndInUserSearchPath(Server server) {
+            var extraSearchPath = TestData.GetTestSpecificPath(Path.Combine("some", "other"));
+            var module1Path = TestData.GetTestSpecificPath("module.py");
+            var module2Path = Path.Combine(extraSearchPath, "module.py");
+            var module1Content = "A = 1";
+            var module2Content = "B = 2";
+            var mainContent = @"import module as mod; mod.";
+
+            server.Analyzer.SetSearchPaths(new[] { extraSearchPath });
+
+            await server.OpenDocumentAndGetUriAsync(module1Path, module1Content);
+            await server.OpenDocumentAndGetUriAsync(module2Path, module2Content);
+            var uri = await server.OpenDocumentAndGetUriAsync("main.py", mainContent);
+
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+            var completion = await server.SendCompletion(uri, 0, 26);
+            completion.Should().HaveLabels("A").And.NotContainLabels("B");
+        }
+
         [Ignore("https://github.com/Microsoft/python-language-server/issues/443")]
         [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
         public async Task Completions_ImportResolution_OneSearchPathInsideAnother(Server server) {
