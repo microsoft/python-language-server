@@ -76,5 +76,47 @@ namespace Microsoft.Python.Analysis.Tests {
             c.GetMember("__class__").Should().BeAssignableTo<IPythonClass>();
             c.GetMember("__bases__").Should().BeAssignableTo<IPythonSequenceType>();
         }
+
+        [TestMethod, Priority(0)]
+        public void Mro() {
+            var O = new PythonClass("O");
+            var A = new PythonClass("A");
+            var B = new PythonClass("B");
+            var C = new PythonClass("C");
+            var D = new PythonClass("D");
+            var E = new PythonClass("E");
+            var F = new PythonClass("F");
+
+            F.SetBases(null, new[] { O });
+            E.SetBases(null, new[] { O });
+            D.SetBases(null, new[] { O });
+            C.SetBases(null, new[] { D, F });
+            B.SetBases(null, new[] { D, E });
+            A.SetBases(null, new[] { B, C });
+
+            PythonClass.CalculateMro(A).Should().Equal(new[] { "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
+            PythonClass.CalculateMro(B).Should().Equal(new[] { "B", "D", "E", "O" }, (p, n) => p.Name == n);
+            PythonClass.CalculateMro(C).Should().Equal(new[] { "C", "D", "F", "O" }, (p, n) => p.Name == n);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ComparisonTypeInference() {
+            var code = @"
+class BankAccount(object):
+    def __init__(self, initial_balance=0):
+        self.balance = initial_balance
+    def withdraw(self, amount):
+        self.balance -= amount
+    def overdrawn(self):
+        return self.balance < 0
+";
+
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+
+            analysis.Should().HaveClass("BankAccount")
+                .Which.Should().HaveMethod("overdrawn")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveSingleReturnType("bool");
+        }
     }
 }

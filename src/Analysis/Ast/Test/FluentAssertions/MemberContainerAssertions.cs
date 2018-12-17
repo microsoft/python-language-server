@@ -19,7 +19,6 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
-using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
@@ -40,13 +39,16 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         protected override string Identifier => nameof(IMemberContainer);
 
-        public AndWhichConstraint<TAssertions, PythonType> HaveClass(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<PythonType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
+        public AndWhichConstraint<TAssertions, IPythonClass> HaveClass(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<IPythonClass>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
 
-        public AndWhichConstraint<TAssertions, PythonProperty> HaveProperty(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<PythonProperty>(name, because, reasonArgs).OfMemberType(PythonMemberType.Property);
+        public AndWhichConstraint<TAssertions, IPythonFunction> HaveFunction(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<IPythonFunction>(name, because, reasonArgs).OfMemberType(PythonMemberType.Function);
 
-        public AndWhichConstraint<TAssertions, PythonProperty> HaveReadOnlyProperty(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<TAssertions, IPythonProperty> HaveProperty(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<IPythonProperty>(name, because, reasonArgs).OfMemberType(PythonMemberType.Property);
+
+        public AndWhichConstraint<TAssertions, IPythonProperty> HaveReadOnlyProperty(string name, string because = "", params object[] reasonArgs) {
             var constraint = HaveProperty(name, because, reasonArgs);
             Execute.Assertion.ForCondition(constraint.Which.IsReadOnly)
                 .BecauseOf(because, reasonArgs)

@@ -31,6 +31,9 @@ namespace Microsoft.Python.Analysis.Types {
         private IReadOnlyList<IPythonType> _mro;
         private readonly AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
 
+        // For tests
+        internal PythonClass(string name): base(name, BuiltinTypeId.Type) { }
+
         public PythonClass(
             ClassDefinition classDefinition,
             IPythonModule declaringModule,

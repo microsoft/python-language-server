@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,25 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Parsing.Ast;
+
 namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Represents a built-in property which has a getter/setter.  
-    /// </summary>
-    public interface IPythonProperty : IPythonFunctionLike {
+    public interface IPythonFunctionLike: IPythonType {
+        FunctionDefinition FunctionDefinition { get; }
+        IPythonType DeclaringType { get; }
         /// <summary>
-        /// The type of the value the property gets/sets.
+        /// False if binds instance when in a class, true if always static.
         /// </summary>
-        IPythonType Type { get; }
-
-        /// <summary>
-        /// A user readable description of the property.
-        /// </summary>
-        string Description { get; }
-
-        /// <summary>
-        /// True if the property is read-only.
-        /// </summary>
-        bool IsReadOnly { get; }
-
+        bool IsStatic { get; }
     }
 }

@@ -55,18 +55,18 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<TScopeAssertions, TChildScope>((TScopeAssertions)this, (TChildScope)childScopes[index]);
         }
 
-        public AndWhichConstraint<TScopeAssertions, IScope> HaveClass(string name, string because = "", params object[] reasonArgs) {
-            var assertion = HaveVariable(name, because, reasonArgs)
-                .Which.Should().BeOfType<IPythonClass>();
+        public AndWhichConstraint<TScopeAssertions, IPythonClass> HaveClass(string name, string because = "", params object[] reasonArgs) {
+            var v = HaveVariable(name, because, reasonArgs).Which;
+            v.Type.Should().BeAssignableTo<IPythonClass>();
 
-            return new AndWhichConstraint<TScopeAssertions, IScope>((TScopeAssertions)this, Subject);
+            return new AndWhichConstraint<TScopeAssertions, IPythonClass>((TScopeAssertions)this, (IPythonClass)v.Type);
         }
 
-        public AndWhichConstraint<TScopeAssertions, IScope> HaveFunction(string name, string because = "", params object[] reasonArgs) {
-            var assertion = HaveVariable(name, because, reasonArgs)
-                .Which.Should().BeOfType<IPythonFunction>();
+        public AndWhichConstraint<TScopeAssertions, IPythonFunction> HaveFunction(string name, string because = "", params object[] reasonArgs) {
+            var f = HaveVariable(name, because, reasonArgs).Which;
+            var assertion = f.Type.Should().BeAssignableTo<IPythonFunction>();
 
-            return new AndWhichConstraint<TScopeAssertions, IScope>((TScopeAssertions)this, Subject);
+            return new AndWhichConstraint<TScopeAssertions, IPythonFunction>((TScopeAssertions)this, (IPythonFunction)f.Type);
         }
         
         public AndWhichConstraint<TScopeAssertions, VariableTestInfo> HaveVariable(string name, string because = "", params object[] reasonArgs) {

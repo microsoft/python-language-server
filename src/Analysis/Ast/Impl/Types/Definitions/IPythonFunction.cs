@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,19 +14,12 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents a function.
     /// </summary>
-    public interface IPythonFunction : IPythonType {
-        FunctionDefinition FunctionDefinition { get; }
-        IPythonType DeclaringType { get; }
-        /// <summary>
-        /// False if binds instance when in a class, true if always static.
-        /// </summary>
-        bool IsStatic { get; }
+    public interface IPythonFunction : IPythonFunctionLike {
         bool IsClassMethod { get; }
         IReadOnlyList<IPythonFunctionOverload> Overloads { get; }
     }

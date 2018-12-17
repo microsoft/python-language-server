@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
@@ -44,8 +45,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
 
         private IServiceContainer _services;
-        private IUIService _ui;
-        private ITelemetryService2 _telemetry;
+        private Server _server;
+        private ILogger _logger;
+        private ITelemetryService _telemetry;
 
         private JsonRpc _rpc;
         private JsonSerializer _jsonSerializer;
@@ -63,9 +65,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _rpc = rpc;
 
             _jsonSerializer = services.GetService<JsonSerializer>();
-            _telemetry = services.GetService<ITelemetryService2>();
-
-            var progress = services.GetService<IProgressService>();
+            _idleTimeTracker = services.GetService<IIdleTimeTracker>();
+            _logger = services.GetService<ILogger>();
+            _telemetry = services.GetService<ITelemetryService>();
 
             var rpcTraceListener = new TelemetryRpcTraceListener(_telemetry);
             _rpc.TraceSource.Listeners.Add(rpcTraceListener);
@@ -420,7 +422,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             var te = Telemetry.CreateEventWithException("analysis_queue.unhandled_exception", ex);
-            _telemetry.SendTelemetry(te).DoNotWait();
+            _telemetry.SendTelemetryAsync(te).DoNotWait();
         }
 
         private class Prioritizer : IDisposable {

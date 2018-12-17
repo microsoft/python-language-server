@@ -33,6 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonProperty
         public bool IsStatic => false;
+        public bool IsReadOnly { get; private set; } = true;
         public IPythonType DeclaringType { get; }
         public string Description 
             => Type == null ? Resources.PropertyOfUnknownType : Resources.PropertyOfType.FormatUI(Type.Name);
@@ -45,6 +46,5 @@ namespace Microsoft.Python.Analysis.Types {
 
         public IPythonType Type => _getter?.ReturnType.FirstOrDefault();
 
-        public bool IsReadOnly { get; private set; } = true;
     }
 }

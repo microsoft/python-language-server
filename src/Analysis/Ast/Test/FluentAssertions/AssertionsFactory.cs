@@ -23,16 +23,17 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public static AstPythonFunctionAssertions Should(this PythonFunction pythonFunction)
             => new AstPythonFunctionAssertions(pythonFunction);
 
-        public static ScopeAssertions Should(this IScope scope)
-            => new ScopeAssertions(scope);
+        public static ScopeAssertions Should(this IScope scope) => new ScopeAssertions(scope);
 
         public static MemberContainerAssertions<IMemberContainer> Should(this IMemberContainer memberContainer)
             => new MemberContainerAssertions<IMemberContainer>(memberContainer);
 
-        public static DocumentAnalysisAssertions Should(this IDocumentAnalysis analysis)
-            => new DocumentAnalysisAssertions(analysis);
+        public static PythonFunctionAssertions Should(this IPythonFunction f) => new PythonFunctionAssertions(f);
+        public static PythonFunctionOverloadAssertions Should(this IPythonFunctionOverload f, string functionName) 
+            => new PythonFunctionOverloadAssertions(f, functionName);
 
-        public static RangeAssertions Should(this Range? range)
-            => new RangeAssertions(range);
+        public static DocumentAnalysisAssertions Should(this IDocumentAnalysis analysis) => new DocumentAnalysisAssertions(analysis);
+
+        public static RangeAssertions Should(this Range? range) => new RangeAssertions(range);
     }
 }

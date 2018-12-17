@@ -31,10 +31,16 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         protected override string Identifier => nameof(IDocumentAnalysis);
 
-        public AndWhichConstraint<DocumentAnalysisAssertions, IScope> HaveFunction(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<DocumentAnalysisAssertions, IPythonFunction> HaveFunction(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
             var constraint = _scopeAssertions.HaveFunction(name, because, reasonArgs);
-            return new AndWhichConstraint<DocumentAnalysisAssertions, IScope>(this, constraint.Which);
+            return new AndWhichConstraint<DocumentAnalysisAssertions, IPythonFunction>(this, constraint.Which);
+        }
+
+        public AndWhichConstraint<DocumentAnalysisAssertions, IPythonClass> HaveClass(string name, string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+            var constraint = _scopeAssertions.HaveClass(name, because, reasonArgs);
+            return new AndWhichConstraint<DocumentAnalysisAssertions, IPythonClass>(this, constraint.Which);
         }
 
         public AndWhichConstraint<DocumentAnalysisAssertions, VariableTestInfo> HaveVariable(string name, string because = "", params object[] reasonArgs) {
