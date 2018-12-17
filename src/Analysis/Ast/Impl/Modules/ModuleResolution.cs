@@ -42,6 +42,8 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private PathResolver _pathResolver;
         private IReadOnlyDictionary<string, string> _searchPathPackages;
+        private IReadOnlyList<string> _searchPaths;
+        private IReadOnlyList<string> _interpreterSearchPaths;
 
         private InterpreterConfiguration Configuration => _interpreter.Configuration;
 
@@ -54,11 +56,11 @@ namespace Microsoft.Python.Analysis.Modules {
             _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_interpreter.Configuration.Version);
             // TODO: merge with user-provided stub paths
             _typeStubPaths = GetTypeShedPaths(_interpreter.Configuration?.TypeshedPath).ToArray();
-
-            Reload();
         }
 
         internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
+            await ReloadAsync(cancellationToken);
+
             // Initialize built-in
             var moduleName = BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
             var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath ?? "python.exe");
@@ -75,9 +77,7 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             // Add names from search paths
-            var paths = _interpreter.Configuration.SearchPaths
-                        .Concat(Enumerable.Repeat(_interpreter.Configuration.LibraryPath, 1)
-                        .Concat(Enumerable.Repeat(_interpreter.Configuration.SitePackagesPath, 1)));
+            var paths = await GetSearchPathsAsync(cancellationToken);
             // TODO: how to remove?
             foreach (var mp in paths.Where(_fs.DirectoryExists).SelectMany(p => _fs.GetFiles(p))) {
                 _pathResolver.TryAddModulePath(mp, out _);
@@ -111,7 +111,17 @@ namespace Microsoft.Python.Analysis.Modules {
             return packageDict;
         }
 
-        public IReadOnlyList<string> SearchPaths => Configuration.SearchPaths;
+        public async Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default) {
+            if (_searchPaths != null) {
+                return _searchPaths;
+            }
+
+            _searchPaths = await GetInterpreterSearchPathsAsync(cancellationToken).ConfigureAwait(false);
+            Debug.Assert(_searchPaths != null, "Should have search paths");
+            _searchPaths = _searchPaths.Concat(Configuration.SearchPaths ?? Array.Empty<string>()).ToArray();
+            _log?.Log(TraceEventType.Information, "SearchPaths", _searchPaths.Cast<object>().ToArray());
+            return _searchPaths;
+        }
 
         public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken) {
             var packageDict = new Dictionary<string, string>();
@@ -131,6 +141,21 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             return packageDict;
+        }
+
+        private async Task<IReadOnlyList<string>> GetInterpreterSearchPathsAsync(CancellationToken cancellationToken) {
+            if (!_fs.FileExists(Configuration.InterpreterPath)) {
+                return Array.Empty<string>();
+            }
+
+            _log?.Log(TraceEventType.Information, "GetCurrentSearchPaths", Configuration.InterpreterPath, ModuleCache.SearchPathCachePath);
+            try {
+                var paths = await PythonLibraryPath.GetDatabaseSearchPathsAsync(Configuration, ModuleCache.SearchPathCachePath).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+                return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
+            } catch (InvalidOperationException) {
+                return Array.Empty<string>();
+            }
         }
 
         private async Task<TryImportModuleResult> TryImportModuleAsync(string name, CancellationToken cancellationToken) {
@@ -241,14 +266,12 @@ namespace Microsoft.Python.Analysis.Modules {
             return null;
         }
 
-        public void Reload() {
+        public async Task ReloadAsync(CancellationToken cancellationToken = default) {
             ModuleCache = new ModuleCache(_interpreter, _services);
 
             _pathResolver = new PathResolver(_interpreter.LanguageVersion);
-            _pathResolver.SetInterpreterSearchPaths(new[] {
-                _interpreter.Configuration.LibraryPath,
-                _interpreter.Configuration.SitePackagesPath,
-            });
+            var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
+            _pathResolver.SetInterpreterSearchPaths(interpreterPaths);
             _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
         }
 

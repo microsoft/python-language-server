@@ -23,8 +23,7 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis.Modules {
     public interface IModuleResolution {
         string BuiltinModuleName { get; }
-        IReadOnlyList<string> SearchPaths { get; }
-
+        Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default);
         Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken = default);
         Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken = default);
         ModulePath FindModule(string filePath);
@@ -53,6 +52,6 @@ namespace Microsoft.Python.Analysis.Modules {
 
         IModuleCache ModuleCache { get; }
 
-        void Reload();
+        Task ReloadAsync(CancellationToken token = default);
     }
 }

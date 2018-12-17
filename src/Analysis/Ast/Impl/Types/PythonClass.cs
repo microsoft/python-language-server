@@ -139,7 +139,7 @@ namespace Microsoft.Python.Analysis.Types {
                 var finalMro = new List<IPythonType> { cls };
 
                 var bases = (cls as PythonClass)?.Bases ??
-                    (cls.GetMember("__bases__") as IPythonSequenceType)?.IndexTypes ??
+                    (cls.GetMember("__bases__") as IPythonSequence)?.IndexTypes ??
                     Array.Empty<IPythonType>();
 
                 foreach (var b in bases) {

@@ -96,6 +96,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return res;
         }
 
-        public void NotifyImportableModulesChanged() => ModuleResolution.Reload();
+        public void NotifyImportableModulesChanged() => ModuleResolution.ReloadAsync().DoNotWait();
     }
 }

@@ -17,19 +17,19 @@
 using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonIterableType : IPythonType {
-        IPythonIteratorType IteratorType { get; }
+    public interface IPythonIterable : IPythonType {
+        IPythonIterator IteratorType { get; }
     }
 
-    public interface IPythonIteratorType : IPythonType {
+    public interface IPythonIterator : IPythonType {
         IEnumerable<IPythonType> NextType { get; }
     }
 
-    public interface IPythonSequenceType : IPythonType {
+    public interface IPythonSequence : IPythonType {
         IEnumerable<IPythonType> IndexTypes { get; }
     }
 
-    public interface IPythonLookupType : IPythonType {
+    public interface IPythonLookup : IPythonType {
         IEnumerable<IPythonType> KeyTypes { get; }
         IEnumerable<IPythonType> ValueTypes { get; }
         IEnumerable<IPythonType> GetIndex(IPythonType key);

@@ -85,5 +85,24 @@ namespace Microsoft.Python.Analysis.Tests {
 
             analysis.TopLevelMembers.GetMemberNames().Should().OnlyContain("version_info", "a_made_up_module");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task FromImportReturnTypes() {
+            var code = @"from ReturnValues import *
+R_str = r_str()
+R_object = r_object()
+R_A1 = A()
+R_A2 = A().r_A()
+R_A3 = R_A1.r_A()";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveFunctionVariables("r_a", "r_b", "r_str", "r_object")
+                .And.HaveClassVariables("A")
+                .And.HaveVariable("R_str").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("R_object").OfType(BuiltinTypeId.Object)
+                .And.HaveVariable("R_A1").OfTypes("A")
+                .And.HaveVariable("R_A2").OfTypes("A")
+                .And.HaveVariable("R_A3").OfTypes("A");
+        }
     }
 }

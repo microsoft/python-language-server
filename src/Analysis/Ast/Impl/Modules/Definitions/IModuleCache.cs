@@ -19,6 +19,7 @@ using Microsoft.Python.Analysis.Documents;
 
 namespace Microsoft.Python.Analysis.Modules {
     public interface IModuleCache {
+        string SearchPathCachePath { get; }
         Task<IDocument> ImportFromCacheAsync(string name, CancellationToken cancellationToken);
         string GetCacheFilePath(string filePath);
         string ReadCachedModule(string filePath);

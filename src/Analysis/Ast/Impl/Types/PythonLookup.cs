@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Types {
-    class PythonLookup : PythonTypeWrapper, IPythonLookupType, IPythonIterableType {
+    class PythonLookup : PythonTypeWrapper, IPythonLookup, IPythonIterable {
         private readonly IReadOnlyDictionary<IPythonType, IReadOnlyList<IPythonType>> _mapping;
 
         public PythonLookup(
@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Types {
             IEnumerable<IPythonType> keys,
             IEnumerable<IPythonType> values,
             IEnumerable<KeyValuePair<IPythonType, IEnumerable<IPythonType>>> mapping,
-            IPythonIteratorType iterator
+            IPythonIterator iterator
         ): base(lookupType, declaringModule) {
             KeyTypes = (keys ?? throw new ArgumentNullException(nameof(keys))).ToArray();
             ValueTypes = (values ?? throw new ArgumentNullException(nameof(values))).ToArray();
@@ -45,7 +45,7 @@ namespace Microsoft.Python.Analysis.Types {
             return Enumerable.Empty<IPythonType>();
         }
 
-        public IPythonIteratorType IteratorType { get; }
+        public IPythonIterator IteratorType { get; }
 
         public override string Name => InnerType?.Name ?? "tuple";
         public override BuiltinTypeId TypeId => InnerType?.TypeId ?? BuiltinTypeId.Tuple;

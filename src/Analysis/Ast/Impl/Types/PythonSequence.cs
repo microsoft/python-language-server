@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Types {
-    internal class PythonSequence : PythonTypeWrapper, IPythonSequenceType, IPythonIterableType {
+    internal class PythonSequence : PythonTypeWrapper, IPythonSequence, IPythonIterable {
         public PythonSequence(
             IPythonType sequenceType,
             IPythonModule declaringModule,
@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public IEnumerable<IPythonType> IndexTypes { get; }
-        public IPythonIteratorType IteratorType { get; }
+        public IPythonIterator IteratorType { get; }
  
         public override string Name => InnerType?.Name ?? "tuple";
         public override BuiltinTypeId TypeId => InnerType?.TypeId ?? BuiltinTypeId.Tuple;
