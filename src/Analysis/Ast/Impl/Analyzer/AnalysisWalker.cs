@@ -38,6 +38,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly ExpressionLookup _lookup;
         private readonly GlobalScope _globalScope;
         private readonly AnalysisFunctionWalkerSet _functionWalkers = new AnalysisFunctionWalkerSet();
+        private readonly HashSet<FunctionDefinition> _replacedByStubs = new HashSet<FunctionDefinition>();
         private readonly bool _suppressBuiltinLookup;
         private IDisposable _classScope;
 
@@ -59,10 +60,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override async Task<bool> WalkAsync(PythonAst node, CancellationToken cancellationToken = default) {
             Check.InvalidOperation(() => _ast == node, "walking wrong AST");
 
-            var name = _module.Name == "sys";
             CollectTopLevelDefinitions();
-
             cancellationToken.ThrowIfCancellationRequested();
+
             return await base.WalkAsync(node, cancellationToken);
         }
 
@@ -253,7 +253,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberReference = asNames[i] ?? names[i];
                 var memberName = memberReference.Name;
 
-                var type = module.GetMember(memberReference.Name) ?? _lookup.UnknownType;
+                var type = module?.GetMember(memberReference.Name) ?? _lookup.UnknownType;
                 _lookup.DeclareVariable(memberName, type);
             }
         }
@@ -353,7 +353,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
-            if (node.IsLambda) {
+            if (node.IsLambda || _replacedByStubs.Contains(node)) {
                 return false;
             }
 
@@ -495,12 +495,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void AddOverload(FunctionDefinition node, Action<IPythonFunctionOverload> addOverload) {
             // Check if function exists in stubs. If so, take overload from stub
             // and the documentation from this actual module.
-            var stubFunction = GetOverloadFromStubs(node.Name);
-            if (stubFunction != null) {
+            var stubOverload = GetOverloadFromStub(node);
+            if (stubOverload != null) {
                 if (!string.IsNullOrEmpty(node.Documentation)) {
-                    stubFunction.SetDocumentation(node.Documentation);
+                    stubOverload.SetDocumentation(node.Documentation);
                 }
-                addOverload(stubFunction);
+                addOverload(stubOverload);
+                _replacedByStubs.Add(node);
                 return;
             }
 
@@ -512,12 +513,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private PythonFunctionOverload GetOverloadFromStubs(string name) {
+        private PythonFunctionOverload GetOverloadFromStub(FunctionDefinition node) {
             if (_module.Stub == null) {
                 return null;
             }
 
-            var memberNameChain = new List<string>(Enumerable.Repeat(name, 1));
+            var memberNameChain = new List<string>(Enumerable.Repeat(node.Name, 1));
             IScope scope = _lookup.CurrentScope;
 
             while (scope != _globalScope) {
@@ -533,7 +534,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            return t is IPythonFunction f ? CreateFunctionOverload(_lookup, f.FunctionDefinition) : null;
+            if (t is IPythonFunction f) {
+                return f.Overloads
+                    .OfType<PythonFunctionOverload>()
+                    .FirstOrDefault(o => o.GetParameters().Length == node.Parameters.Length);
+            }
+
+            return null;
         }
     }
 }

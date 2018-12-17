@@ -104,28 +104,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private async Task<IDocumentAnalysis> AnalyzeAsync(IDependencyChainNode node, CancellationToken cancellationToken) {
             var _startTime = DateTime.Now;
 
-            _log?.Log(TraceEventType.Verbose, $"Analysis begins: {node.Document.Name}");
+            _log?.Log(TraceEventType.Verbose, $"Analysis begins: {node.Document.Name}({node.Document.ModuleType})");
             // Store current expected version so we can see if it still 
             // the same at the time the analysis completes.
             var analysisVersion = node.Analyzable.ExpectedAnalysisVersion;
 
             // Make sure the file is parsed ans the AST is up to date.
             var ast = await node.Document.GetAstAsync(cancellationToken);
-            _log?.Log(TraceEventType.Verbose, $"Parse of {node.Document.Name} complete in {(DateTime.Now - _startTime).TotalMilliseconds} ms.");
+            _log?.Log(TraceEventType.Verbose, $"Parse of {node.Document.Name}({node.Document.ModuleType}) complete in {(DateTime.Now - _startTime).TotalMilliseconds} ms.");
 
             // Now run the analysis.
             var walker = new AnalysisWalker(_services, node.Document, ast,
                 suppressBuiltinLookup: node.Document.ModuleType == ModuleType.Builtins);
 
-            _log?.Log(TraceEventType.Verbose, $"Analysis walk begins: {node.Document.Name}");
             await ast.WalkAsync(walker, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            _log?.Log(TraceEventType.Verbose, $"Analysis walk completed: {node.Document.Name}");
 
             // Note that we do not set the new analysis here and rather let
             // Python analyzer to call NotifyAnalysisComplete.
             var gs = await walker.CompleteAsync(cancellationToken);
-            _log?.Log(TraceEventType.Verbose, $"Analysis of {node.Document.Name} complete in {(DateTime.Now - _startTime).TotalMilliseconds} ms.");
+            _log?.Log(TraceEventType.Verbose, $"Analysis of {node.Document.Name}({node.Document.ModuleType}) complete in {(DateTime.Now - _startTime).TotalMilliseconds} ms.");
             return new DocumentAnalysis(node.Document, analysisVersion, gs);
         }
 

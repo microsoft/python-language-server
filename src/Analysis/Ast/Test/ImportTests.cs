@@ -67,9 +67,9 @@ namespace Microsoft.Python.Analysis.Tests {
                 .And.HaveVariable("l").OfType(BuiltinTypeId.List)
                 .And.HaveVariable("t").OfType(BuiltinTypeId.Tuple)
                 .And.HaveVariable("s").OfType(BuiltinTypeId.Set)
-                .And.HaveVariable("XY").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Str)
-                .And.HaveVariable("XYZ").OfTypes(BuiltinTypeId.Int, BuiltinTypeId.Str, BuiltinTypeId.Bytes)
-                .And.HaveVariable("D").OfTypes(BuiltinTypeId.List, BuiltinTypeId.Tuple, BuiltinTypeId.Dict, BuiltinTypeId.Set);
+                .And.HaveVariable("XY").OfTypes(BuiltinTypeId.Int)
+                .And.HaveVariable("XYZ").OfTypes(BuiltinTypeId.Bytes)
+                .And.HaveVariable("D").OfTypes(BuiltinTypeId.List);
         }
 
         [TestMethod, Priority(0)]

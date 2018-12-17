@@ -34,6 +34,7 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/microsoft/python-language-server/issues/406")]
         public async Task TypeShedSysExcInfo() {
             var code = @"
 import sys
