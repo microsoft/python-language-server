@@ -76,6 +76,9 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<TAssertions, TMember>((TAssertions)this, typedMember);
         }
 
+        public AndConstraint<TAssertions> HaveSameMembersAs(IMemberContainer mc)
+            => HaveMembers(mc.GetMemberNames(), string.Empty);
+
         public AndConstraint<TAssertions> HaveMembers(params string[] memberNames)
             => HaveMembers(memberNames, string.Empty);
 
