@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -18,17 +17,13 @@ using System.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
     class ErrorParameter : Parameter {
-        private readonly Expression _error;
-        
         public ErrorParameter(Expression errorValue, ParameterKind kind)
             : base(null, kind) {
-                _error = errorValue;
+                Error = errorValue;
         }
 
-        public Expression Error => _error;
+        public Expression Error { get; }
 
-        internal override void AppendParameterName(StringBuilder res, PythonAst ast, CodeFormattingOptions format, string leadingWhiteSpace) {
-            _error?.AppendCodeString(res, ast, format, leadingWhiteSpace);
-        }
+        internal override void AppendParameterName(StringBuilder res, PythonAst ast, CodeFormattingOptions format, string leadingWhiteSpace) => Error?.AppendCodeString(res, ast, format, leadingWhiteSpace);
     }
 }

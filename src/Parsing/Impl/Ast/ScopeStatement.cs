@@ -277,9 +277,7 @@ namespace Microsoft.Python.Parsing.Ast {
             return reference;
         }
 
-        internal bool IsReferenced(string name) {
-            return _references != null && _references.ContainsKey(name);
-        }
+        internal bool IsReferenced(string name) => _references != null && _references.ContainsKey(name);
 
         internal PythonVariable/*!*/ CreateVariable(string name, VariableKind kind) {
             EnsureVariables();

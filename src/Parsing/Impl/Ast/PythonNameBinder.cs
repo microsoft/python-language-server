@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -54,15 +53,9 @@ namespace Microsoft.Python.Parsing.Ast {
             }
             return false;
         }
-        public override bool Walk(ParenthesisExpression node) {
-            return true;
-        }
-        public override bool Walk(TupleExpression node) {
-            return true;
-        }
-        public override bool Walk(ListExpression node) {
-            return true;
-        }
+        public override bool Walk(ParenthesisExpression node) => true;
+        public override bool Walk(TupleExpression node) => true;
+        public override bool Walk(ListExpression node) => true;
     }
 
     internal class ParameterBinder : PythonWalkerNonRecursive {
@@ -93,9 +86,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             }
         }
-        public override bool Walk(TupleExpression node) {
-            return true;
-        }
+        public override bool Walk(TupleExpression node) => true;
     }
 
     class DeleteBinder : PythonWalkerNonRecursive {
@@ -196,13 +187,9 @@ namespace Microsoft.Python.Parsing.Ast {
             return variable;
         }
 
-        internal void ReportSyntaxWarning(string message, Node node) {
-            _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.Warning);
-        }
+        internal void ReportSyntaxWarning(string message, Node node) => _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.Warning);
 
-        internal void ReportSyntaxError(string message, Node node) {
-            _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.FatalError);
-        }
+        internal void ReportSyntaxError(string message, Node node) => _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.FatalError);
 
         #region AstBinder Overrides
 

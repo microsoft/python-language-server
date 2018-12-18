@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -16,9 +15,11 @@
 
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
-
     public class DictionaryExpression : Expression {
         private readonly SliceExpression[] _items;
 
@@ -26,30 +27,29 @@ namespace Microsoft.Python.Parsing.Ast {
             _items = items;
         }
 
-        public IList<SliceExpression> Items {
-            get { return _items; }
-        }
+        public IList<SliceExpression> Items => _items;
 
-        public override string NodeName {
-            get {
-                return "dictionary display";
-            }
-        }
+        public override string NodeName => "dictionary display";
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_items != null) {
-                    foreach (var s in _items) {
-                        s.Walk(walker);
-                    }
+                foreach (var s in _items.MaybeEnumerate()) {
+                    s.Walk(walker);
                 }
             }
             walker.PostWalk(this);
         }
 
-        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            ListExpression.AppendItems(res, ast, format, "{", this.IsMissingCloseGrouping(ast) ? "" : "}", this, Items);
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                foreach (var s in _items.MaybeEnumerate()) {
+                    await s.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
+
+        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) => ListExpression.AppendItems(res, ast, format, "{", this.IsMissingCloseGrouping(ast) ? "" : "}", this, Items);
     }
 
     /// <summary>
@@ -61,9 +61,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public Expression Key => SliceStart;
 
-        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            Key?.AppendCodeString(res, ast, format);
-        }
+        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) => Key?.AppendCodeString(res, ast, format);
     }
 
     /// <summary>
@@ -75,8 +73,6 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public Expression Value => SliceStop;
 
-        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            Value?.AppendCodeString(res, ast, format);
-        }
+        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) => Value?.AppendCodeString(res, ast, format);
     }
 }

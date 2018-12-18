@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
 
@@ -23,32 +24,31 @@ namespace Microsoft.Python.Parsing.Ast {
     // The return value (x) is taken from the value attribute of a StopIteration
     // error raised by next(z) or z.send().
     public class YieldFromExpression : Expression {
-        private readonly Expression _expression;
-
         public YieldFromExpression(Expression expression) {
-            _expression = expression;
+            Expression = expression;
         }
 
-        public Expression Expression {
-            get { return _expression; }
-        }
+        public Expression Expression { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_expression != null) {
-                    _expression.Walk(walker);
-                }
+                Expression?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
-        internal override string CheckAugmentedAssign() {
-            return CheckAssign();
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Expression != null) {
+                    await Expression.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        public int GetIndexOfFrom(PythonAst ast) {
-            return StartIndex + 5 + this.GetSecondWhiteSpace(ast).Length;
-        }
+        internal override string CheckAugmentedAssign() => CheckAssign();
+
+        public int GetIndexOfFrom(PythonAst ast) => StartIndex + 5 + this.GetSecondWhiteSpace(ast).Length;
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             res.Append(this.GetPreceedingWhiteSpace(ast));

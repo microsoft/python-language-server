@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -16,6 +15,9 @@
 
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public sealed class GeneratorExpression : Comprehension {
@@ -27,43 +29,38 @@ namespace Microsoft.Python.Parsing.Ast {
             _iterators = iterators;
         }
 
-        public override IList<ComprehensionIterator> Iterators {
-            get { return _iterators; }
-        }
+        public override IList<ComprehensionIterator> Iterators => _iterators;
 
-        public override string NodeName { get { return "generator"; } }
+        public override string NodeName => "generator";
 
-        public Expression Item {
-            get {
-                return _item;
-            }
-        }
+        public Expression Item => _item;
 
-        internal override string CheckAssign() {
-            return "can't assign to generator expression";
-        }
+        internal override string CheckAssign() => "can't assign to generator expression";
 
-        internal override string CheckAugmentedAssign() {
-            return CheckAssign();
-        }
+        internal override string CheckAugmentedAssign() => CheckAssign();
 
-        internal override string CheckDelete() {
-            return "can't delete generator expression";
-        }
+        internal override string CheckDelete() => "can't delete generator expression";
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_item != null) {
-                    _item.Walk(walker);
-                }
-
-                if (_iterators != null) {
-                    foreach (var ci in _iterators) {
-                        ci.Walk(walker);
-                    }
+                _item?.Walk(walker);
+                foreach (var ci in _iterators.MaybeEnumerate()) {
+                    ci.Walk(walker);
                 }
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (_item != null) {
+                    await _item.WalkAsync(walker, cancellationToken);
+                }
+                foreach (var ci in _iterators.MaybeEnumerate()) {
+                    await ci.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {

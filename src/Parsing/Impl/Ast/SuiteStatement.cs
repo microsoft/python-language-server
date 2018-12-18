@@ -45,11 +45,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (_statements != null) {
                     foreach (var s in _statements) {
                         cancellationToken.ThrowIfCancellationRequested();
-                        if (PythonWalkerAsync.IsNodeWalkAsync(s)) {
-                            await s.WalkAsync(walker, cancellationToken);
-                        } else {
-                            s.Walk(walker);
-                        }
+                        await s.WalkAsync(walker, cancellationToken);
                     }
                 }
             }
@@ -112,7 +108,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     for (var i = 0; i < _statements.Length; i++) {
                         if (i == 0) {
                             var tmp = new StringBuilder();
-                            _statements[i].AppendCodeString(tmp, ast, format);  
+                            _statements[i].AppendCodeString(tmp, ast, format);
                             var stmt = tmp.ToString();
                             res.Append(stmt);
 
@@ -153,7 +149,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     res.Append(colonWhiteSpace);
                 }
                 res.Append(':');
-                
+
                 foreach (var statement in _statements) {
                     statement.AppendCodeString(res, ast, format);
                 }

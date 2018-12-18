@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,57 +14,53 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class AugmentedAssignStatement : Statement {
-        private readonly PythonOperator _op;
-        private readonly Expression _left;
-        private readonly Expression _right;
-
         public AugmentedAssignStatement(PythonOperator op, Expression left, Expression right) {
-            _op = op;
-            _left = left; 
-            _right = right;
+            Operator = op;
+            Left = left;
+            Right = right;
         }
 
-        public PythonOperator Operator {
-            get { return _op; }
-        }
+        public PythonOperator Operator { get; }
 
-        public Expression Left {
-            get { return _left; }
-        }
+        public Expression Left { get; }
 
-        public Expression Right {
-            get { return _right; }
-        }
+        public Expression Right { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_left != null) {
-                    _left.Walk(walker);
-                }
-                if (_right != null) {
-                    _right.Walk(walker);
-                }
+                Left?.Walk(walker);
+                Right?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Left != null) {
+                    await Left.WalkAsync(walker, cancellationToken);
+                }
+                if (Right != null) {
+                    await Right.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
+        }
+
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            _left.AppendCodeString(res, ast, format);
+            Left.AppendCodeString(res, ast, format);
             res.Append(this.GetPreceedingWhiteSpace(ast));
-            res.Append(_op.ToCodeString());
+            res.Append(Operator.ToCodeString());
             res.Append('=');
-            _right.AppendCodeString(res, ast, format);
+            Right.AppendCodeString(res, ast, format);
         }
 
-        public override string GetLeadingWhiteSpace(PythonAst ast) {
-            return _left.GetLeadingWhiteSpace(ast);
-        }
+        public override string GetLeadingWhiteSpace(PythonAst ast) => Left.GetLeadingWhiteSpace(ast);
 
-        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) {
-            _left.SetLeadingWhiteSpace(ast, whiteSpace);
-        }
+        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) => Left.SetLeadingWhiteSpace(ast, whiteSpace);
     }
 }

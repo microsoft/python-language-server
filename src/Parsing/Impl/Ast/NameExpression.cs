@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class NameExpression : Expression {
@@ -35,6 +36,12 @@ namespace Microsoft.Python.Parsing.Ast {
             if (walker.Walk(this)) {
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         public PythonReference GetVariableReference(PythonAst ast) => GetVariableReference(this, ast);

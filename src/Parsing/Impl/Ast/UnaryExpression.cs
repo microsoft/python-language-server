@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,46 +14,43 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
-
     public class UnaryExpression : Expression {
-        private readonly Expression _expression;
-        private readonly PythonOperator _op;
-
         public UnaryExpression(PythonOperator op, Expression expression) {
-            _op = op;
-            _expression = expression;
+            Op = op;
+            Expression = expression;
             EndIndex = expression.EndIndex;
         }
 
-        public Expression Expression {
-            get { return _expression; }
-        }
+        public Expression Expression { get; }
 
-        public PythonOperator Op {
-            get { return _op; }
-        }
+        public PythonOperator Op { get; }
 
-        public override string NodeName {
-            get {
-                return "unary operator";
-            }
-        }
+        public override string NodeName => "unary operator";
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
-            res.Append(_op.ToCodeString());
-            _expression.AppendCodeString(res, ast, format);
+            res.Append(Op.ToCodeString());
+            Expression.AppendCodeString(res, ast, format);
         }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_expression != null) {
-                    _expression.Walk(walker);
-                }
+                    Expression?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Expression != null) {
+                    await Expression.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
     }
 }

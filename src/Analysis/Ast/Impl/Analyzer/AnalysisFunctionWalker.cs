@@ -125,7 +125,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return await base.WalkAsync(node, cancellationToken);
         }
 
-        public override bool Walk(IfStatement node) {
+        public override Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default) {
             // Handle basic check such as
             // if isinstance(value, type):
             //    return value
@@ -142,7 +142,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 }
             }
-            return base.Walk(node);
+            return base.WalkAsync(node, cancellationToken);
         }
 
         public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {

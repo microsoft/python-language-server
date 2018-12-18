@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ConditionalExpression : Expression {
@@ -43,6 +44,21 @@ namespace Microsoft.Python.Parsing.Ast {
             walker.PostWalk(this);
         }
 
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Test != null) {
+                    await Test.WalkAsync(walker, cancellationToken);
+                }
+                if (TrueExpression != null) {
+                    await TrueExpression.WalkAsync(walker, cancellationToken);
+                }
+                if (FalseExpression != null) {
+                    await FalseExpression.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
+        }
+
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             TrueExpression.AppendCodeString(res, ast, format);
             res.Append(this.GetPreceedingWhiteSpace(ast));
@@ -61,12 +77,8 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        public override string GetLeadingWhiteSpace(PythonAst ast) {
-            return TrueExpression.GetLeadingWhiteSpace(ast);
-        }
+        public override string GetLeadingWhiteSpace(PythonAst ast) => TrueExpression.GetLeadingWhiteSpace(ast);
 
-        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) {
-            TrueExpression.SetLeadingWhiteSpace(ast, whiteSpace);
-        }
+        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) => TrueExpression.SetLeadingWhiteSpace(ast, whiteSpace);
     }
 }

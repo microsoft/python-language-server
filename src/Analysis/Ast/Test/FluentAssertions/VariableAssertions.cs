@@ -143,6 +143,10 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveSingleOverload(string because = "", params object[] reasonArgs) {
             var f = Subject.Type as IPythonFunction;
+            Execute.Assertion.ForCondition(f != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject.Name} to be a function{{reason}}, but it is {Subject.Type}.");
+
             var overloads = f.Overloads.ToArray();
             Execute.Assertion.ForCondition(overloads.Length == 1)
                 .BecauseOf(because, reasonArgs)

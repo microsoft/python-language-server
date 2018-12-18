@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -39,9 +38,7 @@ namespace Microsoft.Python.Parsing.Ast {
         [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays", Justification = "breaking change")]
         public PythonVariable[] Variables { get; set; }
 
-        public PythonReference[] GetReferences(PythonAst ast) {
-            return GetVariableReferences(this, ast);
-        }
+        public PythonReference[] GetReferences(PythonAst ast) => GetVariableReferences(this, ast);
 
         public IList<DottedName> Names => _names;
         public IList<NameExpression> AsNames => _asNames;

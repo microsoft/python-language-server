@@ -13,11 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Core;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -54,24 +59,67 @@ e1, e2, e3 = sys.exc_info()
             f.Overloads[0].Documentation.Should().Be("tuple[type, BaseException, Unknown]");
         }
 
-//        [TestMethod, Priority(0)]
-//        public async Task TypeShedJsonMakeScanner() {
-//            using (var server = await CreateServerAsync()) {
-//                server.Analyzer.SetTypeStubPaths(new[] { TestData.GetDefaultTypeshedPath() });
-//                var code = @"import _json
+        [TestMethod, Priority(0)]
+        public async Task TypeShedJsonMakeScanner() {
+            var code = @"import _json
+scanner = _json.make_scanner()";
+            var analysis = await GetAnalysisAsync(code);
 
-//scanner = _json.make_scanner()";
-//                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+            var v0 = analysis.Should().HaveVariable("scanner");
 
-//                var v0 = analysis.Should().HaveVariable("scanner").WithValueAt<IBuiltinInstanceInfo>(0);
+            v0.Which.Should().HaveSingleOverload()
+              .Which.Should().HaveName("__call__")
+              .And.HaveParameters("string", "index")
+              .And.HaveParameterAt(0).WithName("string").WithType("str").WithNoDefaultValue()
+              .And.HaveParameterAt(1).WithName("index").WithType("int").WithNoDefaultValue()
+              .And.HaveReturnType("tuple[object, int]");
+        }
 
-//                v0.Which.Should().HaveSingleOverload()
-//                  .Which.Should().HaveName("__call__")
-//                  .And.HaveParameters("string", "index")
-//                  .And.HaveParameterAt(0).WithName("string").WithType("str").WithNoDefaultValue()
-//                  .And.HaveParameterAt(1).WithName("index").WithType("int").WithNoDefaultValue()
-//                  .And.HaveSingleReturnType("tuple[object, int]");
-//            }
-//        }
+        [TestMethod, Priority(0)]
+        public async Task TypeStubConditionalDefine() {
+            var seen = new HashSet<Version>();
+
+            var code = @"import sys
+
+if sys.version_info < (2, 7):
+    LT_2_7 : bool = ...
+if sys.version_info <= (2, 7):
+    LE_2_7 : bool = ...
+if sys.version_info > (2, 7):
+    GT_2_7 : bool = ...
+if sys.version_info >= (2, 7):
+    GE_2_7 : bool = ...
+
+";
+
+            var fullSet = new[] { "LT_2_7", "LE_2_7", "GT_2_7", "GE_2_7" };
+
+            foreach (var ver in PythonVersions.Versions) {
+                if (!seen.Add(ver.Version)) {
+                    continue;
+                }
+
+                Console.WriteLine("Testing with {0}", ver.InterpreterPath);
+
+                var analysis = await GetAnalysisAsync(code, ver);
+
+                var expected = new List<string>();
+                var pythonVersion = ver.Version.ToLanguageVersion();
+                if (pythonVersion.Is3x()) {
+                    expected.Add("GT_2_7");
+                    expected.Add("GE_2_7");
+                } else if (pythonVersion == PythonLanguageVersion.V27) {
+                    expected.Add("GE_2_7");
+                    expected.Add("LE_2_7");
+                } else {
+                    expected.Add("LT_2_7");
+                    expected.Add("LE_2_7");
+                }
+
+                analysis.TopLevelMembers.SelectMany(m => m.Type.GetMemberNames()).Where(n => n.EndsWithOrdinal("2_7"))
+                    .Should().Contain(expected)
+                    .And.NotContain(fullSet.Except(expected));
+            }
+        }
     }
 }

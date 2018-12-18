@@ -15,6 +15,8 @@
 
 using System;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class OrExpression : Expression {
@@ -32,11 +34,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public int OrIndex { get; }
 
-        public override string NodeName {
-            get {
-                return "or expression";
-            }
-        }
+        public override string NodeName => "or expression";
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -44,6 +42,16 @@ namespace Microsoft.Python.Parsing.Ast {
                 Right?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                await Left.WalkAsync(walker, cancellationToken);
+                if (Right != null) {
+                    await Right.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) => BinaryExpression.BinaryToCodeString(res, ast, format, this, Left, Right, "or");

@@ -24,9 +24,7 @@ namespace Microsoft.Python.Parsing.Ast {
             _items = items;
         }
 
-        public IList<Expression> Items {
-            get { return _items; }
-        }
+        public IList<Expression> Items => _items;
 
         internal override string CheckAssign() {
             for (var i = 0; i < Items.Count; i++) {
@@ -59,12 +57,8 @@ namespace Microsoft.Python.Parsing.Ast {
             return null;
         }
 
-        internal override string CheckAugmentedAssign() {
-            return "illegal expression for augmented assignment";
-        }
+        internal override string CheckAugmentedAssign() => "illegal expression for augmented assignment";
 
-        private static bool IsComplexAssignment(Expression expr) {
-            return !(expr is NameExpression);
-        }
+        private static bool IsComplexAssignment(Expression expr) => !(expr is NameExpression);
     }
 }

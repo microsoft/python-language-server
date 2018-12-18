@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -17,6 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class WithStatement : Statement, IMaybeAsyncStatement {
@@ -33,11 +34,7 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
 
-        public IList<WithItem> Items {
-            get {
-                return _items;
-            }
-        }
+        public IList<WithItem> Items => _items;
 
         public int HeaderIndex { get; set; }
         internal void SetKeywordEndIndex(int index) => _keywordEndIndex = index;
@@ -58,6 +55,18 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                foreach (var item in _items) {
+                    await item.WalkAsync(walker, cancellationToken);
+                }
+                if (Body != null) {
+                    await Body.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         public int GetIndexOfWith(PythonAst ast) {
@@ -117,9 +126,20 @@ namespace Microsoft.Python.Parsing.Ast {
             Variable?.Walk(walker);
         }
 
-        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (ContextManager != null) {
+                    await ContextManager.WalkAsync(walker, cancellationToken);
+                }
+                if (Variable != null) {
+                    await Variable.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
+        }
+
+        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) =>
             // WithStatement expands us 
             throw new InvalidOperationException();
-        }
     }
 }

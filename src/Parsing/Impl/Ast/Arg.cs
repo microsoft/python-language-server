@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -16,6 +15,8 @@
 
 using System;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public sealed class Arg : Node {
@@ -37,17 +38,22 @@ namespace Microsoft.Python.Parsing.Ast {
             set => _endIndexIncludingWhitespace = value;
         }
 
-        public override string ToString() {
-            return base.ToString() + ":" + NameExpression;
-        }
+        public override string ToString() => base.ToString() + ":" + NameExpression;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (Expression != null) {
-                    Expression.Walk(walker);
-                }
+                Expression?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Expression != null) {
+                    await Expression.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         string GetPreceedingWhiteSpaceDefaultNull(PythonAst ast) {
@@ -57,8 +63,7 @@ namespace Microsoft.Python.Parsing.Ast {
             return Expression?.GetPreceedingWhiteSpaceDefaultNull(ast);
         }
 
-        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format)
-        {
+        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             if (NameExpression != null) {
                 if (Name == "*" || Name == "**") {
                     NameExpression.AppendCodeString(res, ast, format);

@@ -2232,13 +2232,11 @@ namespace Microsoft.Python.Parsing {
                 return oth != null && Equals(oth);
             }
 
-            public override int GetHashCode() {
-                return (IsRaw ? 0x01 : 0) |
+            public override int GetHashCode() => (IsRaw ? 0x01 : 0) |
                     (IsUnicode ? 0x02 : 0) |
                     (IsTripleQuoted ? 0x04 : 0) |
                     (IsSingleTickQuote ? 0x08 : 0) |
                     (IsFormatted ? 0x10 : 0);
-            }
 
             public static bool operator ==(IncompleteString left, IncompleteString right) {
                 if ((object)left == null) {
@@ -2350,9 +2348,7 @@ namespace Microsoft.Python.Parsing {
 
             #region IEquatable<State> Members
 
-            public bool Equals(State other) {
-                return Equals(other);
-            }
+            public bool Equals(State other) => Equals(other);
 
             #endregion
         }
@@ -2410,9 +2406,7 @@ namespace Microsoft.Python.Parsing {
 
         #region Buffer Access
 
-        private string GetTokenSubstring(int offset) {
-            return GetTokenSubstring(offset, _tokenEnd - _start - offset);
-        }
+        private string GetTokenSubstring(int offset) => GetTokenSubstring(offset, _tokenEnd - _start - offset);
 
         private string GetTokenSubstring(int offset, int length) {
             Debug.Assert(_tokenEnd != -1, "Token end not marked");
@@ -2473,9 +2467,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         [Conditional("DUMP_TOKENS")]
-        private void DumpToken() {
-            Console.WriteLine("--> `{0}` {1}", GetTokenString().Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t"), TokenSpan);
-        }
+        private void DumpToken() => Console.WriteLine("--> `{0}` {1}", GetTokenString().Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t"), TokenSpan);
 
         private void BufferBack(int count = -1) => SeekRelative(count);
         internal string GetTokenString() => new string(_buffer, _start, _tokenEnd - _start);

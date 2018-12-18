@@ -15,44 +15,48 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class AssertStatement : Statement {
-        private readonly Expression _test, _message;
-
         public AssertStatement(Expression test, Expression message) {
-            _test = test;
-            _message = message;
+            Test = test;
+            Message = message;
         }
 
-        public Expression Test {
-            get { return _test; }
-        }
+        public Expression Test { get; }
 
-        public Expression Message {
-            get { return _message; }
-        }
+        public Expression Message { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_test != null) {
-                    _test.Walk(walker);
-                }
-                if (_message != null) {
-                    _message.Walk(walker);
-                }
+                Test?.Walk(walker);
+                Message?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Test != null) {
+                    await Test.WalkAsync(walker, cancellationToken);
+                }
+                if (Message != null) {
+                    await Message.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
             res.Append("assert");
-            _test.AppendCodeString(res, ast, format);
-            if (_message != null) {
+            Test.AppendCodeString(res, ast, format);
+            if (Message != null) {
                 res.Append(this.GetSecondWhiteSpace(ast));
                 res.Append(',');
-                _message.AppendCodeString(res, ast, format);
+                Message.AppendCodeString(res, ast, format);
             }
         }
     }

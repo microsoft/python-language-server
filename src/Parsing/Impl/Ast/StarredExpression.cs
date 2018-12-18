@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class StarredExpression : Expression {
@@ -35,16 +36,17 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        internal override string CheckAssign() {
-            if (StarCount == 1) {
-                return "starred assignment target must be in a list or tuple";
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                await Expression.WalkAsync(walker, cancellationToken);
             }
-            return "invalid syntax";
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        internal override string CheckAugmentedAssign() {
-            return "invalid syntax";
-        }
+        internal override string CheckAssign()
+            => StarCount == 1 ? "starred assignment target must be in a list or tuple" : "invalid syntax";
+
+        internal override string CheckAugmentedAssign() => "invalid syntax";
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             res.Append(this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? "");

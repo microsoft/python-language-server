@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,103 +14,94 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class SliceExpression : Expression {
-        private readonly Expression _sliceStart;
-        private readonly Expression _sliceStop;
-        private readonly Expression _sliceStep;
-        private readonly bool _stepProvided;
-
         public SliceExpression(Expression start, Expression stop, Expression step, bool stepProvided) {
-            _sliceStart = start;
-            _sliceStop = stop;
-            _sliceStep = step;
-            _stepProvided = stepProvided;
+            SliceStart = start;
+            SliceStop = stop;
+            SliceStep = step;
+            StepProvided = stepProvided;
         }
 
-        public Expression SliceStart {
-            get { return _sliceStart; }
-        }
+        public Expression SliceStart { get; }
 
-        public Expression SliceStop {
-            get { return _sliceStop; }
-        }
+        public Expression SliceStop { get; }
 
-        public Expression SliceStep {
-            get { return _sliceStep; }
-        }
+        public Expression SliceStep { get; }
 
         /// <summary>
         /// True if the user provided a step parameter (either providing an explicit parameter
         /// or providing an empty step parameter) false if only start and stop were provided.
         /// </summary>
-        public bool StepProvided {
-            get {
-                return _stepProvided;
-            }
-        }
+        public bool StepProvided { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_sliceStart != null) {
-                    _sliceStart.Walk(walker);
-                }
-                if (_sliceStop != null) {
-                    _sliceStop.Walk(walker);
-                }
-                if (_sliceStep != null) {
-                    _sliceStep.Walk(walker);
-                }
+                SliceStart?.Walk(walker);
+                SliceStop?.Walk(walker);
+                SliceStep?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (SliceStart != null) {
+                    await SliceStart.WalkAsync(walker, cancellationToken);
+                }
+                if (SliceStop != null) {
+                    await SliceStop.WalkAsync(walker, cancellationToken);
+                }
+                if (SliceStep != null) {
+                    await SliceStep.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
+        }
+
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            if (_sliceStart != null) {
-                _sliceStart.AppendCodeString(res, ast, format);
+            if (SliceStart != null) {
+                SliceStart.AppendCodeString(res, ast, format);
             }
             if (!this.IsIncompleteNode(ast)) {
                 format.Append(res, format.SpaceBeforeSliceColon, " ", "", this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? "");
                 res.Append(':');
-                if (_sliceStop != null) {
+                if (SliceStop != null) {
                     string ws = null;
                     if (format.SpaceAfterSliceColon.HasValue) {
                         ws = "";
                         format.Append(res, format.SpaceAfterSliceColon, " ", "", "");
                     }
-                    _sliceStop.AppendCodeString(res, ast, format, ws);
+                    SliceStop.AppendCodeString(res, ast, format, ws);
                 }
-                if (_stepProvided) {
+                if (StepProvided) {
                     format.Append(res, format.SpaceBeforeSliceColon, " ", "", this.GetSecondWhiteSpaceDefaultNull(ast) ?? "");
                     res.Append(':');
-                    if (_sliceStep != null) {
+                    if (SliceStep != null) {
                         string ws = null;
                         if (format.SpaceAfterSliceColon.HasValue) {
                             ws = "";
                             format.Append(res, format.SpaceAfterSliceColon, " ", "", "");
                         }
-                        _sliceStep.AppendCodeString(res, ast, format, ws);
+                        SliceStep.AppendCodeString(res, ast, format, ws);
                     }
                 }
             }
         }
 
 
-        public override string GetLeadingWhiteSpace(PythonAst ast) {
-            if (_sliceStart != null) {
-                return _sliceStart.GetLeadingWhiteSpace(ast);
-            }
-            return this.GetPreceedingWhiteSpace(ast);
-        }
+        public override string GetLeadingWhiteSpace(PythonAst ast) 
+            => SliceStart != null ? SliceStart.GetLeadingWhiteSpace(ast) : this.GetPreceedingWhiteSpace(ast);
 
         public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) {
-            if (_sliceStart != null) {
-                _sliceStart.SetLeadingWhiteSpace(ast, whiteSpace);
+            if (SliceStart != null) {
+                SliceStart.SetLeadingWhiteSpace(ast, whiteSpace);
             } else {
                 base.SetLeadingWhiteSpace(ast, whiteSpace);
             }
         }
-
     }
 }

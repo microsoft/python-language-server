@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -20,20 +19,12 @@ namespace Microsoft.Python.Parsing.Ast {
     /// where a name is referred to in a scope (global, class, or function).  
     /// </summary>
     public class PythonReference {
-        private readonly string/*!*/ _name;
-        private PythonVariable _variable;
-
         public PythonReference(string/*!*/ name) {
-            _name = name;
+            Name = name;
         }
 
-        public string/*!*/ Name {
-            get { return _name; }
-        }
+        public string/*!*/ Name { get; }
 
-        public PythonVariable Variable {
-            get { return _variable; }
-            set { _variable = value; }
-        }
+        public PythonVariable Variable { get; set; }
     }
 }

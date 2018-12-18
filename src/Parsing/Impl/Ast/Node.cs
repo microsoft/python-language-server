@@ -36,7 +36,7 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public abstract void Walk(PythonWalker walker);
-        public virtual Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public abstract Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default);
 
         public virtual string NodeName => GetType().Name;
 

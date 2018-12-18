@@ -120,9 +120,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return await base.WalkAsync(node, cancellationToken);
         }
 
-        public override bool Walk(ExpressionStatement node) {
+        public override Task<bool> WalkAsync(ExpressionStatement node, CancellationToken cancellationToken = default) {
             AssignFromAnnotation(node.Expression as ExpressionWithAnnotation);
-            return false;
+            return Task.FromResult(false);
         }
 
         private void AssignFromAnnotation(ExpressionWithAnnotation expr) {

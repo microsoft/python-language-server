@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
 
@@ -25,34 +26,36 @@ namespace Microsoft.Python.Parsing.Ast {
             _expression = expression;
         }
 
-        public Expression Expression {
-            get { return _expression; }
-        }
+        public Expression Expression => _expression;
 
-        internal override string CheckAssign() {
-            return _expression.CheckAssign();
-        }
+        internal override string CheckAssign() => _expression.CheckAssign();
 
-        internal override string CheckDelete() {
-            return _expression.CheckDelete();
-        }
+        internal override string CheckDelete() => _expression.CheckDelete();
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_expression != null) {
-                    _expression.Walk(walker);
-                }
+                _expression?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (_expression != null) {
+                    await _expression.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
+        }
+
+
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
             res.Append('(');
-            
+
             _expression.AppendCodeString(
-                res, 
-                ast, 
+                res,
+                ast,
                 format,
                 format.SpacesWithinParenthesisExpression != null ? format.SpacesWithinParenthesisExpression.Value ? " " : "" : null
             );

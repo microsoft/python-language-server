@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -15,26 +14,25 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ExpressionWithAnnotation : Expression {
-        private readonly Expression _expression;
-        private readonly Expression _annotation;
-
         public ExpressionWithAnnotation(Expression expression, Expression annotation) {
-            _expression = expression;
-            _annotation = annotation;
+            Expression = expression;
+            Annotation = annotation;
         }
 
         public override string ToString() {
-            if (_annotation != null) {
-                return _expression.ToString() + ":" + _annotation.ToString();
+            if (Annotation != null) {
+                return Expression.ToString() + ":" + Annotation.ToString();
             }
-            return _expression.ToString();
+            return Expression.ToString();
         }
 
-        public Expression Expression => _expression;
-        public Expression Annotation => _annotation;
+        public Expression Expression { get; }
+        public Expression Annotation { get; }
 
         public override string NodeName => "annotated expression";
 
@@ -44,15 +42,27 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                _expression.Walk(walker);
-                _annotation?.Walk(walker);
+                Expression.Walk(walker);
+                Annotation?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Expression != null) {
+                    await Expression.WalkAsync(walker, cancellationToken);
+                }
+                if (Annotation != null) {
+                    await Annotation.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
+        }
+
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            _expression.AppendCodeString(res, ast, format);
-            if (_annotation != null) {
+            Expression.AppendCodeString(res, ast, format);
+            if (Annotation != null) {
                 // For now, use same formatting as around an assignment
                 if (format.SpacesAroundAssignmentOperator == null) {
                     res.Append(this.GetSecondWhiteSpaceDefaultNull(ast) ?? "");
@@ -60,7 +70,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     res.Append(' ');
                 }
                 res.Append(':');
-                _annotation.AppendCodeString(res, ast, format);
+                Annotation.AppendCodeString(res, ast, format);
             }
         }
     }

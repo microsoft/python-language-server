@@ -39,6 +39,22 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonType>(this, returnType);
         }
 
+        public AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonType> HaveSingleReturnType(string because = "", params object[] reasonArgs) {
+            Subject.Should().HaveReturnType();
+            var returnType = Subject.ReturnType;
+
+            Execute.Assertion.ForCondition(!(returnType is IPythonUnionType))
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject.Name} overload to have a single return type{{reason}}, but it has union of types.");
+
+            return new AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonType>(this, returnType);
+        }
+
+        public AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonFunctionOverload> HaveName(string name, string because = "", params object[] reasonArgs) {
+            Subject.Name.Should().Be(name);
+            return new AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonFunctionOverload>(this, Subject);
+        }
+
         public AndWhichConstraint<PythonFunctionOverloadAssertions, IParameterInfo> HaveParameterAt(int index, string because = "", params object[] reasonArgs) {
             var parameters = Subject.GetParameters();
             Execute.Assertion.ForCondition(parameters.Length > index)

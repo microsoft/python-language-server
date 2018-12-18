@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -97,8 +96,7 @@ namespace Microsoft.Python.Parsing {
             return string.Empty;
         }
 
-        public static bool IsComparison(this PythonOperator self) {
-            return self == PythonOperator.LessThan ||
+        public static bool IsComparison(this PythonOperator self) => self == PythonOperator.LessThan ||
                     self == PythonOperator.LessThanOrEqual ||
                     self == PythonOperator.GreaterThan ||
                     self == PythonOperator.GreaterThanOrEqual ||
@@ -108,6 +106,5 @@ namespace Microsoft.Python.Parsing {
                     self == PythonOperator.NotIn ||
                     self == PythonOperator.IsNot ||
                     self == PythonOperator.Is;
-        }
     }
 }

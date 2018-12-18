@@ -20,14 +20,12 @@ namespace Microsoft.Python.Parsing {
     public class ErrorSink {
         public static readonly ErrorSink Null = new ErrorSink();
 
-        internal void Add(string message, NewLineLocation[] lineLocations, int startIndex, int endIndex, int errorCode, Severity severity) {
-            Add(
+        internal void Add(string message, NewLineLocation[] lineLocations, int startIndex, int endIndex, int errorCode, Severity severity) => Add(
                 message,
                 new SourceSpan(NewLineLocation.IndexToLocation(lineLocations, startIndex), NewLineLocation.IndexToLocation(lineLocations, endIndex)),
                 errorCode,
                 severity
             );
-        }
 
         public virtual void Add(string message, SourceSpan span, int errorCode, Severity severity) {
         }

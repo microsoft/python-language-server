@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,50 +14,45 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class IndexExpression : Expression {
-        private readonly Expression _target;
-        private readonly Expression _index;
-
         public IndexExpression(Expression target, Expression index) {
-            _target = target;
-            _index = index;
+            Target = target;
+            Index = index;
         }
 
-        public Expression Target {
-            get { return _target; }
-        }
+        public Expression Target { get; }
 
-        public Expression Index {
-            get { return _index; }
-        }
+        public Expression Index { get; }
 
-        internal override string CheckAssign() {
-            return null;
-        }
+        internal override string CheckAssign() => null;
 
-        internal override string CheckDelete() {
-            return null;
-        }
+        internal override string CheckDelete() => null;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_target != null) {
-                    _target.Walk(walker);
-                }
-                if (_index != null) {
-                    _index.Walk(walker);
-                }
+                Target?.Walk(walker);
+                Index?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
-        private bool IsSlice {
-            get {
-                return _index is SliceExpression;
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Target != null) {
+                    await Target.WalkAsync(walker, cancellationToken);
+                }
+                if (Index != null) {
+                    await Index.WalkAsync(walker, cancellationToken);
+                }
             }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
+
+        private bool IsSlice => Index is SliceExpression;
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             Target.AppendCodeString(res, ast, format);
@@ -71,10 +65,10 @@ namespace Microsoft.Python.Parsing.Ast {
             );
 
             res.Append('[');
-            _index.AppendCodeString(
-                res, 
-                ast, 
-                format, 
+            Index.AppendCodeString(
+                res,
+                ast,
+                format,
                 format.SpaceWithinIndexBrackets != null ? format.SpaceWithinIndexBrackets.Value ? " " : "" : null
             );
 
@@ -90,12 +84,8 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        public override string GetLeadingWhiteSpace(PythonAst ast) {
-            return Target.GetLeadingWhiteSpace(ast);
-        }
+        public override string GetLeadingWhiteSpace(PythonAst ast) => Target.GetLeadingWhiteSpace(ast);
 
-        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) {
-            Target.SetLeadingWhiteSpace(ast, whiteSpace);
-        }
+        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) => Target.SetLeadingWhiteSpace(ast, whiteSpace);
     }
 }

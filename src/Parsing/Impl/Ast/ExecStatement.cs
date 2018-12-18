@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -16,9 +15,10 @@
 
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
-    
     public class ExecStatement : Statement {
         private readonly Expression _code, _locals, _globals;
         private readonly TupleExpression _codeTuple;
@@ -30,38 +30,40 @@ namespace Microsoft.Python.Parsing.Ast {
             _codeTuple = codeTuple;
         }
 
-        public Expression Code {
-            get { return _code ?? _codeTuple?.Items.ElementAtOrDefault(0); }
-        }
+        public Expression Code => _code ?? _codeTuple?.Items.ElementAtOrDefault(0);
 
-        public Expression Locals {
-            get { return _locals ?? _codeTuple?.Items.ElementAtOrDefault(2); }
-        }
+        public Expression Locals => _locals ?? _codeTuple?.Items.ElementAtOrDefault(2);
 
-        public Expression Globals {
-            get { return _globals ?? _codeTuple?.Items.ElementAtOrDefault(1); }
-        }
+        public Expression Globals => _globals ?? _codeTuple?.Items.ElementAtOrDefault(1);
 
-        public bool NeedsLocalsDictionary() {
-            return Globals == null && Locals == null;
-        }
+        public bool NeedsLocalsDictionary() => Globals == null && Locals == null;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_code != null) {
-                    _code.Walk(walker);
-                }
-                if (_codeTuple != null) {
-                    _codeTuple.Walk(walker);
-                }
-                if (_locals != null) {
-                    _locals.Walk(walker);
-                }
-                if (_globals != null) {
-                    _globals.Walk(walker);
-                }
+                _code?.Walk(walker);
+                _codeTuple?.Walk(walker);
+                _locals?.Walk(walker);
+                _globals?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (_code != null) {
+                    await _code.WalkAsync(walker, cancellationToken);
+                }
+                if (_codeTuple != null) {
+                    await _codeTuple.WalkAsync(walker, cancellationToken);
+                }
+                if (_locals != null) {
+                    await _locals.WalkAsync(walker, cancellationToken);
+                }
+                if (_globals != null) {
+                    await _globals.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {

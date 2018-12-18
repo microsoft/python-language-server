@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -142,9 +141,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <summary>
         /// Length of the span (number of characters inside the span).
         /// </summary>
-        public int GetSpanLength(SourceSpan span) {
-            return LocationToIndex(span.End) - LocationToIndex(span.Start);
-        }
+        public int GetSpanLength(SourceSpan span) => LocationToIndex(span.End) - LocationToIndex(span.Start);
 
 
         internal int GetLineEndFromPosition(int index) {
@@ -164,16 +161,12 @@ namespace Microsoft.Python.Parsing.Ast {
 
         #region Name Binding Support
 
-        internal override bool ExposesLocalVariable(PythonVariable variable) {
-            return true;
-        }
+        internal override bool ExposesLocalVariable(PythonVariable variable) => true;
 
         internal override void FinishBind(PythonNameBinder binder) {
         }
 
-        internal override PythonVariable BindReference(PythonNameBinder binder, string name) {
-            return EnsureVariable(name);
-        }
+        internal override PythonVariable BindReference(PythonNameBinder binder, string name) => EnsureVariable(name);
 
         internal override bool TryBindOuter(ScopeStatement from, string name, bool allowGlobals, out PythonVariable variable) {
             if (allowGlobals) {

@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -17,6 +16,8 @@
 using System;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public partial class BinaryExpression : Expression {
@@ -58,18 +59,26 @@ namespace Microsoft.Python.Parsing.Ast {
             return false;
         }
 
-        public override string NodeName {
-            get {
-                return "binary operator";
-            }
-        }
+        public override string NodeName => "binary operator";
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                Left.Walk(walker);
-                Right.Walk(walker);
+                Left?.Walk(walker);
+                Right?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Left != null) {
+                    await Left.WalkAsync(walker, cancellationToken);
+                }
+                if (Right != null) {
+                    await Right.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
@@ -141,12 +150,8 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        public override string GetLeadingWhiteSpace(PythonAst ast) {
-            return Left.GetLeadingWhiteSpace(ast);
-        }
+        public override string GetLeadingWhiteSpace(PythonAst ast) => Left.GetLeadingWhiteSpace(ast);
 
-        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) {
-            Left.SetLeadingWhiteSpace(ast, whiteSpace);
-        }
+        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) => Left.SetLeadingWhiteSpace(ast, whiteSpace);
     }
 }

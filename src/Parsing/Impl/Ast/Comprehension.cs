@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -14,9 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class ComprehensionIterator : Node {
@@ -29,7 +30,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public abstract override void Walk(PythonWalker walker);
 
         internal void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format, string start, string end, Expression item) {
-            if (!String.IsNullOrEmpty(start)) {
+            if (!string.IsNullOrEmpty(start)) {
                 format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
                 res.Append(start);
             }
@@ -40,7 +41,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 Iterators[i].AppendCodeString(res, ast, format);
             }
 
-            if (!String.IsNullOrEmpty(end)) {
+            if (!string.IsNullOrEmpty(end)) {
                 res.Append(this.GetSecondWhiteSpace(ast));
                 res.Append(end);
             }
@@ -49,86 +50,80 @@ namespace Microsoft.Python.Parsing.Ast {
 
     public sealed class ListComprehension : Comprehension {
         private readonly ComprehensionIterator[] _iterators;
-        private readonly Expression _item;
 
         public ListComprehension(Expression item, ComprehensionIterator[] iterators) {
-            _item = item;
+            Item = item;
             _iterators = iterators;
         }
 
-        public Expression Item {
-            get { return _item; }
-        }
+        public Expression Item { get; }
 
-        public override IList<ComprehensionIterator> Iterators {
-            get { return _iterators; }
-        }
+        public override IList<ComprehensionIterator> Iterators => _iterators;
 
-        public override string NodeName {
-            get {
-                return "list comprehension";
-            }
-        }
+        public override string NodeName => "list comprehension";
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_item != null) {
-                    _item.Walk(walker);
-                }
-                if (_iterators != null) {
-                    foreach (var ci in _iterators) {
-                        ci.Walk(walker);
-                    }
+                Item?.Walk(walker);
+                foreach (var ci in _iterators.MaybeEnumerate()) {
+                    ci.Walk(walker);
                 }
             }
             walker.PostWalk(this);
         }
 
-        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            AppendCodeString(res, ast, format, "[", this.IsMissingCloseGrouping(ast) ? "" : "]", _item);
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Item != null) {
+                    await Item.WalkAsync(walker, cancellationToken);
+                }
+                foreach (var ci in _iterators.MaybeEnumerate()) {
+                    await ci.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
+
+        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) => AppendCodeString(res, ast, format, "[", this.IsMissingCloseGrouping(ast) ? "" : "]", Item);
     }
 
     public sealed class SetComprehension : Comprehension {
         private readonly ComprehensionIterator[] _iterators;
-        private readonly Expression _item;
 
         public SetComprehension(Expression item, ComprehensionIterator[] iterators) {
-            _item = item;
+            Item = item;
             _iterators = iterators;
         }
 
-        public Expression Item {
-            get { return _item; }
-        }
+        public Expression Item { get; }
 
-        public override IList<ComprehensionIterator> Iterators {
-            get { return _iterators; }
-        }
+        public override IList<ComprehensionIterator> Iterators => _iterators;
 
-        public override string NodeName {
-            get {
-                return "set comprehension";
-            }
-        }
+        public override string NodeName => "set comprehension";
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_item != null) {
-                    _item.Walk(walker);
-                }
-                if (_iterators != null) {
-                    foreach (var ci in _iterators) {
-                        ci.Walk(walker);
-                    }
+                Item?.Walk(walker);
+                foreach (var ci in _iterators.MaybeEnumerate()) {
+                    ci.Walk(walker);
                 }
             }
             walker.PostWalk(this);
         }
 
-        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            AppendCodeString(res, ast, format, "{", this.IsMissingCloseGrouping(ast) ? "" : "}", _item);
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Item != null) {
+                    await Item.WalkAsync(walker, cancellationToken);
+                }
+                foreach (var ci in _iterators.MaybeEnumerate()) {
+                    await ci.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
+
+        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) => AppendCodeString(res, ast, format, "{", this.IsMissingCloseGrouping(ast) ? "" : "}", Item);
     }
 
     public sealed class DictionaryComprehension : Comprehension {
@@ -140,41 +135,37 @@ namespace Microsoft.Python.Parsing.Ast {
             _iterators = iterators;
         }
 
-        public Expression Key {
-            get { return _value.SliceStart; }
-        }
+        public Expression Key => _value.SliceStart;
 
-        public Expression Value {
-            get { return _value.SliceStop; }
-        }
+        public Expression Value => _value.SliceStop;
 
-        public override IList<ComprehensionIterator> Iterators {
-            get { return _iterators; }
-        }
+        public override IList<ComprehensionIterator> Iterators => _iterators;
 
-        public override string NodeName {
-            get {
-                return "dict comprehension";
-            }
-        }
+        public override string NodeName => "dict comprehension";
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_value != null) {
-                    _value.Walk(walker);
-                }
-
-                if (_iterators != null) {
-                    foreach (var ci in _iterators) {
-                        ci.Walk(walker);
-                    }
+                _value?.Walk(walker);
+                foreach (var ci in _iterators.MaybeEnumerate()) {
+                    ci.Walk(walker);
                 }
             }
             walker.PostWalk(this);
         }
 
-        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            AppendCodeString(res, ast, format, "{", this.IsMissingCloseGrouping(ast) ? "" : "}", _value);
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (_value != null) {
+                    await _value.WalkAsync(walker, cancellationToken);
+                }
+                foreach (var ci in _iterators.MaybeEnumerate()) {
+                    await ci.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
+
+        internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format)
+            => AppendCodeString(res, ast, format, "{", this.IsMissingCloseGrouping(ast) ? "" : "}", _value);
     }
 }

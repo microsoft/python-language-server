@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -17,6 +16,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ListExpression : SequenceExpression {
@@ -24,28 +26,31 @@ namespace Microsoft.Python.Parsing.Ast {
             : base(items) {
         }
 
-        public override string NodeName {
-            get {
-                return "list display";
-            }
-        }
+        public override string NodeName => "list display";
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (Items != null) {
-                    foreach (var e in Items) {
-                        e.Walk(walker);
-                    }
+                foreach (var e in Items.MaybeEnumerate()) {
+                    e.Walk(walker);
                 }
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                foreach (var e in Items.MaybeEnumerate()) {
+                    await e.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             if (Items.Count == 0 && format.SpacesWithinEmptyListExpression != null) {
                 res.Append(this.GetPreceedingWhiteSpace(ast));
                 res.Append('[');
-                if (String.IsNullOrWhiteSpace(this.GetSecondWhiteSpace(ast))) {
+                if (string.IsNullOrWhiteSpace(this.GetSecondWhiteSpace(ast))) {
                     res.Append(format.SpacesWithinEmptyListExpression.Value ? " " : "");
                 } else {
                     format.ReflowComment(res, this.GetSecondWhiteSpace(ast));
@@ -74,7 +79,7 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal static void AppendItems(StringBuilder res, PythonAst ast, CodeFormattingOptions format, string start, string end, Node node, int itemCount, Action<int, StringBuilder> appendItem, bool? trailingWhiteSpace = null) {
-            if (!String.IsNullOrEmpty(start)) {
+            if (!string.IsNullOrEmpty(start)) {
                 format.ReflowComment(res, node.GetPreceedingWhiteSpace(ast));
                 res.Append(start);
             }

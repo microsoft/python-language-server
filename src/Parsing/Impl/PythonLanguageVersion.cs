@@ -48,9 +48,7 @@ namespace Microsoft.Python.Parsing {
         public static bool IsImplicitNamespacePackagesSupported(this PythonLanguageVersion version) 
             => version >= PythonLanguageVersion.V33;
 
-        public static Version ToVersion(this PythonLanguageVersion version) {
-            return new Version(((int)version) >> 8, ((int)version) & 0xff);
-        }
+        public static Version ToVersion(this PythonLanguageVersion version) => new Version(((int)version) >> 8, ((int)version) & 0xff);
 
         public static PythonLanguageVersion ToLanguageVersion(this Version version) {
             var value = (version.Major << 8) + version.Minor;

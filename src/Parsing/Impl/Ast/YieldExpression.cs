@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
 
@@ -22,40 +23,37 @@ namespace Microsoft.Python.Parsing.Ast {
     //    x = yield z
     // The return value (x) is provided by calling Generator.Send()
     public class YieldExpression : Expression {
-        private readonly Expression _expression;
-
         public YieldExpression(Expression expression) {
-            _expression = expression;
+            Expression = expression;
         }
 
-        public Expression Expression {
-            get { return _expression; }
-        }
+        public Expression Expression { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_expression != null) {
-                    _expression.Walk(walker);
-                }
+                    Expression?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
-        internal override string CheckAugmentedAssign() {
-            return CheckAssign();
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Expression != null) {
+                    await Expression.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        public override string NodeName {
-            get {
-                return "yield expression";
-            }
-        }
+        internal override string CheckAugmentedAssign() => CheckAssign();
+
+        public override string NodeName => "yield expression";
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
             res.Append("yield");
             if (!this.IsAltForm(ast)) {
-                _expression.AppendCodeString(res, ast, format);
+                Expression.AppendCodeString(res, ast, format);
                 var itemWhiteSpace = this.GetListWhiteSpace(ast);
                 if (itemWhiteSpace != null) {
                     res.Append(",");

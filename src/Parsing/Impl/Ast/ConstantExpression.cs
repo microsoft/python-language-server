@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -18,29 +17,19 @@ using System;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ConstantExpression : Expression {
-        private readonly object _value;
-
         public ConstantExpression(object value) {
-            _value = value;
+            Value = value;
         }
 
-        public object Value {
-            get {
-                return _value; 
-            }
-        }
+        public object Value { get; }
 
-        internal override string CheckAssign() {
-            if (_value == null) {
-                return "assignment to None";
-            }
-
-            return "can't assign to literal";
-        }
+        internal override string CheckAssign() => Value == null ? "assignment to None" : "can't assign to literal";
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -48,11 +37,13 @@ namespace Microsoft.Python.Parsing.Ast {
             walker.PostWalk(this);
         }
 
-        public override string NodeName {
-            get {
-                return "literal";
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
             }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
+
+        public override string NodeName => "literal";
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             var verbatimPieces = this.GetVerbatimNames(ast);
@@ -72,14 +63,10 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        private static bool IsNegativeZero(double value) {
-            return (value == 0.0) && double.IsNegativeInfinity(1.0 / value);
-        }
+        private static bool IsNegativeZero(double value) => (value == 0.0) && double.IsNegativeInfinity(1.0 / value);
 
         // ToString does not distinguish between negative zero and positive zero, but repr() does, and so should we.
-        private static string NegativeZeroAwareToString(double n) {
-            return IsNegativeZero(n) ? "-0" : n.ToString("g", nfi);
-        }
+        private static string NegativeZeroAwareToString(double n) => IsNegativeZero(n) ? "-0" : n.ToString("g", nfi);
 
         private void AppendEscapedString(StringBuilder res, string s, bool escape8bitStrings) {
             res.Append("'");
@@ -106,24 +93,24 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public string GetConstantRepr(PythonLanguageVersion version, bool escape8bitStrings = false) {
-            if (_value == null) {
+            if (Value == null) {
                 return "None";
-            } else if (_value is AsciiString) {
+            } else if (Value is AsciiString) {
                 var res = new StringBuilder();
                 if (!version.Is2x()) {
                     res.Append("b");
                 }
-                AppendEscapedString(res, ((AsciiString)_value).String, escape8bitStrings);
+                AppendEscapedString(res, ((AsciiString)Value).String, escape8bitStrings);
                 return res.ToString();
-            } else if (_value is string) {
+            } else if (Value is string) {
                 var res = new StringBuilder();
                 if (!version.Is3x()) {
                     res.Append("u");
                 }
-                AppendEscapedString(res, (string)_value, escape8bitStrings);
+                AppendEscapedString(res, (string)Value, escape8bitStrings);
                 return res.ToString();
-            } else if (_value is Complex) {
-                var n = (Complex)_value;
+            } else if (Value is Complex) {
+                var n = (Complex)Value;
                 var real = NegativeZeroAwareToString(n.Real);
                 var imag =  NegativeZeroAwareToString(n.Imaginary);
                 if (n.Real != 0) {
@@ -134,12 +121,12 @@ namespace Microsoft.Python.Parsing.Ast {
                 } else {
                     return imag + "j";
                 }
-            } else if (_value is BigInteger) {
+            } else if (Value is BigInteger) {
                 if (!version.Is3x()) {
-                    return "{0}L".FormatInvariant(_value);
+                    return "{0}L".FormatInvariant(Value);
                 }
-            } else if (_value is double) {
-                var n = (double)_value;
+            } else if (Value is double) {
+                var n = (double)Value;
                 var s = NegativeZeroAwareToString(n);
                 // If there's no fractional part, and this is not NaN or +-Inf, G format will not include the decimal
                 // point. This is okay if we're using scientific notation as this implies float, but if not, add the
@@ -148,12 +135,12 @@ namespace Microsoft.Python.Parsing.Ast {
                     s += ".0";
                 }
                 return s;
-            } else if (_value is IFormattable) {
-                return ((IFormattable)_value).ToString(null, CultureInfo.InvariantCulture);
+            } else if (Value is IFormattable) {
+                return ((IFormattable)Value).ToString(null, CultureInfo.InvariantCulture);
             }
 
             // TODO: We probably need to handle more primitives here
-            return _value.ToString();
+            return Value.ToString();
         }
 
         private static NumberFormatInfo _nfi;

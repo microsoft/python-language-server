@@ -87,9 +87,7 @@ namespace Microsoft.Python.Parsing {
             _privatePrefix = privatePrefix;
         }
 
-        public static Parser CreateParser(TextReader reader, PythonLanguageVersion version) {
-            return CreateParser(reader, version, null);
-        }
+        public static Parser CreateParser(TextReader reader, PythonLanguageVersion version) => CreateParser(reader, version, null);
 
         public static Parser CreateParser(TextReader reader, PythonLanguageVersion version, ParserOptions parserOptions) {
             if (reader == null) {
@@ -257,9 +255,7 @@ namespace Microsoft.Python.Parsing {
             _errorCode = 0;
         }
 
-        public void Reset() {
-            Reset(_languageFeatures);
-        }
+        public void Reset() => Reset(_languageFeatures);
 
         #endregion
 
@@ -295,13 +291,9 @@ namespace Microsoft.Python.Parsing {
             return msg;
         }
 
-        private void ReportSyntaxError(string message) {
-            ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, message);
-        }
+        private void ReportSyntaxError(string message) => ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, message);
 
-        internal void ReportSyntaxError(int start, int end, string message) {
-            ReportSyntaxError(start, end, message, ErrorCodes.SyntaxError);
-        }
+        internal void ReportSyntaxError(int start, int end, string message) => ReportSyntaxError(start, end, message, ErrorCodes.SyntaxError);
 
         internal void ReportSyntaxError(int start, int end, string message, int errorCode) {
             // save the first one, the next error codes may be induced errors:
@@ -320,9 +312,7 @@ namespace Microsoft.Python.Parsing {
 
         #region LL(1) Parsing
 
-        private static bool IsPrivateName(string name) {
-            return name.StartsWithOrdinal("__") && !name.EndsWithOrdinal("__");
-        }
+        private static bool IsPrivateName(string name) => name.StartsWithOrdinal("__") && !name.EndsWithOrdinal("__");
 
         private string FixName(string name) {
             if (_privatePrefix != null && IsPrivateName(name)) {
@@ -364,11 +354,7 @@ namespace Microsoft.Python.Parsing {
                 VerbatimName = verbatimName;
             }
 
-            public bool HasName {
-                get {
-                    return RealName != null;
-                }
-            }
+            public bool HasName => RealName != null;
         }
 
         private Name ReadName() {
@@ -396,12 +382,8 @@ namespace Microsoft.Python.Parsing {
             return Name.Empty;
         }
 
-        private bool AllowReturnSyntax {
-            get {
-                return _alwaysAllowContextDependentSyntax ||
+        private bool AllowReturnSyntax => _alwaysAllowContextDependentSyntax ||
                     CurrentFunction != null;
-            }
-        }
 
         private bool AllowYieldSyntax {
             get {
@@ -2932,9 +2914,7 @@ namespace Microsoft.Python.Parsing {
         arith_expr: term (('+'|'-') term)*
         term: factor (('*'|'@'|'/'|'%'|'//') factor)*
         */
-        private Expression ParseExpr() {
-            return ParseExpr(0);
-        }
+        private Expression ParseExpr() => ParseExpr(0);
 
         private Expression ParseExpr(int precedence) {
             var ret = ParseFactor();
@@ -3305,9 +3285,7 @@ namespace Microsoft.Python.Parsing {
             return s;
         }
 
-        private Expression AddTrailers(Expression ret) {
-            return AddTrailers(ret, true);
-        }
+        private Expression AddTrailers(Expression ret) => AddTrailers(ret, true);
 
         // trailer: '(' [ arglist_genexpr ] ')' | '[' subscriptlist ']' | '.' NAME
         private Expression AddTrailers(Expression ret, bool allowGeneratorExpression) {
@@ -4471,9 +4449,7 @@ namespace Microsoft.Python.Parsing {
             return ret;
         }
 
-        private Expression MakeTupleOrExpr(List<Expression> l, List<string> itemWhiteSpace, bool trailingComma, bool parenFreeTuple = false) {
-            return MakeTupleOrExpr(l, itemWhiteSpace, trailingComma, false, parenFreeTuple);
-        }
+        private Expression MakeTupleOrExpr(List<Expression> l, List<string> itemWhiteSpace, bool trailingComma, bool parenFreeTuple = false) => MakeTupleOrExpr(l, itemWhiteSpace, trailingComma, false, parenFreeTuple);
 
         private Expression MakeTupleOrExpr(List<Expression> l, List<string> itemWhiteSpace, bool trailingComma, bool expandable, bool parenFreeTuple = false) {
             if (l.Count == 1 && !trailingComma) {
@@ -4818,13 +4794,9 @@ namespace Microsoft.Python.Parsing {
             return t;
         }
 
-        private bool TrueDivision {
-            get { return (_languageFeatures & FutureOptions.TrueDivision) == FutureOptions.TrueDivision; }
-        }
+        private bool TrueDivision => (_languageFeatures & FutureOptions.TrueDivision) == FutureOptions.TrueDivision;
 
-        private bool AbsoluteImports {
-            get { return (_languageFeatures & FutureOptions.AbsoluteImports) == FutureOptions.AbsoluteImports; }
-        }
+        private bool AbsoluteImports => (_languageFeatures & FutureOptions.AbsoluteImports) == FutureOptions.AbsoluteImports;
 
         private void StartParsing() {
             if (_parsingStarted) {
@@ -4871,9 +4843,7 @@ namespace Microsoft.Python.Parsing {
             return _token.Token;
         }
 
-        private Token PeekToken() {
-            return _lookahead.Token;
-        }
+        private Token PeekToken() => _lookahead.Token;
 
         private Token PeekToken2() {
             if (_lookahead2.Token == null) {
@@ -4895,13 +4865,9 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        private bool PeekToken(TokenKind kind) {
-            return PeekToken().Kind == kind;
-        }
+        private bool PeekToken(TokenKind kind) => PeekToken().Kind == kind;
 
-        private bool PeekToken(Token check) {
-            return PeekToken() == check;
-        }
+        private bool PeekToken(Token check) => PeekToken() == check;
 
         private bool Eat(TokenKind kind) {
             var next = PeekToken();
@@ -4976,9 +4942,7 @@ namespace Microsoft.Python.Parsing {
         /// 
         /// New in 1.1.
         /// </summary>
-        public static Encoding GetEncodingFromStream(Stream stream) {
-            return GetStreamReaderWithEncoding(stream, new UTF8Encoding(false), ErrorSink.Null).CurrentEncoding;
-        }
+        public static Encoding GetEncodingFromStream(Stream stream) => GetStreamReaderWithEncoding(stream, new UTF8Encoding(false), ErrorSink.Null).CurrentEncoding;
 
         /// <summary>
         /// Fetches encoding specified in the magic comment as per
@@ -5521,17 +5485,11 @@ namespace Microsoft.Python.Parsing {
             GetNodeAttributes(ret)[NodeAttributes.VerbatimNames] = names;
         }
 
-        private void AddIsAltForm(Node expr) {
-            GetNodeAttributes(expr)[NodeAttributes.IsAltFormValue] = NodeAttributes.IsAltFormValue;
-        }
+        private void AddIsAltForm(Node expr) => GetNodeAttributes(expr)[NodeAttributes.IsAltFormValue] = NodeAttributes.IsAltFormValue;
 
-        private void AddErrorMissingCloseGrouping(Node expr) {
-            GetNodeAttributes(expr)[NodeAttributes.ErrorMissingCloseGrouping] = NodeAttributes.ErrorMissingCloseGrouping;
-        }
+        private void AddErrorMissingCloseGrouping(Node expr) => GetNodeAttributes(expr)[NodeAttributes.ErrorMissingCloseGrouping] = NodeAttributes.ErrorMissingCloseGrouping;
 
-        private void AddErrorIsIncompleteNode(Node expr) {
-            GetNodeAttributes(expr)[NodeAttributes.ErrorIncompleteNode] = NodeAttributes.ErrorIncompleteNode;
-        }
+        private void AddErrorIsIncompleteNode(Node expr) => GetNodeAttributes(expr)[NodeAttributes.ErrorIncompleteNode] = NodeAttributes.ErrorIncompleteNode;
 
         private void MoveNodeAttributes(Node target, Node source, object key) {
             var s = GetNodeAttributes(source);

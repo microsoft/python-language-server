@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ForStatement : Statement, IMaybeAsyncStatement {
@@ -54,6 +55,24 @@ namespace Microsoft.Python.Parsing.Ast {
                 Else?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Left != null) {
+                    await Left.WalkAsync(walker, cancellationToken);
+                }
+                if (List != null) {
+                    await List.WalkAsync(walker, cancellationToken);
+                }
+                if (Body != null) {
+                    await Body.WalkAsync(walker, cancellationToken);
+                }
+                if (Else != null) {
+                    await Else.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {

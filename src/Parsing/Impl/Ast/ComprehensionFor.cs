@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,70 +14,65 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ComprehensionFor : ComprehensionIterator {
-        private readonly Expression _lhs, _list;
-        private readonly bool _isAsync;
-
         public ComprehensionFor(Expression lhs, Expression list) {
-            _lhs = lhs;
-            _list = list;
+            Left = lhs;
+            List = list;
         }
 
         public ComprehensionFor(Expression lhs, Expression list, bool isAsync)
             : this(lhs, list) {
-            _isAsync = isAsync;
+            IsAsync = isAsync;
         }
 
-        public Expression Left {
-            get { return _lhs; }
-        }
+        public Expression Left { get; }
 
-        public Expression List {
-            get { return _list; }
-        }
+        public Expression List { get; }
 
-        public bool IsAsync => _isAsync;
+        public bool IsAsync { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_lhs != null) {
-                    _lhs.Walk(walker);
-                }
-                if (_list != null) {
-                    _list.Walk(walker);
-                }
+                Left?.Walk(walker);
+                List?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
-        public int GetIndexOfFor(PythonAst ast) {
-            if (!IsAsync) {
-                return StartIndex;
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Left != null) {
+                    await Left.WalkAsync(walker, cancellationToken);
+                }
+                if (List != null) {
+                    await List.WalkAsync(walker, cancellationToken);
+                }
             }
-            return StartIndex + 5 + this.GetPreceedingWhiteSpace(ast).Length;
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        public int GetIndexOfIn(PythonAst ast) {
-            if (this.IsIncompleteNode(ast)) {
-                return -1;
-            }
-            return Left.EndIndex + this.GetSecondWhiteSpace(ast).Length;
-        }
+        public int GetIndexOfFor(PythonAst ast)
+            => !IsAsync ? StartIndex : StartIndex + 5 + this.GetPreceedingWhiteSpace(ast).Length;
+
+        public int GetIndexOfIn(PythonAst ast)
+            => this.IsIncompleteNode(ast) ? -1 : Left.EndIndex + this.GetSecondWhiteSpace(ast).Length;
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            if (_isAsync) {
+            if (IsAsync) {
                 res.Append(this.GetThirdWhiteSpace(ast));
                 res.Append("async");
             }
             res.Append(this.GetPreceedingWhiteSpace(ast));
             res.Append("for");
-            _lhs.AppendCodeString(res, ast, format);
+            Left.AppendCodeString(res, ast, format);
             if (!this.IsIncompleteNode(ast)) {
                 res.Append(this.GetSecondWhiteSpace(ast));
                 res.Append("in");
-                _list.AppendCodeString(res, ast, format);
+                List.AppendCodeString(res, ast, format);
             }
         }
     }

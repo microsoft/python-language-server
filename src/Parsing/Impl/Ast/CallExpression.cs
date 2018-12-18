@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -17,9 +16,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
-
     public class CallExpression : Expression {
         private readonly Arg[] _args;
 
@@ -68,26 +69,31 @@ namespace Microsoft.Python.Parsing.Ast {
             return false;
         }
 
-        internal override string CheckAssign() {
-            return "can't assign to function call";
-        }
+        internal override string CheckAssign() => "can't assign to function call";
 
-        internal override string CheckDelete() {
-            return "can't delete function call";
-        }
+        internal override string CheckDelete() => "can't delete function call";
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (Target != null) {
-                    Target.Walk(walker);
-                }
-                if (_args != null) {
-                    foreach (var arg in _args) {
-                        arg.Walk(walker);
-                    }
+                Target?.Walk(walker);
+                foreach (var arg in _args.MaybeEnumerate()) {
+                    arg.Walk(walker);
                 }
             }
             walker.PostWalk(this);
+        }
+
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Target != null) {
+                    await Target.WalkAsync(walker, cancellationToken);
+                }
+                foreach (var arg in _args.MaybeEnumerate()) {
+                    await arg.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
@@ -178,12 +184,8 @@ namespace Microsoft.Python.Parsing.Ast {
             return false;
         }
 
-        public override string GetLeadingWhiteSpace(PythonAst ast) {
-            return Target.GetLeadingWhiteSpace(ast);
-        }
+        public override string GetLeadingWhiteSpace(PythonAst ast) => Target.GetLeadingWhiteSpace(ast);
 
-        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) {
-            Target.SetLeadingWhiteSpace(ast, whiteSpace);
-        }
+        public override void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) => Target.SetLeadingWhiteSpace(ast, whiteSpace);
     }
 }

@@ -27,6 +27,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
+using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Tests;
 using Microsoft.Python.Parsing.Tests;
 using TestUtilities;
@@ -48,7 +49,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
 
-        internal async Task<IServiceContainer> CreateServicesAsync(string root, InterpreterConfiguration configuration = null) {
+        internal async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);

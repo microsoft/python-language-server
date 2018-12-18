@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ErrorExpression : Expression {
@@ -30,12 +31,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public ErrorExpression(string verbatimImage, Expression preceding) : this(verbatimImage, preceding, null) { }
 
-        public ErrorExpression AddPrefix(string verbatimImage, Expression preceding) {
-            return new ErrorExpression(verbatimImage, preceding, this);
-        }
+        public ErrorExpression AddPrefix(string verbatimImage, Expression preceding) => new ErrorExpression(verbatimImage, preceding, this);
 
         public string VerbatimImage => _verbatimImage;
-
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             _preceding?.AppendCodeString(res, ast, format);
@@ -49,6 +47,18 @@ namespace Microsoft.Python.Parsing.Ast {
                 _nested?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (_preceding != null) {
+                    await _preceding.WalkAsync(walker, cancellationToken);
+                }
+                if (_nested != null) {
+                    await _nested.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
     }
 }

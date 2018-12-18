@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -16,6 +15,8 @@
 
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
@@ -26,9 +27,7 @@ namespace Microsoft.Python.Parsing.Ast {
             _names = names;
         }
 
-        public IList<NameExpression> Names {
-            get { return _names; }
-        }
+        public IList<NameExpression> Names => _names;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -37,6 +36,15 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                foreach (var n in _names.MaybeEnumerate().ExcludeDefault()) {
+                    await n.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {

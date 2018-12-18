@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -20,9 +19,7 @@ namespace Microsoft.Python.Parsing.Ast {
         internal Expression() {
         }
 
-        internal virtual string CheckAssign() {
-            return "can't assign to " + NodeName;
-        }
+        internal virtual string CheckAssign() => "can't assign to " + NodeName;
 
         internal virtual string CheckAugmentedAssign() {
             if (CheckAssign() != null) {
@@ -32,8 +29,6 @@ namespace Microsoft.Python.Parsing.Ast {
             return null;
         }
 
-        internal virtual string CheckDelete() {
-            return "can't delete " + NodeName;
-        }
+        internal virtual string CheckDelete() => "can't delete " + NodeName;
     }
 }

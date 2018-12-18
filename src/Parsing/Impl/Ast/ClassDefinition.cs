@@ -131,17 +131,11 @@ namespace Microsoft.Python.Parsing.Ast {
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 _name?.Walk(walker);
-                if (_decorators != null) {
-                    _decorators.Walk(walker);
+                _decorators?.Walk(walker);
+                foreach (var b in _bases.MaybeEnumerate()) {
+                    b.Walk(walker);
                 }
-                if (_bases != null) {
-                    foreach (var b in _bases) {
-                        b.Walk(walker);
-                    }
-                }
-                if (_body != null) {
-                    _body.Walk(walker);
-                }
+                _body?.Walk(walker);
             }
             walker.PostWalk(this);
         }

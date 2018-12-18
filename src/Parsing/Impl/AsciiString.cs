@@ -27,9 +27,7 @@ namespace Microsoft.Python.Parsing {
 
         public string String { get; }
 
-        public override string ToString() {
-            return String;
-        }
+        public override string ToString() => String;
 
         public override bool Equals(object obj) {
             var other = obj as AsciiString;
@@ -39,8 +37,6 @@ namespace Microsoft.Python.Parsing {
             return false;
         }
 
-        public override int GetHashCode() {
-            return String.GetHashCode();
-        }
+        public override int GetHashCode() => String.GetHashCode();
     }
 }

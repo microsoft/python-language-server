@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,35 +14,39 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ComprehensionIf : ComprehensionIterator {
-        private readonly Expression _test;
-        private int _headerIndex;
-
         public ComprehensionIf(Expression test) {
-            _test = test;
+            Test = test;
         }
 
-        public Expression Test {
-            get { return _test; }
-        }
+        public Expression Test { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_test != null) {
-                    _test.Walk(walker);
-                }
+                Test?.Walk(walker);
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Test != null) {
+                    await Test.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             res.Append(this.GetPreceedingWhiteSpace(ast));
             res.Append("if");
-            _test.AppendCodeString(res, ast, format);
+            Test.AppendCodeString(res, ast, format);
         }
 
-        public int HeaderIndex { get { return _headerIndex; } set { _headerIndex = value; } }
+        public int HeaderIndex { get; set; }
     }
 }

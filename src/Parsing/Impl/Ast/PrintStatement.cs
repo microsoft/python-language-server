@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -16,52 +15,55 @@
 
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class PrintStatement : Statement {
-        private readonly Expression _dest;
         private readonly Expression[] _expressions;
-        private readonly bool _trailingComma;
 
         public PrintStatement(Expression destination, Expression[] expressions, bool trailingComma) {
-            _dest = destination;
+            Destination = destination;
             _expressions = expressions;
-            _trailingComma = trailingComma;
+            TrailingComma = trailingComma;
         }
 
-        public Expression Destination {
-            get { return _dest; }
-        }
+        public Expression Destination { get; }
 
-        public IList<Expression> Expressions {
-            get { return _expressions; }
-        }
+        public IList<Expression> Expressions => _expressions;
 
-        public bool TrailingComma {
-            get { return _trailingComma; }
-        }
+        public bool TrailingComma { get; }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_dest != null) {
-                    _dest.Walk(walker);
-                }
-                if (_expressions != null) {
-                    foreach (var expression in _expressions) {
-                        expression.Walk(walker);
-                    }
+                Destination?.Walk(walker);
+                foreach (var expression in _expressions.MaybeEnumerate()) {
+                    expression.Walk(walker);
                 }
             }
             walker.PostWalk(this);
         }
 
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                if (Destination != null) {
+                    await Destination.WalkAsync(walker, cancellationToken);
+                }
+                foreach (var expression in _expressions.MaybeEnumerate()) {
+                    await expression.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
+        }
+
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
             res.Append("print");
-            if (_dest != null) {
+            if (Destination != null) {
                 res.Append(this.GetSecondWhiteSpace(ast));
                 res.Append(">>");
-                _dest.AppendCodeString(res, ast, format);
+                Destination.AppendCodeString(res, ast, format);
                 if (_expressions.Length > 0) {
                     res.Append(this.GetThirdWhiteSpace(ast));
                     res.Append(',');

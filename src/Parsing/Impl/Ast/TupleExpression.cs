@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -15,6 +14,9 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class TupleExpression : SequenceExpression {
@@ -32,13 +34,20 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (Items != null) {
-                    foreach (var e in Items) {
-                        e.Walk(walker);
-                    }
+                foreach (var e in Items.MaybeEnumerate()) {
+                    e.Walk(walker);
                 }
             }
             walker.PostWalk(this);
+        }
+
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                foreach (var e in Items.MaybeEnumerate()) {
+                    await e.WalkAsync(walker, cancellationToken);
+                }
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         public bool IsExpandable { get; }
@@ -46,9 +55,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <summary>
         /// Marks this tuple expression as having no parenthesis for the purposes of round tripping.
         /// </summary>
-        public void RoundTripHasNoParenthesis(PythonAst ast) {
-            ast.SetAttribute(this, NodeAttributes.IsAltFormValue, NodeAttributes.IsAltFormValue);
-        }
+        public void RoundTripHasNoParenthesis(PythonAst ast) => ast.SetAttribute(this, NodeAttributes.IsAltFormValue, NodeAttributes.IsAltFormValue);
 
         public override string GetLeadingWhiteSpace(PythonAst ast) {
             if (this.IsAltForm(ast)) {
@@ -69,7 +76,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (this.IsAltForm(ast)) {
                 ListExpression.AppendItems(res, ast, format, "", "", this, Items);
             } else {
-                if (Items.Count == 0 && 
+                if (Items.Count == 0 &&
                     format.SpaceWithinEmptyTupleExpression != null) {
                     format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
                     res.Append('(');
@@ -77,7 +84,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     res.Append(')');
                 } else {
                     ListExpression.AppendItems(res, ast, format, "(", this.IsMissingCloseGrouping(ast) ? "" : ")", this, Items, format.SpacesWithinParenthesisedTupleExpression);
-                } 
+                }
             }
         }
     }
