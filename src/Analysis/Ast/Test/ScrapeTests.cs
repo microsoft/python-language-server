@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -187,6 +188,151 @@ namespace Microsoft.Python.Analysis.Tests {
             foreach (var id in Enum.GetNames(typeof(BuiltinTypeId))) {
                 mod.GetMember($"__{id}").Should().BeNull(id);
             }
+        }
+
+        [TestMethod, TestCategory("60s"), Priority(0)]
+        public async Task FullStdLibV38() {
+            var v = PythonVersions.Python38 ?? PythonVersions.Python38_x64;
+            await FullStdLibTest(v);
+        }
+
+        [TestMethod, TestCategory("60s"), Priority(0)]
+        public async Task FullStdLibV37() {
+            var v = PythonVersions.Python37 ?? PythonVersions.Python37_x64;
+            await FullStdLibTest(v);
+        }
+
+
+        [TestMethod, TestCategory("60s"), Priority(0)]
+        public async Task FullStdLibV36() {
+            var v = PythonVersions.Python36 ?? PythonVersions.Python36_x64;
+            await FullStdLibTest(v);
+        }
+
+
+        [TestMethod, TestCategory("60s"), Priority(0)]
+        public async Task FullStdLibV35() {
+            var v = PythonVersions.Python35 ?? PythonVersions.Python35_x64;
+            await FullStdLibTest(v);
+        }
+
+        [TestMethod, TestCategory("60s"), Priority(0)]
+        public async Task FullStdLibV27() {
+            var v = PythonVersions.Python27 ?? PythonVersions.Python27_x64;
+            await FullStdLibTest(v);
+        }
+
+        [TestMethod, TestCategory("60s"), Priority(1)]
+        [Timeout(10 * 60 * 1000)]
+        public async Task FullStdLibAnaconda3() {
+            var v = PythonVersions.Anaconda36_x64 ?? PythonVersions.Anaconda36;
+            await FullStdLibTest(v,
+                // Crashes Python on import
+                "sklearn.linear_model.cd_fast",
+                // Crashes Python on import
+                "sklearn.cluster._k_means_elkan"
+            );
+        }
+
+        [TestMethod, TestCategory("60s"), Priority(1)]
+        [Timeout(10 * 60 * 1000)]
+        public async Task FullStdLibAnaconda2() {
+            var v = PythonVersions.Anaconda27_x64 ?? PythonVersions.Anaconda27;
+            await FullStdLibTest(v,
+                // Fails to import due to SxS manifest issues
+                "dde",
+                "win32ui"
+            );
+        }
+
+        [TestMethod, TestCategory("60s"), Priority(0)]
+        public async Task FullStdLibIPy27() {
+            var v = PythonVersions.IronPython27 ?? PythonVersions.IronPython27_x64;
+            await FullStdLibTest(v);
+        }
+
+
+        private async Task FullStdLibTest(InterpreterConfiguration configuration, params string[] skipModules) {
+            configuration.AssertInstalled();
+            var moduleUri = TestData.GetDefaultModuleUri();
+            var moduleDirectory = Path.GetDirectoryName(moduleUri.LocalPath);
+
+            var services = await CreateServicesAsync(moduleDirectory, configuration);
+            var interpreter = services.GetService<IPythonInterpreter>();
+
+            var modules = ModulePath.GetModulesInLib(configuration.LibraryPath, configuration.SitePackagesPath).ToList();
+
+            var skip = new HashSet<string>(skipModules);
+            skip.UnionWith(new[] {
+                "matplotlib.backends._backend_gdk",
+                "matplotlib.backends._backend_gtkagg",
+                "matplotlib.backends._gtkagg",
+                "test.test_pep3131",
+                "test.test_unicode_identifiers"
+            });
+            skip.UnionWith(modules.Select(m => m.FullName).Where(n => n.StartsWith("test.badsyntax") || n.StartsWith("test.bad_coding")));
+
+            var anySuccess = false;
+            var anyExtensionSuccess = false;
+            var anyExtensionSeen = false;
+            var anyParseError = false;
+
+            var tasks = new List<Task<Tuple<ModulePath, IPythonModule>>>();
+            foreach (var m in skip) {
+                ((ModuleResolution)interpreter.ModuleResolution).AddUnimportableModule(m);
+            }
+
+            foreach (var r in modules
+                    .Where(m => !skip.Contains(m.ModuleName))
+                    .GroupBy(m => {
+                        var i = m.FullName.IndexOf('.');
+                        return i <= 0 ? m.FullName : m.FullName.Remove(i);
+                    })
+                    .AsParallel()
+                    .SelectMany(g => g.Select(m => Tuple.Create(m, m.ModuleName)))
+                ) {
+                var modName = r.Item1;
+                var mod = await interpreter.ModuleResolution.ImportModuleAsync(r.Item2);
+
+                anyExtensionSeen |= modName.IsNativeExtension;
+                if (mod == null) {
+                    Trace.TraceWarning("failed to import {0} from {1}", modName.ModuleName, modName.SourceFile);
+                } else if (mod is CompiledPythonModule) {
+                    var errors = ((IDocument)mod).GetDiagnostics();
+                    if (errors.Any()) {
+                        anyParseError = true;
+                        Trace.TraceError("Parse errors in {0}", modName.SourceFile);
+                        foreach (var e in errors) {
+                            Trace.TraceError(e.Message);
+                        }
+                    } else {
+                        anySuccess = true;
+                        anyExtensionSuccess |= modName.IsNativeExtension;
+                        mod.GetMemberNames().ToList();
+                    }
+                } else if (mod is IPythonModule) {
+                    var filteredErrors = ((IDocument)mod).GetDiagnostics().Where(e => !e.Message.Contains("encoding problem")).ToArray();
+                    if (filteredErrors.Any()) {
+                        // Do not fail due to errors in installed packages
+                        if (!mod.FilePath.Contains("site-packages")) {
+                            anyParseError = true;
+                        }
+                        Trace.TraceError("Parse errors in {0}", modName.SourceFile);
+                        foreach (var e in filteredErrors) {
+                            Trace.TraceError(e.Message);
+                        }
+                    } else {
+                        anySuccess = true;
+                        anyExtensionSuccess |= modName.IsNativeExtension;
+                        mod.GetMemberNames().ToList();
+                    }
+                } else {
+                    Trace.TraceError("imported {0} as type {1}", modName.ModuleName, mod.GetType().FullName);
+                }
+            }
+            Assert.IsTrue(anySuccess, "failed to import any modules at all");
+            Assert.IsTrue(anyExtensionSuccess || !anyExtensionSeen, "failed to import all extension modules");
+            Assert.IsFalse(anyParseError, "parse errors occurred");
         }
     }
 }

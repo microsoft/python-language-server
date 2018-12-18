@@ -426,5 +426,8 @@ namespace Microsoft.Python.Analysis.Modules {
             // TODO: Search zip files for packages
             return new string[0];
         }
+
+        // For tests
+        internal void AddUnimportableModule(string moduleName) => _modules[moduleName] = new SentinelModule(moduleName);
     }
 }

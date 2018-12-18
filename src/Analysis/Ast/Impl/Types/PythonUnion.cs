@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IPythonFunction GetConstructor() => throw new System.NotImplementedException();
+        public IPythonFunction GetConstructor() => null;
 
         public IEnumerator<IPythonType> GetEnumerator() {
             lock (_lock) {
@@ -92,8 +92,17 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IPythonType GetMember(string name) => throw new System.NotImplementedException();
-        public IEnumerable<string> GetMemberNames() => throw new System.NotImplementedException();
+        public IPythonType GetMember(string name) {
+            lock(_lock) {
+                return _types.Select(t => t.GetMember(name)).ExcludeDefault().FirstOrDefault();
+            }
+        }
+
+        public IEnumerable<string> GetMemberNames() {
+            lock (_lock) {
+                return _types.SelectMany(t => t.GetMemberNames()).ToArray();
+            }
+        }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         #endregion
 
