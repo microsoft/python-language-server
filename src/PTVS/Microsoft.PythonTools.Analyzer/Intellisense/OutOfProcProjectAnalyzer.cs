@@ -1539,7 +1539,7 @@ namespace Microsoft.PythonTools.Intellisense {
             int part = _server.GetPart(request.documentUri);
             return new AP.FileUpdateResponse {
                 version = version,
-                newCode = (entry as IDocument)?.ReadDocument(part, out _)?.ReadToEnd()
+                newCode = entry.Document?.ReadDocument(part, out _)?.ReadToEnd()
             };
 #else
             return new AP.FileUpdateResponse {
