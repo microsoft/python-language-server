@@ -27,9 +27,9 @@ namespace Microsoft.Python.Analysis.Types {
         string Name { get; }
 
         /// <summary>
-        /// The types of the parameter.
+        /// Type of the parameter.
         /// </summary>
-        IReadOnlyList<IPythonType> ParameterTypes { get; }
+        IPythonType Type { get; }
 
         /// <summary>
         /// Documentation for the parameter.

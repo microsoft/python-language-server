@@ -76,5 +76,20 @@ pt = nt(1, 2)
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             analysis.Should().HaveVariable("pt").OfTypes(BuiltinTypeId.Tuple);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeAnnotationConversion() {
+            var code = @"from ReturnAnnotations import *
+x = f()
+y = g()";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfTypes(BuiltinTypeId.Str)
+                .And.HaveVariable("f").OfTypes(BuiltinTypeId.Function)
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("p").And.HaveType("int").And.HaveNoDefaultValue();
+        }
     }
 }

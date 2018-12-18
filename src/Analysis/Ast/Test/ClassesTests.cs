@@ -116,7 +116,7 @@ class BankAccount(object):
             analysis.Should().HaveClass("BankAccount")
                 .Which.Should().HaveMethod("overdrawn")
                 .Which.Should().HaveSingleOverload()
-                .Which.Should().HaveSingleReturnType("bool");
+                .Which.Should().HaveReturnType("bool");
         }
     }
 }

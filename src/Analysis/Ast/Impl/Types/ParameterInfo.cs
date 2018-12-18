@@ -21,7 +21,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class ParameterInfo : IParameterInfo {
-        public ParameterInfo(PythonAst ast, Parameter p, IEnumerable<IPythonType> types) {
+        public ParameterInfo(PythonAst ast, Parameter p, IPythonType type) {
             Name = p?.Name ?? throw new ArgumentNullException(nameof(p));
             Documentation = string.Empty;
             DefaultValue = p.DefaultValue?.ToCodeString(ast).Trim();
@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
             IsParamArray = p.Kind == ParameterKind.List;
             IsKeywordDict = p.Kind == ParameterKind.Dictionary;
-            ParameterTypes = types.MaybeEnumerate().Where(t => t.TypeId != BuiltinTypeId.Unknown).ToArray();
+            Type = type;
         }
 
         public string Name { get; }
@@ -38,6 +38,6 @@ namespace Microsoft.Python.Analysis.Types {
         public string DefaultValue { get; }
         public bool IsParamArray { get; }
         public bool IsKeywordDict { get; }
-        public IReadOnlyList<IPythonType> ParameterTypes { get; }
+        public IPythonType Type { get; }
     }
 }

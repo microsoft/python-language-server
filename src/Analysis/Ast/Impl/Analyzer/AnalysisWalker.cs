@@ -131,14 +131,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (expr.Expression is NameExpression ne) {
-                var any = false;
-                foreach (var annType in _lookup.GetTypesFromAnnotation(expr.Annotation)) {
-                    _lookup.DeclareVariable(ne.Name, new AstPythonConstant(annType, GetLoc(expr.Expression)));
-                    any = true;
-                }
-                if (!any) {
-                    _lookup.DeclareVariable(ne.Name, _lookup.UnknownType);
-                }
+                var t = _lookup.GetTypeFromAnnotation(expr.Annotation);
+                _lookup.DeclareVariable(ne.Name, t != null ? new AstPythonConstant(t, GetLoc(expr.Expression)) : _lookup.UnknownType);
             }
         }
 
@@ -401,10 +395,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private PythonFunctionOverload CreateFunctionOverload(ExpressionLookup lookup, FunctionDefinition node) {
             var parameters = node.Parameters
-                .Select(p => new ParameterInfo(_ast, p, _lookup.GetTypesFromAnnotation(p.Annotation)))
+                .Select(p => new ParameterInfo(_ast, p, _lookup.GetTypeFromAnnotation(p.Annotation)))
                 .ToArray();
 
             var overload = new PythonFunctionOverload(
+                node.Name,
                 parameters,
                 lookup.GetLocOfName(node, node.NameExpression),
                 node.ReturnAnnotation?.ToCodeString(_ast));
@@ -464,7 +459,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var bases = node.Bases.Where(a => string.IsNullOrEmpty(a.Name))
                 // We cheat slightly and treat base classes as annotations.
-                .SelectMany(a => _lookup.GetTypesFromAnnotation(a.Expression))
+                .Select(a => _lookup.GetTypeFromAnnotation(a.Expression))
                 .ToArray();
 
             t.SetBases(_interpreter, bases);

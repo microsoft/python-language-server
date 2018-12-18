@@ -22,10 +22,12 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly IReadOnlyList<IParameterInfo> _parameters;
 
         public PythonFunctionOverload(
+            string name,
             IEnumerable<IParameterInfo> parameters,
             LocationInfo loc,
             string returnDocumentation = null
         ) {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
             _parameters = parameters?.ToArray() ?? throw new ArgumentNullException(nameof(parameters));
             Locations = loc != null ? new[] { loc } : Array.Empty<LocationInfo>();
             ReturnDocumentation = returnDocumentation;
@@ -38,12 +40,14 @@ namespace Microsoft.Python.Analysis.Types {
             Documentation = doc;
         }
 
-        internal List<IPythonType> ReturnTypes { get; } = new List<IPythonType>();
+        internal void AddReturnType(IPythonType type) 
+            => ReturnType = ReturnType == null ? type : PythonUnion.Combine(ReturnType, type);
 
+        public string Name { get; }
         public string Documentation { get; private set; }
         public string ReturnDocumentation { get; }
         public IParameterInfo[] GetParameters() => _parameters.ToArray();
-        public IReadOnlyList<IPythonType> ReturnType => ReturnTypes.Where(v => v.TypeId != BuiltinTypeId.Unknown).ToArray();
+        public IPythonType ReturnType { get; private set; }
         public IEnumerable<LocationInfo> Locations { get; }
     }
 }

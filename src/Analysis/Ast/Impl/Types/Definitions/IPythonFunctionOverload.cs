@@ -20,6 +20,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// Represents a single overload of a function.
     /// </summary>
     public interface IPythonFunctionOverload {
+        string Name { get; }
         string Documentation { get; }
 
         string ReturnDocumentation { get; }
@@ -29,6 +30,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         IParameterInfo[] GetParameters();
 
-        IReadOnlyList<IPythonType> ReturnType { get; }
+        IPythonType ReturnType { get; }
     }
 }

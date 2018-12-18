@@ -93,18 +93,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return loc;
         }
 
-        public IEnumerable<IPythonType> GetTypesFromAnnotation(Expression expr) {
+        public IPythonType GetTypeFromAnnotation(Expression expr) {
             if (expr == null) {
-                return Enumerable.Empty<IPythonType>();
+                return null;
             }
-
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
-            var m = ann.GetValue(new TypeAnnotationConverter(this));
-            if (m is IPythonType type) {
-                return Enumerable.Repeat(type, 1);
-            }
-
-            return Enumerable.Empty<IPythonType>();
+            return ann.GetValue(new TypeAnnotationConverter(this));
         }
 
         [DebuggerStepThrough]
@@ -336,8 +330,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return !returnType.IsUnknown() ? new AstPythonConstant(returnType, GetLoc(expr)) : null;
         }
 
-        private IPythonType GetFunctionReturnType(IPythonFunctionOverload o)
-            => o != null && o.ReturnType.Count > 0 ? o.ReturnType[0] : UnknownType;
+        private IPythonType GetFunctionReturnType(IPythonFunctionOverload o) => o?.ReturnType ?? UnknownType;
 
         private async Task<IPythonType> GetPropertyReturnTypeAsync(IPythonProperty p, Expression expr, CancellationToken cancellationToken = default) {
             if (p.Type.IsUnknown()) {
@@ -359,11 +352,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var type = GetTypeFromLiteral(expr);
             return type != null ? new AstPythonConstant(type, GetLoc(expr)) : null;
-        }
-
-        public IEnumerable<IPythonType> GetTypesFromValue(IPythonType value) {
-            var t = GetTypeFromValue(value);
-            return t != null ? Enumerable.Repeat(t, 1) : Enumerable.Empty<IPythonType>();
         }
 
         public IPythonType GetTypeFromValue(IPythonType value) {

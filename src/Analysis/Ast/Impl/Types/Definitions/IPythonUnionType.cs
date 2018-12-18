@@ -13,20 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Diagnostics.CodeAnalysis;
-using Microsoft.Python.Analysis.Types;
+using System.Collections.Generic;
 
-namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
-    [ExcludeFromCodeCoverage]
-    internal class PythonFunctionOverloadTestInfo {
-        public IPythonFunctionOverload FunctionOverload { get; }
-        public string FunctionName { get; }
-
-        public PythonFunctionOverloadTestInfo(IPythonFunctionOverload functionOverload, string functionName) {
-            FunctionOverload = functionOverload;
-            FunctionName = functionName;
-        }
-        
-        public PythonFunctionOverloadAssertions Should() => new PythonFunctionOverloadAssertions(FunctionOverload, FunctionName);
+namespace Microsoft.Python.Analysis.Types {
+    /// <summary>
+    /// Represents union of types
+    /// </summary>
+    public interface IPythonUnionType: IPythonType, IEnumerable<IPythonType> {
+        IPythonUnionType Add(IPythonType t);
+        IPythonUnionType Add(IPythonUnionType types);
     }
 }

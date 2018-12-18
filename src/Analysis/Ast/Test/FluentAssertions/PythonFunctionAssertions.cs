@@ -30,12 +30,20 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         protected override string Identifier => nameof(IPythonFunction);
         protected string ScopeDescription { get; }
 
+        public AndConstraint<PythonFunctionAssertions> BeClassMethod(string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(Subject.IsClassMethod)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject.Name} to be a class method{{reason}}");
+
+            return new AndConstraint<PythonFunctionAssertions>(this);
+        }
+
         public AndConstraint<PythonFunctionAssertions> HaveOverloads(string because = "", params object[] reasonArgs) {
             Execute.Assertion.ForCondition(Subject.Overloads.Any())
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName()} to have overloads{{reason}}.");
 
-            return new AndConstraint<PythonFunctionAssertions>((PythonFunctionAssertions)this);
+            return new AndConstraint<PythonFunctionAssertions>(this);
         }
 
         public AndConstraint<PythonFunctionAssertions> HaveOverloadCount(int count, string because = "", params object[] reasonArgs) {
@@ -47,24 +55,22 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndConstraint<PythonFunctionAssertions>(this);
         }
 
-        public AndWhichConstraint<PythonFunctionAssertions, PythonFunctionOverloadTestInfo> HaveSingleOverload(string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<PythonFunctionAssertions, IPythonFunctionOverload> HaveSingleOverload(string because = "", params object[] reasonArgs) {
             var overloads = Subject.Overloads.ToArray();
             Execute.Assertion.ForCondition(overloads.Length == 1)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName()} to have single overload{{reason}}, but it {GetOverloadsString(overloads.Length)}.");
 
-            return new AndWhichConstraint<PythonFunctionAssertions, PythonFunctionOverloadTestInfo>
-                (this, new PythonFunctionOverloadTestInfo(overloads[0], Subject.Name));
+            return new AndWhichConstraint<PythonFunctionAssertions, IPythonFunctionOverload>(this, overloads[0]);
         }
 
-        public AndWhichConstraint<PythonFunctionAssertions, PythonFunctionOverloadTestInfo> HaveOverloadAt(int index, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<PythonFunctionAssertions, IPythonFunctionOverload> HaveOverloadAt(int index, string because = "", params object[] reasonArgs) {
             var overloads = Subject.Overloads.ToArray();
             Execute.Assertion.ForCondition(overloads.Length > index)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName()} to have overload at index {index}{{reason}}, but it {GetOverloadsString(overloads.Length)}.");
 
-            return new AndWhichConstraint<PythonFunctionAssertions, PythonFunctionOverloadTestInfo>
-                (this, new PythonFunctionOverloadTestInfo(overloads[index], Subject.Name));
+            return new AndWhichConstraint<PythonFunctionAssertions, IPythonFunctionOverload>(this, overloads[index]);
         }
 
         private static string GetOverloadsString(int overloadsCount)

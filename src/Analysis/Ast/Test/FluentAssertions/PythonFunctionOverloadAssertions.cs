@@ -24,24 +24,19 @@ using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilitie
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     internal class PythonFunctionOverloadAssertions : ReferenceTypeAssertions<IPythonFunctionOverload, PythonFunctionOverloadAssertions> {
-        private readonly string _functionName;
-
-        public PythonFunctionOverloadAssertions(IPythonFunctionOverload pythonFunctionOverload, string functionName) {
-            _functionName = functionName;
+        public PythonFunctionOverloadAssertions(IPythonFunctionOverload pythonFunctionOverload) {
             Subject = pythonFunctionOverload;
         }
 
         protected override string Identifier => nameof(IPythonFunctionOverload);
 
-        public AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonType> HaveSingleReturnType(string because = "", params object[] reasonArgs) {
-            var returnTypes = Subject.ReturnType.ToArray();
-            Execute.Assertion.ForCondition(returnTypes.Length == 1)
+        public AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonType> HaveReturnType(string because = "", params object[] reasonArgs) {
+            var returnType = Subject.ReturnType;
+            Execute.Assertion.ForCondition(returnType != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith(returnTypes.Length > 0
-                    ? $"Expected {_functionName} overload to have only one return type{{reason}}, but it has {returnTypes.Length} overloads."
-                    : $"Expected {_functionName} overload to have a return type{{reason}}, but it has none.");
+                .FailWith($"Expected {Subject.Name} overload to have a return type{{reason}}, but it has none.");
 
-            return new AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonType>(this, returnTypes[0]);
+            return new AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonType>(this, returnType);
         }
 
         public AndWhichConstraint<PythonFunctionOverloadAssertions, IParameterInfo> HaveParameterAt(int index, string because = "", params object[] reasonArgs) {
@@ -49,8 +44,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             Execute.Assertion.ForCondition(parameters.Length > index)
                 .BecauseOf(because, reasonArgs)
                 .FailWith(parameters.Length > 0
-                    ? $"Expected {_functionName} to have parameter at index {index}{{reason}}, but it has only {parameters.Length} parameters."
-                    : $"Expected {_functionName} to have parameter at index {index}{{reason}}, but it has none.");
+                    ? $"Expected {Subject.Name} to have parameter at index {index}{{reason}}, but it has only {parameters.Length} parameters."
+                    : $"Expected {Subject.Name} to have parameter at index {index}{{reason}}, but it has none.");
 
             return new AndWhichConstraint<PythonFunctionOverloadAssertions, IParameterInfo>(this, parameters[index]);
         }
@@ -60,8 +55,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             Execute.Assertion.ForCondition(parameters.Length == 1)
                 .BecauseOf(because, reasonArgs)
                 .FailWith(parameters.Length > 0
-                    ? $"Expected {_functionName} overload to have only one parameter{{reason}}, but it has {parameters.Length} parameters."
-                    : $"Expected {_functionName} overload to have one parameter{{reason}}, but it has none.");
+                    ? $"Expected {Subject.Name} overload to have only one parameter{{reason}}, but it has {parameters.Length} parameters."
+                    : $"Expected {Subject.Name} overload to have one parameter{{reason}}, but it has none.");
 
             return new AndWhichConstraint<PythonFunctionOverloadAssertions, IParameterInfo>(this, parameters[0]);
         }
@@ -72,7 +67,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             var current = Subject.GetParameters().Select(pr => pr.Name).ToArray();
             var expected = parameters.ToArray();
 
-            var message = GetAssertCollectionOnlyContainsMessage(current, expected, _functionName, "parameter", "parameters");
+            var message = GetAssertCollectionOnlyContainsMessage(current, expected, Subject.Name, "parameter", "parameters");
             Execute.Assertion.ForCondition(message == null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith(message);
@@ -83,19 +78,11 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public AndConstraint<PythonFunctionOverloadAssertions> HaveNoParameters(string because = "", params object[] reasonArgs)
             => HaveParameters(Enumerable.Empty<string>(), because, reasonArgs);
 
-        public AndConstraint<PythonFunctionOverloadAssertions> HaveSingleReturnType(string type, string because = "", params object[] reasonArgs) {
-            var returnTypes = Subject.ReturnType;
-            Execute.Assertion.ForCondition(returnTypes.Count == 1)
+        public AndConstraint<PythonFunctionOverloadAssertions> HaveReturnType(string type, string because = "", params object[] reasonArgs) {
+            var returnType = Subject.ReturnType;
+            Execute.Assertion.ForCondition(string.Equals(returnType.Name, type, StringComparison.Ordinal))
                 .BecauseOf(because, reasonArgs)
-                .FailWith(returnTypes.Count > 0
-                    ? $"Expected {_functionName} to have only one return type{{reason}}, but it has {returnTypes.Count} return types."
-                    : $"Expected {_functionName} to have a return type{{reason}}, but it has none.");
-
-            if (returnTypes.Count == 1) {
-                Execute.Assertion.ForCondition(string.Equals(returnTypes[0].Name, type, StringComparison.Ordinal))
-                    .BecauseOf(because, reasonArgs)
-                    .FailWith($"Expected {_functionName} to have return type [{type}]{{reason}}, but it has [{returnTypes[0]}].");
-            }
+                .FailWith($"Expected {Subject.Name} to have return type [{type}]{{reason}}, but it has [{returnType}].");
 
             return new AndConstraint<PythonFunctionOverloadAssertions>(this);
         }

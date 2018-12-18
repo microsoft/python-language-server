@@ -1,4 +1,3 @@
-// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -69,9 +68,9 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         Property,
         /// <summary>
-        /// A merge of multiple types.
+        /// A union of multiple types.
         /// </summary>
-        Multiple,
+        Union,
         /// <summary>
         /// The member represents a keyword
         /// </summary>

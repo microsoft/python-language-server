@@ -49,8 +49,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _self = await GetSelfAsync(cancellationToken);
                 using (_lookup.CreateScope(Target, _parentScope)) {
 
-                    var annotationTypes = _lookup.GetTypesFromAnnotation(Target.ReturnAnnotation).ExcludeDefault().ToArray();
-                    _overload.ReturnTypes.AddRange(annotationTypes);
+                    var annotationType = _lookup.GetTypeFromAnnotation(Target.ReturnAnnotation);
+                    if (annotationType != null) {
+                        _overload.AddReturnType(annotationType);
+                    }
 
                     // Declare self, if any
                     var skip = 0;
@@ -69,7 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
 
                     // return type from the annotation always wins, no need to walk the body.
-                    if (!annotationTypes.Any()) {
+                    if (annotationType == null) {
                         await Target.WalkAsync(this, cancellationToken);
                     }
                 } // Function scope
@@ -145,14 +147,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
             var value = await _lookup.GetValueFromExpressionAsync(node.Expression, cancellationToken);
-            var types = _lookup.GetTypesFromValue(value).ExcludeDefault().ToList();
-
-            // Clean up: if there are None or Unknown types along with real ones, remove them.
-            var realTypes = types
-                .Where(t => t.TypeId != BuiltinTypeId.Unknown && t.TypeId != BuiltinTypeId.NoneType)
-                .ToList();
-
-            _overload.ReturnTypes.AddRange(realTypes.Count > 0 ? realTypes : types);
+            var t = _lookup.GetTypeFromValue(value);
+            if (t != null) {
+                _overload.AddReturnType(t);
+            }
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
 
