@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
@@ -34,17 +35,18 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     public abstract class AnalysisTestBase {
-        protected ServiceManager ServiceManager { get; }
         protected TestLogger TestLogger { get; } = new TestLogger();
 
-        protected AnalysisTestBase(ServiceManager sm = null) {
-            ServiceManager = sm ?? new ServiceManager();
+        protected virtual ServiceManager CreateServiceManager() {
+            var sm = new ServiceManager();
 
             var platform = new OSPlatform();
-            ServiceManager
+            sm
                 .AddService(TestLogger)
                 .AddService(platform)
                 .AddService(new FileSystem(platform));
+
+            return sm;
         }
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
@@ -57,22 +59,28 @@ namespace Microsoft.Python.Analysis.Tests {
             configuration.SearchPaths = new[] { root, GetAnalysisTestDataFilesPath() };
             configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
 
+            var sm = CreateServiceManager();
+
             var dependencyResolver = new TestDependencyResolver();
-            ServiceManager.AddService(dependencyResolver);
+            sm.AddService(dependencyResolver);
 
-            var analyzer = new PythonAnalyzer(ServiceManager);
-            ServiceManager.AddService(analyzer);
+            var analyzer = new PythonAnalyzer(sm);
+            sm.AddService(analyzer);
 
-            var documentTable = new RunningDocumentTable(root, ServiceManager);
-            ServiceManager.AddService(documentTable);
+            var documentTable = new RunningDocumentTable(root, sm);
+            sm.AddService(documentTable);
 
-            var interpreter = await PythonInterpreter.CreateAsync(configuration, ServiceManager);
-            ServiceManager.AddService(interpreter);
+            var interpreter = await PythonInterpreter.CreateAsync(configuration, sm);
+            sm.AddService(interpreter);
 
-            return ServiceManager;
+            return sm;
         }
 
-        internal async Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration = null, string moduleName = null, string modulePath = null) {
+        internal async Task<IDocumentAnalysis> GetAnalysisAsync(
+            string code, 
+            InterpreterConfiguration configuration = null, 
+            string moduleName = null, 
+            string modulePath = null) {
 
             var moduleUri = TestData.GetDefaultModuleUri();
             modulePath = modulePath ?? TestData.GetDefaultModulePath();
@@ -80,6 +88,20 @@ namespace Microsoft.Python.Analysis.Tests {
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
             var services = await CreateServicesAsync(moduleDirectory, configuration);
+            return await GetAnalysisAsync(code, services, moduleName, modulePath);
+        }
+
+        internal async Task<IDocumentAnalysis> GetAnalysisAsync(
+            string code,
+            IServiceContainer services,
+            string moduleName = null,
+            string modulePath = null) {
+
+            var moduleUri = TestData.GetDefaultModuleUri();
+            modulePath = modulePath ?? TestData.GetDefaultModulePath();
+            moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var moduleDirectory = Path.GetDirectoryName(modulePath);
+
             var mco = new ModuleCreationOptions {
                 ModuleName = moduleName,
                 Content = code,

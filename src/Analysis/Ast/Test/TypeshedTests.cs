@@ -100,25 +100,26 @@ if sys.version_info >= (2, 7):
                 }
 
                 Console.WriteLine("Testing with {0}", ver.InterpreterPath);
+                using (var s = await CreateServicesAsync(TestData.Root, ver)) {
+                    var analysis = await GetAnalysisAsync(code, s, "testmodule", TestData.GetTestSpecificPath("testmodule.pyi"));
 
-                var analysis = await GetAnalysisAsync(code, ver);
+                    var expected = new List<string>();
+                    var pythonVersion = ver.Version.ToLanguageVersion();
+                    if (pythonVersion.Is3x()) {
+                        expected.Add("GT_2_7");
+                        expected.Add("GE_2_7");
+                    } else if (pythonVersion == PythonLanguageVersion.V27) {
+                        expected.Add("GE_2_7");
+                        expected.Add("LE_2_7");
+                    } else {
+                        expected.Add("LT_2_7");
+                        expected.Add("LE_2_7");
+                    }
 
-                var expected = new List<string>();
-                var pythonVersion = ver.Version.ToLanguageVersion();
-                if (pythonVersion.Is3x()) {
-                    expected.Add("GT_2_7");
-                    expected.Add("GE_2_7");
-                } else if (pythonVersion == PythonLanguageVersion.V27) {
-                    expected.Add("GE_2_7");
-                    expected.Add("LE_2_7");
-                } else {
-                    expected.Add("LT_2_7");
-                    expected.Add("LE_2_7");
+                    analysis.TopLevelMembers.Select(m => m.Name).Where(n => n.EndsWithOrdinal("2_7"))
+                        .Should().Contain(expected)
+                        .And.NotContain(fullSet.Except(expected));
                 }
-
-                analysis.TopLevelMembers.SelectMany(m => m.Type.GetMemberNames()).Where(n => n.EndsWithOrdinal("2_7"))
-                    .Should().Contain(expected)
-                    .And.NotContain(fullSet.Except(expected));
             }
         }
     }

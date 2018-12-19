@@ -15,9 +15,11 @@
 
 
 namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonConstant : IPythonType {
-        IPythonType Type {
-            get;
-        }
+    /// <summary>
+    /// Represents instance of the type, such as instance of a class,
+    /// rather than the class type itself.
+    /// </summary>
+    public interface IPythonInstance : IPythonType {
+        IPythonType Type { get; }
     }
 }

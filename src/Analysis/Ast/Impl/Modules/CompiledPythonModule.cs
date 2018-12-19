@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Modules {
             : base(moduleName, filePath, moduleType, ModuleLoadOptions.Analyze, stub, services) { }
 
         public override string Documentation
-            => GetMember("__doc__") is AstPythonStringLiteral m ? m.Value : string.Empty;
+            => GetMember("__doc__") is PythonStringLiteral m ? m.Value : string.Empty;
 
         public override IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
 

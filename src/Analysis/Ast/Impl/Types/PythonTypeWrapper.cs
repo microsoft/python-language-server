@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonTypeWrapper(IPythonType type, IPythonModule declaringModule)
             : base(type?.Name ?? "<type wrapper>", declaringModule, type?.Documentation,
-             (type as ILocatedMember)?.Locations.MaybeEnumerate().FirstOrDefault()) {
+             (type as ILocatedMember)?.Location) {
             InnerType = type;
         }
 

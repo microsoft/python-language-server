@@ -16,5 +16,9 @@
 using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis.Types {
-    public interface IVariableCollection: IMemberContainer, IReadOnlyCollection<IVariable> { }
+    public interface IVariableCollection: IMemberContainer, IReadOnlyCollection<IVariable> {
+        IVariable this[string name] { get; }
+        bool Contains(string name);
+        bool TryGetVariable(string key, out IVariable value);
+    }
 }

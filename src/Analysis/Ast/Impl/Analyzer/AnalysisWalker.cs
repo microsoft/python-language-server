@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             await _functionWalkers.ProcessSetAsync(cancellationToken);
             foreach (var childModuleName in _module.GetChildrenModuleNames()) {
                 var name = $"{_module.Name}.{childModuleName}";
-                _globalScope.DeclareVariable(name, _module);
+                _globalScope.DeclareVariable(name, _module, LocationInfo.Empty);
             }
             return GlobalScope;
         }
@@ -95,7 +95,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(_ast).Trim()}");
             }
 
-            if ((value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Ellipsis) {
+            if ((value as IPythonInstance)?.Type?.TypeId == BuiltinTypeId.Ellipsis) {
                 value = _lookup.UnknownType;
             }
 
@@ -109,12 +109,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                 AssignFromAnnotation(expr);
                 if (!value.IsUnknown() && expr.Expression is NameExpression ne) {
-                    _lookup.DeclareVariable(ne.Name, value);
+                    _lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
                 }
             }
 
             foreach (var ne in node.Left.OfType<NameExpression>()) {
-                _lookup.DeclareVariable(ne.Name, value);
+                _lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
             }
 
             return await base.WalkAsync(node, cancellationToken);
@@ -132,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (expr.Expression is NameExpression ne) {
                 var t = _lookup.GetTypeFromAnnotation(expr.Annotation);
-                _lookup.DeclareVariable(ne.Name, t != null ? new AstPythonConstant(t, GetLoc(expr.Expression)) : _lookup.UnknownType);
+                _lookup.DeclareVariable(ne.Name, t ?? _lookup.UnknownType, GetLoc(expr.Expression));
             }
         }
 
@@ -150,20 +150,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
 
                 var imports = _interpreter.ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(_module.FilePath, importNames, node.ForceAbsolute);
+                var location = GetLoc(moduleImportExpression);
                 switch (imports) {
                     case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
-                        _lookup.DeclareVariable(memberName, _module);
+                        _lookup.DeclareVariable(memberName, _module, location);
                         break;
                     case ModuleImport moduleImport:
                         var m1 = await _interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
-                        _lookup.DeclareVariable(memberName, m1 ?? new SentinelModule(moduleImport.FullName));
+                        _lookup.DeclareVariable(memberName, m1 ?? new SentinelModule(moduleImport.FullName), location);
                         break;
                     case PossibleModuleImport possibleModuleImport:
                         var m2 = await _interpreter.ModuleResolution.ImportModuleAsync(possibleModuleImport.PossibleModuleFullName, cancellationToken);
-                        _lookup.DeclareVariable(memberName, m2 ?? new SentinelModule(possibleModuleImport.PossibleModuleFullName));
+                        _lookup.DeclareVariable(memberName, m2 ?? new SentinelModule(possibleModuleImport.PossibleModuleFullName), location);
                         break;
                     default:
-                        _lookup.DeclareVariable(memberName, new SentinelModule(memberName));
+                        _lookup.DeclareVariable(memberName, new SentinelModule(memberName), location);
                         break;
                 }
             }
@@ -226,7 +227,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
 
                 var member = _module.GetMember(importName);
-                _lookup.DeclareVariable(memberName, member);
+                _lookup.DeclareVariable(memberName, member ?? _lookup.UnknownType, GetLoc(names[i]));
             }
         }
 
@@ -236,7 +237,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var module = await _interpreter.ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
 
             if (names.Count == 1 && names[0].Name == "*") {
-                await HandleModuleImportStarAsync(module, cancellationToken);
+                await HandleModuleImportStarAsync(module, node, cancellationToken);
                 return;
             }
 
@@ -247,12 +248,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberReference = asNames[i] ?? names[i];
                 var memberName = memberReference.Name;
 
-                var type = module?.GetMember(memberReference.Name) ?? _lookup.UnknownType;
-                _lookup.DeclareVariable(memberName, type);
+                var type = module?.GetMember(memberReference.Name);
+                _lookup.DeclareVariable(memberName, type, names[i]);
             }
         }
 
-        private async Task HandleModuleImportStarAsync(IPythonModule module, CancellationToken cancellationToken = default) {
+        private async Task HandleModuleImportStarAsync(IPythonModule module, FromImportStatement node, CancellationToken cancellationToken = default) {
             // Ensure child modules have been loaded
             module.GetChildrenModuleNames();
 
@@ -266,11 +267,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     _log?.Log(TraceEventType.Verbose, $"Unknown import: {module.Name}, {memberName}");
                 }
 
-                member = member ?? new AstPythonConstant(_lookup.UnknownType, module.Locations.MaybeEnumerate().ToArray());
+                member = member ?? _lookup.UnknownType;
                 if (member is IPythonModule m) {
                     await _interpreter.ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
                 }
-                _lookup.DeclareVariable(memberName, member);
+                _lookup.DeclareVariable(memberName, member, module.Location);
             }
         }
 
@@ -280,7 +281,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: Need tracking of previous imports to determine possible imports for namespace package. For now import nothing
-                _lookup.DeclareVariable("*", new AstPythonConstant(_lookup.UnknownType, GetLoc(names[0])));
+                _lookup.DeclareVariable("*", _lookup.UnknownType, GetLoc(names[0]));
                 return;
             }
 
@@ -295,10 +296,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
                     member = await _interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
                 } else {
-                    member = new AstPythonConstant(_lookup.UnknownType, location);
+                    member = _lookup.UnknownType;
                 }
-
-                _lookup.DeclareVariable(memberName, member);
+                _lookup.DeclareVariable(memberName, member, location);
             }
         }
 
@@ -387,8 +387,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType) {
             if (!(_lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonProperty existing)) {
-                existing = new PythonProperty(node, declaringModule, declaringType, GetLoc(node));
-                _lookup.DeclareVariable(node.Name, existing);
+                var loc = GetLoc(node);
+                existing = new PythonProperty(node, declaringModule, declaringType, loc);
+                _lookup.DeclareVariable(node.Name, existing, loc);
             }
             AddOverload(node, o => existing.AddOverload(o));
         }
@@ -433,7 +434,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             foreach (var node in statement.OfType<ClassDefinition>()) {
-                _lookup.DeclareVariable(node.Name, CreateClass(node));
+                _lookup.DeclareVariable(node.Name, CreateClass(node), node);
             }
 
             foreach (var node in statement.OfType<AssignmentStatement>().Where(n => n.Right is NameExpression)) {
@@ -441,7 +442,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var t = _lookup.CurrentScope.Variables.GetMember(rhs.Name);
                 if (t != null) {
                     foreach (var lhs in node.Left.OfType<NameExpression>()) {
-                        _lookup.DeclareVariable(lhs.Name, t);
+                        _lookup.DeclareVariable(lhs.Name, t, lhs);
                     }
                 }
             }
@@ -454,7 +455,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var t = member as PythonClass;
             if (t == null) {
                 t = CreateClass(node);
-                _lookup.DeclareVariable(node.Name, t);
+                _lookup.DeclareVariable(node.Name, t, node);
             }
 
             var bases = node.Bases.Where(a => string.IsNullOrEmpty(a.Name))
@@ -465,7 +466,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             t.SetBases(_interpreter, bases);
 
             _classScope = _lookup.CreateScope(node, _lookup.CurrentScope);
-            _lookup.DeclareVariable("__class__", t);
+            _lookup.DeclareVariable("__class__", t, node);
 
             return Task.FromResult(true);
         }
@@ -481,8 +482,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public void ProcessFunctionDefinition(FunctionDefinition node) {
             if (!(_lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonFunction existing)) {
                 var cls = _lookup.GetInScope("__class__");
-                existing = new PythonFunction(node, _module, cls, GetLoc(node));
-                _lookup.DeclareVariable(node.Name, existing);
+                var loc = GetLoc(node);
+                existing = new PythonFunction(node, _module, cls, loc);
+                _lookup.DeclareVariable(node.Name, existing, loc);
             }
             AddOverload(node, o => existing.AddOverload(o));
         }

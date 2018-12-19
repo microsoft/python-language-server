@@ -13,8 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Provides the location of a member. This should be implemented on a class
@@ -24,6 +22,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Returns where the member is located or null if the location is not known.
         /// </summary>
-        IEnumerable<LocationInfo> Locations { get; }
+        LocationInfo Location { get; }
     }
 }

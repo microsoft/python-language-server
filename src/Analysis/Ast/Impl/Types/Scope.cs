@@ -65,8 +65,8 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         public void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
-        public void DeclareVariable(string name, IPythonType type) 
-            => (_variables ?? (_variables = new VariableCollection())).DeclareVariable(name, type);
+        public void DeclareVariable(string name, IPythonType type, LocationInfo location) 
+            => (_variables ?? (_variables = new VariableCollection())).DeclareVariable(name, type, location);
         public List<Scope> ToChainTowardsGlobal() => EnumerateTowardsGlobal.OfType<Scope>().ToList();
     }
 

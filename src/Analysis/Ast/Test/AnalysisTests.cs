@@ -65,7 +65,7 @@ y = c.method()
                 .Which.Type.Should().BeAssignableTo<IPythonFunction>();
 
             analysis.Should().HaveVariable("c")
-                .Which.Type.Should().BeAssignableTo<IPythonConstant>()
+                .Which.Type.Should().BeAssignableTo<IPythonInstance>()
                 .Which.MemberType.Should().Be(PythonMemberType.Class);
 
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Float);

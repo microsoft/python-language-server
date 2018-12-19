@@ -14,9 +14,9 @@
 // permissions and limitations under the License.
 
 namespace Microsoft.Python.Analysis.Types {
-    internal sealed class AstPythonStringLiteral : AstPythonConstant {
-        public AstPythonStringLiteral(string value, IPythonType type, params LocationInfo[] locations)
-            : base(type, locations) {
+    internal sealed class PythonStringLiteral : PythonInstance {
+        public PythonStringLiteral(string value, IPythonType type, LocationInfo location)
+            : base(type, location) {
             Value = value;
         }
         public string Value { get; }

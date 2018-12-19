@@ -20,6 +20,6 @@ namespace Microsoft.Python.Analysis {
         public static bool IsUnknown(this IPythonType value) =>
             value == null ||
             value.TypeId == BuiltinTypeId.Unknown ||
-            (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;
+            (value as IPythonInstance)?.Type?.TypeId == BuiltinTypeId.Unknown;
     }
 }

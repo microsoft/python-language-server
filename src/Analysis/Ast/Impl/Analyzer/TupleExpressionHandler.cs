@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     if (returnedExpressions[i] != null) {
                         var v = await _lookup.GetValueFromExpressionAsync(returnedExpressions[i], cancellationToken);
                         if (v != null) {
-                            _lookup.DeclareVariable(names[i], v);
+                            _lookup.DeclareVariable(names[i], v, returnedExpressions[i]);
                         }
                     }
                 }
@@ -47,12 +47,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             // Tuple = 'tuple value' (such as from callable). Transfer values.
-            if (value is AstPythonConstant c && c.Type is PythonSequence seq) {
+            if (value is PythonInstance c && c.Type is PythonSequence seq) {
                 var types = seq.IndexTypes.ToArray();
-                var names = lhs.Items.Select(x => (x as NameExpression)?.Name).ExcludeDefault().ToArray();
+                var expressions = lhs.Items.OfType<NameExpression>().ToArray();
+                var names = expressions.Select(x => (x as NameExpression)?.Name).ToArray();
                 for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {
                     if (names[i] != null && types[i] != null) {
-                        _lookup.DeclareVariable(names[i], new AstPythonConstant(types[i]));
+                        _lookup.DeclareVariable(names[i], types[i], expressions[i]);
                     }
                 }
             }

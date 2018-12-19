@@ -22,22 +22,27 @@ using System.Linq;
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class VariableCollection : IVariableCollection {
         public static readonly IVariableCollection Empty = new VariableCollection();
-        private readonly ConcurrentDictionary<string, IPythonType> _variables = new ConcurrentDictionary<string, IPythonType>();
+        private readonly ConcurrentDictionary<string, IVariable> _variables = new ConcurrentDictionary<string, IVariable>();
 
         #region ICollection
         public int Count => _variables.Count;
-        public IEnumerator<IVariable> GetEnumerator() => _variables.Select(kvp => new Variable(kvp)).GetEnumerator();
+        public IEnumerator<IVariable> GetEnumerator() => _variables.Values.ToList().GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         #endregion
 
         #region IMemberContainer
-        public IPythonType GetMember(string name) 
-            => _variables.TryGetValue(name, out var t) ? t : null;
-
+        public IPythonType GetMember(string name) => _variables.TryGetValue(name, out var v) ? v.Type : null;
         public IEnumerable<string> GetMemberNames() => _variables.Keys;
         public bool Remove(IVariable item) => throw new NotImplementedException();
         #endregion
 
-        internal void DeclareVariable(string name, IPythonType type) => _variables[name] = type;
+        #region IVariableCollection
+        public IVariable this[string name] => _variables.TryGetValue(name, out var v) ? v : null;
+        public bool Contains(string name) => _variables.ContainsKey(name);
+        public bool TryGetVariable(string key, out IVariable value) => _variables.TryGetValue(key, out value);
+        #endregion
+
+        internal void DeclareVariable(string name, IPythonType type, LocationInfo location) 
+            => _variables[name] = new Variable(name, type, location);
     }
 }

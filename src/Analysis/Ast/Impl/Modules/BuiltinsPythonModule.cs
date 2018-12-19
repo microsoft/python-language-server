@@ -71,12 +71,12 @@ namespace Microsoft.Python.Analysis.Modules {
             _hiddenNames.Add("__builtin_module_names__");
 
             if (boolType != null) {
-                gs.DeclareVariable("True", boolType);
-                gs.DeclareVariable("False", boolType);
+                gs.DeclareVariable("True", boolType, LocationInfo.Empty);
+                gs.DeclareVariable("False", boolType, LocationInfo.Empty);
             }
 
             if (noneType != null) {
-                gs.DeclareVariable("None", noneType);
+                gs.DeclareVariable("None", noneType, LocationInfo.Empty);
             }
         }
     }

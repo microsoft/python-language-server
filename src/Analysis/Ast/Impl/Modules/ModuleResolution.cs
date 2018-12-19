@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinModule.GetAnyMember("__builtin_module_names__");
-            if (builtinModuleNamesMember is AstPythonStringLiteral builtinModuleNamesLiteral && builtinModuleNamesLiteral.Value != null) {
+            if (builtinModuleNamesMember is PythonStringLiteral builtinModuleNamesLiteral && builtinModuleNamesLiteral.Value != null) {
                 var builtinModuleNames = builtinModuleNamesLiteral.Value.Split(',').Select(n => n.Trim());
                 _pathResolver.SetBuiltins(builtinModuleNames);
             }

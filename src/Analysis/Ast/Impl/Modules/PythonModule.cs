@@ -85,7 +85,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Check.ArgumentNotNull(nameof(services), services);
 
             FileSystem = services.GetService<IFileSystem>();
-            Locations = new[] { new LocationInfo(creationOptions.FilePath, creationOptions.Uri, 1, 1) };
+            Location = new LocationInfo(creationOptions.FilePath, creationOptions.Uri, 1, 1);
 
             var uri = creationOptions.Uri;
             if (uri == null && !string.IsNullOrEmpty(creationOptions.FilePath)) {
@@ -116,7 +116,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 _documentation = _documentation ?? _ast?.Documentation;
                 if (_documentation == null) {
                     var m = GetMember("__doc__");
-                    _documentation = (m as AstPythonStringLiteral)?.Value ?? string.Empty;
+                    _documentation = (m as PythonStringLiteral)?.Value ?? string.Empty;
                     if (string.IsNullOrEmpty(_documentation)) {
                         m = GetMember($"_{Name}");
                         _documentation = m?.Documentation;
@@ -202,7 +202,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region ILocatedMember
-        public virtual IEnumerable<LocationInfo> Locations { get; }
+        public virtual LocationInfo Location { get; }
         #endregion
 
         #region IDisposable

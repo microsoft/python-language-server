@@ -13,19 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("({MemberType}, {TypeId})")]
-    internal class AstPythonConstant : PythonTypeWrapper, IPythonConstant {
-        public AstPythonConstant(IPythonType type, params LocationInfo[] locations) :
+
+    /// <summary>
+    /// Represents instance of the type, such as instance of a class,
+    /// rather than the class type itself.
+    /// </summary>
+    internal class PythonInstance : PythonTypeWrapper, IPythonInstance {
+        public PythonInstance(IPythonType type, LocationInfo location) :
             base(type, type.DeclaringModule) {
-            Locations = locations.ToArray();
+            Location = location ?? LocationInfo.Empty;
         }
 
-        public override IEnumerable<LocationInfo> Locations { get; }
+        public override LocationInfo Location { get; }
         public IPythonType Type => InnerType;
     }
 }

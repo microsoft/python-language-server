@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Types {
         ) : this(name, typeId, isTypeFactory) {
             Documentation = doc;
             DeclaringModule = declaringModule;
-            Locations = loc != null ? new[] { loc } : Array.Empty<LocationInfo>();
+            Location = loc ?? LocationInfo.Empty;
             IsTypeFactory = isTypeFactory;
         }
 
@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual string Name {
             get {
                 lock (_lock) {
-                    return Members.TryGetValue("__name__", out var nameMember) && nameMember is AstPythonStringLiteral lit ? lit.Value : _name;
+                    return Members.TryGetValue("__name__", out var nameMember) && nameMember is PythonStringLiteral lit ? lit.Value : _name;
                 }
             }
         }
@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region ILocatedMember
-        public virtual IEnumerable<LocationInfo> Locations { get; } = Array.Empty<LocationInfo>();
+        public virtual LocationInfo Location { get; } = LocationInfo.Empty;
         #endregion
 
         #region IHasQualifiedName
@@ -129,7 +129,7 @@ namespace Microsoft.Python.Analysis.Types {
                 Name,
                 DeclaringModule,
                 Documentation,
-                Locations.FirstOrDefault(),
+                Location,
                 TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId, 
                 true);
             clone.AddMembers(Members, true);

@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Types {
         ) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             _parameters = parameters?.ToArray() ?? throw new ArgumentNullException(nameof(parameters));
-            Locations = loc != null ? new[] { loc } : Array.Empty<LocationInfo>();
+            Location = loc ?? LocationInfo.Empty;
             ReturnDocumentation = returnDocumentation;
         }
 
@@ -48,6 +48,6 @@ namespace Microsoft.Python.Analysis.Types {
         public string ReturnDocumentation { get; }
         public IParameterInfo[] GetParameters() => _parameters.ToArray();
         public IPythonType ReturnType { get; private set; }
-        public IEnumerable<LocationInfo> Locations { get; }
+        public LocationInfo Location { get; }
     }
 }

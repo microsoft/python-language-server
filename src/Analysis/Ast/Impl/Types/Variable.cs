@@ -24,14 +24,14 @@ namespace Microsoft.Python.Analysis.Types {
             Name = name;
             Type = type;
             if (location != null) {
-                Locations = new[] { location };
+                Location = location;
             } else {
-                Locations = type is ILocatedMember lm ? lm.Locations : new[] { LocationInfo.Empty };
+                Location = type is ILocatedMember lm ? lm.Location : LocationInfo.Empty;
             }
         }
 
         public string Name { get; }
         public IPythonType Type { get; }
-        public IEnumerable<LocationInfo> Locations { get; }
+        public LocationInfo Location { get; }
     }
 }

@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     if (_self != null) {
                         var p0 = Target.Parameters.FirstOrDefault();
                         if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
-                            _lookup.DeclareVariable(p0.Name, _self);
+                            _lookup.DeclareVariable(p0.Name, _self, p0.NameExpression);
                             skip++;
                         }
                     }
@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Declare parameters in scope
                     foreach (var p in Target.Parameters.Skip(skip).Where(p => !string.IsNullOrEmpty(p.Name))) {
                         var value = await _lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken);
-                        _lookup.DeclareVariable(p.Name, value ?? _lookup.UnknownType);
+                        _lookup.DeclareVariable(p.Name, value, p.NameExpression);
                     }
 
                     // return type from the annotation always wins, no need to walk the body.
@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 // Basic assignment
                 foreach (var ne in node.Left.OfType<NameExpression>()) {
-                    _lookup.DeclareVariable(ne.Name, value);
+                    _lookup.DeclareVariable(ne.Name, value, ne);
                 }
             }
             return await base.WalkAsync(node, cancellationToken);
@@ -132,13 +132,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // by assigning type to the value unless clause is raising exception.
             var ce = node.Tests.FirstOrDefault()?.Test as CallExpression;
             if (ce?.Target is NameExpression ne && ne?.Name == "isinstance" && ce.Args.Count == 2) {
-                var name = (ce.Args[0].Expression as NameExpression)?.Name;
+                var nex = ce.Args[0].Expression as NameExpression;
+                var name = nex?.Name;
                 var typeName = (ce.Args[1].Expression as NameExpression)?.Name;
                 if (name != null && typeName != null) {
                     var typeId = typeName.GetTypeId();
                     if (typeId != BuiltinTypeId.Unknown) {
-                        _lookup.DeclareVariable(name,
-                            new AstPythonConstant(new PythonType(typeName, typeId)));
+                        _lookup.DeclareVariable(name, new PythonType(typeName, typeId), nex);
                     }
                 }
             }
