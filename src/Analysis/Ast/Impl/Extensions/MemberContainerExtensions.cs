@@ -13,8 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Modules {
-    internal sealed class SentinelModule : PythonModule {
-        public SentinelModule(string name): base(name, ModuleType.Unresolved, null) { }
+namespace Microsoft.Python.Analysis.Types {
+    public static class MemberContainerExtensions {
+        public static T GetMember<T>(this IMemberContainer mc, string name) where T: class, IPythonType => mc.GetMember(name) as T;
     }
 }

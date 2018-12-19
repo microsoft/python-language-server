@@ -106,6 +106,14 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
+        internal void AddMembers(IPythonClass cls, bool overwrite) {
+            if (cls != null) {
+                var names = cls.GetMemberNames();
+                var members = names.Select(n => new KeyValuePair<string, IPythonType>(n, cls.GetMember(n)));
+                AddMembers(members, overwrite);
+            }
+        }
+
         internal IPythonType AddMember(string name, IPythonType member, bool overwrite) {
             lock (_lock) {
                 if (overwrite || !Members.ContainsKey(name)) {
@@ -130,7 +138,7 @@ namespace Microsoft.Python.Analysis.Types {
                 DeclaringModule,
                 Documentation,
                 Location,
-                TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId, 
+                TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId,
                 true);
             clone.AddMembers(Members, true);
             return clone;

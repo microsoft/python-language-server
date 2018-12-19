@@ -78,25 +78,29 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public void Mro() {
-            var O = new PythonClass("O");
-            var A = new PythonClass("A");
-            var B = new PythonClass("B");
-            var C = new PythonClass("C");
-            var D = new PythonClass("D");
-            var E = new PythonClass("E");
-            var F = new PythonClass("F");
+        public async Task Mro() {
+            using (var s = await CreateServicesAsync(null)) {
+                var interpreter = s.GetService<IPythonInterpreter>();
 
-            F.SetBases(null, new[] { O });
-            E.SetBases(null, new[] { O });
-            D.SetBases(null, new[] { O });
-            C.SetBases(null, new[] { D, F });
-            B.SetBases(null, new[] { D, E });
-            A.SetBases(null, new[] { B, C });
+                var O = new PythonClass("O");
+                var A = new PythonClass("A");
+                var B = new PythonClass("B");
+                var C = new PythonClass("C");
+                var D = new PythonClass("D");
+                var E = new PythonClass("E");
+                var F = new PythonClass("F");
 
-            PythonClass.CalculateMro(A).Should().Equal(new[] { "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
-            PythonClass.CalculateMro(B).Should().Equal(new[] { "B", "D", "E", "O" }, (p, n) => p.Name == n);
-            PythonClass.CalculateMro(C).Should().Equal(new[] { "C", "D", "F", "O" }, (p, n) => p.Name == n);
+                F.SetBases(interpreter, new[] {O});
+                E.SetBases(interpreter, new[] {O});
+                D.SetBases(interpreter, new[] {O});
+                C.SetBases(interpreter, new[] {D, F});
+                B.SetBases(interpreter, new[] {D, E});
+                A.SetBases(interpreter, new[] {B, C});
+
+                PythonClass.CalculateMro(A).Should().Equal(new[] {"A", "B", "C", "D", "E", "F", "O"}, (p, n) => p.Name == n);
+                PythonClass.CalculateMro(B).Should().Equal(new[] {"B", "D", "E", "O"}, (p, n) => p.Name == n);
+                PythonClass.CalculateMro(C).Should().Equal(new[] {"C", "D", "F", "O"}, (p, n) => p.Name == n);
+            }
         }
 
         [TestMethod, Priority(0)]

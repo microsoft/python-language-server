@@ -13,30 +13,48 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Delegates most of the methods to the wrapped/inner class.
     /// </summary>
-    internal class PythonTypeWrapper : PythonType {
+    internal class PythonTypeWrapper : IPythonType, ILocatedMember, IHasQualifiedName {
         protected IPythonType InnerType { get; }
 
         public PythonTypeWrapper(IPythonType type)
-            : this(type, type.DeclaringModule) { }
-
-        public PythonTypeWrapper(IPythonType type, IPythonModule declaringModule)
-            : base(type?.Name ?? "<type wrapper>", declaringModule, type?.Documentation,
-             (type as ILocatedMember)?.Location) {
-            InnerType = type;
+            : this(type, type.DeclaringModule) {
         }
 
-        public override BuiltinTypeId TypeId => InnerType?.TypeId ?? BuiltinTypeId.Unknown;
-        public override PythonMemberType MemberType => InnerType?.MemberType ?? PythonMemberType.Unknown;
-        public override IPythonType GetMember(string name) => InnerType?.GetMember(name);
-        public override IEnumerable<string> GetMemberNames() => InnerType?.GetMemberNames();
+        public PythonTypeWrapper(IPythonType type, IPythonModule declaringModule) {
+            InnerType = type ?? throw new ArgumentNullException(nameof(type));
+            DeclaringModule = declaringModule;
+        }
 
+        #region IPythonType
+        public virtual string Name => InnerType.Name;
+        public IPythonModule DeclaringModule { get; }
+        public virtual string Documentation => InnerType.Documentation;
+        public virtual  BuiltinTypeId TypeId => InnerType.TypeId;
+        public virtual  PythonMemberType MemberType => InnerType.MemberType;
+        public virtual  bool IsBuiltin => InnerType.IsBuiltin;
+        public virtual  bool IsTypeFactory => InnerType.IsTypeFactory;
+        public virtual  IPythonFunction GetConstructor() => InnerType.GetConstructor();
+        #endregion
+
+        #region ILocatedMember
+        public virtual LocationInfo Location => (InnerType as ILocatedMember)?.Location ?? LocationInfo.Empty;
+        #endregion
+
+        #region IMemberContainer
+        public IPythonType GetMember(string name) => InnerType.GetMember(name);
+        public IEnumerable<string> GetMemberNames() => InnerType.GetMemberNames();
+        #endregion
+
+        #region IHasQualifiedName
+        public virtual string FullyQualifiedName => (InnerType as IHasQualifiedName)?.FullyQualifiedName;
+        public virtual KeyValuePair<string, string> FullyQualifiedNamePair => (InnerType as IHasQualifiedName)?.FullyQualifiedNamePair ?? default;
+        #endregion
     }
 }

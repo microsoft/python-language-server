@@ -16,15 +16,13 @@
 using System.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
-    [DebuggerDisplay("({MemberType}, {TypeId})")]
-
     /// <summary>
     /// Represents instance of the type, such as instance of a class,
     /// rather than the class type itself.
     /// </summary>
+    [DebuggerDisplay("Instance of {Type.Name}")]
     internal class PythonInstance : PythonTypeWrapper, IPythonInstance {
-        public PythonInstance(IPythonType type, LocationInfo location) :
-            base(type, type.DeclaringModule) {
+        public PythonInstance(IPythonType type, LocationInfo location) : base(type) {
             Location = location ?? LocationInfo.Empty;
         }
 

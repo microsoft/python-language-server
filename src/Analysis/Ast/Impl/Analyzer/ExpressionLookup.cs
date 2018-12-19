@@ -460,6 +460,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public IPythonType GetInScope(string name) => CurrentScope.Variables.GetMember(name);
+        public T GetInScope<T>(string name) where T: class, IPythonType => CurrentScope.Variables.GetMember(name) as T;
 
         public void DeclareVariable(string name, IPythonType type, Node expression)
             => DeclareVariable(name, type, GetLoc(expression));

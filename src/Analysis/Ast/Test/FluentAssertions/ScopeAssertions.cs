@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected scope '{Subject.Name}' to have variable '{name}'{{reason}}.");
 
-            return new AndWhichConstraint<TScopeAssertions, VariableTestInfo>((TScopeAssertions)this, new VariableTestInfo(name, t, Subject));
+            return new AndWhichConstraint<TScopeAssertions, VariableTestInfo>((TScopeAssertions)this, new VariableTestInfo(new Variable(name, t), Subject));
         }
         
         public AndConstraint<TScopeAssertions> HaveClassVariables(params string[] classNames)

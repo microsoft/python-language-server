@@ -30,7 +30,8 @@ namespace Microsoft.Python.Analysis.Documents {
         /// </summary>
         /// <param name="uri">Document URI.</param>
         /// <param name="content">Document content</param>
-        IDocument AddDocument(Uri uri, string content);
+        /// <param name="filePath">Optional file path, if different from the URI.</param>
+        IDocument AddDocument(Uri uri, string content, string filePath = null);
 
         /// <summary>
         /// Adds library module to the list of available documents.

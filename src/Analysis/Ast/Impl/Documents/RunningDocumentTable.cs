@@ -34,12 +34,14 @@ namespace Microsoft.Python.Analysis.Documents {
         private readonly Dictionary<string, IDocument> _documentsByName = new Dictionary<string, IDocument>();
         private readonly IServiceContainer _services;
         private readonly IFileSystem _fs;
+        private readonly IModuleResolution _moduleResolution;
         private readonly string _workspaceRoot;
 
         public RunningDocumentTable(string workspaceRoot, IServiceContainer services) {
             _workspaceRoot = workspaceRoot;
             _services = services;
             _fs = services.GetService<IFileSystem>();
+            _moduleResolution = services.GetService<IPythonInterpreter>().ModuleResolution;
         }
 
         public event EventHandler<DocumentEventArgs> Opened;
@@ -50,7 +52,8 @@ namespace Microsoft.Python.Analysis.Documents {
         /// </summary>
         /// <param name="uri">Document URI.</param>
         /// <param name="content">Document content</param>
-        public IDocument AddDocument(Uri uri, string content) {
+        /// <param name="filePath">Optional file path, if different from the URI.</param>
+        public IDocument AddDocument(Uri uri, string content, string filePath = null) {
             var document = FindDocument(null, uri);
             if (document != null) {
                 return OpenDocument(document, ModuleLoadOptions.Open);
@@ -59,6 +62,7 @@ namespace Microsoft.Python.Analysis.Documents {
             var mco = new ModuleCreationOptions {
                 ModuleName = Path.GetFileNameWithoutExtension(uri.LocalPath),
                 Content = content,
+                FilePath = filePath,
                 Uri = uri,
                 ModuleType = ModuleType.User,
                 LoadOptions = ModuleLoadOptions.Open
@@ -95,6 +99,7 @@ namespace Microsoft.Python.Analysis.Documents {
                 _documentsByName.Remove(document.Name);
                 document.IsOpen = false;
                 Closed?.Invoke(this, new DocumentEventArgs(document));
+                // TODO: Remove from module resolution?
             }
         }
 
@@ -139,6 +144,7 @@ namespace Microsoft.Python.Analysis.Documents {
             _documentsByUri[document.Uri] = document;
             _documentsByName[mco.ModuleName] = document;
 
+            _moduleResolution.AddModulePath(document.FilePath);
             return OpenDocument(document, mco.LoadOptions);
         }
 

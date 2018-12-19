@@ -38,10 +38,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             LanguageVersion = Configuration.Version.ToLanguageVersion();
         }
 
-        public static async Task<IPythonInterpreter> CreateAsync(InterpreterConfiguration configuration, IServiceManager sm, CancellationToken cancellationToken = default) {
+        public static async Task<IPythonInterpreter> CreateAsync(InterpreterConfiguration configuration, string root, IServiceManager sm, CancellationToken cancellationToken = default) {
             var pi = new PythonInterpreter(configuration);
             sm.AddService(pi);
-            pi._moduleResolution = new ModuleResolution(sm);
+            pi._moduleResolution = new ModuleResolution(root, sm);
             await pi._moduleResolution.LoadBuiltinTypesAsync(cancellationToken);
             return pi;
         }

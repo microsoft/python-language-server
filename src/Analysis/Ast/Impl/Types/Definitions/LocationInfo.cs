@@ -15,10 +15,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Types {
     public sealed class LocationInfo : IEquatable<LocationInfo> {
+        [DebuggerDisplay("{StartLine}, {StartColumn} - {EndLine}, {EndColumn}")]
         public static readonly LocationInfo Empty = new LocationInfo();
 
         private LocationInfo() {

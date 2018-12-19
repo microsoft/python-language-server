@@ -76,6 +76,19 @@ scanner = _json.make_scanner()";
         }
 
         [TestMethod, Priority(0)]
+        public async Task MergeStubs() {
+            var analysis = await GetAnalysisAsync("import Package.Module\n\nc = Package.Module.Class()");
+
+            analysis.Should()
+                .HaveVariable("Package")
+                    .Which.Type.Should().HaveMember<IPythonModule>("Module");
+
+            analysis.Should().HaveVariable("c")
+                .Which.Type.Should().HaveMembers("untyped_method", "inferred_method", "typed_method")
+                .And.NotHaveMembers("typed_method_2");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task TypeStubConditionalDefine() {
             var seen = new HashSet<Version>();
 
@@ -99,9 +112,9 @@ if sys.version_info >= (2, 7):
                     continue;
                 }
 
-                Console.WriteLine("Testing with {0}", ver.InterpreterPath);
+                Console.WriteLine(@"Testing with {0}", ver.InterpreterPath);
                 using (var s = await CreateServicesAsync(TestData.Root, ver)) {
-                    var analysis = await GetAnalysisAsync(code, s, "testmodule", TestData.GetTestSpecificPath("testmodule.pyi"));
+                    var analysis = await GetAnalysisAsync(code, s, @"testmodule", TestData.GetTestSpecificPath(@"testmodule.pyi"));
 
                     var expected = new List<string>();
                     var pythonVersion = ver.Version.ToLanguageVersion();

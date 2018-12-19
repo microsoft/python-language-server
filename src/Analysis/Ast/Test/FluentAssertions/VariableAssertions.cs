@@ -24,25 +24,26 @@ using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilitie
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     internal sealed class VariableTestInfo {
         private readonly IScope _scope;
-        public string Name { get; }
-        public IPythonType Type { get; }
+        public IVariable Variable { get; }
 
-        public VariableTestInfo(string name, IPythonType type, IScope scope) {
-            Name = name;
-            Type = type;
+        public string Name => Variable.Name;
+        public IPythonType Type => Variable.Type;
+
+        public VariableTestInfo(IVariable variable, IScope scope) {
+            Variable = variable;
             _scope = scope;
         }
 
         public VariableAssertions Should() => new VariableAssertions(new Variable(Name, Type), Name, _scope);
     }
 
-    internal sealed class VariableAssertions : ReferenceTypeAssertions<IVariable, VariableAssertions> {
+    internal sealed class VariableAssertions : ReferenceTypeAssertions<VariableTestInfo, VariableAssertions> {
         private readonly string _moduleName;
         private readonly string _name;
         private readonly IScope _scope;
 
         public VariableAssertions(IVariable v, string name, IScope scope) {
-            Subject = v;
+            Subject = new VariableTestInfo(v, scope);
             _name = name;
             _scope = scope;
             _moduleName = scope.Name;
@@ -50,27 +51,19 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         protected override string Identifier => nameof(IVariable);
 
-        public AndConstraint<VariableAssertions> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<VariableAssertions, VariableTestInfo> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
             var languageVersionIs3X = Is3X(_scope);
             AssertTypeIds(new[] { Subject.Type.TypeId }, new[] { typeId }, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
 
-            return new AndConstraint<VariableAssertions>(this);
+            return new AndWhichConstraint<VariableAssertions, VariableTestInfo>(this, Subject);
         }
 
-        public AndConstraint<VariableAssertions> HaveTypes(IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
-            var languageVersionIs3X = Is3X(_scope);
-            var actualTypeIds = new[] { Subject.Type.TypeId };
-
-            AssertTypeIds(actualTypeIds, typeIds, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
-            return new AndConstraint<VariableAssertions>(this);
-        }
-
-        public AndConstraint<VariableAssertions> HaveMemberType(PythonMemberType memberType, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<VariableAssertions, VariableTestInfo> HaveMemberType(PythonMemberType memberType, string because = "", params object[] reasonArgs) {
             Execute.Assertion.ForCondition(Subject.Type is IPythonType av && av.MemberType == memberType)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {_moduleName}.{_name} to be {memberType} {{reason}}.");
 
-            return new AndConstraint<VariableAssertions>(this);
+            return new AndWhichConstraint<VariableAssertions, VariableTestInfo>(this, Subject);
         }
 
         public AndConstraint<VariableAssertions> HaveNoTypes(string because = "", params object[] reasonArgs) {

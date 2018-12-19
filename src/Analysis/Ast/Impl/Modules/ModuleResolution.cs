@@ -39,6 +39,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private readonly IFileSystem _fs;
         private readonly ILogger _log;
         private readonly bool _requireInitPy;
+        private readonly string _root;
 
         private PathResolver _pathResolver;
         private IReadOnlyDictionary<string, string> _searchPathPackages;
@@ -46,7 +47,8 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private InterpreterConfiguration Configuration => _interpreter.Configuration;
 
-        public ModuleResolution(IServiceContainer services) {
+        public ModuleResolution(string root, IServiceContainer services) {
+            _root = root;
             _services = services;
             _interpreter = services.GetService<IPythonInterpreter>();
             _fs = services.GetService<IFileSystem>();
@@ -58,6 +60,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
+            // Add names from search paths
             await ReloadAsync(cancellationToken);
 
             // Initialize built-in
@@ -73,13 +76,6 @@ namespace Microsoft.Python.Analysis.Modules {
             if (builtinModuleNamesMember is PythonStringLiteral builtinModuleNamesLiteral && builtinModuleNamesLiteral.Value != null) {
                 var builtinModuleNames = builtinModuleNamesLiteral.Value.Split(',').Select(n => n.Trim());
                 _pathResolver.SetBuiltins(builtinModuleNames);
-            }
-
-            // Add names from search paths
-            var paths = await GetSearchPathsAsync(cancellationToken);
-            // TODO: how to remove?
-            foreach (var mp in paths.Where(_fs.DirectoryExists).SelectMany(p => _fs.GetFiles(p))) {
-                _pathResolver.TryAddModulePath(mp, out _);
             }
         }
 
@@ -269,10 +265,19 @@ namespace Microsoft.Python.Analysis.Modules {
             ModuleCache = new ModuleCache(_interpreter, _services);
 
             _pathResolver = new PathResolver(_interpreter.LanguageVersion);
+
+            var addedRoots = _pathResolver.SetRoot(_root);
+            ReloadModulePaths(addedRoots);
+
             var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
-            _pathResolver.SetInterpreterSearchPaths(interpreterPaths);
-            _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
+            addedRoots = _pathResolver.SetInterpreterSearchPaths(interpreterPaths);
+            ReloadModulePaths(addedRoots);
+
+            addedRoots = _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
+            ReloadModulePaths(addedRoots);
         }
+
+        public void AddModulePath(string path) => _pathResolver.TryAddModulePath(path, out var _);
 
         /// <summary>
         /// Determines whether the specified directory is an importable package.
@@ -425,6 +430,12 @@ namespace Microsoft.Python.Analysis.Modules {
         private static IReadOnlyCollection<string> GetPackagesFromZipFile(string searchPath, CancellationToken cancellationToken) {
             // TODO: Search zip files for packages
             return new string[0];
+        }
+
+        private void ReloadModulePaths(in IEnumerable<string> rootPaths) {
+            foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(p))) {
+                _pathResolver.TryAddModulePath(modulePath, out _);
+            }
         }
 
         // For tests

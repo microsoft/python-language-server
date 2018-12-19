@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Tests {
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
             configuration.ModuleCachePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
-            configuration.SearchPaths = new[] { root, GetAnalysisTestDataFilesPath() };
+            configuration.SearchPaths = new[] { GetAnalysisTestDataFilesPath() };
             configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
 
             var sm = CreateServiceManager();
@@ -67,11 +67,11 @@ namespace Microsoft.Python.Analysis.Tests {
             var analyzer = new PythonAnalyzer(sm);
             sm.AddService(analyzer);
 
+            var interpreter = await PythonInterpreter.CreateAsync(configuration, root, sm);
+            sm.AddService(interpreter);
+
             var documentTable = new RunningDocumentTable(root, sm);
             sm.AddService(documentTable);
-
-            var interpreter = await PythonInterpreter.CreateAsync(configuration, sm);
-            sm.AddService(interpreter);
 
             return sm;
         }
@@ -99,18 +99,23 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var moduleUri = TestData.GetDefaultModuleUri();
             modulePath = modulePath ?? TestData.GetDefaultModulePath();
-            moduleName = Path.GetFileNameWithoutExtension(modulePath);
-            var moduleDirectory = Path.GetDirectoryName(modulePath);
+            moduleName = moduleName ?? Path.GetFileNameWithoutExtension(modulePath);
 
-            var mco = new ModuleCreationOptions {
-                ModuleName = moduleName,
-                Content = code,
-                FilePath = modulePath,
-                Uri = moduleUri,
-                ModuleType = ModuleType.User,
-                LoadOptions = ModuleLoadOptions.Analyze
-            };
-            var doc = new PythonModule(mco, services);
+            IDocument doc;
+            var rdt = services.GetService<IRunningDocumentTable>();
+            if (rdt != null) {
+                doc = rdt.AddDocument(moduleUri, code, modulePath);
+            } else {
+                var mco = new ModuleCreationOptions {
+                    ModuleName = moduleName,
+                    Content = code,
+                    FilePath = modulePath,
+                    Uri = moduleUri,
+                    ModuleType = ModuleType.User,
+                    LoadOptions = ModuleLoadOptions.Analyze
+                };
+                doc = new PythonModule(mco, services);
+            }
 
             var ast = await doc.GetAstAsync(CancellationToken.None);
             ast.Should().NotBeNull();

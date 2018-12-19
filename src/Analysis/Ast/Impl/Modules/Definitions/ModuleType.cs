@@ -49,8 +49,13 @@ namespace Microsoft.Python.Analysis.Modules {
         Builtins,
 
         /// <summary>
-        /// Module is an empty placeholder such as fallback or sentinel.
+        /// Module that contains child modules
         /// </summary>
-        Empty
+        Package,
+
+        /// <summary>
+        /// Unresolved import.
+        /// </summary>
+        Unresolved
     }
 }

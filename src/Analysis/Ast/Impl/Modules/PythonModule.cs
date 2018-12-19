@@ -180,23 +180,25 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         protected virtual string LoadContent() {
-            if ((_options & ModuleLoadOptions.Load) == ModuleLoadOptions.Load && ModuleType != ModuleType.Empty) {
+            if ((_options & ModuleLoadOptions.Load) == ModuleLoadOptions.Load && ModuleType != ModuleType.Unresolved) {
                 return FileSystem.ReadAllText(FilePath);
             }
             return string.Empty;
         }
 
         private void InitializeContent(string content) {
-            content = content ?? LoadContent();
-            _buffer.Reset(0, content);
+            lock (_analysisLock) {
+                content = content ?? LoadContent();
+                _buffer.Reset(0, content);
 
-            _loaded = true;
+                _loaded = true;
 
-            if ((_options & ModuleLoadOptions.Analyze) == ModuleLoadOptions.Analyze) {
-                _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
-            }
-            if ((_options & ModuleLoadOptions.Ast) == ModuleLoadOptions.Ast) {
-                Parse();
+                if ((_options & ModuleLoadOptions.Analyze) == ModuleLoadOptions.Analyze) {
+                    _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
+                }
+                if ((_options & ModuleLoadOptions.Ast) == ModuleLoadOptions.Ast) {
+                    Parse();
+                }
             }
         }
         #endregion

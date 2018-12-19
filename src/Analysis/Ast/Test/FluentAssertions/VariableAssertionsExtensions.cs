@@ -28,16 +28,6 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return andWhichConstraint;
         }
 
-        public static AndWhichConstraint<TAssertion, VariableTestInfo> OfTypes<TAssertion>(
-            this AndWhichConstraint<TAssertion, VariableTestInfo> andWhichConstraint, params BuiltinTypeId[] typeIds)
-            => andWhichConstraint.OfTypes(typeIds, string.Empty);
-
-        public static AndWhichConstraint<TAssertion, VariableTestInfo> OfTypes<TAssertion>(
-            this AndWhichConstraint<TAssertion, VariableTestInfo> andWhichConstraint, IEnumerable<BuiltinTypeId> typeIds, string because = "", params object[] reasonArgs) {
-            andWhichConstraint.Which.Should().HaveTypes(typeIds, because, reasonArgs);
-            return andWhichConstraint;
-        }
-
         public static AndWhichConstraint<TAssertion, VariableTestInfo> WithNoTypes<TAssertion>(
             this AndWhichConstraint<TAssertion, VariableTestInfo> andWhichConstraint, string because = "", params object[] reasonArgs) {
             andWhichConstraint.Which.Should().HaveNoTypes(because, reasonArgs);

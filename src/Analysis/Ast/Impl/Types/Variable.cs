@@ -14,8 +14,10 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
+    [DebuggerDisplay("{Name} : {Type.Name}")]
     internal sealed class Variable : IVariable {
         public Variable(KeyValuePair<string, IPythonType> kvp, LocationInfo location = null) 
             : this(kvp.Key, kvp.Value, location) { }

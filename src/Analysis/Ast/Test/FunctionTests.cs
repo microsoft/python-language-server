@@ -74,7 +74,7 @@ nt = namedtuple('Point', ['x', 'y'])
 pt = nt(1, 2)
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Should().HaveVariable("pt").OfTypes(BuiltinTypeId.Tuple);
+            analysis.Should().HaveVariable("pt").OfType(BuiltinTypeId.Tuple);
         }
 
         [TestMethod, Priority(0)]
@@ -84,9 +84,9 @@ x = f()
 y = g()";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Should().HaveVariable("x").OfTypes(BuiltinTypeId.Int)
-                .And.HaveVariable("y").OfTypes(BuiltinTypeId.Str)
-                .And.HaveVariable("f").OfTypes(BuiltinTypeId.Function)
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Function)
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveSingleParameter()
                 .Which.Should().HaveName("p").And.HaveType("int").And.HaveNoDefaultValue();

@@ -53,5 +53,7 @@ namespace Microsoft.Python.Analysis.Modules {
         IModuleCache ModuleCache { get; }
 
         Task ReloadAsync(CancellationToken token = default);
+
+        void AddModulePath(string path);
     }
 }

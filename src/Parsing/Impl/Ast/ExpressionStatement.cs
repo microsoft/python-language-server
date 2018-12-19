@@ -44,13 +44,11 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override string Documentation {
             get {
-                var ce = Expression as ConstantExpression;
-                if (ce != null) {
-                    if (ce.Value is string) {
-                        return ce.Value as string;
-                    } else if (ce.Value is AsciiString) {
-                        return ((AsciiString)ce.Value).String;
+                if (Expression is ConstantExpression ce) {
+                    if (ce.Value is string s) {
+                        return s;
                     }
+                    return ce.Value is AsciiString ? ((AsciiString)ce.Value).String : null;
                 }
                 return null;
             }

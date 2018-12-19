@@ -17,9 +17,11 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Types {
+    [DebuggerDisplay("Count: {Count}")]
     internal sealed class VariableCollection : IVariableCollection {
         public static readonly IVariableCollection Empty = new VariableCollection();
         private readonly ConcurrentDictionary<string, IVariable> _variables = new ConcurrentDictionary<string, IVariable>();

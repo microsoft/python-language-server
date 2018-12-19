@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public sealed class SuiteStatement : Statement {
@@ -31,10 +32,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                if (_statements != null) {
-                    foreach (var s in _statements) {
-                        s.Walk(walker);
-                    }
+                foreach (var s in _statements.MaybeEnumerate()) {
+                    s.Walk(walker);
                 }
             }
             walker.PostWalk(this);
@@ -42,24 +41,15 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                if (_statements != null) {
-                    foreach (var s in _statements) {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        await s.WalkAsync(walker, cancellationToken);
-                    }
+                foreach (var s in _statements.MaybeEnumerate()) {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await s.WalkAsync(walker, cancellationToken);
                 }
             }
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        public override string Documentation {
-            get {
-                if (_statements.Length > 0) {
-                    return _statements[0].Documentation;
-                }
-                return null;
-            }
-        }
+        public override string Documentation => _statements.Length > 0 ? _statements[0].Documentation : null;
 
         /// <summary>
         /// Returns a new SuiteStatement which is composed of a subset of the statements in this suite statement.
