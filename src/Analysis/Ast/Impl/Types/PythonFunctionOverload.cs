@@ -16,10 +16,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
-        private readonly IReadOnlyList<IParameterInfo> _parameters;
+        private IPythonType _returnType;
 
         public PythonFunctionOverload(
             string name,
@@ -28,7 +29,7 @@ namespace Microsoft.Python.Analysis.Types {
             string returnDocumentation = null
         ) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            _parameters = parameters?.ToArray() ?? throw new ArgumentNullException(nameof(parameters));
+            Parameters = parameters?.ToArray() ?? throw new ArgumentNullException(nameof(parameters));
             Location = loc ?? LocationInfo.Empty;
             ReturnDocumentation = returnDocumentation;
         }
@@ -41,13 +42,19 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal void AddReturnType(IPythonType type) 
-            => ReturnType = ReturnType == null ? type : PythonUnion.Combine(ReturnType, type);
+            => _returnType = _returnType == null ? type : PythonUnion.Combine(_returnType, type);
 
         public string Name { get; }
         public string Documentation { get; private set; }
         public string ReturnDocumentation { get; }
-        public IParameterInfo[] GetParameters() => _parameters.ToArray();
-        public IPythonType ReturnType { get; private set; }
+        public IReadOnlyList<IParameterInfo> Parameters { get; }
         public LocationInfo Location { get; }
+
+        public IPythonType GetReturnType(IReadOnlyList<IPythonType> args) {
+            if (_returnType is IPythonCallableArgumentType cat) {
+                return cat.ParameterIndex < args.Count ? args[cat.ParameterIndex] : _returnType;
+            }
+            return _returnType;
+        }
     }
 }

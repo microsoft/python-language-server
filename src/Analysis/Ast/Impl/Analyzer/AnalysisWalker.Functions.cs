@@ -149,7 +149,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (t is IPythonFunction f) {
                 return f.Overloads
                     .OfType<PythonFunctionOverload>()
-                    .FirstOrDefault(o => o.GetParameters().Length == node.Parameters.Length);
+                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Length);
             }
 
             return null;

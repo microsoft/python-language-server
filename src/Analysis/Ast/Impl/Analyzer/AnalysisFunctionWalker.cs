@@ -65,9 +65,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
 
                     // Declare parameters in scope
-                    foreach (var p in Target.Parameters.Skip(skip).Where(p => !string.IsNullOrEmpty(p.Name))) {
-                        var value = await _lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken);
-                        _lookup.DeclareVariable(p.Name, value, p.NameExpression);
+                    for(var i = skip; i < Target.Parameters.Length; i++) {
+                        var p = Target.Parameters[i];
+                        if (!string.IsNullOrEmpty(p.Name)) {
+                            var defaultValue = await _lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? _lookup.UnknownType;
+                            var argType = new PythonCallableArgumentType(i, defaultValue);
+                            _lookup.DeclareVariable(p.Name, argType, p.NameExpression);
+                        }
                     }
 
                     // return type from the annotation always wins, no need to walk the body.

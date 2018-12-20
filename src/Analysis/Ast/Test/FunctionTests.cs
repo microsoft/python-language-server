@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod, Priority(0)]
         [Ignore("https://github.com/microsoft/python-language-server/issues/406")]
         public async Task NamedTupleReturnAnnotation() {
-            var code = @"
+            const string code = @"
 from ReturnAnnotation import *
 nt = namedtuple('Point', ['x', 'y'])
 pt = nt(1, 2)
@@ -94,17 +94,55 @@ y = g()";
 
         [TestMethod, Priority(0)]
         public async Task ParameterAnnotation() {
-            var code = @"
+            const string code = @"
 s = None
 def f(s: s = 123):
     return s
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType)
-                .And.HaveFunction("f")
+            analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType);
+            analysis.Should().HaveFunction("f")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveSingleParameter()
                 .Which.Should().HaveName("s").And.HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReturnValueEval() {
+            const string code = @"
+def f(a, b):
+    return a + b
+
+x = f('x', 'y')
+y = f(1, 2)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("f")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveReturnType(BuiltinTypeId.Unknown);
+
+            analysis.Should()
+                .HaveVariable("x").OfType(BuiltinTypeId.Unicode).And
+                .HaveVariable("y").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReturnValueAnnotated() {
+            const string code = @"
+def f(a, b) -> str:
+    return a + b
+
+x = f('x', 'y')
+y = f(1, 2)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("f")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveReturnType(BuiltinTypeId.Unicode);
+
+            analysis.Should()
+                .HaveVariable("x").OfType(BuiltinTypeId.Unicode).And
+                .HaveVariable("y").OfType(BuiltinTypeId.Unicode);
         }
     }
 }

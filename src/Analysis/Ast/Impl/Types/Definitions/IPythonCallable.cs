@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,12 +13,28 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents a single overload of a function.
+    /// Describes callable entity.
     /// </summary>
-    public interface IPythonFunctionOverload: IPythonCallable {
-        string Name { get; }
-        string Documentation { get; }
+    public interface IPythonCallable {
+        /// <summary>
+        /// Describes callable parameters.
+        /// </summary>
+        IReadOnlyList<IParameterInfo> Parameters { get; }
+
+        /// <summary>
+        /// Determines return value type given arguments.
+        /// For annotated or stubbed functions the annotation
+        /// type is always returned.
+        /// </summary>
+        IPythonType GetReturnType(IReadOnlyList<IPythonType> args = null);
+
+        /// <summary>
+        /// Return value documentation.
+        /// </summary>
+        string ReturnDocumentation { get; }
     }
 }

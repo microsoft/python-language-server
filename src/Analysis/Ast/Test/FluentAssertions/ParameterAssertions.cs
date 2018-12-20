@@ -37,6 +37,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<ParameterAssertions, IPythonType>(this, Subject.Type);
         }
         public AndWhichConstraint<ParameterAssertions, IPythonType> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
+            Subject.Type.Should().NotBeNull();
             Subject.Type.TypeId.Should().Be(typeId);
             return new AndWhichConstraint<ParameterAssertions, IPythonType>(this, Subject.Type);
         }

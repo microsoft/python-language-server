@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,12 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Types {
+using Microsoft.Python.Analysis.Types;
+
+namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
-    /// Represents a single overload of a function.
+    /// Represents pseudo-type that turns into specific type
+    /// when function return type depends on the arguments passed.
     /// </summary>
-    public interface IPythonFunctionOverload: IPythonCallable {
-        string Name { get; }
-        string Documentation { get; }
+    internal interface IPythonCallableArgumentType: IPythonType {
+        /// <summary>
+        /// Index of the input argument which type should be used as return type.
+        /// </summary>
+        int ParameterIndex { get; }
     }
 }

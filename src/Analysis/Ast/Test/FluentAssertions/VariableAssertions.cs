@@ -109,7 +109,11 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             var overload = constraint.Which;
             var function = Subject.Type as IPythonFunction;
 
-            Execute.Assertion.ForCondition(overload.GetParameters().Length > 0)
+            Execute.Assertion.ForCondition(function != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject.Name} to be a function, but it is {Subject.Type}.");
+
+            Execute.Assertion.ForCondition(overload.Parameters.Count > 0)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected overload at index {index} of {function.DeclaringModule.Name}.{function.Name} to have parameters{{reason}}, but it has none.");
 
@@ -117,17 +121,18 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveOverloadAt(int index, string because = "", params object[] reasonArgs) {
-            var f = Subject.Type as IPythonFunction;
-            Execute.Assertion.ForCondition(f != null)
+            var function = Subject.Type as IPythonFunction;
+
+            Execute.Assertion.ForCondition(function != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {Subject.Name} to be a function, but it is {Subject.Type}.");
 
-            var overloads = f.Overloads.ToArray();
+            var overloads = function.Overloads.ToArray();
             Execute.Assertion.ForCondition(overloads.Length > index)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {f.Name} to have overload at index {index}{{reason}}, but it {GetOverloadsString(overloads.Length)}.");
+                .FailWith($"Expected {function.Name} to have overload at index {index}{{reason}}, but it {GetOverloadsString(overloads.Length)}.");
 
-            return new AndWhichConstraint<VariableAssertions, IPythonFunctionOverload>(this, f.Overloads[index]);
+            return new AndWhichConstraint<VariableAssertions, IPythonFunctionOverload>(this, function.Overloads[index]);
         }
 
         private static string GetOverloadsString(int overloadsCount)

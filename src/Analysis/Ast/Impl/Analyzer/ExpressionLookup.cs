@@ -120,23 +120,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     m = GetValueFromName(nex, options);
                     break;
                 case MemberExpression mex:
-                    m = await GetValueFromMemberAsync(mex, options, cancellationToken);
+                    m = await GetValueFromMemberAsync(mex, cancellationToken);
                     break;
                 case CallExpression cex:
                     m = await GetValueFromCallableAsync(cex, options, cancellationToken);
                     break;
                 case UnaryExpression uex:
-                    m = await GetValueFromUnaryOpAsync(uex, options, cancellationToken);
+                    m = await GetValueFromUnaryOpAsync(uex, cancellationToken);
                     break;
                 case IndexExpression iex:
-                    m = await GetValueFromIndexAsync(iex, options, cancellationToken);
+                    m = await GetValueFromIndexAsync(iex, cancellationToken);
                     break;
                 case ConditionalExpression coex:
-                    m = await GetValueFromConditionalAsync(coex, options, cancellationToken);
+                    m = await GetValueFromConditionalAsync(coex, cancellationToken);
                     break;
                 default:
-                    m = await GetValueFromBinaryOpAsync(expr, options, cancellationToken)
-                        ?? GetConstantFromLiteral(expr, options);
+                    m = await GetValueFromBinaryOpAsync(expr, cancellationToken) ?? GetConstantFromLiteral(expr, options);
                     break;
             }
             if (m == null) {
@@ -162,42 +161,33 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return UnknownType;
         }
 
-        private async Task<IPythonType> GetValueFromMemberAsync(MemberExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
-            if (expr?.Target == null || string.IsNullOrEmpty(expr?.Name)) {
+        private async Task<IPythonType> GetValueFromMemberAsync(MemberExpression expr, CancellationToken cancellationToken = default) {
+            if (expr?.Target == null || string.IsNullOrEmpty(expr.Name)) {
                 return null;
             }
 
-            var e = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            IPythonType value = null;
-            switch (e) {
-                case IMemberContainer mc:
-                    value = mc.GetMember(expr.Name);
-                    // If container is class rather than the instance, then method is an unbound function.
-                    value = mc is IPythonClass c && value is PythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
-                    break;
+            var mc = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
+            var value = mc.GetMember(expr.Name);
+            // If container is class rather than the instance, then method is an unbound function.
+            value = mc is IPythonClass c && value is PythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
+
+            switch (value) {
+                case IPythonProperty p:
+                    return await GetPropertyReturnTypeAsync(p, expr, cancellationToken);
+                case IPythonFunction fn:
+                    return await GetValueFromFunctionAsync(fn, expr, cancellationToken);
+                case null:
+                    _log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
+                    return UnknownType;
                 default:
-                    value = await GetValueFromPropertyOrFunctionAsync(e, expr, cancellationToken);
-                    break;
+                    return value;
             }
-
-            if (value is IPythonProperty p) {
-                value = await GetPropertyReturnTypeAsync(p, expr, cancellationToken);
-            } else if (value == null) {
-                _log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
-                return UnknownType;
-            }
-            return value;
         }
 
-        private Task<IPythonType> GetValueFromUnaryOpAsync(UnaryExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
-            if (expr?.Expression == null) {
-                return null;
-            }
-            // Assume that the type after the op is the same as before
-            return GetValueFromExpressionAsync(expr.Expression, cancellationToken);
-        }
+        private Task<IPythonType> GetValueFromUnaryOpAsync(UnaryExpression expr, CancellationToken cancellationToken = default)
+            => GetValueFromExpressionAsync(expr?.Expression, cancellationToken);
 
-        private async Task<IPythonType> GetValueFromBinaryOpAsync(Expression expr, LookupOptions options, CancellationToken cancellationToken = default) {
+        private async Task<IPythonType> GetValueFromBinaryOpAsync(Expression expr, CancellationToken cancellationToken = default) {
             if (expr is AndExpression || expr is OrExpression) {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             }
@@ -232,7 +222,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return null;
         }
 
-        private async Task<IPythonType> GetValueFromIndexAsync(IndexExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
+        private async Task<IPythonType> GetValueFromIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
             if (expr?.Target == null) {
                 return null;
             }
@@ -271,7 +261,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return null;
         }
 
-        private async Task<IPythonType> GetValueFromConditionalAsync(ConditionalExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
+        private async Task<IPythonType> GetValueFromConditionalAsync(ConditionalExpression expr, CancellationToken cancellationToken = default) {
             if (expr == null) {
                 return null;
             }
@@ -290,11 +280,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var m = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             IPythonType value = null;
             switch (m) {
+                case IPythonInstance c when c.Type?.MemberType == PythonMemberType.Class:
+                    return c.Type; // typically cls()
                 case IPythonClass cls:
                     value = new PythonInstance(cls, GetLoc(expr));
                     break;
                 case IPythonFunction pf:
-                    value = await GetValueFromPropertyOrFunctionAsync(pf, expr, cancellationToken);
+                    value = await GetValueFromFunctionAsync(pf, expr, cancellationToken);
                     break;
                 case IPythonType type when type == Interpreter.GetBuiltinType(BuiltinTypeId.Type) && expr.Args.Count >= 1:
                     value = await GetValueFromExpressionAsync(expr.Args[0].Expression, options, cancellationToken);
@@ -311,29 +303,29 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return value;
         }
 
-        private Task<IPythonType> GetValueFromPropertyOrFunctionAsync(IPythonType fn, Expression expr, CancellationToken cancellationToken = default) {
-            switch (fn) {
-                case IPythonProperty p:
-                    return GetPropertyReturnTypeAsync(p, expr, cancellationToken);
-                case IPythonFunction f:
-                    return GetValueFromFunctionAsync(f, expr, cancellationToken);
-                case IPythonInstance c when c.Type?.MemberType == PythonMemberType.Class:
-                    return Task.FromResult(c.Type); // typically cls()
-            }
-            return Task.FromResult<IPythonType>(null);
-        }
-
         private async Task<IPythonType> GetValueFromFunctionAsync(IPythonFunction fn, Expression expr, CancellationToken cancellationToken = default) {
-            var returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
+            // Determine argument types
+            List<IPythonType> args = null;
+            if (expr is CallExpression callExpr && callExpr.Args.Count > 0) {
+                args = new List<IPythonType>();
+                foreach (var a in callExpr.Args.MaybeEnumerate()) {
+                    var type = await GetValueFromExpressionAsync(a.Expression, cancellationToken);
+                    args.Add(type ?? UnknownType);
+                }
+            }
+            
+            // Find best overload match
+
+            var returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault(), args);
             if (returnType.IsUnknown()) {
                 // Function may not have been walked yet. Do it now.
                 await _functionWalkers.ProcessFunctionAsync(fn.FunctionDefinition, cancellationToken);
-                returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault());
+                returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault(), args);
             }
             return !returnType.IsUnknown() ? new PythonInstance(returnType, GetLoc(expr)) : null;
         }
 
-        private IPythonType GetFunctionReturnType(IPythonFunctionOverload o) => o?.ReturnType ?? UnknownType;
+        private IPythonType GetFunctionReturnType(IPythonFunctionOverload o, IReadOnlyList<IPythonType> args) => o?.GetReturnType(args) ?? UnknownType;
 
         private async Task<IPythonType> GetPropertyReturnTypeAsync(IPythonProperty p, Expression expr, CancellationToken cancellationToken = default) {
             if (p.Type.IsUnknown()) {
@@ -460,7 +452,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public IPythonType GetInScope(string name) => CurrentScope.Variables.GetMember(name);
-        public T GetInScope<T>(string name) where T: class, IPythonType => CurrentScope.Variables.GetMember(name) as T;
+        public T GetInScope<T>(string name) where T : class, IPythonType => CurrentScope.Variables.GetMember(name) as T;
 
         public void DeclareVariable(string name, IPythonType type, Node expression)
             => DeclareVariable(name, type, GetLoc(expression));
