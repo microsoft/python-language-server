@@ -91,5 +91,20 @@ y = g()";
                 .Which.Should().HaveSingleParameter()
                 .Which.Should().HaveName("p").And.HaveType("int").And.HaveNoDefaultValue();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ParameterAnnotation() {
+            var code = @"
+s = None
+def f(s: s = 123):
+    return s
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType)
+                .And.HaveFunction("f")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("s").And.HaveType(BuiltinTypeId.Int);
+        }
     }
 }
