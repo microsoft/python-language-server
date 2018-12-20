@@ -52,9 +52,12 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         protected override string Identifier => nameof(IVariable);
 
         public AndWhichConstraint<VariableAssertions, VariableTestInfo> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
-            var languageVersionIs3X = Is3X(_scope);
-            AssertTypeIds(new[] { Subject.Type.TypeId }, new[] { typeId }, $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
+            Subject.Type.TypeId.Should().Be(typeId);
+            return new AndWhichConstraint<VariableAssertions, VariableTestInfo>(this, Subject);
+        }
 
+        public AndWhichConstraint<VariableAssertions, VariableTestInfo> HaveType(string name, string because = "", params object[] reasonArgs) {
+            Subject.Type.Name.Should().Be(name);
             return new AndWhichConstraint<VariableAssertions, VariableTestInfo>(this, Subject);
         }
 

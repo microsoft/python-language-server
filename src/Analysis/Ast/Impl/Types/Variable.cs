@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
-    [DebuggerDisplay("{Name} : {Type.Name}")]
+    [DebuggerDisplay("{Name} : {Type}")]
     internal sealed class Variable : IVariable {
         public Variable(KeyValuePair<string, IPythonType> kvp, LocationInfo location = null) 
             : this(kvp.Key, kvp.Value, location) { }

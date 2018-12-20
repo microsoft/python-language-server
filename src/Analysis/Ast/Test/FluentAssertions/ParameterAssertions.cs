@@ -32,9 +32,13 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<ParameterAssertions, string>(this, Subject.Name);
         }
 
-        public AndWhichConstraint<ParameterAssertions, string> HaveType(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<ParameterAssertions, IPythonType> HaveType(string name, string because = "", params object[] reasonArgs) {
             Subject.Type.Name.Should().Be(name);
-            return new AndWhichConstraint<ParameterAssertions, string>(this, Subject.Name);
+            return new AndWhichConstraint<ParameterAssertions, IPythonType>(this, Subject.Type);
+        }
+        public AndWhichConstraint<ParameterAssertions, IPythonType> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
+            Subject.Type.TypeId.Should().Be(typeId);
+            return new AndWhichConstraint<ParameterAssertions, IPythonType>(this, Subject.Type);
         }
 
         public AndWhichConstraint<ParameterAssertions, IParameterInfo> HaveNoDefaultValue(string because = "", params object[] reasonArgs) {

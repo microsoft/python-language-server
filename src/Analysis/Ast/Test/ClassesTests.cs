@@ -90,16 +90,16 @@ namespace Microsoft.Python.Analysis.Tests {
                 var E = new PythonClass("E");
                 var F = new PythonClass("F");
 
-                F.SetBases(interpreter, new[] {O});
-                E.SetBases(interpreter, new[] {O});
-                D.SetBases(interpreter, new[] {O});
-                C.SetBases(interpreter, new[] {D, F});
-                B.SetBases(interpreter, new[] {D, E});
-                A.SetBases(interpreter, new[] {B, C});
+                F.SetBases(interpreter, new[] { O });
+                E.SetBases(interpreter, new[] { O });
+                D.SetBases(interpreter, new[] { O });
+                C.SetBases(interpreter, new[] { D, F });
+                B.SetBases(interpreter, new[] { D, E });
+                A.SetBases(interpreter, new[] { B, C });
 
-                PythonClass.CalculateMro(A).Should().Equal(new[] {"A", "B", "C", "D", "E", "F", "O"}, (p, n) => p.Name == n);
-                PythonClass.CalculateMro(B).Should().Equal(new[] {"B", "D", "E", "O"}, (p, n) => p.Name == n);
-                PythonClass.CalculateMro(C).Should().Equal(new[] {"C", "D", "F", "O"}, (p, n) => p.Name == n);
+                PythonClass.CalculateMro(A).Should().Equal(new[] { "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
+                PythonClass.CalculateMro(B).Should().Equal(new[] { "B", "D", "E", "O" }, (p, n) => p.Name == n);
+                PythonClass.CalculateMro(C).Should().Equal(new[] { "C", "D", "F", "O" }, (p, n) => p.Name == n);
             }
         }
 
@@ -121,6 +121,134 @@ class BankAccount(object):
                 .Which.Should().HaveMethod("overdrawn")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveReturnType("bool");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MembersAfterError() {
+            var code = @"
+class X(object):
+    def f(self):
+        return self.
+        
+    def g(self):
+        pass
+        
+    def h(self):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            var objectMemberNames = analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.Object).GetMemberNames();
+
+            var cls = analysis.Should().HaveClass("X").Which;
+
+            cls.Should().HaveMethod("f")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameterAt(0)
+                .Which.Should().HaveName("self");
+
+            cls.Should().HaveMembers(objectMemberNames)
+                .And.HaveMembers("f", "g", "h");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Property() {
+            var code = @"
+class x(object):
+    @property
+    def SomeProp(self):
+        return 42
+
+a = x().SomeProp
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task StaticMethod() {
+            var code = @"
+class x(object):
+    @staticmethod
+    def StaticMethod(value):
+        return value
+
+a = x().StaticMethod(4.0)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Float);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritedStaticMethod() {
+            var code = @"
+class x(object):
+    @staticmethod
+    def StaticMethod(value):
+        return value
+
+class y(x):
+    pass
+
+a = y().StaticMethod(4.0)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Float);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassMethod() {
+            var code = @"
+class x(object):
+    @classmethod
+    def ClassMethod(cls):
+        return cls
+
+a = x().ClassMethod()
+b = x.ClassMethod()
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("a").Which.Should().HaveType("x");
+            analysis.Should().HaveVariable("b").Which.Should().HaveType("x");
+            analysis.Should().HaveClass("x")
+                .Which.Should().HaveMethod("ClassMethod")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameterAt(0).Which.Should().HaveName("cls").And.HaveType("x");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassInit() {
+            var code = @"
+class X:
+    def __init__(self, value):
+        self.value = value
+
+a = X(2)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a")
+                .Which.Type.Should().BeAssignableTo<IPythonInstance>()
+                .Which.Type.Name.Should().Be("X");
+
+            analysis.Should().HaveClass("x")
+                .Which.Should().HaveMethod("__init__")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameterAt(0).Which.Should().HaveName("self").And.HaveType("X");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InstanceCall() {
+            var code = @"
+class X:
+    def __call__(self, value):
+        return value
+
+x = X()
+
+a = x(2)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
         }
     }
 }
