@@ -56,7 +56,7 @@ fob3 = x
             analysis.Should().HaveVariable("fob1").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("fob2").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("fob3").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("a").Which.Type.Should().BeAssignableTo<IPythonInstance>()
+                .And.HaveVariable("a").Which.Type.Should().BeAssignableTo<IPythonConstant>()
                 .Which.Should().HaveMembers("abc", "func", "y", "__doc__", "__class__");
         }
 

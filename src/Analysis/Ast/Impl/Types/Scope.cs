@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Types {
         public void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
         public void DeclareVariable(string name, IPythonType type, LocationInfo location) 
             => (_variables ?? (_variables = new VariableCollection())).DeclareVariable(name, type, location);
-        public List<Scope> ToChainTowardsGlobal() => EnumerateTowardsGlobal.OfType<Scope>().ToList();
+        public IReadOnlyList<Scope> ToChainTowardsGlobal() => EnumerateTowardsGlobal.OfType<Scope>().ToList();
     }
 
     internal class EmptyGlobalScope : IGlobalScope {

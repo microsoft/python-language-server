@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonType declaringType,
             LocationInfo loc
         ) : base(fd.Name, declaringModule, fd.Documentation, loc,
-                declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, true) {
+                declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;
@@ -76,15 +76,15 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        internal IPythonFunction ToUnbound() => new AstPythonUnboundMethod(this);
+        internal IPythonFunction ToUnbound() => new PythonUnboundMethod(this);
 
         /// <summary>
         /// Represents unbound method, such in C.f where C is class rather than the instance.
         /// </summary>
-        private sealed class AstPythonUnboundMethod : PythonTypeWrapper, IPythonFunction {
+        private sealed class PythonUnboundMethod : PythonTypeWrapper, IPythonFunction {
             private readonly IPythonFunction _pf;
 
-            public AstPythonUnboundMethod(IPythonFunction function) : base(function, function.DeclaringModule) {
+            public PythonUnboundMethod(IPythonFunction function) : base(function, function.DeclaringModule) {
                 _pf = function;
             }
 

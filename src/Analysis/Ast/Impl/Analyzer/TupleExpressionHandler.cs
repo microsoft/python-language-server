@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             // Tuple = 'tuple value' (such as from callable). Transfer values.
-            if (value is PythonInstance c && c.Type is PythonSequence seq) {
+            if (value is PythonConstant c && c.Type is PythonSequence seq) {
                 var types = seq.IndexTypes.ToArray();
                 var expressions = lhs.Items.OfType<NameExpression>().ToArray();
                 var names = expressions.Select(x => (x as NameExpression)?.Name).ToArray();

@@ -36,18 +36,16 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonModule declaringModule,
             string doc,
             LocationInfo loc,
-            BuiltinTypeId typeId = BuiltinTypeId.Unknown,
-            bool isTypeFactory = false
-        ) : this(name, typeId, isTypeFactory) {
+            BuiltinTypeId typeId = BuiltinTypeId.Unknown
+        ) : this(name, typeId) {
             Documentation = doc;
             DeclaringModule = declaringModule;
             Location = loc ?? LocationInfo.Empty;
-            IsTypeFactory = isTypeFactory;
         }
 
-        public PythonType(string name, BuiltinTypeId typeId, bool isTypeFactory = false) {
+        public PythonType(string name, BuiltinTypeId typeId) {
             _name = name ?? throw new ArgumentNullException(nameof(name));
-            _typeId = typeId == BuiltinTypeId.Unknown && isTypeFactory ? BuiltinTypeId.Type : typeId;
+            _typeId = typeId;
         }
 
         #region IPythonType
@@ -64,7 +62,6 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual PythonMemberType MemberType => _typeId.GetMemberId();
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinPythonModule;
-        public bool IsTypeFactory { get; }
         public IPythonFunction GetConstructor() => GetMember("__init__") as IPythonFunction;
         #endregion
 
@@ -124,25 +121,6 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal bool IsHidden => ContainsMember("__hidden__");
-
-        /// <summary>
-        /// Provides type factory. Similar to __metaclass__ but does not expose full
-        /// metaclass functionality. Used in cases when function has to return a class
-        /// rather than the class instance. Example: function annotated as '-> Type[T]'
-        /// can be called as a T constructor so func() constructs class instance rather than invoking
-        /// call on an existing instance. See also collections/namedtuple typing in the Typeshed.
-        /// </summary>
-        internal PythonType GetTypeFactory() {
-            var clone = new PythonType(
-                Name,
-                DeclaringModule,
-                Documentation,
-                Location,
-                TypeId == BuiltinTypeId.Unknown ? BuiltinTypeId.Type : TypeId,
-                true);
-            clone.AddMembers(Members, true);
-            return clone;
-        }
 
         protected bool ContainsMember(string name) => Members.ContainsKey(name);
     }

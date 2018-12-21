@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Types {
             LocationInfo loc,
             IPythonInterpreter interpreter,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, declaringModule, doc, loc, builtinTypeId, false) {
+        ) : base(classDefinition.Name, declaringModule, doc, loc, builtinTypeId) {
             ClassDefinition = classDefinition;
             _interpreter = interpreter;
         }

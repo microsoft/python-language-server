@@ -45,14 +45,8 @@ namespace Microsoft.Python.Analysis.Types {
         bool IsBuiltin { get; }
 
         /// <summary>
-        /// Type is a type class factory.
-        /// </summary>
-        bool IsTypeFactory { get; }
-
-        /// <summary>
         /// Returns constructors of the type, if any.
         /// </summary>
-        /// <returns></returns>
         IPythonFunction GetConstructor();
     }
 }

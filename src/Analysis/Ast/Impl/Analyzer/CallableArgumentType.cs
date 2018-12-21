@@ -15,11 +15,13 @@
 
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis {
-    public static class PythonTypeExtensions {
-        public static bool IsUnknown(this IPythonType value) =>
-            value == null ||
-            value.TypeId == BuiltinTypeId.Unknown ||
-            (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;
+namespace Microsoft.Python.Analysis.Analyzer {
+    internal sealed class CallableArgumentType : PythonTypeWrapper, IPythonCallableArgumentType {
+        public CallableArgumentType(int parameterIndex, IPythonType parameterType) :
+            base(parameterType) {
+            ParameterIndex = parameterIndex;
+        }
+
+        public int ParameterIndex { get; }
     }
 }

@@ -13,20 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Diagnostics;
-
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents instance of the type, such as instance of a class,
-    /// rather than the class type itself.
+    /// Represents a constructor that makes type.
+    /// For example, 'x' in 'x = C' where 'C' is a class
+    /// so 'x()' makes an instance of 'C'.
     /// </summary>
-    [DebuggerDisplay("Instance of {Type.Name}")]
-    internal class PythonInstance : PythonTypeWrapper, IPythonInstance {
-        public PythonInstance(IPythonType type, LocationInfo location) : base(type) {
-            Location = location ?? LocationInfo.Empty;
-        }
-
-        public override LocationInfo Location { get; }
-        public IPythonType Type => InnerType;
+    public interface IPythonTypeConstructor: IPythonType {
+        IPythonType Type { get; }
     }
 }

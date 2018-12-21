@@ -50,7 +50,7 @@ e1, e2, e3 = sys.exc_info()
             // sys.exc_info() -> (exception_type, exception_value, traceback)
             var f = analysis.Should()
                 .HaveVariable("e1").OfType(BuiltinTypeId.Type)
-                .And.HaveVariable("e2").OfTypes("BaseException")
+                .And.HaveVariable("e2").OfType("BaseException")
                 .And.HaveVariable("e3").OfType(BuiltinTypeId.Unknown)
                 .And.HaveVariable("sys").OfType(BuiltinTypeId.Module)
                 .Which.Should().HaveMember<IPythonFunction>("exc_info").Which;

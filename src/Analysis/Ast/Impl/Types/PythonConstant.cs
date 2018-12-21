@@ -13,15 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
+using System.Diagnostics;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class PythonCallableArgumentType : PythonTypeWrapper, IPythonCallableArgumentType {
-        public PythonCallableArgumentType(int parameterIndex, IPythonType parameterType) :
-            base(parameterType) {
-            ParameterIndex = parameterIndex;
+namespace Microsoft.Python.Analysis.Types {
+    /// <summary>
+    /// Represents constant value, such as string literal.
+    /// </summary>
+    [DebuggerDisplay("Instance of {Type.Name}")]
+    internal abstract class PythonConstant : PythonTypeWrapper, IPythonConstant {
+        protected PythonConstant(IPythonType type, LocationInfo location) : base(type) {
+            Location = location ?? LocationInfo.Empty;
         }
 
-        public int ParameterIndex { get; }
+        public override LocationInfo Location { get; }
+        public IPythonType Type => InnerType;
     }
 }

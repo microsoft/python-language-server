@@ -105,7 +105,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task ComparisonTypeInference() {
-            var code = @"
+            const string code = @"
 class BankAccount(object):
     def __init__(self, initial_balance=0):
         self.balance = initial_balance
@@ -125,7 +125,7 @@ class BankAccount(object):
 
         [TestMethod, Priority(0)]
         public async Task MembersAfterError() {
-            var code = @"
+            const string code = @"
 class X(object):
     def f(self):
         return self.
@@ -152,7 +152,7 @@ class X(object):
 
         [TestMethod, Priority(0)]
         public async Task Property() {
-            var code = @"
+            const string code = @"
 class x(object):
     @property
     def SomeProp(self):
@@ -166,7 +166,7 @@ a = x().SomeProp
 
         [TestMethod, Priority(0)]
         public async Task StaticMethod() {
-            var code = @"
+            const string code = @"
 class x(object):
     @staticmethod
     def StaticMethod(value):
@@ -180,7 +180,7 @@ a = x().StaticMethod(4.0)
 
         [TestMethod, Priority(0)]
         public async Task InheritedStaticMethod() {
-            var code = @"
+            const string code = @"
 class x(object):
     @staticmethod
     def StaticMethod(value):
@@ -197,7 +197,7 @@ a = y().StaticMethod(4.0)
 
         [TestMethod, Priority(0)]
         public async Task ClassMethod() {
-            var code = @"
+            const string code = @"
 class x(object):
     @classmethod
     def ClassMethod(cls):
@@ -218,7 +218,7 @@ b = x.ClassMethod()
 
         [TestMethod, Priority(0)]
         public async Task ClassInit() {
-            var code = @"
+            const string code = @"
 class X:
     def __init__(self, value):
         self.value = value
@@ -227,10 +227,10 @@ a = X(2)
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a")
-                .Which.Type.Should().BeAssignableTo<IPythonInstance>()
+                .Which.Type.Should().BeAssignableTo<IPythonConstant>()
                 .Which.Type.Name.Should().Be("X");
 
-            analysis.Should().HaveClass("x")
+            analysis.Should().HaveClass("X")
                 .Which.Should().HaveMethod("__init__")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveParameterAt(0).Which.Should().HaveName("self").And.HaveType("X");
@@ -249,6 +249,29 @@ a = x(2)
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InstanceMembers() {
+            const string code = @"
+class C:
+    def f(self): pass
+
+x = C
+y = x()
+
+f1 = C.f
+c = C()
+f2 = c.f
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("x").Which.Type.Should().BeAssignableTo<IPythonTypeConstructor>();
+            analysis.Should().HaveVariable("y").Which.Type.Should().BeAssignableTo<IPythonClass>();
+
+            analysis.Should()
+                .HaveVariable("f1").OfType(BuiltinTypeId.Function).And
+                .HaveVariable("f2").OfType(BuiltinTypeId.Method);
         }
     }
 }

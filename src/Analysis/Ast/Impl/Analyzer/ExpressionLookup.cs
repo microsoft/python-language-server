@@ -109,9 +109,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (expr is ParenthesisExpression parExpr) {
                 expr = parExpr.Expression;
             }
-
             if (expr == null) {
                 return null;
+            }
+
+            var value = GetConstructorFromName(expr);
+            if(value is IPythonTypeConstructor) {
+                return value;
             }
 
             IPythonType m;
@@ -169,13 +173,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var mc = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             var value = mc.GetMember(expr.Name);
             // If container is class rather than the instance, then method is an unbound function.
-            value = mc is IPythonClass c && value is PythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
+            value = mc is IPythonTypeConstructor && value is PythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
 
             switch (value) {
                 case IPythonProperty p:
                     return await GetPropertyReturnTypeAsync(p, expr, cancellationToken);
-                case IPythonFunction fn:
-                    return await GetValueFromFunctionAsync(fn, expr, cancellationToken);
                 case null:
                     _log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
                     return UnknownType;
@@ -280,10 +282,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var m = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             IPythonType value = null;
             switch (m) {
-                case IPythonInstance c when c.Type?.MemberType == PythonMemberType.Class:
-                    return c.Type; // typically cls()
+                case IPythonTypeConstructor tcs:
+                    value = tcs.Type; // typically x = C; y = x() where C is class
+                    break;
                 case IPythonClass cls:
-                    value = new PythonInstance(cls, GetLoc(expr));
+                    value = cls; // typically C() where C is class
                     break;
                 case IPythonFunction pf:
                     value = await GetValueFromFunctionAsync(pf, expr, cancellationToken);
@@ -305,24 +308,33 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private async Task<IPythonType> GetValueFromFunctionAsync(IPythonFunction fn, Expression expr, CancellationToken cancellationToken = default) {
             // Determine argument types
-            List<IPythonType> args = null;
+            var args = new List<IPythonType>();
             if (expr is CallExpression callExpr && callExpr.Args.Count > 0) {
-                args = new List<IPythonType>();
                 foreach (var a in callExpr.Args.MaybeEnumerate()) {
                     var type = await GetValueFromExpressionAsync(a.Expression, cancellationToken);
                     args.Add(type ?? UnknownType);
                 }
             }
-            
-            // Find best overload match
 
-            var returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault(), args);
+            // Find best overload match
+            // TODO: match better, see ArgumentSet class in DDG.
+            var overload = fn.Overloads.FirstOrDefault(o => o.Parameters.Count == args.Count);
+            overload = overload ?? fn.Overloads
+                       .Where(o => o.Parameters.Count >= args.Count)
+                       .FirstOrDefault(o => {
+                           // Match so overall param count is bigger, but required params
+                           // count is less or equal to the passed arguments.
+                           var requiredParams = o.Parameters.Where(p => string.IsNullOrEmpty(p.DefaultValue)).ToArray();
+                           return requiredParams.Length <= args.Count;
+                       });
+
+            var returnType = GetFunctionReturnType(overload, args);
             if (returnType.IsUnknown()) {
                 // Function may not have been walked yet. Do it now.
                 await _functionWalkers.ProcessFunctionAsync(fn.FunctionDefinition, cancellationToken);
-                returnType = GetFunctionReturnType(fn.Overloads.FirstOrDefault(), args);
+                returnType = GetFunctionReturnType(overload, args);
             }
-            return !returnType.IsUnknown() ? new PythonInstance(returnType, GetLoc(expr)) : null;
+            return returnType ?? UnknownType;
         }
 
         private IPythonType GetFunctionReturnType(IPythonFunctionOverload o, IReadOnlyList<IPythonType> args) => o?.GetReturnType(args) ?? UnknownType;
@@ -332,10 +344,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 // Function may not have been walked yet. Do it now.
                 await _functionWalkers.ProcessFunctionAsync(p.FunctionDefinition, cancellationToken);
             }
-            return !p.Type.IsUnknown() ? new PythonInstance(p.Type, GetLoc(expr)) : null;
+            return p.Type ?? UnknownType;
         }
 
-        public IPythonInstance GetConstantFromLiteral(Expression expr, LookupOptions options) {
+        public IPythonType GetConstantFromLiteral(Expression expr, LookupOptions options) {
             if (expr is ConstantExpression ce) {
                 if (ce.Value is string s) {
                     return new PythonStringLiteral(s, Interpreter.GetBuiltinType(BuiltinTypeId.Unicode), GetLoc(expr));
@@ -345,16 +357,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            var type = GetTypeFromLiteral(expr);
-            return type != null ? new PythonInstance(type, GetLoc(expr)) : null;
+            return GetTypeFromLiteral(expr) ?? UnknownType;
         }
-
         public IPythonType GetTypeFromValue(IPythonType value) {
             if (value == null) {
                 return null;
             }
 
-            var type = (value as IPythonInstance)?.Type;
+            var type = (value as IPythonConstant)?.Type;
             if (type != null) {
                 return type;
             }
@@ -395,6 +405,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             return Interpreter.GetBuiltinType(BuiltinTypeId.Type);
+        }
+
+        public IPythonType GetConstructorFromName(Expression expression) {
+            // Special case for x = C where C is a class.
+            if(expression is NameExpression nex) {
+                var type = LookupNameInScopes(nex.Name);
+                if(type is IPythonClass) {
+                    return new PythonTypeConstructor(type);
+                }
+            }
+            return null;
         }
 
         public IPythonType GetTypeFromLiteral(Expression expr) {
@@ -483,10 +504,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IPythonType LookupNameInScopes(string name) => LookupNameInScopes(name, DefaultLookupOptions);
 
         public IPythonType LookupNameInScopes(string name, LookupOptions options) {
-            var scopes = CurrentScope.ToChainTowardsGlobal();
+            var scopes = CurrentScope.ToChainTowardsGlobal().ToList();
             if (scopes.Count == 1) {
                 if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
-                    scopes = null;
+                    scopes.Clear();
                 }
             } else if (scopes.Count >= 2) {
                 if (!options.HasFlag(LookupOptions.Nonlocal)) {
@@ -502,14 +523,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            if (scopes != null) {
-                foreach (var scope in scopes) {
-                    var v = scope.Variables[name];
-                    if (v != null) {
-                        scope.DeclareVariable(name, v.Type, v.Location);
-                        return v.Type;
-                    }
-                }
+            var t = scopes.FirstOrDefault(s => s.Variables.Contains(name))?.Variables[name].Type;
+            if(t != null) {
+                return t;
             }
 
             if (Module != Interpreter.ModuleResolution.BuiltinModule && options.HasFlag(LookupOptions.Builtins)) {

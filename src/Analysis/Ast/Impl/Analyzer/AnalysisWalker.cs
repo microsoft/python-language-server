@@ -95,16 +95,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             foreach (var node in statement.OfType<ClassDefinition>()) {
                 _lookup.DeclareVariable(node.Name, CreateClass(node), node);
             }
-
-            foreach (var node in statement.OfType<AssignmentStatement>().Where(n => n.Right is NameExpression)) {
-                var rhs = (NameExpression)node.Right;
-                var t = _lookup.CurrentScope.Variables.GetMember(rhs.Name);
-                if (t != null) {
-                    foreach (var lhs in node.Left.OfType<NameExpression>()) {
-                        _lookup.DeclareVariable(lhs.Name, t, lhs);
-                    }
-                }
-            }
         }
     }
 }

@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         var p = Target.Parameters[i];
                         if (!string.IsNullOrEmpty(p.Name)) {
                             var defaultValue = await _lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? _lookup.UnknownType;
-                            var argType = new PythonCallableArgumentType(i, defaultValue);
+                            var argType = new CallableArgumentType(i, defaultValue);
                             _lookup.DeclareVariable(p.Name, argType, p.NameExpression);
                         }
                     }

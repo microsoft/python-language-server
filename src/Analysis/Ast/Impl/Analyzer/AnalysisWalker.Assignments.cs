@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(_ast).Trim()}");
             }
 
-            if ((value as IPythonInstance)?.Type?.TypeId == BuiltinTypeId.Ellipsis) {
+            if (value?.TypeId == BuiltinTypeId.Ellipsis) {
                 value = _lookup.UnknownType;
             }
 

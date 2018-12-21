@@ -39,7 +39,6 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual  BuiltinTypeId TypeId => InnerType.TypeId;
         public virtual  PythonMemberType MemberType => InnerType.MemberType;
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;
-        public virtual  bool IsTypeFactory => InnerType.IsTypeFactory;
         public virtual  IPythonFunction GetConstructor() => InnerType.GetConstructor();
         #endregion
 

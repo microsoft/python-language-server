@@ -13,13 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
-
-namespace Microsoft.Python.Analysis {
-    public static class PythonTypeExtensions {
-        public static bool IsUnknown(this IPythonType value) =>
-            value == null ||
-            value.TypeId == BuiltinTypeId.Unknown ||
-            (value as IPythonConstant)?.Type?.TypeId == BuiltinTypeId.Unknown;
+namespace Microsoft.Python.Analysis.Types {
+    internal sealed class PythonTypeConstructor: PythonTypeWrapper, IPythonTypeConstructor {
+        public PythonTypeConstructor(IPythonType type) : base(type) { }
+        public IPythonType Type => InnerType;
     }
 }

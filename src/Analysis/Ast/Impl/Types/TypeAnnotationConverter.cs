@@ -102,7 +102,8 @@ namespace Microsoft.Python.Analysis.Types {
                 case "ByteString":
                     return _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
                 case "Type":
-                    return args.Count > 0 ? MakeGenericClassType(args[0]) : _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type);
+                    // TODO: handle arguments
+                    return _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type);
                 case "Any":
                     return baseType;
                 // TODO: Other types
@@ -163,17 +164,6 @@ namespace Microsoft.Python.Analysis.Types {
                 );
             }
             return res;
-        }
-
-        private IPythonType MakeGenericClassType(IPythonType typeArg) {
-            if (typeArg.IsBuiltin) {
-                if (_scope.Interpreter.GetBuiltinType(typeArg.TypeId) is PythonType type) {
-                    return type.TypeId == BuiltinTypeId.Unknown
-                        ? _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type)
-                        : type.GetTypeFactory();
-                }
-            }
-            return new PythonType(typeArg.Name, _scope.Module, typeArg.Documentation, null, BuiltinTypeId.Type, isTypeFactory: true);
         }
 
         private sealed class ModuleType : PythonType {

@@ -100,9 +100,9 @@ R_A3 = R_A1.r_A()";
                 .And.HaveClassVariables("A")
                 .And.HaveVariable("R_str").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("R_object").OfType(BuiltinTypeId.Object)
-                .And.HaveVariable("R_A1").OfTypes("A")
-                .And.HaveVariable("R_A2").OfTypes("A")
-                .And.HaveVariable("R_A3").OfTypes("A");
+                .And.HaveVariable("R_A1").OfType("A")
+                .And.HaveVariable("R_A2").OfType("A")
+                .And.HaveVariable("R_A3").OfType("A");
         }
     }
 }
