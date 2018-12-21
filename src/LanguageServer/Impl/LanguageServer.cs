@@ -176,8 +176,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         || ex is UnauthorizedAccessException
                     ) {
                         // These exceptions are not caused by the LS, but by invalid/inaccessible user-specified paths.
-                        _server.LogMessage(MessageType.Error, $"Failed to load files in {_initParams.rootPath} - {ex.GetType().Name}: {ex.Message}");
-                        // TODO: Should this exit completely, or stay open and give the user a chance to fix their config?
+                        _server.ShowMessage(MessageType.Error, $"Failed to load files in {_initParams.rootPath} - {ex.GetType().Name}: {ex.Message}");
                         return;
                     }
                 }
