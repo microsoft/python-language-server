@@ -94,7 +94,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             foreach (var node in statement.OfType<ClassDefinition>()) {
-                DeclareClass(node);
+                var classInfo = CreateClass(node);
+                _lookup.DeclareVariable(node.Name, classInfo, GetLoc(node));
             }
         }
     }

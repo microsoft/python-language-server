@@ -20,7 +20,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis {
+namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class ExpressionFinder {
         public ExpressionFinder(PythonAst ast, FindExpressionOptions options) {
             Ast = ast;

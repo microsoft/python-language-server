@@ -268,7 +268,9 @@ f2 = c.f
             var analysis = await GetAnalysisAsync(code);
 
             analysis.Should().HaveVariable("x").Which.Value.Should().BeAssignableTo<IPythonType>();
-            analysis.Should().HaveVariable("y").Which.Value.Should().BeAssignableTo<IPythonClass>();
+            analysis.Should().HaveVariable("y")
+                .Which.Value.Should().BeAssignableTo<IPythonInstance>()
+                .And.HaveInstanceType<IPythonClass>();
 
             analysis.Should()
                 .HaveVariable("f1").OfType(BuiltinTypeId.Function).And

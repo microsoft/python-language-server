@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Types {
             FunctionDefinition = fd;
             DeclaringType = declaringType;
 
-            if (Name == "__init__") {
+            if (fd.Name == "__init__") {
                 _doc = declaringType?.Documentation;
             }
 

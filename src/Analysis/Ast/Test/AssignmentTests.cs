@@ -35,60 +35,6 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task AnnotatedAssign01() {
-            var code = @"
-x : int = 42
-
-class C:
-    y : int = 42
-
-    def func(self):
-        self.abc : int = 42
-
-a = C()
-a.func()
-fob1 = a.abc
-fob2 = a.y
-fob3 = x
-";
-            var analysis = await GetAnalysisAsync(code);
-
-            analysis.Should().HaveVariable("fob1").OfType(BuiltinTypeId.Int);
-            analysis.Should().HaveVariable("fob2").OfType(BuiltinTypeId.Int);
-            analysis.Should().HaveVariable("fob3").OfType(BuiltinTypeId.Int);
-
-            var a = analysis.Should().HaveVariable("a").Which;
-            a.Value.Should().BeAssignableTo<IPythonInstance>();
-            a.Value.Should().HaveMembers("abc", "func", "y", "__doc__", "__class__");
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task AnnotatedAssign02() {
-            var code = @"
-def f(val):
-    print(val)
-
-class C:
-    def __init__(self, y):
-        self.y = y
-
-x:f(42) = 1
-x:C(42) = 1
-";
-            var analysis = await GetAnalysisAsync(code);
-
-            analysis.Should().HaveFunction("f")
-                .Which.Should().HaveSingleOverload()
-                .Which.Should().HaveParameterAt(0).Which.Should().HaveName("val").And.HaveType(BuiltinTypeId.Int);
-
-            analysis.Should().HaveClass("C")
-                .Which.Should().HaveMethod("__init__")
-                .Which.Should().HaveSingleOverload()
-                .Which.Should().HaveParameterAt(1)
-                .Which.Should().HaveName("y").And.HaveType(BuiltinTypeId.Int);
-        }
-
-        [TestMethod, Priority(0)]
         public async Task AssignSelf() {
             var code = @"
 class x(object):
@@ -98,12 +44,15 @@ class x(object):
         pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveClass("x")
-                .Which.Should().HaveMethod("f")
+            var cls = analysis.Should().HaveClass("x").Which;
+
+            var xType = cls.Should().HaveMethod("f")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveParameterAt(0)
-                .Which.Should().HaveName("self").And.HaveType("x")
-                .Which.Should().HaveMember<IPythonType>("x").Which.TypeId.Should().Be(BuiltinTypeId.Str);
+                .Which.Should().HaveName("self").And.HaveType("x").Which;
+
+            xType.Should().HaveMember<IPythonType>("x")
+                .Which.TypeId.Should().Be(BuiltinTypeId.Unicode);
         }
 
         [TestMethod, Priority(0)]

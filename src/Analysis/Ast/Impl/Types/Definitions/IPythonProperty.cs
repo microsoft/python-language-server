@@ -13,11 +13,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Parsing.Ast;
+
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents a built-in property which has a getter/setter.  
     /// </summary>
-    public interface IPythonProperty : IPythonFunctionLike {
+    public interface IPythonProperty : IPythonClassMember {
+        /// <summary>
+        /// Function definition in the AST.
+        /// </summary>
+        FunctionDefinition FunctionDefinition { get; }
+
+        bool IsStatic { get; }
+
         /// <summary>
         /// The type of the value the property gets/sets.
         /// </summary>
@@ -32,6 +41,5 @@ namespace Microsoft.Python.Analysis.Types {
         /// True if the property is read-only.
         /// </summary>
         bool IsReadOnly { get; }
-
     }
 }

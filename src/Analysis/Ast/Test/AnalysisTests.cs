@@ -25,11 +25,11 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class BasicTests: AnalysisTestBase {
+    public class BasicTests : AnalysisTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize() 
+        public void TestInitialize()
             => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
 
         [TestCleanup]
@@ -62,9 +62,10 @@ y = c.method()
             analysis.Should().HaveVariable("func")
                 .Which.Value.Should().BeAssignableTo<IPythonFunction>();
 
-            analysis.Should().HaveVariable("c")
-                .Which.Value.Should().BeAssignableTo<IPythonInstance>()
-                .Which.MemberType.Should().Be(PythonMemberType.Class);
+            var v = analysis.Should().HaveVariable("c").Which;
+            var instance = v.Value.Should().BeAssignableTo<IPythonInstance>().Which;
+            instance.MemberType.Should().Be(PythonMemberType.Instance);
+            instance.Type.Should().BeAssignableTo<IPythonClass>();
 
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Float);
         }

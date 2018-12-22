@@ -96,7 +96,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 lookup.GetLocOfName(node, node.NameExpression),
                 node.ReturnAnnotation?.ToCodeString(_ast));
 
-            _functionWalkers.Add(new AnalysisFunctionWalker(lookup, node, overload));
+            _functionWalkers.Add(new AnalysisFunctionWalker(_module, lookup, node, overload));
             return overload;
         }
 

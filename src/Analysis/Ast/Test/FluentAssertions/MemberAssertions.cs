@@ -16,10 +16,12 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
@@ -107,6 +109,15 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetQuotedName(Subject)} to have no members with names {GetQuotedNames(missingNames)}{{reason}}, but found {GetQuotedNames(existingNames)}");
 
+            return new AndConstraint<MemberAssertions>(this);
+        }
+
+        public AndConstraint<MemberAssertions> HaveInstanceType<T>(string because = "", params object[] reasonArgs) {
+            var instance = Subject as IPythonInstance;
+            Execute.Assertion.ForCondition(instance != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetQuotedName(Subject)} be an instance{{reason}}");
+            instance.Type.Should().BeAssignableTo<T>();
             return new AndConstraint<MemberAssertions>(this);
         }
     }

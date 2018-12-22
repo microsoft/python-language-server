@@ -209,13 +209,13 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
 
                 if (Decorators != null) {
-                    await Decorators?.WalkAsync(walker, cancellationToken);
+                    await Decorators.WalkAsync(walker, cancellationToken);
                 }
                 if (_body != null) {
-                    await _body?.WalkAsync(walker, cancellationToken);
+                    await _body.WalkAsync(walker, cancellationToken);
                 }
                 if (ReturnAnnotation != null) {
-                    await ReturnAnnotation?.WalkAsync(walker, cancellationToken);
+                    await ReturnAnnotation.WalkAsync(walker, cancellationToken);
                 }
             }
             await walker.PostWalkAsync(this, cancellationToken);

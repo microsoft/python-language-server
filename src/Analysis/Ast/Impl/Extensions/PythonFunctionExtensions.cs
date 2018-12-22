@@ -13,15 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonFunctionLike: IPythonType {
-        FunctionDefinition FunctionDefinition { get; }
-        IPythonType DeclaringType { get; }
-        /// <summary>
-        /// False if binds instance when in a class, true if always static.
-        /// </summary>
-        bool IsStatic { get; }
+namespace Microsoft.Python.Analysis.Extensions {
+    public static class PythonFunctionExtensions {
+        public static bool IsUnbound(this IPythonFunction m) 
+            => m.DeclaringType != null && m.MemberType == PythonMemberType.Function;
+        public static bool IsClassMethod(this IPythonFunction m)
+            => m.DeclaringType != null && m.MemberType == PythonMemberType.Method;
     }
 }

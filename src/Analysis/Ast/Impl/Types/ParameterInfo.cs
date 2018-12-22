@@ -14,9 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -38,6 +35,12 @@ namespace Microsoft.Python.Analysis.Types {
         public string DefaultValue { get; }
         public bool IsParamArray { get; }
         public bool IsKeywordDict { get; }
-        public IPythonType Type { get; }
+        public IPythonType Type { get; private set; }
+
+        internal void SetType(IPythonType type) {
+            if (Type.IsUnknown()) {
+                Type = type;
+            }
+        }
     }
 }

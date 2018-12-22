@@ -20,6 +20,7 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -159,11 +160,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var m = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            var typeInfo = m as IPythonType;
+            var typeInfo = m as IPythonType; // See if value is type info.
             var value = typeInfo?.GetMember(expr.Name);
             // If container is class (type) info rather than the instance, then method is an unbound function.
             value = typeInfo != null && value is PythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
 
+            var type = m.GetPythonType(); // Try inner type
+            value = value ?? type?.GetMember(expr.Name);
             switch (value) {
                 case IPythonProperty p:
                     return await GetPropertyReturnTypeAsync(p, expr, cancellationToken);
@@ -272,13 +275,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private async Task<IMember> GetValueFromFunctionAsync(IPythonFunction fn, Expression expr, CancellationToken cancellationToken = default) {
+            if (!(expr is CallExpression callExpr)) {
+                Debug.Assert(false, "Call to GetValueFromFunctionAsync with non-call expression.");
+                return null;
+            }
+
             // Determine argument types
             var args = new List<IMember>();
-            if (expr is CallExpression callExpr && callExpr.Args.Count > 0) {
-                foreach (var a in callExpr.Args.MaybeEnumerate()) {
-                    var type = await GetValueFromExpressionAsync(a.Expression, cancellationToken);
-                    args.Add(type ?? UnknownType);
-                }
+            // For static and regular methods add 'self' or 'cls'
+            if (fn.DeclaringType != null && !(fn.IsUnbound() || fn.IsClassMethod)) {
+                // TODO: tell between static and regular by passing instance and not class type info.
+                args.Add(fn.DeclaringType);
+            }
+
+            foreach (var a in callExpr.Args.MaybeEnumerate()) {
+                var type = await GetValueFromExpressionAsync(a.Expression, cancellationToken);
+                args.Add(type ?? UnknownType);
             }
 
             // Find best overload match
@@ -435,7 +447,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public void DeclareVariable(string name, IMember value, LocationInfo location) {
             var member = GetInScope(name);
             if (member != null) {
-                if (member.IsUnknown() && !value.IsUnknown()) {
+                if (!value.IsUnknown()) {
                     CurrentScope.DeclareVariable(name, value, location);
                 }
             } else {
@@ -491,8 +503,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (expr == null) {
                 return null;
             }
-            // TODO: handle typing
-            return GetTypeFromLiteral(expr)?.GetPythonType();
+            var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
+            return ann.GetValue(new TypeAnnotationConverter(this));
         }
 
         /// <summary>

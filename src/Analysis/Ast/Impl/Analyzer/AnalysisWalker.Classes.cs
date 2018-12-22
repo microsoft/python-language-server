@@ -28,12 +28,25 @@ namespace Microsoft.Python.Analysis.Analyzer {
             cancellationToken.ThrowIfCancellationRequested();
 
             var instance = _lookup.GetInScope(node.Name);
-            if (instance != null) {
+            if (instance != null && !(instance.GetPythonType() is PythonClass)) {
                 // TODO: warning that variable is already declared.
-                    return Task.FromResult(false);
+                return Task.FromResult(false);
             }
 
-            DeclareClass(node);
+            if (!(instance.GetPythonType() is PythonClass classInfo)) {
+                classInfo = CreateClass(node);
+                _lookup.DeclareVariable(node.Name, classInfo, node);
+            }
+
+            var bases = node.Bases.Where(a => string.IsNullOrEmpty(a.Name))
+                // We cheat slightly and treat base classes as annotations.
+                .Select(a => _lookup.GetTypeFromAnnotation(a.Expression))
+                .ToArray();
+
+            classInfo.SetBases(_interpreter, bases);
+            _classScope = _lookup.CreateScope(node, _lookup.CurrentScope);
+            _lookup.DeclareVariable("__class__", classInfo, node);
+
             return Task.FromResult(true);
         }
 
@@ -53,29 +66,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return base.PostWalkAsync(node, cancellationToken);
         }
 
-        private IPythonClass DeclareClass(ClassDefinition node) {
+        private PythonClass CreateClass(ClassDefinition node) {
             node = node ?? throw new ArgumentNullException(nameof(node));
-            var classInfo = new PythonClass(
+            return new PythonClass(
                 node,
                 _module,
                 GetDoc(node.Body as SuiteStatement),
                 GetLoc(node),
                 _interpreter,
                 _suppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
-
-            _lookup.DeclareVariable(node.Name, classInfo, node);
-
-            var bases = node.Bases.Where(a => string.IsNullOrEmpty(a.Name))
-                // We cheat slightly and treat base classes as annotations.
-                .Select(a => _lookup.GetTypeFromAnnotation(a.Expression))
-                .ToArray();
-
-            classInfo.SetBases(_interpreter, bases);
-
-            _classScope = _lookup.CreateScope(node, _lookup.CurrentScope);
-            _lookup.DeclareVariable("__class__", classInfo, node);
-
-            return classInfo;
         }
     }
 }

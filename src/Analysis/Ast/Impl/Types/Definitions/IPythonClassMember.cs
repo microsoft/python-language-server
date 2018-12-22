@@ -1,4 +1,4 @@
-﻿// Copyright(c) Microsoft Corporation
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,15 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing.Ast;
-
-namespace Microsoft.Python.Analysis.Extensions {
-    public static class AstExtensions {
-        public static Expression FindExpression(this PythonAst ast, int index, FindExpressionOptions options) 
-            => new ExpressionFinder(ast, options).GetExpression(index) as Expression;
-        public static Expression FindExpression(this PythonAst ast, SourceLocation location, FindExpressionOptions options) 
-            => new ExpressionFinder(ast, options).GetExpression(location) as Expression;
+namespace Microsoft.Python.Analysis.Types {
+    /// <summary>
+    /// Represents member of a class.
+    /// </summary>
+    public interface IPythonClassMember : IPythonType {
+        IPythonType DeclaringType { get; }
     }
 }

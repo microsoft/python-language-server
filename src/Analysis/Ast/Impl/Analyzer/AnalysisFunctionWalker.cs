@@ -27,12 +27,14 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Target.Name}")]
     class AnalysisFunctionWalker : PythonWalkerAsync {
+        private readonly IPythonModule _module; // For debugging conditional breakpoint on user code.
         private readonly ExpressionLookup _lookup;
         private readonly Scope _parentScope;
         private readonly PythonFunctionOverload _overload;
         private IPythonClass _self;
 
         public AnalysisFunctionWalker(
+            IPythonModule module,
             ExpressionLookup lookup,
             FunctionDefinition targetFunction,
             PythonFunctionOverload overload
@@ -41,6 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Target = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
             _overload = overload ?? throw new ArgumentNullException(nameof(overload));
             _parentScope = _lookup.CurrentScope;
+            _module = module;
         }
 
         public FunctionDefinition Target { get; }
@@ -61,12 +64,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         var p0 = Target.Parameters.FirstOrDefault();
                         if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
                             _lookup.DeclareVariable(p0.Name, _self, p0.NameExpression);
+                            if (_overload.Parameters[0] is ParameterInfo pi) {
+                                pi.SetType(_self);
+                            }
                             skip++;
                         }
                     }
 
                     // Declare parameters in scope
-                    for(var i = skip; i < Target.Parameters.Length; i++) {
+                    for (var i = skip; i < Target.Parameters.Length; i++) {
                         var p = Target.Parameters[i];
                         if (!string.IsNullOrEmpty(p.Name)) {
                             var defaultValue = await _lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? _lookup.UnknownType;
@@ -152,7 +158,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
             var value = await _lookup.GetValueFromExpressionAsync(node.Expression, cancellationToken);
-            var t = _lookup.GetTypeFromValue(value.GetPythonType());
+            var t = value.GetPythonType();
             if (t != null) {
                 _overload.AddReturnType(t);
             }
