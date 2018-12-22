@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Parsing.Ast;
@@ -101,7 +102,7 @@ namespace Microsoft.PythonTools.Analysis.Values {
 
         public virtual ILocatedMember GetLocatedMember() => null;
 
-        public override IEnumerable<ILocationInfo> Locations => GetLocatedMember()?.Locations.MaybeEnumerate();
+        public override IEnumerable<ILocationInfo> Locations => GetLocatedMember()?.Locations ?? Enumerable.Empty<ILocationInfo>();
 
         public override bool Equals(object obj) {
             if (obj is BuiltinNamespace<TMemberContainer> bn && GetType() == bn.GetType()) {

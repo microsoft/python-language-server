@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -168,7 +169,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 await _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
 
                 if (!_filesLoaded) {
-                    await LoadDirectoryFiles();
+                    try {
+                        await LoadDirectoryFiles();
+                    } catch (Exception ex) when (
+                        ex is IOException // FileNotFoundException, DirectoryNotFoundException, PathTooLongException, etc
+                        || ex is UnauthorizedAccessException
+                    ) {
+                        // These exceptions are not caused by the LS, but by invalid/inaccessible user-specified paths.
+                        _server.ShowMessage(MessageType.Error, $"Failed to load files in {_initParams.rootPath} - {ex.GetType().Name}: {ex.Message}");
+                        return;
+                    }
                 }
                 _filesLoaded = true;
             }

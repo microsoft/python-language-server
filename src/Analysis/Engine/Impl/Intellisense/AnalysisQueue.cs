@@ -67,7 +67,7 @@ namespace Microsoft.PythonTools.Intellisense {
                     return;
                 } catch (Exception ex) when (!ex.IsCriticalException()) {
                     UnhandledException?.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
-                    Dispose();
+                    throw;
                 }
             }
             RaiseEventOnThreadPool(AnalysisComplete);

@@ -209,15 +209,15 @@ namespace Microsoft.PythonTools.Analysis.Values {
             return _original.IsOfType(klass);
         }
 
-        public override IEnumerable<ILocationInfo> Locations => _original?.Locations.MaybeEnumerate();
+        public override IEnumerable<ILocationInfo> Locations => _original?.Locations ?? Enumerable.Empty<ILocationInfo>();
 
         public override string Name => _original == null ? base.Name : _original.Name;
 
-        public override IEnumerable<OverloadResult> Overloads => _original?.Overloads.MaybeEnumerate();
+        public override IEnumerable<OverloadResult> Overloads => _original?.Overloads ?? Enumerable.Empty<OverloadResult>();
 
         public override IPythonType PythonType => _original?.PythonType;
 
-        internal override IEnumerable<ILocationInfo> References => _original?.References.MaybeEnumerate();
+        internal override IEnumerable<ILocationInfo> References => _original?.References ?? Enumerable.Empty<ILocationInfo>();
 
         public override PythonMemberType MemberType => _original == null ? PythonMemberType.Unknown : _original.MemberType;
 
