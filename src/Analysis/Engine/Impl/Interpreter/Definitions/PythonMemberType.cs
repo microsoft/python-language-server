@@ -64,7 +64,6 @@ namespace Microsoft.PythonTools.Interpreter {
         /// An instance of a namespace object that was imported from .NET.
         /// </summary>
         Namespace,
-
         /// <summary>
         /// A constant defined in source code.
         /// </summary>

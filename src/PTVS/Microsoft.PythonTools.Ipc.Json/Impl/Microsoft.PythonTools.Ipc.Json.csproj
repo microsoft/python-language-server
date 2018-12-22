@@ -5,11 +5,11 @@
     <AssemblyName>Microsoft.PythonTools.Ipc.Json</AssemblyName>
     <AssemblyTitle></AssemblyTitle>
   </PropertyGroup>
-  <Import Project="..\..\..\build\NetStandard.settings" />
+  <Import Project="..\..\..\..\build\NetStandard.settings" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
-    <PackageReference Include="NewtonSoft.Json" Version="11.0.2" />
+    <PackageReference Include="NewtonSoft.Json" Version="9.0.1" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-  <Import Project="..\..\..\build\NetStandard.targets" />
+  <Import Project="..\..\..\..\build\NetStandard.targets" />
 </Project>

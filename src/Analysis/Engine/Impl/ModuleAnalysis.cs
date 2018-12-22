@@ -861,17 +861,6 @@ namespace Microsoft.PythonTools.Analysis {
         /// Gets the available names at the given location.  This includes
         /// global variables and locals, but not built-in variables.
         /// </summary>
-        /// <param name="index">
-        /// The 0-based absolute index into the file where the available members
-        /// should be looked up.
-        /// </param>
-        /// <remarks>TODO: Remove; this is only used for tests</remarks>
-        internal IEnumerable<string> GetVariablesNoBuiltinsByIndex(int index) => GetVariablesNoBuiltins(_unit.Tree.IndexToLocation(index));
-
-        /// <summary>
-        /// Gets the available names at the given location.  This includes
-        /// global variables and locals, but not built-in variables.
-        /// </summary>
         /// <param name="location">
         /// The location in the file where the available members should be
         /// looked up.

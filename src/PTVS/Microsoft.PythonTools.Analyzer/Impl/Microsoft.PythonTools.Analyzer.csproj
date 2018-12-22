@@ -2,9 +2,10 @@
     <PropertyGroup>
       <TargetFramework>net472</TargetFramework>
       <RootNamespace>Microsoft.PythonTools.Analysis</RootNamespace>
+      <AssemblyTitle>Visual Studio - Python background analyzer</AssemblyTitle>
       <AssemblyName>Microsoft.PythonTools.Analyzer</AssemblyName>
     </PropertyGroup>
-    <Import Project="..\..\..\build\NetStandard.settings" />
+    <Import Project="..\..\..\..\build\NetStandard.settings" />
     <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -12,10 +13,10 @@
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-      <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>
+      <CodeAnalysisRuleSet>..\..\..\PLS.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-      <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>
+      <CodeAnalysisRuleSet>..\..\..\PLS.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
     <ItemGroup>
       <Compile Remove="obj\**" />
@@ -61,13 +62,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Analysis\Engine\Impl\Microsoft.Python.Analysis.Engine.csproj" />
-    <ProjectReference Include="..\..\LanguageServer\Core\Impl\Microsoft.Python.LanguageServer.Core.csproj" />
-    <ProjectReference Include="..\Microsoft.PythonTools.Ipc.Json\Microsoft.PythonTools.Ipc.Json.csproj" />
+    <ProjectReference Include="..\..\..\Analysis\Engine\Impl\Microsoft.Python.Analysis.Engine.csproj" />
+    <ProjectReference Include="..\..\..\LanguageServer\Core\Impl\Microsoft.Python.LanguageServer.Core.csproj" />
+    <ProjectReference Include="..\..\Microsoft.PythonTools.Ipc.Json\Impl\Microsoft.PythonTools.Ipc.Json.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NewtonSoft.Json" Version="11.0.2" />
+    <PackageReference Include="NewtonSoft.Json" Version="9.0.1" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-    <Import Project="..\..\..\build\NetStandard.targets" />
+    <Import Project="..\..\..\..\build\NetStandard.targets" />
 </Project>

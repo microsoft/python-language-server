@@ -15,9 +15,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Python.Analysis.E
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Python.Analysis.Engine.Tests", "Analysis\Engine\Test\Microsoft.Python.Analysis.Engine.Tests.csproj", "{1CFA416B-6932-432F-8C75-34B5615D7664}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.PythonTools.Analyzer", "PTVS\Microsoft.PythonTools.Analyzer\Microsoft.PythonTools.Analyzer.csproj", "{467679B2-D043-4C7D-855C-5A833B635EEE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.PythonTools.Analyzer", "PTVS\Microsoft.PythonTools.Analyzer\Impl\Microsoft.PythonTools.Analyzer.csproj", "{467679B2-D043-4C7D-855C-5A833B635EEE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.PythonTools.Ipc.Json", "PTVS\Microsoft.PythonTools.Ipc.Json\Microsoft.PythonTools.Ipc.Json.csproj", "{A5E04CC1-F600-45BA-B493-F7DCBA8C7E1A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.PythonTools.Ipc.Json", "PTVS\Microsoft.PythonTools.Ipc.Json\Impl\Microsoft.PythonTools.Ipc.Json.csproj", "{A5E04CC1-F600-45BA-B493-F7DCBA8C7E1A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Python.LanguageServer.Core", "LanguageServer\Core\Impl\Microsoft.Python.LanguageServer.Core.csproj", "{0EA1F1C3-2733-423C-BEC5-059BD77F0A3F}"
 EndProject

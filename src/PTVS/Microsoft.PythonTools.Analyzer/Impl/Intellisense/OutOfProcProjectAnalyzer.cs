@@ -1558,7 +1558,7 @@ namespace Microsoft.PythonTools.Intellisense {
             Project.Limits = AnalysisLimitsConverter.FromDictionary(Options.analysisLimits);
             _server.ParseQueue.InconsistentIndentation = DiagnosticsErrorSink.GetSeverity(Options.indentationInconsistencySeverity);
             _server.ParseQueue.TaskCommentMap = Options.commentTokens;
-            _server.Analyzer.SetTypeStubPaths(Options.typeStubPaths);
+            _server.Analyzer.SetTypeStubPaths(Options.typeStubPaths ?? Enumerable.Empty<string>());
 
             return new Response();
         }

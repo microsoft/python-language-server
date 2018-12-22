@@ -29,6 +29,7 @@ using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Values;
+using Microsoft.PythonTools.Intellisense;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
 using Microsoft.PythonTools.Parsing;
@@ -5576,6 +5577,52 @@ def f(s = 123) -> s:
                     .And.HaveReturnValue().OfTypes(BuiltinTypeId.Int, BuiltinTypeId.NoneType, BuiltinTypeId.Unknown);
             }
         }
+
+
+        [TestMethod, Priority(0)]
+        public async Task SysModulesSetSpecialization() {
+            var code = @"import sys
+modules = sys.modules
+
+modules['name_in_modules'] = None
+";
+            code += string.Join(
+                Environment.NewLine,
+                Enumerable.Range(0, 100).Select(i => $"sys.modules['name{i}'] = None")
+            );
+
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable2X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                analysis.Should().HaveVariable("sys").WithValue<SysModuleInfo>()
+                    .And.HaveVariable("modules").WithValue<SysModuleInfo.SysModulesDictionaryInfo>();
+            }
+
+        }
+
+
+        [DataRow("import abc", 7, "abc", "")]
+        [DataRow("import abc", 8, "abc", "")]
+        [DataRow("import abc", 9, "abc", "")]
+        [DataRow("import abc", 10, "abc", "")]
+        [DataRow("import deg, abc as A",12, "abc", "")]
+        [DataRow("from abc import A", 6, "abc", "")]
+        [DataRow("from .deg import A", 9, "deg", "abc")]
+        [DataRow("from .hij import A", 9, "abc.hij", "abc.deg")]
+        [DataRow("from ..hij import A", 10, "hij", "abc.deg")]
+        [DataRow("from ..hij import A", 10, "abc.hij", "abc.deg.HIJ")]
+        [DataTestMethod, Priority(0)]
+        public async Task ModuleNameWalker(string code, int index, string expected, string baseCode) {
+            using (var server = await CreateServerAsync(PythonVersions.LatestAvailable3X)) {
+                var analysis = await server.OpenDefaultDocumentAndGetAnalysisAsync(code);
+                var entry = (IPythonProjectEntry)server.GetEntry(analysis.DocumentUri);
+                var walker = new ImportedModuleNameWalker(baseCode, string.Empty, index, null);
+                entry.Tree.Walk(walker);
+                walker.ImportedModules.Should().NotBeEmpty()
+                    .And.NotContainNulls()
+                    .And.Subject.First().Name.Should().Be(expected);
+            }
+        }
+
 /*
         [TestMethod, Priority(0)]
         public async Task Super() {
@@ -5843,32 +5890,6 @@ test1_result = test1()
         }
 
         [TestMethod, Priority(0)]
-        public async Task SysModulesSetSpecialization() {
-            var code = @"import sys
-modules = sys.modules
-
-modules['name_in_modules'] = None
-";
-            code += string.Join(
-                Environment.NewLine,
-                Enumerable.Range(0, 100).Select(i => string.Format("sys.modules['name{0}'] = None", i))
-            );
-
-            var entry = ProcessTextV2(code);
-
-            var sys = entry.GetValue<SysModuleInfo>("sys");
-
-            var modules = entry.GetValue<SysModuleInfo.SysModulesDictionaryInfo>("modules");
-            Assert.IsInstanceOfType(modules, typeof(SysModuleInfo.SysModulesDictionaryInfo));
-
-            AssertUtil.ContainsExactly(
-                sys.Modules.Keys,
-                Enumerable.Range(0, 100).Select(i => string.Format("name{0}", i))
-                    .Concat(new[] { "name_in_modules" })
-            );
-        }
-
-        [TestMethod, Priority(0)]
         public async Task SysModulesGetSpecialization() {
             var code = @"import sys
 modules = sys.modules
@@ -6027,28 +6048,6 @@ def f():
                 var entry1 = state.AddModule("NullNamedArgument", "def fn(**kwargs): pass");
                 var entry2 = state.AddModule("test", "import NullNamedArgument; NullNamedArgument.fn(a=0, ]]])");
                 state.WaitForAnalysis();
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public void ModuleNameWalker() {
-            foreach (var item in new[] {
-                new { Code="import abc", Index=7, Expected="abc", Base="" },
-                new { Code="import abc", Index=8, Expected="abc", Base="" },
-                new { Code="import abc", Index=9, Expected="abc", Base="" },
-                new { Code="import abc", Index=10, Expected="abc", Base="" },
-                new { Code="import deg, abc as A", Index=12, Expected="abc", Base="" },
-                new { Code="from abc import A", Index=6, Expected="abc", Base="" },
-                new { Code="from .deg import A", Index=9, Expected="deg", Base="abc" },
-                new { Code="from .hij import A", Index=9, Expected="abc.hij", Base="abc.deg" },
-                new { Code="from ..hij import A", Index=10, Expected="hij", Base="abc.deg" },
-                new { Code="from ..hij import A", Index=10, Expected="abc.hij", Base="abc.deg.HIJ" },
-            }) {
-                var entry = ProcessTextV3(item.Code);
-                var walker = new ImportedModuleNameWalker(item.Base, string.Empty, item.Index, null);
-                entry.Modules[entry.DefaultModule].Tree.Walk(walker);
-
-                Assert.AreEqual(item.Expected, walker.ImportedModules.FirstOrDefault()?.Name);
             }
         }
 

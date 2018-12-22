@@ -17,7 +17,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("Visual Studio - Python background analyzer")]
 [assembly: AssemblyDescription("Performs analysis of the Python standard library and installed site packages.")]
 
 [assembly: ComVisible(false)]
