@@ -13,85 +13,43 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
 using Microsoft.Python.Analysis.Types;
-using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
-    internal sealed class VariableTestInfo {
-        private readonly IScope _scope;
-        public IVariable Variable { get; }
-
-        public string Name => Variable.Name;
-        public IPythonType Type => Variable.Type;
-
-        public VariableTestInfo(IVariable variable, IScope scope) {
-            Variable = variable;
-            _scope = scope;
-        }
-
-        public VariableAssertions Should() => new VariableAssertions(new Variable(Name, Type), Name, _scope);
-    }
-
-    internal sealed class VariableAssertions : ReferenceTypeAssertions<VariableTestInfo, VariableAssertions> {
-        private readonly string _moduleName;
-        private readonly string _name;
-        private readonly IScope _scope;
-
-        public VariableAssertions(IVariable v, string name, IScope scope) {
-            Subject = new VariableTestInfo(v, scope);
-            _name = name;
-            _scope = scope;
-            _moduleName = scope.Name;
+    internal sealed class VariableAssertions : ReferenceTypeAssertions<IVariable, VariableAssertions> {
+        public VariableAssertions(IVariable v) {
+            Subject = v;
         }
 
         protected override string Identifier => nameof(IVariable);
 
-        public AndWhichConstraint<VariableAssertions, VariableTestInfo> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
-            Subject.Type.TypeId.Should().Be(typeId);
-            return new AndWhichConstraint<VariableAssertions, VariableTestInfo>(this, Subject);
+        public AndWhichConstraint<VariableAssertions, IVariable> OfType(PythonMemberType memberType, string because = "", params object[] reasonArgs) {
+            Subject.Value.MemberType.Should().Be(memberType);
+            return new AndWhichConstraint<VariableAssertions, IVariable>(this, Subject);
         }
 
-        public AndWhichConstraint<VariableAssertions, VariableTestInfo> HaveType(string name, string because = "", params object[] reasonArgs) {
-            Subject.Type.Name.Should().Be(name);
-            return new AndWhichConstraint<VariableAssertions, VariableTestInfo>(this, Subject);
+        public AndWhichConstraint<VariableAssertions, IVariable> OfType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
+            Subject.Value.GetPythonType().TypeId.Should().Be(typeId);
+            return new AndWhichConstraint<VariableAssertions, IVariable>(this, Subject);
         }
 
-        public AndWhichConstraint<VariableAssertions, VariableTestInfo> HaveMemberType(PythonMemberType memberType, string because = "", params object[] reasonArgs) {
-            Execute.Assertion.ForCondition(Subject.Type is IPythonType av && av.MemberType == memberType)
-                .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {_moduleName}.{_name} to be {memberType} {{reason}}.");
-
-            return new AndWhichConstraint<VariableAssertions, VariableTestInfo>(this, Subject);
+        public AndWhichConstraint<VariableAssertions, IVariable> OfType<TType>(string because = "", params object[] reasonArgs) {
+            Subject.Value.Should().BeAssignableTo<TType>();
+            return new AndWhichConstraint<VariableAssertions, IVariable>(this, Subject);
         }
 
-        public AndConstraint<VariableAssertions> HaveNoTypes(string because = "", params object[] reasonArgs) {
-            var languageVersionIs3X = Is3X(_scope);
-            var types = new[] { Subject.Type.TypeId };
-            AssertTypeIds(types, new BuiltinTypeId[0], $"{_moduleName}.{_name}", languageVersionIs3X, because, reasonArgs);
-
-            return new AndConstraint<VariableAssertions>(this);
+        public AndWhichConstraint<VariableAssertions, IVariable> OfType(string typeName, string because = "", params object[] reasonArgs) {
+            Subject.Value.GetPythonType().Name.Should().Be(typeName);
+            return new AndWhichConstraint<VariableAssertions, IVariable>(this, Subject);
         }
 
-        public AndConstraint<VariableAssertions> HaveClassNames(IEnumerable<string> classNames, string because = "", params object[] reasonArgs) {
-            var types = new[] { Subject.Type };
-
-            var actualMemberTypes = types.Select(av => av.MemberType).ToArray();
-            var expectedMemberTypes = new[] { PythonMemberType.Class };
-            var actualNames = types.Select(av => av.Name).ToArray();
-            var expectedNames = classNames.ToArray();
-
-            var message = GetAssertCollectionContainsMessage(actualMemberTypes, expectedMemberTypes, $"variable '{_moduleName}.{_name}'", "member type", "member types")
-                ?? GetAssertCollectionOnlyContainsMessage(actualNames, actualNames, $"variable '{_moduleName}.{_name}'", "type", "types");
-
-            Execute.Assertion.ForCondition(message == null)
-                    .BecauseOf(because, reasonArgs)
-                    .FailWith(message);
-
+        public AndConstraint<VariableAssertions> HaveNoType(string because = "", params object[] reasonArgs) {
+            Subject.Value.GetPythonType().IsUnknown().Should().BeTrue(because, reasonArgs);
             return new AndConstraint<VariableAssertions>(this);
         }
 
@@ -99,19 +57,24 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             where TMember : class, IPythonType {
             NotBeNull(because, reasonArgs);
 
+            var t = Subject.Value.GetPythonType();
+            Execute.Assertion.ForCondition(t != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject.Name} to have a value, but the value is {t}.");
+
             Execute.Assertion.BecauseOf(because, reasonArgs)
-                .AssertHasMemberOfType(Subject.Type, name, Subject.Name, $"member '{name}'", out TMember typedMember);
+                .AssertHasMemberOfType(t, name, Subject.Name, $"member '{name}'", out TMember typedMember);
             return new AndWhichConstraint<VariableAssertions, TMember>(this, typedMember);
         }
 
         public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveOverloadWithParametersAt(int index, string because = "", params object[] reasonArgs) {
             var constraint = HaveOverloadAt(index);
             var overload = constraint.Which;
-            var function = Subject.Type as IPythonFunction;
+            var function = Subject.Value as IPythonFunction;
 
             Execute.Assertion.ForCondition(function != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {Subject.Name} to be a function, but it is {Subject.Type}.");
+                .FailWith($"Expected {Subject.Name} to be a function, but it is {Subject.Value}.");
 
             Execute.Assertion.ForCondition(overload.Parameters.Count > 0)
                 .BecauseOf(because, reasonArgs)
@@ -121,11 +84,11 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveOverloadAt(int index, string because = "", params object[] reasonArgs) {
-            var function = Subject.Type as IPythonFunction;
+            var function = Subject.Value as IPythonFunction;
 
             Execute.Assertion.ForCondition(function != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {Subject.Name} to be a function, but it is {Subject.Type}.");
+                .FailWith($"Expected {Subject.Name} to be a function, but it is {Subject.Value}.");
 
             var overloads = function.Overloads.ToArray();
             Execute.Assertion.ForCondition(overloads.Length > index)
@@ -143,10 +106,11 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                     : "has no overloads";
 
         public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveSingleOverload(string because = "", params object[] reasonArgs) {
-            var f = Subject.Type as IPythonFunction;
+            var f = Subject.Value as IPythonFunction;
+
             Execute.Assertion.ForCondition(f != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {Subject.Name} to be a function{{reason}}, but it is {Subject.Type}.");
+                .FailWith($"Expected {Subject.Name} to be a function{{reason}}, but it is {Subject.Value}.");
 
             var overloads = f.Overloads.ToArray();
             Execute.Assertion.ForCondition(overloads.Length == 1)

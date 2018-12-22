@@ -14,23 +14,35 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     public interface IPythonIterable : IPythonType {
-        IPythonIterator IteratorType { get; }
+        IPythonIterator Iterator { get; }
     }
 
+    /// <summary>
+    /// Represents iterator that can enumerate items in a set.
+    /// </summary>
     public interface IPythonIterator : IPythonType {
-        IEnumerable<IPythonType> NextType { get; }
+        IMember Next { get; }
     }
 
+    /// <summary>
+    /// Represents type that has values at indexes,
+    /// such as list or array.
+    /// </summary>
     public interface IPythonSequence : IPythonType {
-        IEnumerable<IPythonType> IndexTypes { get; }
+        IMember GetValueAt(IPythonInstance instance, int index);
+        IEnumerable<IMember> GetMembers(IPythonInstance instance);
     }
 
+    /// <summary>
+    /// Represents dictionary-like type, such as tuple.
+    /// </summary>
     public interface IPythonLookup : IPythonType {
-        IEnumerable<IPythonType> KeyTypes { get; }
-        IEnumerable<IPythonType> ValueTypes { get; }
-        IEnumerable<IPythonType> GetIndex(IPythonType key);
+        IEnumerable<IMember> Keys { get; }
+        IEnumerable<IMember> Values { get; }
+        IEnumerable<IMember> GetAt(IMember key);
     }
 }

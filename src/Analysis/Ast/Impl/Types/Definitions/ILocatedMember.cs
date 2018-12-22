@@ -18,7 +18,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// Provides the location of a member. This should be implemented on a class
     /// which also implements IPythonType.
     /// </summary>
-    public interface ILocatedMember {
+    public interface ILocatedMember: IMember {
         /// <summary>
         /// Returns where the member is located or null if the location is not known.
         /// </summary>

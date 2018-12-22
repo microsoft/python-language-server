@@ -19,6 +19,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -31,18 +32,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().ToArray();
             foreach (var d in dec) {
-                var declaringType = await _lookup.GetValueFromExpressionAsync(d, cancellationToken);
-                if (declaringType != null) {
-                    var declaringModule = declaringType.DeclaringModule;
+                var member = await _lookup.GetValueFromExpressionAsync(d, cancellationToken);
+                var memberType = member?.GetPythonType();
+                if (memberType != null) {
+                    var declaringModule = memberType.DeclaringModule;
 
-                    if (declaringType.TypeId == BuiltinTypeId.Property) {
-                        AddProperty(node, declaringModule, declaringType);
+                    if (memberType.TypeId == BuiltinTypeId.Property) {
+                        AddProperty(node, declaringModule, memberType);
                         return false;
                     }
 
-                    var name = declaringType.Name;
+                    var name = memberType.Name;
                     if (declaringModule?.Name == "abc" && name == "abstractproperty") {
-                        AddProperty(node, declaringModule, declaringType);
+                        AddProperty(node, declaringModule, memberType);
                         return false;
                     }
                 }
@@ -67,7 +69,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (!(_lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonFunction existing)) {
                 var cls = _lookup.GetInScope("__class__");
                 var loc = GetLoc(node);
-                existing = new PythonFunction(node, _module, cls, loc);
+                existing = new PythonFunction(node, _module, cls.GetPythonType(), loc);
                 _lookup.DeclareVariable(node.Name, existing, loc);
             }
             AddOverload(node, o => existing.AddOverload(o));
@@ -140,7 +142,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             IPythonType t = _module.Stub;
             for (var i = memberNameChain.Count - 1; i >= 0; i--) {
-                t = t.GetMember(memberNameChain[i]);
+                t = t.GetMember(memberNameChain[i]).GetPythonType();
                 if (t == null) {
                     return null;
                 }

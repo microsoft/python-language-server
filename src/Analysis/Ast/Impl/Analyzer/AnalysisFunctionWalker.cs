@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -69,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         var p = Target.Parameters[i];
                         if (!string.IsNullOrEmpty(p.Name)) {
                             var defaultValue = await _lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? _lookup.UnknownType;
-                            var argType = new CallableArgumentType(i, defaultValue);
+                            var argType = new CallableArgumentType(i, defaultValue.GetPythonType());
                             _lookup.DeclareVariable(p.Name, argType, p.NameExpression);
                         }
                     }
@@ -105,14 +106,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (node.Left.FirstOrDefault() is TupleExpression tex) {
                 // Tuple = Tuple. Transfer values.
                 var texHandler = new TupleExpressionHandler(_lookup);
-                await texHandler.HandleTupleAssignmentAsync(tex, node.Right, value, cancellationToken);
+                await texHandler.HandleTupleAssignmentAsync(tex, node.Right, value.GetPythonType(), cancellationToken);
                 return await base.WalkAsync(node, cancellationToken);
             }
 
             foreach (var lhs in node.Left) {
                 if (lhs is MemberExpression memberExp && memberExp.Target is NameExpression nameExp1) {
                     if (_self is PythonType t && nameExp1.Name == "self") {
-                        t.AddMembers(new[] { new KeyValuePair<string, IPythonType>(memberExp.Name, value) }, true);
+                        t.AddMembers(new[] { new KeyValuePair<string, IPythonType>(memberExp.Name, value.GetPythonType()) }, true);
                     }
                     continue;
                 }
@@ -151,7 +152,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
             var value = await _lookup.GetValueFromExpressionAsync(node.Expression, cancellationToken);
-            var t = _lookup.GetTypeFromValue(value);
+            var t = _lookup.GetTypeFromValue(value.GetPythonType());
             if (t != null) {
                 _overload.AddReturnType(t);
             }

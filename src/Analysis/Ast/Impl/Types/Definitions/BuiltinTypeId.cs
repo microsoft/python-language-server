@@ -238,8 +238,6 @@ namespace Microsoft.Python.Analysis.Types {
                 case BuiltinTypeId.Unicode:
                 case BuiltinTypeId.NoneType:
                 case BuiltinTypeId.Ellipsis:
-                    return PythonMemberType.Constant;
-
                 case BuiltinTypeId.Dict:
                 case BuiltinTypeId.List:
                 case BuiltinTypeId.Object:

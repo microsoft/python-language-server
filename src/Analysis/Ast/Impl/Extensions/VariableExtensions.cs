@@ -13,23 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.IO;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
+using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Modules {
-    internal sealed class AstTypingModule : StubPythonModule {
-        public AstTypingModule(IServiceContainer services)
-            : base("typing", FindTypingStub(), services) { }
+namespace Microsoft.Python.Analysis {
+    public static class VariableExtensions {
+        public static T GetValue<T>(this IVariable v) where T : class => v.Value as T;
 
-        private static string FindTypingStub() {
-            if (InstallPath.TryGetFile("typing-stub.pyi", out var fullPath)) {
-                return fullPath;
-            }
-            throw new FileNotFoundException("typing-stub.pyi");
-        }
+        public static bool IsTypeInfo(this IVariable v) => v.Value is IPythonType;
+        public static bool IsTypeInfoOf<T>(this IVariable v) where T : class, IPythonType => v.Value is T;
 
-        public static bool IsTypingType(IPythonType type) => type.DeclaringModule is AstTypingModule;
+        public static bool IsInstance(this IVariable v) => v.Value is IPythonInstance;
+        public static bool IsInstanceOf<T>(this IVariable v) where T: class, IPythonInstance => v.Value is T;
     }
 }

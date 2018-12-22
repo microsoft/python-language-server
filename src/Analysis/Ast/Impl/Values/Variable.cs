@@ -13,27 +13,38 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
-    [DebuggerDisplay("{Name} : {Type}")]
+namespace Microsoft.Python.Analysis.Values {
+    [DebuggerDisplay("{DebuggerDisplay}")]
     internal sealed class Variable : IVariable {
-        public Variable(KeyValuePair<string, IPythonType> kvp, LocationInfo location = null) 
-            : this(kvp.Key, kvp.Value, location) { }
-
-        public Variable(string name, IPythonType type, LocationInfo location = null) {
+        public Variable(string name, IMember value, LocationInfo location = null) {
             Name = name;
-            Type = type;
+            Value = value;
             if (location != null) {
                 Location = location;
             } else {
-                Location = type is ILocatedMember lm ? lm.Location : LocationInfo.Empty;
+                Location = value is ILocatedMember lm ? lm.Location : LocationInfo.Empty;
             }
         }
 
         public string Name { get; }
-        public IPythonType Type { get; }
+        public IMember Value { get; }
         public LocationInfo Location { get; }
+        public PythonMemberType MemberType => PythonMemberType.Variable;
+
+        private string DebuggerDisplay {
+            get {
+                switch (Value) {
+                    case IPythonInstance pi:
+                        return $"{Name} : instance of {pi.Type.Name}";
+                    case IPythonType pt:
+                        return $"{Name} : typeInfo of {pt.Name}";
+                    default:
+                        return $"{Name} : member {Value.MemberType}";
+                }
+            }
+        }
     }
 }

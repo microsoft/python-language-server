@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         protected override string Identifier => nameof(IPythonFunctionOverload);
 
         public AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonType> HaveReturnType(string because = "", params object[] reasonArgs) {
-            var returnType = Subject.GetReturnType();
+            var returnType = Subject.GetReturnType(null);
             Execute.Assertion.ForCondition(returnType != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {Subject.Name} overload to have a return type{{reason}}, but it has none.");
@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         public AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonFunctionOverload> HaveReturnType(BuiltinTypeId typeid, string because = "", params object[] reasonArgs) {
-            Subject.GetReturnType().TypeId.Should().Be(typeid);
+            Subject.GetReturnType(null).TypeId.Should().Be(typeid);
             return new AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonFunctionOverload>(this, Subject);
         }
 
@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             => HaveParameters(Enumerable.Empty<string>(), because, reasonArgs);
 
         public AndConstraint<PythonFunctionOverloadAssertions> HaveReturnType(string type, string because = "", params object[] reasonArgs) {
-            var returnType = Subject.GetReturnType();
+            var returnType = Subject.GetReturnType(null);
             Execute.Assertion.ForCondition(string.Equals(returnType.Name, type, StringComparison.Ordinal))
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {Subject.Name} to have return type [{type}]{{reason}}, but it has [{returnType}].");

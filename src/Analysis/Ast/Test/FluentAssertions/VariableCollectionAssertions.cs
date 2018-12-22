@@ -18,7 +18,7 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
-using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 

@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
@@ -54,12 +55,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Module top-level members
         /// </summary>
-        public IVariableCollection TopLevelMembers => GlobalScope.Variables;
+        public IVariableCollection TopLevelVariables => GlobalScope.Variables;
 
         /// <summary>
         /// All module members from all scopes.
         /// </summary>
-        public IEnumerable<IVariable> AllMembers 
+        public IEnumerable<IVariable> AllVariables
             => (GlobalScope as IScope).TraverseBreadthFirst(s => s.Children).SelectMany(s => s.Variables);
 
         public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
@@ -78,8 +79,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             public int Version { get; } = -1;
             public IGlobalScope GlobalScope { get; }
             public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
-            public IVariableCollection TopLevelMembers => VariableCollection.Empty;
-            public IEnumerable<IVariable> AllMembers => Enumerable.Empty<IVariable>();
+            public IVariableCollection TopLevelVariables => VariableCollection.Empty;
+            public IEnumerable<IVariable> AllVariables => Enumerable.Empty<IVariable>();
             public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
             public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
             public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();

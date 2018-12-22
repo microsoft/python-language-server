@@ -26,6 +26,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
@@ -119,7 +120,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     _documentation = (m as PythonStringLiteral)?.Value ?? string.Empty;
                     if (string.IsNullOrEmpty(_documentation)) {
                         m = GetMember($"_{Name}");
-                        _documentation = m?.Documentation;
+                        _documentation = m?.GetPythonType()?.Documentation;
                         if (string.IsNullOrEmpty(_documentation)) {
                             _documentation = TryGetDocFromModuleInitFile();
                         }
@@ -132,8 +133,8 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IMemberContainer
-        public virtual IPythonType GetMember(string name) => _analysis.TopLevelMembers.GetMember(name);
-        public virtual IEnumerable<string> GetMemberNames() => _analysis.TopLevelMembers.GetMemberNames();
+        public virtual IMember GetMember(string name) => _analysis.GlobalScope.Variables[name]?.Value;
+        public virtual IEnumerable<string> GetMemberNames() => _analysis.GlobalScope.Variables.Names;
         #endregion
 
         #region IPythonFile

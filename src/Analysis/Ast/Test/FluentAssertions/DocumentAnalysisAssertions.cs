@@ -18,6 +18,7 @@ using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using FluentAssertions.Primitives;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
@@ -43,10 +44,10 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<DocumentAnalysisAssertions, IPythonClass>(this, constraint.Which);
         }
 
-        public AndWhichConstraint<DocumentAnalysisAssertions, VariableTestInfo> HaveVariable(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<DocumentAnalysisAssertions, IVariable> HaveVariable(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
             var constraint = _scopeAssertions.HaveVariable(name, because, reasonArgs);
-            return new AndWhichConstraint<DocumentAnalysisAssertions, VariableTestInfo>(this, constraint.Which);
+            return new AndWhichConstraint<DocumentAnalysisAssertions, IVariable>(this, constraint.Which);
         }
 
         public AndConstraint<DocumentAnalysisAssertions> HaveClassVariables(params string[] classNames)

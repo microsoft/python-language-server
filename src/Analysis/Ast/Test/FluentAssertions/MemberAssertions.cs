@@ -24,31 +24,23 @@ using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilitie
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
-    internal class MemberContainerAssertions<TMemberContainer> : MemberContainerAssertions<IMemberContainer, MemberContainerAssertions<TMemberContainer>> {
-        public MemberContainerAssertions(IMemberContainer memberContainer) : base(memberContainer) { }
-    }
-
-    [ExcludeFromCodeCoverage]
-    internal class MemberContainerAssertions<TMemberContainer, TAssertions> : ReferenceTypeAssertions<TMemberContainer, TAssertions>
-        where TMemberContainer : IMemberContainer
-        where TAssertions : MemberContainerAssertions<TMemberContainer, TAssertions> {
-
-        public MemberContainerAssertions(TMemberContainer memberContainer) {
-            Subject = memberContainer;
+    internal class MemberAssertions : ReferenceTypeAssertions<IMember, MemberAssertions> {
+        public MemberAssertions(IMember member) {
+            Subject = member;
         }
 
-        protected override string Identifier => nameof(IMemberContainer);
+        protected override string Identifier => nameof(IMember);
 
-        public AndWhichConstraint<TAssertions, IPythonClass> HaveClass(string name, string because = "", params object[] reasonArgs)
+        public AndWhichConstraint<MemberAssertions, IPythonClass> HaveClass(string name, string because = "", params object[] reasonArgs)
             => HaveMember<IPythonClass>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
 
-        public AndWhichConstraint<TAssertions, IPythonFunction> HaveFunction(string name, string because = "", params object[] reasonArgs)
+        public AndWhichConstraint<MemberAssertions, IPythonFunction> HaveFunction(string name, string because = "", params object[] reasonArgs)
             => HaveMember<IPythonFunction>(name, because, reasonArgs).OfMemberType(PythonMemberType.Function);
 
-        public AndWhichConstraint<TAssertions, IPythonProperty> HaveProperty(string name, string because = "", params object[] reasonArgs)
+        public AndWhichConstraint<MemberAssertions, IPythonProperty> HaveProperty(string name, string because = "", params object[] reasonArgs)
             => HaveMember<IPythonProperty>(name, because, reasonArgs).OfMemberType(PythonMemberType.Property);
 
-        public AndWhichConstraint<TAssertions, IPythonProperty> HaveReadOnlyProperty(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<MemberAssertions, IPythonProperty> HaveReadOnlyProperty(string name, string because = "", params object[] reasonArgs) {
             var constraint = HaveProperty(name, because, reasonArgs);
             Execute.Assertion.ForCondition(constraint.Which.IsReadOnly)
                 .BecauseOf(because, reasonArgs)
@@ -57,15 +49,20 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return constraint;
         }
 
-        public AndWhichConstraint<TAssertions, PythonFunction> HaveMethod(string name, string because = "", params object[] reasonArgs)
+        public AndWhichConstraint<MemberAssertions, PythonFunction> HaveMethod(string name, string because = "", params object[] reasonArgs)
             => HaveMember<PythonFunction>(name, because, reasonArgs).OfMemberType(PythonMemberType.Method);
 
-        public AndWhichConstraint<TAssertions, TMember> HaveMember<TMember>(string name,
+        public AndWhichConstraint<MemberAssertions, TMember> HaveMember<TMember>(string name,
             string because = "", params object[] reasonArgs)
             where TMember : class, IPythonType {
             NotBeNull();
 
-            var member = Subject.GetMember(name);
+            var mc = Subject as IMemberContainer;
+            Execute.Assertion.ForCondition(mc != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName(Subject)} to be a member container{{reason}}.");
+
+            var member = mc.GetMember(name);
             var typedMember = member as TMember;
             Execute.Assertion.ForCondition(member != null)
                 .BecauseOf(because, reasonArgs)
@@ -75,17 +72,19 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName(Subject)} to have a member {name} of type {typeof(TMember)}{{reason}}, but its type is {member?.GetType()}.");
 
-            return new AndWhichConstraint<TAssertions, TMember>((TAssertions)this, typedMember);
+            return new AndWhichConstraint<MemberAssertions, TMember>(this, typedMember);
         }
 
-        public AndConstraint<TAssertions> HaveSameMembersAs(IMemberContainer mc)
-            => HaveMembers(mc.GetMemberNames(), string.Empty);
+        public AndConstraint<MemberAssertions> HaveSameMembersAs(IMember m) {
+            m.Should().BeAssignableTo<IMemberContainer>();
+            return HaveMembers(((IMemberContainer)m).GetMemberNames(), string.Empty);
+        }
 
-        public AndConstraint<TAssertions> HaveMembers(params string[] memberNames)
+        public AndConstraint<MemberAssertions> HaveMembers(params string[] memberNames)
             => HaveMembers(memberNames, string.Empty);
 
-        public AndConstraint<TAssertions> HaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
-            var names = Subject.GetMemberNames().ToArray();
+        public AndConstraint<MemberAssertions> HaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
+            var names = ((IMemberContainer)Subject).GetMemberNames().ToArray();
             var expectedNames = memberNames.ToArray();
             var missingNames = expectedNames.Except(names).ToArray();
 
@@ -93,14 +92,14 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetQuotedName(Subject)} to have members with names {GetQuotedNames(expectedNames)}{{reason}}, but haven't found {GetQuotedNames(missingNames)}");
 
-            return new AndConstraint<TAssertions>((TAssertions)this);
+            return new AndConstraint<MemberAssertions>(this);
         }
 
-        public AndConstraint<TAssertions> NotHaveMembers(params string[] memberNames)
+        public AndConstraint<MemberAssertions> NotHaveMembers(params string[] memberNames)
             => NotHaveMembers(memberNames, string.Empty);
 
-        public AndConstraint<TAssertions> NotHaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
-            var names = Subject.GetMemberNames();
+        public AndConstraint<MemberAssertions> NotHaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
+            var names = ((IMemberContainer)Subject).GetMemberNames();
             var missingNames = memberNames.ToArray();
             var existingNames = names.Intersect(missingNames).ToArray();
 
@@ -108,7 +107,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetQuotedName(Subject)} to have no members with names {GetQuotedNames(missingNames)}{{reason}}, but found {GetQuotedNames(existingNames)}");
 
-            return new AndConstraint<TAssertions>((TAssertions)this);
+            return new AndConstraint<MemberAssertions>(this);
         }
     }
 }

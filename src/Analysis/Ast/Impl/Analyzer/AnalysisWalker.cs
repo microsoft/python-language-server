@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Logging;
@@ -93,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             foreach (var node in statement.OfType<ClassDefinition>()) {
-                _lookup.DeclareVariable(node.Name, CreateClass(node), node);
+                DeclareClass(node);
             }
         }
     }

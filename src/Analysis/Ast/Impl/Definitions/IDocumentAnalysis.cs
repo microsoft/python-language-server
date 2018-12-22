@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis {
@@ -41,14 +42,14 @@ namespace Microsoft.Python.Analysis {
         IGlobalScope GlobalScope { get; }
 
         /// <summary>
-        /// Module top-level members
+        /// Module top-level variables
         /// </summary>
-        IVariableCollection TopLevelMembers { get; }
+        IVariableCollection TopLevelVariables { get; }
 
         /// <summary>
         /// All module members from all scopes.
         /// </summary>
-        IEnumerable<IVariable> AllMembers { get; }
+        IEnumerable<IVariable> AllVariables { get; }
 
         /// <summary>
         /// Evaluates a given expression and returns a list of members which

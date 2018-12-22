@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
@@ -32,9 +33,9 @@ namespace Microsoft.Python.Analysis.Modules {
         public BuiltinsPythonModule(string moduleName, string filePath, IServiceContainer services)
             : base(moduleName, ModuleType.Builtins, filePath, null, services) { } // TODO: builtins stub
 
-        public override IPythonType GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
+        public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 
-        public IPythonType GetAnyMember(string name) => base.GetMember(name);
+        public IMember GetAnyMember(string name) => base.GetMember(name);
 
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
 

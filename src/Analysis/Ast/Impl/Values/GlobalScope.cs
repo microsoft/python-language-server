@@ -13,9 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Types {
-    internal sealed class PythonTypeConstructor: PythonTypeWrapper, IPythonTypeConstructor {
-        public PythonTypeConstructor(IPythonType type) : base(type) { }
-        public IPythonType Type => InnerType;
+using Microsoft.Python.Analysis.Types;
+
+namespace Microsoft.Python.Analysis.Values {
+    internal sealed class GlobalScope: Scope, IGlobalScope {
+        public GlobalScope(IPythonModule module):
+            base(null, null, true) {
+            Module = module;
+        }
+
+        public IPythonModule Module { get; }
     }
 }

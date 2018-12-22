@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IMemberContainer
-        public IPythonType GetMember(string name) => InnerType.GetMember(name);
+        public IMember GetMember(string name) => InnerType.GetMember(name);
         public IEnumerable<string> GetMemberNames() => InnerType.GetMemberNames();
         #endregion
 

@@ -18,8 +18,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents Python tclass - typically a type that has
-    /// __bases__ and the method resolution order.
+    /// Represents Python class type definition.
     /// </summary>
     public interface IPythonClass : IPythonType {
         ClassDefinition ClassDefinition { get; }

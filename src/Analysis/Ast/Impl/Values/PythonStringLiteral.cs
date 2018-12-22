@@ -13,13 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Represents a constructor that makes type.
-    /// For example, 'x' in 'x = C' where 'C' is a class
-    /// so 'x()' makes an instance of 'C'.
-    /// </summary>
-    public interface IPythonTypeConstructor: IPythonType {
-        IPythonType Type { get; }
+using Microsoft.Python.Analysis.Types;
+
+namespace Microsoft.Python.Analysis.Values {
+    internal sealed class PythonStringLiteral : PythonInstance {
+        public PythonStringLiteral(string value, IPythonType stringType, LocationInfo location)
+            : base(stringType, location) {
+            Value = value;
+        }
+        public string Value { get; }
     }
 }

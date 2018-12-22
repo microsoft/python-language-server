@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,14 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Represents type which has members.
-    /// </summary>
-    public interface IMemberContainer {
-        IMember GetMember(string name);
-        IEnumerable<string> GetMemberNames();
+namespace Microsoft.Python.Analysis.Values {
+    public interface IGlobalScope: IScope {
+        IPythonModule Module { get; }
     }
 }

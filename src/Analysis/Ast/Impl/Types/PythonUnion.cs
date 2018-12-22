@@ -92,7 +92,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IPythonType GetMember(string name) {
+        public IMember GetMember(string name) {
             lock(_lock) {
                 return _types.Select(t => t.GetMember(name)).ExcludeDefault().FirstOrDefault();
             }

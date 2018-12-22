@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
@@ -49,10 +50,11 @@ namespace Microsoft.Python.Analysis.Types {
         public string ReturnDocumentation { get; }
         public IReadOnlyList<IParameterInfo> Parameters { get; }
         public LocationInfo Location { get; }
+        public PythonMemberType MemberType => PythonMemberType.Function;
 
-        public IPythonType GetReturnType(IReadOnlyList<IPythonType> args) {
+        public IPythonType GetReturnType(IPythonInstance instance, IReadOnlyList<IMember> args) {
             if (_returnType is IPythonCallableArgumentType cat) {
-                return cat.ParameterIndex < args.Count ? args[cat.ParameterIndex] : _returnType;
+                return cat.ParameterIndex < args.Count ? args[cat.ParameterIndex].GetPythonType() : _returnType;
             }
             return _returnType;
         }

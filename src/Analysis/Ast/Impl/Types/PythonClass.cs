@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -48,7 +49,7 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonType
         public override PythonMemberType MemberType => PythonMemberType.Class;
 
-        public override IPythonType GetMember(string name) {
+        public override IMember GetMember(string name) {
             IPythonType member;
             lock (_lock) {
                 if (Members.TryGetValue(name, out member)) {
@@ -71,7 +72,7 @@ namespace Microsoft.Python.Analysis.Types {
                         if (m == this) {
                             return member;
                         }
-                        member = member ?? m.GetMember(name);
+                        member = member ?? m.GetMember(name).GetPythonType();
                     }
                 } finally {
                     Pop();
@@ -137,9 +138,13 @@ namespace Microsoft.Python.Analysis.Types {
                 var mergeList = new List<List<IPythonType>> { new List<IPythonType>() };
                 var finalMro = new List<IPythonType> { cls };
 
-                var bases = (cls as PythonClass)?.Bases ??
-                    (cls.GetMember("__bases__") as IPythonSequence)?.IndexTypes ??
-                    Array.Empty<IPythonType>();
+                var bases = (cls as PythonClass)?.Bases;
+                if (bases == null) {
+                    var instance = cls.GetMember("__bases__") as IPythonInstance;
+                    var seq = instance?.GetPythonType() as IPythonSequence;
+                    var members = seq?.GetMembers(instance) ?? Array.Empty<IMember>();
+                    bases = members.Select(m => m.GetPythonType()).ToArray();
+                }
 
                 foreach (var b in bases) {
                     var b_mro = new List<IPythonType>();

@@ -17,11 +17,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
     internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName {
-        private readonly string _name;
         private readonly object _lock = new object();
         private Dictionary<string, IPythonType> _members;
         private BuiltinTypeId _typeId;
@@ -44,19 +44,12 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public PythonType(string name, BuiltinTypeId typeId) {
-            _name = name ?? throw new ArgumentNullException(nameof(name));
+            Name = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId;
         }
 
         #region IPythonType
-        public virtual string Name {
-            get {
-                lock (_lock) {
-                    return Members.TryGetValue("__name__", out var nameMember) && nameMember is PythonStringLiteral lit ? lit.Value : _name;
-                }
-            }
-        }
-
+        public virtual string Name { get; }
         public virtual string Documentation { get; }
         public IPythonModule DeclaringModule { get; }
         public virtual PythonMemberType MemberType => _typeId.GetMemberId();
@@ -75,7 +68,7 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IMemberContainer
-        public virtual IPythonType GetMember(string name) => Members.TryGetValue(name, out var member) ? member : null;
+        public virtual IMember GetMember(string name) => Members.TryGetValue(name, out var member) ? member : null;
         public virtual IEnumerable<string> GetMemberNames() => Members.Keys;
         #endregion
 
@@ -90,7 +83,7 @@ namespace Microsoft.Python.Analysis.Types {
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
             lock (_lock) {
                 foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
-                    WritableMembers[v.Name] = v.Type;
+                    WritableMembers[v.Name] = v.Value.GetPythonType();
                 }
             }
         }
@@ -106,7 +99,7 @@ namespace Microsoft.Python.Analysis.Types {
         internal void AddMembers(IPythonClass cls, bool overwrite) {
             if (cls != null) {
                 var names = cls.GetMemberNames();
-                var members = names.Select(n => new KeyValuePair<string, IPythonType>(n, cls.GetMember(n)));
+                var members = names.Select(n => new KeyValuePair<string, IPythonType>(n, cls.GetMember(n).GetPythonType()));
                 AddMembers(members, overwrite);
             }
         }

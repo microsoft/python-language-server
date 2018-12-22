@@ -19,6 +19,7 @@ using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
@@ -57,27 +58,27 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public AndWhichConstraint<TScopeAssertions, IPythonClass> HaveClass(string name, string because = "", params object[] reasonArgs) {
             var v = HaveVariable(name, because, reasonArgs).Which;
-            v.Type.Should().BeAssignableTo<IPythonClass>();
+            v.Value.Should().BeAssignableTo<IPythonClass>();
 
-            return new AndWhichConstraint<TScopeAssertions, IPythonClass>((TScopeAssertions)this, (IPythonClass)v.Type);
+            return new AndWhichConstraint<TScopeAssertions, IPythonClass>((TScopeAssertions)this, (IPythonClass)v.Value);
         }
 
         public AndWhichConstraint<TScopeAssertions, IPythonFunction> HaveFunction(string name, string because = "", params object[] reasonArgs) {
             var f = HaveVariable(name, because, reasonArgs).Which;
-            var assertion = f.Type.Should().BeAssignableTo<IPythonFunction>();
+            f.Value.Should().BeAssignableTo<IPythonFunction>();
 
-            return new AndWhichConstraint<TScopeAssertions, IPythonFunction>((TScopeAssertions)this, (IPythonFunction)f.Type);
+            return new AndWhichConstraint<TScopeAssertions, IPythonFunction>((TScopeAssertions)this, (IPythonFunction)f.Value);
         }
         
-        public AndWhichConstraint<TScopeAssertions, VariableTestInfo> HaveVariable(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<TScopeAssertions, IVariable> HaveVariable(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            var t = Subject.Variables.GetMember(name);
-            Execute.Assertion.ForCondition(t != null)
+            var v = Subject.Variables[name];
+            Execute.Assertion.ForCondition(v != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected scope '{Subject.Name}' to have variable '{name}'{{reason}}.");
 
-            return new AndWhichConstraint<TScopeAssertions, VariableTestInfo>((TScopeAssertions)this, new VariableTestInfo(new Variable(name, t), Subject));
+            return new AndWhichConstraint<TScopeAssertions, IVariable>((TScopeAssertions)this, v);
         }
         
         public AndConstraint<TScopeAssertions> HaveClassVariables(params string[] classNames)
@@ -87,7 +88,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             NotBeNull();
 
             foreach (var className in classNames) {
-                HaveVariable(className, because, reasonArgs).Which.Should().HaveMemberType(PythonMemberType.Class, because, reasonArgs);
+                HaveVariable(className, because, reasonArgs).OfType(className, because, reasonArgs);
             }
 
             return new AndConstraint<TScopeAssertions>((TScopeAssertions)this);
@@ -100,7 +101,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             Subject.Should().NotBeNull();
 
             foreach (var functionName in functionNames) {
-                HaveVariable(functionName, because, reasonArgs).Which.Should().HaveMemberType(PythonMemberType.Function, because, reasonArgs);
+                HaveVariable(functionName, because, reasonArgs).OfType(functionName, because, reasonArgs);
             }
 
             return new AndConstraint<TScopeAssertions>((TScopeAssertions)this);
@@ -109,7 +110,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public AndConstraint<TScopeAssertions> NotHaveVariable(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            Execute.Assertion.ForCondition(Subject.Variables.GetMember(name) == null)
+            Execute.Assertion.ForCondition(Subject.Variables[name] == null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected scope '{Subject.Name}' to have no variable '{name}'{{reason}}.");
 

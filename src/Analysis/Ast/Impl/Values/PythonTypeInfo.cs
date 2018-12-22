@@ -13,8 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Types {
-    public interface IGlobalScope: IScope {
-        IPythonModule Module { get; }
+using System.Diagnostics;
+using Microsoft.Python.Analysis.Types;
+
+namespace Microsoft.Python.Analysis.Values {
+    /// <summary>
+    /// Represents instance of a type information.
+    /// Actual instance has <see cref="MemberType"/> set to <see cref="PythonMemberType.Instance"/>.
+    /// Type information is marked as the type it describes, such as <see cref="PythonMemberType.Class"/>.
+    /// </summary>
+    [DebuggerDisplay("TypeInfo of {Type.Name}")]
+    internal class PythonTypeInfo : PythonInstance {
+        public PythonTypeInfo(IPythonType type, LocationInfo location = null): base(type, location) { }
+
+        public override PythonMemberType MemberType => Type.MemberType;
     }
 }

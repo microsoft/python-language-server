@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -40,8 +41,8 @@ namespace Microsoft.Python.Analysis.Tests {
         public async Task Classes() {
             var code = await File.ReadAllTextAsync(Path.Combine(GetAnalysisTestDataFilesPath(), "Classes.py"));
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var names = analysis.TopLevelMembers.GetMemberNames();
-            var all = analysis.AllMembers.ToArray();
+            var names = analysis.GlobalScope.Variables.Names;
+            var all = analysis.GlobalScope.Variables.ToArray();
 
             names.Should().OnlyContain("C1", "C2", "C3", "C4", "C5",
                 "D", "E",
@@ -49,23 +50,23 @@ namespace Microsoft.Python.Analysis.Tests {
                 "f"
             );
 
-            all.First(x => x.Name == "C1").Type.Should().BeAssignableTo<IPythonClass>();
-            all.First(x => x.Name == "C2").Type.Should().BeAssignableTo<IPythonClass>();
-            all.First(x => x.Name == "C3").Type.Should().BeAssignableTo<IPythonClass>();
-            all.First(x => x.Name == "C4").Type.Should().BeAssignableTo<IPythonClass>();
+            all.First(x => x.Name == "C1").Value.Should().BeAssignableTo<IPythonClass>();
+            all.First(x => x.Name == "C2").Value.Should().BeAssignableTo<IPythonClass>();
+            all.First(x => x.Name == "C3").Value.Should().BeAssignableTo<IPythonClass>();
+            all.First(x => x.Name == "C4").Value.Should().BeAssignableTo<IPythonClass>();
 
             all.First(x => x.Name == "C5")
-                .Type.Should().BeAssignableTo<IPythonClass>()
+                .Value.Should().BeAssignableTo<IPythonClass>()
                 .Which.Name.Should().Be("C1");
 
-            all.First(x => x.Name == "D").Type.Should().BeAssignableTo<IPythonClass>();
-            all.First(x => x.Name == "E").Type.Should().BeAssignableTo<IPythonClass>();
-            all.First(x => x.Name == "f").Type.Should().BeAssignableTo<IPythonFunction>();
+            all.First(x => x.Name == "D").Value.Should().BeAssignableTo<IPythonClass>();
+            all.First(x => x.Name == "E").Value.Should().BeAssignableTo<IPythonClass>();
+            all.First(x => x.Name == "f").Value.Should().BeAssignableTo<IPythonFunction>();
 
-            all.First(x => x.Name == "f").Type.Should().BeAssignableTo<IPythonFunction>();
+            all.First(x => x.Name == "f").Value.Should().BeAssignableTo<IPythonFunction>();
 
             var f1 = all.First(x => x.Name == "F1");
-            var c = f1.Type.Should().BeAssignableTo<IPythonClass>().Which;
+            var c = f1.Value.Should().BeAssignableTo<IPythonClass>().Which;
 
             c.GetMemberNames().Should().OnlyContain("F2", "F3", "F6", "__class__", "__bases__");
             c.GetMember("F6").Should().BeAssignableTo<IPythonClass>()
@@ -208,8 +209,8 @@ b = x.ClassMethod()
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Should().HaveVariable("a").Which.Should().HaveType("x");
-            analysis.Should().HaveVariable("b").Which.Should().HaveType("x");
+            analysis.Should().HaveVariable("a").OfType("x");
+            analysis.Should().HaveVariable("b").OfType("x");
             analysis.Should().HaveClass("x")
                 .Which.Should().HaveMethod("ClassMethod")
                 .Which.Should().HaveSingleOverload()
@@ -227,7 +228,7 @@ a = X(2)
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a")
-                .Which.Type.Should().BeAssignableTo<IPythonConstant>()
+                .Which.Value.Should().BeAssignableTo<IPythonInstance>()
                 .Which.Type.Name.Should().Be("X");
 
             analysis.Should().HaveClass("X")
@@ -266,8 +267,8 @@ f2 = c.f
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Should().HaveVariable("x").Which.Type.Should().BeAssignableTo<IPythonTypeConstructor>();
-            analysis.Should().HaveVariable("y").Which.Type.Should().BeAssignableTo<IPythonClass>();
+            analysis.Should().HaveVariable("x").Which.Value.Should().BeAssignableTo<IPythonType>();
+            analysis.Should().HaveVariable("y").Which.Value.Should().BeAssignableTo<IPythonClass>();
 
             analysis.Should()
                 .HaveVariable("f1").OfType(BuiltinTypeId.Function).And

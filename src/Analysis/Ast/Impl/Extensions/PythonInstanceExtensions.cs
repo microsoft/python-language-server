@@ -13,12 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Types {
-    internal sealed class PythonStringLiteral : PythonConstant {
-        public PythonStringLiteral(string value, IPythonType type, LocationInfo location)
-            : base(type, location) {
-            Value = value;
-        }
-        public string Value { get; }
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
+
+namespace Microsoft.Python.Analysis {
+    public static class PythonInstanceExtensions {
+        public static bool IsUnknown(this IPythonInstance value) =>
+            value?.Type == null || value.Type.TypeId == BuiltinTypeId.Unknown;
     }
 }

@@ -13,13 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-
 namespace Microsoft.Python.Analysis.Types {
-    public interface IHasRichDescription {
+    /// <summary>
+    /// Represents lowest common denominator in the type system.
+    /// Both instance and its type information are members.
+    /// </summary>
+    public interface IMember {
         /// <summary>
-        /// Returns a sequence of Kind,Text pairs that make up the description.
+        /// Member type.
         /// </summary>
-        IEnumerable<KeyValuePair<string, string>> GetRichDescription();
+        PythonMemberType MemberType { get; }
     }
 }

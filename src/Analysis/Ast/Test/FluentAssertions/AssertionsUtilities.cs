@@ -20,6 +20,7 @@ using System.Text;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
@@ -210,12 +211,14 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             .FailWith($"Expected {subjectName} to have {itemName} of type `{typeof(T).Name}` at index {index}{{reason}}, but its type is `{collection[index].GetType().Name}`.");
 
         [CustomAssertion]
-        public static Continuation AssertHasMember(this AssertionScope assertionScope, IPythonType type, string memberName, string analysisValueName, string memberPrintName, out IPythonType member) {
+        public static Continuation AssertHasMember(this AssertionScope assertionScope, IMember m, string memberName, string analysisValueName, string memberPrintName, out IMember member) {
+            var t = m.GetPythonType();
+            t.Should().BeAssignableTo<IMemberContainer>();
             try {
-                member = type.GetMember(memberName);
+                member = ((IMemberContainer)m).GetMember(memberName);
             } catch (Exception e) {
                 member = null;
-                return assertionScope.FailWith($"Expected {analysisValueName} to have a {memberPrintName}{{reason}}, but {nameof(type.GetMember)} has failed with exception: {e}.");
+                return assertionScope.FailWith($"Expected {analysisValueName} to have a {memberPrintName}{{reason}}, but {nameof(t.GetMember)} has failed with exception: {e}.");
             }
 
             return assertionScope.ForCondition(!(member is null))

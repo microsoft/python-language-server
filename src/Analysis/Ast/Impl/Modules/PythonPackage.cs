@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         public override IEnumerable<string> GetMemberNames() => _childModules.Keys.ToArray();
-        public override IPythonType GetMember(string name) => _childModules.TryGetValue(name, out var v) ? v : null;
+        public override IMember GetMember(string name) => _childModules.TryGetValue(name, out var v) ? v : null;
         public override IEnumerable<string> GetChildrenModuleNames() => GetMemberNames();
     }
 }

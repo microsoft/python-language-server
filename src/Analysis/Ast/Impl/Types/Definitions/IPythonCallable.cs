@@ -14,10 +14,11 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Describes callable entity.
+    /// Describes callable type.
     /// </summary>
     public interface IPythonCallable {
         /// <summary>
@@ -26,11 +27,10 @@ namespace Microsoft.Python.Analysis.Types {
         IReadOnlyList<IParameterInfo> Parameters { get; }
 
         /// <summary>
-        /// Determines return value type given arguments.
-        /// For annotated or stubbed functions the annotation
-        /// type is always returned.
+        /// Determines return value type given arguments for the particular instance.
+        /// For annotated or stubbed functions the annotation type is always returned.
         /// </summary>
-        IPythonType GetReturnType(IReadOnlyList<IPythonType> args = null);
+        IPythonType GetReturnType(IPythonInstance instance, IReadOnlyList<IMember> args = null);
 
         /// <summary>
         /// Return value documentation.

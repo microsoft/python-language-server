@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -29,12 +30,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _lookup = lookup;
         }
 
-        public async Task HandleTupleAssignmentAsync(TupleExpression lhs, Expression rhs, IPythonType value, CancellationToken cancellationToken = default) {
+        public async Task HandleTupleAssignmentAsync(TupleExpression lhs, Expression rhs, IMember value, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
 
             if (rhs is TupleExpression tex) {
                 var returnedExpressions = tex.Items.ToArray();
-                var names = tex.Items.Select(x => (x as NameExpression)?.Name).ExcludeDefault().ToArray();
+                var names = tex.Items.OfType<NameExpression>().Select(x => x.Name).ExcludeDefault().ToArray();
                 for (var i = 0; i < Math.Min(names.Length, returnedExpressions.Length); i++) {
                     if (returnedExpressions[i] != null) {
                         var v = await _lookup.GetValueFromExpressionAsync(returnedExpressions[i], cancellationToken);
@@ -47,10 +48,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             // Tuple = 'tuple value' (such as from callable). Transfer values.
-            if (value is PythonConstant c && c.Type is PythonSequence seq) {
-                var types = seq.IndexTypes.ToArray();
+            if (value is IPythonInstance c && c.Type is IPythonSequence seq) {
+                var types = seq.GetMembers(c).ToArray();
                 var expressions = lhs.Items.OfType<NameExpression>().ToArray();
-                var names = expressions.Select(x => (x as NameExpression)?.Name).ToArray();
+                var names = expressions.Select(x => x.Name).ToArray();
                 for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {
                     if (names[i] != null && types[i] != null) {
                         _lookup.DeclareVariable(names[i], types[i], expressions[i]);

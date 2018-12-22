@@ -13,22 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Values {
     /// <summary>
-    /// Represents scope where variables can be declared.
+    /// Represents a variable.
     /// </summary>
-    public interface IScope {
+    public interface IVariable: ILocatedMember {
         string Name { get; }
-        Node Node { get; }
-        IScope OuterScope { get; }
-        IGlobalScope GlobalScope { get; }
-        bool VisibleToChildren { get; }
-        IReadOnlyList<IScope> Children { get; }
-        IEnumerable<IScope> EnumerateTowardsGlobal { get; }
-        IEnumerable<IScope> EnumerateFromGlobal { get; }
-        IVariableCollection Variables { get; }
+        IMember Value { get; }
     }
 }

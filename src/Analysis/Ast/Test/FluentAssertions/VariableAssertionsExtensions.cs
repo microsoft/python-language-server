@@ -16,25 +16,32 @@
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class VariableAssertionsExtensions {
-        public static AndWhichConstraint<TAssertion, VariableTestInfo> OfType<TAssertion>(
-            this AndWhichConstraint<TAssertion, VariableTestInfo> andWhichConstraint, BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
-            andWhichConstraint.Which.Should().HaveType(typeId, because, reasonArgs);
+        public static AndWhichConstraint<TAssertion, IVariable> OfType<TAssertion>(
+            this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
+            andWhichConstraint.Subject.Should().OfType(typeId, because, reasonArgs);
             return andWhichConstraint;
         }
 
-        public static AndWhichConstraint<TAssertion, VariableTestInfo> OfType<TAssertion>(
-            this AndWhichConstraint<TAssertion, VariableTestInfo> andWhichConstraint, string typeName, string because = "", params object[] reasonArgs) {
-            andWhichConstraint.Which.Should().HaveType(typeName, because, reasonArgs);
+        public static AndWhichConstraint<TAssertion, IVariable> OfType<TAssertion>(
+            this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, string typeName, string because = "", params object[] reasonArgs) {
+            andWhichConstraint.Subject.Should().OfType(typeName, because, reasonArgs);
             return andWhichConstraint;
         }
 
-        public static AndWhichConstraint<TAssertion, VariableTestInfo> WithNoTypes<TAssertion>(
-            this AndWhichConstraint<TAssertion, VariableTestInfo> andWhichConstraint, string because = "", params object[] reasonArgs) {
-            andWhichConstraint.Which.Should().HaveNoTypes(because, reasonArgs);
+        public static AndWhichConstraint<TAssertion, IVariable> OfType<TAssertion ,T>(
+            this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, string because = "", params object[] reasonArgs) {
+            andWhichConstraint.Subject.Should().OfType<T>(because, reasonArgs);
+            return andWhichConstraint;
+        }
+
+        public static AndWhichConstraint<TAssertion, IVariable> WithNoTypes<TAssertion>(
+            this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, string because = "", params object[] reasonArgs) {
+            andWhichConstraint.Subject.Should().HaveNoType(because, reasonArgs);
             return andWhichConstraint;
         }
     }

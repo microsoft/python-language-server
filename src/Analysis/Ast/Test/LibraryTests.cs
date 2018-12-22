@@ -51,13 +51,14 @@ namespace Microsoft.Python.Analysis.Tests {
             var dtVar = analysis.Should().HaveVariable("datetime").Which;
             dtVar.Name.Should().Be("datetime");
 
-            var c = dtVar.Type.Should().BeAssignableTo<IPythonModule>().
-                And.HaveMember<IPythonClass>("datetime").Which;
+            var c = dtVar.Value;
+            c.Should().BeAssignableTo<IPythonModule>();
+            var dt = c.Should().HaveMember<IPythonClass>("datetime").Which;
 
             c.Should().HaveReadOnlyProperty("day").And.HaveMethod("now")
                 .Which.Should().BeClassMethod().And.HaveSingleOverload()
                 .Which.Should().HaveReturnType()
-                .Which.Should().HaveSameMembersAs(dtVar.Type.GetMember("datetime"));
+                .Which.Should().HaveSameMembersAs(dt);
         }
     }
 }

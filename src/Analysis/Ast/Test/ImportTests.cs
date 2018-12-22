@@ -83,7 +83,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var code = await File.ReadAllTextAsync(Path.Combine(GetAnalysisTestDataFilesPath(), "Imports.py"));
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.TopLevelMembers.GetMemberNames().Should().OnlyContain("version_info", "a_made_up_module");
+            analysis.GlobalScope.Variables.Names.Should().OnlyContain("version_info", "a_made_up_module");
         }
 
         [TestMethod, Priority(0)]

@@ -20,26 +20,25 @@ namespace Microsoft.Python.Analysis.Types {
     internal class PythonIterable : PythonTypeWrapper, IPythonIterable {
         public PythonIterable(
             IPythonType iterableType,
-            IEnumerable<IPythonType> types,
+            IEnumerable<IMember> contents,
             IPythonType iteratorBase,
             IPythonModule declaringModule
         ) : base(iterableType, declaringModule) {
-            IteratorType = new AstPythonIterator(iteratorBase, types, declaringModule);
+            Iterator = new PythonIterator(iteratorBase, contents, declaringModule);
         }
 
-        public IPythonIterator IteratorType { get; }
+        public IPythonIterator Iterator { get; }
     }
 
-    class AstPythonIterator : PythonTypeWrapper, IPythonIterator, IPythonIterable {
-        private readonly IPythonType _type;
+    internal sealed class PythonIterator : PythonTypeWrapper, IPythonIterator, IPythonIterable {
 
-        public AstPythonIterator(IPythonType iterableType, IEnumerable<IPythonType> nextType, IPythonModule declaringModule):
+        public PythonIterator(IPythonType iterableType, IEnumerable<IMember> contents, IPythonModule declaringModule):
             base(iterableType, declaringModule) {
-            _type = iterableType;
-            NextType = nextType.ToArray();
+            // TODO: handle non-homogenous collections
+            Next = contents.FirstOrDefault();
         }
 
-        public IPythonIterator IteratorType => this;
-        public IEnumerable<IPythonType> NextType { get; }
+        public IPythonIterator Iterator => this;
+        public IMember Next { get; }
     }
 }

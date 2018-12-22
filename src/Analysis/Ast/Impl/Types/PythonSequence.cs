@@ -16,21 +16,29 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
-    internal class PythonSequence : PythonTypeWrapper, IPythonSequence, IPythonIterable {
+    internal class PythonSequence : PythonTypeWrapper, IPythonSequence {
+        private readonly IReadOnlyList<IMember> _contents;
+
         public PythonSequence(
             IPythonType sequenceType,
             IPythonModule declaringModule,
-            IEnumerable<IPythonType> contents,
+            IEnumerable<IMember> contents,
             IPythonType iteratorBase
         ): base(sequenceType, declaringModule) {
-            IndexTypes = (contents ?? throw new ArgumentNullException(nameof(contents))).ToArray();
-            IteratorType = new AstPythonIterator(iteratorBase, IndexTypes, declaringModule);
+            _contents = (contents ?? throw new ArgumentNullException(nameof(contents))).ToArray();
+            Iterator = new PythonIterator(iteratorBase, _contents, declaringModule);
         }
 
-        public IEnumerable<IPythonType> IndexTypes { get; }
-        public IPythonIterator IteratorType { get; }
+        public IMember GetValueAt(IPythonInstance instance, int index) 
+            // TODO: report index out of bounds warning
+            => index >= 0 && index < _contents.Count ? _contents[index] : null;
+
+        public IEnumerable<IMember> GetMembers(IPythonInstance instance) => _contents;
+
+        public IPythonIterator Iterator { get; }
  
         public override string Name => InnerType?.Name ?? "tuple";
         public override BuiltinTypeId TypeId => InnerType?.TypeId ?? BuiltinTypeId.Tuple;

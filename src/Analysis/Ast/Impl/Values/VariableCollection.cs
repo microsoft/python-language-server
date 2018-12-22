@@ -19,8 +19,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("Count: {Count}")]
     internal sealed class VariableCollection : IVariableCollection {
         public static readonly IVariableCollection Empty = new VariableCollection();
@@ -32,19 +33,19 @@ namespace Microsoft.Python.Analysis.Types {
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         #endregion
 
-        #region IMemberContainer
-        public IPythonType GetMember(string name) => _variables.TryGetValue(name, out var v) ? v.Type : null;
-        public IEnumerable<string> GetMemberNames() => _variables.Keys;
-        public bool Remove(IVariable item) => throw new NotImplementedException();
-        #endregion
-
         #region IVariableCollection
         public IVariable this[string name] => _variables.TryGetValue(name, out var v) ? v : null;
         public bool Contains(string name) => _variables.ContainsKey(name);
         public bool TryGetVariable(string key, out IVariable value) => _variables.TryGetValue(key, out value);
+        public IReadOnlyList<string> Names => _variables.Keys.ToArray();
         #endregion
 
-        internal void DeclareVariable(string name, IPythonType type, LocationInfo location) 
-            => _variables[name] = new Variable(name, type, location);
+        #region IMemberContainer
+        public IMember GetMember(string name) => _variables.TryGetValue(name, out var v) ? v : null;
+        public IEnumerable<string> GetMemberNames() => _variables.Keys.ToArray();
+        #endregion
+
+        internal void DeclareVariable(string name, IMember value, LocationInfo location) 
+            => _variables[name] = new Variable(name, value, location);
     }
 }

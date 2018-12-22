@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -52,20 +53,17 @@ y = c.method()
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            var names = analysis.TopLevelMembers.Select(v => v.Name);
+            var names = analysis.GlobalScope.Variables.Names;
             names.Should().OnlyContain("x", "C", "func", "c", "y");
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Unicode);
-
-            analysis.Should().HaveVariable("C")
-                .Which.Type.Should().BeAssignableTo<IPythonClass>()
-                .Which.MemberType.Should().Be(PythonMemberType.Class);
+            analysis.Should().HaveVariable("C").Which.Value.Should().BeAssignableTo<IPythonClass>();
 
             analysis.Should().HaveVariable("func")
-                .Which.Type.Should().BeAssignableTo<IPythonFunction>();
+                .Which.Value.Should().BeAssignableTo<IPythonFunction>();
 
             analysis.Should().HaveVariable("c")
-                .Which.Type.Should().BeAssignableTo<IPythonConstant>()
+                .Which.Value.Should().BeAssignableTo<IPythonInstance>()
                 .Which.MemberType.Should().Be(PythonMemberType.Class);
 
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Float);
@@ -79,7 +77,7 @@ x = sys.path
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.TopLevelMembers.Count.Should().Be(2);
+            analysis.GlobalScope.Variables.Count.Should().Be(2);
 
             analysis.Should()
                 .HaveVariable("sys").OfType(BuiltinTypeId.Module);

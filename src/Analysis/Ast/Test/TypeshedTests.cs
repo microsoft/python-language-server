@@ -81,10 +81,10 @@ scanner = _json.make_scanner()";
 
             analysis.Should()
                 .HaveVariable("Package")
-                    .Which.Type.Should().HaveMember<IPythonModule>("Module");
+                    .Which.Value.Should().HaveMember<IPythonModule>("Module");
 
             analysis.Should().HaveVariable("c")
-                .Which.Type.Should().HaveMembers("untyped_method", "inferred_method", "typed_method")
+                .Which.Value.Should().HaveMembers("untyped_method", "inferred_method", "typed_method")
                 .And.NotHaveMembers("typed_method_2");
         }
 
@@ -129,7 +129,7 @@ if sys.version_info >= (2, 7):
                         expected.Add("LE_2_7");
                     }
 
-                    analysis.TopLevelMembers.Select(m => m.Name).Where(n => n.EndsWithOrdinal("2_7"))
+                    analysis.GlobalScope.Variables.Select(m => m.Name).Where(n => n.EndsWithOrdinal("2_7"))
                         .Should().Contain(expected)
                         .And.NotContain(fullSet.Except(expected));
                 }

@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Indicates the type of a variable result lookup.
@@ -24,47 +23,27 @@ namespace Microsoft.Python.Analysis.Types {
     public enum PythonMemberType {
         Unknown,
         /// <summary>
-        /// The result is a user defined or built-in class.
+        /// Class definition.
         /// </summary>
         Class,
         /// <summary>
-        /// An instance of a user defined or built-in class.
+        /// An instance of a type.
         /// </summary>
         Instance,
         /// <summary>
-        /// The result is an enum type.
-        /// </summary>
-        Enum,
-        /// <summary>
-        /// The result is an enum instance.
-        /// </summary>
-        EnumInstance,
-        /// <summary>
-        /// An instance of a user defined or built-in function.
+        /// Function type information.
         /// </summary>
         Function,
         /// <summary>
-        /// An instance of a user defined or built-in method.
+        /// Method type information.
         /// </summary>
         Method,
         /// <summary>
-        /// An instance of a built-in or user defined module.
+        /// An instance of a module.
         /// </summary>
         Module,
         /// <summary>
-        /// A constant defined in source code.
-        /// </summary>
-        Constant,
-        /// <summary>
-        /// A .NET event object that is exposed to Python.
-        /// </summary>
-        Event,
-        /// <summary>
-        /// A .NET field object that is exposed to Python.
-        /// </summary>
-        Field,
-        /// <summary>
-        /// A .NET property object that is exposed to Python.
+        /// A class property definition.
         /// </summary>
         Property,
         /// <summary>
@@ -72,16 +51,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         Union,
         /// <summary>
-        /// The member represents a keyword
+        /// Member is a variable.
         /// </summary>
-        Keyword,
-        /// <summary>
-        /// The member represents a code snippet
-        /// </summary>
-        CodeSnippet,
-        /// <summary>
-        /// The member represents a named argument
-        /// </summary>
-        NamedArgument
+        Variable
     }
 }

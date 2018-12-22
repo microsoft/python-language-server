@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,12 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Represents constant value, such as string literal.
-    /// </summary>
-    public interface IPythonConstant : IPythonType {
-        IPythonType Type { get; }
+namespace Microsoft.Python.Analysis.Values {
+    public interface IVariableCollection: IReadOnlyCollection<IVariable> {
+        IVariable this[string name] { get; }
+        bool Contains(string name);
+        bool TryGetVariable(string name, out IVariable variable);
+        IReadOnlyList<string> Names { get; }
     }
 }

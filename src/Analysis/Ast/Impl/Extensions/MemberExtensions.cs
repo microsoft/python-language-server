@@ -13,12 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Types {
-    public interface IVariableCollection: IMemberContainer, IReadOnlyCollection<IVariable> {
-        IVariable this[string name] { get; }
-        bool Contains(string name);
-        bool TryGetVariable(string key, out IVariable value);
+namespace Microsoft.Python.Analysis {
+    public static class MemberExtensions {
+        public static bool IsUnknown(this IMember m) {
+            switch (m) {
+                case IPythonType pt when pt.IsUnknown():
+                case IPythonInstance pi when pi.IsUnknown():
+                    return true;
+                default:
+                    return m.MemberType == PythonMemberType.Unknown;
+            }
+        }
+
+        public static IPythonType GetPythonType(this IMember m)
+            => m is IPythonType pt ? pt : (m as IPythonInstance)?.Type;
     }
 }

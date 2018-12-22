@@ -13,19 +13,25 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Diagnostics;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Values {
     /// <summary>
-    /// Represents constant value, such as string literal.
+    /// Represents an instance of type or the type information.
+    /// Actual instance has <see cref="MemberType"/> set to <see cref="PythonMemberType.Instance"/>.
+    /// Type information is marked as the type it describes, such as <see cref="PythonMemberType.Class"/>.
     /// </summary>
     [DebuggerDisplay("Instance of {Type.Name}")]
-    internal abstract class PythonConstant : PythonTypeWrapper, IPythonConstant {
-        protected PythonConstant(IPythonType type, LocationInfo location) : base(type) {
+    internal class PythonInstance : IPythonInstance {
+        public PythonInstance(IPythonType type, LocationInfo location = null) {
+            Type = type ?? throw new ArgumentNullException(nameof(type));
             Location = location ?? LocationInfo.Empty;
         }
 
-        public override LocationInfo Location { get; }
-        public IPythonType Type => InnerType;
+        public IPythonType Type { get; }
+        public LocationInfo Location { get; }
+        public virtual PythonMemberType MemberType => PythonMemberType.Instance;
     }
 }

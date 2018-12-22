@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Tests.Utilities.FluentAssertions;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -53,11 +53,13 @@ fob3 = x
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Should().HaveVariable("fob1").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("fob2").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("fob3").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("a").Which.Type.Should().BeAssignableTo<IPythonConstant>()
-                .Which.Should().HaveMembers("abc", "func", "y", "__doc__", "__class__");
+            analysis.Should().HaveVariable("fob1").OfType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("fob2").OfType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("fob3").OfType(BuiltinTypeId.Int);
+
+            var a = analysis.Should().HaveVariable("a").Which;
+            a.Value.Should().BeAssignableTo<IPythonInstance>();
+            a.Value.Should().HaveMembers("abc", "func", "y", "__doc__", "__class__");
         }
 
         [TestMethod, Priority(0)]
