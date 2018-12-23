@@ -85,7 +85,7 @@ y = g()";
             var analysis = await GetAnalysisAsync(code);
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("y").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Unicode)
                 .And.HaveVariable("f").OfType(BuiltinTypeId.Function)
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveSingleParameter()

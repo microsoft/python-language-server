@@ -43,27 +43,28 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public void Update(DocumentChangeSet changes) {
+        public void Update(DocumentChangeSet set) {
             Check.InvalidOperation(() => _ownerThreadId == Thread.CurrentThread.ManagedThreadId,
                 "Document buffer update must be done from the thread that created it");
 
-            if (!changes.Any(c => c.WholeBuffer)) {
+            if (!set.Changes.Any(c => c.WholeBuffer)) {
                 if (Version >= 0) {
-                    if (changes.FromVersion < Version) {
+                    if (set.FromVersion < Version) {
                         return;
-                    } else if (changes.FromVersion > Version) {
+                    }
+                    if (set.FromVersion > Version) {
                         throw new InvalidOperationException("missing prior versions");
                     }
                 }
-                if (changes.FromVersion >= changes.ToVersion) {
+                if (set.FromVersion >= set.ToVersion) {
                     throw new InvalidOperationException("cannot reduce version without resetting buffer");
                 }
             }
 
-            int lastStart = int.MaxValue;
+            var lastStart = int.MaxValue;
             var lineLoc = SplitLines(_sb).ToArray();
 
-            foreach (var change in changes) {
+            foreach (var change in set.Changes) {
                 if (change.WholeBuffer) {
                     _sb.Clear();
                     if (!string.IsNullOrEmpty(change.InsertedText)) {
@@ -72,22 +73,22 @@ namespace Microsoft.Python.Analysis.Documents {
                     continue;
                 }
 
-                int start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, Text.Length);
+                var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, _sb.Length);
                 if (start > lastStart) {
                     throw new InvalidOperationException("changes must be in reverse order of start location");
                 }
                 lastStart = start;
 
-                int end = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.End, Text.Length);
+                var end = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.End, _sb.Length);
                 if (end > start) {
-                    Text.Remove(start, end - start);
+                    _sb.Remove(start, end - start);
                 }
                 if (!string.IsNullOrEmpty(change.InsertedText)) {
-                    Text.Insert(start, change.InsertedText);
+                    _sb.Insert(start, change.InsertedText);
                 }
             }
 
-            Version = changes.ToVersion;
+            Version = set.ToVersion;
         }
 
         private static IEnumerable<NewLineLocation> SplitLines(StringBuilder text) {
@@ -96,7 +97,7 @@ namespace Microsoft.Python.Analysis.Documents {
             // TODO: Avoid string allocation by operating directly on StringBuilder
             var str = text.ToString();
 
-            int lastLineEnd = 0;
+            var lastLineEnd = 0;
             while ((nextLine = NewLineLocation.FindNewLine(str, lastLineEnd)).EndIndex != lastLineEnd) {
                 yield return nextLine;
                 lastLineEnd = nextLine.EndIndex;

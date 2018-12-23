@@ -50,6 +50,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Default value. Returns empty string  for optional parameters,
         /// or a string representation of the default value.
         /// </summary>
-        string DefaultValue { get; }
+        string DefaultValueString { get; }
+
+        /// <summary>
+        /// Default value type.
+        /// </summary>
+        IPythonType DefaultValueType { get; }
     }
 }

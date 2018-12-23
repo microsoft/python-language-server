@@ -35,7 +35,6 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
-        #region Test cases
         [TestMethod, Priority(0)]
         public async Task SmokeTest() {
             const string code = @"
@@ -85,6 +84,21 @@ x = sys.path
             analysis.Should()
                 .HaveVariable("x").OfType(BuiltinTypeId.List);
         }
-        #endregion
+
+        [TestMethod, Priority(0)]
+        public async Task BuiltinsTest() {
+            const string code = @"
+x = 1
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            var v = analysis.Should().HaveVariable("x").Which;
+            var t = v.Value.GetPythonType();
+            t.Should().BeAssignableTo<IMemberContainer>();
+
+            var mc = (IMemberContainer)t;
+            var names = mc.GetMemberNames().ToArray();
+            names.Length.Should().BeGreaterThan(50);
+        }
     }
 }

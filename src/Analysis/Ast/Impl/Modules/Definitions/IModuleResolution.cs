@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Builtins module.
         /// </summary>
-        IBuiltinPythonModule BuiltinModule { get; }
+        IBuiltinsPythonModule BuiltinsModule { get; }
 
         IModuleCache ModuleCache { get; }
 

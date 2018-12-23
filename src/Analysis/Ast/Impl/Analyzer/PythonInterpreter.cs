@@ -26,8 +26,12 @@ using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
+    /// <summary>
+    /// Describes Python interpreter associated with the analysis.
+    /// </summary>
     internal sealed class PythonInterpreter : IPythonInterpreter {
         private ModuleResolution _moduleResolution;
+        private readonly object _lock = new object();
         private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>() {
             { BuiltinTypeId.NoneType, new PythonType("NoneType", BuiltinTypeId.NoneType) },
             { BuiltinTypeId.Unknown, new PythonType("Unknown", BuiltinTypeId.Unknown) }
@@ -74,26 +78,27 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 throw new KeyNotFoundException("(BuiltinTypeId)({0})".FormatInvariant((int)id));
             }
 
-            IPythonType res;
-            lock (_builtinTypes) {
-                if (!_builtinTypes.TryGetValue(id, out res)) {
-                    var bm = ModuleResolution.BuiltinModule;
+            lock (_lock) {
+                if (_builtinTypes.TryGetValue(id, out var res) && res != null) {
+                    return res;
+                }
+
+                var bm = ModuleResolution.BuiltinsModule;
+                var typeName = id.GetTypeName(LanguageVersion);
+                if (typeName != null) {
+                    res = bm.GetMember(typeName) as IPythonType;
+                }
+
+                if (res == null) {
                     res = bm.GetAnyMember("__{0}__".FormatInvariant(id)) as IPythonType;
                     if (res == null) {
-                        var name = id.GetTypeName(Configuration.Version);
-                        if (string.IsNullOrEmpty(name)) {
-                            Debug.Assert(id == BuiltinTypeId.Unknown, $"no name for {id}");
-                            if (!_builtinTypes.TryGetValue(BuiltinTypeId.Unknown, out res)) {
-                                _builtinTypes[BuiltinTypeId.Unknown] = res = new PythonType("<unknown>", bm, null, null, BuiltinTypeId.Unknown);
-                            }
-                        } else {
-                            res = new PythonType(name, bm, null, null, id);
-                        }
+                        return _builtinTypes[BuiltinTypeId.Unknown];
                     }
-                    _builtinTypes[id] = res;
                 }
+
+                _builtinTypes[id] = res;
+                return res;
             }
-            return res;
         }
 
         public void NotifyImportableModulesChanged() => ModuleResolution.ReloadAsync().DoNotWait();

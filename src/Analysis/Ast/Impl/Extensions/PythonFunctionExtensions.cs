@@ -20,10 +20,11 @@ namespace Microsoft.Python.Analysis.Extensions {
         public static bool IsUnbound(this IPythonFunction f) 
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Function;
 
-        public static bool IsClassMethod(this IPythonFunction f)
+        public static bool IsBound(this IPythonFunction f) 
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Method;
 
         public static bool HasClassFirstArgument(this IPythonClassMember m)
-            => !(m.IsStatic || (m is IPythonFunction f && f.IsUnbound()));
+            => (m is IPythonFunction f && !f.IsStatic && (f.IsClassMethod || f.IsBound())) ||
+               (m is IPythonProperty prop && !prop.IsStatic);
     }
 }

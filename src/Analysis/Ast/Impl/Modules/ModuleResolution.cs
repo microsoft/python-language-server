@@ -69,11 +69,11 @@ namespace Microsoft.Python.Analysis.Modules {
             var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath ?? "python.exe");
 
             var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
-            _modules[BuiltinModuleName] = BuiltinModule = b;
+            _modules[BuiltinModuleName] = BuiltinsModule = b;
             await b.LoadAndAnalyzeAsync(cancellationToken);
 
             // Add built-in module names
-            var builtinModuleNamesMember = BuiltinModule.GetAnyMember("__builtin_module_names__");
+            var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
             if (builtinModuleNamesMember is PythonStringLiteral builtinModuleNamesLiteral && builtinModuleNamesLiteral.Value != null) {
                 var builtinModuleNames = builtinModuleNamesLiteral.Value.Split(',').Select(n => n.Trim());
                 _pathResolver.SetBuiltins(builtinModuleNames);
@@ -91,7 +91,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Builtins module.
         /// </summary>
-        public IBuiltinPythonModule BuiltinModule { get; private set; }
+        public IBuiltinsPythonModule BuiltinsModule { get; private set; }
 
         public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken) {
             if (_searchPathPackages != null) {
@@ -159,7 +159,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 return TryImportModuleResult.ModuleNotFound;
             }
             if (name == BuiltinModuleName) {
-                return new TryImportModuleResult(BuiltinModule);
+                return new TryImportModuleResult(BuiltinsModule);
             }
 
             Debug.Assert(!name.EndsWithOrdinal("."), $"{name} should not end with '.'");
@@ -224,7 +224,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public async Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token) {
             if (name == BuiltinModuleName) {
-                return BuiltinModule;
+                return BuiltinsModule;
             }
 
             for (var retries = 5; retries > 0; --retries) {

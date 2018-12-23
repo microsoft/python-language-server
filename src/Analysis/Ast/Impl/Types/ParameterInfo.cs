@@ -21,9 +21,9 @@ namespace Microsoft.Python.Analysis.Types {
         public ParameterInfo(PythonAst ast, Parameter p, IPythonType type) {
             Name = p?.Name ?? throw new ArgumentNullException(nameof(p));
             Documentation = string.Empty;
-            DefaultValue = p.DefaultValue?.ToCodeString(ast).Trim();
-            if (DefaultValue == "...") {
-                DefaultValue = null;
+            DefaultValueString = p.DefaultValue?.ToCodeString(ast).Trim();
+            if (DefaultValueString == "...") {
+                DefaultValueString = null;
             }
             IsParamArray = p.Kind == ParameterKind.List;
             IsKeywordDict = p.Kind == ParameterKind.Dictionary;
@@ -32,14 +32,21 @@ namespace Microsoft.Python.Analysis.Types {
 
         public string Name { get; }
         public string Documentation { get; }
-        public string DefaultValue { get; }
         public bool IsParamArray { get; }
         public bool IsKeywordDict { get; }
         public IPythonType Type { get; private set; }
+        public string DefaultValueString { get; }
+        public IPythonType DefaultValueType { get; private set; }
 
         internal void SetType(IPythonType type) {
             if (Type.IsUnknown()) {
                 Type = type;
+            }
+        }
+        internal void SetDefaultValueType(IPythonType type) {
+            if (DefaultValueType.IsUnknown()) {
+                DefaultValueType = type;
+                SetType(type);
             }
         }
     }

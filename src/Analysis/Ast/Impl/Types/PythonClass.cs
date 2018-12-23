@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -32,7 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
 
         // For tests
-        internal PythonClass(string name): base(name, BuiltinTypeId.Type) { }
+        internal PythonClass(string name) : base(name, BuiltinTypeId.Type) { }
 
         public PythonClass(
             ClassDefinition classDefinition,
@@ -48,6 +49,17 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonType
         public override PythonMemberType MemberType => PythonMemberType.Class;
+
+        public override IEnumerable<string> GetMemberNames() {
+            var names = new HashSet<string>();
+            lock (_lock) {
+                names.UnionWith(Members.Keys);
+            }
+            foreach (var m in Mro.Skip(1)) {
+                names.UnionWith(m.GetMemberNames());
+            }
+            return names;
+        }
 
         public override IMember GetMember(string name) {
             IPythonType member;
@@ -115,12 +127,15 @@ namespace Microsoft.Python.Analysis.Types {
                     AddMember("__base__", Bases[0], true);
                 }
 
-                AddMember("__bases__", new PythonSequence(
-                    interpreter?.GetBuiltinType(BuiltinTypeId.Tuple),
-                    DeclaringModule,
-                    Bases,
-                    interpreter?.GetBuiltinType(BuiltinTypeId.TupleIterator)
-                ), true);
+                if (!(DeclaringModule is BuiltinsPythonModule)) {
+                    // TODO: If necessary,  we can set __bases__ on builtins when the module is fully analyzed.
+                    AddMember("__bases__", new PythonSequence(
+                        interpreter.GetBuiltinType(BuiltinTypeId.Tuple),
+                        DeclaringModule,
+                        Bases,
+                        interpreter.GetBuiltinType(BuiltinTypeId.TupleIterator)
+                    ), true);
+                }
             }
         }
 

@@ -21,7 +21,7 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis {
     /// <summary>
-    /// Represents Python interpreter.
+    /// Describes Python interpreter associated with the analysis.
     /// </summary>
     public interface IPythonInterpreter  {
         /// <summary>

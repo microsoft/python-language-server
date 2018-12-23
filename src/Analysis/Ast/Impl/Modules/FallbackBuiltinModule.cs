@@ -19,11 +19,11 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Modules {
-    internal sealed class FallbackBuiltinModule : PythonModule, IBuiltinPythonModule {
+    internal sealed class FallbackBuiltinsModule : PythonModule, IBuiltinsPythonModule {
         public readonly PythonLanguageVersion LanguageVersion;
         private readonly Dictionary<BuiltinTypeId, IPythonType> _cachedInstances;
 
-        public FallbackBuiltinModule(PythonLanguageVersion version)
+        public FallbackBuiltinsModule(PythonLanguageVersion version)
             : base(BuiltinTypeId.Unknown.GetModuleName(version), ModuleType.Builtins, null) {
             LanguageVersion = version;
             _cachedInstances = new Dictionary<BuiltinTypeId, IPythonType>();
@@ -63,7 +63,7 @@ namespace Microsoft.Python.Analysis.Modules {
     }
 
     class FallbackBuiltinPythonType : PythonType {
-        public FallbackBuiltinPythonType(FallbackBuiltinModule declaringModule, BuiltinTypeId typeId) :
+        public FallbackBuiltinPythonType(FallbackBuiltinsModule declaringModule, BuiltinTypeId typeId) :
             base(typeId.GetModuleName(declaringModule.LanguageVersion), declaringModule, declaringModule.Documentation, null) {
             TypeId = typeId;
         }

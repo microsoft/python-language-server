@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _interpreter = services.GetService<IPythonInterpreter>();
             _log = services.GetService<ILogger>();
             _globalScope = new GlobalScope(module);
-            _lookup = new ExpressionLookup(services, module, ast, _globalScope, _functionWalkers);
+            _lookup = new ExpressionLookup(services, module, ast, _globalScope, _functionWalkers, suppressBuiltinLookup);
             _suppressBuiltinLookup = suppressBuiltinLookup;
             // TODO: handle typing module
         }

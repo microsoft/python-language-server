@@ -27,8 +27,9 @@ namespace Microsoft.Python.Analysis.Modules {
     internal class CompiledPythonModule : PythonModule {
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
 
-        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, IServiceContainer services)
-            : base(moduleName, filePath, moduleType, ModuleLoadOptions.Analyze, stub, services) { }
+        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, 
+            IServiceContainer services, ModuleLoadOptions options = ModuleLoadOptions.Analyze)
+            : base(moduleName, filePath, moduleType, options, stub, services) { }
 
         public override string Documentation
             => GetMember("__doc__") is PythonStringLiteral m ? m.Value : string.Empty;

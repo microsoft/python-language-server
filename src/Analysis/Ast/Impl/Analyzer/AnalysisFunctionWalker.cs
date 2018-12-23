@@ -58,37 +58,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 using (_lookup.CreateScope(Target, _parentScope)) {
 
                     var annotationType = _lookup.GetTypeFromAnnotation(Target.ReturnAnnotation);
-                    if (annotationType != null) {
+                    if (!annotationType.IsUnknown()) {
                         _overload.AddReturnType(annotationType);
                     }
 
-                    // Declare self, if any
-                    var skip = 0;
-                    if (_self != null) {
-                        var p0 = Target.Parameters.FirstOrDefault();
-                        if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
-                            if (_function.HasClassFirstArgument()
-                                && _overload.Parameters.Count > 0 && _overload.Parameters[0] is ParameterInfo pi) {
-                                // TODO: set instance vs class type info for regular methods.
-                                _lookup.DeclareVariable(p0.Name, _self, p0.NameExpression);
-                                pi.SetType(_self);
-                                skip++;
-                            }
-                        }
-                    }
-
-                    // Declare parameters in scope
-                    for (var i = skip; i < Target.Parameters.Length; i++) {
-                        var p = Target.Parameters[i];
-                        if (!string.IsNullOrEmpty(p.Name)) {
-                            var defaultValue = await _lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? _lookup.UnknownType;
-                            var argType = new CallableArgumentType(i, defaultValue.GetPythonType());
-                            _lookup.DeclareVariable(p.Name, argType, p.NameExpression);
-                        }
-                    }
-
-                    // return type from the annotation always wins, no need to walk the body.
-                    if (annotationType == null) {
+                    await DeclareParametersAsync(cancellationToken);
+                    // Return type from the annotation always wins, no need to walk the body.
+                    if (annotationType.IsUnknown()) {
                         await Target.WalkAsync(this, cancellationToken);
                     }
                 } // Function scope
@@ -178,10 +154,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private async Task<IPythonClass> GetSelfAsync(CancellationToken cancellationToken = default) {
             var info = await GetMethodInfoAsync(cancellationToken);
-            var self = _lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local);
-            return !info.isStaticMethod && !info.isClassMethod
-                 ? self as IPythonClass
-                 : null;
+            return _lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local) as IPythonClass;
         }
 
         private async Task<MethodInfo> GetMethodInfoAsync(CancellationToken cancellationToken = default) {
@@ -203,6 +176,48 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
             return info;
+        }
+
+        private async Task DeclareParametersAsync(CancellationToken cancellationToken = default) {
+            // For class method no need to add extra parameters, but first parameter type should be the class.
+            // For static and unbound methods do not add or set anything.
+            // For regular bound methods add first parameter and set it to the class.
+
+            var skip = 0;
+            if (_self != null && _function.HasClassFirstArgument()) {
+                var p0 = Target.Parameters.FirstOrDefault();
+                if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
+                    if (_overload.Parameters.Count > 0 && _overload.Parameters[0] is ParameterInfo pi) {
+                        // TODO: set instance vs class type info for regular methods.
+                        _lookup.DeclareVariable(p0.Name, _self, p0.NameExpression);
+                        pi.SetType(_self);
+                        skip++;
+                    }
+                }
+            }
+
+            // Declare parameters in scope
+            var parameterCount = Math.Min(Target.Parameters.Length, _overload.Parameters.Count);
+            for (var i = skip; i < parameterCount; i++) {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var p = Target.Parameters[i];
+                var pi = _overload.Parameters[i] as ParameterInfo;
+
+                if (!string.IsNullOrEmpty(p.Name)) {
+                    await DeclareParameterAsync(p, i, pi, cancellationToken);
+                }
+            }
+        }
+
+        private async Task DeclareParameterAsync(Parameter p, int index, ParameterInfo pi, CancellationToken cancellationToken = default) {
+            var defaultValue = await _lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? _lookup.UnknownType;
+
+            var defaultValueType = defaultValue.GetPythonType();
+            var argType = new CallableArgumentType(index, defaultValueType);
+
+            _lookup.DeclareVariable(p.Name, argType, p.NameExpression);
+            pi?.SetDefaultValueType(defaultValueType);
         }
     }
 }

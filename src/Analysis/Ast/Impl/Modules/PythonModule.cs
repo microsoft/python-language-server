@@ -44,8 +44,9 @@ namespace Microsoft.Python.Analysis.Modules {
     internal class PythonModule : IDocument, IAnalyzable, IDisposable {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
-        private readonly ModuleLoadOptions _options;
         private IReadOnlyList<DiagnosticsEntry> _diagnostics = Array.Empty<DiagnosticsEntry>();
+
+        private ModuleLoadOptions _options;
         private string _documentation = string.Empty;
 
         private readonly object _analysisLock = new object();
@@ -174,9 +175,8 @@ namespace Microsoft.Python.Analysis.Modules {
         /// analysis until later time, when module members are actually needed.
         /// </summary>
         public virtual Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) {
-            if (!_loaded) {
-                InitializeContent(null);
-            }
+            _options |= ModuleLoadOptions.Analyze;
+            InitializeContent(null);
             return GetAnalysisAsync(cancellationToken);
         }
 
@@ -189,10 +189,11 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private void InitializeContent(string content) {
             lock (_analysisLock) {
-                content = content ?? LoadContent();
-                _buffer.Reset(0, content);
-
-                _loaded = true;
+                if (!_loaded) {
+                    content = content ?? LoadContent();
+                    _buffer.Reset(0, content);
+                    _loaded = true;
+                }
 
                 if ((_options & ModuleLoadOptions.Analyze) == ModuleLoadOptions.Analyze) {
                     _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();

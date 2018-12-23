@@ -29,22 +29,22 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         protected override string Identifier => nameof(IVariable);
 
         public AndWhichConstraint<VariableAssertions, IVariable> OfType(PythonMemberType memberType, string because = "", params object[] reasonArgs) {
-            Subject.Value.MemberType.Should().Be(memberType);
+            Subject.Value.MemberType.Should().Be(memberType, because, reasonArgs);
             return new AndWhichConstraint<VariableAssertions, IVariable>(this, Subject);
         }
 
         public AndWhichConstraint<VariableAssertions, IVariable> OfType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
-            Subject.Value.GetPythonType().TypeId.Should().Be(typeId);
+            Subject.Value.GetPythonType().TypeId.Should().Be(typeId, because, reasonArgs);
             return new AndWhichConstraint<VariableAssertions, IVariable>(this, Subject);
         }
 
         public AndWhichConstraint<VariableAssertions, IVariable> OfType<TType>(string because = "", params object[] reasonArgs) {
-            Subject.Value.Should().BeAssignableTo<TType>();
+            Subject.Value.Should().BeAssignableTo<TType>(because, reasonArgs);
             return new AndWhichConstraint<VariableAssertions, IVariable>(this, Subject);
         }
 
         public AndWhichConstraint<VariableAssertions, IVariable> OfType(string typeName, string because = "", params object[] reasonArgs) {
-            Subject.Value.GetPythonType().Name.Should().Be(typeName);
+            Subject.Value.GetPythonType().Name.Should().Be(typeName, because, reasonArgs);
             return new AndWhichConstraint<VariableAssertions, IVariable>(this, Subject);
         }
 

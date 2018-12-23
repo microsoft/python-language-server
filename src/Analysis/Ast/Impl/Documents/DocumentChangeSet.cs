@@ -13,23 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Python.Analysis.Documents {
-    public sealed class DocumentChangeSet: IEnumerable<DocumentChange> {
-        private readonly DocumentChange[] _changes;
+    public sealed class DocumentChangeSet {
         public DocumentChangeSet(int fromVersion, int toVersion, IEnumerable<DocumentChange> changes) {
             FromVersion = fromVersion;
             ToVersion = toVersion;
-            _changes = changes.ToArray();
+            Changes = changes.ToArray();
         }
 
         public int FromVersion { get; }
         public int ToVersion { get; }
-
-        public IEnumerator<DocumentChange> GetEnumerator() => GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => _changes.GetEnumerator();
+        public IReadOnlyCollection<DocumentChange> Changes { get; }
     }
 }

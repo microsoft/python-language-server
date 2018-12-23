@@ -20,7 +20,6 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -34,9 +33,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed class ExpressionLookup {
+    internal sealed partial class ExpressionLookup {
         private readonly AnalysisFunctionWalkerSet _functionWalkers;
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
+        private readonly bool _suppressBuiltinLookup;
         private readonly ILogger _log;
 
         internal IPythonType UnknownType { get; }
@@ -46,7 +46,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IPythonModule module,
             PythonAst ast,
             Scope moduleScope,
-            AnalysisFunctionWalkerSet functionWalkers
+            AnalysisFunctionWalkerSet functionWalkers,
+            bool suppressBuiltinLookup
         ) {
             Ast = ast ?? throw new ArgumentNullException(nameof(ast));
             Module = module ?? throw new ArgumentNullException(nameof(module));
@@ -54,11 +55,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             _log = services.GetService<ILogger>();
             _functionWalkers = functionWalkers ?? throw new ArgumentNullException(nameof(functionWalkers));
+            _suppressBuiltinLookup = suppressBuiltinLookup;
 
             DefaultLookupOptions = LookupOptions.Normal;
 
             UnknownType = Interpreter.GetBuiltinType(BuiltinTypeId.Unknown) ??
-                new FallbackBuiltinPythonType(new FallbackBuiltinModule(Ast.LanguageVersion), BuiltinTypeId.Unknown);
+                new FallbackBuiltinPythonType(new FallbackBuiltinsModule(Ast.LanguageVersion), BuiltinTypeId.Unknown);
         }
 
         public PythonAst Ast { get; }
@@ -244,99 +246,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return trueValue ?? falseValue;
         }
 
-        private async Task<IMember> GetValueFromCallableAsync(CallExpression expr, CancellationToken cancellationToken = default) {
-            if (expr?.Target == null) {
-                return null;
-            }
-
-            var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            IMember value = null;
-            switch (target) {
-                case IPythonInstance pi:
-                    value = await GetValueFromInstanceCall(pi, expr, cancellationToken);
-                    break;
-                case IPythonFunction pf:
-                    value = await GetValueFromFunctionAsync(pf, expr, cancellationToken);
-                    break;
-                case IPythonType t:
-                    // Target is type (info), the call creates instance.
-                    // For example, 'x = C; y = x()' or 'x = C()' where C is class
-                    value = new PythonInstance(t, GetLoc(expr));
-                    break;
-            }
-
-            if (value == null) {
-                _log?.Log(TraceEventType.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
-            }
-            return value;
-        }
-
-        private async Task<IMember> GetValueFromInstanceCall(IPythonInstance pi, CallExpression expr, CancellationToken cancellationToken = default) {
-            // Call on an instance such as 'a = 1; a()'
-            // If instance is a function (such as an unbound method), then invoke it.
-            var type = pi.GetPythonType();
-            if (type is IPythonFunction pif) {
-                return await GetValueFromFunctionAsync(pif, expr, cancellationToken);
-            }
-            // Try using __call__
-            if (type.GetMember("__call__") is IPythonFunction call) {
-                return await GetValueFromFunctionAsync(call, expr, cancellationToken);
-            }
-            return null;
-        }
-
-        private async Task<IMember> GetValueFromFunctionAsync(IPythonFunction fn, Expression expr, CancellationToken cancellationToken = default) {
-            if (!(expr is CallExpression callExpr)) {
-                Debug.Assert(false, "Call to GetValueFromFunctionAsync with non-call expression.");
-                return null;
-            }
-
-            // Determine argument types
-            var args = new List<IMember>();
-            // For static and regular methods add 'self' or 'cls'
-            if (fn.DeclaringType != null && !(fn.IsUnbound() || fn.IsStatic)) {
-                // TODO: tell between static and regular by passing instance and not class type info.
-                args.Add(fn.DeclaringType);
-            }
-
-            foreach (var a in callExpr.Args.MaybeEnumerate()) {
-                var type = await GetValueFromExpressionAsync(a.Expression, cancellationToken);
-                args.Add(type ?? UnknownType);
-            }
-
-            // Find best overload match
-            // TODO: match better, see ArgumentSet class in DDG.
-            var overload = fn.Overloads.FirstOrDefault(o => o.Parameters.Count == args.Count);
-            overload = overload ?? fn.Overloads
-                       .Where(o => o.Parameters.Count >= args.Count)
-                       .FirstOrDefault(o => {
-                           // Match so overall param count is bigger, but required params
-                           // count is less or equal to the passed arguments.
-                           var requiredParams = o.Parameters.Where(p => string.IsNullOrEmpty(p.DefaultValue)).ToArray();
-                           return requiredParams.Length <= args.Count;
-                       });
-
-            // TODO: provide instance
-            var returnType = GetFunctionReturnType(overload, null, args);
-            if (returnType.IsUnknown()) {
-                // Function may not have been walked yet. Do it now.
-                await _functionWalkers.ProcessFunctionAsync(fn.FunctionDefinition, cancellationToken);
-                returnType = GetFunctionReturnType(overload, null, args);
-            }
-            return returnType ?? UnknownType;
-        }
-
-        private IPythonType GetFunctionReturnType(IPythonFunctionOverload o, IPythonInstance instance, IReadOnlyList<IMember> args)
-            => o?.GetReturnType(instance, args) ?? UnknownType;
-
-        private async Task<IPythonType> GetPropertyReturnTypeAsync(IPythonProperty p, Expression expr, CancellationToken cancellationToken = default) {
-            if (p.Type.IsUnknown()) {
-                // Function may not have been walked yet. Do it now.
-                await _functionWalkers.ProcessFunctionAsync(p.FunctionDefinition, cancellationToken);
-            }
-            return p.Type ?? UnknownType;
-        }
-
         public IPythonInstance GetConstantFromLiteral(Expression expr, LookupOptions options) {
             var location = GetLoc(expr);
             if (expr is ConstantExpression ce) {
@@ -347,49 +256,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         return new PythonStringLiteral(b.String, Interpreter.GetBuiltinType(BuiltinTypeId.Bytes), location);
                 }
             }
-            return new PythonInstance(GetTypeFromLiteral(expr) ?? UnknownType, location);
-        }
-        public IPythonType GetTypeFromValue(IPythonType value) {
-            if (value == null) {
-                return null;
-            }
 
-            var type = (value as IPythonInstance)?.Type;
-            if (type != null) {
-                return type;
-            }
-
-            switch (value.MemberType) {
-                case PythonMemberType.Class:
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.Type);
-                case PythonMemberType.Function:
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.Function);
-                case PythonMemberType.Method:
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.Method);
-                case PythonMemberType.Module:
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.Module);
-            }
-
-            if (value is IPythonFunction f) {
-                if (f.IsStatic) {
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
-                }
-                if (f.IsClassMethod) {
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
-                }
-                return f.DeclaringType == null
-                    ? Interpreter.GetBuiltinType(BuiltinTypeId.Function)
-                    : Interpreter.GetBuiltinType(BuiltinTypeId.Method);
-            }
-
-            if (value is IPythonProperty prop) {
-                return prop.Type ?? Interpreter.GetBuiltinType(BuiltinTypeId.Property);
-            }
-            if (value.MemberType == PythonMemberType.Property) {
-                return Interpreter.GetBuiltinType(BuiltinTypeId.Property);
-            }
-
-            return Interpreter.GetBuiltinType(BuiltinTypeId.Type);
+            var t = _suppressBuiltinLookup ? UnknownType : (GetTypeFromLiteral(expr) ?? UnknownType);
+            return new PythonInstance(t, location);
         }
 
         public IPythonType GetTypeFromLiteral(Expression expr) {
@@ -502,8 +371,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             var value = scope?.Variables[name].Value;
             if (value == null) {
-                if (Module != Interpreter.ModuleResolution.BuiltinModule && options.HasFlag(LookupOptions.Builtins)) {
-                    value = Interpreter.ModuleResolution.BuiltinModule.GetMember(name);
+                if (Module != Interpreter.ModuleResolution.BuiltinsModule && options.HasFlag(LookupOptions.Builtins)) {
+                    value = Interpreter.ModuleResolution.BuiltinsModule.GetMember(name);
                 }
             }
 

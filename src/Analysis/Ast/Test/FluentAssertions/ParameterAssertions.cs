@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         protected override string Identifier => nameof(IParameterInfo);
 
         public AndWhichConstraint<ParameterAssertions, string> HaveName(string name, string because = "", params object[] reasonArgs) {
-            Subject.Name.Should().Be(name);
+            Subject.Name.Should().Be(name, because, reasonArgs);
             return new AndWhichConstraint<ParameterAssertions, string>(this, Subject.Name);
         }
 
@@ -37,13 +37,13 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<ParameterAssertions, IPythonType>(this, Subject.Type);
         }
         public AndWhichConstraint<ParameterAssertions, IPythonType> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
-            Subject.Type.Should().NotBeNull();
-            Subject.Type.TypeId.Should().Be(typeId);
+            Subject.Type.Should().NotBeNull(because, reasonArgs);
+            Subject.Type.TypeId.Should().Be(typeId, because, reasonArgs);
             return new AndWhichConstraint<ParameterAssertions, IPythonType>(this, Subject.Type);
         }
 
         public AndWhichConstraint<ParameterAssertions, IParameterInfo> HaveNoDefaultValue(string because = "", params object[] reasonArgs) {
-            Subject.DefaultValue.Should().BeNull();
+            Subject.DefaultValueString.Should().BeNull(because, reasonArgs);
             return new AndWhichConstraint<ParameterAssertions, IParameterInfo>(this, Subject);
         }
     }

@@ -27,11 +27,11 @@ namespace Microsoft.Python.Analysis.Modules {
     /// by running special 'scraper' Python script that generates Python code via
     /// introspection of the compiled built-in language types.
     /// </summary>
-    internal sealed class BuiltinsPythonModule : CompiledPythonModule, IBuiltinPythonModule {
+    internal sealed class BuiltinsPythonModule : CompiledPythonModule, IBuiltinsPythonModule {
         private readonly HashSet<string> _hiddenNames = new HashSet<string>();
 
         public BuiltinsPythonModule(string moduleName, string filePath, IServiceContainer services)
-            : base(moduleName, ModuleType.Builtins, filePath, null, services) { } // TODO: builtins stub
+            : base(moduleName, ModuleType.Builtins, filePath, null, services, ModuleLoadOptions.None) { } // TODO: builtins stub
 
         public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 

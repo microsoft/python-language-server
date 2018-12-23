@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var analysis = await GetAnalysisAsync(code);
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("y").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Unicode)
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Bytes)
                 .And.HaveVariable("pi").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("l").OfType(BuiltinTypeId.List)
@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 .And.HaveVariable("d").OfType(BuiltinTypeId.Dict)
                 .And.HaveVariable("s").OfType(BuiltinTypeId.Set)
                 .And.HaveVariable("X").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("Y").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("Y").OfType(BuiltinTypeId.Unicode)
                 .And.HaveVariable("Z").OfType(BuiltinTypeId.Bytes)
                 .And.HaveVariable("PI").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("L").OfType(BuiltinTypeId.List)

@@ -54,7 +54,10 @@ namespace Microsoft.Python.Analysis.Types {
 
         public IPythonType GetReturnType(IPythonInstance instance, IReadOnlyList<IMember> args) {
             if (_returnType is IPythonCallableArgumentType cat && args != null) {
-                return cat.ParameterIndex < args.Count ? args[cat.ParameterIndex].GetPythonType() : _returnType;
+                var rt = cat.ParameterIndex < args.Count ? args[cat.ParameterIndex].GetPythonType() : null;
+                if (!rt.IsUnknown()) {
+                    return rt;
+                }
             }
             return _returnType;
         }
