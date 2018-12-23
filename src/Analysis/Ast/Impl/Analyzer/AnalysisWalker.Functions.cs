@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 existing = new PythonFunction(node, _module, cls.GetPythonType(), loc);
                 _lookup.DeclareVariable(node.Name, existing, loc);
             }
-            AddOverload(node, o => existing.AddOverload(o));
+            AddOverload(node, existing, o => existing.AddOverload(o));
         }
 
         private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType) {
@@ -82,10 +82,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _lookup.DeclareVariable(node.Name, existing, loc);
             }
 
-            AddOverload(node, o => existing.AddOverload(o));
+            AddOverload(node, existing, o => existing.AddOverload(o));
         }
 
-        private PythonFunctionOverload CreateFunctionOverload(ExpressionLookup lookup, FunctionDefinition node) {
+        private PythonFunctionOverload CreateFunctionOverload(ExpressionLookup lookup, FunctionDefinition node, IPythonClassMember function) {
             var parameters = node.Parameters
                 .Select(p => new ParameterInfo(_ast, p, _lookup.GetTypeFromAnnotation(p.Annotation)))
                 .ToArray();
@@ -96,7 +96,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 lookup.GetLocOfName(node, node.NameExpression),
                 node.ReturnAnnotation?.ToCodeString(_ast));
 
-            _functionWalkers.Add(new AnalysisFunctionWalker(_module, lookup, node, overload));
+            _functionWalkers.Add(new AnalysisFunctionWalker(_module, lookup, node, overload, function));
             return overload;
         }
 
@@ -106,7 +106,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return ce?.Value as string;
         }
 
-        private void AddOverload(FunctionDefinition node, Action<IPythonFunctionOverload> addOverload) {
+        private void AddOverload(FunctionDefinition node, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
             // Check if function exists in stubs. If so, take overload from stub
             // and the documentation from this actual module.
             var stubOverload = GetOverloadFromStub(node);
@@ -120,7 +120,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (!_functionWalkers.Contains(node)) {
-                var overload = CreateFunctionOverload(_lookup, node);
+                var overload = CreateFunctionOverload(_lookup, node, function);
                 if (overload != null) {
                     addOverload(overload);
                 }

@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Types {
         public PythonMemberType MemberType => PythonMemberType.Function;
 
         public IPythonType GetReturnType(IPythonInstance instance, IReadOnlyList<IMember> args) {
-            if (_returnType is IPythonCallableArgumentType cat) {
+            if (_returnType is IPythonCallableArgumentType cat && args != null) {
                 return cat.ParameterIndex < args.Count ? args[cat.ParameterIndex].GetPythonType() : _returnType;
             }
             return _returnType;

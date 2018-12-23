@@ -100,11 +100,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
 
         public async Task<IMember> GetValueFromExpressionAsync(Expression expr, LookupOptions options, CancellationToken cancellationToken = default) {
-            if (expr is ParenthesisExpression parExpr) {
-                expr = parExpr.Expression;
-            }
+            cancellationToken.ThrowIfCancellationRequested();
             if (expr == null) {
                 return null;
+            }
+
+            while(expr is ParenthesisExpression parExpr) {
+                expr = parExpr.Expression;
             }
 
             IMember m;
@@ -116,7 +118,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     m = await GetValueFromMemberAsync(mex, cancellationToken);
                     break;
                 case CallExpression cex:
-                    m = await GetValueFromCallableAsync(cex, options, cancellationToken);
+                    m = await GetValueFromCallableAsync(cex, cancellationToken);
                     break;
                 case UnaryExpression uex:
                     m = await GetValueFromUnaryOpAsync(uex, cancellationToken);
@@ -242,7 +244,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return trueValue ?? falseValue;
         }
 
-        private async Task<IMember> GetValueFromCallableAsync(CallExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
+        private async Task<IMember> GetValueFromCallableAsync(CallExpression expr, CancellationToken cancellationToken = default) {
             if (expr?.Target == null) {
                 return null;
             }
@@ -251,12 +253,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IMember value = null;
             switch (target) {
                 case IPythonInstance pi:
-                    // Call on an instance such as 'a = 1; a()'
-                    // If instance is a function (such as an unbound method), then invoke it.
-                    if (pi.GetPythonType() is IPythonFunction pif) {
-                        return await GetValueFromFunctionAsync(pif, expr, cancellationToken);
-                        // TODO: handle __call__ ?
-                    }
+                    value = await GetValueFromInstanceCall(pi, expr, cancellationToken);
                     break;
                 case IPythonFunction pf:
                     value = await GetValueFromFunctionAsync(pf, expr, cancellationToken);
@@ -274,6 +271,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return value;
         }
 
+        private async Task<IMember> GetValueFromInstanceCall(IPythonInstance pi, CallExpression expr, CancellationToken cancellationToken = default) {
+            // Call on an instance such as 'a = 1; a()'
+            // If instance is a function (such as an unbound method), then invoke it.
+            var type = pi.GetPythonType();
+            if (type is IPythonFunction pif) {
+                return await GetValueFromFunctionAsync(pif, expr, cancellationToken);
+            }
+            // Try using __call__
+            if (type.GetMember("__call__") is IPythonFunction call) {
+                return await GetValueFromFunctionAsync(call, expr, cancellationToken);
+            }
+            return null;
+        }
+
         private async Task<IMember> GetValueFromFunctionAsync(IPythonFunction fn, Expression expr, CancellationToken cancellationToken = default) {
             if (!(expr is CallExpression callExpr)) {
                 Debug.Assert(false, "Call to GetValueFromFunctionAsync with non-call expression.");
@@ -283,7 +294,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Determine argument types
             var args = new List<IMember>();
             // For static and regular methods add 'self' or 'cls'
-            if (fn.DeclaringType != null && !(fn.IsUnbound() || fn.IsClassMethod)) {
+            if (fn.DeclaringType != null && !(fn.IsUnbound() || fn.IsStatic)) {
                 // TODO: tell between static and regular by passing instance and not class type info.
                 args.Add(fn.DeclaringType);
             }

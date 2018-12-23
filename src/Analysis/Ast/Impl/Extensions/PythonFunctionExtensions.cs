@@ -17,9 +17,13 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Extensions {
     public static class PythonFunctionExtensions {
-        public static bool IsUnbound(this IPythonFunction m) 
-            => m.DeclaringType != null && m.MemberType == PythonMemberType.Function;
-        public static bool IsClassMethod(this IPythonFunction m)
-            => m.DeclaringType != null && m.MemberType == PythonMemberType.Method;
+        public static bool IsUnbound(this IPythonFunction f) 
+            => f.DeclaringType != null && f.MemberType == PythonMemberType.Function;
+
+        public static bool IsClassMethod(this IPythonFunction f)
+            => f.DeclaringType != null && f.MemberType == PythonMemberType.Method;
+
+        public static bool HasClassFirstArgument(this IPythonClassMember m)
+            => !(m.IsStatic || (m is IPythonFunction f && f.IsUnbound()));
     }
 }

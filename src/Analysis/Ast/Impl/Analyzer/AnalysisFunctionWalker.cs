@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -31,17 +32,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly ExpressionLookup _lookup;
         private readonly Scope _parentScope;
         private readonly PythonFunctionOverload _overload;
+        private readonly IPythonClassMember _function;
         private IPythonClass _self;
 
         public AnalysisFunctionWalker(
             IPythonModule module,
             ExpressionLookup lookup,
             FunctionDefinition targetFunction,
-            PythonFunctionOverload overload
+            PythonFunctionOverload overload,
+            IPythonClassMember function
         ) {
             _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
             Target = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
             _overload = overload ?? throw new ArgumentNullException(nameof(overload));
+            _function = function ?? throw new ArgumentNullException(nameof(function));
             _parentScope = _lookup.CurrentScope;
             _module = module;
         }
@@ -63,11 +67,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     if (_self != null) {
                         var p0 = Target.Parameters.FirstOrDefault();
                         if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
-                            _lookup.DeclareVariable(p0.Name, _self, p0.NameExpression);
-                            if (_overload.Parameters[0] is ParameterInfo pi) {
+                            if (_function.HasClassFirstArgument()
+                                && _overload.Parameters.Count > 0 && _overload.Parameters[0] is ParameterInfo pi) {
+                                // TODO: set instance vs class type info for regular methods.
+                                _lookup.DeclareVariable(p0.Name, _self, p0.NameExpression);
                                 pi.SetType(_self);
+                                skip++;
                             }
-                            skip++;
                         }
                     }
 

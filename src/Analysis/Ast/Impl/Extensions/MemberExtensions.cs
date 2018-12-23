@@ -22,6 +22,7 @@ namespace Microsoft.Python.Analysis {
             switch (m) {
                 case IPythonType pt when pt.IsUnknown():
                 case IPythonInstance pi when pi.IsUnknown():
+                case null:
                     return true;
                 default:
                     return m.MemberType == PythonMemberType.Unknown;

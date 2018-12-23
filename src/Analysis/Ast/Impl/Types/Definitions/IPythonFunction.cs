@@ -26,7 +26,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         FunctionDefinition FunctionDefinition { get; }
 
-        bool IsStatic { get; }
         bool IsClassMethod { get; }
 
         /// <summary>

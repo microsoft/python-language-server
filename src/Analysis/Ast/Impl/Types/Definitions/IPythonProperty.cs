@@ -25,8 +25,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         FunctionDefinition FunctionDefinition { get; }
 
-        bool IsStatic { get; }
-
         /// <summary>
         /// The type of the value the property gets/sets.
         /// </summary>
