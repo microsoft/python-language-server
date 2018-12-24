@@ -19,6 +19,8 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -66,6 +68,24 @@ t.x, t. =
 ";
             // This just shouldn't crash, we should handle the malformed code
             await GetAnalysisAsync(code);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Backquote() {
+            var analysis = await GetAnalysisAsync(@"x = `42`", PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Bytes);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task BadKeywordArguments() {
+            var code = @"def f(a, b):
+    return a
+
+x = 100
+z = f(a=42, x)";
+
+            var analysis = await GetAnalysisAsync(code);
+                analysis.Should().HaveVariable("z").OfType(BuiltinTypeId.Int);
         }
     }
 }

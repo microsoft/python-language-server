@@ -34,12 +34,6 @@ namespace Microsoft.Python.Analysis.Types {
         ModuleType ModuleType { get; }
 
         /// <summary>
-        /// Modules imported by this module.
-        /// </summary>
-        /// <returns></returns>
-        IEnumerable<string> GetChildrenModuleNames();
-
-        /// <summary>
         /// Module stub, if any.
         /// </summary>
         IPythonModule Stub { get; }

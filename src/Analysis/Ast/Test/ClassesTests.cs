@@ -237,6 +237,18 @@ a = X(2)
                 .Which.Should().HaveParameterAt(0).Which.Should().HaveName("self").And.HaveType("X");
         }
 
+//        [TestMethod, Priority(0)]
+//        public async Task ClassVariables() {
+//            const string code = @"
+//class A:
+//    x: int
+
+//";
+//            var analysis = await GetAnalysisAsync(code);
+//            analysis.Should().HaveClass("A")
+//                .Which.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+//        }
+
         [TestMethod, Priority(0)]
         public async Task InstanceCall() {
             var code = @"

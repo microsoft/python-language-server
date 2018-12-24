@@ -79,7 +79,7 @@ pt = nt(1, 2)
 
         [TestMethod, Priority(0)]
         public async Task TypeAnnotationConversion() {
-            var code = @"from ReturnAnnotations import *
+            const string code = @"from ReturnAnnotations import *
 x = f()
 y = g()";
             var analysis = await GetAnalysisAsync(code);
@@ -143,6 +143,38 @@ y = f(1, 2)
             analysis.Should()
                 .HaveVariable("x").OfType(BuiltinTypeId.Unicode).And
                 .HaveVariable("y").OfType(BuiltinTypeId.Unicode);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task BadMethod() {
+            const string code = @"
+class cls(object):
+    def f():
+        'help'
+        return 42
+
+abc = cls()
+fob = abc.f()
+";
+
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("fob").OfType(BuiltinTypeId.Int);
+            analysis.Should().HaveClass("cls")
+                .Which.Should().HaveMethod("f")
+                .Which.Documentation.Should().Be("help");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task BuiltinFuncRetval() {
+            const string code = @"
+x = ord('a')
+y = range(5)
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.List);
         }
     }
 }

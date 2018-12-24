@@ -26,6 +26,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
@@ -97,11 +98,7 @@ namespace Microsoft.Python.Analysis.Modules {
             FilePath = creationOptions.FilePath ?? uri?.LocalPath;
             Stub = creationOptions.Stub;
 
-            _options = creationOptions.LoadOptions;
-            IsOpen = (_options & ModuleLoadOptions.Open) == ModuleLoadOptions.Open;
-            _options = _options | (IsOpen ? ModuleLoadOptions.Analyze : 0);
-
-            InitializeContent(creationOptions.Content);
+            InitializeContent(creationOptions.Content, creationOptions.LoadOptions);
         }
 
         #region IPythonType
@@ -148,26 +145,6 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public IPythonModule Stub { get; }
 
-        public virtual IEnumerable<string> GetChildrenModuleNames() => GetChildModuleNames(FilePath, Name, Interpreter);
-
-        private IEnumerable<string> GetChildModuleNames(string filePath, string prefix, IPythonInterpreter interpreter) {
-            if (interpreter == null || string.IsNullOrEmpty(filePath)) {
-                yield break;
-            }
-            var searchPath = Path.GetDirectoryName(filePath);
-            if (!FileSystem.DirectoryExists(searchPath)) {
-                yield break;
-            }
-
-            foreach (var n in ModulePath.GetModulesInPath(
-                searchPath,
-                recurse: false,
-                includePackages: true
-            ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n))) {
-                yield return n;
-            }
-        }
-
         /// <summary>
         /// Ensures that module content is loaded and analysis has started.
         /// Typically module content is loaded at the creation time, but delay
@@ -175,30 +152,42 @@ namespace Microsoft.Python.Analysis.Modules {
         /// analysis until later time, when module members are actually needed.
         /// </summary>
         public virtual Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) {
-            _options |= ModuleLoadOptions.Analyze;
-            InitializeContent(null);
+            InitializeContent(null, ModuleLoadOptions.Analyze);
             return GetAnalysisAsync(cancellationToken);
         }
 
-        protected virtual string LoadContent() {
-            if ((_options & ModuleLoadOptions.Load) == ModuleLoadOptions.Load && ModuleType != ModuleType.Unresolved) {
+        protected virtual string LoadContent(ModuleLoadOptions options) {
+            if (options.ShouldLoad() && ModuleType != ModuleType.Unresolved) {
                 return FileSystem.ReadAllText(FilePath);
             }
-            return string.Empty;
+            return null; // Keep content as null so module can be loaded later.
         }
 
-        private void InitializeContent(string content) {
+        private void InitializeContent(string content, ModuleLoadOptions newOptions) {
             lock (_analysisLock) {
                 if (!_loaded) {
-                    content = content ?? LoadContent();
+                    if (!newOptions.ShouldLoad()) {
+                        return;
+                    }
+                    content = content ?? LoadContent(newOptions);
                     _buffer.Reset(0, content);
                     _loaded = true;
                 }
 
-                if ((_options & ModuleLoadOptions.Analyze) == ModuleLoadOptions.Analyze) {
+                IsOpen = (newOptions & ModuleLoadOptions.Open) == ModuleLoadOptions.Open;
+                newOptions = newOptions | (IsOpen ? ModuleLoadOptions.Analyze : 0);
+
+                var change = (_options ^ newOptions);
+                var startAnalysis = change.ShouldAlalyze() && _analysisTcs?.Task == null;
+                var startParse = change.ShouldParse() && _parsingTask == null;
+
+                _options = newOptions;
+
+                if (startAnalysis) {
                     _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
                 }
-                if ((_options & ModuleLoadOptions.Ast) == ModuleLoadOptions.Ast) {
+
+                if (startParse) {
                     Parse();
                 }
             }
@@ -441,7 +430,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
                     if (quote != null) {
                         // Check if it is a single-liner
-                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote) < line.LastIndexOf(quote)) {
+                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote, StringComparison.Ordinal) < line.LastIndexOf(quote, StringComparison.Ordinal)) {
                             return line.Substring(quote.Length, line.Length - 2 * quote.Length).Trim();
                         }
                         var sb = new StringBuilder();

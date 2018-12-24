@@ -15,7 +15,6 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -39,6 +38,6 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public override IEnumerable<string> GetMemberNames() => _childModules.Keys.ToArray();
         public override IMember GetMember(string name) => _childModules.TryGetValue(name, out var v) ? v : null;
-        public override IEnumerable<string> GetChildrenModuleNames() => GetMemberNames();
+        public IEnumerable<string> GetChildrenModuleNames() => GetMemberNames();
     }
 }

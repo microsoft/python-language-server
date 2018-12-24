@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Modules {
         Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken = default);
         Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken = default);
         ModulePath FindModule(string filePath);
-        IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken);
+        IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Determines if directory contains Python package.
@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Returns an IPythonModule for a given module name. Returns null if
         /// the module does not exist. The import is performed asynchronously.
         /// </summary>
-        Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token = default);
+        Task<IPythonModule> ImportModuleAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Builtins module.

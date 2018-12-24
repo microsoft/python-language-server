@@ -105,5 +105,25 @@ R_A3 = R_A1.r_A()";
                 .And.HaveVariable("R_A2").OfType("A")
                 .And.HaveVariable("R_A3").OfType("A");
         }
+        [TestMethod, Priority(0)]
+        public async Task BuiltinImport() {
+            var analysis = await GetAnalysisAsync(@"import sys");
+
+            var v = analysis.Should().HaveVariable("sys").Which;
+            v.Should().OfType(BuiltinTypeId.Module);
+            v.Value.Should().HaveMembers("platform");
+        }
+
+//        [TestMethod, Priority(0)]
+//        public async Task BuiltinImportInClass() {
+//            var code = @"
+//class C:
+//    import sys
+//";
+//            var analysis = await GetAnalysisAsync(code);
+//            analysis.Should().HaveClass("C")
+//                .Which.Should().HaveVariable("sys")
+//                .Which.Should().HaveMembers("platform");
+//        }
     }
 }

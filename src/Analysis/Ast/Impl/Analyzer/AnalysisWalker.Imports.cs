@@ -34,6 +34,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var len = Math.Min(node.Names.Count, node.AsNames.Count);
             for (var i = 0; i < len; i++) {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var moduleImportExpression = node.Names[i];
                 var importNames = moduleImportExpression.Names.Select(n => n.Name).ToArray();
                 var asNameExpression = node.AsNames[i];
@@ -53,12 +55,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         module = await HandlePossibleImportAsync(node, possibleModuleImport, cancellationToken);
                         break;
                     default:
+                        // TODO: Package import?
                         MakeUnresolvedImport(memberName, moduleImportExpression);
                         break;
                 }
 
                 if (module != null) {
-                    AssignImportedVariables(node, module, moduleImportExpression, asNameExpression);
+                    AssignImportedVariables(module, moduleImportExpression, asNameExpression);
                 }
             }
             return false;
@@ -96,7 +99,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return module;
         }
 
-        private void AssignImportedVariables(ImportStatement node, IPythonModule module, DottedName moduleImportExpression, NameExpression asNameExpression) {
+        private void AssignImportedVariables(IPythonModule module, DottedName moduleImportExpression, NameExpression asNameExpression) {
             // "import fob.oar as baz" is handled as
             // baz = import_module('fob.oar')
             if (asNameExpression != null) {

@@ -34,8 +34,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public override string Documentation
             => GetMember("__doc__") is PythonStringLiteral m ? m.Value : string.Empty;
 
-        public override IEnumerable<string> GetChildrenModuleNames() => Enumerable.Empty<string>();
-
         protected virtual IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter) {
             var args = new List<string> { "-B", "-E" };
 
@@ -56,14 +54,18 @@ namespace Microsoft.Python.Analysis.Modules {
             return args;
         }
 
-        protected override string LoadContent() {
-            var code = ModuleCache.ReadCachedModule(FilePath);
-            if (string.IsNullOrEmpty(code)) {
-                if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {
-                    return string.Empty;
+        protected override string LoadContent(ModuleLoadOptions options) {
+            var code = string.Empty;
+            if ((options & ModuleLoadOptions.Load) == ModuleLoadOptions.Load) {
+                code = ModuleCache.ReadCachedModule(FilePath);
+                if (string.IsNullOrEmpty(code)) {
+                    if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {
+                        return string.Empty;
+                    }
+
+                    code = ScrapeModule();
+                    SaveCachedCode(code);
                 }
-                code = ScrapeModule();
-                SaveCachedCode(code);
             }
             return code;
         }

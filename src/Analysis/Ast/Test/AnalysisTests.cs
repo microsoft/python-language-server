@@ -100,5 +100,16 @@ x = 1
             var names = mc.GetMemberNames().ToArray();
             names.Length.Should().BeGreaterThan(50);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task BuiltinsTrueFalse() {
+            const string code = @"
+booltypetrue = True
+booltypefalse = False
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable(@"booltypetrue").OfType(BuiltinTypeId.Bool)
+                .And.HaveVariable(@"booltypefalse").OfType(BuiltinTypeId.Bool);
+        }
     }
 }

@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var module = await _interpreter.ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
 
             if (names.Count == 1 && names[0].Name == "*") {
-                await HandleModuleImportStarAsync(module, node, cancellationToken);
+                await HandleModuleImportStarAsync(module, cancellationToken);
                 return;
             }
 
@@ -104,10 +104,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private async Task HandleModuleImportStarAsync(IPythonModule module, FromImportStatement node, CancellationToken cancellationToken = default) {
-            // Ensure child modules have been loaded
-            module.GetChildrenModuleNames();
-
+        private async Task HandleModuleImportStarAsync(IPythonModule module, CancellationToken cancellationToken = default) {
             foreach (var memberName in module.GetMemberNames()) {
                 cancellationToken.ThrowIfCancellationRequested();
 

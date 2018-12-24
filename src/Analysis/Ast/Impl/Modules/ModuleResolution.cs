@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Modules {
             return _searchPaths;
         }
 
-        public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken) {
+        public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken = default) {
             var packageDict = new Dictionary<string, string>();
 
             foreach (var searchPath in searchPaths.MaybeEnumerate()) {
@@ -139,7 +139,7 @@ namespace Microsoft.Python.Analysis.Modules {
             return packageDict;
         }
 
-        private async Task<IReadOnlyList<string>> GetInterpreterSearchPathsAsync(CancellationToken cancellationToken) {
+        private async Task<IReadOnlyList<string>> GetInterpreterSearchPathsAsync(CancellationToken cancellationToken = default) {
             if (!_fs.FileExists(Configuration.InterpreterPath)) {
                 return Array.Empty<string>();
             }
@@ -154,7 +154,7 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
-        private async Task<TryImportModuleResult> TryImportModuleAsync(string name, CancellationToken cancellationToken) {
+        private async Task<TryImportModuleResult> TryImportModuleAsync(string name, CancellationToken cancellationToken = default) {
             if (string.IsNullOrEmpty(name)) {
                 return TryImportModuleResult.ModuleNotFound;
             }
@@ -222,12 +222,14 @@ namespace Microsoft.Python.Analysis.Modules {
             ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
         }
 
-        public async Task<IPythonModule> ImportModuleAsync(string name, CancellationToken token) {
+        public async Task<IPythonModule> ImportModuleAsync(string name, CancellationToken cancellationToken = default) {
             if (name == BuiltinModuleName) {
                 return BuiltinsModule;
             }
 
             for (var retries = 5; retries > 0; --retries) {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // The call should be cancelled by the cancellation token, but since we
                 // are blocking here we wait for slightly longer. Timeouts are handled
                 // gracefully by TryImportModuleAsync(), so we want those to trigger if
@@ -236,7 +238,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 // (And if we've got a debugger attached, don't time out at all.)
                 TryImportModuleResult result;
                 try {
-                    result = await TryImportModuleAsync(name, token);
+                    result = await TryImportModuleAsync(name, cancellationToken);
                 } catch (OperationCanceledException) {
                     _log?.Log(TraceEventType.Error, $"Import timeout: {name}");
                     Debug.Fail("Import timeout");

@@ -312,6 +312,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (expr is SetExpression || expr is SetComprehension) {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Set);
             }
+
+            if (expr is BackQuoteExpression && Interpreter.LanguageVersion.Is2x()) {
+                return Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
+            }
             return expr is LambdaExpression ? Interpreter.GetBuiltinType(BuiltinTypeId.Function) : null;
         }
 
@@ -418,7 +422,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             public void Dispose() {
                 Debug.Assert(_lookup._openScopes.Count > 0, "Attempt to close global scope");
-                var s = _lookup.CurrentScope;
                 _lookup.CurrentScope = _lookup._openScopes.Pop();
             }
         }

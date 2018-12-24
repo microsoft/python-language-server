@@ -59,20 +59,21 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             where TMember : class, IPythonType {
             NotBeNull();
 
-            var mc = Subject as IMemberContainer;
+            var t = Subject.GetPythonType();
+            var mc =  t as IMemberContainer;
             Execute.Assertion.ForCondition(mc != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {GetName(Subject)} to be a member container{{reason}}.");
+                .FailWith($"Expected {GetName(t)} to be a member container{{reason}}.");
 
             var member = mc.GetMember(name);
             var typedMember = member as TMember;
             Execute.Assertion.ForCondition(member != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {GetName(Subject)} to have a member {name}{{reason}}.")
+                .FailWith($"Expected {GetName(t)} to have a member {name}{{reason}}.")
                 .Then
                 .ForCondition(typedMember != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {GetName(Subject)} to have a member {name} of type {typeof(TMember)}{{reason}}, but its type is {member?.GetType()}.");
+                .FailWith($"Expected {GetName(t)} to have a member {name} of type {typeof(TMember)}{{reason}}, but its type is {member?.GetType()}.");
 
             return new AndWhichConstraint<MemberAssertions, TMember>(this, typedMember);
         }
@@ -86,7 +87,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             => HaveMembers(memberNames, string.Empty);
 
         public AndConstraint<MemberAssertions> HaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
-            var names = ((IMemberContainer)Subject).GetMemberNames().ToArray();
+            var names = Subject.GetPythonType().GetMemberNames().ToArray();
             var expectedNames = memberNames.ToArray();
             var missingNames = expectedNames.Except(names).ToArray();
 
@@ -101,7 +102,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             => NotHaveMembers(memberNames, string.Empty);
 
         public AndConstraint<MemberAssertions> NotHaveMembers(IEnumerable<string> memberNames, string because = "", params object[] reasonArgs) {
-            var names = ((IMemberContainer)Subject).GetMemberNames();
+            var names = Subject.GetPythonType().GetMemberNames();
             var missingNames = memberNames.ToArray();
             var existingNames = names.Intersect(missingNames).ToArray();
 

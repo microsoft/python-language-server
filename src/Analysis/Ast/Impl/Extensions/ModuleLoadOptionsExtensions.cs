@@ -13,13 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using Microsoft.Python.Analysis.Modules;
 
-namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonPackage : IPythonModule {
-        /// <summary>
-        /// Modules imported by this module.
-        /// </summary>
-        IEnumerable<string> GetChildrenModuleNames();
+namespace Microsoft.Python.Analysis.Extensions {
+    public static class ModuleLoadOptionsExtensions {
+        public static bool ShouldLoad(this ModuleLoadOptions o)
+            => (o & ModuleLoadOptions.Load) == ModuleLoadOptions.Load;
+        public static bool ShouldParse(this ModuleLoadOptions o)
+            => (o & ModuleLoadOptions.Ast) == ModuleLoadOptions.Ast;
+        public static bool ShouldAlalyze(this ModuleLoadOptions o)
+            => (o & ModuleLoadOptions.Analyze) == ModuleLoadOptions.Analyze;
     }
 }
