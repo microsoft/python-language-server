@@ -75,20 +75,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 args.Add(type ?? UnknownType);
             }
 
-            IPythonType returnType = null;
+            IMember value = null;
 
             var overload = FindOverload(fn, args);
             if (overload != null) {
                 // TODO: provide instance
-                returnType = GetFunctionReturnType(overload, null, args);
-                if (returnType.IsUnknown()) {
+                value = GetFunctionReturnValue(overload, null, args);
+                if (value.IsUnknown() && fn.FunctionDefinition != null) {
                     // Function may not have been walked yet. Do it now.
                     await _functionWalkers.ProcessFunctionAsync(fn.FunctionDefinition, cancellationToken);
-                    returnType = GetFunctionReturnType(overload, null, args);
+                    value = GetFunctionReturnValue(overload, null, args);
                 }
             }
 
-            return returnType ?? UnknownType;
+            return value ?? UnknownType;
         }
 
         private IPythonFunctionOverload FindOverload(IPythonFunction fn, ICollection<IMember> args) {
@@ -113,8 +113,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return overload;
         }
 
-        private IPythonType GetFunctionReturnType(IPythonFunctionOverload o, IPythonInstance instance, IReadOnlyList<IMember> args)
-            => o?.GetReturnType(instance, args) ?? UnknownType;
+        private IMember GetFunctionReturnValue(IPythonFunctionOverload o, IPythonInstance instance, IReadOnlyList<IMember> args)
+            => o?.GetReturnValue(instance, args) ?? UnknownType;
 
         private async Task<IPythonType> GetPropertyReturnTypeAsync(IPythonProperty p, Expression expr, CancellationToken cancellationToken = default) {
             if (p.Type.IsUnknown()) {

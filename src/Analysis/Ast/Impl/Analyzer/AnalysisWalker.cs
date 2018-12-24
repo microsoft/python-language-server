@@ -67,15 +67,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
             await _functionWalkers.ProcessSetAsync(cancellationToken);
-
-            if (_module is IPythonPackage p) {
-                // TODO: move this to the module/package implementation?
-                foreach (var childModuleName in p.GetChildrenModuleNames()) {
-                    var name = $"{_module.Name}.{childModuleName}";
-                    _globalScope.DeclareVariable(name, _module, LocationInfo.Empty);
-                }
-            }
-
             return GlobalScope;
         }
 

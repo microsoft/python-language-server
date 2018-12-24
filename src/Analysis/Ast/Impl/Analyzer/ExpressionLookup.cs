@@ -249,11 +249,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IPythonInstance GetConstantFromLiteral(Expression expr, LookupOptions options) {
             var location = GetLoc(expr);
             if (expr is ConstantExpression ce) {
+                BuiltinTypeId typeId;
                 switch (ce.Value) {
                     case string s:
-                        return new PythonStringLiteral(s, Interpreter.GetBuiltinType(BuiltinTypeId.Unicode), location);
+                        typeId = Interpreter.LanguageVersion.Is3x() ? BuiltinTypeId.Str : BuiltinTypeId.Unicode;
+                        return new PythonStringLiteral(s, Interpreter.GetBuiltinType(typeId), location);
                     case AsciiString b:
-                        return new PythonStringLiteral(b.String, Interpreter.GetBuiltinType(BuiltinTypeId.Bytes), location);
+                        typeId = Interpreter.LanguageVersion.Is3x() ? BuiltinTypeId.Bytes : BuiltinTypeId.Str;
+                        return new PythonStringLiteral(b.String, Interpreter.GetBuiltinType(typeId), location);
                 }
             }
 

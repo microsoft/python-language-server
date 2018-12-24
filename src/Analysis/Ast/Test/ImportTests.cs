@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var analysis = await GetAnalysisAsync("from Values import *");
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("y").OfType(BuiltinTypeId.Unicode)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Bytes)
                 .And.HaveVariable("pi").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("l").OfType(BuiltinTypeId.List)
@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 .And.HaveVariable("d").OfType(BuiltinTypeId.Dict)
                 .And.HaveVariable("s").OfType(BuiltinTypeId.Set)
                 .And.HaveVariable("X").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("Y").OfType(BuiltinTypeId.Unicode)
+                .And.HaveVariable("Y").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("Z").OfType(BuiltinTypeId.Bytes)
                 .And.HaveVariable("PI").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("L").OfType(BuiltinTypeId.List)
@@ -63,13 +63,13 @@ namespace Microsoft.Python.Analysis.Tests {
 
             // TODO: track assignments and type changes by position
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("y").OfType(BuiltinTypeId.Unicode)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Bytes)
                 .And.HaveVariable("l").OfType(BuiltinTypeId.List)
                 .And.HaveVariable("t").OfType(BuiltinTypeId.Tuple)
                 .And.HaveVariable("s").OfType(BuiltinTypeId.Set)
-                .And.HaveVariable("XY").OfType(BuiltinTypeId.Unicode)
-                .And.HaveVariable("XYZ").OfType(BuiltinTypeId.Unicode)
+                .And.HaveVariable("XY").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("XYZ").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("D").OfType(BuiltinTypeId.Dict);
         }
 
@@ -99,7 +99,7 @@ R_A3 = R_A1.r_A()";
 
             analysis.Should().HaveFunctionVariables("r_a", "r_b", "r_str", "r_object")
                 .And.HaveClassVariables("A")
-                .And.HaveVariable("R_str").OfType(BuiltinTypeId.Unicode)
+                .And.HaveVariable("R_str").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("R_object").OfType(BuiltinTypeId.Object)
                 .And.HaveVariable("R_A1").OfType("A")
                 .And.HaveVariable("R_A2").OfType("A")

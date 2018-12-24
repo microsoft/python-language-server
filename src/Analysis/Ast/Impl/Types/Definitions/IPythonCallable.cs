@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Determines return value type given arguments for the particular instance.
         /// For annotated or stubbed functions the annotation type is always returned.
         /// </summary>
-        IPythonType GetReturnType(IPythonInstance instance, IReadOnlyList<IMember> args = null);
+        IMember GetReturnValue(IPythonInstance instance, IReadOnlyList<IMember> args = null);
 
         /// <summary>
         /// Return value documentation.

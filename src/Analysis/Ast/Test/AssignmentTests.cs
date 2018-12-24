@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task AssignSelf() {
-            var code = @"
+            const string code = @"
 class x(object):
     def __init__(self):
         self.x = 'abc'
@@ -54,12 +54,12 @@ class x(object):
                 .Which.Should().HaveName("self").And.HaveType("x").Which;
 
             xType.Should().HaveMember<IPythonType>("x")
-                .Which.TypeId.Should().Be(BuiltinTypeId.Unicode);
+                .Which.TypeId.Should().Be(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
         public async Task AssignToMissingMember() {
-            var code = @"
+            const string code = @"
 class test():
     x = 0;
     y = 1;
@@ -73,12 +73,12 @@ t.x, t. =
         [TestMethod, Priority(0)]
         public async Task Backquote() {
             var analysis = await GetAnalysisAsync(@"x = `42`", PythonVersions.LatestAvailable2X);
-            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Bytes);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
         public async Task BadKeywordArguments() {
-            var code = @"def f(a, b):
+            const string code = @"def f(a, b):
     return a
 
 x = 100
@@ -86,6 +86,28 @@ z = f(a=42, x)";
 
             var analysis = await GetAnalysisAsync(code);
                 analysis.Should().HaveVariable("z").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AssignBytes() {
+            const string code = @"
+x = b'b'
+y = u'u'
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Bytes)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AssignUnicode() {
+            const string code = @"
+x = b'b'
+y = u'u'
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Unicode);
         }
     }
 }

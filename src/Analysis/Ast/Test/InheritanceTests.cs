@@ -31,53 +31,6 @@ namespace Microsoft.Python.Analysis.Tests {
         public void TestCleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task AbstractMethodReturnTypeIgnored() {
-            const string code = @"import abc
-class A:
-    @abc.abstractmethod
-    def virt():
-        return 'base'
-
-class B(A):
-    def virt():
-        return 42
-
-a = A()
-b = a.virt()
-c = B().virt()
-";
-
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("b").WithNoTypes();
-            analysis.Should().HaveVariable("c").OfType(BuiltinTypeId.Int);
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task AbstractPropertyReturnTypeIgnored() {
-            const string code = @"
-import abc
-
-class A:
-    @abc.abstractproperty
-    def virt():
-        return 'base'
-
-class B(A):
-    @property
-    def virt():
-        return 42
-
-a = A()
-b = a.virt
-c = B().virt
-";
-
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("b").WithNoTypes();
-            analysis.Should().HaveVariable("c").OfType(BuiltinTypeId.Int);
-        }
-
-        [TestMethod, Priority(0)]
         public async Task BaseFunctionCall() {
             const string code = @"
 class Baze:
@@ -106,7 +59,7 @@ y = Baze().foo(42.0)
                 .Which.Should().HaveParameterAt(1)
                 .Which.Should().HaveName("x");
 
-            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Unicode);
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]

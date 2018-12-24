@@ -5689,16 +5689,16 @@ keywords_from_fob_2 = fob_2.keywords
                 "args_from_fob_1"
             }) {
                 entry.AssertDescription(name, "tuple[int, float, str, list]");
-                var result = entry.GetValue<AnalysisValue>(name);
+                var result = entry.GetAnnotationType<AnalysisValue>(name);
                 Console.WriteLine("{0} = {1}", name, result);
                 AssertTupleContains(result, BuiltinTypeId.Int, BuiltinTypeId.Float, entry.BuiltinTypeId_Str, BuiltinTypeId.List);
             }
 
-            var fob = entry.GetValue<FunctionInfo>("fob");
-            var fob2 = entry.GetValue<FunctionInfo>("func_from_fob_1");
+            var fob = entry.GetAnnotationType<FunctionInfo>("fob");
+            var fob2 = entry.GetAnnotationType<FunctionInfo>("func_from_fob_1");
             Assert.AreSame(fob, fob2);
 
-            entry.GetValue<DictionaryInfo>("keywords_from_fob_2");
+            entry.GetAnnotationType<DictionaryInfo>("keywords_from_fob_2");
         }
 
         [TestMethod, Priority(0)]
@@ -5736,10 +5736,10 @@ test1_result = test1()
 
             state.AssertConstantEquals("test1.__name__", "test1");
             state.AssertConstantEquals("test1.__doc__", "doc");
-            var fi = state.GetValue<FunctionInfo>("test1");
+            var fi = state.GetAnnotationType<FunctionInfo>("test1");
             Assert.AreEqual("doc", fi.Documentation);
-            state.GetValue<FunctionInfo>("test1.__wrapped__");
-            Assert.AreEqual(2, state.GetValue<FunctionInfo>("test1").Overloads.Count());
+            state.GetAnnotationType<FunctionInfo>("test1.__wrapped__");
+            Assert.AreEqual(2, state.GetAnnotationType<FunctionInfo>("test1").Overloads.Count());
             state.AssertConstantEquals("test1_result", "decorated");
 
             // __name__ should not have been changed by update_wrapper
@@ -5858,9 +5858,9 @@ modules['name_in_modules'] = None
 
             var entry = ProcessTextV2(code);
 
-            var sys = entry.GetValue<SysModuleInfo>("sys");
+            var sys = entry.GetAnnotationType<SysModuleInfo>("sys");
 
-            var modules = entry.GetValue<SysModuleInfo.SysModulesDictionaryInfo>("modules");
+            var modules = entry.GetAnnotationType<SysModuleInfo.SysModulesDictionaryInfo>("modules");
             Assert.IsInstanceOfType(modules, typeof(SysModuleInfo.SysModulesDictionaryInfo));
 
             AssertUtil.ContainsExactly(
@@ -5887,9 +5887,9 @@ builtins3 = modules.pop('__builtin__')
 
             entry.AssertIsInstance("value_in_modules", BuiltinTypeId.Int);
 
-            Assert.AreEqual("__builtin__", entry.GetValue<AnalysisValue>("builtins").Name);
-            Assert.AreEqual("__builtin__", entry.GetValue<AnalysisValue>("builtins2").Name);
-            Assert.AreEqual("__builtin__", entry.GetValue<AnalysisValue>("builtins3").Name);
+            Assert.AreEqual("__builtin__", entry.GetAnnotationType<AnalysisValue>("builtins").Name);
+            Assert.AreEqual("__builtin__", entry.GetAnnotationType<AnalysisValue>("builtins2").Name);
+            Assert.AreEqual("__builtin__", entry.GetAnnotationType<AnalysisValue>("builtins3").Name);
         }
 
         [TestMethod, Priority(0)]
@@ -6071,7 +6071,7 @@ def h(x): return g(x)";
                 entryA.Analyze(CancellationToken.None, true);
                 analyzer.WaitForAnalysis(CancellationTokens.After5s);
             }
-            var g = analyzer.GetValue<FunctionInfo>(entryB, "g");
+            var g = analyzer.GetAnnotationType<FunctionInfo>(entryB, "g");
             Assert.AreEqual(1, g.References.Count());
         }
 

@@ -44,6 +44,6 @@ namespace Microsoft.Python.Analysis.Types {
 
         public void MakeSettable() => IsReadOnly = false;
 
-        public IPythonType Type => _getter?.GetReturnType(null);
+        public IPythonType Type => _getter?.GetReturnValue(null)?.GetPythonType();
     }
 }

@@ -26,6 +26,17 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly string _doc;
         private readonly object _lock = new object();
 
+        /// <summary>
+        /// Creates function for specializations
+        /// </summary>
+        public static PythonFunction ForSpecialization(string name, IPythonModule declaringModule) 
+            => new PythonFunction(name, declaringModule);
+
+        private PythonFunction(string name, IPythonModule declaringModule): 
+            base(name, declaringModule, null, LocationInfo.Empty, BuiltinTypeId.Function) {
+            DeclaringType = declaringModule;
+        }
+
         public PythonFunction(
             FunctionDefinition fd,
             IPythonModule declaringModule,

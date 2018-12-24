@@ -21,7 +21,12 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
-        private IPythonType _returnType;
+        // Allow dynamic function specialization, such as defining return types for builtin
+        // functions that are impossible to scrape and that are missing from stubs.
+        private Func<IReadOnlyList<IMember>, IMember> _returnValueCallback;
+        // Return value can be an instance or a type info. Consider type(C()) returning
+        // type info of C vs. return C() that returns an instance of C.
+        private IMember _returnValue;
 
         public PythonFunctionOverload(
             string name,
@@ -42,8 +47,20 @@ namespace Microsoft.Python.Analysis.Types {
             Documentation = doc;
         }
 
-        internal void AddReturnType(IPythonType type) 
-            => _returnType = _returnType == null ? type : PythonUnion.Combine(_returnType, type);
+        internal void AddReturnValue(IMember value) {
+            if (_returnValue.IsUnknown()) {
+                SetReturnValue(value);
+                return;
+            } 
+            var type = PythonUnion.Combine(_returnValue.GetPythonType(), value.GetPythonType());
+            // Track instance vs type info.
+            _returnValue = value is IPythonInstance ? new PythonInstance(type) : (IMember)type;
+        }
+
+        internal void SetReturnValue(IMember value) => _returnValue = value;
+
+        internal void SetReturnValueCallback(Func<IReadOnlyList<IMember>, IMember> returnValueCallback)
+            => _returnValueCallback = returnValueCallback;
 
         public string Name { get; }
         public string Documentation { get; private set; }
@@ -52,14 +69,26 @@ namespace Microsoft.Python.Analysis.Types {
         public LocationInfo Location { get; }
         public PythonMemberType MemberType => PythonMemberType.Function;
 
-        public IPythonType GetReturnType(IPythonInstance instance, IReadOnlyList<IMember> args) {
-            if (_returnType is IPythonCallableArgumentType cat && args != null) {
-                var rt = cat.ParameterIndex < args.Count ? args[cat.ParameterIndex].GetPythonType() : null;
+        public IMember GetReturnValue(IPythonInstance instance, IReadOnlyList<IMember> args) {
+            // First try supplied specialization callback.
+            var rt = _returnValueCallback?.Invoke(args);
+            if (!rt.IsUnknown()) {
+                return rt;
+            }
+
+            // Then see if return value matches type of one of the input arguments.
+            var t = _returnValue.GetPythonType();
+            if (!(t is IPythonCallableArgumentType) && !t.IsUnknown()) {
+                return _returnValue;
+            }
+
+            if (t is IPythonCallableArgumentType cat && args != null) {
+                rt = cat.ParameterIndex < args.Count ? args[cat.ParameterIndex] : null;
                 if (!rt.IsUnknown()) {
                     return rt;
                 }
             }
-            return _returnType;
+            return _returnValue;
         }
     }
 }

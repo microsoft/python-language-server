@@ -30,11 +30,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public override IPythonType Finalize(IPythonType type) {
-            if (type == null || type is ModuleType) {
-                return null;
-            }
-
-            if (type == _scope.UnknownType) {
+            if (type.IsUnknown() || type is IPythonModule) {
                 return null;
             }
 
@@ -97,7 +93,7 @@ namespace Microsoft.Python.Analysis.Types {
                 case "Union":
                     return MakeUnion(args);
                 case "ByteString":
-                    return _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
+                    return _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
                 case "Type":
                     // TODO: handle arguments
                     return _scope.Interpreter.GetBuiltinType(BuiltinTypeId.Type);
@@ -125,12 +121,12 @@ namespace Microsoft.Python.Analysis.Types {
             var iterator = MakeIteratorType(types);
             var bti = BuiltinTypeId.List;
             switch (iterator.TypeId) {
-                case BuiltinTypeId.BytesIterator:
-                    bti = BuiltinTypeId.Bytes;
+                case BuiltinTypeId.StrIterator:
+                    bti = BuiltinTypeId.Str;
                     break;
-                case BuiltinTypeId.UnicodeIterator:
-                    bti = BuiltinTypeId.Unicode;
-                    break;
+                //case BuiltinTypeId.UnicodeIterator:
+                //    bti = BuiltinTypeId.Unicode;
+                //    break;
             }
 
             return new PythonIterable(_scope.Interpreter.GetBuiltinType(bti), types, iterator, _scope.Module);
@@ -138,11 +134,14 @@ namespace Microsoft.Python.Analysis.Types {
 
         private IPythonType MakeIteratorType(IReadOnlyList<IPythonType> types) {
             var bti = BuiltinTypeId.ListIterator;
-            if (types.Any(t => t.TypeId == BuiltinTypeId.Bytes)) {
-                bti = BuiltinTypeId.BytesIterator;
-            } else if (types.Any(t => t.TypeId == BuiltinTypeId.Unicode)) {
-                bti = BuiltinTypeId.UnicodeIterator;
+            if (types.Any(t => t.TypeId == BuiltinTypeId.Str)) {
+                bti = BuiltinTypeId.StrIterator;
             }
+            //} else if (types.Any(t => t.TypeId == BuiltinTypeId.Bytes)) {
+            //    bti = BuiltinTypeId.BytesIterator;
+            //} else if (types.Any(t => t.TypeId == BuiltinTypeId.Unicode)) {
+            //    bti = BuiltinTypeId.UnicodeIterator;
+            //}
 
             return new PythonIterator(_scope.Interpreter.GetBuiltinType(bti), types, _scope.Module);
         }
@@ -161,18 +160,6 @@ namespace Microsoft.Python.Analysis.Types {
                 );
             }
             return res;
-        }
-
-        private sealed class ModuleType : PythonType {
-            public ModuleType(IPythonModule module) :
-                base(module.Name, module, module.Documentation, null) {
-            }
-
-            public override BuiltinTypeId TypeId => BuiltinTypeId.Module;
-            public override PythonMemberType MemberType => PythonMemberType.Module;
-
-            public override IMember GetMember(string name) => DeclaringModule.GetMember(name);
-            public override IEnumerable<string> GetMemberNames() => DeclaringModule.GetMemberNames();
         }
 
         private sealed class UnionType : PythonType {

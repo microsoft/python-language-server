@@ -55,7 +55,7 @@ y = c.method()
             var names = analysis.GlobalScope.Variables.Names;
             names.Should().OnlyContain("x", "C", "func", "c", "y");
 
-            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Unicode);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
             analysis.Should().HaveVariable("C").Which.Value.Should().BeAssignableTo<IPythonClass>();
 
             analysis.Should().HaveVariable("func")

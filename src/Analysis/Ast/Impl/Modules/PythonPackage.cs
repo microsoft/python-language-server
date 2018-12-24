@@ -17,6 +17,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Modules {
@@ -24,10 +25,10 @@ namespace Microsoft.Python.Analysis.Modules {
     /// Represents package with child modules. Typically
     /// used in scenarios such as 'import a.b.c'.
     /// </summary>
-    internal sealed class PythonPackage: PythonModule, IPythonPackage {
+    internal sealed class PythonPackage : PythonModule, IPythonPackage {
         private readonly ConcurrentDictionary<string, IPythonModule> _childModules = new ConcurrentDictionary<string, IPythonModule>();
 
-        public PythonPackage(string name, IServiceContainer services) 
+        public PythonPackage(string name, IServiceContainer services)
             : base(name, ModuleType.Package, services) { }
 
         public void AddChildModule(string name, IPythonModule module) {
@@ -39,5 +40,13 @@ namespace Microsoft.Python.Analysis.Modules {
         public override IEnumerable<string> GetMemberNames() => _childModules.Keys.ToArray();
         public override IMember GetMember(string name) => _childModules.TryGetValue(name, out var v) ? v : null;
         public IEnumerable<string> GetChildrenModuleNames() => GetMemberNames();
+
+        protected override void OnAnalysisComplete(GlobalScope gs) {
+            foreach (var childModuleName in GetChildrenModuleNames()) {
+                var name = $"{Name}.{childModuleName}";
+                gs.DeclareVariable(name, this, LocationInfo.Empty);
+            }
+            base.OnAnalysisComplete(gs);
+        }
     }
 }

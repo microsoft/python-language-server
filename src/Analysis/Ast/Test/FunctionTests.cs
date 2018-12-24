@@ -85,7 +85,7 @@ y = g()";
             var analysis = await GetAnalysisAsync(code);
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("y").OfType(BuiltinTypeId.Unicode)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("f").OfType(BuiltinTypeId.Function)
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveSingleParameter()
@@ -122,7 +122,7 @@ y = f(1, 2)
                 .Which.Should().HaveReturnType(BuiltinTypeId.Unknown);
 
             analysis.Should()
-                .HaveVariable("x").OfType(BuiltinTypeId.Unicode).And
+                .HaveVariable("x").OfType(BuiltinTypeId.Str).And
                 .HaveVariable("y").OfType(BuiltinTypeId.Int);
         }
 
@@ -138,11 +138,11 @@ y = f(1, 2)
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveFunction("f")
                 .Which.Should().HaveSingleOverload()
-                .Which.Should().HaveReturnType(BuiltinTypeId.Unicode);
+                .Which.Should().HaveReturnType(BuiltinTypeId.Str);
 
             analysis.Should()
-                .HaveVariable("x").OfType(BuiltinTypeId.Unicode).And
-                .HaveVariable("y").OfType(BuiltinTypeId.Unicode);
+                .HaveVariable("x").OfType(BuiltinTypeId.Str).And
+                .HaveVariable("y").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
@@ -166,15 +166,32 @@ fob = abc.f()
         }
 
         [TestMethod, Priority(0)]
-        public async Task BuiltinFuncRetval() {
+        public async Task Specializations() {
             const string code = @"
-x = ord('a')
-y = range(5)
-";
+class C:
+    pass
 
+a = ord('a')
+b = abs(5)
+c = abs(5.0)
+d = eval('')
+e = isinstance(d)
+f = pow(1)
+g = pow(3.0)
+h = type(C())
+i = h()
+";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("y").OfType(BuiltinTypeId.List);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Float)
+                .And.HaveVariable("d").OfType(BuiltinTypeId.Object)
+                .And.HaveVariable("e").OfType(BuiltinTypeId.Bool)
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("g").OfType(BuiltinTypeId.Float)
+                .And.HaveVariable("h").OfType(BuiltinTypeId.Type)
+                .And.HaveVariable("i").OfType("C");
+                ;
         }
     }
 }

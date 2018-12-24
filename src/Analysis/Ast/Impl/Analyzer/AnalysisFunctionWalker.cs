@@ -54,12 +54,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public async Task WalkAsync(CancellationToken cancellationToken = default) {
             using (_lookup.OpenScope(_parentScope)) {
-                _self = await GetSelfAsync(cancellationToken);
+                _self = _lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local) as IPythonClass;
                 using (_lookup.CreateScope(Target, _parentScope)) {
 
                     var annotationType = _lookup.GetTypeFromAnnotation(Target.ReturnAnnotation);
                     if (!annotationType.IsUnknown()) {
-                        _overload.AddReturnType(annotationType);
+                        _overload.AddReturnValue(annotationType);
                     }
 
                     await DeclareParametersAsync(cancellationToken);
@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             //    return value
             // by assigning type to the value unless clause is raising exception.
             var ce = node.Tests.FirstOrDefault()?.Test as CallExpression;
-            if (ce?.Target is NameExpression ne && ne?.Name == "isinstance" && ce.Args.Count == 2) {
+            if (ce?.Target is NameExpression ne && ne.Name == @"isinstance" && ce.Args.Count == 2) {
                 var nex = ce.Args[0].Expression as NameExpression;
                 var name = nex?.Name;
                 var typeName = (ce.Args[1].Expression as NameExpression)?.Name;
@@ -140,9 +140,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
             var value = await _lookup.GetValueFromExpressionAsync(node.Expression, cancellationToken);
-            var t = value.GetPythonType();
-            if (t != null) {
-                _overload.AddReturnType(t);
+            if (value != null) {
+                _overload.AddReturnValue(value);
             }
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
@@ -150,11 +149,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private struct MethodInfo {
             public bool isClassMethod;
             public bool isStaticMethod;
-        }
-
-        private async Task<IPythonClass> GetSelfAsync(CancellationToken cancellationToken = default) {
-            var info = await GetMethodInfoAsync(cancellationToken);
-            return _lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local) as IPythonClass;
         }
 
         private async Task<MethodInfo> GetMethodInfoAsync(CancellationToken cancellationToken = default) {

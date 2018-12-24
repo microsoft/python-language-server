@@ -37,7 +37,8 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task Closures() {
-            const string code = @"def f(a):
+            const string code = @"
+def f(a):
     def g():
         return a
     return g()
@@ -63,7 +64,7 @@ y = f('fob')";
 
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("y").OfType(BuiltinTypeId.Unicode);
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str);
         }
     }
 }

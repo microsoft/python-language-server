@@ -51,8 +51,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override Task PostWalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
-            var cls = _lookup.GetInScope<PythonClass>("__class__");
-            Debug.Assert(cls != null || _lookup.GetInScope("__class__") == null, "__class__ variable is not a IPythonClass.");
+            var cls = _lookup.GetInScope("__class__")?.GetPythonType() as PythonClass;
+            Debug.Assert(cls != null || _lookup.GetInScope("__class__") == null, "__class__ variable is not a PythonClass.");
             if (cls != null) {
                 // Add members from this file
                 cls.AddMembers(_lookup.CurrentScope.Variables, true);

@@ -33,10 +33,10 @@ namespace Microsoft.Python.Analysis.Modules {
             if (typeId.IsVirtualId()) {
                 switch (typeId) {
                     case BuiltinTypeId.Str:
-                        typeId = LanguageVersion.Is3x() ? BuiltinTypeId.Unicode : BuiltinTypeId.Bytes;
+                        typeId = BuiltinTypeId.Str;
                         break;
                     case BuiltinTypeId.StrIterator:
-                        typeId = LanguageVersion.Is3x() ? BuiltinTypeId.UnicodeIterator : BuiltinTypeId.BytesIterator;
+                        typeId =  BuiltinTypeId.StrIterator;
                         break;
                     default:
                         typeId = BuiltinTypeId.Unknown;
