@@ -23,22 +23,22 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
     internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName {
         private readonly object _lock = new object();
-        private Dictionary<string, IPythonType> _members;
+        private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
 
-        protected IReadOnlyDictionary<string, IPythonType> Members => WritableMembers;
+        protected IReadOnlyDictionary<string, IMember> Members => WritableMembers;
 
-        private Dictionary<string, IPythonType> WritableMembers =>
-            _members ?? (_members = new Dictionary<string, IPythonType>());
+        private Dictionary<string, IMember> WritableMembers =>
+            _members ?? (_members = new Dictionary<string, IMember>());
 
         public PythonType(
             string name,
             IPythonModule declaringModule,
-            string doc,
+            string documentation,
             LocationInfo loc,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
         ) : this(name, typeId) {
-            Documentation = doc;
+            Documentation = documentation;
             DeclaringModule = declaringModule;
             Location = loc ?? LocationInfo.Empty;
         }
@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonType
         public virtual string Name { get; }
-        public virtual string Documentation { get; }
+        public virtual string Documentation { get; private set; }
         public IPythonModule DeclaringModule { get; }
         public virtual PythonMemberType MemberType => _typeId.GetMemberId();
         public virtual BuiltinTypeId TypeId => _typeId;
@@ -80,6 +80,12 @@ namespace Microsoft.Python.Analysis.Types {
             return true;
         }
 
+        internal void SetDocumentation(string doc) {
+            if (string.IsNullOrEmpty(Documentation)) {
+                Documentation = doc;
+            }
+        }
+
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
             lock (_lock) {
                 foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
@@ -88,7 +94,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        internal void AddMembers(IEnumerable<KeyValuePair<string, IPythonType>> members, bool overwrite) {
+        internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
             lock (_lock) {
                 foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
                     WritableMembers[kv.Key] = kv.Value;
@@ -99,7 +105,7 @@ namespace Microsoft.Python.Analysis.Types {
         internal void AddMembers(IPythonClass cls, bool overwrite) {
             if (cls != null) {
                 var names = cls.GetMemberNames();
-                var members = names.Select(n => new KeyValuePair<string, IPythonType>(n, cls.GetMember(n).GetPythonType()));
+                var members = names.Select(n => new KeyValuePair<string, IMember>(n, cls.GetMember(n)));
                 AddMembers(members, overwrite);
             }
         }

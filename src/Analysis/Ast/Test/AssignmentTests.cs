@@ -53,8 +53,8 @@ class x(object):
                 .Which.Should().HaveParameterAt(0)
                 .Which.Should().HaveName("self").And.HaveType("x").Which;
 
-            xType.Should().HaveMember<IPythonType>("x")
-                .Which.TypeId.Should().Be(BuiltinTypeId.Str);
+            xType.Should().HaveMember<IPythonInstance>("x")
+                .Which.Should().HaveType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]

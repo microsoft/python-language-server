@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (value == null) {
-                _log?.Log(TraceEventType.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
+                Log?.Log(TraceEventType.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
             }
 
             return value;
@@ -83,7 +83,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 value = GetFunctionReturnValue(overload, null, args);
                 if (value.IsUnknown() && fn.FunctionDefinition != null) {
                     // Function may not have been walked yet. Do it now.
-                    await _functionWalkers.ProcessFunctionAsync(fn.FunctionDefinition, cancellationToken);
+                    await FunctionWalkers.ProcessFunctionAsync(fn.FunctionDefinition, cancellationToken);
                     value = GetFunctionReturnValue(overload, null, args);
                 }
             }
@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private async Task<IPythonType> GetPropertyReturnTypeAsync(IPythonProperty p, Expression expr, CancellationToken cancellationToken = default) {
             if (p.Type.IsUnknown()) {
                 // Function may not have been walked yet. Do it now.
-                await _functionWalkers.ProcessFunctionAsync(p.FunctionDefinition, cancellationToken);
+                await FunctionWalkers.ProcessFunctionAsync(p.FunctionDefinition, cancellationToken);
             }
 
             return p.Type ?? UnknownType;

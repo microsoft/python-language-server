@@ -13,60 +13,41 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    [DebuggerDisplay("{_module.Name} : {_module.ModuleType}")]
-    internal sealed partial class AnalysisWalker : PythonWalkerAsync {
-        private readonly IServiceContainer _services;
-        private readonly IPythonInterpreter _interpreter;
-        private readonly ILogger _log;
-        private readonly IPythonModule _module;
-        private readonly PythonAst _ast;
-        private readonly ExpressionLookup _lookup;
-        private readonly GlobalScope _globalScope;
-        private readonly AnalysisFunctionWalkerSet _functionWalkers = new AnalysisFunctionWalkerSet();
-        private readonly HashSet<FunctionDefinition> _replacedByStubs = new HashSet<FunctionDefinition>();
-        private readonly bool _suppressBuiltinLookup;
-        private IDisposable _classScope;
+    /// <summary>
+    /// Base class with common functionality to module and function analysis walkers.
+    /// </summary>
+    internal abstract partial class AnalysisWalker : PythonWalkerAsync {
+        private readonly HashSet<Node> _replacedByStubs = new HashSet<Node>();
 
-        public AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast, bool suppressBuiltinLookup) {
-            _services = services ?? throw new ArgumentNullException(nameof(services));
-            _module = module ?? throw new ArgumentNullException(nameof(module));
-            _ast = ast ?? throw new ArgumentNullException(nameof(ast));
+        protected ExpressionLookup Lookup { get; }
+        protected IServiceContainer Services => Lookup.Services;
+        protected ILogger Log => Lookup.Log;
+        protected IPythonModule Module => Lookup.Module;
+        protected IPythonInterpreter Interpreter => Lookup.Interpreter;
+        protected GlobalScope GlobalScope => Lookup.GlobalScope;
+        protected PythonAst Ast => Lookup.Ast;
+        protected AnalysisFunctionWalkerSet FunctionWalkers => Lookup.FunctionWalkers;
 
-            _interpreter = services.GetService<IPythonInterpreter>();
-            _log = services.GetService<ILogger>();
-            _globalScope = new GlobalScope(module);
-            _lookup = new ExpressionLookup(services, module, ast, _globalScope, _functionWalkers, suppressBuiltinLookup);
-            _suppressBuiltinLookup = suppressBuiltinLookup;
-            // TODO: handle typing module
+        protected AnalysisWalker(ExpressionLookup lookup) {
+            Lookup = lookup;
+        }
+        protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast) {
+            Lookup = new ExpressionLookup(services, module, ast);
         }
 
-        public IGlobalScope GlobalScope => _globalScope;
-
-        public override async Task<bool> WalkAsync(PythonAst node, CancellationToken cancellationToken = default) {
-            Check.InvalidOperation(() => _ast == node, "walking wrong AST");
-
-            CollectTopLevelDefinitions();
-            cancellationToken.ThrowIfCancellationRequested();
-
-            return await base.WalkAsync(node, cancellationToken);
-        }
-
-        public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
-            await _functionWalkers.ProcessSetAsync(cancellationToken);
+        public virtual async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
+            await FunctionWalkers.ProcessSetAsync(cancellationToken);
             return GlobalScope;
         }
 
@@ -75,24 +56,44 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return null;
             }
 
-            var start = node.NameExpression?.GetStart(_ast) ?? node.GetStart(_ast);
-            var end = node.GetEnd(_ast);
-            return new LocationInfo(_module.FilePath, _module.Uri, start.Line, start.Column, end.Line, end.Column);
+            var start = node.NameExpression?.GetStart(Ast) ?? node.GetStart(Ast);
+            var end = node.GetEnd(Ast);
+            return new LocationInfo(Module.FilePath, Module.Uri, start.Line, start.Column, end.Line, end.Column);
         }
 
-        private LocationInfo GetLoc(Node node) => _lookup.GetLoc(node);
+        private LocationInfo GetLoc(Node node) => Lookup.GetLoc(node);
 
-        private void CollectTopLevelDefinitions() {
-            var statement = (_ast.Body as SuiteStatement)?.Statements.ToArray() ?? Array.Empty<Statement>();
+        protected static string GetDoc(SuiteStatement node) {
+            var docExpr = node?.Statements?.FirstOrDefault() as ExpressionStatement;
+            var ce = docExpr?.Expression as ConstantExpression;
+            return ce?.Value as string;
+        }
 
-            foreach (var node in statement.OfType<FunctionDefinition>()) {
-                ProcessFunctionDefinition(node);
+        protected IMember GetMemberFromStub(string name) {
+            if (Module.Stub == null) {
+                return null;
             }
 
-            foreach (var node in statement.OfType<ClassDefinition>()) {
-                var classInfo = CreateClass(node);
-                _lookup.DeclareVariable(node.Name, classInfo, GetLoc(node));
+            var memberNameChain = new List<string>(Enumerable.Repeat(name, 1));
+            IScope scope = Lookup.CurrentScope;
+
+            while (scope != GlobalScope) {
+                memberNameChain.Add(scope.Name);
+                scope = scope.OuterScope;
             }
+
+            IMember member = Module.Stub;
+            for (var i = memberNameChain.Count - 1; i >= 0; i--) {
+                if (!(member is IMemberContainer mc)) {
+                    return null;
+                }
+                member = mc.GetMember(memberNameChain[i]);
+                if (member == null) {
+                    return null;
+                }
+            }
+
+            return member;
         }
     }
 }

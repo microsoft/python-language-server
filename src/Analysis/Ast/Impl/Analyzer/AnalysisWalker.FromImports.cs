@@ -23,7 +23,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed partial class AnalysisWalker {
+    internal partial class AnalysisWalker {
         public override async Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             if (node.Root == null || node.Names == null) {
@@ -41,9 +41,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            var importSearchResult = _interpreter.ModuleResolution.CurrentPathResolver.FindImports(_module.FilePath, node);
+            var importSearchResult = Interpreter.ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
             switch (importSearchResult) {
-                case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
+                case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
                     ImportMembersFromSelf(node);
                     return false;
                 case ModuleImport moduleImport:
@@ -78,15 +78,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberReference = asNames[i];
                 var memberName = memberReference.Name;
 
-                var member = _module.GetMember(importName);
-                _lookup.DeclareVariable(memberName, member ?? _lookup.UnknownType, GetLoc(names[i]));
+                var member = Module.GetMember(importName);
+                Lookup.DeclareVariable(memberName, member ?? Lookup.UnknownType, GetLoc(names[i]));
             }
         }
 
         private async Task ImportMembersFromModuleAsync(FromImportStatement node, string moduleName, CancellationToken cancellationToken = default) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var module = await _interpreter.ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
+            var module = await Interpreter.ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
 
             if (names.Count == 1 && names[0].Name == "*") {
                 await HandleModuleImportStarAsync(module, cancellationToken);
@@ -100,7 +100,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
 
                 var type = module?.GetMember(memberReference.Name);
-                _lookup.DeclareVariable(memberName, type, names[i]);
+                Lookup.DeclareVariable(memberName, type, names[i]);
             }
         }
 
@@ -110,17 +110,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 var member = module.GetMember(memberName);
                 if (member == null) {
-                    _log?.Log(TraceEventType.Verbose, $"Undefined import: {module.Name}, {memberName}");
+                    Log?.Log(TraceEventType.Verbose, $"Undefined import: {module.Name}, {memberName}");
                 } else if (member.MemberType == PythonMemberType.Unknown) {
-                    _log?.Log(TraceEventType.Verbose, $"Unknown import: {module.Name}, {memberName}");
+                    Log?.Log(TraceEventType.Verbose, $"Unknown import: {module.Name}, {memberName}");
                 }
 
-                member = member ?? _lookup.UnknownType;
+                member = member ?? Lookup.UnknownType;
                 if (member is IPythonModule m) {
-                    await _interpreter.ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
+                    await Interpreter.ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
                 }
 
-                _lookup.DeclareVariable(memberName, member, module.Location);
+                Lookup.DeclareVariable(memberName, member, module.Location);
             }
         }
 
@@ -130,7 +130,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: Need tracking of previous imports to determine possible imports for namespace package. For now import nothing
-                _lookup.DeclareVariable("*", _lookup.UnknownType, GetLoc(names[0]));
+                Lookup.DeclareVariable("*", Lookup.UnknownType, GetLoc(names[0]));
                 return;
             }
 
@@ -143,12 +143,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ModuleImport moduleImport;
                 IPythonType member;
                 if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
-                    member = await _interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
+                    member = await Interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
                 } else {
-                    member = _lookup.UnknownType;
+                    member = Lookup.UnknownType;
                 }
 
-                _lookup.DeclareVariable(memberName, member, location);
+                Lookup.DeclareVariable(memberName, member, location);
             }
         }
     }

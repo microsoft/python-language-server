@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void NotifyAnalysisComplete(IDependencyChainNode node, IDocumentAnalysis analysis) {
+        private static void NotifyAnalysisComplete(IDependencyChainNode node, IDocumentAnalysis analysis) {
             if (!node.Analyzable.NotifyAnalysisComplete(analysis)) {
                 // If snapshot does not match, there is no reason to continue analysis along the chain
                 // since subsequent change that incremented the expected version will start
@@ -114,8 +114,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _log?.Log(TraceEventType.Verbose, $"Parse of {node.Document.Name}({node.Document.ModuleType}) complete in {(DateTime.Now - _startTime).TotalMilliseconds} ms.");
 
             // Now run the analysis.
-            var walker = new AnalysisWalker(_services, node.Document, ast,
-                suppressBuiltinLookup: node.Document.ModuleType == ModuleType.Builtins);
+            var walker = new AnalysisModuleWalker(_services, node.Document, ast);
 
             await ast.WalkAsync(walker, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();

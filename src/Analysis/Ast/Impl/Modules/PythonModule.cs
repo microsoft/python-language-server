@@ -455,7 +455,7 @@ namespace Microsoft.Python.Analysis.Modules {
             var f = GetOrCreateFunction(name, gs);
             if (f != null) {
                 foreach (var o in f.Overloads.OfType<PythonFunctionOverload>()) {
-                    o.SetReturnValue(returnValue);
+                    o.SetReturnValue(returnValue, true);
                 }
             }
         }

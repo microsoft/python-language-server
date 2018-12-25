@@ -14,18 +14,16 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed partial class AnalysisWalker {
+    internal partial class AnalysisWalker {
         public override async Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             if (node.Names == null) {
@@ -41,12 +39,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var asNameExpression = node.AsNames[i];
                 var memberName = asNameExpression?.Name ?? moduleImportExpression.Names[0].Name;
 
-                var imports = _interpreter.ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(_module.FilePath, importNames, node.ForceAbsolute);
+                var imports = Interpreter.ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, node.ForceAbsolute);
                 var location = GetLoc(moduleImportExpression);
                 IPythonModule module = null;
                 switch (imports) {
-                    case ModuleImport moduleImport when moduleImport.FullName == _module.Name:
-                        _lookup.DeclareVariable(memberName, _module, location);
+                    case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
+                        Lookup.DeclareVariable(memberName, Module, location);
                         break;
                     case ModuleImport moduleImport:
                         module = await HandleImportAsync(node, moduleImport, cancellationToken);
@@ -68,7 +66,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private async Task<IPythonModule> HandleImportAsync(ImportStatement node, ModuleImport moduleImport, CancellationToken cancellationToken) {
-            var module = await _interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
+            var module = await Interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
             if (module == null) {
                 MakeUnresolvedImport(moduleImport.FullName, node);
                 return null;
@@ -78,7 +76,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private async Task<IPythonModule> HandlePossibleImportAsync(ImportStatement node, PossibleModuleImport possibleModuleImport, CancellationToken cancellationToken) {
             var fullName = possibleModuleImport.PrecedingModuleFullName;
-            var module = await _interpreter.ModuleResolution.ImportModuleAsync(possibleModuleImport.PossibleModuleFullName, cancellationToken);
+            var module = await Interpreter.ModuleResolution.ImportModuleAsync(possibleModuleImport.PossibleModuleFullName, cancellationToken);
             if (module == null) {
                 MakeUnresolvedImport(possibleModuleImport.PossibleModuleFullName, node);
                 return null;
@@ -103,7 +101,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // "import fob.oar as baz" is handled as
             // baz = import_module('fob.oar')
             if (asNameExpression != null) {
-                _lookup.DeclareVariable(asNameExpression.Name, module, asNameExpression);
+                Lookup.DeclareVariable(asNameExpression.Name, module, asNameExpression);
                 return;
             }
 
@@ -115,7 +113,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             PythonPackage pythonPackage = null;
             var existingDepth = 0;
 
-            var childPackage = _lookup.GetInScope<PythonPackage>(importNames[0].Name);
+            var childPackage = Lookup.GetInScope<PythonPackage>(importNames[0].Name);
             while (childPackage != null && existingDepth < importNames.Count - 1) {
                 existingDepth++;
                 pythonPackage = childPackage;
@@ -126,18 +124,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
             for (var i = importNames.Count - 2; i >= existingDepth; i--) {
                 var childName = importNames[i + 1].Name;
                 var parentName = importNames[i].Name;
-                var parent = new PythonPackage(parentName, _services);
+                var parent = new PythonPackage(parentName, Services);
                 parent.AddChildModule(childName, child);
                 child = parent;
             }
 
             if (pythonPackage == null) {
-                _lookup.DeclareVariable(importNames[0].Name, child, importNames[0]);
+                Lookup.DeclareVariable(importNames[0].Name, child, importNames[0]);
             } else {
                 pythonPackage.AddChildModule(importNames[existingDepth].Name, child);
             }
         }
 
-        private void MakeUnresolvedImport(string name, Node node) => _lookup.DeclareVariable(name, new SentinelModule(name), GetLoc(node));
+        private void MakeUnresolvedImport(string name, Node node)
+            => Lookup.DeclareVariable(name, new SentinelModule(name), GetLoc(node));
     }
 }

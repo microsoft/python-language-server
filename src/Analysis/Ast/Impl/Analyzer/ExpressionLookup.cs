@@ -34,29 +34,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// and types in a chain of scopes during analysis.
     /// </summary>
     internal sealed partial class ExpressionLookup {
-        private readonly AnalysisFunctionWalkerSet _functionWalkers;
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
-        private readonly bool _suppressBuiltinLookup;
-        private readonly ILogger _log;
 
         internal IPythonType UnknownType { get; }
 
         public ExpressionLookup(
             IServiceContainer services,
             IPythonModule module,
-            PythonAst ast,
-            Scope moduleScope,
-            AnalysisFunctionWalkerSet functionWalkers,
-            bool suppressBuiltinLookup
+            PythonAst ast
         ) {
-            Ast = ast ?? throw new ArgumentNullException(nameof(ast));
+            Services = services ?? throw new ArgumentNullException(nameof(services));
             Module = module ?? throw new ArgumentNullException(nameof(module));
-            CurrentScope = moduleScope ?? throw new ArgumentNullException(nameof(moduleScope));
+            Ast = ast ?? throw new ArgumentNullException(nameof(ast));
 
-            _log = services.GetService<ILogger>();
-            _functionWalkers = functionWalkers ?? throw new ArgumentNullException(nameof(functionWalkers));
-            _suppressBuiltinLookup = suppressBuiltinLookup;
+            GlobalScope = new GlobalScope(module);
+            CurrentScope = GlobalScope;
 
+            Log = services.GetService<ILogger>();
             DefaultLookupOptions = LookupOptions.Normal;
 
             UnknownType = Interpreter.GetBuiltinType(BuiltinTypeId.Unknown) ??
@@ -66,8 +60,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public PythonAst Ast { get; }
         public IPythonModule Module { get; }
         public LookupOptions DefaultLookupOptions { get; set; }
+        public GlobalScope GlobalScope { get; }
         public Scope CurrentScope { get; private set; }
         public IPythonInterpreter Interpreter => Module.Interpreter;
+        public bool SuppressBuiltinLookup => Module.ModuleType == ModuleType.Builtins;
+        public ILogger Log { get; }
+        public IServiceContainer Services { get; }
+        public AnalysisFunctionWalkerSet FunctionWalkers { get; } = new AnalysisFunctionWalkerSet();
 
         public LocationInfo GetLoc(Node node) {
             if (node == null || node.StartIndex >= node.EndIndex) {
@@ -136,7 +135,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     break;
             }
             if (m == null) {
-                _log?.Log(TraceEventType.Verbose, $"Unknown expression: {expr.ToCodeString(Ast).Trim()}");
+                Log?.Log(TraceEventType.Verbose, $"Unknown expression: {expr.ToCodeString(Ast).Trim()}");
             }
             return m;
         }
@@ -154,7 +153,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (expr.Name == Module.Name) {
                 return Module;
             }
-            _log?.Log(TraceEventType.Verbose, $"Unknown name: {expr.Name}");
+            Log?.Log(TraceEventType.Verbose, $"Unknown name: {expr.Name}");
             return UnknownType;
         }
 
@@ -175,7 +174,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case IPythonProperty p:
                     return await GetPropertyReturnTypeAsync(p, expr, cancellationToken);
                 case null:
-                    _log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
+                    Log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
                     return UnknownType;
                 default:
                     return value;
@@ -260,7 +259,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            var t = _suppressBuiltinLookup ? UnknownType : (GetTypeFromLiteral(expr) ?? UnknownType);
+            var t = SuppressBuiltinLookup ? UnknownType : (GetTypeFromLiteral(expr) ?? UnknownType);
             return new PythonInstance(t, location);
         }
 

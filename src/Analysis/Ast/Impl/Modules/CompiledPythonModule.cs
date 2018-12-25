@@ -15,7 +15,6 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;

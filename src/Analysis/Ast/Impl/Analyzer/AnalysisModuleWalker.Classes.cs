@@ -19,15 +19,24 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed partial class AnalysisWalker {
+    internal sealed partial class AnalysisModuleWalker {
         public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var instance = _lookup.GetInScope(node.Name);
+            var name = Module.Name == "_json";
+            // Check if class exists in stub. If so, take it from there.
+            var stubClass = GetClassFromStub(node);
+            if (stubClass != null) {
+                if (!string.IsNullOrEmpty(node.Documentation)) {
+                    stubClass.SetDocumentation(node.Documentation);
+                }
+                return Task.FromResult(false);
+            }
+
+            var instance = Lookup.GetInScope(node.Name);
             if (instance != null && !(instance.GetPythonType() is PythonClass)) {
                 // TODO: warning that variable is already declared.
                 return Task.FromResult(false);
@@ -35,30 +44,30 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (!(instance.GetPythonType() is PythonClass classInfo)) {
                 classInfo = CreateClass(node);
-                _lookup.DeclareVariable(node.Name, classInfo, node);
+                Lookup.DeclareVariable(node.Name, classInfo, node);
             }
 
             var bases = node.Bases.Where(a => string.IsNullOrEmpty(a.Name))
                 // We cheat slightly and treat base classes as annotations.
-                .Select(a => _lookup.GetTypeFromAnnotation(a.Expression))
+                .Select(a => Lookup.GetTypeFromAnnotation(a.Expression))
                 .ToArray();
 
-            classInfo.SetBases(_interpreter, bases);
-            _classScope = _lookup.CreateScope(node, _lookup.CurrentScope);
-            _lookup.DeclareVariable("__class__", classInfo, node);
+            classInfo.SetBases(Interpreter, bases);
+            _classScope = Lookup.CreateScope(node, Lookup.CurrentScope);
+            Lookup.DeclareVariable("__class__", classInfo, node);
 
             return Task.FromResult(true);
         }
 
         public override Task PostWalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
-            var cls = _lookup.GetInScope("__class__")?.GetPythonType() as PythonClass;
-            Debug.Assert(cls != null || _lookup.GetInScope("__class__") == null, "__class__ variable is not a PythonClass.");
+            var cls = Lookup.GetInScope("__class__")?.GetPythonType() as PythonClass;
+            Debug.Assert(cls != null || Lookup.GetInScope("__class__") == null, "__class__ variable is not a PythonClass.");
             if (cls != null) {
                 // Add members from this file
-                cls.AddMembers(_lookup.CurrentScope.Variables, true);
+                cls.AddMembers(Lookup.CurrentScope.Variables, true);
 
                 // Add members from stub
-                var stubClass = _lookup.Module.Stub?.GetMember<IPythonClass>(cls.Name);
+                var stubClass = Lookup.Module.Stub?.GetMember<IPythonClass>(cls.Name);
                 cls.AddMembers(stubClass, false);
                 _classScope?.Dispose();
             }
@@ -70,11 +79,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             node = node ?? throw new ArgumentNullException(nameof(node));
             return new PythonClass(
                 node,
-                _module,
+                Module,
                 GetDoc(node.Body as SuiteStatement),
                 GetLoc(node),
-                _interpreter,
-                _suppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
+                Interpreter,
+                Lookup.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
         }
+
+        private PythonClass GetClassFromStub(ClassDefinition node)
+            => GetMemberFromStub(node.Name).GetPythonType() as PythonClass;
     }
 }

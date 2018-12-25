@@ -38,11 +38,11 @@ namespace Microsoft.Python.Analysis.Types {
         public PythonClass(
             ClassDefinition classDefinition,
             IPythonModule declaringModule,
-            string doc,
+            string documentation,
             LocationInfo loc,
             IPythonInterpreter interpreter,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, declaringModule, doc, loc, builtinTypeId) {
+        ) : base(classDefinition.Name, declaringModule, documentation, loc, builtinTypeId) {
             ClassDefinition = classDefinition;
             _interpreter = interpreter;
         }
@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public override IMember GetMember(string name) {
-            IPythonType member;
+            IMember member;
             lock (_lock) {
                 if (Members.TryGetValue(name, out member)) {
                     return member;

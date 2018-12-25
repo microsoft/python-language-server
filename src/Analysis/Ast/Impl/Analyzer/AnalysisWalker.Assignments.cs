@@ -21,22 +21,22 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed partial class AnalysisWalker {
+    internal partial class AnalysisWalker {
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            var value = await _lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
+            var value = await Lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
 
             if (value == null || value.MemberType == PythonMemberType.Unknown) {
-                _log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(_ast).Trim()}");
+                Log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(Ast).Trim()}");
             }
 
             if (value?.GetPythonType().TypeId == BuiltinTypeId.Ellipsis) {
-                value = _lookup.UnknownType;
+                value = Lookup.UnknownType;
             }
 
             if (node.Left.FirstOrDefault() is TupleExpression tex) {
                 // Tuple = Tuple. Transfer values.
-                var texHandler = new TupleExpressionHandler(_lookup);
+                var texHandler = new TupleExpressionHandler(Lookup);
                 await texHandler.HandleTupleAssignmentAsync(tex, node.Right, value, cancellationToken);
                 return await base.WalkAsync(node, cancellationToken);
             }
@@ -44,12 +44,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                 AssignFromAnnotation(expr);
                 if (!value.IsUnknown() && expr.Expression is NameExpression ne) {
-                    _lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
+                    Lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
                 }
             }
 
             foreach (var ne in node.Left.OfType<NameExpression>()) {
-                _lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
+                Lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
             }
 
             return await base.WalkAsync(node, cancellationToken);
@@ -62,8 +62,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void AssignFromAnnotation(ExpressionWithAnnotation expr) {
             if (expr?.Annotation != null && expr.Expression is NameExpression ne) {
-                var t = _lookup.GetTypeFromAnnotation(expr.Annotation);
-                _lookup.DeclareVariable(ne.Name, t ?? _lookup.UnknownType, GetLoc(expr.Expression));
+                var t = Lookup.GetTypeFromAnnotation(expr.Annotation);
+                Lookup.DeclareVariable(ne.Name, t ?? Lookup.UnknownType, GetLoc(expr.Expression));
             }
         }
     }

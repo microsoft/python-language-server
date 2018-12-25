@@ -43,7 +43,6 @@ def f(a):
         return a
     return g()
 
-
 x = f(42)
 y = f('fob')";
 

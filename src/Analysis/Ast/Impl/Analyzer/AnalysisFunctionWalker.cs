@@ -20,156 +20,92 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Extensions;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Target.Name}")]
-    class AnalysisFunctionWalker : PythonWalkerAsync {
-        private readonly IPythonModule _module; // For debugging conditional breakpoint on user code.
-        private readonly ExpressionLookup _lookup;
+    internal sealed class AnalysisFunctionWalker : AnalysisWalker {
         private readonly Scope _parentScope;
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassMember _function;
         private IPythonClass _self;
 
         public AnalysisFunctionWalker(
-            IPythonModule module,
             ExpressionLookup lookup,
             FunctionDefinition targetFunction,
             PythonFunctionOverload overload,
             IPythonClassMember function
-        ) {
-            _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
+        ) : base(lookup) {
             Target = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
             _overload = overload ?? throw new ArgumentNullException(nameof(overload));
             _function = function ?? throw new ArgumentNullException(nameof(function));
-            _parentScope = _lookup.CurrentScope;
-            _module = module;
+            _parentScope = Lookup.CurrentScope;
         }
 
         public FunctionDefinition Target { get; }
 
         public async Task WalkAsync(CancellationToken cancellationToken = default) {
-            using (_lookup.OpenScope(_parentScope)) {
-                _self = _lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local) as IPythonClass;
-                using (_lookup.CreateScope(Target, _parentScope)) {
+            using (Lookup.OpenScope(_parentScope)) {
+                _self = Lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local) as IPythonClass;
+                using (Lookup.CreateScope(Target, _parentScope)) {
 
-                    var annotationType = _lookup.GetTypeFromAnnotation(Target.ReturnAnnotation);
+                    var annotationType = Lookup.GetTypeFromAnnotation(Target.ReturnAnnotation);
                     if (!annotationType.IsUnknown()) {
-                        _overload.AddReturnValue(annotationType);
+                        _overload.SetReturnValue(annotationType, true);
                     }
 
                     await DeclareParametersAsync(cancellationToken);
-                    // Return type from the annotation always wins, no need to walk the body.
-                    if (annotationType.IsUnknown()) {
-                        await Target.WalkAsync(this, cancellationToken);
+                    if (_overload.Documentation == null) {
+                        var docNode = (Target.Body as SuiteStatement)?.Statements.FirstOrDefault();
+                        var ce = (docNode as ExpressionStatement)?.Expression as ConstantExpression;
+                        if (ce?.Value is string doc) {
+                            _overload.SetDocumentation(doc);
+                        }
+                    }
+
+                    if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
+                        // Return type from the annotation is sufficient for libraries
+                        // and stubs, no need to walk the body.
+                        if (Target.Body != null) {
+                            await Target.Body.WalkAsync(this, cancellationToken);
+                        }
                     }
                 } // Function scope
             } // Restore original scope at the entry
         }
 
-        public override Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
-            if (node != Target) {
-                // Do not walk nested functions (yet)
-                return Task.FromResult(false);
-            }
-
-            if (_overload.Documentation == null) {
-                var docNode = (node.Body as SuiteStatement)?.Statements.FirstOrDefault();
-                var ce = (docNode as ExpressionStatement)?.Expression as ConstantExpression;
-                if (ce?.Value is string doc) {
-                    _overload.SetDocumentation(doc);
-                }
-            }
-
-            return Task.FromResult(true);
-        }
-
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
-            var value = await _lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
-
-            if (node.Left.FirstOrDefault() is TupleExpression tex) {
-                // Tuple = Tuple. Transfer values.
-                var texHandler = new TupleExpressionHandler(_lookup);
-                await texHandler.HandleTupleAssignmentAsync(tex, node.Right, value.GetPythonType(), cancellationToken);
-                return await base.WalkAsync(node, cancellationToken);
-            }
+            var value = await Lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
 
             foreach (var lhs in node.Left) {
                 if (lhs is MemberExpression memberExp && memberExp.Target is NameExpression nameExp1) {
-                    if (_self is PythonType t && nameExp1.Name == "self") {
-                        t.AddMembers(new[] { new KeyValuePair<string, IPythonType>(memberExp.Name, value.GetPythonType()) }, true);
+                    if (_self.GetPythonType() is PythonClass t && nameExp1.Name == "self") {
+                        t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, true);
                     }
                     continue;
                 }
 
                 if (lhs is NameExpression nameExp2 && nameExp2.Name == "self") {
-                    continue; // Don't assign to 'self'
-                }
-
-                // Basic assignment
-                foreach (var ne in node.Left.OfType<NameExpression>()) {
-                    _lookup.DeclareVariable(ne.Name, value, ne);
+                    return true; // Don't assign to 'self'
                 }
             }
             return await base.WalkAsync(node, cancellationToken);
         }
 
-        public override Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default) {
-            // Handle basic check such as
-            // if isinstance(value, type):
-            //    return value
-            // by assigning type to the value unless clause is raising exception.
-            var ce = node.Tests.FirstOrDefault()?.Test as CallExpression;
-            if (ce?.Target is NameExpression ne && ne.Name == @"isinstance" && ce.Args.Count == 2) {
-                var nex = ce.Args[0].Expression as NameExpression;
-                var name = nex?.Name;
-                var typeName = (ce.Args[1].Expression as NameExpression)?.Name;
-                if (name != null && typeName != null) {
-                    var typeId = typeName.GetTypeId();
-                    if (typeId != BuiltinTypeId.Unknown) {
-                        _lookup.DeclareVariable(name, new PythonType(typeName, typeId), nex);
-                    }
-                }
-            }
-            return base.WalkAsync(node, cancellationToken);
-        }
-
         public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
-            var value = await _lookup.GetValueFromExpressionAsync(node.Expression, cancellationToken);
+            var value = await Lookup.GetValueFromExpressionAsync(node.Expression, cancellationToken);
             if (value != null) {
                 _overload.AddReturnValue(value);
             }
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
 
-        private struct MethodInfo {
-            public bool isClassMethod;
-            public bool isStaticMethod;
-        }
-
-        private async Task<MethodInfo> GetMethodInfoAsync(CancellationToken cancellationToken = default) {
-            var info = new MethodInfo();
-
-            if (Target.IsLambda) {
-                info.isStaticMethod = true;
-                return info;
-            }
-
-            var classMethodObj = _lookup.Interpreter.GetBuiltinType(BuiltinTypeId.ClassMethod);
-            var staticMethodObj = _lookup.Interpreter.GetBuiltinType(BuiltinTypeId.StaticMethod);
-            foreach (var d in (Target.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
-                var m = await _lookup.GetValueFromExpressionAsync(d, cancellationToken);
-                if (classMethodObj.Equals(m)) {
-                    info.isClassMethod = true;
-                } else if (staticMethodObj.Equals(m)) {
-                    info.isStaticMethod = true;
-                }
-            }
-            return info;
+        public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
+            // TODO: report that classes are not supposed to appear inside functions.
+            return Task.FromResult(false);
         }
 
         private async Task DeclareParametersAsync(CancellationToken cancellationToken = default) {
@@ -183,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
                     if (_overload.Parameters.Count > 0 && _overload.Parameters[0] is ParameterInfo pi) {
                         // TODO: set instance vs class type info for regular methods.
-                        _lookup.DeclareVariable(p0.Name, _self, p0.NameExpression);
+                        Lookup.DeclareVariable(p0.Name, _self, p0.NameExpression);
                         pi.SetType(_self);
                         skip++;
                     }
@@ -205,12 +141,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private async Task DeclareParameterAsync(Parameter p, int index, ParameterInfo pi, CancellationToken cancellationToken = default) {
-            var defaultValue = await _lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? _lookup.UnknownType;
+            var defaultValue = await Lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? Lookup.UnknownType;
 
             var defaultValueType = defaultValue.GetPythonType();
             var argType = new CallableArgumentType(index, defaultValueType);
 
-            _lookup.DeclareVariable(p.Name, argType, p.NameExpression);
+            Lookup.DeclareVariable(p.Name, argType, p.NameExpression);
             pi?.SetDefaultValueType(defaultValueType);
         }
     }

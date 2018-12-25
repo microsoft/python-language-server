@@ -27,6 +27,7 @@ namespace Microsoft.Python.Analysis.Types {
         // Return value can be an instance or a type info. Consider type(C()) returning
         // type info of C vs. return C() that returns an instance of C.
         private IMember _returnValue;
+        private bool _fromAnnotation;
 
         public PythonFunctionOverload(
             string name,
@@ -49,15 +50,21 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal void AddReturnValue(IMember value) {
             if (_returnValue.IsUnknown()) {
-                SetReturnValue(value);
+                SetReturnValue(value, false);
                 return;
-            } 
-            var type = PythonUnion.Combine(_returnValue.GetPythonType(), value.GetPythonType());
-            // Track instance vs type info.
-            _returnValue = value is IPythonInstance ? new PythonInstance(type) : (IMember)type;
+            }
+            // If return value is set from annotation, it should not be changing.
+            if (!_fromAnnotation) {
+                var type = PythonUnion.Combine(_returnValue.GetPythonType(), value.GetPythonType());
+                // Track instance vs type info.
+                _returnValue = value is IPythonInstance ? new PythonInstance(type) : (IMember)type;
+            }
         }
 
-        internal void SetReturnValue(IMember value) => _returnValue = value;
+        internal void SetReturnValue(IMember value, bool fromAnnotation) {
+            _returnValue = value;
+            _fromAnnotation = fromAnnotation;
+        }
 
         internal void SetReturnValueCallback(Func<IReadOnlyList<IMember>, IMember> returnValueCallback)
             => _returnValueCallback = returnValueCallback;

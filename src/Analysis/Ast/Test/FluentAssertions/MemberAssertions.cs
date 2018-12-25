@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public AndWhichConstraint<MemberAssertions, TMember> HaveMember<TMember>(string name,
             string because = "", params object[] reasonArgs)
-            where TMember : class, IPythonType {
+            where TMember : class, IMember {
             NotBeNull();
 
             var t = Subject.GetPythonType();
@@ -119,6 +119,15 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetQuotedName(Subject)} be an instance{{reason}}");
             instance.Type.Should().BeAssignableTo<T>();
+            return new AndConstraint<MemberAssertions>(this);
+        }
+
+        public AndConstraint<MemberAssertions> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
+            var instance = Subject as IPythonInstance;
+            Execute.Assertion.ForCondition(instance != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetQuotedName(Subject)} be an instance{{reason}}");
+            instance.GetPythonType().TypeId.Should().Be(typeId, because, reasonArgs);
             return new AndConstraint<MemberAssertions>(this);
         }
     }

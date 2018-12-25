@@ -17,11 +17,12 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed partial class AnalysisWalker {
+    internal partial class AnalysisWalker {
         public override async Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default) {
             var allValidComparisons = true;
             foreach (var test in node.Tests) {
@@ -42,16 +43,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     var shouldWalk = false;
                     switch (cmp.Operator) {
                         case PythonOperator.LessThan:
-                            shouldWalk = _ast.LanguageVersion.ToVersion() < v;
+                            shouldWalk = Ast.LanguageVersion.ToVersion() < v;
                             break;
                         case PythonOperator.LessThanOrEqual:
-                            shouldWalk = _ast.LanguageVersion.ToVersion() <= v;
+                            shouldWalk = Ast.LanguageVersion.ToVersion() <= v;
                             break;
                         case PythonOperator.GreaterThan:
-                            shouldWalk = _ast.LanguageVersion.ToVersion() > v;
+                            shouldWalk = Ast.LanguageVersion.ToVersion() > v;
                             break;
                         case PythonOperator.GreaterThanOrEqual:
-                            shouldWalk = _ast.LanguageVersion.ToVersion() >= v;
+                            shouldWalk = Ast.LanguageVersion.ToVersion() >= v;
                             break;
                     }
 
@@ -62,6 +63,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 } else {
                     allValidComparisons = false;
+                }
+            }
+
+            // Handle basic check such as
+            // if isinstance(value, type):
+            //    return value
+            // by assigning type to the value unless clause is raising exception.
+            var ce = node.Tests.FirstOrDefault()?.Test as CallExpression;
+            if (ce?.Target is NameExpression ne && ne.Name == @"isinstance" && ce.Args.Count == 2) {
+                var nex = ce.Args[0].Expression as NameExpression;
+                var name = nex?.Name;
+                var typeName = (ce.Args[1].Expression as NameExpression)?.Name;
+                if (name != null && typeName != null) {
+                    var typeId = typeName.GetTypeId();
+                    if (typeId != BuiltinTypeId.Unknown) {
+                        Lookup.DeclareVariable(name, new PythonType(typeName, typeId), nex);
+                    }
                 }
             }
 
