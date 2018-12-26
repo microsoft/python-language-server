@@ -76,13 +76,11 @@ import sys
 x = sys.path
 ";
             var analysis = await GetAnalysisAsync(code);
-
             analysis.GlobalScope.Variables.Count.Should().Be(2);
 
             analysis.Should()
-                .HaveVariable("sys").OfType(BuiltinTypeId.Module);
-            analysis.Should()
-                .HaveVariable("x").OfType(BuiltinTypeId.List);
+                .HaveVariable("sys").OfType(BuiltinTypeId.Module)
+                .And.HaveVariable("x").OfType(BuiltinTypeId.List);
         }
 
         [TestMethod, Priority(0)]

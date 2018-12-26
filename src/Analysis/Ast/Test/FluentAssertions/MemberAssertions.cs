@@ -16,19 +16,19 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal class MemberAssertions : ReferenceTypeAssertions<IMember, MemberAssertions> {
+        private IPythonType Type { get; }
         public MemberAssertions(IMember member) {
             Subject = member;
+            Type = Subject.GetPythonType();
         }
 
         protected override string Identifier => nameof(IMember);
@@ -113,21 +113,36 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndConstraint<MemberAssertions>(this);
         }
 
-        public AndConstraint<MemberAssertions> HaveInstanceType<T>(string because = "", params object[] reasonArgs) {
-            var instance = Subject as IPythonInstance;
-            Execute.Assertion.ForCondition(instance != null)
+        public AndConstraint<MemberAssertions> HaveType<T>(string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(Type != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {GetQuotedName(Subject)} be an instance{{reason}}");
-            instance.Type.Should().BeAssignableTo<T>();
+                .FailWith($"Expected {GetQuotedName(Subject)} to have type{{reason}}");
+            Type.Should().BeAssignableTo<T>(because, reasonArgs);
             return new AndConstraint<MemberAssertions>(this);
         }
 
         public AndConstraint<MemberAssertions> HaveType(BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
-            var instance = Subject as IPythonInstance;
-            Execute.Assertion.ForCondition(instance != null)
+            Execute.Assertion.ForCondition(Type != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {GetQuotedName(Subject)} be an instance{{reason}}");
-            instance.GetPythonType().TypeId.Should().Be(typeId, because, reasonArgs);
+                .FailWith($"Expected {GetQuotedName(Subject)} to have type{{reason}}");
+            Type.TypeId.Should().Be(typeId, because, reasonArgs);
+            return new AndConstraint<MemberAssertions>(this);
+        }
+
+        public AndConstraint<MemberAssertions> HaveType(string typeName, string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(Type != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetQuotedName(Subject)} to have type{{reason}}");
+            Type.Name.Should().Be(typeName, because, reasonArgs);
+            return new AndConstraint<MemberAssertions>(this);
+        }
+        public AndConstraint<MemberAssertions> HaveNoType(string because = "", params object[] reasonArgs) {
+            Type.IsUnknown().Should().BeTrue(because, reasonArgs);
+            return new AndConstraint<MemberAssertions>(this);
+        }
+
+        public AndConstraint<MemberAssertions> HaveMemberType(PythonMemberType memberType, string because = "", params object[] reasonArgs) {
+            Subject.MemberType.Should().Be(memberType, because, reasonArgs);
             return new AndConstraint<MemberAssertions>(this);
         }
     }

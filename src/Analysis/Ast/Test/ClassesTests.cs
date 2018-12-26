@@ -282,11 +282,31 @@ f2 = c.f
             analysis.Should().HaveVariable("x").Which.Value.Should().BeAssignableTo<IPythonType>();
             analysis.Should().HaveVariable("y")
                 .Which.Value.Should().BeAssignableTo<IPythonInstance>()
-                .And.HaveInstanceType<IPythonClass>();
+                .And.HaveType<IPythonClass>();
 
             analysis.Should()
                 .HaveVariable("f1").OfType(BuiltinTypeId.Function).And
                 .HaveVariable("f2").OfType(BuiltinTypeId.Method);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnfinishedDot() {
+            // the partial dot should be ignored and we shouldn't see g as a member of D
+            const string code = @"
+class D(object):
+    def func(self):
+        self.
+        
+def g(a, b, c): pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("D")
+                    .Which.Should().HaveMember<IPythonFunction>("func")
+                    .Which.Should().HaveSingleOverload()
+                    .Which.Should().HaveParameterAt(0)
+                    .Which.Name.Should().Be("self");
+
+            analysis.Should().HaveFunction("g").Which.DeclaringType.Should().BeNull();
         }
     }
 }

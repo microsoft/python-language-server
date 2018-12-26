@@ -48,14 +48,13 @@ namespace Microsoft.Python.Analysis.Tests {
         public async Task Datetime() {
             var analysis = await GetAnalysisAsync("import datetime");
 
-            var dtVar = analysis.Should().HaveVariable("datetime").Which;
-            dtVar.Name.Should().Be("datetime");
+            var module = analysis.Should().HaveVariable("datetime")
+                .Which.Should().HaveType<IPythonModule>().Which;
+            module.Name.Should().Be("datetime");
 
-            var c = dtVar.Value;
-            c.Should().BeAssignableTo<IPythonModule>();
-            var dt = c.Should().HaveMember<IPythonClass>("datetime").Which;
+            var dt = module.Should().HaveMember<IPythonClass>("datetime").Which;
 
-            c.Should().HaveReadOnlyProperty("day").And.HaveMethod("now")
+            dt.Should().HaveReadOnlyProperty("day").And.HaveMethod("now")
                 .Which.Should().BeClassMethod().And.HaveSingleOverload()
                 .Which.Should().HaveReturnType()
                 .Which.Should().HaveSameMembersAs(dt);

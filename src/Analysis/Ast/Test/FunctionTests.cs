@@ -191,7 +191,19 @@ i = h()
                 .And.HaveVariable("g").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("h").OfType(BuiltinTypeId.Type)
                 .And.HaveVariable("i").OfType("C");
-                ;
+            ;
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Defaults() {
+            const string code = @"
+def f(x = 42):
+    return x
+
+a = f()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
         }
     }
 }

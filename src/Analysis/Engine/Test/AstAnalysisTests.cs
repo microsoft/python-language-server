@@ -764,7 +764,7 @@ class BankAccount(object):
                         interp.AddUnimportableModule(m);
                     }
 
-                    foreach (var r in modules
+                    var set = modules
                         .Where(m => !skip.Contains(m.ModuleName))
                         .GroupBy(m => {
                             var i = m.FullName.IndexOf('.');
@@ -772,7 +772,9 @@ class BankAccount(object):
                         })
                         .AsParallel()
                         .SelectMany(g => g.Select(m => Tuple.Create(m, interp.ImportModule(m.ModuleName))))
-                    ) {
+                        .ToArray();
+
+                    foreach (var r in set) {
                         var modName = r.Item1;
                         var mod = r.Item2;
 

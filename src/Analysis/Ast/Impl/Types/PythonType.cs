@@ -64,7 +64,8 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IHasQualifiedName
         public virtual string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
-        public virtual KeyValuePair<string, string> FullyQualifiedNamePair => new KeyValuePair<string, string>(DeclaringModule.Name, Name);
+        public virtual KeyValuePair<string, string> FullyQualifiedNamePair 
+            => new KeyValuePair<string, string>(DeclaringModule?.Name ?? string.Empty, Name);
         #endregion
 
         #region IMemberContainer
@@ -110,7 +111,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        internal IPythonType AddMember(string name, IPythonType member, bool overwrite) {
+        internal IMember AddMember(string name, IMember member, bool overwrite) {
             lock (_lock) {
                 if (overwrite || !Members.ContainsKey(name)) {
                     WritableMembers[name] = member;

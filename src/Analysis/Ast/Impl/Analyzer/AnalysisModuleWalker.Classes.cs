@@ -26,16 +26,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var name = Module.Name == "_json";
-            // Check if class exists in stub. If so, take it from there.
-            var stubClass = GetClassFromStub(node);
-            if (stubClass != null) {
-                if (!string.IsNullOrEmpty(node.Documentation)) {
-                    stubClass.SetDocumentation(node.Documentation);
-                }
-                return Task.FromResult(false);
-            }
-
             var instance = Lookup.GetInScope(node.Name);
             if (instance != null && !(instance.GetPythonType() is PythonClass)) {
                 // TODO: warning that variable is already declared.
@@ -85,8 +75,5 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 Interpreter,
                 Lookup.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
         }
-
-        private PythonClass GetClassFromStub(ClassDefinition node)
-            => GetMemberFromStub(node.Name).GetPythonType() as PythonClass;
     }
 }

@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -89,7 +90,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task FromImportReturnTypes() {
-            var code = @"from ReturnValues import *
+            const string code = @"from ReturnValues import *
 R_str = r_str()
 R_object = r_object()
 R_A1 = A()
@@ -109,21 +110,47 @@ R_A3 = R_A1.r_A()";
         public async Task BuiltinImport() {
             var analysis = await GetAnalysisAsync(@"import sys");
 
-            var v = analysis.Should().HaveVariable("sys").Which;
-            v.Should().OfType(BuiltinTypeId.Module);
-            v.Value.Should().HaveMembers("platform");
+            analysis.Should().HaveVariable("sys")
+                 .Which.Should().HaveType(BuiltinTypeId.Module)
+                 .And.HaveMember("platform");
         }
 
-//        [TestMethod, Priority(0)]
-//        public async Task BuiltinImportInClass() {
-//            var code = @"
-//class C:
-//    import sys
-//";
-//            var analysis = await GetAnalysisAsync(code);
-//            analysis.Should().HaveClass("C")
-//                .Which.Should().HaveVariable("sys")
-//                .Which.Should().HaveMembers("platform");
-//        }
+        [TestMethod, Priority(0)]
+        public async Task BuiltinImportInClass() {
+            const string code = @"
+class C:
+    import sys
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("C")
+                .Which.Should().HaveMember<IPythonModule>("sys")
+                .Which.Should().HaveMember<IMember>("platform");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task BuiltinImportInFunc() {
+            const string code = @"
+def f():
+    import sys
+    return sys.path
+
+x = f()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.List);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ImportAs() {
+            var analysis = await GetAnalysisAsync(@"import sys as s, array as a", PythonVersions.LatestAvailable3X);
+
+            analysis.Should().HaveVariable("s")
+                .Which.Should().HaveType<IPythonModule>()
+                .Which.Should().HaveMember("platform");
+
+            analysis.Should().HaveVariable("a")
+                .Which.Should().HaveType<IPythonModule>()
+                .Which.Should().HaveMember("ArrayType");
+        }
     }
 }

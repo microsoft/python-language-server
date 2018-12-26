@@ -106,7 +106,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return null;
             }
 
-            while(expr is ParenthesisExpression parExpr) {
+            while (expr is ParenthesisExpression parExpr) {
                 expr = parExpr.Expression;
             }
 
@@ -189,34 +189,53 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             }
 
-            if (expr is BinaryExpression binop) {
-                if (binop.Left == null) {
-                    return null;
-                }
-
-                // TODO: Specific parsing
-                switch (binop.Operator) {
-                    case PythonOperator.Equal:
-                    case PythonOperator.GreaterThan:
-                    case PythonOperator.GreaterThanOrEqual:
-                    case PythonOperator.In:
-                    case PythonOperator.Is:
-                    case PythonOperator.IsNot:
-                    case PythonOperator.LessThan:
-                    case PythonOperator.LessThanOrEqual:
-                    case PythonOperator.Not:
-                    case PythonOperator.NotEqual:
-                    case PythonOperator.NotIn:
-                        // Assume all of these return True/False
-                        return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
-                }
-
-                // Try LHS, then, if unknown, try RHS. Example: y = 1 when y is not declared by the walker yet.
-                var value = await GetValueFromExpressionAsync(binop.Left, cancellationToken);
-                return value.IsUnknown() ? await GetValueFromExpressionAsync(binop.Right, cancellationToken) : value;
+            if (!(expr is BinaryExpression binop) || binop.Left == null) {
+                return null;
             }
 
-            return null;
+            // TODO: Specific parsing
+            // TODO: warn about incompatible types like 'str' + 1
+            switch (binop.Operator) {
+                case PythonOperator.Equal:
+                case PythonOperator.GreaterThan:
+                case PythonOperator.GreaterThanOrEqual:
+                case PythonOperator.In:
+                case PythonOperator.Is:
+                case PythonOperator.IsNot:
+                case PythonOperator.LessThan:
+                case PythonOperator.LessThanOrEqual:
+                case PythonOperator.Not:
+                case PythonOperator.NotEqual:
+                case PythonOperator.NotIn:
+                    // Assume all of these return True/False
+                    return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
+            }
+
+            var left = await GetValueFromExpressionAsync(binop.Left, cancellationToken);
+            var right = await GetValueFromExpressionAsync(binop.Right, cancellationToken);
+
+            switch (binop.Operator) {
+                case PythonOperator.Divide:
+                case PythonOperator.TrueDivide:
+                    if (Interpreter.LanguageVersion.Is3x()) {
+                        return Interpreter.GetBuiltinType(BuiltinTypeId.Float);
+                    }
+                    break;
+            }
+
+            if (right.GetPythonType()?.TypeId == BuiltinTypeId.Float) {
+                return right;
+            }
+            if (left.GetPythonType()?.TypeId == BuiltinTypeId.Float) {
+                return left;
+            }
+            if (right.GetPythonType()?.TypeId == BuiltinTypeId.Long) {
+                return right;
+            }
+            if (left.GetPythonType()?.TypeId == BuiltinTypeId.Long) {
+                return left;
+            }
+            return left.IsUnknown() ? right : left;
         }
 
         private async Task<IMember> GetValueFromIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
@@ -330,7 +349,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public void DeclareVariable(string name, IMember value, Node expression)
             => DeclareVariable(name, value, GetLoc(expression));
 
-        public void DeclareVariable(string name, IMember value, LocationInfo location) {
+        public void DeclareVariable(string name, IMember value, LocationInfo location, bool overwrite = false) {
             var member = GetInScope(name);
             if (member != null) {
                 if (!value.IsUnknown()) {

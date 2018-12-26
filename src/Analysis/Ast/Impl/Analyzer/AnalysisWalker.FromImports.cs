@@ -89,6 +89,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var module = await Interpreter.ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
 
             if (names.Count == 1 && names[0].Name == "*") {
+                // TODO: warn this is not a good style per
+                // TODO: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
+                // TODO: warn this is invalid if not in the global scope.
                 await HandleModuleImportStarAsync(module, cancellationToken);
                 return;
             }

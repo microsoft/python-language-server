@@ -13,13 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Tests;
-using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -34,6 +31,20 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
+
+        [TestMethod, Priority(0)]
+        public async Task Simple() {
+            const string code = @"
+def f(a):
+    return a
+
+x = f(42)
+y = f('fob')";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str);
+        }
 
         [TestMethod, Priority(0)]
         public async Task Closures() {
@@ -60,6 +71,25 @@ def f(a):
 
 x = f(42)
 y = f('fob')";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task LocalsIsInstance() {
+            const string code = @"def f(a, c):
+    if isinstance(c, int):
+        b = a
+        return b
+    else:
+        b = a
+        return b
+
+
+x = f(42, 'oar')
+y = f('fob', 'oar')";
 
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)

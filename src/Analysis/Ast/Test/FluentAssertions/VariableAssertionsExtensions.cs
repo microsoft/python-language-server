@@ -23,25 +23,25 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     internal static class VariableAssertionsExtensions {
         public static AndWhichConstraint<TAssertion, IVariable> OfType<TAssertion>(
             this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
-            andWhichConstraint.Subject.Should().OfType(typeId, because, reasonArgs);
+            andWhichConstraint.Subject.Value.Should().HaveType(typeId, because, reasonArgs);
             return andWhichConstraint;
         }
 
         public static AndWhichConstraint<TAssertion, IVariable> OfType<TAssertion>(
             this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, string typeName, string because = "", params object[] reasonArgs) {
-            andWhichConstraint.Subject.Should().OfType(typeName, because, reasonArgs);
+            andWhichConstraint.Subject.Value.Should().HaveType(typeName, because, reasonArgs);
             return andWhichConstraint;
         }
 
         public static AndWhichConstraint<TAssertion, IVariable> OfType<TAssertion ,T>(
             this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, string because = "", params object[] reasonArgs) {
-            andWhichConstraint.Subject.Should().OfType<T>(because, reasonArgs);
+            andWhichConstraint.Subject.Value.Should().HaveType<T>(because, reasonArgs);
             return andWhichConstraint;
         }
 
         public static AndWhichConstraint<TAssertion, IVariable> WithNoTypes<TAssertion>(
             this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, string because = "", params object[] reasonArgs) {
-            andWhichConstraint.Subject.Should().HaveNoType(because, reasonArgs);
+            andWhichConstraint.Subject.Value.Should().HaveNoType(because, reasonArgs);
             return andWhichConstraint;
         }
     }

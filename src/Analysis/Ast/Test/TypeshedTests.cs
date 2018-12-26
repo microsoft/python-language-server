@@ -67,12 +67,13 @@ scanner = _json.make_scanner()";
 
             var v0 = analysis.Should().HaveVariable("scanner");
 
-            v0.Which.Should().HaveSingleOverload()
-              .Which.Should().HaveName("__call__")
-              .And.HaveParameters("string", "index")
-              .And.HaveParameterAt(0).WithName("string").WithType("str").WithNoDefaultValue()
-              .And.HaveParameterAt(1).WithName("index").WithType("int").WithNoDefaultValue()
-              .And.HaveReturnType("tuple[object, int]");
+            v0.Which.Should().HaveMember<IPythonFunction>("__call__")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveName("__call__")
+                    .And.HaveParameters("self", "string", "index")
+                    .And.HaveParameterAt(1).WithName("string").WithType("str").WithNoDefaultValue()
+                    .And.HaveParameterAt(2).WithName("index").WithType("int").WithNoDefaultValue()
+                    .And.HaveReturnType("Tuple[ (Any,int) ]");
         }
 
         [TestMethod, Priority(0)]

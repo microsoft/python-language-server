@@ -48,6 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public virtual async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
             await FunctionWalkers.ProcessSetAsync(cancellationToken);
+            _replacedByStubs.Clear();
             return GlobalScope;
         }
 

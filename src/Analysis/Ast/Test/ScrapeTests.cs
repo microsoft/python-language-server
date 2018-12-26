@@ -228,9 +228,9 @@ namespace Microsoft.Python.Analysis.Tests {
             var v = PythonVersions.Anaconda36_x64 ?? PythonVersions.Anaconda36;
             await FullStdLibTest(v,
                 // Crashes Python on import
-                "sklearn.linear_model.cd_fast",
+                @"sklearn.linear_model.cd_fast",
                 // Crashes Python on import
-                "sklearn.cluster._k_means_elkan"
+                @"sklearn.cluster._k_means_elkan"
             );
         }
 
@@ -264,70 +264,79 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var skip = new HashSet<string>(skipModules);
             skip.UnionWith(new[] {
-                "matplotlib.backends._backend_gdk",
-                "matplotlib.backends._backend_gtkagg",
-                "matplotlib.backends._gtkagg",
+                @"matplotlib.backends._backend_gdk",
+                @"matplotlib.backends._backend_gtkagg",
+                @"matplotlib.backends._gtkagg",
                 "test.test_pep3131",
                 "test.test_unicode_identifiers"
             });
-            skip.UnionWith(modules.Select(m => m.FullName).Where(n => n.StartsWith("test.badsyntax") || n.StartsWith("test.bad_coding")));
+            skip.UnionWith(modules.Select(m => m.FullName)
+                .Where(n => n.StartsWith(@"test.badsyntax") || n.StartsWith("test.bad_coding")));
 
             var anySuccess = false;
             var anyExtensionSuccess = false;
             var anyExtensionSeen = false;
             var anyParseError = false;
 
-            var tasks = new List<Task<Tuple<ModulePath, IPythonModule>>>();
             foreach (var m in skip) {
                 ((ModuleResolution)interpreter.ModuleResolution).AddUnimportableModule(m);
             }
 
-            foreach (var r in modules
-                    .Where(m => !skip.Contains(m.ModuleName))
-                    .GroupBy(m => {
-                        var i = m.FullName.IndexOf('.');
-                        return i <= 0 ? m.FullName : m.FullName.Remove(i);
-                    })
-                    .AsParallel()
-                    .SelectMany(g => g.Select(m => Tuple.Create(m, m.ModuleName)))
-                ) {
+            var set = modules
+                .Where(m => !skip.Contains(m.ModuleName))
+                .GroupBy(m => {
+                    var i = m.FullName.IndexOf('.');
+                    return i <= 0 ? m.FullName : m.FullName.Remove(i);
+                })
+                .AsParallel()
+                .SelectMany(g => g.Select(m => Tuple.Create(m, m.ModuleName)))
+                .ToArray();
+
+            foreach (var r in set) {
                 var modName = r.Item1;
                 var mod = await interpreter.ModuleResolution.ImportModuleAsync(r.Item2);
 
                 anyExtensionSeen |= modName.IsNativeExtension;
-                if (mod == null) {
-                    Trace.TraceWarning("failed to import {0} from {1}", modName.ModuleName, modName.SourceFile);
-                } else if (mod is CompiledPythonModule) {
-                    var errors = ((IDocument)mod).GetDiagnostics();
-                    if (errors.Any()) {
-                        anyParseError = true;
-                        Trace.TraceError("Parse errors in {0}", modName.SourceFile);
-                        foreach (var e in errors) {
-                            Trace.TraceError(e.Message);
+                switch (mod) {
+                    case null:
+                        Trace.TraceWarning("failed to import {0} from {1}", modName.ModuleName, modName.SourceFile);
+                        break;
+                    case CompiledPythonModule _: {
+                            var errors = ((IDocument)mod).GetDiagnostics().ToArray();
+                            if (errors.Any()) {
+                                anyParseError = true;
+                                Trace.TraceError("Parse errors in {0}", modName.SourceFile);
+                                foreach (var e in errors) {
+                                    Trace.TraceError(e.Message);
+                                }
+                            } else {
+                                anySuccess = true;
+                                anyExtensionSuccess |= modName.IsNativeExtension;
+                            }
+
+                            break;
                         }
-                    } else {
-                        anySuccess = true;
-                        anyExtensionSuccess |= modName.IsNativeExtension;
-                        mod.GetMemberNames().ToList();
-                    }
-                } else if (mod is IPythonModule) {
-                    var filteredErrors = ((IDocument)mod).GetDiagnostics().Where(e => !e.Message.Contains("encoding problem")).ToArray();
-                    if (filteredErrors.Any()) {
-                        // Do not fail due to errors in installed packages
-                        if (!mod.FilePath.Contains("site-packages")) {
-                            anyParseError = true;
+                    case IPythonModule _: {
+                            var filteredErrors = ((IDocument)mod).GetDiagnostics().Where(e => !e.Message.Contains("encoding problem")).ToArray();
+                            if (filteredErrors.Any()) {
+                                // Do not fail due to errors in installed packages
+                                if (!mod.FilePath.Contains("site-packages")) {
+                                    anyParseError = true;
+                                }
+                                Trace.TraceError("Parse errors in {0}", modName.SourceFile);
+                                foreach (var e in filteredErrors) {
+                                    Trace.TraceError(e.Message);
+                                }
+                            } else {
+                                anySuccess = true;
+                                anyExtensionSuccess |= modName.IsNativeExtension;
+                            }
+
+                            break;
                         }
-                        Trace.TraceError("Parse errors in {0}", modName.SourceFile);
-                        foreach (var e in filteredErrors) {
-                            Trace.TraceError(e.Message);
-                        }
-                    } else {
-                        anySuccess = true;
-                        anyExtensionSuccess |= modName.IsNativeExtension;
-                        mod.GetMemberNames().ToList();
-                    }
-                } else {
-                    Trace.TraceError("imported {0} as type {1}", modName.ModuleName, mod.GetType().FullName);
+                    default:
+                        Trace.TraceError("imported {0} as type {1}", modName.ModuleName, mod.GetType().FullName);
+                        break;
                 }
             }
             Assert.IsTrue(anySuccess, "failed to import any modules at all");

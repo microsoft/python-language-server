@@ -85,7 +85,7 @@ x = 100
 z = f(a=42, x)";
 
             var analysis = await GetAnalysisAsync(code);
-                analysis.Should().HaveVariable("z").OfType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("z").OfType(BuiltinTypeId.Int);
         }
 
         [TestMethod, Priority(0)]
@@ -108,6 +108,12 @@ y = u'u'
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("y").OfType(BuiltinTypeId.Unicode);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Ellipsis() {
+            var analysis = await GetAnalysisAsync(@"x = ...");
+            analysis.Should().HaveVariable("x").WithNoTypes();
         }
     }
 }
