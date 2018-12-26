@@ -50,8 +50,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public async Task WalkAsync(CancellationToken cancellationToken = default) {
             using (Lookup.OpenScope(_parentScope)) {
                 _self = Lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local) as IPythonClass;
-                using (Lookup.CreateScope(Target, _parentScope)) {
+                // Ensure constructors are processed so class members are initialized.
+                if (_self != null) {
+                    await FunctionWalkers.ProcessConstructorsAsync(_self.ClassDefinition, cancellationToken);
+                }
 
+                using (Lookup.CreateScope(Target, _parentScope)) {
+                    // Process annotations.
                     var annotationType = Lookup.GetTypeFromAnnotation(Target.ReturnAnnotation);
                     if (!annotationType.IsUnknown()) {
                         _overload.SetReturnValue(annotationType, true);

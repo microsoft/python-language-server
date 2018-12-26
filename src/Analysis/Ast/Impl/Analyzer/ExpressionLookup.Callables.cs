@@ -83,8 +83,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 value = GetFunctionReturnValue(overload, null, args);
                 if (value.IsUnknown() && fn.FunctionDefinition != null) {
                     // Function may not have been walked yet. Do it now.
-                    await FunctionWalkers.ProcessFunctionAsync(fn.FunctionDefinition, cancellationToken);
-                    value = GetFunctionReturnValue(overload, null, args);
+                    if (await FunctionWalkers.ProcessFunctionAsync(fn.FunctionDefinition, cancellationToken)) {
+                        value = GetFunctionReturnValue(overload, null, args);
+                    }
                 }
             }
 

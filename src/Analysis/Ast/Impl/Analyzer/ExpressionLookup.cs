@@ -181,8 +181,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private Task<IMember> GetValueFromUnaryOpAsync(UnaryExpression expr, CancellationToken cancellationToken = default)
-            => GetValueFromExpressionAsync(expr?.Expression, cancellationToken);
+        private Task<IMember> GetValueFromUnaryOpAsync(UnaryExpression expr, CancellationToken cancellationToken = default) {
+            IMember result = null;
+            switch (expr.Op) {
+                case PythonOperator.Not:
+                case PythonOperator.Is:
+                case PythonOperator.IsNot:
+                    // Assume all of these return True/False
+                    result = Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
+                    break;
+            }
+            return Task.FromResult(result);
+        }
 
         private async Task<IMember> GetValueFromBinaryOpAsync(Expression expr, CancellationToken cancellationToken = default) {
             if (expr is AndExpression || expr is OrExpression) {

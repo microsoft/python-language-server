@@ -17,7 +17,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -55,10 +55,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public async Task ProcessFunctionAsync(FunctionDefinition fn, CancellationToken cancellationToken = default) {
+        public async Task ProcessConstructorsAsync(ClassDefinition cd, CancellationToken cancellationToken = default) {
+            // Do not use foreach since walker list is dynamically modified and walkers are removed
+            // after processing. Handle __init__ and __new__ first so class variables are initialized.
+            var constructors = _functionWalkers
+                .Where(kvp => GetClassParent(kvp.Key) == cd && (kvp.Key.Name == "__init__" || kvp.Key.Name == "__new__"))
+                .Select(c => c.Value)
+                .ExcludeDefault()
+                .ToArray();
+
+            foreach (var ctor in constructors) {
+                await ProcessWalkerAsync(ctor, cancellationToken);
+            }
+        }
+
+        public async Task<bool> ProcessFunctionAsync(FunctionDefinition fn, CancellationToken cancellationToken = default) {
             if (_functionWalkers.TryGetValue(fn, out var w)) {
                 await ProcessWalkerAsync(w, cancellationToken);
+                return true;
             }
+            return false;
         }
 
         public bool Contains(FunctionDefinition node)
@@ -71,6 +87,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _processed.Add(walker.Target);
             _functionWalkers.TryRemove(walker.Target, out _);
             return walker.WalkAsync(cancellationToken);
+        }
+
+        private static ClassDefinition GetClassParent(FunctionDefinition fd) {
+            ScopeStatement node = fd;
+            while (node != null) {
+                if (node is ClassDefinition cd) {
+                    return cd;
+                }
+                node = node.Parent;
+            }
+            return null;
         }
     }
 }

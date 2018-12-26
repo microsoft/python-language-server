@@ -110,7 +110,7 @@ fob = 'abc %d'.lower()
 oar = fob * 100
 
 fob2 = u'abc' + u'%d'
-oar2 = fob2 * 100";;
+oar2 = fob2 * 100"; ;
 
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str)
@@ -121,6 +121,36 @@ oar2 = fob2 * 100";;
                 .And.HaveVariable("oar").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("fob2").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("oar2").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RangeIteration() {
+            const string code = @"
+for i in range(5):
+    pass
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            // TODO: fix to actual type
+            analysis.Should().HaveVariable("i")
+                .Which.Should().HaveMemberType(PythonMemberType.Instance);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NotOperator() {
+            const string code = @"
+class C(object):
+    def __nonzero__(self):
+        pass
+
+    def __bool__(self):
+        pass
+
+a = not C()
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Bool);
         }
     }
 }

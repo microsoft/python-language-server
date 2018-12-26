@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
@@ -102,6 +103,21 @@ def f(s: s = 123):
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType);
             analysis.Should().HaveFunction("f")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("s").And.HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ParameterAnnotationLambda() {
+            const string code = @"
+s = None
+def f(s: lambda s: s > 0 = 123):
+    return s
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType)
+                .And.HaveFunction("f")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveSingleParameter()
                 .Which.Should().HaveName("s").And.HaveType(BuiltinTypeId.Int);
@@ -204,6 +220,40 @@ a = f()
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OverrideFunction() {
+            const string code = @"
+class oar(object):
+    def Call(self, xvar, yvar):
+        return xvar
+
+class baz(oar):
+    def Call(self, xvar, yvar):
+        return 42
+
+class Cxxxx(object):
+    def __init__(self):
+        self.b = baz()
+        self.o = oar()
+
+    def CmethB(self, avar, bvar):
+        return self.b.Call(avar, bvar)
+
+    def CmethO(self, avar, bvar):
+        return self.o.Call(avar, bvar)
+
+abc = Cxxxx()
+a = abc.CmethB(['fob'], 'oar')
+b = abc.CmethO(['fob'], 'oar')
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("a")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("b")
+                .Which.Should().HaveType(BuiltinTypeId.List);
         }
     }
 }

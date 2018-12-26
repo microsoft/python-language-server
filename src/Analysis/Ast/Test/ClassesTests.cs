@@ -237,17 +237,17 @@ a = X(2)
                 .Which.Should().HaveParameterAt(0).Which.Should().HaveName("self").And.HaveType("X");
         }
 
-//        [TestMethod, Priority(0)]
-//        public async Task ClassVariables() {
-//            const string code = @"
-//class A:
-//    x: int
+        //        [TestMethod, Priority(0)]
+        //        public async Task ClassVariables() {
+        //            const string code = @"
+        //class A:
+        //    x: int
 
-//";
-//            var analysis = await GetAnalysisAsync(code);
-//            analysis.Should().HaveClass("A")
-//                .Which.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
-//        }
+        //";
+        //            var analysis = await GetAnalysisAsync(code);
+        //            analysis.Should().HaveClass("A")
+        //                .Which.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        //        }
 
         [TestMethod, Priority(0)]
         public async Task InstanceCall() {
@@ -307,6 +307,71 @@ def g(a, b, c): pass
                     .Which.Name.Should().Be("self");
 
             analysis.Should().HaveFunction("g").Which.DeclaringType.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task CtorSignatures() {
+            const string code = @"
+class C: pass
+
+class D(object): pass
+
+class E(object):
+    def __init__(self): pass
+
+class F(object):
+    def __init__(self, one): pass
+
+class G(object):
+    def __new__(cls): pass
+
+class H(object):
+    def __new__(cls, one): pass
+"; ;
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("C")
+                .Which.Should().NotHaveMembers();
+
+            analysis.Should().HaveClass("D")
+                .Which.Should().NotHaveMembers();
+
+            analysis.Should().HaveClass("E")
+                .Which.Should().HaveMember<IPythonFunction>("__init__")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameters("self");
+
+            analysis.Should().HaveClass("F")
+                .Which.Should().HaveMember<IPythonFunction>("__init__")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameters("self", "one");
+
+            analysis.Should().HaveClass("G")
+                .Which.Should().HaveMember<IPythonFunction>("__new__")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameters("cls");
+
+            analysis.Should().HaveClass("H")
+                .Which.Should().HaveMember<IPythonFunction>("__new__")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameters("cls", "one");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SelfNestedMethod() {
+            const string code = @"
+class MyClass:
+    def func1(self):
+        def func2(a, b):
+            return a
+
+        return func2('abc', 123)
+
+x = MyClass().func1()
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
     }
 }

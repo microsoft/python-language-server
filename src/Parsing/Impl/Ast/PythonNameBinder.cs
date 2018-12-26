@@ -404,6 +404,12 @@ namespace Microsoft.Python.Parsing.Ast {
                     // conflict?
                     switch (conflict.Kind) {
                         case VariableKind.Global:
+                            // OK to reassign, as long as kind is the same.
+                            // Consider (from Python test grammar)
+                            // global a
+                            // global a, b
+                            assignedGlobal = true;
+                            break;
                         case VariableKind.Local:
                             assignedGlobal = true;
                             ReportSyntaxWarning(
@@ -469,6 +475,13 @@ namespace Microsoft.Python.Parsing.Ast {
                             ReportSyntaxError(
                                 "name '{0}' is a parameter and nonlocal".FormatUI(n),
                                 node);
+                            break;
+                        case VariableKind.Nonlocal:
+                            // OK to reassign as long as kind is the same.
+                            // Consider example from Python test grammar:
+                            //  nonlocal x
+                            //  nonlocal x, y
+                            assignedLocal = true;
                             break;
                     }
                 }

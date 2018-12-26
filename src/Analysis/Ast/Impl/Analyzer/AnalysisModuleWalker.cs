@@ -93,7 +93,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Note that scrape can pick up more functions than the stub contains
             // Or the stub can have definitions that scraping had missed. Therefore
             // merge is the combination of the two with documentation coming from scrape.
-
+            var z = Module.Name == "_json";
             foreach (var v in stubAnalysis.TopLevelVariables) {
                 cancellationToken.ThrowIfCancellationRequested();
                 var currentVar = Lookup.GlobalScope.Variables[v.Name];
@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 } else {
                     // Re-declare variable with the data from the stub.
-                    if (currentVar.IsUnknown() && !v.Value.IsUnknown()) {
+                    if (currentVar.Value.IsUnknown() && !v.Value.IsUnknown()) {
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         Lookup.DeclareVariable(v.Name, v.Value, LocationInfo.Empty, overwrite: true);
                     }

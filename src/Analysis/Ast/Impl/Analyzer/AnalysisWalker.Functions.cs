@@ -79,7 +79,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 existing = new PythonProperty(node, declaringModule, declaringType, loc);
                 Lookup.DeclareVariable(node.Name, existing, loc);
             }
-
             AddOverload(node, existing, o => existing.AddOverload(o));
         }
 

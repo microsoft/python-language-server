@@ -65,9 +65,9 @@ e1, e2, e3 = sys.exc_info()
 scanner = _json.make_scanner()";
             var analysis = await GetAnalysisAsync(code);
 
-            var v0 = analysis.Should().HaveVariable("scanner");
+            var v0 = analysis.Should().HaveVariable("scanner").Which;
 
-            v0.Which.Should().HaveMember<IPythonFunction>("__call__")
+            v0.Should().HaveMember<IPythonFunction>("__call__")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveName("__call__")
                     .And.HaveParameters("self", "string", "index")
