@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
             var gs = await base.CompleteAsync(cancellationToken);
-            await MergeStubAsync(cancellationToken);
+            MergeStub();
             return gs;
         }
 
@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// However, if the module is compiled (scraped), it often lacks some
         /// of the definitions. Stub may contains those so we need to merge it in.
         /// </remarks>
-        private async Task MergeStubAsync(CancellationToken cancellationToken = default) {
+        private void MergeStub() {
             // We replace classes only in compiled (scraped) modules.
             // Stubs do not apply to user code and library modules that come in source
             // should be providing sufficient information on their classes from the code.
@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // No stub, no merge.
             IDocumentAnalysis stubAnalysis = null;
             if (Module.Stub is IDocument doc) {
-                stubAnalysis = await doc.GetAnalysisAsync(cancellationToken);
+                stubAnalysis = doc.GetAnyAnalysis();
             }
             if (stubAnalysis == null) {
                 return;
@@ -93,9 +93,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Note that scrape can pick up more functions than the stub contains
             // Or the stub can have definitions that scraping had missed. Therefore
             // merge is the combination of the two with documentation coming from scrape.
-            var z = Module.Name == "_json";
             foreach (var v in stubAnalysis.TopLevelVariables) {
-                cancellationToken.ThrowIfCancellationRequested();
                 var currentVar = Lookup.GlobalScope.Variables[v.Name];
 
                 var stub = v.Value.GetPythonType<PythonClass>();
@@ -124,7 +122,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 } else {
                     // Re-declare variable with the data from the stub.
-                    if (currentVar.Value.IsUnknown() && !v.Value.IsUnknown()) {
+                    if (currentVar != null && currentVar.Value.IsUnknown() && !v.Value.IsUnknown()) {
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         Lookup.DeclareVariable(v.Name, v.Value, LocationInfo.Empty, overwrite: true);
                     }

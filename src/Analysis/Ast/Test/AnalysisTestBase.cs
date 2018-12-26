@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -61,15 +62,19 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var sm = CreateServiceManager();
 
+            TestLogger.Log(TraceEventType.Information, "Create TestDependencyResolver");
             var dependencyResolver = new TestDependencyResolver();
             sm.AddService(dependencyResolver);
 
+            TestLogger.Log(TraceEventType.Information, "Create PythonAnalyzer");
             var analyzer = new PythonAnalyzer(sm);
             sm.AddService(analyzer);
 
+            TestLogger.Log(TraceEventType.Information, "Create PythonInterpreter");
             var interpreter = await PythonInterpreter.CreateAsync(configuration, root, sm);
             sm.AddService(interpreter);
 
+            TestLogger.Log(TraceEventType.Information, "Create RunningDocumentTable");
             var documentTable = new RunningDocumentTable(root, sm);
             sm.AddService(documentTable);
 
@@ -77,9 +82,9 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         internal async Task<IDocumentAnalysis> GetAnalysisAsync(
-            string code, 
-            InterpreterConfiguration configuration = null, 
-            string moduleName = null, 
+            string code,
+            InterpreterConfiguration configuration = null,
+            string moduleName = null,
             string modulePath = null) {
 
             var moduleUri = TestData.GetDefaultModuleUri();
@@ -117,11 +122,15 @@ namespace Microsoft.Python.Analysis.Tests {
                 doc = new PythonModule(mco, services);
             }
 
+            TestLogger.Log(TraceEventType.Information, "Ast begin");
             var ast = await doc.GetAstAsync(CancellationToken.None);
             ast.Should().NotBeNull();
+            TestLogger.Log(TraceEventType.Information, "Ast end");
 
+            TestLogger.Log(TraceEventType.Information, "Analysis begin");
             var analysis = await doc.GetAnalysisAsync(CancellationToken.None);
             analysis.Should().NotBeNull();
+            TestLogger.Log(TraceEventType.Information, "Analysis end");
 
             return analysis;
         }

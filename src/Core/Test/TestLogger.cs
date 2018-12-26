@@ -15,15 +15,28 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using Microsoft.Python.Core.Logging;
 using TestUtilities;
 
 namespace Microsoft.Python.Core.Tests {
-    public sealed class TestLogger : ILogger {
+    public sealed class TestLogger : ILogger, IDisposable {
+        private readonly FileStream _file = null;
+        public TestLogger() {
+            //var path = Path.Combine(Path.GetTempPath(), "python_analysis.log");
+            //_file = File.OpenWrite(path);
+        }
+
+        public void Dispose() {
+            _file?.Close();
+            _file?.Dispose();
+        }
+
         public TraceEventType LogLevel { get; set; } = TraceEventType.Verbose;
         public void Log(TraceEventType eventType, IFormattable message) => Log(eventType, message.ToString());
         public void Log(TraceEventType eventType, string message) {
+
             var m = $"[{TestEnvironmentImpl.Elapsed()}]: {message}";
             switch (eventType) {
                 case TraceEventType.Error:
@@ -39,6 +52,14 @@ namespace Microsoft.Python.Core.Tests {
                 case TraceEventType.Verbose:
                     Trace.TraceInformation($"LOG: {m}");
                     break;
+            }
+            WriteToFile(m);
+        }
+
+        private void WriteToFile(string s) {
+            if (_file != null) {
+                var b = Encoding.UTF8.GetBytes(s + Environment.NewLine);
+                _file.Write(b, 0, b.Length);
             }
         }
 
