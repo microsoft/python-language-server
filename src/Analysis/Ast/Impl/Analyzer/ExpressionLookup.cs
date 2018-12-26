@@ -181,7 +181,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private Task<IMember> GetValueFromUnaryOpAsync(UnaryExpression expr, CancellationToken cancellationToken = default) {
+        private async Task<IMember> GetValueFromUnaryOpAsync(UnaryExpression expr, CancellationToken cancellationToken = default) {
             IMember result = null;
             switch (expr.Op) {
                 case PythonOperator.Not:
@@ -190,8 +190,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Assume all of these return True/False
                     result = Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
                     break;
+                case PythonOperator.Negate:
+                    result = await GetValueFromExpressionAsync(expr.Expression, cancellationToken);
+                    break;
             }
-            return Task.FromResult(result);
+            return result;
         }
 
         private async Task<IMember> GetValueFromBinaryOpAsync(Expression expr, CancellationToken cancellationToken = default) {

@@ -115,5 +115,35 @@ y = u'u'
             var analysis = await GetAnalysisAsync(@"x = ...");
             analysis.Should().HaveVariable("x").WithNoTypes();
         }
+        [TestMethod, Priority(0)]
+        public async Task NegativeNumbersV2() {
+            const string code = @"
+x = -1
+y = -3.0
+z = -4L
+a = z
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Float)
+                .And.HaveVariable("z").OfType(BuiltinTypeId.Long)
+                .And.HaveVariable("a").OfType(BuiltinTypeId.Long);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NegativeNumbersV3() {
+            const string code = @"
+x = -1
+y = -3.0
+z = -4L
+a = z
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Float)
+                .And.HaveVariable("z").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
+
     }
 }
