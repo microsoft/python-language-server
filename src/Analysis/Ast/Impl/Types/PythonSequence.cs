@@ -36,7 +36,7 @@ namespace Microsoft.Python.Analysis.Types {
             // TODO: report index out of bounds warning
             => index >= 0 && index < _contents.Count ? _contents[index] : null;
 
-        public IEnumerable<IMember> GetMembers(IPythonInstance instance) => _contents;
+        public IEnumerable<IMember> GetContents(IPythonInstance instance) => _contents;
 
         public IPythonIterator Iterator { get; }
  

@@ -22,11 +22,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Extensions;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
@@ -115,7 +114,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 _documentation = _documentation ?? _ast?.Documentation;
                 if (_documentation == null) {
                     var m = GetMember("__doc__");
-                    _documentation = (m as PythonStringLiteral)?.Value ?? string.Empty;
+                    _documentation = m.TryGetConstant<string>(out var s) ? s : string.Empty;
                     if (string.IsNullOrEmpty(_documentation)) {
                         m = GetMember($"_{Name}");
                         _documentation = m?.GetPythonType()?.Documentation;

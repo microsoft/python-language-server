@@ -157,7 +157,7 @@ namespace Microsoft.Python.Analysis.Types {
                 if (bases == null) {
                     var instance = cls.GetMember("__bases__") as IPythonInstance;
                     var seq = instance?.GetPythonType() as IPythonSequence;
-                    var members = seq?.GetMembers(instance) ?? Array.Empty<IMember>();
+                    var members = seq?.GetContents(instance) ?? Array.Empty<IMember>();
                     bases = members.Select(m => m.GetPythonType()).ToArray();
                 }
 

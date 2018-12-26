@@ -17,7 +17,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
@@ -26,12 +25,12 @@ namespace Microsoft.Python.Analysis.Modules {
     internal class CompiledPythonModule : PythonModule {
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
 
-        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, 
+        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub,
             IServiceContainer services, ModuleLoadOptions options = ModuleLoadOptions.Analyze)
             : base(moduleName, filePath, moduleType, options, stub, services) { }
 
         public override string Documentation
-            => GetMember("__doc__") is PythonStringLiteral m ? m.Value : string.Empty;
+            => GetMember("__doc__").TryGetConstant<string>(out var s) ? s : string.Empty;
 
         protected virtual IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter) {
             var args = new List<string> { "-B", "-E" };

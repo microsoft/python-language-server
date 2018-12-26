@@ -21,11 +21,10 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
@@ -74,8 +73,8 @@ namespace Microsoft.Python.Analysis.Modules {
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
-            if (builtinModuleNamesMember is PythonStringLiteral builtinModuleNamesLiteral && builtinModuleNamesLiteral.Value != null) {
-                var builtinModuleNames = builtinModuleNamesLiteral.Value.Split(',').Select(n => n.Trim());
+            if (builtinModuleNamesMember.TryGetConstant<string>(out var s)) {
+                var builtinModuleNames = s.Split(',').Select(n => n.Trim());
                 _pathResolver.SetBuiltins(builtinModuleNames);
             }
         }

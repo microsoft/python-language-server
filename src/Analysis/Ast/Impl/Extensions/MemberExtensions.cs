@@ -31,8 +31,16 @@ namespace Microsoft.Python.Analysis {
 
         public static IPythonType GetPythonType(this IMember m)
             => m is IPythonType pt ? pt : (m as IPythonInstance)?.Type;
-        public static T GetPythonType<T>(this IMember m) where T: class, IPythonType
-            => m is IPythonType pt ? pt as T: (m as IPythonInstance)?.Type as T;
+        public static T GetPythonType<T>(this IMember m) where T : class, IPythonType
+            => m is IPythonType pt ? pt as T : (m as IPythonInstance)?.Type as T;
 
+        public static bool TryGetConstant<T>(this IMember m, out T value) {
+            if (m is IPythonConstant c && c.TryGetValue<T>(out var v)) {
+                value = v;
+                return true;
+            }
+            value = default;
+            return false;
+        }
     }
 }

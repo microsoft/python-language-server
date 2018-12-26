@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     public interface IPythonSequence : IPythonType {
         IMember GetValueAt(IPythonInstance instance, int index);
-        IEnumerable<IMember> GetMembers(IPythonInstance instance);
+        IEnumerable<IMember> GetContents(IPythonInstance instance);
     }
 
     /// <summary>

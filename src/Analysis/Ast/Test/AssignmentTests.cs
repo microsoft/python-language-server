@@ -19,7 +19,6 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -144,6 +143,5 @@ a = z
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("a").OfType(BuiltinTypeId.Int);
         }
-
     }
 }

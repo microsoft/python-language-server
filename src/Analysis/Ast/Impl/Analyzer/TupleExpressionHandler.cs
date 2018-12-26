@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             // Tuple = 'tuple value' (such as from callable). Transfer values.
             if (value is IPythonInstance c && c.Type is IPythonSequence seq) {
-                var types = seq.GetMembers(c).ToArray();
+                var types = seq.GetContents(c).ToArray();
                 var expressions = lhs.Items.OfType<NameExpression>().ToArray();
                 var names = expressions.Select(x => x.Name).ToArray();
                 for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {

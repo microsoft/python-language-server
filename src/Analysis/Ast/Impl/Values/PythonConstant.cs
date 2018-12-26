@@ -16,11 +16,20 @@
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
-    internal sealed class PythonStringLiteral : PythonInstance {
-        public PythonStringLiteral(string value, IPythonType stringType, LocationInfo location)
-            : base(stringType, location) {
+    internal sealed class PythonConstant : PythonInstance, IPythonConstant {
+        public PythonConstant(object value, IPythonType type, LocationInfo location)
+            : base(type, location) {
             Value = value;
         }
-        public string Value { get; }
+        public object Value { get; }
+
+        public bool TryGetValue<T>(out T value) {
+            if (Value is T variable) {
+                value = variable;
+                return true;
+            }
+            value = default;
+            return false;
+        }
     }
 }

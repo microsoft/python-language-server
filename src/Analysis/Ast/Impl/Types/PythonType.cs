@@ -35,12 +35,12 @@ namespace Microsoft.Python.Analysis.Types {
             string name,
             IPythonModule declaringModule,
             string documentation,
-            LocationInfo loc,
+            LocationInfo location,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
         ) : this(name, typeId) {
             Documentation = documentation;
             DeclaringModule = declaringModule;
-            Location = loc ?? LocationInfo.Empty;
+            Location = location ?? LocationInfo.Empty;
         }
 
         public PythonType(string name, BuiltinTypeId typeId) {
