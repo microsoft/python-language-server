@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,12 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
+
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents a single overload of a function.
+    /// Represents type that has values at indexes, such as list or tuple.
     /// </summary>
-    public interface IPythonFunctionOverload: IPythonCallableType {
-        string Name { get; }
-        string Documentation { get; }
+    public interface IPythonSequenceType : IPythonIterableType {
+        /// <summary>
+        /// Invokes 'GetValueAt' on the supplied instance.
+        /// </summary>
+        IMember GetValueAt(IPythonInstance instance, int index);
+        
+        /// <summary>
+        /// Invokes 'GetContents' on the supplied instance.
+        /// </summary>
+        IEnumerable<IMember> GetContents(IPythonInstance instance);
     }
 }

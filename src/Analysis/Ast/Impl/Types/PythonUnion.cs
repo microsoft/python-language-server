@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IPythonModule DeclaringModule => null;
+        public IPythonModuleType DeclaringModule => null;
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public PythonMemberType MemberType => PythonMemberType.Union;
         public string Documentation => Name;
@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IPythonFunction GetConstructor() => null;
+        public IPythonFunctionType GetConstructor() => null;
 
         public IEnumerator<IPythonType> GetEnumerator() {
             lock (_lock) {

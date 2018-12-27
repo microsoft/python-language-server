@@ -24,8 +24,8 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis.Modules {
     public sealed class TryImportModuleContext {
         public IPythonInterpreter Interpreter { get; set; }
-        public ConcurrentDictionary<string, IPythonModule> ModuleCache { get; set; }
-        public IPythonModule BuiltinModule { get; set; }
+        public ConcurrentDictionary<string, IPythonModuleType> ModuleCache { get; set; }
+        public IPythonModuleType BuiltinModule { get; set; }
         public Func<string, CancellationToken, Task<ModulePath?>> FindModuleInUserSearchPathAsync { get; set; }
         public IReadOnlyList<string> TypeStubPaths { get; set; }
         public bool MergeTypeStubPackages { get; set; }

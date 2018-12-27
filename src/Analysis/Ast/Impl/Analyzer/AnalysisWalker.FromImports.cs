@@ -107,7 +107,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private async Task HandleModuleImportStarAsync(IPythonModule module, CancellationToken cancellationToken = default) {
+        private async Task HandleModuleImportStarAsync(IPythonModuleType module, CancellationToken cancellationToken = default) {
             foreach (var memberName in module.GetMemberNames()) {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 member = member ?? Lookup.UnknownType;
-                if (member is IPythonModule m) {
+                if (member is IPythonModuleType m) {
                     await Interpreter.ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
                 }
 

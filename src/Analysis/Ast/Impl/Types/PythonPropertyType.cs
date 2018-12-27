@@ -18,10 +18,10 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
-    class PythonProperty : PythonType, IPythonProperty {
+    class PythonPropertyTypeType : PythonType, IPythonPropertyType {
         private IPythonFunctionOverload _getter;
 
-        public PythonProperty(FunctionDefinition fd, IPythonModule declaringModule, IPythonType declaringType, LocationInfo location)
+        public PythonPropertyTypeType(FunctionDefinition fd, IPythonModuleType declaringModule, IPythonType declaringType, LocationInfo location)
             : base(fd.Name, declaringModule, null, location) {
             FunctionDefinition = fd;
             DeclaringType = declaringType;
@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override PythonMemberType MemberType => PythonMemberType.Property;
         #endregion
 
-        #region IPythonProperty
+        #region IPythonPropertyType
         public bool IsStatic => false;
         public bool IsReadOnly { get; private set; } = true;
         public IPythonType DeclaringType { get; }

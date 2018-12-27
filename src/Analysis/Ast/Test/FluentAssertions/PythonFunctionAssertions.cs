@@ -21,13 +21,13 @@ using Microsoft.Python.Analysis.Types;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
-    internal class PythonFunctionAssertions : ReferenceTypeAssertions<IPythonFunction, PythonFunctionAssertions> {
-        public PythonFunctionAssertions(IPythonFunction pythonFunction) {
+    internal class PythonFunctionAssertions : ReferenceTypeAssertions<IPythonFunctionType, PythonFunctionAssertions> {
+        public PythonFunctionAssertions(IPythonFunctionType pythonFunction) {
             Subject = pythonFunction;
             ScopeDescription = $"in a scope {GetQuotedName(Subject.DeclaringType)}";
         }
 
-        protected override string Identifier => nameof(IPythonFunction);
+        protected override string Identifier => nameof(IPythonFunctionType);
         protected string ScopeDescription { get; }
 
         public AndConstraint<PythonFunctionAssertions> BeClassMethod(string because = "", params object[] reasonArgs) {

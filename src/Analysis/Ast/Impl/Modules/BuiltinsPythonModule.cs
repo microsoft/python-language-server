@@ -111,11 +111,11 @@ namespace Microsoft.Python.Analysis.Modules {
             //SpecializeFunction(_builtinName, "globals", ReturnsStringToObjectDict);
             SpecializeFunction(@"isinstance", gs, _boolType);
             SpecializeFunction(@"issubclass", gs, _boolType);
-            //SpecializeFunction(_builtinName, "iter", SpecialIter);
+            SpecializeFunction(@"iter", gs, Specializations.Iterator);
             //SpecializeFunction(_builtinName, "locals", ReturnsStringToObjectDict);
             //SpecializeFunction(_builtinName, "max", ReturnUnionOfInputs);
             //SpecializeFunction(_builtinName, "min", ReturnUnionOfInputs);
-            //SpecializeFunction(_builtinName, "next", SpecialNext);
+            // SpecializeFunction("next", gs, Specializations.Next);
             //SpecializeFunction(_builtinName, "open", SpecialOpen);
             SpecializeFunction("ord", gs, Interpreter.GetBuiltinType(BuiltinTypeId.Int));
             SpecializeFunction("pow", gs, Specializations.Identity);

@@ -53,7 +53,7 @@ e1, e2, e3 = sys.exc_info()
                 .And.HaveVariable("e2").OfType("BaseException")
                 .And.HaveVariable("e3").OfType(BuiltinTypeId.Unknown)
                 .And.HaveVariable("sys").OfType(BuiltinTypeId.Module)
-                .Which.Should().HaveMember<IPythonFunction>("exc_info").Which;
+                .Which.Should().HaveMember<IPythonFunctionType>("exc_info").Which;
 
             f.Overloads.Should().HaveCount(1);
             f.Overloads[0].Documentation.Should().Be("tuple[type, BaseException, Unknown]");
@@ -67,7 +67,7 @@ scanner = _json.make_scanner()";
 
             var v0 = analysis.Should().HaveVariable("scanner").Which;
 
-            v0.Should().HaveMember<IPythonFunction>("__call__")
+            v0.Should().HaveMember<IPythonFunctionType>("__call__")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveName("__call__")
                     .And.HaveParameters("self", "string", "index")
@@ -82,7 +82,7 @@ scanner = _json.make_scanner()";
 
             analysis.Should()
                 .HaveVariable("Package")
-                    .Which.Value.Should().HaveMember<IPythonModule>("Module");
+                    .Which.Value.Should().HaveMember<IPythonModuleType>("Module");
 
             analysis.Should().HaveVariable("c")
                 .Which.Value.Should().HaveMembers("untyped_method", "inferred_method", "typed_method")

@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Module the type is declared in.
         /// </summary>
-        IPythonModule DeclaringModule { get; }
+        IPythonModuleType DeclaringModule { get; }
 
         /// <summary>
         /// Indicates built-in type id such as 'int' or 'str'
@@ -47,6 +47,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Returns constructors of the type, if any.
         /// </summary>
-        IPythonFunction GetConstructor();
+        IPythonFunctionType GetConstructor();
     }
 }

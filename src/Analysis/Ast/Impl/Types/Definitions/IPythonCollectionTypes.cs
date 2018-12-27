@@ -17,32 +17,15 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonIterable : IPythonType {
-        IPythonIterator Iterator { get; }
-    }
-
-    /// <summary>
-    /// Represents iterator that can enumerate items in a set.
-    /// </summary>
-    public interface IPythonIterator : IPythonType {
-        IMember Next { get; }
-    }
-
-    /// <summary>
-    /// Represents type that has values at indexes,
-    /// such as list or array.
-    /// </summary>
-    public interface IPythonSequence : IPythonType {
-        IMember GetValueAt(IPythonInstance instance, int index);
-        IEnumerable<IMember> GetContents(IPythonInstance instance);
+    public interface IPythonIteratorType : IPythonType {
     }
 
     /// <summary>
     /// Represents dictionary-like type, such as tuple.
     /// </summary>
-    public interface IPythonLookup : IPythonType {
+    public interface IPythonLookupType : IPythonType {
         IEnumerable<IMember> Keys { get; }
         IEnumerable<IMember> Values { get; }
-        IEnumerable<IMember> GetAt(IMember key);
+        IMember GetValueAt(IPythonInstance instance, IMember key);
     }
 }

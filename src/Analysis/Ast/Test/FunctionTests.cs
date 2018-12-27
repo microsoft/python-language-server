@@ -43,27 +43,27 @@ namespace Microsoft.Python.Analysis.Tests {
             var mod = analysis.Document;
 
             mod.GetMemberNames().Should().OnlyContain("f", "f2", "g", "h", "C");
-            mod.GetMember("f").Should().BeAssignableTo<IPythonFunction>()
+            mod.GetMember("f").Should().BeAssignableTo<IPythonFunctionType>()
                 .Which.Documentation.Should().Be("f");
 
-            mod.GetMember("f2").Should().BeAssignableTo<IPythonFunction>()
+            mod.GetMember("f2").Should().BeAssignableTo<IPythonFunctionType>()
                 .Which.Documentation.Should().Be("f");
 
-            mod.GetMember("g").Should().BeAssignableTo<IPythonFunction>();
-            mod.GetMember("h").Should().BeAssignableTo<IPythonFunction>();
+            mod.GetMember("g").Should().BeAssignableTo<IPythonFunctionType>();
+            mod.GetMember("h").Should().BeAssignableTo<IPythonFunctionType>();
 
-            var c = mod.GetMember("C").Should().BeAssignableTo<IPythonClass>().Which;
+            var c = mod.GetMember("C").Should().BeAssignableTo<IPythonClassType>().Which;
             c.GetMemberNames().Should().OnlyContain("i", "j", "C2", "__class__", "__bases__");
-            c.GetMember("i").Should().BeAssignableTo<IPythonFunction>();
-            c.GetMember("j").Should().BeAssignableTo<IPythonFunction>();
-            c.GetMember("__class__").Should().BeAssignableTo<IPythonClass>();
-            c.GetMember("__bases__").Should().BeAssignableTo<IPythonSequence>();
+            c.GetMember("i").Should().BeAssignableTo<IPythonFunctionType>();
+            c.GetMember("j").Should().BeAssignableTo<IPythonFunctionType>();
+            c.GetMember("__class__").Should().BeAssignableTo<IPythonClassType>();
+            c.GetMember("__bases__").Should().BeAssignableTo<IPythonSequenceType>();
 
-            var c2 = c.GetMember("C2").Should().BeAssignableTo<IPythonClass>().Which;
+            var c2 = c.GetMember("C2").Should().BeAssignableTo<IPythonClassType>().Which;
             c2.GetMemberNames().Should().OnlyContain("k", "__class__", "__bases__");
-            c2.GetMember("k").Should().BeAssignableTo<IPythonFunction>();
-            c2.GetMember("__class__").Should().BeAssignableTo<IPythonClass>();
-            c2.GetMember("__bases__").Should().BeAssignableTo<IPythonSequence>();
+            c2.GetMember("k").Should().BeAssignableTo<IPythonFunctionType>();
+            c2.GetMember("__class__").Should().BeAssignableTo<IPythonClassType>();
+            c2.GetMember("__bases__").Should().BeAssignableTo<IPythonSequenceType>();
         }
 
         [TestMethod, Priority(0)]

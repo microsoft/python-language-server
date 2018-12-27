@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public static ScopeAssertions Should(this IScope scope) => new ScopeAssertions(scope);
 
         public static MemberAssertions Should(this IMember member) => new MemberAssertions(member);
-        public static PythonFunctionAssertions Should(this IPythonFunction f) => new PythonFunctionAssertions(f);
+        public static PythonFunctionAssertions Should(this IPythonFunctionType f) => new PythonFunctionAssertions(f);
         public static PythonFunctionOverloadAssertions Should(this IPythonFunctionOverload f) => new PythonFunctionOverloadAssertions(f);
         public static ParameterAssertions Should(this IParameterInfo p) => new ParameterAssertions(p);
 

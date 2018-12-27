@@ -33,16 +33,16 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         protected override string Identifier => nameof(IMember);
 
-        public AndWhichConstraint<MemberAssertions, IPythonClass> HaveClass(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<IPythonClass>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
+        public AndWhichConstraint<MemberAssertions, IPythonClassType> HaveClass(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<IPythonClassType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Class);
 
-        public AndWhichConstraint<MemberAssertions, IPythonFunction> HaveFunction(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<IPythonFunction>(name, because, reasonArgs).OfMemberType(PythonMemberType.Function);
+        public AndWhichConstraint<MemberAssertions, IPythonFunctionType> HaveFunction(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<IPythonFunctionType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Function);
 
-        public AndWhichConstraint<MemberAssertions, IPythonProperty> HaveProperty(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<IPythonProperty>(name, because, reasonArgs).OfMemberType(PythonMemberType.Property);
+        public AndWhichConstraint<MemberAssertions, IPythonPropertyType> HaveProperty(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<IPythonPropertyType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Property);
 
-        public AndWhichConstraint<MemberAssertions, IPythonProperty> HaveReadOnlyProperty(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<MemberAssertions, IPythonPropertyType> HaveReadOnlyProperty(string name, string because = "", params object[] reasonArgs) {
             var constraint = HaveProperty(name, because, reasonArgs);
             Execute.Assertion.ForCondition(constraint.Which.IsReadOnly)
                 .BecauseOf(because, reasonArgs)
@@ -51,8 +51,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return constraint;
         }
 
-        public AndWhichConstraint<MemberAssertions, PythonFunction> HaveMethod(string name, string because = "", params object[] reasonArgs)
-            => HaveMember<PythonFunction>(name, because, reasonArgs).OfMemberType(PythonMemberType.Method);
+        public AndWhichConstraint<MemberAssertions, PythonFunctionType> HaveMethod(string name, string because = "", params object[] reasonArgs)
+            => HaveMember<PythonFunctionType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Method);
 
         public AndWhichConstraint<MemberAssertions, TMember> HaveMember<TMember>(string name,
             string because = "", params object[] reasonArgs)

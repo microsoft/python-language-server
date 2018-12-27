@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Interpreter = services?.GetService<IPythonInterpreter>();
         }
 
-        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, ModuleLoadOptions loadOptions, IPythonModule stub, IServiceContainer services) :
+        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, ModuleLoadOptions loadOptions, IPythonModuleType stub, IServiceContainer services) :
             this(new ModuleCreationOptions {
                 ModuleName = moduleName,
                 FilePath = filePath,
@@ -102,11 +102,11 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IPythonType
         public string Name { get; }
-        public virtual IPythonModule DeclaringModule => null;
+        public virtual IPythonModuleType DeclaringModule => null;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
         public bool IsTypeFactory => false;
-        public IPythonFunction GetConstructor() => null;
+        public IPythonFunctionType GetConstructor() => null;
         public PythonMemberType MemberType => PythonMemberType.Module;
 
         public virtual string Documentation {
@@ -142,7 +142,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IPythonModule
         public IPythonInterpreter Interpreter { get; }
 
-        public IPythonModule Stub { get; }
+        public IPythonModuleType Stub { get; }
 
         /// <summary>
         /// Ensures that module content is loaded and analysis has started.
@@ -471,12 +471,12 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
-        private PythonFunction GetOrCreateFunction(string name, GlobalScope gs) {
-            var f = gs.Variables[name]?.Value as PythonFunction;
+        private PythonFunctionType GetOrCreateFunction(string name, GlobalScope gs) {
+            var f = gs.Variables[name]?.Value as PythonFunctionType;
             // We DO want to replace class by function. Consider type() in builtins.
             // 'type()' in code is a function call, not a type class instantiation.
             if (f == null) {
-                f = PythonFunction.ForSpecialization(name, this);
+                f = PythonFunctionType.ForSpecialization(name, this);
                 f.AddOverload(new PythonFunctionOverload(name, Enumerable.Empty<IParameterInfo>(), LocationInfo.Empty));
                 gs.DeclareVariable(name, f, LocationInfo.Empty);
             }

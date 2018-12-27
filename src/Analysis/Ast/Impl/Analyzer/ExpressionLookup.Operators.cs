@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
@@ -29,11 +30,27 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case PythonOperator.IsNot:
                     // Assume all of these return True/False
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
+
+                case PythonOperator.Invert:
+                    return await GetValueFromUnaryOpAsync(expr, "__invert__", cancellationToken);
                 case PythonOperator.Negate:
-                    var result = await GetValueFromExpressionAsync(expr.Expression, cancellationToken);
-                    return result is IPythonConstant c && result.TryGetConstant<int>(out var value)
-                        ? new PythonConstant(-value, c.Type, GetLoc(expr))
-                        : result;
+                    return await GetValueFromUnaryOpAsync(expr, "__neg__", cancellationToken);
+                case PythonOperator.Pos:
+                    return await GetValueFromUnaryOpAsync(expr, "__pos__", cancellationToken);
+            }
+            return null;
+        }
+
+        private async Task<IMember> GetValueFromUnaryOpAsync(UnaryExpression expr, string op, CancellationToken cancellationToken = default) {
+            var target = await GetValueFromExpressionAsync(expr.Expression, cancellationToken);
+            if (target is IPythonInstance instance) {
+                var fn = instance.GetPythonType()?.GetMember<IPythonFunctionType>(op);
+                if (fn != null) {
+                    return await GetValueFromFunctionAsync(fn, Array.Empty<IMember>(), cancellationToken);
+                }
+                return instance is IPythonConstant c && instance.TryGetConstant<int>(out var value)
+                    ? new PythonConstant(-value, c.Type, GetLoc(expr))
+                    : instance;
             }
             return null;
         }

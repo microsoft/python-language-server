@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 var imports = Interpreter.ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, node.ForceAbsolute);
                 var location = GetLoc(moduleImportExpression);
-                IPythonModule module = null;
+                IPythonModuleType module = null;
                 switch (imports) {
                     case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
                         Lookup.DeclareVariable(memberName, Module, location);
@@ -65,7 +65,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return false;
         }
 
-        private async Task<IPythonModule> HandleImportAsync(ImportStatement node, ModuleImport moduleImport, CancellationToken cancellationToken) {
+        private async Task<IPythonModuleType> HandleImportAsync(ImportStatement node, ModuleImport moduleImport, CancellationToken cancellationToken) {
             var module = await Interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
             if (module == null) {
                 MakeUnresolvedImport(moduleImport.FullName, node);
@@ -74,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return module;
         }
 
-        private async Task<IPythonModule> HandlePossibleImportAsync(ImportStatement node, PossibleModuleImport possibleModuleImport, CancellationToken cancellationToken) {
+        private async Task<IPythonModuleType> HandlePossibleImportAsync(ImportStatement node, PossibleModuleImport possibleModuleImport, CancellationToken cancellationToken) {
             var fullName = possibleModuleImport.PrecedingModuleFullName;
             var module = await Interpreter.ModuleResolution.ImportModuleAsync(possibleModuleImport.PossibleModuleFullName, cancellationToken);
             if (module == null) {
@@ -85,7 +85,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var nameParts = possibleModuleImport.RemainingNameParts;
             for (var i = 0; i < nameParts.Count; i++) {
                 var namePart = nameParts[i];
-                var childModule = module.GetMember<IPythonModule>(namePart);
+                var childModule = module.GetMember<IPythonModuleType>(namePart);
                 if (childModule == null) {
                     var unresolvedModuleName = string.Join(".", nameParts.Take(i + 1).Prepend(fullName));
                     MakeUnresolvedImport(unresolvedModuleName, node);
@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return module;
         }
 
-        private void AssignImportedVariables(IPythonModule module, DottedName moduleImportExpression, NameExpression asNameExpression) {
+        private void AssignImportedVariables(IPythonModuleType module, DottedName moduleImportExpression, NameExpression asNameExpression) {
             // "import fob.oar as baz" is handled as
             // baz = import_module('fob.oar')
             if (asNameExpression != null) {

@@ -28,8 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
                 contents.Add(value);
             }
-
-            return new PythonSequenceInstance(contents, Interpreter, GetLoc(expression));
+            return new PythonList(contents, Interpreter, GetLoc(expression));
         }
 
         private async Task<IMember> GetValueFromIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
@@ -43,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            if (target is IPythonSequenceInstance instance) {
+            if (target is IPythonSequence seq) {
                 var m = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
                 var index = 0;
                 if (m is IPythonConstant c) {
@@ -54,7 +53,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         return UnknownType;
                     }
                 }
-                return instance.GetValueAt(index);
+                return seq.GetValueAt(index);
                 // TODO: handle typing module
             }
             return UnknownType;

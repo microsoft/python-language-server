@@ -13,17 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class LibraryTests : AnalysisTestBase {
+    public class OperatorTests : AnalysisTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -34,30 +33,57 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task Random() {
-            var analysis = await GetAnalysisAsync("from random import *");
+        public async Task UnaryOperatorPlus() {
+            const string code = @"
+class Result(object):
+    pass
 
-            foreach (var fnName in new[] { "seed", "randrange", "gauss" }) {
-                analysis.Should().HaveVariable(fnName)
-                    .OfType(BuiltinTypeId.Method)
-                    .Which.Should().HaveOverloadWithParametersAt(0);
-            }
+class C(object):
+    def __pos__(self):
+        return Result()
+
+a = +C()
+b = ++C()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType("Result")
+                .And.HaveVariable("b").OfType("Result");
         }
 
         [TestMethod, Priority(0)]
-        public async Task Datetime() {
-            var analysis = await GetAnalysisAsync("import datetime");
+        public async Task UnaryOperatorMinus() {
+            const string code = @"
+class Result(object):
+    pass
 
-            var module = analysis.Should().HaveVariable("datetime")
-                .Which.Should().HaveType<IPythonModuleType>().Which;
-            module.Name.Should().Be("datetime");
+class C(object):
+    def __neg__(self):
+        return Result()
 
-            var dt = module.Should().HaveMember<IPythonClassType>("datetime").Which;
+a = -C()
+b = --C()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType("Result")
+                .And.HaveVariable("b").OfType("Result");
+        }
 
-            dt.Should().HaveReadOnlyProperty("day").And.HaveMethod("now")
-                .Which.Should().BeClassMethod().And.HaveSingleOverload()
-                .Which.Should().HaveReturnType()
-                .Which.Should().HaveSameMembersAs(dt);
+        [TestMethod, Priority(0)]
+        public async Task UnaryOperatorTilde() {
+            const string code = @"
+class Result(object):
+    pass
+
+class C(object):
+    def __invert__(self):
+        return Result()
+
+a = ~C()
+b = ~~C()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType("Result")
+                .And.HaveVariable("b").OfType("Result");
         }
     }
 }

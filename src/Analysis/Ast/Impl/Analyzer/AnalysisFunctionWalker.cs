@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly Scope _parentScope;
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassMember _function;
-        private IPythonClass _self;
+        private IPythonClassType _self;
 
         public AnalysisFunctionWalker(
             ExpressionLookup lookup,
@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public async Task WalkAsync(CancellationToken cancellationToken = default) {
             using (Lookup.OpenScope(_parentScope)) {
-                _self = Lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local) as IPythonClass;
+                _self = Lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local) as IPythonClassType;
                 // Ensure constructors are processed so class members are initialized.
                 if (_self != null) {
                     await FunctionWalkers.ProcessConstructorsAsync(_self.ClassDefinition, cancellationToken);
@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             foreach (var lhs in node.Left) {
                 if (lhs is MemberExpression memberExp && memberExp.Target is NameExpression nameExp1) {
-                    if (_self.GetPythonType() is PythonClass t && nameExp1.Name == "self") {
+                    if (_self.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
                         t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, true);
                     }
                     continue;

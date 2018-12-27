@@ -59,15 +59,15 @@ y = c.method()
             names.Should().OnlyContain("x", "C", "func", "c", "y");
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
-            analysis.Should().HaveVariable("C").Which.Value.Should().BeAssignableTo<IPythonClass>();
+            analysis.Should().HaveVariable("C").Which.Value.Should().BeAssignableTo<IPythonClassType>();
 
             analysis.Should().HaveVariable("func")
-                .Which.Value.Should().BeAssignableTo<IPythonFunction>();
+                .Which.Value.Should().BeAssignableTo<IPythonFunctionType>();
 
             var v = analysis.Should().HaveVariable("c").Which;
             var instance = v.Value.Should().BeAssignableTo<IPythonInstance>().Which;
             instance.MemberType.Should().Be(PythonMemberType.Instance);
-            instance.Type.Should().BeAssignableTo<IPythonClass>();
+            instance.Type.Should().BeAssignableTo<IPythonClassType>();
 
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Float);
         }

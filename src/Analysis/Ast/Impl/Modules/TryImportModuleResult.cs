@@ -26,9 +26,9 @@ namespace Microsoft.Python.Analysis.Modules {
 
     public struct TryImportModuleResult {
         public readonly TryImportModuleResultCode Status;
-        public readonly IPythonModule Module;
+        public readonly IPythonModuleType Module;
 
-        public TryImportModuleResult(IPythonModule module) {
+        public TryImportModuleResult(IPythonModuleType module) {
             Status = module == null ? TryImportModuleResultCode.ModuleNotFound : TryImportModuleResultCode.Success;
             Module = module;
         }

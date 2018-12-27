@@ -14,27 +14,20 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Describes callable type.
-    /// </summary>
-    public interface IPythonCallable {
+namespace Microsoft.Python.Analysis.Values {
+    internal sealed class PythonList: PythonSequence {
         /// <summary>
-        /// Describes callable parameters.
+        /// Creates list with consistent content (i.e. all strings)
         /// </summary>
-        IReadOnlyList<IParameterInfo> Parameters { get; }
+        public PythonList(IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null) 
+            : base(BuiltinTypeId.List, contentType, interpreter, location) { }
 
         /// <summary>
-        /// Determines return value type given arguments for the particular instance.
-        /// For annotated or stubbed functions the annotation type is always returned.
+        /// Creates list with mixed content.
         /// </summary>
-        IMember GetReturnValue(IPythonInstance instance, IReadOnlyList<IMember> args = null);
-
-        /// <summary>
-        /// Return value documentation.
-        /// </summary>
-        string ReturnDocumentation { get; }
+        public PythonList(IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null):
+            base(BuiltinTypeId.List, contentTypes, interpreter, location) { }
     }
 }

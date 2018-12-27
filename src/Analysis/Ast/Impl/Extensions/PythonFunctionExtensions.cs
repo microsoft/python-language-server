@@ -17,14 +17,14 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Extensions {
     public static class PythonFunctionExtensions {
-        public static bool IsUnbound(this IPythonFunction f) 
+        public static bool IsUnbound(this IPythonFunctionType f) 
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Function;
 
-        public static bool IsBound(this IPythonFunction f) 
+        public static bool IsBound(this IPythonFunctionType f) 
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Method;
 
         public static bool HasClassFirstArgument(this IPythonClassMember m)
-            => (m is IPythonFunction f && !f.IsStatic && (f.IsClassMethod || f.IsBound())) ||
-               (m is IPythonProperty prop && !prop.IsStatic);
+            => (m is IPythonFunctionType f && !f.IsStatic && (f.IsClassMethod || f.IsBound())) ||
+               (m is IPythonPropertyType prop && !prop.IsStatic);
     }
 }

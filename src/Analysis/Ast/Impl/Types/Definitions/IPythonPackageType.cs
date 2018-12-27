@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,12 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+
 namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Represents a single overload of a function.
-    /// </summary>
-    public interface IPythonFunctionOverload: IPythonCallableType {
-        string Name { get; }
-        string Documentation { get; }
+    public interface IPythonPackageType : IPythonModuleType {
+        /// <summary>
+        /// Modules imported by this module.
+        /// </summary>
+        IEnumerable<string> GetChildrenModuleNames();
     }
 }

@@ -25,13 +25,13 @@ namespace Microsoft.Python.Analysis.Modules {
     /// Represents package with child modules. Typically
     /// used in scenarios such as 'import a.b.c'.
     /// </summary>
-    internal sealed class PythonPackage : PythonModule, IPythonPackage {
-        private readonly ConcurrentDictionary<string, IPythonModule> _childModules = new ConcurrentDictionary<string, IPythonModule>();
+    internal sealed class PythonPackage : PythonModule, IPythonPackageType {
+        private readonly ConcurrentDictionary<string, IPythonModuleType> _childModules = new ConcurrentDictionary<string, IPythonModuleType>();
 
         public PythonPackage(string name, IServiceContainer services)
             : base(name, ModuleType.Package, services) { }
 
-        public void AddChildModule(string name, IPythonModule module) {
+        public void AddChildModule(string name, IPythonModuleType module) {
             if (!_childModules.ContainsKey(name)) {
                 _childModules[name] = module;
             }

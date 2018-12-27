@@ -22,7 +22,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents a Python module.
     /// </summary>
-    public interface IPythonModule : IPythonType, IPythonFile, ILocatedMember {
+    public interface IPythonModuleType : IPythonType, IPythonFile, ILocatedMember {
         /// <summary>
         /// Interpreter associated with the module.
         /// </summary>
@@ -36,7 +36,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Module stub, if any.
         /// </summary>
-        IPythonModule Stub { get; }
+        IPythonModuleType Stub { get; }
 
         /// <summary>
         /// Ensures that module content is loaded and analysis has completed.

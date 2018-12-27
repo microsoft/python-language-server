@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             foreach (var setter in dec.OfType<MemberExpression>().Where(n => n.Name == "setter")) {
                 if (setter.Target is NameExpression src) {
-                    if (Lookup.LookupNameInScopes(src.Name, ExpressionLookup.LookupOptions.Local) is PythonProperty existingProp) {
+                    if (Lookup.LookupNameInScopes(src.Name, ExpressionLookup.LookupOptions.Local) is PythonPropertyTypeType existingProp) {
                         // Setter for an existing property, so don't create a function
                         existingProp.MakeSettable();
                         return false;
@@ -64,19 +64,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public void ProcessFunctionDefinition(FunctionDefinition node) {
-            if (!(Lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonFunction existing)) {
+            if (!(Lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonFunctionType existing)) {
                 var cls = Lookup.GetInScope("__class__");
                 var loc = GetLoc(node);
-                existing = new PythonFunction(node, Module, cls.GetPythonType(), loc);
+                existing = new PythonFunctionType(node, Module, cls.GetPythonType(), loc);
                 Lookup.DeclareVariable(node.Name, existing, loc);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
         }
 
-        private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType) {
-            if (!(Lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonProperty existing)) {
+        private void AddProperty(FunctionDefinition node, IPythonModuleType declaringModule, IPythonType declaringType) {
+            if (!(Lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonPropertyTypeType existing)) {
                 var loc = GetLoc(node);
-                existing = new PythonProperty(node, declaringModule, declaringType, loc);
+                existing = new PythonPropertyTypeType(node, declaringModule, declaringType, loc);
                 Lookup.DeclareVariable(node.Name, existing, loc);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
@@ -120,7 +120,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private PythonFunctionOverload GetOverloadFromStub(FunctionDefinition node) {
             var t = GetMemberFromStub(node.Name).GetPythonType();
-            if (t is IPythonFunction f) {
+            if (t is IPythonFunctionType f) {
                 return f.Overloads
                     .OfType<PythonFunctionOverload>()
                     .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Length);

@@ -143,5 +143,16 @@ a = z
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("a").OfType(BuiltinTypeId.Int);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task Tuple() {
+            const string code = @"
+x, y, z = 1, 'str', 3.0
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("z").OfType(BuiltinTypeId.Float);
+        }
     }
 }

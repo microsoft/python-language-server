@@ -50,32 +50,32 @@ namespace Microsoft.Python.Analysis.Tests {
                 "f"
             );
 
-            all.First(x => x.Name == "C1").Value.Should().BeAssignableTo<IPythonClass>();
-            all.First(x => x.Name == "C2").Value.Should().BeAssignableTo<IPythonClass>();
-            all.First(x => x.Name == "C3").Value.Should().BeAssignableTo<IPythonClass>();
-            all.First(x => x.Name == "C4").Value.Should().BeAssignableTo<IPythonClass>();
+            all.First(x => x.Name == "C1").Value.Should().BeAssignableTo<IPythonClassType>();
+            all.First(x => x.Name == "C2").Value.Should().BeAssignableTo<IPythonClassType>();
+            all.First(x => x.Name == "C3").Value.Should().BeAssignableTo<IPythonClassType>();
+            all.First(x => x.Name == "C4").Value.Should().BeAssignableTo<IPythonClassType>();
 
             all.First(x => x.Name == "C5")
-                .Value.Should().BeAssignableTo<IPythonClass>()
+                .Value.Should().BeAssignableTo<IPythonClassType>()
                 .Which.Name.Should().Be("C1");
 
-            all.First(x => x.Name == "D").Value.Should().BeAssignableTo<IPythonClass>();
-            all.First(x => x.Name == "E").Value.Should().BeAssignableTo<IPythonClass>();
-            all.First(x => x.Name == "f").Value.Should().BeAssignableTo<IPythonFunction>();
+            all.First(x => x.Name == "D").Value.Should().BeAssignableTo<IPythonClassType>();
+            all.First(x => x.Name == "E").Value.Should().BeAssignableTo<IPythonClassType>();
+            all.First(x => x.Name == "f").Value.Should().BeAssignableTo<IPythonFunctionType>();
 
-            all.First(x => x.Name == "f").Value.Should().BeAssignableTo<IPythonFunction>();
+            all.First(x => x.Name == "f").Value.Should().BeAssignableTo<IPythonFunctionType>();
 
             var f1 = all.First(x => x.Name == "F1");
-            var c = f1.Value.Should().BeAssignableTo<IPythonClass>().Which;
+            var c = f1.Value.Should().BeAssignableTo<IPythonClassType>().Which;
 
             c.GetMemberNames().Should().OnlyContain("F2", "F3", "F6", "__class__", "__bases__");
-            c.GetMember("F6").Should().BeAssignableTo<IPythonClass>()
+            c.GetMember("F6").Should().BeAssignableTo<IPythonClassType>()
                 .Which.Documentation.Should().Be("C1");
 
-            c.GetMember("F2").Should().BeAssignableTo<IPythonClass>();
-            c.GetMember("F3").Should().BeAssignableTo<IPythonClass>();
-            c.GetMember("__class__").Should().BeAssignableTo<IPythonClass>();
-            c.GetMember("__bases__").Should().BeAssignableTo<IPythonSequence>();
+            c.GetMember("F2").Should().BeAssignableTo<IPythonClassType>();
+            c.GetMember("F3").Should().BeAssignableTo<IPythonClassType>();
+            c.GetMember("__class__").Should().BeAssignableTo<IPythonClassType>();
+            c.GetMember("__bases__").Should().BeAssignableTo<IPythonSequenceType>();
         }
 
         [TestMethod, Priority(0)]
@@ -83,13 +83,13 @@ namespace Microsoft.Python.Analysis.Tests {
             using (var s = await CreateServicesAsync(null)) {
                 var interpreter = s.GetService<IPythonInterpreter>();
 
-                var O = new PythonClass("O");
-                var A = new PythonClass("A");
-                var B = new PythonClass("B");
-                var C = new PythonClass("C");
-                var D = new PythonClass("D");
-                var E = new PythonClass("E");
-                var F = new PythonClass("F");
+                var O = new PythonClassType("O");
+                var A = new PythonClassType("A");
+                var B = new PythonClassType("B");
+                var C = new PythonClassType("C");
+                var D = new PythonClassType("D");
+                var E = new PythonClassType("E");
+                var F = new PythonClassType("F");
 
                 F.SetBases(interpreter, new[] { O });
                 E.SetBases(interpreter, new[] { O });
@@ -98,9 +98,9 @@ namespace Microsoft.Python.Analysis.Tests {
                 B.SetBases(interpreter, new[] { D, E });
                 A.SetBases(interpreter, new[] { B, C });
 
-                PythonClass.CalculateMro(A).Should().Equal(new[] { "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
-                PythonClass.CalculateMro(B).Should().Equal(new[] { "B", "D", "E", "O" }, (p, n) => p.Name == n);
-                PythonClass.CalculateMro(C).Should().Equal(new[] { "C", "D", "F", "O" }, (p, n) => p.Name == n);
+                PythonClassType.CalculateMro(A).Should().Equal(new[] { "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
+                PythonClassType.CalculateMro(B).Should().Equal(new[] { "B", "D", "E", "O" }, (p, n) => p.Name == n);
+                PythonClassType.CalculateMro(C).Should().Equal(new[] { "C", "D", "F", "O" }, (p, n) => p.Name == n);
             }
         }
 
@@ -282,7 +282,7 @@ f2 = c.f
             analysis.Should().HaveVariable("x").Which.Value.Should().BeAssignableTo<IPythonType>();
             analysis.Should().HaveVariable("y")
                 .Which.Value.Should().BeAssignableTo<IPythonInstance>()
-                .And.HaveType<IPythonClass>();
+                .And.HaveType<IPythonClassType>();
 
             analysis.Should()
                 .HaveVariable("f1").OfType(BuiltinTypeId.Function).And
@@ -301,7 +301,7 @@ def g(a, b, c): pass
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveClass("D")
-                    .Which.Should().HaveMember<IPythonFunction>("func")
+                    .Which.Should().HaveMember<IPythonFunctionType>("func")
                     .Which.Should().HaveSingleOverload()
                     .Which.Should().HaveParameterAt(0)
                     .Which.Name.Should().Be("self");
@@ -337,22 +337,22 @@ class H(object):
                 .Which.Should().NotHaveMembers();
 
             analysis.Should().HaveClass("E")
-                .Which.Should().HaveMember<IPythonFunction>("__init__")
+                .Which.Should().HaveMember<IPythonFunctionType>("__init__")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveParameters("self");
 
             analysis.Should().HaveClass("F")
-                .Which.Should().HaveMember<IPythonFunction>("__init__")
+                .Which.Should().HaveMember<IPythonFunctionType>("__init__")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveParameters("self", "one");
 
             analysis.Should().HaveClass("G")
-                .Which.Should().HaveMember<IPythonFunction>("__new__")
+                .Which.Should().HaveMember<IPythonFunctionType>("__new__")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveParameters("cls");
 
             analysis.Should().HaveClass("H")
-                .Which.Should().HaveMember<IPythonFunction>("__new__")
+                .Which.Should().HaveMember<IPythonFunctionType>("__new__")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveParameters("cls", "one");
         }

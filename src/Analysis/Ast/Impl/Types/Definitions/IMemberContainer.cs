@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>

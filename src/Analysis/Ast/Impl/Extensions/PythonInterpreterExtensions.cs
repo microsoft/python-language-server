@@ -13,13 +13,21 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing;
 
-namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonPackage : IPythonModule {
+namespace Microsoft.Python.Analysis {
+    public static class PythonInterpreterExtensions {
         /// <summary>
-        /// Modules imported by this module.
+        /// Returns ASCII string type id.
         /// </summary>
-        IEnumerable<string> GetChildrenModuleNames();
+        public static BuiltinTypeId GetAsciiTypeId(this IPythonInterpreter interpreter)
+            => interpreter.LanguageVersion.Is3x() ? BuiltinTypeId.Bytes : BuiltinTypeId.Str;
+
+        /// <summary>
+        /// Returns Unicode string type id.
+        /// </summary>
+        public static BuiltinTypeId GetUnicodeTypeId(this IPythonInterpreter interpreter) 
+            => interpreter.LanguageVersion.Is3x() ? BuiltinTypeId.Str : BuiltinTypeId.Unicode;
     }
 }

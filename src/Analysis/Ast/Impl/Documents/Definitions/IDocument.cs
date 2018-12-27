@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Documents {
     /// <summary>
     /// Represent document (file) loaded for the analysis.
     /// </summary>
-    public interface IDocument: IPythonModule {
+    public interface IDocument: IPythonModuleType {
         /// <summary>
         /// Module content version (increments after every change).
         /// </summary>

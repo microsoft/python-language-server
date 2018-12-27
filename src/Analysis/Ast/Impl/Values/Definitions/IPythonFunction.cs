@@ -13,11 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonList: IPythonSequence {
+namespace Microsoft.Python.Analysis.Values {
+    /// <summary>
+    /// Represents function with the associated class instance.
+    /// </summary>
+    public interface IPythonFunction: IPythonInstance {
+        IPythonInstance Self { get; }
     }
 }

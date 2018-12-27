@@ -26,14 +26,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IPythonInstance GetConstantFromLiteral(Expression expr, LookupOptions options) {
             var location = GetLoc(expr);
             if (expr is ConstantExpression ce) {
-                BuiltinTypeId typeId;
                 switch (ce.Value) {
                     case string s:
-                        typeId = Interpreter.LanguageVersion.Is3x() ? BuiltinTypeId.Str : BuiltinTypeId.Unicode;
-                        return new PythonConstant(s, Interpreter.GetBuiltinType(typeId), location);
+                        return new PythonUnicodeString(s, Interpreter, location);
                     case AsciiString b:
-                        typeId = Interpreter.LanguageVersion.Is3x() ? BuiltinTypeId.Bytes : BuiltinTypeId.Str;
-                        return new PythonConstant(b.String, Interpreter.GetBuiltinType(typeId), location);
+                        return new PythonAsciiString(b, Interpreter, location);
                     case int integer:
                         return new PythonConstant(integer, Interpreter.GetBuiltinType(BuiltinTypeId.Int), location);
                 }
@@ -93,7 +90,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var res = Interpreter.GetBuiltinType(BuiltinTypeId.Tuple);
                 if (types.Length > 0) {
                     var iterRes = Interpreter.GetBuiltinType(BuiltinTypeId.TupleIterator);
-                    res = new PythonSequence(res, Module, types, iterRes);
+                    //res = new PythonSequence(res, Module, types, iterRes);
                 }
 
                 return res;

@@ -27,12 +27,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             cancellationToken.ThrowIfCancellationRequested();
 
             var instance = Lookup.GetInScope(node.Name);
-            if (instance != null && !(instance.GetPythonType() is PythonClass)) {
+            if (instance != null && !(instance.GetPythonType() is PythonClassType)) {
                 // TODO: warning that variable is already declared.
                 return Task.FromResult(false);
             }
 
-            if (!(instance.GetPythonType() is PythonClass classInfo)) {
+            if (!(instance.GetPythonType() is PythonClassType classInfo)) {
                 classInfo = CreateClass(node);
                 Lookup.DeclareVariable(node.Name, classInfo, node);
             }
@@ -50,14 +50,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override Task PostWalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
-            var cls = Lookup.GetInScope("__class__")?.GetPythonType() as PythonClass;
+            var cls = Lookup.GetInScope("__class__")?.GetPythonType() as PythonClassType;
             Debug.Assert(cls != null || Lookup.GetInScope("__class__") == null, "__class__ variable is not a PythonClass.");
             if (cls != null) {
                 // Add members from this file
                 cls.AddMembers(Lookup.CurrentScope.Variables, true);
 
                 // Add members from stub
-                var stubClass = Lookup.Module.Stub?.GetMember<IPythonClass>(cls.Name);
+                var stubClass = Lookup.Module.Stub?.GetMember<IPythonClassType>(cls.Name);
                 cls.AddMembers(stubClass, false);
                 _classScope?.Dispose();
             }
@@ -65,9 +65,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return base.PostWalkAsync(node, cancellationToken);
         }
 
-        private PythonClass CreateClass(ClassDefinition node) {
+        private PythonClassType CreateClass(ClassDefinition node) {
             node = node ?? throw new ArgumentNullException(nameof(node));
-            return new PythonClass(
+            return new PythonClassType(
                 node,
                 Module,
                 GetDoc(node.Body as SuiteStatement),

@@ -80,7 +80,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveOverloadWithParametersAt(int index, string because = "", params object[] reasonArgs) {
             var constraint = HaveOverloadAt(index);
             var overload = constraint.Which;
-            var function = Value.GetPythonType<IPythonFunction>();
+            var function = Value.GetPythonType<IPythonFunctionType>();
 
             Execute.Assertion.ForCondition(function != null)
                 .BecauseOf(because, reasonArgs)
@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveOverloadAt(int index, string because = "", params object[] reasonArgs) {
-            var function = Subject.Value.GetPythonType<IPythonFunction>();
+            var function = Subject.Value.GetPythonType<IPythonFunctionType>();
 
             Execute.Assertion.ForCondition(function != null)
                 .BecauseOf(because, reasonArgs)
@@ -116,7 +116,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                     : "has no overloads";
 
         public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveSingleOverload(string because = "", params object[] reasonArgs) {
-            var f = Subject.Value.GetPythonType<IPythonFunction>();
+            var f = Subject.Value.GetPythonType<IPythonFunctionType>();
 
             Execute.Assertion.ForCondition(f != null)
                 .BecauseOf(because, reasonArgs)

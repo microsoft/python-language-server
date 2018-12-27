@@ -21,7 +21,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
-    internal class PythonFunction : PythonType, IPythonFunction {
+    internal class PythonFunctionType : PythonType, IPythonFunctionType {
         private readonly List<IPythonFunctionOverload> _overloads = new List<IPythonFunctionOverload>();
         private readonly string _doc;
         private readonly object _lock = new object();
@@ -29,33 +29,43 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Creates function for specializations
         /// </summary>
-        public static PythonFunction ForSpecialization(string name, IPythonModule declaringModule) 
-            => new PythonFunction(name, declaringModule);
+        public static PythonFunctionType ForSpecialization(string name, IPythonModuleType declaringModule) 
+            => new PythonFunctionType(name, declaringModule);
 
-        private PythonFunction(string name, IPythonModule declaringModule): 
+        private PythonFunctionType(string name, IPythonModuleType declaringModule): 
             base(name, declaringModule, null, LocationInfo.Empty, BuiltinTypeId.Function) {
             DeclaringType = declaringModule;
         }
 
-        public PythonFunction(
+        public PythonFunctionType(
+            string name,
+            IPythonModuleType declaringModule,
+            IPythonType declaringType,
+            string documentation,
+            LocationInfo loc
+        ) : base(name, declaringModule, documentation, loc,
+            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+            DeclaringType = declaringType;
+        }
+
+        public PythonFunctionType(
             FunctionDefinition fd,
-            IPythonModule declaringModule,
+            IPythonModuleType declaringModule,
             IPythonType declaringType,
             LocationInfo loc
         ) : base(fd.Name, declaringModule, fd.Documentation, loc,
                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
 
             FunctionDefinition = fd;
-            DeclaringType = declaringType;
 
             if (fd.Name == "__init__") {
                 _doc = declaringType?.Documentation;
             }
 
             foreach (var dec in (FunctionDefinition.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
-                if (dec.Name == "classmethod") {
+                if (dec.Name == @"classmethod") {
                     IsClassMethod = true;
-                } else if (dec.Name == "staticmethod") {
+                } else if (dec.Name == @"staticmethod") {
                     IsStatic = true;
                 }
             }
@@ -87,15 +97,15 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        internal IPythonFunction ToUnbound() => new PythonUnboundMethod(this);
+        internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);
 
         /// <summary>
         /// Represents unbound method, such in C.f where C is class rather than the instance.
         /// </summary>
-        private sealed class PythonUnboundMethod : PythonTypeWrapper, IPythonFunction {
-            private readonly IPythonFunction _pf;
+        private sealed class PythonUnboundMethod : PythonTypeWrapper, IPythonFunctionType {
+            private readonly IPythonFunctionType _pf;
 
-            public PythonUnboundMethod(IPythonFunction function) : base(function, function.DeclaringModule) {
+            public PythonUnboundMethod(IPythonFunctionType function) : base(function, function.DeclaringModule) {
                 _pf = function;
             }
 

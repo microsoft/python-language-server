@@ -72,11 +72,11 @@ namespace Microsoft.Python.Analysis.Values {
     }
 
     internal class EmptyGlobalScope : IGlobalScope {
-        public EmptyGlobalScope(IPythonModule module) {
+        public EmptyGlobalScope(IPythonModuleType module) {
             GlobalScope = this;
             Module = module;
         }
-        public IPythonModule Module { get; }
+        public IPythonModuleType Module { get; }
         public string Name => string.Empty;
         public Node Node => null;
         public IScope OuterScope => null;

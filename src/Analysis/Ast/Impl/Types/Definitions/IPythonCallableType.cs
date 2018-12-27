@@ -13,23 +13,28 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Modules {
-    public static class Specializations {
-        public static Func<IReadOnlyList<IMember>, IMember> Identity
-            => (args => args.Count > 0 ? args[0] : null);
+namespace Microsoft.Python.Analysis.Types {
+    /// <summary>
+    /// Describes callable type.
+    /// </summary>
+    public interface IPythonCallableType {
+        /// <summary>
+        /// Describes callable parameters.
+        /// </summary>
+        IReadOnlyList<IParameterInfo> Parameters { get; }
 
-        public static Func<IReadOnlyList<IMember>, IMember> TypeInfo
-            => (args => args.Count > 0 ? args[0].GetPythonType() : null);
+        /// <summary>
+        /// Determines return value type given arguments for the particular instance.
+        /// For annotated or stubbed functions the annotation type is always returned.
+        /// </summary>
+        IMember GetReturnValue(IPythonInstance instance, IReadOnlyList<IMember> args = null);
 
-        public static Func<IReadOnlyList<IMember>, IMember> Iterator
-            => (args => args.Count > 0 && args[0] is IPythonSequence seq ? seq.GetIterator(): null);
-
-        //public static Func<IReadOnlyList<IMember>, IMember> Next
-        //    => (args => args.Count > 0 && args[0] is IPythonIterator iter ? iter.Next() : null);
+        /// <summary>
+        /// Return value documentation.
+        /// </summary>
+        string ReturnDocumentation { get; }
     }
 }

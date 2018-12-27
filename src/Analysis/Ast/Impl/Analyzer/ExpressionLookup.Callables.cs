@@ -20,11 +20,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             IMember value = null;
             switch (target) {
+                case IPythonFunctionType fnt:
+                    value = await GetValueFromFunctionAsync(fnt, null, expr, cancellationToken);
+                    break;
+                case IPythonFunction fn:
+                    value = await GetValueFromFunctionAsync(fn, expr, cancellationToken);
+                    break;
                 case IPythonInstance pi:
                     value = await GetValueFromInstanceCall(pi, expr, cancellationToken);
-                    break;
-                case IPythonFunction pf:
-                    value = await GetValueFromFunctionAsync(pf, expr, cancellationToken);
                     break;
                 case IPythonType t:
                     // Target is type (info), the call creates instance.
@@ -44,39 +47,40 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Call on an instance such as 'a = 1; a()'
             // If instance is a function (such as an unbound method), then invoke it.
             var type = pi.GetPythonType();
-            if (type is IPythonFunction pif) {
-                return await GetValueFromFunctionAsync(pif, expr, cancellationToken);
+            if (type is IPythonFunctionType pif) {
+                return await GetValueFromFunctionAsync(pif, pi, expr, cancellationToken);
             }
 
             // Try using __call__
-            if (type.GetMember("__call__") is IPythonFunction call) {
-                return await GetValueFromFunctionAsync(call, expr, cancellationToken);
+            var call = type.GetMember("__call__").GetPythonType<IPythonFunctionType>();
+            if (call != null) {
+                return await GetValueFromFunctionAsync(call, pi, expr, cancellationToken);
             }
 
             return null;
         }
 
-        private async Task<IMember> GetValueFromFunctionAsync(IPythonFunction fn, Expression expr, CancellationToken cancellationToken = default) {
-            if (!(expr is CallExpression callExpr)) {
-                Debug.Assert(false, "Call to GetValueFromFunctionAsync with non-call expression.");
-                return null;
-            }
+        private Task<IMember> GetValueFromFunctionAsync(IPythonFunction fn, CallExpression expr, CancellationToken cancellationToken = default)
+            => GetValueFromFunctionAsync(fn.GetPythonType<IPythonFunctionType>(), fn.Self, expr, cancellationToken);
 
+        private async Task<IMember> GetValueFromFunctionAsync(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr, CancellationToken cancellationToken = default) {
             // Determine argument types
             var args = new List<IMember>();
             // For static and regular methods add 'self' or 'cls'
             if (fn.HasClassFirstArgument()) {
-                // TODO: tell between static and regular by passing instance and not the class type info.
-                args.Add(fn.DeclaringType);
+                args.Add(fn.IsClassMethod ? fn.DeclaringType : (IMember)instance);
             }
 
-            foreach (var a in callExpr.Args.MaybeEnumerate()) {
+            foreach (var a in expr.Args.MaybeEnumerate()) {
                 var type = await GetValueFromExpressionAsync(a.Expression, cancellationToken);
                 args.Add(type ?? UnknownType);
             }
 
-            IMember value = null;
+            return await GetValueFromFunctionAsync(fn, args, cancellationToken);
+        }
 
+        private async Task<IMember> GetValueFromFunctionAsync(IPythonFunctionType fn, IReadOnlyList<IMember> args, CancellationToken cancellationToken = default) {
+            IMember value = null;
             var overload = FindOverload(fn, args);
             if (overload != null) {
                 // TODO: provide instance
@@ -88,11 +92,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 }
             }
-
             return value ?? UnknownType;
         }
 
-        private IPythonFunctionOverload FindOverload(IPythonFunction fn, ICollection<IMember> args) {
+        private IPythonFunctionOverload FindOverload(IPythonFunctionType fn, IReadOnlyList<IMember> args) {
             // Find best overload match. Of only one, use it.
             // TODO: match better, see ArgumentSet class in DDG.
             IPythonFunctionOverload overload = null;
@@ -117,7 +120,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private IMember GetFunctionReturnValue(IPythonFunctionOverload o, IPythonInstance instance, IReadOnlyList<IMember> args)
             => o?.GetReturnValue(instance, args) ?? UnknownType;
 
-        private async Task<IPythonType> GetPropertyReturnTypeAsync(IPythonProperty p, Expression expr, CancellationToken cancellationToken = default) {
+        private async Task<IPythonType> GetPropertyReturnTypeAsync(IPythonPropertyType p, Expression expr, CancellationToken cancellationToken = default) {
             if (p.Type.IsUnknown()) {
                 // Function may not have been walked yet. Do it now.
                 await FunctionWalkers.ProcessFunctionAsync(p.FunctionDefinition, cancellationToken);

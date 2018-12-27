@@ -34,10 +34,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 value = Lookup.UnknownType;
             }
 
-            if (node.Left.FirstOrDefault() is TupleExpression tex) {
+            if (node.Left.FirstOrDefault() is TupleExpression lhs) {
                 // Tuple = Tuple. Transfer values.
                 var texHandler = new TupleExpressionHandler(Lookup);
-                await texHandler.HandleTupleAssignmentAsync(tex, node.Right, value, cancellationToken);
+                await texHandler.HandleTupleAssignmentAsync(lhs, node.Right, value, cancellationToken);
                 return await base.WalkAsync(node, cancellationToken);
             }
 

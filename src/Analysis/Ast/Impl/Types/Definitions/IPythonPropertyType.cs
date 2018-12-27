@@ -13,12 +13,31 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Parsing.Ast;
+
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents a single overload of a function.
+    /// Represents a built-in property which has a getter/setter.  
     /// </summary>
-    public interface IPythonFunctionOverload: IPythonCallableType {
-        string Name { get; }
-        string Documentation { get; }
+    public interface IPythonPropertyType : IPythonClassMember {
+        /// <summary>
+        /// Function definition in the AST.
+        /// </summary>
+        FunctionDefinition FunctionDefinition { get; }
+
+        /// <summary>
+        /// The type of the value the property gets/sets.
+        /// </summary>
+        IPythonType Type { get; }
+
+        /// <summary>
+        /// A user readable description of the property.
+        /// </summary>
+        string Description { get; }
+
+        /// <summary>
+        /// True if the property is read-only.
+        /// </summary>
+        bool IsReadOnly { get; }
     }
 }

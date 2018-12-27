@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,23 +14,20 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Represents a function.
-    /// </summary>
-    public interface IPythonFunction : IPythonClassMember {
+namespace Microsoft.Python.Analysis.Values {
+    internal sealed class PythonTuple: PythonSequence {
         /// <summary>
-        /// Function definition in the AST.
+        /// Creates list with consistent content (i.e. all strings)
         /// </summary>
-        FunctionDefinition FunctionDefinition { get; }
-
-        bool IsClassMethod { get; }
+        public PythonTuple(IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null) 
+            : base(BuiltinTypeId.Tuple, contentType, interpreter, location) { }
 
         /// <summary>
-        /// List of function overloads
+        /// Creates list with mixed content.
         /// </summary>
-        IReadOnlyList<IPythonFunctionOverload> Overloads { get; }
+        public PythonTuple(IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null):
+            base(BuiltinTypeId.Tuple, contentTypes, interpreter, location) { }
     }
 }

@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         protected ExpressionLookup Lookup { get; }
         protected IServiceContainer Services => Lookup.Services;
         protected ILogger Log => Lookup.Log;
-        protected IPythonModule Module => Lookup.Module;
+        protected IPythonModuleType Module => Lookup.Module;
         protected IPythonInterpreter Interpreter => Lookup.Interpreter;
         protected GlobalScope GlobalScope => Lookup.GlobalScope;
         protected PythonAst Ast => Lookup.Ast;
@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         protected AnalysisWalker(ExpressionLookup lookup) {
             Lookup = lookup;
         }
-        protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast) {
+        protected AnalysisWalker(IServiceContainer services, IPythonModuleType module, PythonAst ast) {
             Lookup = new ExpressionLookup(services, module, ast);
         }
 

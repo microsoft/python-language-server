@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonType(
             string name,
-            IPythonModule declaringModule,
+            IPythonModuleType declaringModule,
             string documentation,
             LocationInfo location,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
@@ -51,11 +51,11 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonType
         public virtual string Name { get; }
         public virtual string Documentation { get; private set; }
-        public IPythonModule DeclaringModule { get; }
+        public IPythonModuleType DeclaringModule { get; }
         public virtual PythonMemberType MemberType => _typeId.GetMemberId();
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
-        public IPythonFunction GetConstructor() => GetMember("__init__") as IPythonFunction;
+        public IPythonFunctionType GetConstructor() => GetMember("__init__") as IPythonFunctionType;
         #endregion
 
         #region ILocatedMember
@@ -103,7 +103,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        internal void AddMembers(IPythonClass cls, bool overwrite) {
+        internal void AddMembers(IPythonClassType cls, bool overwrite) {
             if (cls != null) {
                 var names = cls.GetMemberNames();
                 var members = names.Select(n => new KeyValuePair<string, IMember>(n, cls.GetMember(n)));

@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public ExpressionLookup(
             IServiceContainer services,
-            IPythonModule module,
+            IPythonModuleType module,
             PythonAst ast
         ) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public PythonAst Ast { get; }
-        public IPythonModule Module { get; }
+        public IPythonModuleType Module { get; }
         public LookupOptions DefaultLookupOptions { get; set; }
         public GlobalScope GlobalScope { get; }
         public Scope CurrentScope { get; private set; }
@@ -166,13 +166,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var typeInfo = m as IPythonType; // See if value is type info.
             var value = typeInfo?.GetMember(expr.Name);
             // If container is class (type) info rather than the instance, then method is an unbound function.
-            value = typeInfo != null && value is PythonFunction f && !f.IsStatic ? f.ToUnbound() : value;
+            value = typeInfo != null && value is PythonFunctionType f && !f.IsStatic ? f.ToUnbound() : value;
 
+            var instance = m as IPythonInstance;
             var type = m.GetPythonType(); // Try inner type
             value = value ?? type?.GetMember(expr.Name);
             switch (value) {
-                case IPythonProperty p:
+                case IPythonPropertyType p:
                     return await GetPropertyReturnTypeAsync(p, expr, cancellationToken);
+                case IPythonFunctionType fn:
+                    return new PythonFunction(fn, instance, GetLoc(expr));
                 case null:
                     Log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
                     return UnknownType;

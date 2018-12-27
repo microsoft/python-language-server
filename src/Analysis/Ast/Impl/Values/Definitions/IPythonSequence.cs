@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,15 +14,12 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Represents Python class type definition.
-    /// </summary>
-    public interface IPythonClass : IPythonType {
-        ClassDefinition ClassDefinition { get; }
-        IReadOnlyList<IPythonType> Mro { get; }
-        IReadOnlyList<IPythonType> Bases { get; }
+namespace Microsoft.Python.Analysis.Values {
+    public interface IPythonSequence: IPythonInstance {
+        IMember GetValueAt(int index);
+        IEnumerable<IMember> GetContents();
+        IPythonIterator GetIterator();
     }
 }

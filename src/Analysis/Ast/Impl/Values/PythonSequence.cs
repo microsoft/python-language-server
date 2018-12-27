@@ -19,25 +19,25 @@ using System.Linq;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
-    internal sealed class PythonSequenceInstance : PythonInstance, IPythonSequenceInstance {
+    internal abstract class PythonSequence : PythonInstance, IPythonSequence {
         private readonly IPythonInterpreter _interpreter;
         private readonly IMember _contentType;
         private readonly IReadOnlyList<IMember> _contentTypes;
 
         /// <summary>
-        /// Creates list with consistent content (i.e. all strings)
+        /// Creates sequence with consistent content (i.e. all strings)
         /// </summary>
-        public PythonSequenceInstance(IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(interpreter.GetBuiltinType(BuiltinTypeId.List), location) {
+        protected PythonSequence(BuiltinTypeId typeId, IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null)
+            : base(new PythonSequenceType(typeId, interpreter), location) {
             _interpreter = interpreter;
             _contentType = contentType ?? throw new ArgumentNullException(nameof(contentType));
         }
 
         /// <summary>
-        /// Creates list with mixed content.
+        /// Creates sequence with mixed content.
         /// </summary>
-        public PythonSequenceInstance(IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(interpreter.GetBuiltinType(BuiltinTypeId.List), location) {
+        protected PythonSequence(BuiltinTypeId typeId, IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null)
+            : base(new PythonSequenceType(typeId, interpreter), location) {
             _interpreter = interpreter;
             _contentTypes = contentTypes?.ToArray() ?? throw new ArgumentNullException(nameof(contentTypes));
         }
@@ -46,15 +46,32 @@ namespace Microsoft.Python.Analysis.Values {
             if (_contentType != null) {
                 return _contentType;
             }
+
             if (index < 0) {
                 index = _contentTypes.Count + index; // -1 means last, etc.
             }
+
             if (_contentTypes != null && index >= 0 && index < _contentTypes.Count) {
                 return _contentTypes[index];
             }
+
             return _interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
         }
 
         public IEnumerable<IMember> GetContents() => _contentTypes ?? new[] {_contentType};
+
+        public IPythonIterator GetIterator() => new Iterator(this);
+
+        protected sealed class Iterator : PythonInstance, IPythonIterator {
+            private readonly PythonSequence _owner;
+            private int _index;
+
+            public Iterator(PythonSequence owner)
+                : base(new PythonIteratorType(owner.GetPythonType().TypeId.GetIteratorTypeId(), owner.Type.DeclaringModule)) {
+                _owner = owner;
+            }
+
+            public IMember Next => _owner.GetValueAt(_index++);
+        }
     }
 }

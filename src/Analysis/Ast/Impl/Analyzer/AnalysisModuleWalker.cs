@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal partial class AnalysisModuleWalker : AnalysisWalker {
         private IDisposable _classScope;
 
-        public AnalysisModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
+        public AnalysisModuleWalker(IServiceContainer services, IPythonModuleType module, PythonAst ast)
             : base(services, module, ast) {
             // TODO: handle typing module
         }
@@ -96,12 +96,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             foreach (var v in stubAnalysis.TopLevelVariables) {
                 var currentVar = Lookup.GlobalScope.Variables[v.Name];
 
-                var stub = v.Value.GetPythonType<PythonClass>();
+                var stub = v.Value.GetPythonType<PythonClassType>();
                 if (stub == null) {
                     continue;
                 }
 
-                var cls = currentVar.GetPythonType<PythonClass>();
+                var cls = currentVar.GetPythonType<PythonClassType>();
                 if (cls != null) {
                     // If class exists, add or replace its members
                     // with ones from the stub, preserving documentation.

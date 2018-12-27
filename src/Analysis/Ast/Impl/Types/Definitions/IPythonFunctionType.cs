@@ -13,12 +13,24 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.Python.Parsing.Ast;
+
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents a single overload of a function.
+    /// Represents a function.
     /// </summary>
-    public interface IPythonFunctionOverload: IPythonCallableType {
-        string Name { get; }
-        string Documentation { get; }
+    public interface IPythonFunctionType : IPythonClassMember {
+        /// <summary>
+        /// Function definition in the AST.
+        /// </summary>
+        FunctionDefinition FunctionDefinition { get; }
+
+        bool IsClassMethod { get; }
+
+        /// <summary>
+        /// List of function overloads
+        /// </summary>
+        IReadOnlyList<IPythonFunctionOverload> Overloads { get; }
     }
 }

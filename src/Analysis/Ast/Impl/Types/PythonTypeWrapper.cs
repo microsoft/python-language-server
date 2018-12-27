@@ -27,19 +27,19 @@ namespace Microsoft.Python.Analysis.Types {
             : this(type, type.DeclaringModule) {
         }
 
-        public PythonTypeWrapper(IPythonType type, IPythonModule declaringModule) {
+        public PythonTypeWrapper(IPythonType type, IPythonModuleType declaringModule) {
             InnerType = type ?? throw new ArgumentNullException(nameof(type));
             DeclaringModule = declaringModule;
         }
 
         #region IPythonType
         public virtual string Name => InnerType.Name;
-        public IPythonModule DeclaringModule { get; }
+        public IPythonModuleType DeclaringModule { get; }
         public virtual string Documentation => InnerType.Documentation;
         public virtual  BuiltinTypeId TypeId => InnerType.TypeId;
         public virtual  PythonMemberType MemberType => InnerType.MemberType;
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;
-        public virtual  IPythonFunction GetConstructor() => InnerType.GetConstructor();
+        public virtual  IPythonFunctionType GetConstructor() => InnerType.GetConstructor();
         #endregion
 
         #region ILocatedMember
@@ -47,8 +47,8 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IMemberContainer
-        public IMember GetMember(string name) => InnerType.GetMember(name);
-        public IEnumerable<string> GetMemberNames() => InnerType.GetMemberNames();
+        public virtual IMember GetMember(string name) => InnerType.GetMember(name);
+        public virtual IEnumerable<string> GetMemberNames() => InnerType.GetMemberNames();
         #endregion
 
         #region IHasQualifiedName

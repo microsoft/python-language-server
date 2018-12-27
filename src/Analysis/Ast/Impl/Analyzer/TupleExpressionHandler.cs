@@ -35,9 +35,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (rhs is TupleExpression tex) {
                 var returnedExpressions = tex.Items.ToArray();
-                var names = tex.Items.OfType<NameExpression>().Select(x => x.Name).ExcludeDefault().ToArray();
+                var names = lhs.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
                 for (var i = 0; i < Math.Min(names.Length, returnedExpressions.Length); i++) {
-                    if (returnedExpressions[i] != null) {
+                    if (returnedExpressions[i] != null && !string.IsNullOrEmpty(names[i])) {
                         var v = await _lookup.GetValueFromExpressionAsync(returnedExpressions[i], cancellationToken);
                         if (v != null) {
                             _lookup.DeclareVariable(names[i], v, returnedExpressions[i]);
@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             // Tuple = 'tuple value' (such as from callable). Transfer values.
-            if (value is IPythonInstance c && c.Type is IPythonSequence seq) {
+            if (value is IPythonInstance c && c.Type is IPythonSequenceType seq) {
                 var types = seq.GetContents(c).ToArray();
                 var expressions = lhs.Items.OfType<NameExpression>().ToArray();
                 var names = expressions.Select(x => x.Name).ToArray();

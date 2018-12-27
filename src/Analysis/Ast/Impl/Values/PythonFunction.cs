@@ -13,12 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
-    public interface IPythonSequenceInstance: IPythonInstance {
-        IMember GetValueAt(int index);
-        IEnumerable<IMember> GetContents();
+    /// <summary>
+    /// Represents function type and the instance to invoke the method on.
+    /// </summary>
+    internal sealed class PythonFunction: PythonInstance, IPythonFunction {
+        public IPythonInstance Self { get; }
+
+        public PythonFunction(IPythonFunctionType fn, IPythonInstance self, LocationInfo location) : base(fn, location) {
+            Self = self;
+        }
     }
 }
