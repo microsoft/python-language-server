@@ -16,26 +16,26 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed partial class ExpressionLookup {
         private async Task<IMember> GetValueFromUnaryOpAsync(UnaryExpression expr, CancellationToken cancellationToken = default) {
-            IMember result = null;
             switch (expr.Op) {
                 case PythonOperator.Not:
                 case PythonOperator.Is:
                 case PythonOperator.IsNot:
                     // Assume all of these return True/False
-                    result = Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
-                    break;
+                    return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
                 case PythonOperator.Negate:
-                    result = await GetValueFromExpressionAsync(expr.Expression, cancellationToken);
-                    break;
+                    var result = await GetValueFromExpressionAsync(expr.Expression, cancellationToken);
+                    return result is IPythonConstant c && result.TryGetConstant<int>(out var value)
+                        ? new PythonConstant(-value, c.Type, GetLoc(expr))
+                        : result;
             }
-
-            return result;
+            return null;
         }
 
         private async Task<IMember> GetValueFromBinaryOpAsync(Expression expr, CancellationToken cancellationToken = default) {

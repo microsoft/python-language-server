@@ -46,6 +46,9 @@ namespace Microsoft.Python.Analysis.Values {
             if (_contentType != null) {
                 return _contentType;
             }
+            if (index < 0) {
+                index = _contentTypes.Count + index; // -1 means last, etc.
+            }
             if (_contentTypes != null && index >= 0 && index < _contentTypes.Count) {
                 return _contentTypes[index];
             }
