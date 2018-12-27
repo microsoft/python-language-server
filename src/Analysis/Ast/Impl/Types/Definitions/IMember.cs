@@ -13,12 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Values;
-
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents lowest common denominator in the type system.
+    /// Represents lowest common denominator in the analysis.
     /// Both instance and its type information are members.
     /// </summary>
     public interface IMember {

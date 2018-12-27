@@ -18,14 +18,26 @@ using System.Linq;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
+    /// <summary>
+    /// Type info for a sequence.
+    /// </summary>
     internal class PythonSequenceType : PythonTypeWrapper, IPythonSequenceType {
         private readonly PythonIteratorType _iteratorType;
 
-        public PythonSequenceType(BuiltinTypeId typeId, IPythonInterpreter interpreter)
-            : base(interpreter.GetBuiltinType(typeId), interpreter.ModuleResolution.BuiltinsModule) {
-            _iteratorType = new PythonIteratorType(typeId, DeclaringModule);
+        /// <summary>
+        /// Creates type info for a sequence.
+        /// </summary>
+        /// <param name="sequenceTypeId">Sequence type id, such as <see cref="BuiltinTypeId.List"/>.</param>
+        /// <param name="interpreter">Python interpreter</param>
+        public PythonSequenceType(BuiltinTypeId sequenceTypeId, IPythonInterpreter interpreter)
+            : base(interpreter.GetBuiltinType(sequenceTypeId), interpreter.ModuleResolution.BuiltinsModule) {
+            _iteratorType = new PythonIteratorType(sequenceTypeId.GetIteratorTypeId(), DeclaringModule);
         }
 
+        /// <summary>
+        /// Retrieves value at a given index for specific instance.
+        /// Equivalent to the <see cref="PythonSequence.GetValueAt"/>.
+        /// </summary>
         public IMember GetValueAt(IPythonInstance instance, int index) 
             => (instance as IPythonSequence)?.GetValueAt(index) ?? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
 

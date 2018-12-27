@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public static Func<IReadOnlyList<IMember>, IMember> Iterator
             => (args => args.Count > 0 && args[0] is IPythonSequence seq ? seq.GetIterator(): null);
 
-        //public static Func<IReadOnlyList<IMember>, IMember> Next
-        //    => (args => args.Count > 0 && args[0] is IPythonIterator iter ? iter.Next() : null);
+        public static Func<IReadOnlyList<IMember>, IMember> Next
+            => (args => args.Count > 0 && args[0] is IPythonIterator it ? it.Next : null);
     }
 }

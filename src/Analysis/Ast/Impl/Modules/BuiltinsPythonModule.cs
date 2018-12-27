@@ -115,7 +115,7 @@ namespace Microsoft.Python.Analysis.Modules {
             //SpecializeFunction(_builtinName, "locals", ReturnsStringToObjectDict);
             //SpecializeFunction(_builtinName, "max", ReturnUnionOfInputs);
             //SpecializeFunction(_builtinName, "min", ReturnUnionOfInputs);
-            // SpecializeFunction("next", gs, Specializations.Next);
+            SpecializeFunction("next", gs, Specializations.Next);
             //SpecializeFunction(_builtinName, "open", SpecialOpen);
             SpecializeFunction("ord", gs, Interpreter.GetBuiltinType(BuiltinTypeId.Int));
             SpecializeFunction("pow", gs, Specializations.Identity);

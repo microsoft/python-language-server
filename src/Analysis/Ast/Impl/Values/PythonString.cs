@@ -17,11 +17,16 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Values {
+    /// <summary>
+    /// Base class for ASCII (bytes) and Unicode strings.
+    /// </summary>
     internal abstract class PythonString: PythonSequence, IPythonConstant {
-        protected PythonString(object s, BuiltinTypeId typeId, IPythonInterpreter interpreter, LocationInfo location = null):
-            base(typeId, interpreter.GetBuiltinType(interpreter.GetAsciiTypeId()), interpreter, location) {
+        protected PythonString(object s, BuiltinTypeId contentTypeId, IPythonInterpreter interpreter, LocationInfo location = null):
+            base(contentTypeId, interpreter.GetBuiltinType(contentTypeId), interpreter, location) {
             Value = s;
         }
+
+        #region IPythonConstant
         public object Value { get; }
 
         public bool TryGetValue<T>(out T value) {
@@ -32,13 +37,22 @@ namespace Microsoft.Python.Analysis.Values {
             value = default;
             return false;
         }
+        #endregion
     }
 
+    /// <inheritdoc />
+    /// <summary>
+    /// Python ASCII (bytes) string (default string in 2.x).
+    /// </summary>
     internal sealed class PythonAsciiString : PythonString {
         public PythonAsciiString(AsciiString s, IPythonInterpreter interpreter, LocationInfo location = null)
             : base(s, interpreter.GetAsciiTypeId(), interpreter, location) { }
     }
 
+    /// <inheritdoc />
+    /// <summary>
+    /// Python Unicode string (default string in 3.x+)
+    /// </summary>
     internal sealed class PythonUnicodeString : PythonString {
         public PythonUnicodeString(string s, IPythonInterpreter interpreter, LocationInfo location = null)
             : base(s, interpreter.GetUnicodeTypeId(), interpreter, location) { }

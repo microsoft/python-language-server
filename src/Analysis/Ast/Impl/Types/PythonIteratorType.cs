@@ -25,14 +25,25 @@ namespace Microsoft.Python.Analysis.Types {
     /// is implemented manually via specialized function overload.
     /// </summary>
     internal sealed class PythonIteratorType : PythonType, IPythonIteratorType {
-        private readonly PythonFunctionType _next;
+        private static readonly string[] _methodNames = new[] { "next", "__next__" };
+        private readonly PythonFunctionType[] _methods = new PythonFunctionType[2];
 
+        /// <summary>
+        /// Creates type info for an iterator.
+        /// </summary>
+        /// <param name="typeId">Iterator type id, such as <see cref="BuiltinTypeId.StrIterator"/>.</param>
+        /// <param name="declaringModule">Declaring module</param>
         public PythonIteratorType(BuiltinTypeId typeId, IPythonModuleType declaringModule)
             : base("iterator", declaringModule, string.Empty, LocationInfo.Empty, typeId) {
 
-            _next = new PythonFunctionType("next", declaringModule, this, string.Empty, LocationInfo.Empty);
+            // Create 'next' members.
+            _methods[0] = new PythonFunctionType(_methodNames[0], declaringModule, this, string.Empty, LocationInfo.Empty);
+            _methods[1] = new PythonFunctionType(_methodNames[1], declaringModule, this, string.Empty, LocationInfo.Empty);
+
+            // Both members share the same overload.
             var overload = new PythonFunctionOverload("next", Array.Empty<IParameterInfo>(), LocationInfo.Empty);
 
+            // Set up the overload return type handler.
             overload.SetReturnValueCallback(args => {
                 if (args.Count > 0) {
                     if (args[0] is IPythonIterator iter) {
@@ -46,12 +57,14 @@ namespace Microsoft.Python.Analysis.Types {
                 return DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
             });
 
-            _next.AddOverload(overload);
+            foreach (var m in _methods) {
+                m.AddOverload(overload);
+            }
         }
-        public IMember GetNext(IPythonInstance instance) 
+        public IMember GetNext(IPythonInstance instance)
             => (instance as IPythonIterator)?.Next ?? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
 
-        public override IEnumerable<string> GetMemberNames() => Enumerable.Repeat(_next.Name, 1);
-        public override IMember GetMember(string name) => name == _next.Name ? _next : null;
+        public override IEnumerable<string> GetMemberNames() => _methodNames;
+        public override IMember GetMember(string name) => _methods.FirstOrDefault(m => m.Name == name);
     }
 }

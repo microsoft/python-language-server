@@ -27,8 +27,12 @@ namespace Microsoft.Python.Analysis.Values {
         /// <summary>
         /// Creates sequence with consistent content (i.e. all strings)
         /// </summary>
-        protected PythonSequence(BuiltinTypeId typeId, IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(new PythonSequenceType(typeId, interpreter), location) {
+        /// <param name="sequenceTypeId">Sequence type id, such as <see cref="BuiltinTypeId.List"/>.</param>
+        /// <param name="contentType">Content type (str, int, ...).</param>
+        /// <param name="interpreter">Python interpreter.</param>
+        /// <param name="location">Declaring location.</param>
+        protected PythonSequence(BuiltinTypeId sequenceTypeId, IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null)
+            : base(new PythonSequenceType(sequenceTypeId, interpreter), location) {
             _interpreter = interpreter;
             _contentType = contentType ?? throw new ArgumentNullException(nameof(contentType));
         }
@@ -36,8 +40,12 @@ namespace Microsoft.Python.Analysis.Values {
         /// <summary>
         /// Creates sequence with mixed content.
         /// </summary>
-        protected PythonSequence(BuiltinTypeId typeId, IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(new PythonSequenceType(typeId, interpreter), location) {
+        /// <param name="sequenceTypeId">Sequence type id, such as <see cref="BuiltinTypeId.List"/>.</param>
+        /// <param name="contentTypes">Content types of the sequence elements (str, int, ...).</param>
+        /// <param name="interpreter">Python interpreter.</param>
+        /// <param name="location">Declaring location.</param>
+        protected PythonSequence(BuiltinTypeId sequenceTypeId, IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null)
+            : base(new PythonSequenceType(sequenceTypeId, interpreter), location) {
             _interpreter = interpreter;
             _contentTypes = contentTypes?.ToArray() ?? throw new ArgumentNullException(nameof(contentTypes));
         }
