@@ -60,18 +60,6 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IEnumerable<IMember> GetContents() => _contentTypes ?? new[] {_contentType};
 
-        public IPythonIterator GetIterator() => new Iterator(this);
-
-        protected sealed class Iterator : PythonInstance, IPythonIterator {
-            private readonly PythonSequence _owner;
-            private int _index;
-
-            public Iterator(PythonSequence owner)
-                : base(new PythonIteratorType(owner.GetPythonType().TypeId.GetIteratorTypeId(), owner.Type.DeclaringModule)) {
-                _owner = owner;
-            }
-
-            public IMember Next => _owner.GetValueAt(_index++);
-        }
+        public IPythonIterator GetIterator() => new PythonIterator(this);
     }
 }

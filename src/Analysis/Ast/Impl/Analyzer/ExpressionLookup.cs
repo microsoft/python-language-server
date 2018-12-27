@@ -163,19 +163,24 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var m = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            var typeInfo = m as IPythonType; // See if value is type info.
-            var value = typeInfo?.GetMember(expr.Name);
-            // If container is class (type) info rather than the instance, then method is an unbound function.
-            value = typeInfo != null && value is PythonFunctionType f && !f.IsStatic ? f.ToUnbound() : value;
+            if (m is IPythonType typeInfo) {
+                var member = typeInfo.GetMember(expr.Name);
+                // If container is class/type info rather than the instance, then the method is an unbound function.
+                if (member is PythonFunctionType f && !f.IsStatic) {
+                    return f.ToUnbound();
+                }
+            }
 
             var instance = m as IPythonInstance;
             var type = m.GetPythonType(); // Try inner type
-            value = value ?? type?.GetMember(expr.Name);
+            var value = type?.GetMember(expr.Name);
             switch (value) {
                 case IPythonPropertyType p:
                     return await GetPropertyReturnTypeAsync(p, expr, cancellationToken);
                 case IPythonFunctionType fn:
                     return new PythonFunction(fn, instance, GetLoc(expr));
+                case IPythonIteratorType _ when instance is IPythonSequence seq:
+                    return new PythonIterator(seq);
                 case null:
                     Log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
                     return UnknownType;

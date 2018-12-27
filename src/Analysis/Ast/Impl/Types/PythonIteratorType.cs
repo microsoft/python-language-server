@@ -24,18 +24,32 @@ namespace Microsoft.Python.Analysis.Types {
     /// to the analysis on the return type of the 'next' method. 'Next' method
     /// is implemented manually via specialized function overload.
     /// </summary>
-    internal sealed class PythonIteratorType : PythonType {
+    internal sealed class PythonIteratorType : PythonType, IPythonIteratorType {
         private readonly PythonFunctionType _next;
 
         public PythonIteratorType(BuiltinTypeId typeId, IPythonModuleType declaringModule)
-            : base("iterator", typeId) {
+            : base("iterator", declaringModule, string.Empty, LocationInfo.Empty, typeId) {
+
             _next = new PythonFunctionType("next", declaringModule, this, string.Empty, LocationInfo.Empty);
             var overload = new PythonFunctionOverload("next", Array.Empty<IParameterInfo>(), LocationInfo.Empty);
-            overload.SetReturnValueCallback(
-                args => args.Count > 0 && args[0] is IPythonIterator iter
-                    ? iter.Next : DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown));
+
+            overload.SetReturnValueCallback(args => {
+                if (args.Count > 0) {
+                    if (args[0] is IPythonIterator iter) {
+                        return iter.Next;
+                    }
+                    var t = args[0].GetPythonType<IPythonIteratorType>();
+                    if (t != null && args[0] is IPythonFunction fn) {
+                        return t.GetNext(fn.Self);
+                    }
+                }
+                return DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
+            });
+
             _next.AddOverload(overload);
         }
+        public IMember GetNext(IPythonInstance instance) 
+            => (instance as IPythonIterator)?.Next ?? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
 
         public override IEnumerable<string> GetMemberNames() => Enumerable.Repeat(_next.Name, 1);
         public override IMember GetMember(string name) => name == _next.Name ? _next : null;

@@ -19,8 +19,12 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     internal class PythonSequenceType : PythonTypeWrapper, IPythonSequenceType {
+        private readonly PythonIteratorType _iteratorType;
+
         public PythonSequenceType(BuiltinTypeId typeId, IPythonInterpreter interpreter)
-            : base(interpreter.GetBuiltinType(typeId), interpreter.ModuleResolution.BuiltinsModule) { }
+            : base(interpreter.GetBuiltinType(typeId), interpreter.ModuleResolution.BuiltinsModule) {
+            _iteratorType = new PythonIteratorType(typeId, DeclaringModule);
+        }
 
         public IMember GetValueAt(IPythonInstance instance, int index) 
             => (instance as IPythonSequence)?.GetValueAt(index) ?? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
@@ -32,7 +36,6 @@ namespace Microsoft.Python.Analysis.Types {
             => (instance as IPythonSequence)?.GetIterator();
 
         public override PythonMemberType MemberType => PythonMemberType.Class;
-        public override IMember GetMember(string name) 
-            => name == @"__iter__" ? new PythonIteratorType(TypeId, DeclaringModule) : base.GetMember(name);
+        public override IMember GetMember(string name) => name == @"__iter__" ? _iteratorType : base.GetMember(name);
     }
 }

@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,20 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonIteratorType : IPythonType {
-        IMember GetNext(IPythonInstance instance);
-    }
+namespace Microsoft.Python.Analysis.Values {
+    internal sealed class PythonIterator : PythonInstance, IPythonIterator {
+        private readonly IPythonSequence _owner;
+        private int _index;
 
-    /// <summary>
-    /// Represents dictionary-like type, such as tuple.
-    /// </summary>
-    public interface IPythonLookupType : IPythonType {
-        IEnumerable<IMember> Keys { get; }
-        IEnumerable<IMember> Values { get; }
-        IMember GetValueAt(IPythonInstance instance, IMember key);
+        public PythonIterator(IPythonSequence owner)
+            : base(new PythonIteratorType(owner.GetPythonType().TypeId.GetIteratorTypeId(), owner.Type.DeclaringModule)) {
+            _owner = owner;
+        }
+
+        public IMember Next => _owner.GetValueAt(_index++);
     }
 }

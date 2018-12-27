@@ -26,6 +26,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case IPythonFunction fn:
                     value = await GetValueFromFunctionAsync(fn, expr, cancellationToken);
                     break;
+                case IPythonIterator _:
+                    value = target;
+                    break;
                 case IPythonInstance pi:
                     value = await GetValueFromInstanceCall(pi, expr, cancellationToken);
                     break;

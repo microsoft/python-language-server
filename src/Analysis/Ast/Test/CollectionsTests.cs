@@ -144,12 +144,22 @@ C = [1.0, 'a', 3]
 iA = A.__iter__()
 iB = B.__iter__()
 iC = C.__iter__()
+
+a = iA.next()
+b = iB.next()
+c1 = iC.next()
+c2 = iC.next()
+
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             analysis.Should().HaveVariable("iA").OfType(BuiltinTypeId.ListIterator)
-                .And.HaveVariable("B").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("iB").OfType(BuiltinTypeId.StrIterator)
                 .And.HaveVariable("iC").OfType(BuiltinTypeId.ListIterator);
+
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("c1").OfType(BuiltinTypeId.Float)
+                .And.HaveVariable("c2").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
