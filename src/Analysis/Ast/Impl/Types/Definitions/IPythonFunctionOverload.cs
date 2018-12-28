@@ -13,12 +13,38 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
+
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents a single overload of a function.
     /// </summary>
-    public interface IPythonFunctionOverload: IPythonCallableType {
+    public interface IPythonFunctionOverload {
+        /// <summary>
+        /// Function name.
+        /// </summary>
         string Name { get; }
+
+        /// <summary>
+        /// Overload documentation.
+        /// </summary>
         string Documentation { get; }
+        
+        /// <summary>
+        /// Overload parameters.
+        /// </summary>
+        IReadOnlyList<IParameterInfo> Parameters { get; }
+
+        /// <summary>
+        /// Determines return value type given arguments for the particular instance.
+        /// For annotated or stubbed functions the annotation type is always returned.
+        /// </summary>
+        IMember GetReturnValue(IPythonInstance instance, IReadOnlyList<IMember> args = null);
+
+        /// <summary>
+        /// Return value documentation.
+        /// </summary>
+        string ReturnDocumentation { get; }
     }
 }

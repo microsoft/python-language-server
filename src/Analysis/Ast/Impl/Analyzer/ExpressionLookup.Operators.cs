@@ -16,6 +16,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing;
@@ -45,8 +46,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var target = await GetValueFromExpressionAsync(expr.Expression, cancellationToken);
             if (target is IPythonInstance instance) {
                 var fn = instance.GetPythonType()?.GetMember<IPythonFunctionType>(op);
-                if (fn != null) {
-                    return await GetValueFromFunctionAsync(fn, Array.Empty<IMember>(), cancellationToken);
+                // Process functions declared in code modules. Scraped/compiled/stub modules do not actually perform any operations.
+                if (fn?.DeclaringModule != null && (fn.DeclaringModule.ModuleType == ModuleType.User || fn.DeclaringModule.ModuleType == ModuleType.Library)) {
+                    var result = await GetValueFromFunctionAsync(fn, Array.Empty<IMember>(), cancellationToken);
+                    if (!result.IsUnknown()) {
+                        return result;
+                    }
                 }
                 return instance is IPythonConstant c && instance.TryGetConstant<int>(out var value)
                     ? new PythonConstant(-value, c.Type, GetLoc(expr))

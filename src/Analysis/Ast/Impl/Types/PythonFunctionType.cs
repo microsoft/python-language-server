@@ -57,6 +57,7 @@ namespace Microsoft.Python.Analysis.Types {
                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
 
             FunctionDefinition = fd;
+            DeclaringType = declaringType;
 
             if (fd.Name == "__init__") {
                 _doc = declaringType?.Documentation;

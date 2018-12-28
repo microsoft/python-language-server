@@ -75,7 +75,7 @@ namespace Microsoft.Python.Analysis.Tests {
             c.GetMember("F2").Should().BeAssignableTo<IPythonClassType>();
             c.GetMember("F3").Should().BeAssignableTo<IPythonClassType>();
             c.GetMember("__class__").Should().BeAssignableTo<IPythonClassType>();
-            c.GetMember("__bases__").Should().BeAssignableTo<IPythonSequenceType>();
+            c.GetMember("__bases__").Should().BeAssignableTo<IPythonSequence>();
         }
 
         [TestMethod, Priority(0)]
