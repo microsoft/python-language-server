@@ -63,13 +63,7 @@ namespace Microsoft.Python.Analysis.Types {
                 _doc = declaringType?.Documentation;
             }
 
-            foreach (var dec in (FunctionDefinition.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
-                if (dec.Name == @"classmethod") {
-                    IsClassMethod = true;
-                } else if (dec.Name == @"staticmethod") {
-                    IsStatic = true;
-                }
-            }
+            ProcessDecorators(fd);
         }
 
         #region IPythonType
@@ -81,8 +75,9 @@ namespace Microsoft.Python.Analysis.Types {
         public FunctionDefinition FunctionDefinition { get; }
         public IPythonType DeclaringType { get; }
         public override string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
-        public virtual bool IsClassMethod { get; }
-        public virtual bool IsStatic { get; }
+        public virtual bool IsClassMethod { get; private set; }
+        public virtual bool IsStatic { get; private set; }
+        public virtual bool IsAbstract { get; private set; }
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
         #endregion
 
@@ -100,6 +95,35 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);
 
+        private void ProcessDecorators(FunctionDefinition fd) {
+            foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
+                // TODO: warn about incompatible combinations.
+                switch (dec.Name) {
+                    case @"staticmethod":
+                        IsStatic = true;
+                        break;
+                    case @"classmethod":
+                        IsClassMethod = true;
+                        break;
+                    case @"abstractmethod":
+                        IsAbstract = true;
+                        break;
+                    case @"abstractstaticmethod":
+                        IsStatic = true;
+                        IsAbstract = true;
+                        break;
+                    case @"abstractclassmethod":
+                        IsClassMethod = true;
+                        IsAbstract = true;
+                        break;
+                    case @"property":
+                    case @"abstractproperty":
+                        Debug.Assert(false, "Found property attribute while processing function. Properties should be handled in the respective class.");
+                        break;
+                }
+            }
+        }
+
         /// <summary>
         /// Represents unbound method, such in C.f where C is class rather than the instance.
         /// </summary>
@@ -114,6 +138,8 @@ namespace Microsoft.Python.Analysis.Types {
             public IPythonType DeclaringType => _pf.DeclaringType;
             public bool IsStatic => _pf.IsStatic;
             public bool IsClassMethod => _pf.IsClassMethod;
+            public bool IsAbstract => _pf.IsAbstract;
+
             public IReadOnlyList<IPythonFunctionOverload> Overloads => _pf.Overloads;
             public override BuiltinTypeId TypeId => BuiltinTypeId.Function;
             public override PythonMemberType MemberType => PythonMemberType.Function;

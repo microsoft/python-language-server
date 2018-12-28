@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var statement = (Ast.Body as SuiteStatement)?.Statements.ToArray() ?? Array.Empty<Statement>();
 
             foreach (var node in statement.OfType<FunctionDefinition>()) {
-                ProcessFunctionDefinition(node);
+                ProcessFunctionDefinition(node, null, Lookup.GetLoc(node));
             }
 
             foreach (var node in statement.OfType<ClassDefinition>()) {

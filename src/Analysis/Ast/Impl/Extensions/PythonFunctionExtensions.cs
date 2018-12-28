@@ -25,6 +25,6 @@ namespace Microsoft.Python.Analysis.Extensions {
 
         public static bool HasClassFirstArgument(this IPythonClassMember m)
             => (m is IPythonFunctionType f && !f.IsStatic && (f.IsClassMethod || f.IsBound())) ||
-               (m is IPythonPropertyType prop && !prop.IsStatic);
+               (m is IPythonPropertyType prop);
     }
 }

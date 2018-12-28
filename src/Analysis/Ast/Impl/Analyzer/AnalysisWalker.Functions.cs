@@ -28,55 +28,27 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return false;
             }
 
-            var dec = (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().ToArray();
-            foreach (var d in dec) {
-                var member = await Lookup.GetValueFromExpressionAsync(d, cancellationToken);
-                var memberType = member?.GetPythonType();
-                if (memberType != null) {
-                    var declaringModule = memberType.DeclaringModule;
-
-                    if (memberType.TypeId == BuiltinTypeId.Property) {
-                        AddProperty(node, declaringModule, memberType);
-                        return false;
-                    }
-
-                    var name = memberType.Name;
-                    if (declaringModule?.Name == "abc" && name == "abstractproperty") {
-                        AddProperty(node, declaringModule, memberType);
-                        return false;
-                    }
-                }
+            var cls = Lookup.GetInScope("__class__").GetPythonType();
+            var loc = GetLoc(node);
+            if (ProcessFunctionDecorators(node, cls, loc)) {
+                ProcessFunctionDefinition(node, cls, loc);
             }
-
-            foreach (var setter in dec.OfType<MemberExpression>().Where(n => n.Name == "setter")) {
-                if (setter.Target is NameExpression src) {
-                    if (Lookup.LookupNameInScopes(src.Name, ExpressionLookup.LookupOptions.Local) is PythonPropertyTypeType existingProp) {
-                        // Setter for an existing property, so don't create a function
-                        existingProp.MakeSettable();
-                        return false;
-                    }
-                }
-            }
-
-            ProcessFunctionDefinition(node);
             // Do not recurse into functions
             return false;
         }
 
-        public void ProcessFunctionDefinition(FunctionDefinition node) {
+        public void ProcessFunctionDefinition(FunctionDefinition node, IPythonType declaringType, LocationInfo loc) {
             if (!(Lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonFunctionType existing)) {
-                var cls = Lookup.GetInScope("__class__");
-                var loc = GetLoc(node);
-                existing = new PythonFunctionType(node, Module, cls.GetPythonType(), loc);
+                existing = new PythonFunctionType(node, Module, declaringType, loc);
                 Lookup.DeclareVariable(node.Name, existing, loc);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
         }
 
-        private void AddProperty(FunctionDefinition node, IPythonModuleType declaringModule, IPythonType declaringType) {
-            if (!(Lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonPropertyTypeType existing)) {
-                var loc = GetLoc(node);
-                existing = new PythonPropertyTypeType(node, declaringModule, declaringType, loc);
+
+        private void AddProperty(FunctionDefinition node, IPythonModuleType declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo loc) {
+            if (!(Lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonPropertyType existing)) {
+                existing = new PythonPropertyType(node, declaringModule, declaringType, isAbstract, loc);
                 Lookup.DeclareVariable(node.Name, existing, loc);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
@@ -126,6 +98,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Length);
             }
             return null;
+        }
+
+        private bool ProcessFunctionDecorators(FunctionDefinition node, IPythonType declaringType, LocationInfo location) {
+            var dec = node.Decorators?.Decorators;
+            var decorators = dec != null ? dec.ExcludeDefault().ToArray() : Array.Empty<Expression>();
+
+            foreach (var d in decorators.OfType<NameExpression>()) {
+                switch (d.Name) {
+                    case "property":
+                        AddProperty(node, Module, declaringType, false, location);
+                        return false;
+                    case "abstractproperty":
+                        AddProperty(node, Module, declaringType, true, location);
+                        return false;
+                }
+            }
+            return true;
         }
     }
 }

@@ -27,6 +27,7 @@ namespace Microsoft.Python.Analysis.Types {
         FunctionDefinition FunctionDefinition { get; }
 
         bool IsClassMethod { get; }
+        bool IsStatic { get; }
 
         /// <summary>
         /// List of function overloads

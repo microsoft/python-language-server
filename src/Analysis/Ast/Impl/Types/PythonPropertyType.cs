@@ -13,18 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
-    class PythonPropertyTypeType : PythonType, IPythonPropertyType {
+    class PythonPropertyType : PythonType, IPythonPropertyType {
         private IPythonFunctionOverload _getter;
 
-        public PythonPropertyTypeType(FunctionDefinition fd, IPythonModuleType declaringModule, IPythonType declaringType, LocationInfo location)
+        public PythonPropertyType(FunctionDefinition fd, IPythonModuleType declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo location)
             : base(fd.Name, declaringModule, null, location) {
             FunctionDefinition = fd;
             DeclaringType = declaringType;
+            IsAbstract = isAbstract;
         }
 
         #region IPythonType
@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IPythonPropertyType
-        public bool IsStatic => false;
+        public bool IsAbstract { get; }
         public bool IsReadOnly { get; private set; } = true;
         public IPythonType DeclaringType { get; }
         public string Description 

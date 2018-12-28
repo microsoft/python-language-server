@@ -256,5 +256,51 @@ b = abc.CmethO(['fob'], 'oar')
             analysis.Should().HaveVariable("b")
                 .Which.Should().HaveType(BuiltinTypeId.List);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task Decorators() {
+            const string code = @"
+class cls(object):
+    @property
+    def a(self): pass
+    
+    @staticmethod
+    def b(): pass
+
+    @abstractproperty
+    def c(self): pass
+    
+    @classmethod
+    def d(cls): pass
+    
+    @abstractclassmethod
+    def e(cls): pass
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            var cls = analysis.Should().HaveClass("cls").Which;
+
+            var a = cls.Should().HaveProperty("a").Which;
+            a.IsAbstract.Should().BeFalse();
+            a.IsReadOnly.Should().BeTrue();
+
+            var b = cls.Should().HaveMethod("b").Which;
+            b.IsAbstract.Should().BeFalse();
+            b.IsStatic.Should().BeTrue();
+
+            var c = cls.Should().HaveProperty("c").Which;
+            c.IsAbstract.Should().BeTrue();
+            c.IsReadOnly.Should().BeTrue();
+
+            var d = cls.Should().HaveMethod("d").Which;
+            d.IsAbstract.Should().BeFalse();
+            d.IsStatic.Should().BeFalse();
+            d.IsClassMethod.Should().BeTrue();
+
+            var e = cls.Should().HaveMethod("e").Which;
+            e.IsAbstract.Should().BeTrue();
+            e.IsStatic.Should().BeFalse();
+            e.IsClassMethod.Should().BeTrue();
+        }
     }
 }
