@@ -275,12 +275,16 @@ namespace Microsoft.PythonTools.Analysis.AnalysisSetDetails {
                 return true;
             }
 
-            if (Count == 0 && other.Count == 0) {
+            // Only access Count once to prevent wasted time in bucket locks.
+            var lCount = Count;
+            var rCount = other.Count;
+
+            if (lCount == 0 && rCount == 0) {
                 return true;
             }
 
             if (Comparer == other.Comparer) {
-                if (Count != other.Count) {
+                if (lCount != rCount) {
                     return false;
                 }
 
@@ -298,11 +302,11 @@ namespace Microsoft.PythonTools.Analysis.AnalysisSetDetails {
                 }
             }
 
-            if (Count == 0 || other.Count == 0) {
+            if (lCount == 0 || rCount == 0) {
                 return false;
             }
 
-            if (Count == 1 && other.Count == 1) {
+            if (lCount == 1 && rCount == 1) {
                 return _comparer.Equals(this.First(), other.First());
             }
 
