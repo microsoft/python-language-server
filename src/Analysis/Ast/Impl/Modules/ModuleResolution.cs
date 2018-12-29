@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Specializations;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -304,6 +305,32 @@ namespace Microsoft.Python.Analysis.Modules {
             return mp;
         }
 
+        /// <summary>
+        /// Provides ability to specialize module by replacing module import by
+        /// <see cref="IPythonModuleType"/> implementation in code. Real module
+        /// then acts like a stub.
+        /// </summary>
+        /// <param name="name">Module to specialize.</param>
+        /// <param name="specialization">Specialized replacement.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Original (library) module loaded as stub.</returns>
+        public async Task<IPythonModuleType> SpecializeModuleAsync(string name, IPythonModuleType specialization, CancellationToken cancellationToken = default) {
+            var import = CurrentPathResolver.GetModuleImportFromModuleName(name);
+            if (!string.IsNullOrEmpty(import?.ModulePath)) {
+                var libraryModule = new StubPythonModule(import.FullName, import.ModulePath, _services);
+                await libraryModule.LoadAndAnalyzeAsync(cancellationToken);
+                _modules[name] = specialization;
+                return libraryModule;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Returns specialized module, if any.
+        /// </summary>
+        public IPythonModuleType GetSpecializedModule(string name)
+            => _modules.TryGetValue(name, out var m) && m is SpecializedModule ? m : null;
+
         private async Task<IPythonModuleType> ImportFromSearchPathsAsync(string name, CancellationToken cancellationToken) {
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (moduleImport == null) {
@@ -328,7 +355,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     ModuleName = moduleImport.FullName,
                     ModuleType = ModuleType.Library,
                     FilePath = moduleImport.ModulePath,
-                    Stub =  stub,
+                    Stub = stub,
                     LoadOptions = ModuleLoadOptions.Analyze
                 };
                 module = rdt.AddModule(mco);

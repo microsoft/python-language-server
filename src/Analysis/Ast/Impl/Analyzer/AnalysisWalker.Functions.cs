@@ -75,7 +75,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var stubOverload = GetOverloadFromStub(node);
             if (stubOverload != null) {
                 if (!string.IsNullOrEmpty(node.Documentation)) {
-                    stubOverload.SetDocumentation(node.Documentation);
+                    stubOverload.SetDocumentationProvider(_ => node.Documentation);
                 }
                 addOverload(stubOverload);
                 _replacedByStubs.Add(node);

@@ -14,23 +14,13 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Values {
+namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents scope where variables can be declared.
+    /// A special callable that declares new type, such as TypeVar.
+    /// The difference is that when function is called, it needs
     /// </summary>
-    public interface IScope {
-        string Name { get; }
-        Node Node { get; }
-        IScope OuterScope { get; }
-        IGlobalScope GlobalScope { get; }
-        bool VisibleToChildren { get; }
-        IReadOnlyList<IScope> Children { get; }
-        IEnumerable<IScope> EnumerateTowardsGlobal { get; }
-        IEnumerable<IScope> EnumerateFromGlobal { get; }
-        IVariableCollection Variables { get; }
-        void DeclareVariable(string name, IMember value, LocationInfo location);
+    public interface IPythonTypeDeclaration: IPythonType {
+        IPythonType DeclareType(IReadOnlyList<IMember> args, IPythonModuleType declaringModule, string documentation, LocationInfo location);
     }
 }

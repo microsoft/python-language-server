@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -42,18 +43,30 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonModuleType declaringModule,
             IPythonType declaringType,
             string documentation,
-            LocationInfo loc
-        ) : base(name, declaringModule, documentation, loc,
+            LocationInfo location = null
+        ) : this(name, declaringModule, declaringType, _ => documentation, _ => location ?? LocationInfo.Empty) { }
+
+        public PythonFunctionType(
+            string name,
+            IPythonModuleType declaringModule,
+            IPythonType declaringType,
+            Func<string, string> documentationProvider,
+            Func<string, LocationInfo> locationProvider,
+            IPythonFunctionOverload overload = null
+        ) : base(name, declaringModule, documentationProvider, locationProvider,
             declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
+            if (overload != null) {
+                AddOverload(overload);
+            }
         }
 
         public PythonFunctionType(
             FunctionDefinition fd,
             IPythonModuleType declaringModule,
             IPythonType declaringType,
-            LocationInfo loc
-        ) : base(fd.Name, declaringModule, fd.Documentation, loc,
+            LocationInfo location = null
+        ) : base(fd.Name, declaringModule, fd.Documentation, location ?? LocationInfo.Empty,
                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
 
             FunctionDefinition = fd;
@@ -87,7 +100,7 @@ namespace Microsoft.Python.Analysis.Types {
             new KeyValuePair<string, string>((DeclaringType as IHasQualifiedName)?.FullyQualifiedName ?? DeclaringType?.Name ?? DeclaringModule?.Name, Name);
         #endregion
 
-        internal virtual void AddOverload(IPythonFunctionOverload overload) {
+        internal void AddOverload(IPythonFunctionOverload overload) {
             lock (_lock) {
                 _overloads.Add(overload);
             }

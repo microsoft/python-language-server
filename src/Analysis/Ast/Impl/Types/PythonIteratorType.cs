@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Types {
             var overload = new PythonFunctionOverload("next", Array.Empty<IParameterInfo>(), LocationInfo.Empty);
 
             // Set up the overload return type handler.
-            overload.SetReturnValueCallback(args => {
+            overload.SetReturnValueProvider(args => {
                 if (args.Count > 0) {
                     if (args[0] is IPythonIterator iter) {
                         return iter.Next;

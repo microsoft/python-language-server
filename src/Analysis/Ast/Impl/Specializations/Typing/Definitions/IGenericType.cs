@@ -15,22 +15,16 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Values {
+namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
-    /// Represents scope where variables can be declared.
+    /// Represents generic type, such as class or function.
     /// </summary>
-    public interface IScope {
-        string Name { get; }
-        Node Node { get; }
-        IScope OuterScope { get; }
-        IGlobalScope GlobalScope { get; }
-        bool VisibleToChildren { get; }
-        IReadOnlyList<IScope> Children { get; }
-        IEnumerable<IScope> EnumerateTowardsGlobal { get; }
-        IEnumerable<IScope> EnumerateFromGlobal { get; }
-        IVariableCollection Variables { get; }
-        void DeclareVariable(string name, IMember value, LocationInfo location);
+    public interface IGenericType: IPythonType {
+        /// <summary>
+        /// Creates instance of a type information with the specific
+        /// type arguments from the generic template.
+        /// </summary>
+        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModuleType declatingModule, LocationInfo location = null);
     }
 }

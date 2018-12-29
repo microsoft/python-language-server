@@ -29,8 +29,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         /// <param name="sequenceTypeId">Sequence type id, such as <see cref="BuiltinTypeId.List"/>.</param>
         /// <param name="interpreter">Python interpreter</param>
-        public PythonSequenceType(BuiltinTypeId sequenceTypeId, IPythonInterpreter interpreter)
-            : base(interpreter.GetBuiltinType(sequenceTypeId), interpreter.ModuleResolution.BuiltinsModule) {
+        /// <param name="declaringModule">Declaring module. Can be null of module is 'builtins'.</param>
+        public PythonSequenceType(BuiltinTypeId sequenceTypeId, IPythonInterpreter interpreter, IPythonModuleType declaringModule = null)
+            : base(interpreter.GetBuiltinType(sequenceTypeId),
+                declaringModule ?? interpreter.ModuleResolution.BuiltinsModule) {
             _iteratorType = new PythonIteratorType(sequenceTypeId.GetIteratorTypeId(), DeclaringModule);
         }
 

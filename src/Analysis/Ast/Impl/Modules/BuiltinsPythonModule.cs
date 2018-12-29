@@ -44,83 +44,87 @@ namespace Microsoft.Python.Analysis.Modules {
         protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter)
             => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new List<string> { "-B", "-E", sb };
 
-        protected override void OnAnalysisComplete(GlobalScope gs) {
-            IPythonType noneType = null;
-            var isV3 = Interpreter.LanguageVersion.Is3x();
+        protected override void OnAnalysisComplete() {
+            lock (AnalysisLock) {
+                IPythonType noneType = null;
+                var isV3 = Interpreter.LanguageVersion.Is3x();
 
-            foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
-                var m = GetMember("__{0}__".FormatInvariant(typeId));
-                if (!(m is PythonType biType && biType.IsBuiltin)) {
-                    continue;
+                foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
+                    var m = GetMember("__{0}__".FormatInvariant(typeId));
+                    if (!(m is PythonType biType && biType.IsBuiltin)) {
+                        continue;
+                    }
+
+                    if (biType.IsHidden) {
+                        _hiddenNames.Add(biType.Name);
+                    }
+
+                    _hiddenNames.Add("__{0}__".FormatInvariant(typeId));
+
+                    // In V2 Unicode string is 'Unicode' and regular string is 'Str' or 'Bytes'.
+                    // In V3 Unicode and regular strings are 'Str' and ASCII/byte string is 'Bytes'.
+                    switch (typeId) {
+                        case BuiltinTypeId.Bytes:
+                            biType.TrySetTypeId(!isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Bytes);
+                            break;
+                        case BuiltinTypeId.BytesIterator:
+                            biType.TrySetTypeId(!isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.BytesIterator);
+                            break;
+                        case BuiltinTypeId.Unicode:
+                            biType.TrySetTypeId(isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Unicode);
+                            break;
+                        case BuiltinTypeId.UnicodeIterator:
+                            biType.TrySetTypeId(isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.UnicodeIterator);
+                            break;
+                        default:
+                            biType.TrySetTypeId(typeId);
+                            switch (typeId) {
+                                case BuiltinTypeId.Bool:
+                                    _boolType = _boolType ?? biType;
+                                    break;
+                                case BuiltinTypeId.NoneType:
+                                    noneType = noneType ?? biType;
+                                    break;
+                            }
+
+                            break;
+                    }
                 }
 
-                if (biType.IsHidden) {
-                    _hiddenNames.Add(biType.Name);
+                _hiddenNames.Add("__builtin_module_names__");
+
+                if (_boolType != null) {
+                    Analysis.GlobalScope.DeclareVariable("True", _boolType, LocationInfo.Empty);
+                    Analysis.GlobalScope.DeclareVariable("False", _boolType, LocationInfo.Empty);
                 }
-                _hiddenNames.Add("__{0}__".FormatInvariant(typeId));
 
-                // In V2 Unicode string is 'Unicode' and regular string is 'Str' or 'Bytes'.
-                // In V3 Unicode and regular strings are 'Str' and ASCII/byte string is 'Bytes'.
-                switch (typeId) {
-                    case BuiltinTypeId.Bytes:
-                        biType.TrySetTypeId(!isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Bytes);
-                        break;
-                    case BuiltinTypeId.BytesIterator:
-                        biType.TrySetTypeId(!isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.BytesIterator);
-                        break;
-                    case BuiltinTypeId.Unicode:
-                        biType.TrySetTypeId(isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Unicode);
-                        break;
-                    case BuiltinTypeId.UnicodeIterator:
-                        biType.TrySetTypeId(isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.UnicodeIterator);
-                        break;
-                    default:
-                        biType.TrySetTypeId(typeId);
-                        switch (typeId) {
-                            case BuiltinTypeId.Bool:
-                                _boolType = _boolType ?? biType;
-                                break;
-                            case BuiltinTypeId.NoneType:
-                                noneType = noneType ?? biType;
-                                break;
-                        }
-                        break;
+                if (noneType != null) {
+                    Analysis.GlobalScope.DeclareVariable("None", noneType, LocationInfo.Empty);
                 }
+
+                Specialize();
             }
-
-            _hiddenNames.Add("__builtin_module_names__");
-
-            if (_boolType != null) {
-                gs.DeclareVariable("True", _boolType, LocationInfo.Empty);
-                gs.DeclareVariable("False", _boolType, LocationInfo.Empty);
-            }
-
-            if (noneType != null) {
-                gs.DeclareVariable("None", noneType, LocationInfo.Empty);
-            }
-
-            Specialize(gs);
         }
 
-        private void Specialize(GlobalScope gs) {
+        private void Specialize() {
             // TODO: deal with commented out functions.
-            SpecializeFunction("abs", gs, Specializations.Identity);
-            SpecializeFunction("cmp", gs, Interpreter.GetBuiltinType(BuiltinTypeId.Int));
+            SpecializeFunction("abs", Specializations.Identity);
+            SpecializeFunction("cmp", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
             //SpecializeFunction(_builtinName, "dir", ReturnsListOfString);
-            SpecializeFunction("eval", gs, Interpreter.GetBuiltinType(BuiltinTypeId.Object));
+            SpecializeFunction("eval", Interpreter.GetBuiltinType(BuiltinTypeId.Object));
             //SpecializeFunction(_builtinName, "globals", ReturnsStringToObjectDict);
-            SpecializeFunction(@"isinstance", gs, _boolType);
-            SpecializeFunction(@"issubclass", gs, _boolType);
-            SpecializeFunction(@"iter", gs, Specializations.Iterator);
+            SpecializeFunction(@"isinstance", _boolType);
+            SpecializeFunction(@"issubclass", _boolType);
+            SpecializeFunction(@"iter", Specializations.Iterator);
             //SpecializeFunction(_builtinName, "locals", ReturnsStringToObjectDict);
             //SpecializeFunction(_builtinName, "max", ReturnUnionOfInputs);
             //SpecializeFunction(_builtinName, "min", ReturnUnionOfInputs);
-            SpecializeFunction("next", gs, Specializations.Next);
+            SpecializeFunction("next", Specializations.Next);
             //SpecializeFunction(_builtinName, "open", SpecialOpen);
-            SpecializeFunction("ord", gs, Interpreter.GetBuiltinType(BuiltinTypeId.Int));
-            SpecializeFunction("pow", gs, Specializations.Identity);
-            //SpecializeFunction("range", gs, Specializations.Identity);
-            SpecializeFunction("type", gs, Specializations.TypeInfo);
+            SpecializeFunction("ord", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
+            SpecializeFunction("pow", Specializations.Identity);
+            //SpecializeFunction("range", Specializations.Identity);
+            SpecializeFunction("type", Specializations.TypeInfo);
 
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);

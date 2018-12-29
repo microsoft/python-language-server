@@ -26,7 +26,6 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
@@ -41,7 +40,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// to AST and the module analysis.
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
-    internal class PythonModule : IDocument, IAnalyzable, IDisposable {
+    public class PythonModule : IDocument, IAnalyzable, IDisposable {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private IReadOnlyList<DiagnosticsEntry> _diagnostics = Array.Empty<DiagnosticsEntry>();
@@ -49,10 +48,8 @@ namespace Microsoft.Python.Analysis.Modules {
         private ModuleLoadOptions _options;
         private string _documentation = string.Empty;
 
-        private readonly object _analysisLock = new object();
         private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
         private CancellationTokenSource _linkedAnalysisCts; // cancellation token combined with the 'dispose' cts
-        private IDocumentAnalysis _analysis = DocumentAnalysis.Empty;
         private CancellationTokenSource _parseCts;
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
         private Task _parsingTask;
@@ -62,6 +59,8 @@ namespace Microsoft.Python.Analysis.Modules {
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
         protected IServiceContainer Services { get; }
+        protected IDocumentAnalysis Analysis { get; private set; } = DocumentAnalysis.Empty;
+        protected object AnalysisLock { get; } = new object();
 
         protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) {
             Check.ArgumentNotNull(nameof(name), name);
@@ -105,7 +104,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public virtual IPythonModuleType DeclaringModule => null;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
-        public bool IsTypeFactory => false;
         public IPythonFunctionType GetConstructor() => null;
         public PythonMemberType MemberType => PythonMemberType.Module;
 
@@ -130,8 +128,8 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name) => _analysis.GlobalScope.Variables[name]?.Value;
-        public virtual IEnumerable<string> GetMemberNames() => _analysis.GlobalScope.Variables.Names;
+        public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
+        public virtual IEnumerable<string> GetMemberNames() => Analysis.GlobalScope.Variables.Names;
         #endregion
 
         #region IPythonFile
@@ -142,6 +140,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IPythonModule
         public IPythonInterpreter Interpreter { get; }
 
+        /// <summary>
+        /// Associated stub module. Note that in case of specialized modules
+        /// stub may be actually a real module that is being specialized in code.
+        /// </summary>
         public IPythonModuleType Stub { get; }
 
         /// <summary>
@@ -163,7 +165,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private void InitializeContent(string content, ModuleLoadOptions newOptions) {
-            lock (_analysisLock) {
+            lock (AnalysisLock) {
                 if (!_loaded) {
                     if (!newOptions.ShouldLoad()) {
                         return;
@@ -257,7 +259,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public IEnumerable<DiagnosticsEntry> GetDiagnostics() => _diagnostics.ToArray();
 
         public void Update(IEnumerable<DocumentChangeSet> changes) {
-            lock (_analysisLock) {
+            lock (AnalysisLock) {
                 ExpectedAnalysisVersion++;
 
                 _linkedAnalysisCts?.Cancel();
@@ -289,7 +291,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
 
-            lock (_analysisLock) {
+            lock (AnalysisLock) {
                 version = _buffer.Version;
                 parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, new ParserOptions {
                     StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison),
@@ -301,7 +303,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
 
-            lock (_analysisLock) {
+            lock (AnalysisLock) {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (version != _buffer.Version) {
                     throw new OperationCanceledException();
@@ -355,7 +357,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// modified and the current analysis is no longer up to date.
         /// </summary>
         public void NotifyAnalysisPending() {
-            lock (_analysisLock) {
+            lock (AnalysisLock) {
                 // The notification comes from the analyzer when it needs to invalidate
                 // current analysis since one of the dependencies changed. Upon text
                 // buffer change the version may be incremented twice - once in Update()
@@ -367,14 +369,14 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         public virtual bool NotifyAnalysisComplete(IDocumentAnalysis analysis) {
-            lock (_analysisLock) {
+            lock (AnalysisLock) {
                 Log?.Log(TraceEventType.Verbose, $"Analysis complete: {Name}, Version: {analysis.Version}, Expected: {ExpectedAnalysisVersion}");
                 if (analysis.Version == ExpectedAnalysisVersion) {
-                    _analysis = analysis;
+                    Analysis = analysis;
                     // Derived classes can override OnAnalysisComplete if they want
                     // to perform additional actions on the completed analysis such
                     // as declare additional variables, etc.
-                    OnAnalysisComplete(analysis.GlobalScope as GlobalScope);
+                    OnAnalysisComplete();
                     _analysisTcs.TrySetResult(analysis);
                     _analysisTcs = null;
 
@@ -386,18 +388,18 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
-        protected virtual void OnAnalysisComplete(GlobalScope gs) { }
+        protected virtual void OnAnalysisComplete() { }
         #endregion
 
         #region Analysis
-        public IDocumentAnalysis GetAnyAnalysis() => _analysis;
+        public IDocumentAnalysis GetAnyAnalysis() => Analysis;
 
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
-            lock (_analysisLock) {
+            lock (AnalysisLock) {
                 if ((_options & ModuleLoadOptions.Analyze) != ModuleLoadOptions.Analyze) {
                     return Task.FromResult(DocumentAnalysis.Empty);
                 }
-                return _analysis.Version == ExpectedAnalysisVersion ? Task.FromResult(_analysis) : _analysisTcs.Task;
+                return Analysis.Version == ExpectedAnalysisVersion ? Task.FromResult(Analysis) : _analysisTcs.Task;
             }
         }
         #endregion
@@ -450,8 +452,8 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Provides ability to specialize function return type manually.
         /// </summary>
-        protected void SpecializeFunction(string name, GlobalScope gs, IMember returnValue) {
-            var f = GetOrCreateFunction(name, gs);
+        protected void SpecializeFunction(string name, IMember returnValue) {
+            var f = GetOrCreateFunction(name);
             if (f != null) {
                 foreach (var o in f.Overloads.OfType<PythonFunctionOverload>()) {
                     o.SetReturnValue(returnValue, true);
@@ -462,23 +464,23 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Provides ability to dynamically calculate function return type.
         /// </summary>
-        protected void SpecializeFunction(string name, GlobalScope gs, Func<IReadOnlyList<IMember>, IMember> returnTypeCallback) {
-            var f = GetOrCreateFunction(name, gs);
+        protected void SpecializeFunction(string name, Func<IReadOnlyList<IMember>, IMember> returnTypeCallback) {
+            var f = GetOrCreateFunction(name);
             if (f != null) {
                 foreach (var o in f.Overloads.OfType<PythonFunctionOverload>()) {
-                    o.SetReturnValueCallback(returnTypeCallback);
+                    o.SetReturnValueProvider(returnTypeCallback);
                 }
             }
         }
 
-        private PythonFunctionType GetOrCreateFunction(string name, GlobalScope gs) {
-            var f = gs.Variables[name]?.Value as PythonFunctionType;
+        private PythonFunctionType GetOrCreateFunction(string name) {
+            var f = Analysis.GlobalScope.Variables[name]?.Value as PythonFunctionType;
             // We DO want to replace class by function. Consider type() in builtins.
             // 'type()' in code is a function call, not a type class instantiation.
             if (f == null) {
                 f = PythonFunctionType.ForSpecialization(name, this);
                 f.AddOverload(new PythonFunctionOverload(name, Enumerable.Empty<IParameterInfo>(), LocationInfo.Empty));
-                gs.DeclareVariable(name, f, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable(name, f, LocationInfo.Empty);
             }
             return f;
         }

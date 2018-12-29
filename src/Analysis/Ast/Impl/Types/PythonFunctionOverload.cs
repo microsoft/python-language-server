@@ -21,31 +21,43 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
+        private readonly Func<string, LocationInfo> _locationProvider;
+
         // Allow dynamic function specialization, such as defining return types for builtin
         // functions that are impossible to scrape and that are missing from stubs.
-        private Func<IReadOnlyList<IMember>, IMember> _returnValueCallback;
+        private Func<IReadOnlyList<IMember>, IMember> _returnValueProvider;
+        
         // Return value can be an instance or a type info. Consider type(C()) returning
         // type info of C vs. return C() that returns an instance of C.
+        private Func<string, string> _documentationProvider;
+
         private IMember _returnValue;
         private bool _fromAnnotation;
 
         public PythonFunctionOverload(
             string name,
             IEnumerable<IParameterInfo> parameters,
-            LocationInfo loc,
+            LocationInfo location,
+            string returnDocumentation = null
+        ): this(name, parameters, _ => location ?? LocationInfo.Empty, returnDocumentation) { }
+
+        public PythonFunctionOverload(
+            string name,
+            IEnumerable<IParameterInfo> parameters,
+            Func<string, LocationInfo> locationProvider,
             string returnDocumentation = null
         ) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Parameters = parameters?.ToArray() ?? throw new ArgumentNullException(nameof(parameters));
-            Location = loc ?? LocationInfo.Empty;
+            _locationProvider = locationProvider;
             ReturnDocumentation = returnDocumentation;
         }
 
-        internal void SetDocumentation(string doc) {
-            if (Documentation != null) {
-                throw new InvalidOperationException("cannot set Documentation twice");
+        internal void SetDocumentationProvider(Func<string, string> documentationProvider) {
+            if (_documentationProvider != null) {
+                throw new InvalidOperationException("cannot set documentation provider twice");
             }
-            Documentation = doc;
+            _documentationProvider = documentationProvider;
         }
 
         internal void AddReturnValue(IMember value) {
@@ -66,19 +78,19 @@ namespace Microsoft.Python.Analysis.Types {
             _fromAnnotation = fromAnnotation;
         }
 
-        internal void SetReturnValueCallback(Func<IReadOnlyList<IMember>, IMember> returnValueCallback)
-            => _returnValueCallback = returnValueCallback;
+        internal void SetReturnValueProvider(Func<IReadOnlyList<IMember>, IMember> provider)
+            => _returnValueProvider = provider;
 
         public string Name { get; }
-        public string Documentation { get; private set; }
+        public string Documentation => _documentationProvider?.Invoke(Name) ?? string.Empty;
         public string ReturnDocumentation { get; }
         public IReadOnlyList<IParameterInfo> Parameters { get; }
-        public LocationInfo Location { get; }
+        public LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
         public PythonMemberType MemberType => PythonMemberType.Function;
 
         public IMember GetReturnValue(IPythonInstance instance, IReadOnlyList<IMember> args) {
             // First try supplied specialization callback.
-            var rt = _returnValueCallback?.Invoke(args);
+            var rt = _returnValueProvider?.Invoke(args);
             if (!rt.IsUnknown()) {
                 return rt;
             }

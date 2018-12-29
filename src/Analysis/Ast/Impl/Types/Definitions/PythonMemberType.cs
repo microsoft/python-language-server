@@ -53,6 +53,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Member is a variable.
         /// </summary>
-        Variable
+        Variable,
+        /// <summary>
+        /// Generic type.
+        /// </summary>
+        Generic
     }
 }

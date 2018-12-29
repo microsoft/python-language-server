@@ -63,11 +63,11 @@ namespace Microsoft.Python.Analysis.Values {
         }
 
         public IEnumerable<IScope> EnumerateFromGlobal => EnumerateTowardsGlobal.Reverse();
+        public void DeclareVariable(string name, IMember value, LocationInfo location)
+            => (_variables ?? (_variables = new VariableCollection())).DeclareVariable(name, value, location);
         #endregion
 
         public void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
-        public void DeclareVariable(string name, IMember value, LocationInfo location) 
-            => (_variables ?? (_variables = new VariableCollection())).DeclareVariable(name, value, location);
         public IReadOnlyList<Scope> ToChainTowardsGlobal() => EnumerateTowardsGlobal.OfType<Scope>().ToList();
     }
 
@@ -86,5 +86,7 @@ namespace Microsoft.Python.Analysis.Values {
         public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Repeat(this, 1);
         public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Repeat(this, 1);
         public IVariableCollection Variables => VariableCollection.Empty;
+        public void DeclareVariable(string name, IMember value, LocationInfo location) { }
+
     }
 }

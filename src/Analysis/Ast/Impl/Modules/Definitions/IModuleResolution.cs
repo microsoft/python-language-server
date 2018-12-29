@@ -55,5 +55,21 @@ namespace Microsoft.Python.Analysis.Modules {
         Task ReloadAsync(CancellationToken token = default);
 
         void AddModulePath(string path);
+
+        /// <summary>
+        /// Provides ability to specialize module by replacing module import by
+        /// <see cref="IPythonModuleType"/> implementation in code. Real module
+        /// then acts like a stub.
+        /// </summary>
+        /// <param name="name">Module to specialize.</param>
+        /// <param name="specialization">Specialized replacement.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Original (library) module loaded as stub.</returns>
+        Task<IPythonModuleType> SpecializeModuleAsync(string name, IPythonModuleType specialization, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Returns specialized module, if any.
+        /// </summary>
+        IPythonModuleType GetSpecializedModule(string name);
     }
 }

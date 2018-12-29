@@ -56,6 +56,11 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Unresolved import.
         /// </summary>
-        Unresolved
+        Unresolved,
+
+        /// <summary>
+        /// Module that is implemented inside the analyzer, such as 'typing'.
+        /// </summary>
+        Specialized
     }
 }

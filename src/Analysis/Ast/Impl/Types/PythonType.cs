@@ -23,6 +23,8 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
     internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName {
         private readonly object _lock = new object();
+        private Func<string, string> _documentationProvider;
+        private Func<string, LocationInfo> _locationProvider;
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
 
@@ -37,10 +39,18 @@ namespace Microsoft.Python.Analysis.Types {
             string documentation,
             LocationInfo location,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
+        ) : this(name, declaringModule, _ => documentation, _ => location ?? LocationInfo.Empty, typeId) { }
+
+        public PythonType(
+            string name,
+            IPythonModuleType declaringModule,
+            Func<string, string> documentationProvider,
+            Func<string, LocationInfo> locationProvider,
+            BuiltinTypeId typeId = BuiltinTypeId.Unknown
         ) : this(name, typeId) {
-            Documentation = documentation;
             DeclaringModule = declaringModule;
-            Location = location ?? LocationInfo.Empty;
+            _documentationProvider = documentationProvider;
+            _locationProvider = locationProvider;
         }
 
         public PythonType(string name, BuiltinTypeId typeId) {
@@ -50,7 +60,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonType
         public virtual string Name { get; }
-        public virtual string Documentation { get; private set; }
+        public virtual string Documentation => _documentationProvider?.Invoke(Name);
         public IPythonModuleType DeclaringModule { get; }
         public virtual PythonMemberType MemberType => _typeId.GetMemberId();
         public virtual BuiltinTypeId TypeId => _typeId;
@@ -59,7 +69,7 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region ILocatedMember
-        public virtual LocationInfo Location { get; } = LocationInfo.Empty;
+        public virtual LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
         #endregion
 
         #region IHasQualifiedName
@@ -81,11 +91,8 @@ namespace Microsoft.Python.Analysis.Types {
             return true;
         }
 
-        internal void SetDocumentation(string doc) {
-            if (string.IsNullOrEmpty(Documentation)) {
-                Documentation = doc;
-            }
-        }
+        internal void SetDocumentationProvider(Func<string, string> provider) => _documentationProvider = provider;
+        internal void SetLocationProvider(Func<string, LocationInfo> provider) => _locationProvider = provider;
 
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
             lock (_lock) {

@@ -41,12 +41,12 @@ namespace Microsoft.Python.Analysis.Modules {
         public override IMember GetMember(string name) => _childModules.TryGetValue(name, out var v) ? v : null;
         public IEnumerable<string> GetChildrenModuleNames() => GetMemberNames();
 
-        protected override void OnAnalysisComplete(GlobalScope gs) {
+        protected override void OnAnalysisComplete() {
             foreach (var childModuleName in GetChildrenModuleNames()) {
                 var name = $"{Name}.{childModuleName}";
-                gs.DeclareVariable(name, this, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable(name, this, LocationInfo.Empty);
             }
-            base.OnAnalysisComplete(gs);
+            base.OnAnalysisComplete();
         }
     }
 }

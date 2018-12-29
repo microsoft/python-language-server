@@ -114,7 +114,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         if (member != null) {
                             var documentation = member.GetPythonType()?.Documentation;
                             if (!string.IsNullOrEmpty(documentation)) {
-                                stubMember.GetPythonType<PythonType>()?.SetDocumentation(documentation);
+                                stubMember.GetPythonType<PythonType>()?.SetDocumentationProvider(_ => documentation);
                             }
                         }
 

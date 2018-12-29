@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         var docNode = (Target.Body as SuiteStatement)?.Statements.FirstOrDefault();
                         var ce = (docNode as ExpressionStatement)?.Expression as ConstantExpression;
                         if (ce?.Value is string doc) {
-                            _overload.SetDocumentation(doc);
+                            _overload.SetDocumentationProvider(_ => doc);
                         }
                     }
 
