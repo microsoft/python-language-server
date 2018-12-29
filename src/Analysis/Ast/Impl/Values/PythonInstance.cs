@@ -15,6 +15,7 @@
 
 using System;
 using System.Diagnostics;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {

@@ -19,7 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
-    internal abstract class PythonSequence : PythonInstance, IPythonSequence {
+    internal class PythonSequence : PythonInstance, IPythonSequence {
         private readonly IPythonInterpreter _interpreter;
         private readonly IMember _contentType;
         private readonly IReadOnlyList<IMember> _contentTypes;
@@ -27,12 +27,26 @@ namespace Microsoft.Python.Analysis.Values {
         /// <summary>
         /// Creates sequence with consistent content (i.e. all strings)
         /// </summary>
+        /// <param name="type">Sequence type.</param>
+        /// <param name="contentType">Content type (str, int, ...).</param>
+        /// <param name="interpreter">Python interpreter.</param>
+        /// <param name="location">Declaring location.</param>
+        public PythonSequence(IPythonType type, IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null)
+            : base(type, location) {
+            _interpreter = interpreter;
+            _contentType = contentType ?? throw new ArgumentNullException(nameof(contentType));
+        }
+
+        /// <summary>
+        /// Creates sequence with consistent content (i.e. all strings)
+        /// </summary>
+        /// <param name="typeName">Sequence type name.</param>
         /// <param name="sequenceTypeId">Sequence type id, such as <see cref="BuiltinTypeId.List"/>.</param>
         /// <param name="contentType">Content type (str, int, ...).</param>
         /// <param name="interpreter">Python interpreter.</param>
         /// <param name="location">Declaring location.</param>
-        protected PythonSequence(BuiltinTypeId sequenceTypeId, IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(new PythonSequenceType(sequenceTypeId, interpreter), location) {
+        public PythonSequence(string typeName, BuiltinTypeId sequenceTypeId, IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null)
+            : base(new PythonSequenceType(typeName, sequenceTypeId, interpreter), location) {
             _interpreter = interpreter;
             _contentType = contentType ?? throw new ArgumentNullException(nameof(contentType));
         }
@@ -40,12 +54,13 @@ namespace Microsoft.Python.Analysis.Values {
         /// <summary>
         /// Creates sequence with mixed content.
         /// </summary>
+        /// <param name="typeName">Sequence type name.</param>
         /// <param name="sequenceTypeId">Sequence type id, such as <see cref="BuiltinTypeId.List"/>.</param>
         /// <param name="contentTypes">Content types of the sequence elements (str, int, ...).</param>
         /// <param name="interpreter">Python interpreter.</param>
         /// <param name="location">Declaring location.</param>
-        protected PythonSequence(BuiltinTypeId sequenceTypeId, IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(new PythonSequenceType(sequenceTypeId, interpreter), location) {
+        public PythonSequence(string typeName, BuiltinTypeId sequenceTypeId, IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null)
+            : base(new PythonSequenceType(typeName, sequenceTypeId, interpreter), location) {
             _interpreter = interpreter;
             _contentTypes = contentTypes?.ToArray() ?? throw new ArgumentNullException(nameof(contentTypes));
         }

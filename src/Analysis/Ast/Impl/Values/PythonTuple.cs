@@ -22,12 +22,12 @@ namespace Microsoft.Python.Analysis.Values {
         /// Creates list with consistent content (i.e. all strings)
         /// </summary>
         public PythonTuple(IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null) 
-            : base(BuiltinTypeId.Tuple, contentType, interpreter, location) { }
+            : base(null, BuiltinTypeId.Tuple, contentType, interpreter, location) { }
 
         /// <summary>
         /// Creates list with mixed content.
         /// </summary>
         public PythonTuple(IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null):
-            base(BuiltinTypeId.Tuple, contentTypes, interpreter, location) { }
+            base(null, BuiltinTypeId.Tuple, contentTypes, interpreter, location) { }
     }
 }

@@ -156,10 +156,8 @@ namespace Microsoft.Python.Core.OS {
                 throw new InvalidOperationException("Process was not started");
             }
 
-            if (!_process.HasExited) {
-                await _seenNullOutput.WaitAsync(cancellationToken).ConfigureAwait(false);
-                await _seenNullError.WaitAsync(cancellationToken).ConfigureAwait(false);
-            }
+            await _seenNullOutput.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _seenNullError.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             for (var i = 0; i < 5 && !_process.HasExited; i++) {
                 await Task.Delay(100, cancellationToken);

@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Parsing;
@@ -46,7 +47,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var pi = new PythonInterpreter(configuration);
             sm.AddService(pi);
             pi._moduleResolution = new ModuleResolution(root, sm);
+            // Load builtins
             await pi._moduleResolution.LoadBuiltinTypesAsync(cancellationToken);
+            // Specialize typing
+            await TypingModule.CreateAsync(sm, cancellationToken);
             return pi;
         }
 

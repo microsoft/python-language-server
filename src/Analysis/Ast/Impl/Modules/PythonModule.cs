@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Interpreter = services?.GetService<IPythonInterpreter>();
         }
 
-        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, ModuleLoadOptions loadOptions, IPythonModuleType stub, IServiceContainer services) :
+        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, ModuleLoadOptions loadOptions, IPythonModule stub, IServiceContainer services) :
             this(new ModuleCreationOptions {
                 ModuleName = moduleName,
                 FilePath = filePath,
@@ -101,10 +101,10 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IPythonType
         public string Name { get; }
-        public virtual IPythonModuleType DeclaringModule => null;
+        public virtual IPythonModule DeclaringModule => null;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
-        public IPythonFunctionType GetConstructor() => null;
+        public IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args) => this;
         public PythonMemberType MemberType => PythonMemberType.Module;
 
         public virtual string Documentation {
@@ -144,7 +144,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Associated stub module. Note that in case of specialized modules
         /// stub may be actually a real module that is being specialized in code.
         /// </summary>
-        public IPythonModuleType Stub { get; }
+        public IPythonModule Stub { get; }
 
         /// <summary>
         /// Ensures that module content is loaded and analysis has started.

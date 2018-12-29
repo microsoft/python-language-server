@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonType(
             string name,
-            IPythonModuleType declaringModule,
+            IPythonModule declaringModule,
             string documentation,
             LocationInfo location,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonType(
             string name,
-            IPythonModuleType declaringModule,
+            IPythonModule declaringModule,
             Func<string, string> documentationProvider,
             Func<string, LocationInfo> locationProvider,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
@@ -61,11 +61,13 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonType
         public virtual string Name { get; }
         public virtual string Documentation => _documentationProvider?.Invoke(Name);
-        public IPythonModuleType DeclaringModule { get; }
+        public IPythonModule DeclaringModule { get; }
         public virtual PythonMemberType MemberType => _typeId.GetMemberId();
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
-        public IPythonFunctionType GetConstructor() => GetMember("__init__") as IPythonFunctionType;
+
+        public virtual IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args)
+            => new PythonInstance(this, location);
         #endregion
 
         #region ILocatedMember

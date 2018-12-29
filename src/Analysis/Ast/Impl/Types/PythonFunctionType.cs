@@ -30,17 +30,17 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Creates function for specializations
         /// </summary>
-        public static PythonFunctionType ForSpecialization(string name, IPythonModuleType declaringModule) 
+        public static PythonFunctionType ForSpecialization(string name, IPythonModule declaringModule) 
             => new PythonFunctionType(name, declaringModule);
 
-        private PythonFunctionType(string name, IPythonModuleType declaringModule): 
+        private PythonFunctionType(string name, IPythonModule declaringModule): 
             base(name, declaringModule, null, LocationInfo.Empty, BuiltinTypeId.Function) {
             DeclaringType = declaringModule;
         }
 
         public PythonFunctionType(
             string name,
-            IPythonModuleType declaringModule,
+            IPythonModule declaringModule,
             IPythonType declaringType,
             string documentation,
             LocationInfo location = null
@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonFunctionType(
             string name,
-            IPythonModuleType declaringModule,
+            IPythonModule declaringModule,
             IPythonType declaringType,
             Func<string, string> documentationProvider,
             Func<string, LocationInfo> locationProvider,
@@ -63,7 +63,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonFunctionType(
             FunctionDefinition fd,
-            IPythonModuleType declaringModule,
+            IPythonModule declaringModule,
             IPythonType declaringType,
             LocationInfo location = null
         ) : base(fd.Name, declaringModule, fd.Documentation, location ?? LocationInfo.Empty,

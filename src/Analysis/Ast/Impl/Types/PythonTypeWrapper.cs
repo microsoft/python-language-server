@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
@@ -27,19 +28,20 @@ namespace Microsoft.Python.Analysis.Types {
             : this(type, type.DeclaringModule) {
         }
 
-        public PythonTypeWrapper(IPythonType type, IPythonModuleType declaringModule) {
+        public PythonTypeWrapper(IPythonType type, IPythonModule declaringModule) {
             InnerType = type ?? throw new ArgumentNullException(nameof(type));
             DeclaringModule = declaringModule;
         }
 
         #region IPythonType
         public virtual string Name => InnerType.Name;
-        public IPythonModuleType DeclaringModule { get; }
+        public IPythonModule DeclaringModule { get; }
         public virtual string Documentation => InnerType.Documentation;
         public virtual  BuiltinTypeId TypeId => InnerType.TypeId;
         public virtual  PythonMemberType MemberType => InnerType.MemberType;
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;
-        public virtual  IPythonFunctionType GetConstructor() => InnerType.GetConstructor();
+        public virtual IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args)
+            => new PythonInstance(this, location);
         #endregion
 
         #region ILocatedMember

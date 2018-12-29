@@ -13,21 +13,23 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Values {
-    internal sealed class PythonList: PythonSequence {
-        /// <summary>
-        /// Creates list with consistent content (i.e. all strings)
-        /// </summary>
-        public PythonList(IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null) 
-            : base(BuiltinTypeId.List, contentType, interpreter, location) { }
+namespace Microsoft.Python.Analysis.Specializations {
+    public static class BuiltinsSpecializations {
+        public static Func<IReadOnlyList<IMember>, IMember> Identity
+            => (args => args.Count > 0 ? args[0] : null);
 
-        /// <summary>
-        /// Creates list with mixed content.
-        /// </summary>
-        public PythonList(IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null):
-            base(BuiltinTypeId.List, contentTypes, interpreter, location) { }
+        public static Func<IReadOnlyList<IMember>, IMember> TypeInfo
+            => (args => args.Count > 0 ? args[0].GetPythonType() : null);
+
+        public static Func<IReadOnlyList<IMember>, IMember> Iterator
+            => (args => args.Count > 0 && args[0] is IPythonSequence seq ? seq.GetIterator(): null);
+
+        public static Func<IReadOnlyList<IMember>, IMember> Next
+            => (args => args.Count > 0 && args[0] is IPythonIterator it ? it.Next : null);
     }
 }

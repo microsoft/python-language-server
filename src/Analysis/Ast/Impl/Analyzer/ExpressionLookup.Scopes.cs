@@ -93,6 +93,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return null;
             }
 
+            // Look at specialization and typing first
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             return ann.GetValue(new TypeAnnotationConverter(this));
         }

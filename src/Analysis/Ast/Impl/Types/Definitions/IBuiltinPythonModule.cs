@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Types {
     ///     
     /// These are the addition types in BuiltinTypeId which do not exist in __builtin__.
     /// </summary>
-    public interface IBuiltinsPythonModule : IPythonModuleType {
+    public interface IBuiltinsPythonModule : IPythonModule {
         IMember GetAnyMember(string name);
     }
 }

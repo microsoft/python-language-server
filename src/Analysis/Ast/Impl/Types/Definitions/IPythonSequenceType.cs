@@ -30,5 +30,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// Invokes 'GetContents' on the supplied instance.
         /// </summary>
         IEnumerable<IMember> GetContents(IPythonInstance instance);
+
+        /// <summary>
+        /// Sequence element type.
+        /// </summary>
+        IPythonType ContentType { get; }
     }
 }

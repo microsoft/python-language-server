@@ -28,31 +28,38 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Module.Name} : {Module.ModuleType}")]
-    internal partial class AnalysisModuleWalker : AnalysisWalker {
-        private IDisposable _classScope;
-
-        public AnalysisModuleWalker(IServiceContainer services, IPythonModuleType module, PythonAst ast)
-            : base(services, module, ast) {
-            // TODO: handle typing module
-        }
+    internal class AnalysisModuleWalker : AnalysisWalker {
+        public AnalysisModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
+            : base(services, module, ast) { }
 
         public override async Task<bool> WalkAsync(PythonAst node, CancellationToken cancellationToken = default) {
             Check.InvalidOperation(() => Ast == node, "walking wrong AST");
 
-            CollectTopLevelDefinitions();
-            cancellationToken.ThrowIfCancellationRequested();
+            await CollectTopLevelDefinitionsAsync(cancellationToken);
 
             return await base.WalkAsync(node, cancellationToken);
         }
 
-        private void CollectTopLevelDefinitions() {
+        private async Task CollectTopLevelDefinitionsAsync(CancellationToken cancellationToken = default) {
             var statement = (Ast.Body as SuiteStatement)?.Statements.ToArray() ?? Array.Empty<Statement>();
 
+            foreach (var node in statement.OfType<ImportStatement>()) {
+                cancellationToken.ThrowIfCancellationRequested();
+                await HandleImportAsync(node, cancellationToken);
+            }
+
+            foreach (var node in statement.OfType<FromImportStatement>()) {
+                cancellationToken.ThrowIfCancellationRequested();
+                await HandleFromImportAsync(node, cancellationToken);
+            }
+
             foreach (var node in statement.OfType<FunctionDefinition>()) {
+                cancellationToken.ThrowIfCancellationRequested();
                 ProcessFunctionDefinition(node, null, Lookup.GetLoc(node));
             }
 
             foreach (var node in statement.OfType<ClassDefinition>()) {
+                cancellationToken.ThrowIfCancellationRequested();
                 var classInfo = CreateClass(node);
                 Lookup.DeclareVariable(node.Name, classInfo, GetLoc(node));
             }
@@ -62,6 +69,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var gs = await base.CompleteAsync(cancellationToken);
             MergeStub();
             return gs;
+        }
+
+        public override async Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
+            var classWalker = new AnalysisClassWalker(this, node);
+            await classWalker.WalkAsync(cancellationToken);
+            return false;
         }
 
         /// <summary>
@@ -129,5 +142,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
         }
+
+        public PythonClassType CreateClass(ClassDefinition node) {
+            node = node ?? throw new ArgumentNullException(nameof(node));
+            return new PythonClassType(
+                node,
+                Module,
+                GetDoc(node.Body as SuiteStatement),
+                GetLoc(node),
+                Interpreter,
+                Lookup.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
+        }
+
     }
 }

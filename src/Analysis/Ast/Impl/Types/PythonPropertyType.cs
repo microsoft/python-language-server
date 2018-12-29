@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis.Types {
     class PythonPropertyType : PythonType, IPythonPropertyType {
         private IPythonFunctionOverload _getter;
 
-        public PythonPropertyType(FunctionDefinition fd, IPythonModuleType declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo location)
+        public PythonPropertyType(FunctionDefinition fd, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo location)
             : base(fd.Name, declaringModule, null, location) {
             FunctionDefinition = fd;
             DeclaringType = declaringType;

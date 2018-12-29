@@ -27,29 +27,42 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Creates type info for a sequence.
         /// </summary>
+        /// <param name="typeName">Sequence type name.</param>
         /// <param name="sequenceTypeId">Sequence type id, such as <see cref="BuiltinTypeId.List"/>.</param>
         /// <param name="interpreter">Python interpreter</param>
         /// <param name="declaringModule">Declaring module. Can be null of module is 'builtins'.</param>
-        public PythonSequenceType(BuiltinTypeId sequenceTypeId, IPythonInterpreter interpreter, IPythonModuleType declaringModule = null)
+        public PythonSequenceType(string typeName, BuiltinTypeId sequenceTypeId, IPythonInterpreter interpreter, IPythonModule declaringModule = null, IPythonType contentType = null)
             : base(interpreter.GetBuiltinType(sequenceTypeId),
                 declaringModule ?? interpreter.ModuleResolution.BuiltinsModule) {
             _iteratorType = new PythonIteratorType(sequenceTypeId.GetIteratorTypeId(), DeclaringModule);
+            Name = typeName ?? interpreter.GetBuiltinType(sequenceTypeId).Name;
+            ContentType = contentType ?? interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
         }
+
+        /// <summary>
+        /// Sequence element type.
+        /// </summary>
+        public IPythonType ContentType { get; }
 
         /// <summary>
         /// Retrieves value at a given index for specific instance.
         /// Equivalent to the <see cref="PythonSequence.GetValueAt"/>.
         /// </summary>
-        public IMember GetValueAt(IPythonInstance instance, int index) 
+        public virtual IMember GetValueAt(IPythonInstance instance, int index) 
             => (instance as IPythonSequence)?.GetValueAt(index) ?? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
 
-        public IEnumerable<IMember> GetContents(IPythonInstance instance) 
+        public virtual IEnumerable<IMember> GetContents(IPythonInstance instance) 
             => (instance as IPythonSequence)?.GetContents() ?? Enumerable.Empty<IMember>();
 
-        public IPythonIterator GetIterator(IPythonInstance instance) 
+        public virtual IPythonIterator GetIterator(IPythonInstance instance) 
             => (instance as IPythonSequence)?.GetIterator();
 
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override IMember GetMember(string name) => name == @"__iter__" ? _iteratorType : base.GetMember(name);
+
+        public override IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args) 
+            => new PythonSequence(this, ContentType, interpreter, location);
+
+        public override string Name { get; }
     }
 }

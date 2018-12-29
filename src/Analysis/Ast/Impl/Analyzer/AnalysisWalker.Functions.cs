@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
 
-        private void AddProperty(FunctionDefinition node, IPythonModuleType declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo loc) {
+        private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo loc) {
             if (!(Lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonPropertyType existing)) {
                 existing = new PythonPropertyType(node, declaringModule, declaringType, isAbstract, loc);
                 Lookup.DeclareVariable(node.Name, existing, loc);

@@ -22,7 +22,7 @@ namespace Microsoft.Python.Analysis.Values {
     /// </summary>
     internal abstract class PythonString: PythonSequence, IPythonConstant {
         protected PythonString(object s, BuiltinTypeId contentTypeId, IPythonInterpreter interpreter, LocationInfo location = null):
-            base(contentTypeId, interpreter.GetBuiltinType(contentTypeId), interpreter, location) {
+            base(null, contentTypeId, interpreter.GetBuiltinType(contentTypeId), interpreter, location) {
             Value = s;
         }
 

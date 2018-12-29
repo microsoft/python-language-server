@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public ExpressionLookup(
             IServiceContainer services,
-            IPythonModuleType module,
+            IPythonModule module,
             PythonAst ast
         ) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public PythonAst Ast { get; }
-        public IPythonModuleType Module { get; }
+        public IPythonModule Module { get; }
         public LookupOptions DefaultLookupOptions { get; set; }
         public GlobalScope GlobalScope { get; }
         public Scope CurrentScope { get; private set; }

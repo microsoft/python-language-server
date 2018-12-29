@@ -25,6 +25,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         /// Creates instance of a type information with the specific
         /// type arguments from the generic template.
         /// </summary>
-        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModuleType declatingModule, LocationInfo location = null);
+        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declatingModule, LocationInfo location = null);
     }
 }

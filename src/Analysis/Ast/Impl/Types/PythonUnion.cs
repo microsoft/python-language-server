@@ -23,7 +23,7 @@ using Microsoft.Python.Core.Diagnostics;
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonUnion : IPythonUnionType {
         private readonly HashSet<IPythonType> _types = new HashSet<IPythonType>(PythonTypeComparer.Instance);
-        private object _lock = new object();
+        private readonly object _lock = new object();
 
         private PythonUnion(IPythonType x, IPythonType y) {
             Check.Argument(nameof(x), () => !(x is IPythonUnionType));
@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IPythonModuleType DeclaringModule => null;
+        public IPythonModule DeclaringModule => null;
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public PythonMemberType MemberType => PythonMemberType.Union;
         public string Documentation => Name;
@@ -61,7 +61,8 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
         }
-        public bool IsTypeFactory => false;
+
+        public IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args) => this;
         #endregion
 
         #region IPythonUnionType
@@ -124,11 +125,10 @@ namespace Microsoft.Python.Analysis.Types {
             if (utx != null && uty == null) {
                 return utx.Add(y);
             }
-            if (utx == null && uty != null) {
-                return uty.Add(x);
-            }
 
-            return utx.Add(uty);
+            return utx == null ? uty.Add(x) : utx.Add(uty);
         }
+
+
     }
 }

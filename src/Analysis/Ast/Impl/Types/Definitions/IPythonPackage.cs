@@ -16,7 +16,7 @@
 using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonPackageType : IPythonModuleType {
+    public interface IPythonPackage : IPythonModule {
         /// <summary>
         /// Modules imported by this module.
         /// </summary>

@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
                 contents.Add(value);
             }
-            return new PythonList(contents, Interpreter, GetLoc(expression));
+            return new PythonSequence(null, BuiltinTypeId.List, contents, Interpreter, GetLoc(expression));
         }
 
         private async Task<IMember> GetValueFromIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
@@ -42,21 +42,28 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            if (target is IPythonSequence seq) {
-                var m = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
-                var index = 0;
-                if (m is IPythonConstant c) {
-                    if (c.Type.TypeId == BuiltinTypeId.Int || c.Type.TypeId == BuiltinTypeId.Long) {
-                        index = (int)c.Value;
-                    } else {
-                        // TODO: report bad index type.
-                        return UnknownType;
-                    }
-                }
-                return seq.GetValueAt(index);
-                // TODO: handle typing module
+            switch (target) {
+                case IPythonSequence seq:
+                    return await GetValueFromSequenceAsync(expr, seq, cancellationToken);
+                case IPythonSequenceType seqt:
+                    return seqt.ContentType;
+                default:
+                    return UnknownType;
             }
-            return UnknownType;
+        }
+
+        private async Task<IMember> GetValueFromSequenceAsync(IndexExpression expr, IPythonSequence seq, CancellationToken cancellationToken = default) {
+            var m = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
+            var index = 0;
+            if (m is IPythonConstant c) {
+                if (c.Type.TypeId == BuiltinTypeId.Int || c.Type.TypeId == BuiltinTypeId.Long) {
+                    index = (int)c.Value;
+                } else {
+                    // TODO: report bad index type.
+                    return UnknownType;
+                }
+            }
+            return seq.GetValueAt(index);
         }
     }
 }

@@ -19,7 +19,7 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter: PythonType, IGenericTypeParameter {
-        public GenericTypeParameter(string name, IPythonModuleType declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, LocationInfo location)
+        public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, LocationInfo location)
             : base(name, declaringModule, documentation, location) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
         }

@@ -14,24 +14,28 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal sealed class TypingSequenceType: PythonSequenceType, ITypingSequenceType {
-        public TypingSequenceType(IPythonType contentType, IPythonModuleType declaringModule) 
-            : base(BuiltinTypeId.List, declaringModule.Interpreter, declaringModule) {
-            ContentType = contentType;
+    internal sealed class TypingSequenceType : PythonSequenceType {
+        public TypingSequenceType(string name, BuiltinTypeId typeId, IPythonModule declaringModule, IPythonType contentType)
+            : base(name, typeId, declaringModule.Interpreter, declaringModule, contentType) {
+            Name = $"{name}[{contentType.Name}]";
         }
 
-        public static IPythonType Create(IReadOnlyList<IPythonType> typeArguments, IPythonModuleType declaringModule) {
+        public static IPythonType Create(string name, BuiltinTypeId typeId, IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
             if (typeArguments.Count == 1) {
-                return new TypingSequenceType(typeArguments[0], declaringModule);
+                return new TypingSequenceType(name, typeId, declaringModule, typeArguments[0]);
             }
             // TODO: report wrong number of arguments
             return null;
         }
 
-        public IPythonType ContentType { get; }
+        public override IMember GetValueAt(IPythonInstance instance, int index) => ContentType;
+        public override IEnumerable<IMember> GetContents(IPythonInstance instance) => Enumerable.Repeat(ContentType, 1);
 
+        public override string Name { get; }
     }
 }

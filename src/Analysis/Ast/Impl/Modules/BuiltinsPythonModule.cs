@@ -16,8 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Specializations;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
@@ -108,23 +108,23 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private void Specialize() {
             // TODO: deal with commented out functions.
-            SpecializeFunction("abs", Specializations.Identity);
+            SpecializeFunction("abs", BuiltinsSpecializations.Identity);
             SpecializeFunction("cmp", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
             //SpecializeFunction(_builtinName, "dir", ReturnsListOfString);
             SpecializeFunction("eval", Interpreter.GetBuiltinType(BuiltinTypeId.Object));
             //SpecializeFunction(_builtinName, "globals", ReturnsStringToObjectDict);
             SpecializeFunction(@"isinstance", _boolType);
             SpecializeFunction(@"issubclass", _boolType);
-            SpecializeFunction(@"iter", Specializations.Iterator);
+            SpecializeFunction(@"iter", BuiltinsSpecializations.Iterator);
             //SpecializeFunction(_builtinName, "locals", ReturnsStringToObjectDict);
             //SpecializeFunction(_builtinName, "max", ReturnUnionOfInputs);
             //SpecializeFunction(_builtinName, "min", ReturnUnionOfInputs);
-            SpecializeFunction("next", Specializations.Next);
+            SpecializeFunction("next", BuiltinsSpecializations.Next);
             //SpecializeFunction(_builtinName, "open", SpecialOpen);
             SpecializeFunction("ord", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
-            SpecializeFunction("pow", Specializations.Identity);
+            SpecializeFunction("pow", BuiltinsSpecializations.Identity);
             //SpecializeFunction("range", Specializations.Identity);
-            SpecializeFunction("type", Specializations.TypeInfo);
+            SpecializeFunction("type", BuiltinsSpecializations.TypeInfo);
 
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);

@@ -251,10 +251,8 @@ b = abc.CmethO(['fob'], 'oar')
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Should().HaveVariable("a")
-                .Which.Should().HaveType(BuiltinTypeId.Int);
-            analysis.Should().HaveVariable("b")
-                .Which.Should().HaveType(BuiltinTypeId.List);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("b").OfType(BuiltinTypeId.List);
         }
 
         [TestMethod, Priority(0)]
@@ -301,6 +299,41 @@ class cls(object):
             e.IsAbstract.Should().BeTrue();
             e.IsStatic.Should().BeFalse();
             e.IsClassMethod.Should().BeTrue();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OverloadsParamTypeMatch() {
+            const string code = @"
+
+def f(a: None) -> None: ...
+def f(a: int) -> float: ...
+def f(a: str) -> bytes: ...
+
+x = f()
+y = f(1)
+z = f('s')
+";
+            var analysis = await GetAnalysisAsync(code);
+            var f = analysis.Should().HaveFunction("f").Which;
+
+            f.Should().HaveOverloadAt(0)
+                .Which.Should().HaveReturnType(BuiltinTypeId.NoneType)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.NoneType);
+
+            f.Should().HaveOverloadAt(1)
+                .Which.Should().HaveReturnType(BuiltinTypeId.Float)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.Int);
+
+            f.Should().HaveOverloadAt(2)
+                .Which.Should().HaveReturnType(BuiltinTypeId.Bytes)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.Str);
+
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.NoneType)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Float)
+                .And.HaveVariable("z").OfType(BuiltinTypeId.Bytes);
         }
     }
 }

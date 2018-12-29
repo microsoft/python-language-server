@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,7 +44,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Returns an IPythonModule for a given module name. Returns null if
         /// the module does not exist. The import is performed asynchronously.
         /// </summary>
-        Task<IPythonModuleType> ImportModuleAsync(string name, CancellationToken cancellationToken = default);
+        Task<IPythonModule> ImportModuleAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Builtins module.
@@ -58,18 +59,19 @@ namespace Microsoft.Python.Analysis.Modules {
 
         /// <summary>
         /// Provides ability to specialize module by replacing module import by
-        /// <see cref="IPythonModuleType"/> implementation in code. Real module
-        /// then acts like a stub.
+        /// <see cref="IPythonModule"/> implementation in code. Real module
+        /// content is loaded and analyzed only for class/functions definitions
+        /// so the original documentation can be extracted.
         /// </summary>
         /// <param name="name">Module to specialize.</param>
-        /// <param name="specialization">Specialized replacement.</param>
+        /// <param name="specializationConstructor">Specialized module constructor.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Original (library) module loaded as stub.</returns>
-        Task<IPythonModuleType> SpecializeModuleAsync(string name, IPythonModuleType specialization, CancellationToken cancellationToken = default);
+        Task<IPythonModule> SpecializeModuleAsync(string name, Func<string, IPythonModule> specializationConstructor, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns specialized module, if any.
         /// </summary>
-        IPythonModuleType GetSpecializedModule(string name);
+        IPythonModule GetSpecializedModule(string name);
     }
 }

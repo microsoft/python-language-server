@@ -61,7 +61,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 format.SpaceBeforeIndexBracket,
                 " ",
                 "",
-                this.GetPreceedingWhiteSpace(ast)
+                this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? string.Empty
             );
 
             res.Append('[');
@@ -78,7 +78,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     format.SpaceWithinIndexBrackets,
                     " ",
                     "",
-                    this.GetSecondWhiteSpace(ast)
+                    this.GetSecondWhiteSpaceDefaultNull(ast) ?? string.Empty
                 );
                 res.Append(']');
             }

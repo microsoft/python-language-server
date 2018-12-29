@@ -33,7 +33,7 @@ using Microsoft.Python.Core.Logging;
 namespace Microsoft.Python.Analysis.Modules {
     internal sealed class ModuleResolution : IModuleResolution {
         private static readonly IReadOnlyDictionary<string, string> _emptyModuleSet = EmptyDictionary<string, string>.Instance;
-        private readonly ConcurrentDictionary<string, IPythonModuleType> _modules = new ConcurrentDictionary<string, IPythonModuleType>();
+        private readonly ConcurrentDictionary<string, IPythonModule> _modules = new ConcurrentDictionary<string, IPythonModule>();
         private readonly IReadOnlyList<string> _typeStubPaths;
         private readonly IServiceContainer _services;
         private readonly IPythonInterpreter _interpreter;
@@ -222,7 +222,7 @@ namespace Microsoft.Python.Analysis.Modules {
             ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
         }
 
-        public async Task<IPythonModuleType> ImportModuleAsync(string name, CancellationToken cancellationToken = default) {
+        public async Task<IPythonModule> ImportModuleAsync(string name, CancellationToken cancellationToken = default) {
             if (name == BuiltinModuleName) {
                 return BuiltinsModule;
             }
@@ -307,20 +307,21 @@ namespace Microsoft.Python.Analysis.Modules {
 
         /// <summary>
         /// Provides ability to specialize module by replacing module import by
-        /// <see cref="IPythonModuleType"/> implementation in code. Real module
-        /// then acts like a stub.
+        /// <see cref="IPythonModule"/> implementation in code. Real module
+        /// content is loaded and analyzed only for class/functions definitions
+        /// so the original documentation can be extracted.
         /// </summary>
         /// <param name="name">Module to specialize.</param>
-        /// <param name="specialization">Specialized replacement.</param>
+        /// <param name="specializationConstructor">Specialized module constructor.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Original (library) module loaded as stub.</returns>
-        public async Task<IPythonModuleType> SpecializeModuleAsync(string name, IPythonModuleType specialization, CancellationToken cancellationToken = default) {
+        public async Task<IPythonModule> SpecializeModuleAsync(string name, Func<string, IPythonModule> specializationConstructor, CancellationToken cancellationToken = default) {
             var import = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (!string.IsNullOrEmpty(import?.ModulePath)) {
-                var libraryModule = new StubPythonModule(import.FullName, import.ModulePath, _services);
-                await libraryModule.LoadAndAnalyzeAsync(cancellationToken);
-                _modules[name] = specialization;
-                return libraryModule;
+                var module = specializationConstructor(import.ModulePath);
+                _modules[name] = module;
+                await module.LoadAndAnalyzeAsync(cancellationToken);
+                return module;
             }
             return null;
         }
@@ -328,10 +329,10 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Returns specialized module, if any.
         /// </summary>
-        public IPythonModuleType GetSpecializedModule(string name)
+        public IPythonModule GetSpecializedModule(string name)
             => _modules.TryGetValue(name, out var m) && m is SpecializedModule ? m : null;
 
-        private async Task<IPythonModuleType> ImportFromSearchPathsAsync(string name, CancellationToken cancellationToken) {
+        private async Task<IPythonModule> ImportFromSearchPathsAsync(string name, CancellationToken cancellationToken) {
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (moduleImport == null) {
                 _log?.Log(TraceEventType.Verbose, "Import not found: ", name);
@@ -339,7 +340,7 @@ namespace Microsoft.Python.Analysis.Modules {
             }
             // If there is a stub, make sure it is loaded and attached
             var stub = await ImportFromTypeStubsAsync(moduleImport.IsBuiltin ? name : moduleImport.FullName, cancellationToken);
-            IPythonModuleType module;
+            IPythonModule module;
 
             if (moduleImport.IsBuiltin) {
                 _log?.Log(TraceEventType.Verbose, "Import built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
@@ -365,7 +366,7 @@ namespace Microsoft.Python.Analysis.Modules {
             return module;
         }
 
-        private async Task<IPythonModuleType> ImportFromTypeStubsAsync(string name, CancellationToken cancellationToken = default) {
+        private async Task<IPythonModule> ImportFromTypeStubsAsync(string name, CancellationToken cancellationToken = default) {
             var mp = FindModuleInSearchPath(_typeStubPaths, null, name);
             if (mp != null) {
                 if (mp.Value.IsCompiled) {
@@ -385,7 +386,7 @@ namespace Microsoft.Python.Analysis.Modules {
             return stubPath != null ? await CreateStubModuleAsync(name, stubPath, cancellationToken) : null;
         }
 
-        private async Task<IPythonModuleType> CreateStubModuleAsync(string moduleName, string filePath, CancellationToken cancellationToken = default) {
+        private async Task<IPythonModule> CreateStubModuleAsync(string moduleName, string filePath, CancellationToken cancellationToken = default) {
             _log?.Log(TraceEventType.Verbose, "Import type stub", moduleName, filePath);
             var module = new StubPythonModule(moduleName, filePath, _services);
             await module.LoadAndAnalyzeAsync(cancellationToken);
@@ -424,7 +425,7 @@ namespace Microsoft.Python.Analysis.Modules {
             return null;
         }
 
-        private async Task<IReadOnlyList<IPythonModuleType>> GetModuleStubsAsync(string moduleName, string modulePath, CancellationToken cancellationToken = default) {
+        private async Task<IReadOnlyList<IPythonModule>> GetModuleStubsAsync(string moduleName, string modulePath, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
 
             // Also search for type stub packages if enabled and we are not a blacklisted module
@@ -435,7 +436,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     return new[] { tsModule };
                 }
             }
-            return Array.Empty<IPythonModuleType>();
+            return Array.Empty<IPythonModule>();
         }
 
         private IEnumerable<string> GetTypeShedPaths(string typeshedRootPath) {

@@ -74,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                         // Return type from the annotation is sufficient for libraries
                         // and stubs, no need to walk the body.
-                        if (Target.Body != null) {
+                        if (Target.Body != null && Module.ModuleType != ModuleType.Specialized) {
                             await Target.Body.WalkAsync(this, cancellationToken);
                         }
                     }
@@ -146,13 +146,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private async Task DeclareParameterAsync(Parameter p, int index, ParameterInfo pi, CancellationToken cancellationToken = default) {
-            var defaultValue = await Lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? Lookup.UnknownType;
+            IPythonType paramType;
 
-            var defaultValueType = defaultValue.GetPythonType();
-            var argType = new CallableArgumentType(index, defaultValueType);
+            // If type is known from annotation, use it.
+            if (pi != null && !pi.Type.IsUnknown()) {
+                paramType = pi.Type;
+            } else {
+                // Declare as an argument which type is only known at the invocation time.
+                var defaultValue = await Lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? Lookup.UnknownType;
+                var defaultValueType = defaultValue.GetPythonType();
 
-            Lookup.DeclareVariable(p.Name, argType, p.NameExpression);
-            pi?.SetDefaultValueType(defaultValueType);
+                paramType = new CallableArgumentType(index, defaultValueType);
+                if (!defaultValueType.IsUnknown()) {
+                    pi?.SetDefaultValueType(defaultValueType);
+                }
+            }
+
+            Lookup.DeclareVariable(p.Name, paramType, p.NameExpression);
         }
     }
 }

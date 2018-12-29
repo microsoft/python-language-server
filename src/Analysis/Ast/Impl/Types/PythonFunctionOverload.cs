@@ -89,10 +89,12 @@ namespace Microsoft.Python.Analysis.Types {
         public PythonMemberType MemberType => PythonMemberType.Function;
 
         public IMember GetReturnValue(IPythonInstance instance, IReadOnlyList<IMember> args) {
-            // First try supplied specialization callback.
-            var rt = _returnValueProvider?.Invoke(args);
-            if (!rt.IsUnknown()) {
-                return rt;
+            if (!_fromAnnotation) {
+                // First try supplied specialization callback.
+                var rt = _returnValueProvider?.Invoke(args);
+                if (!rt.IsUnknown()) {
+                    return rt;
+                }
             }
 
             // Then see if return value matches type of one of the input arguments.
@@ -102,7 +104,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             if (t is IPythonCallableArgumentType cat && args != null) {
-                rt = cat.ParameterIndex < args.Count ? args[cat.ParameterIndex] : null;
+                var rt = cat.ParameterIndex < args.Count ? args[cat.ParameterIndex] : null;
                 if (!rt.IsUnknown()) {
                     return rt;
                 }

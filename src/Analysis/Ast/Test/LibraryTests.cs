@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var analysis = await GetAnalysisAsync("import datetime");
 
             var module = analysis.Should().HaveVariable("datetime")
-                .Which.Should().HaveType<IPythonModuleType>().Which;
+                .Which.Should().HaveType<IPythonModule>().Which;
             module.Name.Should().Be("datetime");
 
             var dt = module.Should().HaveMember<IPythonClassType>("datetime").Which;

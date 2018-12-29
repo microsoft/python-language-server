@@ -73,7 +73,7 @@ scanner = _json.make_scanner()";
                     .And.HaveParameters("self", "string", "index")
                     .And.HaveParameterAt(1).WithName("string").WithType("str").WithNoDefaultValue()
                     .And.HaveParameterAt(2).WithName("index").WithType("int").WithNoDefaultValue()
-                    .And.HaveReturnDocumentation("Tuple [ (Any,int) ]");
+                    .And.HaveReturnDocumentation("Tuple[Any, int]");
         }
 
         [TestMethod, Priority(0)]
@@ -82,7 +82,7 @@ scanner = _json.make_scanner()";
 
             analysis.Should()
                 .HaveVariable("Package")
-                    .Which.Value.Should().HaveMember<IPythonModuleType>("Module");
+                    .Which.Value.Should().HaveMember<IPythonModule>("Module");
 
             analysis.Should().HaveVariable("c")
                 .Which.Value.Should().HaveMembers("untyped_method", "inferred_method", "typed_method")

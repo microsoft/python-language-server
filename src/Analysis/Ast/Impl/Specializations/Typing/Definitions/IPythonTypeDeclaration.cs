@@ -21,6 +21,6 @@ namespace Microsoft.Python.Analysis.Types {
     /// The difference is that when function is called, it needs
     /// </summary>
     public interface IPythonTypeDeclaration: IPythonType {
-        IPythonType DeclareType(IReadOnlyList<IMember> args, IPythonModuleType declaringModule, string documentation, LocationInfo location);
+        IPythonType DeclareType(IReadOnlyList<IMember> args, IPythonModule declaringModule, string documentation, LocationInfo location);
     }
 }

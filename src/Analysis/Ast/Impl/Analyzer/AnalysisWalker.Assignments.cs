@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -42,7 +43,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
-                AssignFromAnnotation(expr);
+                // x: List[str] = [...]
+                AssignAnnotatedVariable(expr, value);
                 if (!value.IsUnknown() && expr.Expression is NameExpression ne) {
                     Lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
                 }
@@ -56,14 +58,31 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override Task<bool> WalkAsync(ExpressionStatement node, CancellationToken cancellationToken = default) {
-            AssignFromAnnotation(node.Expression as ExpressionWithAnnotation);
+            AssignAnnotatedVariable(node.Expression as ExpressionWithAnnotation, null);
             return Task.FromResult(false);
         }
 
-        private void AssignFromAnnotation(ExpressionWithAnnotation expr) {
+        private void AssignAnnotatedVariable(ExpressionWithAnnotation expr, IMember value) {
             if (expr?.Annotation != null && expr.Expression is NameExpression ne) {
-                var t = Lookup.GetTypeFromAnnotation(expr.Annotation);
-                Lookup.DeclareVariable(ne.Name, t ?? Lookup.UnknownType, GetLoc(expr.Expression));
+                var variableType = Lookup.GetTypeFromAnnotation(expr.Annotation);
+                // If value is null, then this is a pure declaration like 
+                //   x: List[str]
+                // without a value. If value is provided, then this is
+                //   x: List[str] = [...]
+
+                // Check value type for compatibility
+                IMember instance;
+                if (value != null) {
+                    var valueType = value.GetPythonType();
+                    if (!valueType.IsUnknown() && !variableType.IsUnknown() && !valueType.Equals(variableType)) {
+                        // TODO: warn incompatible value type.
+                        return;
+                    }
+                    instance = value;
+                } else {
+                    instance = variableType?.CreateInstance(Interpreter, GetLoc(expr.Expression)) ?? Lookup.UnknownType;
+                }
+                Lookup.DeclareVariable(ne.Name, instance, expr.Expression);
             }
         }
     }

@@ -123,7 +123,7 @@ class C:
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveClass("C")
-                .Which.Should().HaveMember<IPythonModuleType>("sys")
+                .Which.Should().HaveMember<IPythonModule>("sys")
                 .Which.Should().HaveMember<IMember>("platform");
         }
 
@@ -145,11 +145,11 @@ x = f()
             var analysis = await GetAnalysisAsync(@"import sys as s, array as a", PythonVersions.LatestAvailable3X);
 
             analysis.Should().HaveVariable("s")
-                .Which.Should().HaveType<IPythonModuleType>()
+                .Which.Should().HaveType<IPythonModule>()
                 .Which.Should().HaveMember("platform");
 
             analysis.Should().HaveVariable("a")
-                .Which.Should().HaveType<IPythonModuleType>()
+                .Which.Should().HaveType<IPythonModule>()
                 .Which.Should().HaveMember("ArrayType");
         }
     }

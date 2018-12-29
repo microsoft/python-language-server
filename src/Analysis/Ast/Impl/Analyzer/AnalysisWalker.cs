@@ -30,19 +30,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal abstract partial class AnalysisWalker : PythonWalkerAsync {
         private readonly HashSet<Node> _replacedByStubs = new HashSet<Node>();
 
-        protected ExpressionLookup Lookup { get; }
-        protected IServiceContainer Services => Lookup.Services;
-        protected ILogger Log => Lookup.Log;
-        protected IPythonModuleType Module => Lookup.Module;
-        protected IPythonInterpreter Interpreter => Lookup.Interpreter;
-        protected GlobalScope GlobalScope => Lookup.GlobalScope;
-        protected PythonAst Ast => Lookup.Ast;
+        public ExpressionLookup Lookup { get; }
+        public IServiceContainer Services => Lookup.Services;
+        public ILogger Log => Lookup.Log;
+        public IPythonModule Module => Lookup.Module;
+        public IPythonInterpreter Interpreter => Lookup.Interpreter;
+        public GlobalScope GlobalScope => Lookup.GlobalScope;
+        public PythonAst Ast => Lookup.Ast;
         protected AnalysisFunctionWalkerSet FunctionWalkers => Lookup.FunctionWalkers;
 
         protected AnalysisWalker(ExpressionLookup lookup) {
             Lookup = lookup;
         }
-        protected AnalysisWalker(IServiceContainer services, IPythonModuleType module, PythonAst ast) {
+        protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast) {
             Lookup = new ExpressionLookup(services, module, ast);
         }
 

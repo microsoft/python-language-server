@@ -13,25 +13,33 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Types;
+using System;
+using System.IO;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Specializations {
+namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
     /// Base class for specialized modules. Specialized modules are implementations
-    /// that replace real Python module in imports. 
+    /// that replace real Python module in imports. Content is loaded from the
+    /// original module and analyzed only for the class/functions documentation.
     /// </summary>
     /// <remarks>
     /// Specialization is helpful when it is easier to express module members
     /// behavior to the analyzer in code. Example of specialization is 'typing'
     /// module. Specialized module can use actual library module as a source
-    /// of documentation for its members. See <see cref="Typing.TypingModule"/>
-    /// and <see cref="DocumentationOnlyModule"/>
+    /// of documentation for its members. See <see cref="Typing.TypingModule"/>.
     /// </remarks>
     public abstract class SpecializedModule : PythonModule {
-        protected SpecializedModule(string name, IServiceContainer services)
-            : base(name, string.Empty, ModuleType.Specialized, ModuleLoadOptions.None, null, services) { }
+        protected SpecializedModule(string name, string modulePath, IServiceContainer services)
+            : base(name, modulePath, ModuleType.Specialized, ModuleLoadOptions.Analyze, null, services) { }
+
+        protected override string LoadContent(ModuleLoadOptions options) {
+            try {
+                if (FileSystem.FileExists(FilePath)) {
+                    return FileSystem.ReadAllText(FilePath);
+                }
+            } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            return string.Empty;
+        }
     }
 }

@@ -18,15 +18,19 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal partial class AnalysisWalker {
-        public override async Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
+        public override Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
+            => HandleFromImportAsync(node, cancellationToken);
+
+        public async Task<bool> HandleFromImportAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            if (node.Root == null || node.Names == null) {
+            if (node.Root == null || node.Names == null || Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
 
@@ -35,9 +39,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 switch (rootNames[0].Name) {
                     case "__future__":
                         return false;
-                        //case "typing":
-                        //    ImportMembersFromTyping(node);
-                        //    return false;
                 }
             }
 
@@ -107,7 +108,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private async Task HandleModuleImportStarAsync(IPythonModuleType module, CancellationToken cancellationToken = default) {
+        private async Task HandleModuleImportStarAsync(IPythonModule module, CancellationToken cancellationToken = default) {
             foreach (var memberName in module.GetMemberNames()) {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -119,7 +120,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 member = member ?? Lookup.UnknownType;
-                if (member is IPythonModuleType m) {
+                if (member is IPythonModule m) {
                     await Interpreter.ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
                 }
 

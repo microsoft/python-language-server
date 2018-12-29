@@ -17,6 +17,6 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
     public interface IGlobalScope: IScope {
-        IPythonModuleType Module { get; }
+        IPythonModule Module { get; }
     }
 }

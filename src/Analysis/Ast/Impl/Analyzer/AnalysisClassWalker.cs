@@ -22,18 +22,30 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed partial class AnalysisModuleWalker {
+    internal sealed class AnalysisClassWalker: AnalysisWalker {
+        private readonly AnalysisModuleWalker _moduleWalker;
+        private readonly ClassDefinition _target;
+        private IDisposable _classScope;
+
+        public AnalysisClassWalker(AnalysisModuleWalker moduleWalker, ClassDefinition target) : base(moduleWalker.Lookup) {
+            _moduleWalker = moduleWalker;
+            _target = target;
+        }
+
+        public async Task WalkAsync(CancellationToken cancellationToken = default) 
+            => await _target.WalkAsync(this, cancellationToken);
+
         public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
 
             var instance = Lookup.GetInScope(node.Name);
             if (instance != null && !(instance.GetPythonType() is PythonClassType)) {
-                // TODO: warning that variable is already declared.
+                // TODO: warning that variable is already declared of a different type.
                 return Task.FromResult(false);
             }
 
             if (!(instance.GetPythonType() is PythonClassType classInfo)) {
-                classInfo = CreateClass(node);
+                classInfo = _moduleWalker.CreateClass(node);
                 Lookup.DeclareVariable(node.Name, classInfo, node);
             }
 
@@ -63,17 +75,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             return base.PostWalkAsync(node, cancellationToken);
-        }
-
-        private PythonClassType CreateClass(ClassDefinition node) {
-            node = node ?? throw new ArgumentNullException(nameof(node));
-            return new PythonClassType(
-                node,
-                Module,
-                GetDoc(node.Body as SuiteStatement),
-                GetLoc(node),
-                Interpreter,
-                Lookup.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
         }
     }
 }

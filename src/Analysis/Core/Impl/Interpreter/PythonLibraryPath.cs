@@ -104,7 +104,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 List<PythonLibraryPath> paths;
                 if (!string.IsNullOrEmpty(cachePath)) {
                     paths = GetCachedDatabaseSearchPaths(cachePath);
-                    if (paths != null) {
+                    if (paths != null && paths.Count > 2) {
                         return paths;
                     }
                 }
@@ -146,7 +146,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             // path that we can filter out later
             var tempWorkingDir = IOPath.Combine(IOPath.GetTempPath(), IOPath.GetRandomFileName());
             Directory.CreateDirectory(tempWorkingDir);
-            if (!InstallPath.TryGetFile("get_search_paths.py", out string srcGetSearchPaths)) {
+            if (!InstallPath.TryGetFile("get_search_paths.py", out var srcGetSearchPaths)) {
                 return new List<PythonLibraryPath>();
             }
             var getSearchPaths = IOPath.Combine(tempWorkingDir, PathUtils.GetFileName(srcGetSearchPaths));
@@ -156,7 +156,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             var errorLines = new List<string> { "Cannot obtain list of paths" };
 
             try {
-                using (var seenNullData = new ManualResetEventSlim())
                 using (var proc = new ProcessHelper(interpreter, new[] { "-S", "-E", getSearchPaths }, tempWorkingDir)) {
                     proc.OnOutputLine = lines.Add;
                     proc.OnErrorLine = errorLines.Add;

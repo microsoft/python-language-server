@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonClassType(
             ClassDefinition classDefinition,
-            IPythonModuleType declaringModule,
+            IPythonModule declaringModule,
             string documentation,
             LocationInfo loc,
             IPythonInterpreter interpreter,
@@ -128,7 +128,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                 if (!(DeclaringModule is BuiltinsPythonModule)) {
                     // TODO: If necessary,  we can set __bases__ on builtins when the module is fully analyzed.
-                    AddMember("__bases__", new PythonList(Bases, interpreter), true);
+                    AddMember("__bases__", new PythonSequence(null, BuiltinTypeId.List, Bases, interpreter), true);
                 }
             }
         }

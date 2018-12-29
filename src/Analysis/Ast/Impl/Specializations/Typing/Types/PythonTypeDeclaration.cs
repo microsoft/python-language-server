@@ -24,10 +24,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// The difference is that when function is called, it needs
     /// </summary>
     internal sealed class PythonTypeDeclaration : PythonType, IPythonTypeDeclaration {
-        public PythonTypeDeclaration(string name, IPythonModuleType declaringModule) :
+        public PythonTypeDeclaration(string name, IPythonModule declaringModule) :
             base(name, declaringModule, string.Empty, null) { }
 
-        public IPythonType DeclareType(IReadOnlyList<IMember> args, IPythonModuleType declaringModule, string documentation, LocationInfo location) {
+        public IPythonType DeclareType(IReadOnlyList<IMember> args, IPythonModule declaringModule, string documentation, LocationInfo location) {
             if (args.Count == 0) {
                 // TODO: report that at least one argument is required.
                 return DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);

@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         /// <param name="typeId">Iterator type id, such as <see cref="BuiltinTypeId.StrIterator"/>.</param>
         /// <param name="declaringModule">Declaring module</param>
-        public PythonIteratorType(BuiltinTypeId typeId, IPythonModuleType declaringModule)
+        public PythonIteratorType(BuiltinTypeId typeId, IPythonModule declaringModule)
             : base("iterator", declaringModule, string.Empty, LocationInfo.Empty, typeId) {
 
             // Create 'next' members.

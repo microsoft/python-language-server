@@ -317,7 +317,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
                             break;
                         }
-                    case IPythonModuleType _: {
+                    case IPythonModule _: {
                             var filteredErrors = ((IDocument)mod).GetDiagnostics().Where(e => !e.Message.Contains("encoding problem")).ToArray();
                             if (filteredErrors.Any()) {
                                 // Do not fail due to errors in installed packages

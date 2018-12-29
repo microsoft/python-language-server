@@ -17,11 +17,11 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
     internal sealed class GlobalScope: Scope, IGlobalScope {
-        public GlobalScope(IPythonModuleType module):
+        public GlobalScope(IPythonModule module):
             base(null, null, true) {
             Module = module;
         }
 
-        public IPythonModuleType Module { get; }
+        public IPythonModule Module { get; }
     }
 }

@@ -24,11 +24,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// Base class for generic types and type declarations.
     /// </summary>
     internal class GenericType : IGenericType {
-        private readonly Func<IReadOnlyList<IPythonType>, IPythonModuleType, LocationInfo, IPythonType> _typeConstructor;
-        protected IPythonModuleType TypingModule { get; }
+        private readonly Func<IReadOnlyList<IPythonType>, IPythonModule, LocationInfo, IPythonType> _typeConstructor;
+        protected IPythonModule TypingModule { get; }
 
-        public GenericType(string name, IPythonModuleType declaringModule, 
-            Func<IReadOnlyList<IPythonType>, IPythonModuleType, LocationInfo, IPythonType> typeConstructor) {
+        public GenericType(string name, IPythonModule declaringModule, 
+            Func<IReadOnlyList<IPythonType>, IPythonModule, LocationInfo, IPythonType> typeConstructor) {
 
             Name = name ?? throw new ArgumentNullException(nameof(name));
             DeclaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
@@ -38,19 +38,29 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             Debug.Assert(TypingModule != null, "Typing must be specialized for generic types to work.");
         }
 
-        public IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModuleType declatingModule, LocationInfo location = null)
-            => _typeConstructor(typeArguments, declatingModule, location);
+        public IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null)
+            => _typeConstructor(typeArguments, declaringModule, location);
 
         #region IPythonType
         public string Name { get; }
-        public IPythonModuleType DeclaringModule { get; }
+        public IPythonModule DeclaringModule { get; }
         public PythonMemberType MemberType => PythonMemberType.Generic;
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
         public BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
         public virtual string Documentation => (TypingModule?.GetMember(Name) as IPythonType)?.Documentation;
         public bool IsBuiltin => false;
-        public IPythonFunctionType GetConstructor() => null;
+
+        public IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args) {
+            var types = args.OfType<IPythonType>().ToArray();
+            if (types.Length != args.Length) {
+                throw new ArgumentException(@"Generic type instance construction arguments must be all of IPythonType", nameof(args));
+            }
+            var specific = CreateSpecificType(types, DeclaringModule, location);
+            return specific == null 
+                ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown) 
+                : specific.CreateInstance(interpreter, location);
+        }
         #endregion
     }
 }

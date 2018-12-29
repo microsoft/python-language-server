@@ -166,7 +166,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             string name;
             switch (value) {
                 case IHasQualifiedName _:
-                case IPythonModuleType _:
+                case IPythonModule _:
                     name = GetName(value);
                     return string.IsNullOrEmpty(name) ? string.Empty : $"'{name}'";
                 default:
@@ -179,7 +179,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             switch (value) {
                 case IHasQualifiedName qualifiedName:
                     return qualifiedName.FullyQualifiedName;
-                case IPythonModuleType pythonModule:
+                case IPythonModule pythonModule:
                     return pythonModule.Name;
                 case IScope scope:
                     return scope.Name;
