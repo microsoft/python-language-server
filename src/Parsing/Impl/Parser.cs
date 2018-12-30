@@ -1092,15 +1092,13 @@ namespace Microsoft.Python.Parsing {
             var dotWhiteSpace = MakeWhiteSpaceList();
             for (; ; ) {
                 if (MaybeEat(TokenKind.Dot)) {
-                    if (dotWhiteSpace != null) {
-                        dotWhiteSpace.Add(_tokenWhiteSpace);
-                    }
+                    dotWhiteSpace?.Add(_tokenWhiteSpace);
                     dotCount++;
                 } else if (MaybeEat(TokenKind.Ellipsis)) {
                     if (dotWhiteSpace != null) {
                         dotWhiteSpace.Add(_tokenWhiteSpace);
-                        dotWhiteSpace.Add("");
-                        dotWhiteSpace.Add("");
+                        dotWhiteSpace.Add(string.Empty);
+                        dotWhiteSpace.Add(string.Empty);
                     }
                     dotCount += 3;
                 } else {
@@ -2182,7 +2180,7 @@ namespace Microsoft.Python.Parsing {
             var func = ParseLambdaHelperStart(out commaWhiteSpace, out ateTerminator);
             var colonWhiteSpace = ateTerminator || PeekToken(TokenKind.EndOfFile) ? _tokenWhiteSpace : null;
 
-            var expr = ateTerminator ? ParseOldExpression() : Error("");
+            var expr = ateTerminator ? ParseOldExpression() : Error(string.Empty);
             return ParseLambdaHelperEnd(func, expr, whitespace, colonWhiteSpace, commaWhiteSpace, ateTerminator);
         }
 
@@ -2194,7 +2192,7 @@ namespace Microsoft.Python.Parsing {
             var func = ParseLambdaHelperStart(out commaWhiteSpace, out ateTerminator);
             var colonWhiteSpace = ateTerminator || PeekToken(TokenKind.EndOfFile) ? _tokenWhiteSpace : null;
 
-            var expr = ateTerminator ? ParseExpression() : Error("");
+            var expr = ateTerminator ? ParseExpression() : Error(string.Empty);
             return ParseLambdaHelperEnd(func, expr, whitespace, colonWhiteSpace, commaWhiteSpace, ateTerminator);
         }
 
@@ -4728,7 +4726,7 @@ namespace Microsoft.Python.Parsing {
         /// when we're parsing in verbatim mode.
         /// </summary>
         private bool MaybeEatNewLine() {
-            var curWhiteSpace = "";
+            var curWhiteSpace = string.Empty;
             string newWhiteSpace;
             if (MaybeEatNewLine(out newWhiteSpace)) {
                 if (_verbatim) {
@@ -4740,7 +4738,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private bool MaybeEatNewLine(out string whitespace) {
-            whitespace = _verbatim ? "" : null;
+            whitespace = _verbatim ? string.Empty : null;
             if (MaybeEat(TokenKind.NewLine)) {
                 if (whitespace != null) {
                     whitespace += _tokenWhiteSpace + _token.Token.VerbatimImage;
@@ -4759,14 +4757,14 @@ namespace Microsoft.Python.Parsing {
         /// Eats a new line token throwing if the next token isn't a new line.  
         /// 
         /// Python always tokenizes to have only 1  new line character in a 
-        /// row.  But we also craete NLToken's and ignore them except for 
+        /// row.  But we also create NLToken's and ignore them except for 
         /// error reporting purposes.  This gives us the same errors as 
         /// CPython and also matches the behavior of the standard library 
         /// tokenize module.  This function eats any present NL tokens and throws
         /// them away.
         /// </summary>
         private bool EatNewLine(out string whitespace) {
-            whitespace = _verbatim ? "" : null;
+            whitespace = _verbatim ? string.Empty : null;
             if (Eat(TokenKind.NewLine)) {
                 if (whitespace != null) {
                     whitespace += _tokenWhiteSpace + _token.Token.VerbatimImage;

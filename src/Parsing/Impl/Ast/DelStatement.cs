@@ -49,6 +49,6 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) 
-            => ListExpression.AppendItems(res, ast, format, "del", "", this, Expressions);
+            => ListExpression.AppendItems(res, ast, format, "del", string.Empty, this, Expressions);
     }
 }

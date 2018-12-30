@@ -114,7 +114,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 res,
                 format.SpacesAroundBinaryOperators,
                 " ",
-                Char.IsLetter(op1[0]) ? " " : "",   // spaces required for is not, not in, etc...
+                char.IsLetter(op1[0]) ? " " : "",   // spaces required for is not, not in, etc...
                 node.GetPreceedingWhiteSpace(ast)
             );
 
@@ -127,11 +127,11 @@ namespace Microsoft.Python.Parsing.Ast {
                     format.SpacesAroundBinaryOperators != null ?
                         format.SpacesAroundBinaryOperators.Value ?
                             " " :
-                            (Char.IsLetter(op1[0]) ? " " : "") :
+                            (char.IsLetter(op1[0]) ? " " : string.Empty) :
                         null
                 );
             } else {
-                Debug.Assert(Char.IsLetter(op1[0]));
+                Debug.Assert(char.IsLetter(op1[0]));
 
                 res.Append(op1);
                 res.Append(node.GetSecondWhiteSpace(ast));
@@ -143,11 +143,11 @@ namespace Microsoft.Python.Parsing.Ast {
         public int GetIndexOfSecondOp(PythonAst ast) {
             if (Operator == PythonOperator.NotIn) {
                 return OperatorIndex + 3 + this.GetSecondWhiteSpace(ast).Length;
-            } else if (Operator == PythonOperator.IsNot) {
-                return OperatorIndex + 2 + this.GetSecondWhiteSpace(ast).Length;
-            } else {
-                return -1;
             }
+            if (Operator == PythonOperator.IsNot) {
+                return OperatorIndex + 2 + this.GetSecondWhiteSpace(ast).Length;
+            }
+            return -1;
         }
 
         public override string GetLeadingWhiteSpace(PythonAst ast) => Left.GetLeadingWhiteSpace(ast);

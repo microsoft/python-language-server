@@ -73,17 +73,23 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
+            var hasOpenSquareBracket = res.Length > 0 && res[res.Length - 1] == '['; // Tuple[
             if (this.IsAltForm(ast)) {
-                ListExpression.AppendItems(res, ast, format, "", "", this, Items);
+                ListExpression.AppendItems(res, ast, format, string.Empty, string.Empty, this, Items);
             } else {
-                if (Items.Count == 0 &&
-                    format.SpaceWithinEmptyTupleExpression != null) {
+                if (Items.Count == 0 && format.SpaceWithinEmptyTupleExpression != null) {
                     format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
-                    res.Append('(');
-                    format.Append(res, format.SpaceWithinEmptyTupleExpression, " ", "", this.GetSecondWhiteSpaceDefaultNull(ast));
-                    res.Append(')');
+                    res.AppendIf(!hasOpenSquareBracket, '(');
+                    format.Append(res, format.SpaceWithinEmptyTupleExpression, " ", string.Empty, this.GetSecondWhiteSpaceDefaultNull(ast));
+                    res.AppendIf(!hasOpenSquareBracket, ')');
                 } else {
-                    ListExpression.AppendItems(res, ast, format, "(", this.IsMissingCloseGrouping(ast) ? "" : ")", this, Items, format.SpacesWithinParenthesisedTupleExpression);
+                    ListExpression.AppendItems(res, ast, format,
+                        !hasOpenSquareBracket ? "(" : string.Empty, 
+                        this.IsMissingCloseGrouping(ast) ? string.Empty :
+                            (!hasOpenSquareBracket ? ")" : string.Empty), 
+                        this, 
+                        Items, 
+                        format.SpacesWithinParenthesisedTupleExpression);
                 }
             }
         }

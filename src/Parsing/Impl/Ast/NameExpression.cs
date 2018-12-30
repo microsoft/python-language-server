@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Python.Parsing.Ast {
     public class NameExpression : Expression {
         public static readonly NameExpression[] EmptyArray = new NameExpression[0];
-        public static readonly NameExpression Empty = new NameExpression("");
+        public static readonly NameExpression Empty = new NameExpression(string.Empty);
 
         public NameExpression(string name) {
             Name = name ?? "";

@@ -69,7 +69,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     res.Append(',');
                 }
             }
-            ListExpression.AppendItems(res, ast, format, "", "", this, Expressions);
+            ListExpression.AppendItems(res, ast, format, string.Empty, string.Empty, this, Expressions);
         }
     }
 }

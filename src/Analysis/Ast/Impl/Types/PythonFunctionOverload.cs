@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
@@ -26,7 +27,7 @@ namespace Microsoft.Python.Analysis.Types {
         // Allow dynamic function specialization, such as defining return types for builtin
         // functions that are impossible to scrape and that are missing from stubs.
         private Func<IReadOnlyList<IMember>, IMember> _returnValueProvider;
-        
+
         // Return value can be an instance or a type info. Consider type(C()) returning
         // type info of C vs. return C() that returns an instance of C.
         private Func<string, string> _documentationProvider;
@@ -34,18 +35,18 @@ namespace Microsoft.Python.Analysis.Types {
         private IMember _returnValue;
         private bool _fromAnnotation;
 
-        public PythonFunctionOverload(
-            string name,
-            IEnumerable<IParameterInfo> parameters,
-            LocationInfo location,
-            string returnDocumentation = null
-        ): this(name, parameters, _ => location ?? LocationInfo.Empty, returnDocumentation) { }
+        public PythonFunctionOverload(string name, IEnumerable<IParameterInfo> parameters,
+            LocationInfo location, string returnDocumentation = null
+        ) : this(name, parameters, _ => location ?? LocationInfo.Empty, returnDocumentation) { }
 
-        public PythonFunctionOverload(
-            string name,
-            IEnumerable<IParameterInfo> parameters,
-            Func<string, LocationInfo> locationProvider,
-            string returnDocumentation = null
+        public PythonFunctionOverload(FunctionDefinition fd, IEnumerable<IParameterInfo> parameters,
+            LocationInfo location, string returnDocumentation = null
+        ) : this(fd.Name, parameters, _ => location, returnDocumentation) {
+            FunctionDefinition = fd;
+        }
+
+        public PythonFunctionOverload(string name, IEnumerable<IParameterInfo> parameters,
+            Func<string, LocationInfo> locationProvider, string returnDocumentation = null
         ) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Parameters = parameters?.ToArray() ?? throw new ArgumentNullException(nameof(parameters));
@@ -81,6 +82,8 @@ namespace Microsoft.Python.Analysis.Types {
         internal void SetReturnValueProvider(Func<IReadOnlyList<IMember>, IMember> provider)
             => _returnValueProvider = provider;
 
+        #region IPythonFunctionOverload
+        public FunctionDefinition FunctionDefinition { get; }
         public string Name { get; }
         public string Documentation => _documentationProvider?.Invoke(Name) ?? string.Empty;
         public string ReturnDocumentation { get; }
@@ -111,5 +114,6 @@ namespace Microsoft.Python.Analysis.Types {
             }
             return _returnValue;
         }
+        #endregion
     }
 }

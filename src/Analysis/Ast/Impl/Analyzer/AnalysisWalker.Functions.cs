@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 .ToArray();
 
             var overload = new PythonFunctionOverload(
-                node.Name,
+                node,
                 parameters,
                 lookup.GetLocOfName(node, node.NameExpression),
                 node.ReturnAnnotation?.ToCodeString(Ast));

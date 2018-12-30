@@ -305,11 +305,12 @@ class cls(object):
         public async Task OverloadsParamTypeMatch() {
             const string code = @"
 
-def f(a: None) -> None: ...
+def f(a: bool) -> None: ...
 def f(a: int) -> float: ...
 def f(a: str) -> bytes: ...
 
-x = f()
+a = True
+x = f(a)
 y = f(1)
 z = f('s')
 ";
@@ -319,7 +320,7 @@ z = f('s')
             f.Should().HaveOverloadAt(0)
                 .Which.Should().HaveReturnType(BuiltinTypeId.NoneType)
                 .Which.Should().HaveSingleParameter()
-                .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.NoneType);
+                .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.Bool);
 
             f.Should().HaveOverloadAt(1)
                 .Which.Should().HaveReturnType(BuiltinTypeId.Float)

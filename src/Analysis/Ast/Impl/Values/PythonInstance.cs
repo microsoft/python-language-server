@@ -15,7 +15,6 @@
 
 using System;
 using System.Diagnostics;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -31,7 +30,7 @@ namespace Microsoft.Python.Analysis.Values {
             Location = location ?? LocationInfo.Empty;
         }
 
-        public IPythonType Type { get; }
+        public virtual IPythonType Type { get; }
         public LocationInfo Location { get; }
         public virtual PythonMemberType MemberType => PythonMemberType.Instance;
     }

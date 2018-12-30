@@ -51,23 +51,23 @@ namespace Microsoft.Python.Parsing.Ast {
                 res.Append(this.GetPreceedingWhiteSpace(ast));
                 res.Append('[');
                 if (string.IsNullOrWhiteSpace(this.GetSecondWhiteSpace(ast))) {
-                    res.Append(format.SpacesWithinEmptyListExpression.Value ? " " : "");
+                    res.Append(format.SpacesWithinEmptyListExpression.Value ? " " : string.Empty);
                 } else {
                     format.ReflowComment(res, this.GetSecondWhiteSpace(ast));
                 }
                 res.Append(']');
             } else {
-                AppendItems(res, ast, format, "[", this.IsMissingCloseGrouping(ast) ? "" : "]", this, Items, format.SpacesWithinListExpression);
+                AppendItems(res, ast, format, "[", this.IsMissingCloseGrouping(ast) ? string.Empty : "]", this, Items, format.SpacesWithinListExpression);
             }
         }
 
         internal static void AppendItems<T>(StringBuilder res, PythonAst ast, CodeFormattingOptions format, string start, string end, Node node, IList<T> items, bool? delimiterWhiteSpace = null) where T : Expression {
             string initialWs = null, ws = null;
             if (delimiterWhiteSpace.HasValue) {
-                initialWs = delimiterWhiteSpace.Value ? " " : "";
+                initialWs = delimiterWhiteSpace.Value ? " " : string.Empty;
             }
             if (format.SpaceAfterComma.HasValue) {
-                ws = format.SpaceAfterComma.Value ? " " : "";
+                ws = format.SpaceAfterComma.Value ? " " : string.Empty;
             }
             AppendItems(res, ast, format, start, end, node, items.Count, (i, sb) => {
                 if (i == 0) {
@@ -86,7 +86,7 @@ namespace Microsoft.Python.Parsing.Ast {
             var listWhiteSpace = node.GetListWhiteSpace(ast);
             for (var i = 0; i < itemCount; i++) {
                 if (i > 0) {
-                    format.Append(res, format.SpaceBeforeComma, " ", "", listWhiteSpace?[i - 1]);
+                    format.Append(res, format.SpaceBeforeComma, " ", string.Empty, listWhiteSpace?[i - 1]);
                     res.Append(",");
                 }
 
@@ -95,12 +95,12 @@ namespace Microsoft.Python.Parsing.Ast {
 
             if (listWhiteSpace != null && listWhiteSpace.Length == itemCount && itemCount != 0) {
                 // trailing comma
-                format.Append(res, format.SpaceBeforeComma, " ", "", listWhiteSpace[listWhiteSpace.Length - 1]);
+                format.Append(res, format.SpaceBeforeComma, " ", string.Empty, listWhiteSpace[listWhiteSpace.Length - 1]);
                 res.Append(",");
             }
 
-            if (!String.IsNullOrEmpty(end)) {
-                format.Append(res, trailingWhiteSpace, " ", "", node.GetSecondWhiteSpaceDefaultNull(ast));
+            if (!string.IsNullOrEmpty(end)) {
+                format.Append(res, trailingWhiteSpace, " ", string.Empty, node.GetSecondWhiteSpaceDefaultNull(ast));
                 res.Append(end);
             }
         }

@@ -100,18 +100,18 @@ namespace Microsoft.Python.Parsing.Ast {
             var writeName = true;
             switch (Kind) {
                 case ParameterKind.Dictionary:
-                    res.Append(leadingWhiteSpace ?? this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? "");
+                    res.Append(leadingWhiteSpace ?? this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? string.Empty);
                     leadingWhiteSpace = null;
                     res.Append("**");
                     break;
                 case ParameterKind.List:
-                    res.Append(leadingWhiteSpace ?? this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? "");
+                    res.Append(leadingWhiteSpace ?? this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? string.Empty);
                     leadingWhiteSpace = null;
                     res.Append('*');
                     break;
                 case ParameterKind.Normal:
                     if (this.IsAltForm(ast)) {
-                        res.Append(leadingWhiteSpace ?? this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? "");
+                        res.Append(leadingWhiteSpace ?? this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? string.Empty);
                         leadingWhiteSpace = null;
                         res.Append('(');
                         AppendParameterName(res, ast, format, leadingWhiteSpace);
@@ -142,13 +142,13 @@ namespace Microsoft.Python.Parsing.Ast {
                     res,
                     format.SpaceAroundDefaultValueEquals,
                     " ",
-                    "",
+                    string.Empty,
                     NodeAttributes.GetWhiteSpace(this, ast, WhitespacePrecedingAssign)
                 );
 
                 res.Append('=');
                 if (format.SpaceAroundDefaultValueEquals != null) {
-                    DefaultValue.AppendCodeString(res, ast, format, format.SpaceAroundDefaultValueEquals.Value ? " " : "");
+                    DefaultValue.AppendCodeString(res, ast, format, format.SpaceAroundDefaultValueEquals.Value ? " " : string.Empty);
                 } else {
                     DefaultValue.AppendCodeString(res, ast, format);
                 }

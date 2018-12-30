@@ -130,9 +130,9 @@ namespace Microsoft.Python.Parsing {
     }
 
     public static class Tokens {
-        public static readonly Token EndOfFileToken = new VerbatimToken(TokenKind.EndOfFile, "", "<eof>");
+        public static readonly Token EndOfFileToken = new VerbatimToken(TokenKind.EndOfFile, string.Empty, "<eof>");
 
-        public static readonly Token ImpliedNewLineToken = new VerbatimToken(TokenKind.NewLine, "", "<newline>");
+        public static readonly Token ImpliedNewLineToken = new VerbatimToken(TokenKind.NewLine, string.Empty, "<newline>");
 
         public static readonly Token NewLineToken = new VerbatimToken(TokenKind.NewLine, "\n", "<newline>");
         public static readonly Token NewLineTokenCRLF = new VerbatimToken(TokenKind.NewLine, "\r\n", "<newline>");

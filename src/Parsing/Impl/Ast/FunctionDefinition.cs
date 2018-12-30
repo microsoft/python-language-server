@@ -68,7 +68,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public int DefIndex { get; set; }
 
-        public override string/*!*/ Name => NameExpression.Name ?? "";
+        public override string/*!*/ Name => NameExpression.Name ?? string.Empty;
 
         public NameExpression NameExpression { get; }
 
@@ -299,7 +299,7 @@ namespace Microsoft.Python.Parsing.Ast {
                             res,
                             format.SpaceAroundAnnotationArrow,
                             " ",
-                            "",
+                            string.Empty,
                             this.GetFifthWhiteSpace(ast)
                         );
                         res.Append("->");
@@ -308,7 +308,7 @@ namespace Microsoft.Python.Parsing.Ast {
                             ast,
                             format,
                             format.SpaceAroundAnnotationArrow != null ?
-                                format.SpaceAroundAnnotationArrow.Value ? " " : "" :
+                                format.SpaceAroundAnnotationArrow.Value ? " " : string.Empty :
                                 null
                         );
                     }

@@ -63,7 +63,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
 
                     await DeclareParametersAsync(cancellationToken);
-                    if (_overload.Documentation == null) {
+                    if (string.IsNullOrEmpty(_overload.Documentation)) {
                         var docNode = (Target.Body as SuiteStatement)?.Statements.FirstOrDefault();
                         var ce = (docNode as ExpressionStatement)?.Expression as ConstantExpression;
                         if (ce?.Value is string doc) {

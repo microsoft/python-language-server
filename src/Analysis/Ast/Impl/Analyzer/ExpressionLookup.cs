@@ -180,7 +180,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case IPythonFunctionType fn:
                     return new PythonFunction(fn, instance, GetLoc(expr));
                 case IPythonIteratorType _ when instance is IPythonSequence seq:
-                    return new PythonIterator(seq);
+                    return new PythonSequenceIterator(seq);
                 case null:
                     Log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
                     return UnknownType;

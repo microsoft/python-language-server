@@ -38,7 +38,7 @@ namespace Microsoft.Python.Parsing {
     /// </summary>
     public sealed class CodeFormattingOptions {
         internal static CodeFormattingOptions Default = new CodeFormattingOptions();    // singleton with no options set, internal so no one mutates it
-        private static Regex _commentRegex = new Regex("^[\t ]*#+[\t ]*");
+        private static readonly Regex _commentRegex = new Regex("^[\t ]*#+[\t ]*");
         private const string _sentenceTerminators = ".!?";
 
         public string NewLineFormat { get; set; }
@@ -159,7 +159,7 @@ namespace Microsoft.Python.Parsing {
         public bool? SpaceWithinIndexBrackets { get; set; }
 
         public bool? SpaceBeforeComma { get; set; }
-        public bool? SpaceAfterComma { get; set; }
+        public bool? SpaceAfterComma { get; set; } = true;
 
         public bool? SpaceBeforeDot { get; set; }
         public bool? SpaceAfterDot { get; set; }

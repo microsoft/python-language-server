@@ -63,28 +63,26 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            if (SliceStart != null) {
-                SliceStart.AppendCodeString(res, ast, format);
-            }
+            SliceStart?.AppendCodeString(res, ast, format);
             if (!this.IsIncompleteNode(ast)) {
-                format.Append(res, format.SpaceBeforeSliceColon, " ", "", this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? "");
+                format.Append(res, format.SpaceBeforeSliceColon, " ", string.Empty, this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? "");
                 res.Append(':');
                 if (SliceStop != null) {
                     string ws = null;
                     if (format.SpaceAfterSliceColon.HasValue) {
-                        ws = "";
-                        format.Append(res, format.SpaceAfterSliceColon, " ", "", "");
+                        ws = string.Empty;
+                        format.Append(res, format.SpaceAfterSliceColon, " ", string.Empty, string.Empty);
                     }
                     SliceStop.AppendCodeString(res, ast, format, ws);
                 }
                 if (StepProvided) {
-                    format.Append(res, format.SpaceBeforeSliceColon, " ", "", this.GetSecondWhiteSpaceDefaultNull(ast) ?? "");
+                    format.Append(res, format.SpaceBeforeSliceColon, " ", string.Empty, this.GetSecondWhiteSpaceDefaultNull(ast) ?? "");
                     res.Append(':');
                     if (SliceStep != null) {
                         string ws = null;
                         if (format.SpaceAfterSliceColon.HasValue) {
-                            ws = "";
-                            format.Append(res, format.SpaceAfterSliceColon, " ", "", "");
+                            ws = string.Empty;
+                            format.Append(res, format.SpaceAfterSliceColon, " ", string.Empty, string.Empty);
                         }
                         SliceStep.AppendCodeString(res, ast, format, ws);
                     }

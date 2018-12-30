@@ -18,43 +18,18 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
-    /// Base class for ASCII (bytes) and Unicode strings.
-    /// </summary>
-    internal abstract class PythonString: PythonSequence, IPythonConstant {
-        protected PythonString(object s, BuiltinTypeId contentTypeId, IPythonInterpreter interpreter, LocationInfo location = null):
-            base(null, contentTypeId, interpreter.GetBuiltinType(contentTypeId), interpreter, location) {
-            Value = s;
-        }
-
-        #region IPythonConstant
-        public object Value { get; }
-
-        public bool TryGetValue<T>(out T value) {
-            if (Value is T variable) {
-                value = variable;
-                return true;
-            }
-            value = default;
-            return false;
-        }
-        #endregion
-    }
-
-    /// <inheritdoc />
-    /// <summary>
     /// Python ASCII (bytes) string (default string in 2.x).
     /// </summary>
-    internal sealed class PythonAsciiString : PythonString {
+    internal sealed class PythonAsciiString : PythonConstant {
         public PythonAsciiString(AsciiString s, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(s, interpreter.GetAsciiTypeId(), interpreter, location) { }
+            : base(s, interpreter.GetBuiltinType(interpreter.GetAsciiTypeId()), location) { }
     }
 
-    /// <inheritdoc />
     /// <summary>
     /// Python Unicode string (default string in 3.x+)
     /// </summary>
-    internal sealed class PythonUnicodeString : PythonString {
+    internal sealed class PythonUnicodeString : PythonConstant {
         public PythonUnicodeString(string s, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(s, interpreter.GetUnicodeTypeId(), interpreter, location) { }
+            : base(s, interpreter.GetBuiltinType(interpreter.GetUnicodeTypeId()), location) { }
     }
 }

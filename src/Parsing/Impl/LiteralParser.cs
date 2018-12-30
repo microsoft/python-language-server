@@ -592,7 +592,7 @@ namespace Microsoft.Python.Parsing {
         public static Complex ParseImaginary(string text) {
             try {
                 return new Complex(0.0, double.Parse(
-                    text.Substring(0, text.Length - 1).Replace("_", ""),
+                    text.Substring(0, text.Length - 1).Replace("_", string.Empty),
                     CultureInfo.InvariantCulture.NumberFormat
                 ));
             } catch (OverflowException) {

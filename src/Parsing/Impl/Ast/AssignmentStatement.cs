@@ -74,7 +74,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     ast,
                     format,
                     i != 0 && format.SpacesAroundAssignmentOperator != null ?
-                        format.SpacesAroundAssignmentOperator.Value ? " " : "" :
+                        format.SpacesAroundAssignmentOperator.Value ? " " : string.Empty :
                         null
                 );
             }
@@ -83,7 +83,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     res,
                     format.SpacesAroundAssignmentOperator,
                     " ",
-                    "",
+                    string.Empty,
                     lhs[lhs.Length - 1]
                 );
             }
@@ -94,7 +94,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 ast,
                 format,
                 format.SpacesAroundAssignmentOperator != null ?
-                    format.SpacesAroundAssignmentOperator.Value ? " " : "" :
+                    format.SpacesAroundAssignmentOperator.Value ? " " : string.Empty :
                     null
             );
         }

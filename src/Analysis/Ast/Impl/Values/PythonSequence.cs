@@ -83,6 +83,6 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IEnumerable<IMember> GetContents() => _contentTypes ?? new[] {_contentType};
 
-        public IPythonIterator GetIterator() => new PythonIterator(this);
+        public IPythonIterator GetIterator() => new PythonSequenceIterator(this);
     }
 }

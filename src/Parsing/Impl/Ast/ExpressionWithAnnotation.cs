@@ -65,7 +65,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (Annotation != null) {
                 // For now, use same formatting as around an assignment
                 if (format.SpacesAroundAssignmentOperator == null) {
-                    res.Append(this.GetSecondWhiteSpaceDefaultNull(ast) ?? "");
+                    res.Append(this.GetSecondWhiteSpaceDefaultNull(ast) ?? string.Empty);
                 } else if (format.SpacesAroundAssignmentOperator == true) {
                     res.Append(' ');
                 }

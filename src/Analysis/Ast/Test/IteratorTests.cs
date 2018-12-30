@@ -13,9 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Tests;
@@ -156,6 +154,9 @@ c = _next(iC)
                 .And.HaveVariable("B").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("C").OfType(BuiltinTypeId.List);
 
+            analysis.Should().HaveVariable("iA").OfType(BuiltinTypeId.ListIterator)
+                .And.HaveVariable("iB").OfType(BuiltinTypeId.StrIterator)
+                .And.HaveVariable("iC").OfType(BuiltinTypeId.ListIterator);
 
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("b").OfType(BuiltinTypeId.Str)

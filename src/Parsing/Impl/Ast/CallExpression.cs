@@ -114,7 +114,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             } else {
                 var listWhiteSpace = format.SpaceBeforeComma == null ? this.GetListWhiteSpace(ast) : null;
-                var spaceAfterComma = format.SpaceAfterComma.HasValue ? (format.SpaceAfterComma.Value ? " " : "") : (string)null;
+                var spaceAfterComma = format.SpaceAfterComma.HasValue ? (format.SpaceAfterComma.Value ? " " : string.Empty) : (string)null;
                 for (var i = 0; i < _args.Length; i++) {
                     if (i > 0) {
                         if (format.SpaceBeforeComma == true) {
@@ -124,7 +124,7 @@ namespace Microsoft.Python.Parsing.Ast {
                         }
                         res.Append(',');
                     } else if (format.SpaceWithinCallParens != null) {
-                        _args[i].AppendCodeString(res, ast, format, format.SpaceWithinCallParens.Value ? " " : "");
+                        _args[i].AppendCodeString(res, ast, format, format.SpaceWithinCallParens.Value ? " " : string.Empty);
                         continue;
                     }
 

@@ -16,11 +16,11 @@
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
-    internal sealed class PythonIterator : PythonInstance, IPythonIterator {
+    internal sealed class PythonSequenceIterator : PythonInstance, IPythonIterator {
         private readonly IPythonSequence _owner;
         private int _index;
 
-        public PythonIterator(IPythonSequence owner)
+        public PythonSequenceIterator(IPythonSequence owner)
             : base(new PythonIteratorType(owner.GetPythonType().TypeId.GetIteratorTypeId(), owner.Type.DeclaringModule)) {
             _owner = owner;
         }

@@ -22,10 +22,9 @@ using Microsoft.Python.Core;
 namespace Microsoft.Python.Parsing.Ast {
     public sealed class GeneratorExpression : Comprehension {
         private readonly ComprehensionIterator[] _iterators;
-        private readonly Expression _item;
 
         public GeneratorExpression(Expression item, ComprehensionIterator[] iterators) {
-            _item = item;
+            Item = item;
             _iterators = iterators;
         }
 
@@ -33,7 +32,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override string NodeName => "generator";
 
-        public Expression Item => _item;
+        public Expression Item { get; }
 
         internal override string CheckAssign() => "can't assign to generator expression";
 
@@ -43,7 +42,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                _item?.Walk(walker);
+                Item?.Walk(walker);
                 foreach (var ci in _iterators.MaybeEnumerate()) {
                     ci.Walk(walker);
                 }
@@ -53,8 +52,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                if (_item != null) {
-                    await _item.WalkAsync(walker, cancellationToken);
+                if (Item != null) {
+                    await Item.WalkAsync(walker, cancellationToken);
                 }
                 foreach (var ci in _iterators.MaybeEnumerate()) {
                     await ci.WalkAsync(walker, cancellationToken);
@@ -65,9 +64,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             if (this.IsAltForm(ast)) {
-                this.AppendCodeString(res, ast, format, "", "", _item);
+                AppendCodeString(res, ast, format, string.Empty, string.Empty, Item);
             } else {
-                this.AppendCodeString(res, ast, format, "(", this.IsMissingCloseGrouping(ast) ? "" : ")", _item);
+                AppendCodeString(res, ast, format, "(", this.IsMissingCloseGrouping(ast) ? string.Empty : ")", Item);
             }
         }
     }

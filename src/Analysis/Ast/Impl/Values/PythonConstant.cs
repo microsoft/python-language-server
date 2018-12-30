@@ -16,7 +16,7 @@
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
-    internal sealed class PythonConstant : PythonInstance, IPythonConstant {
+    internal class PythonConstant : PythonInstance, IPythonConstant {
         public PythonConstant(object value, IPythonType type, LocationInfo location)
             : base(type, location) {
             Value = value;

@@ -88,9 +88,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (overload != null) {
                 // TODO: provide instance
                 value = GetFunctionReturnValue(overload, null, args);
-                if (value.IsUnknown() && fn.FunctionDefinition != null) {
+                if (value.IsUnknown() && overload.FunctionDefinition != null) {
                     // Function may not have been walked yet. Do it now.
-                    if (await FunctionWalkers.ProcessFunctionAsync(fn.FunctionDefinition, cancellationToken)) {
+                    if (await FunctionWalkers.ProcessFunctionAsync(overload.FunctionDefinition, cancellationToken)) {
                         value = GetFunctionReturnValue(overload, null, args);
                     }
                 }
@@ -101,23 +101,30 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private IPythonFunctionOverload FindOverload(IPythonFunctionType fn, IReadOnlyList<IMember> args) {
             // Find best overload match. Of only one, use it.
             // TODO: match better, see ArgumentSet class in DDG.
-            IPythonFunctionOverload overload = null;
             if (fn.Overloads.Count == 1) {
-                overload = fn.Overloads[0];
-            } else {
-                // Try exact match
-                overload = fn.Overloads.FirstOrDefault(o => o.Parameters.Count == args.Count);
-
-                overload = overload ?? fn.Overloads
-                               .Where(o => o.Parameters.Count >= args.Count)
-                               .FirstOrDefault(o => {
-                                   // Match so overall param count is bigger, but required params
-                                   // count is less or equal to the passed arguments.
-                                   var requiredParams = o.Parameters.Where(p => string.IsNullOrEmpty(p.DefaultValueString)).ToArray();
-                                   return requiredParams.Length <= args.Count;
-                               });
+                return fn.Overloads[0];
             }
-            return overload;
+
+            // Try match number of parameters
+            var matching = fn.Overloads.Where(o => o.Parameters.Count == args.Count);
+            var argTypes = args.Select(a => a.GetPythonType());
+            var overload = matching.FirstOrDefault(o => {
+                var paramTypes = o.Parameters.Select(p => p.Type);
+                return paramTypes.SequenceEqual(argTypes);
+            });
+
+            if (overload != null) {
+                return overload;
+            }
+
+            return fn.Overloads
+                       .Where(o => o.Parameters.Count >= args.Count)
+                       .FirstOrDefault(o => {
+                           // Match so overall param count is bigger, but required params
+                           // count is less or equal to the passed arguments.
+                           var requiredParams = o.Parameters.Where(p => string.IsNullOrEmpty(p.DefaultValueString)).ToArray();
+                           return requiredParams.Length <= args.Count;
+                       });
         }
 
         private IMember GetFunctionReturnValue(IPythonFunctionOverload o, IPythonInstance instance, IReadOnlyList<IMember> args)
@@ -128,7 +135,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 // Function may not have been walked yet. Do it now.
                 await FunctionWalkers.ProcessFunctionAsync(p.FunctionDefinition, cancellationToken);
             }
-
             return p.Type ?? UnknownType;
         }
     }

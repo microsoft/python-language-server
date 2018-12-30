@@ -15,6 +15,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
@@ -26,10 +28,28 @@ namespace Microsoft.Python.Analysis.Specializations {
         public static Func<IReadOnlyList<IMember>, IMember> TypeInfo
             => (args => args.Count > 0 ? args[0].GetPythonType() : null);
 
-        public static Func<IReadOnlyList<IMember>, IMember> Iterator
-            => (args => args.Count > 0 && args[0] is IPythonSequence seq ? seq.GetIterator(): null);
+        public static IMember Iterator(IReadOnlyList<IMember> args) {
+            if (args.Count > 0) {
+                if (args[0] is IPythonSequence seq) {
+                    return seq.GetIterator();
+                }
+                var t = args[0].GetPythonType();
+                if (t.IsBuiltin && t.Name == "str") {
+                    return new PythonTypeIterator(t.DeclaringModule, BuiltinTypeId.StrIterator, BuiltinTypeId.Str);
+                }
+            }
+            return null;
+        }
 
         public static Func<IReadOnlyList<IMember>, IMember> Next
-            => (args => args.Count > 0 && args[0] is IPythonIterator it ? it.Next : null);
+                => (args => args.Count > 0 && args[0] is IPythonIterator it ? it.Next : null);
+
+        public static IMember __iter__(IPythonModule  declaringModule, BuiltinTypeId contentTypeId) {
+            var fn = new PythonFunctionType(@"__iter__", declaringModule, null, string.Empty, LocationInfo.Empty);
+            var o = new PythonFunctionOverload(fn.Name, Enumerable.Empty<IParameterInfo>(), _ => fn.Location);
+            o.AddReturnValue(PythonTypeIterator.FromTypeId(declaringModule, contentTypeId));
+            fn.AddOverload(o);
+            return fn;
+        }
     }
 }

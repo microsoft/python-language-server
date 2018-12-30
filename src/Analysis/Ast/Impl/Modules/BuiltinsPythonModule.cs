@@ -46,67 +46,81 @@ namespace Microsoft.Python.Analysis.Modules {
 
         protected override void OnAnalysisComplete() {
             lock (AnalysisLock) {
-                IPythonType noneType = null;
-                var isV3 = Interpreter.LanguageVersion.Is3x();
-
-                foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
-                    var m = GetMember("__{0}__".FormatInvariant(typeId));
-                    if (!(m is PythonType biType && biType.IsBuiltin)) {
-                        continue;
-                    }
-
-                    if (biType.IsHidden) {
-                        _hiddenNames.Add(biType.Name);
-                    }
-
-                    _hiddenNames.Add("__{0}__".FormatInvariant(typeId));
-
-                    // In V2 Unicode string is 'Unicode' and regular string is 'Str' or 'Bytes'.
-                    // In V3 Unicode and regular strings are 'Str' and ASCII/byte string is 'Bytes'.
-                    switch (typeId) {
-                        case BuiltinTypeId.Bytes:
-                            biType.TrySetTypeId(!isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Bytes);
-                            break;
-                        case BuiltinTypeId.BytesIterator:
-                            biType.TrySetTypeId(!isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.BytesIterator);
-                            break;
-                        case BuiltinTypeId.Unicode:
-                            biType.TrySetTypeId(isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Unicode);
-                            break;
-                        case BuiltinTypeId.UnicodeIterator:
-                            biType.TrySetTypeId(isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.UnicodeIterator);
-                            break;
-                        default:
-                            biType.TrySetTypeId(typeId);
-                            switch (typeId) {
-                                case BuiltinTypeId.Bool:
-                                    _boolType = _boolType ?? biType;
-                                    break;
-                                case BuiltinTypeId.NoneType:
-                                    noneType = noneType ?? biType;
-                                    break;
-                            }
-
-                            break;
-                    }
-                }
-
-                _hiddenNames.Add("__builtin_module_names__");
-
-                if (_boolType != null) {
-                    Analysis.GlobalScope.DeclareVariable("True", _boolType, LocationInfo.Empty);
-                    Analysis.GlobalScope.DeclareVariable("False", _boolType, LocationInfo.Empty);
-                }
-
-                if (noneType != null) {
-                    Analysis.GlobalScope.DeclareVariable("None", noneType, LocationInfo.Empty);
-                }
-
-                Specialize();
+                SpecializeTypes();
+                SpecializeFunctions();
             }
         }
 
-        private void Specialize() {
+        private void SpecializeTypes() {
+            IPythonType noneType = null;
+            var isV3 = Interpreter.LanguageVersion.Is3x();
+
+            foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
+                var m = GetMember("__{0}__".FormatInvariant(typeId));
+                if (!(m is PythonType biType && biType.IsBuiltin)) {
+                    continue;
+                }
+
+                if (biType.IsHidden) {
+                    _hiddenNames.Add(biType.Name);
+                }
+
+                _hiddenNames.Add("__{0}__".FormatInvariant(typeId));
+
+                // In V2 Unicode string is 'Unicode' and regular string is 'Str' or 'Bytes'.
+                // In V3 Unicode and regular strings are 'Str' and ASCII/byte string is 'Bytes'.
+                switch (typeId) {
+                    case BuiltinTypeId.Bytes: {
+                            var id = !isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Bytes;
+                            biType.TrySetTypeId(id);
+                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(this, id), true);
+                            break;
+                        }
+                    case BuiltinTypeId.BytesIterator: {
+                            biType.TrySetTypeId(!isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.BytesIterator);
+                            break;
+                        }
+                    case BuiltinTypeId.Unicode: {
+                            var id = isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Unicode;
+                            biType.TrySetTypeId(id);
+                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(this, id), true);
+                            break;
+                        }
+                    case BuiltinTypeId.UnicodeIterator: {
+                            biType.TrySetTypeId(isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.UnicodeIterator);
+                            break;
+                        }
+                    case BuiltinTypeId.Str: {
+                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(this, typeId), true);
+                        }
+                        break;
+                    default:
+                        biType.TrySetTypeId(typeId);
+                        switch (typeId) {
+                            case BuiltinTypeId.Bool:
+                                _boolType = _boolType ?? biType;
+                                break;
+                            case BuiltinTypeId.NoneType:
+                                noneType = noneType ?? biType;
+                                break;
+                        }
+                        break;
+                }
+            }
+
+            _hiddenNames.Add("__builtin_module_names__");
+
+            if (_boolType != null) {
+                Analysis.GlobalScope.DeclareVariable("True", _boolType, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable("False", _boolType, LocationInfo.Empty);
+            }
+
+            if (noneType != null) {
+                Analysis.GlobalScope.DeclareVariable("None", noneType, LocationInfo.Empty);
+            }
+        }
+
+        private void SpecializeFunctions() {
             // TODO: deal with commented out functions.
             SpecializeFunction("abs", BuiltinsSpecializations.Identity);
             SpecializeFunction("cmp", Interpreter.GetBuiltinType(BuiltinTypeId.Int));

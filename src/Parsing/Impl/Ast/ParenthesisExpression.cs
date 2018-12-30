@@ -57,14 +57,14 @@ namespace Microsoft.Python.Parsing.Ast {
                 res,
                 ast,
                 format,
-                format.SpacesWithinParenthesisExpression != null ? format.SpacesWithinParenthesisExpression.Value ? " " : "" : null
+                format.SpacesWithinParenthesisExpression != null ? format.SpacesWithinParenthesisExpression.Value ? " " : string.Empty : null
             );
             if (!this.IsMissingCloseGrouping(ast)) {
                 format.Append(
                     res,
                     format.SpacesWithinParenthesisExpression,
                     " ",
-                    "",
+                    string.Empty,
                     this.GetSecondWhiteSpace(ast)
                 );
 

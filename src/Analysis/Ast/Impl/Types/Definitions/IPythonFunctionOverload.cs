@@ -15,12 +15,18 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents a single overload of a function.
     /// </summary>
     public interface IPythonFunctionOverload {
+        /// <summary>
+        /// The corresponding function definition node.
+        /// </summary>
+        FunctionDefinition FunctionDefinition { get; }
+
         /// <summary>
         /// Function name.
         /// </summary>
