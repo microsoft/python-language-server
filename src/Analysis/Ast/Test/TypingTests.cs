@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -112,6 +113,24 @@ x = f(1)
 
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeVarSimple() {
+            const string code = @"
+from typing import TypeVar
+
+T = TypeVar('T', str, bytes)
+
+def longest(x: T, y: T):
+    return x if len(x) >= len(y) else y
+
+x = longest('a', 'bc')
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("T").OfType(typeof(IPythonTypeDeclaration))
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
     }
 }

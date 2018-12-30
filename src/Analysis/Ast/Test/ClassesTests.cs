@@ -282,7 +282,7 @@ f2 = c.f
             analysis.Should().HaveVariable("x").Which.Value.Should().BeAssignableTo<IPythonType>();
             analysis.Should().HaveVariable("y")
                 .Which.Value.Should().BeAssignableTo<IPythonInstance>()
-                .And.HaveType<IPythonClassType>();
+                .And.HaveType(typeof(IPythonClassType));
 
             analysis.Should()
                 .HaveVariable("f1").OfType(BuiltinTypeId.Function).And

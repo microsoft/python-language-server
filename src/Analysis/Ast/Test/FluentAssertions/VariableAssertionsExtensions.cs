@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Types;
@@ -33,9 +34,9 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return andWhichConstraint;
         }
 
-        public static AndWhichConstraint<TAssertion, IVariable> OfType<TAssertion ,T>(
-            this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, string because = "", params object[] reasonArgs) {
-            andWhichConstraint.Subject.Value.Should().HaveType<T>(because, reasonArgs);
+        public static AndWhichConstraint<TAssertion, IVariable> OfType<TAssertion>(
+            this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, Type type,  string because = "", params object[] reasonArgs) {
+            andWhichConstraint.Subject.Value.Should().HaveType(type, because, reasonArgs);
             return andWhichConstraint;
         }
 

@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -113,11 +114,11 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndConstraint<MemberAssertions>(this);
         }
 
-        public AndConstraint<MemberAssertions> HaveType<T>(string because = "", params object[] reasonArgs) {
+        public AndConstraint<MemberAssertions> HaveType(Type t, string because = "", params object[] reasonArgs) {
             Execute.Assertion.ForCondition(Type != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetQuotedName(Subject)} to have type{{reason}}");
-            Type.Should().BeAssignableTo<T>(because, reasonArgs);
+            Type.Should().BeAssignableTo(t, because, reasonArgs);
             return new AndConstraint<MemberAssertions>(this);
         }
 

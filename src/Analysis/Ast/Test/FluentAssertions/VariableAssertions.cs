@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         public AndWhichConstraint<VariableAssertions, IVariable> HaveType<TType>(string because = "", params object[] reasonArgs) {
-            Value.Should().HaveType<TType>(because, reasonArgs);
+            Value.Should().HaveType(typeof(TType), because, reasonArgs);
             return new AndWhichConstraint<VariableAssertions, IVariable>(this, Subject);
         }
 
