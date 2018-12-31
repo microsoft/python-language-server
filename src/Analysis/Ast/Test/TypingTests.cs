@@ -184,11 +184,11 @@ z1 = x[1]
 ";
 
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable(@"lst").OfType("Tuple[Tuple[int, str], bool]")
+            analysis.Should().HaveVariable("t").OfType("Tuple[Tuple[int, str], bool]")
                 .And.HaveVariable("x").OfType("Tuple[int, str]")
                 .And.HaveVariable("y").OfType(BuiltinTypeId.Bool)
-                .And.HaveVariable("z1").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("z2").OfType(BuiltinTypeId.Str);
+                .And.HaveVariable("z0").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("z1").OfType(BuiltinTypeId.Str);
         }
     }
 }
