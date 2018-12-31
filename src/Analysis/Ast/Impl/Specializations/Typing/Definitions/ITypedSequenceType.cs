@@ -14,13 +14,15 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// A special callable that declares new type, such as TypeVar.
-    /// The difference is that when function is called, it needs
-    /// </summary>
-    public interface IPythonTypeDeclaration: IPythonType {
-        IPythonType DeclareType(IReadOnlyList<IMember> args, IPythonModule declaringModule, string documentation, LocationInfo location);
+namespace Microsoft.Python.Analysis.Specializations.Typing {
+    public interface ITypedSequenceType {
+        /// <summary>
+        /// Sequence elements types if the sequence is typed.
+        /// This is different from the actual types that untyped
+        /// instance may be holding.
+        /// </summary>
+        IReadOnlyList<IPythonType> ContentTypes { get; }
     }
 }

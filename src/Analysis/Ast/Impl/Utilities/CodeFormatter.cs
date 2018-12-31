@@ -21,10 +21,10 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Utilities {
     internal static class CodeFormatter {
-        public static string FormatSequence(string sequenceName, IEnumerable<IPythonType> types, char openBrace)
-            => FormatSequence(sequenceName, types.Select(t => t.Name), openBrace);
+        public static string FormatSequence(string sequenceName, char openBrace, IEnumerable<IPythonType> types)
+            => FormatSequence(sequenceName, openBrace, types.Select(t => t.Name));
 
-        public static string FormatSequence(string sequenceName, IEnumerable<string> names, char openBrace) {
+        public static string FormatSequence(string sequenceName, char openBrace, IEnumerable<string> names) {
             var sb = new StringBuilder(sequenceName);
             sb.Append(openBrace);
             var i = 0;

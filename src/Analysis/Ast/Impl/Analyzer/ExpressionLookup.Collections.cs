@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             switch (target) {
                 case IPythonSequence seq:
                     return await GetValueFromSequenceInstanceAsync(expr, seq, cancellationToken);
-                case ITypingSequenceType seqt:
+                case ITypedSequenceType seqt:
                     return await GetValueFromSequenceTypeAsync(expr, seqt, cancellationToken);
                 default:
                     return UnknownType;
@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return seq.GetValueAt(index);
         }
 
-        private async Task<IMember> GetValueFromSequenceTypeAsync(IndexExpression expr, ITypingSequenceType seqt, CancellationToken cancellationToken = default) {
+        private async Task<IMember> GetValueFromSequenceTypeAsync(IndexExpression expr, ITypedSequenceType seqt, CancellationToken cancellationToken = default) {
             if (seqt.ContentTypes.Count == 1) {
                 return seqt.ContentTypes[0];
             }

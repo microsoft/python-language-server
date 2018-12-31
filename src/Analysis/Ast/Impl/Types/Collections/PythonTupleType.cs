@@ -22,7 +22,7 @@ namespace Microsoft.Python.Analysis.Types {
         private static PythonTupleType _instance;
 
         public static PythonTupleType GetPythonTupleType(IPythonInterpreter interpreter)
-            => _instance ?? (_instance = new PythonTupleType(interpreter));
+            => _instance.IsUnknown() ? _instance = new PythonTupleType(interpreter) : _instance;
 
         private PythonTupleType(IPythonInterpreter interpreter)
             : base(null, BuiltinTypeId.Tuple, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), false) { }

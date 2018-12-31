@@ -18,7 +18,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -27,7 +26,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             cancellationToken.ThrowIfCancellationRequested();
             var value = await Lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
 
-            if (value == null || value.MemberType == PythonMemberType.Unknown) {
+            if (value.IsUnknown()) {
                 Log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(Ast).Trim()}");
             }
 
@@ -39,19 +38,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 // Tuple = Tuple. Transfer values.
                 var texHandler = new TupleExpressionHandler(Lookup);
                 await texHandler.HandleTupleAssignmentAsync(lhs, node.Right, value, cancellationToken);
-                return await base.WalkAsync(node, cancellationToken);
-            }
+            } else {
+                foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
+                    // x: List[str] = [...]
+                    AssignAnnotatedVariable(expr, value);
+                    if (!value.IsUnknown() && expr.Expression is NameExpression ne) {
+                        Lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
+                    }
+                }
 
-            foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
-                // x: List[str] = [...]
-                AssignAnnotatedVariable(expr, value);
-                if (!value.IsUnknown() && expr.Expression is NameExpression ne) {
+                foreach (var ne in node.Left.OfType<NameExpression>()) {
                     Lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
                 }
-            }
-
-            foreach (var ne in node.Left.OfType<NameExpression>()) {
-                Lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
             }
 
             return await base.WalkAsync(node, cancellationToken);

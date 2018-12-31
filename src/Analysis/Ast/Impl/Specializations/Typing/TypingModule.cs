@@ -17,9 +17,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing {
@@ -44,13 +46,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         private void SpecializeMembers() {
             // TypeVar
             var fn = new PythonFunctionType("TypeVar", this, null, GetMemberDocumentation, GetMemberLocation);
-            var o = new PythonFunctionOverload(fn.Name, Enumerable.Empty<IParameterInfo>(), _ => fn.Location);
-            o.AddReturnValue(new PythonTypeDeclaration("TypeVar", this));
+            var o = new PythonFunctionOverload(fn.Name, this, _ => fn.Location);
+            // When called, create generic parameter type. For documentation
+            // use original TypeVar declaration so it appear as a tooltip.
+            o.SetReturnValueProvider((module, overload, location, args) => GenericTypeParameter.FromTypeVar(args, module, location));
+
             fn.AddOverload(o);
             _members["TypeVar"] = fn;
 
-            _members["List"] = new GenericType("List", this, 
+            _members["List"] = new GenericType("List", this,
                 (typeArgs, module, location) => TypingListType.Create(module, typeArgs));
+            _members["Sequence"] = new GenericType("Sequence", this,
+                (typeArgs, module, location) => TypingSequenceType.Create(module, typeArgs));
             _members["Tuple"] = new GenericType("Tuple", this,
                 (typeArgs, module, location) => TypingTupleType.Create(module, typeArgs));
         }
@@ -60,5 +67,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             => base.GetMember(name)?.GetPythonType()?.Documentation;
         private LocationInfo GetMemberLocation(string name)
             => (base.GetMember(name)?.GetPythonType() as ILocatedMember)?.Location ?? LocationInfo.Empty;
+
     }
 }

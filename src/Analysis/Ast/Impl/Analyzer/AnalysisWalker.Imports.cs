@@ -24,10 +24,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal partial class AnalysisWalker {
-        public override Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default)
-            => HandleImportAsync(node, cancellationToken);
-
-        public async Task<bool> HandleImportAsync(ImportStatement node, CancellationToken cancellationToken = default) {
+        public override async Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             if (node.Names == null || Module.ModuleType == ModuleType.Specialized) {
                 return false;
@@ -42,7 +39,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var asNameExpression = node.AsNames[i];
                 var memberName = asNameExpression?.Name ?? moduleImportExpression.Names[0].Name;
 
+                // If we are processing stub, ignore imports of the original module.
+                // For example, typeshed stub for sys imports sys.
                 var imports = Interpreter.ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, node.ForceAbsolute);
+                if (Module.ModuleType == ModuleType.Stub && imports is ModuleImport mi && mi.Name == Module.Name) {
+                    continue;
+                }
+
                 var location = GetLoc(moduleImportExpression);
                 IPythonModule module = null;
                 switch (imports) {

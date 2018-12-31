@@ -17,10 +17,12 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
-    /// Represents pseudo-type that turns into specific type
-    /// when function return type depends on the arguments passed.
+    /// Describes function argument which type is not known from
+    /// the function signature and is only known at the call time.
+    /// Serves as a placeholder argument type until function return
+    /// value can be determined by using actual call arguments.
     /// </summary>
-    internal interface IPythonCallableArgumentType: IPythonType {
+    internal interface IFunctionArgumentType: IPythonType {
         /// <summary>
         /// Index of the input argument which type should be used as return type.
         /// </summary>

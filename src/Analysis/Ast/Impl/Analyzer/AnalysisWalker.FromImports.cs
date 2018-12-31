@@ -25,10 +25,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal partial class AnalysisWalker {
-        public override Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
-            => HandleFromImportAsync(node, cancellationToken);
-
-        public async Task<bool> HandleFromImportAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
+        public override async Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default) { 
             cancellationToken.ThrowIfCancellationRequested();
             if (node.Root == null || node.Names == null || Module.ModuleType == ModuleType.Specialized) {
                 return false;
@@ -42,8 +39,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            var importSearchResult = Interpreter.ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
-            switch (importSearchResult) {
+            var imports = Interpreter.ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
+            // If we are processing stub, ignore imports of the original module.
+            // For example, typeshed stub for sys imports sys.
+            if (Module.ModuleType == ModuleType.Stub && imports is ModuleImport mi && mi.Name == Module.Name) {
+                return false;
+            }
+
+            switch (imports) {
                 case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
                     ImportMembersFromSelf(node);
                     return false;

@@ -254,6 +254,8 @@ namespace Microsoft.Python.Analysis.Modules {
             return _ast;
         }
 
+        public PythonAst GetAnyAst() => _ast;
+
         /// <summary>
         /// Provides collection of parsing errors, if any.
         /// </summary>
@@ -465,7 +467,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Provides ability to dynamically calculate function return type.
         /// </summary>
-        protected void SpecializeFunction(string name, Func<IReadOnlyList<IMember>, IMember> returnTypeCallback) {
+        internal void SpecializeFunction(string name, ReturnValueProvider returnTypeCallback) {
             var f = GetOrCreateFunction(name);
             if (f != null) {
                 foreach (var o in f.Overloads.OfType<PythonFunctionOverload>()) {
@@ -480,7 +482,7 @@ namespace Microsoft.Python.Analysis.Modules {
             // 'type()' in code is a function call, not a type class instantiation.
             if (f == null) {
                 f = PythonFunctionType.ForSpecialization(name, this);
-                f.AddOverload(new PythonFunctionOverload(name, Enumerable.Empty<IParameterInfo>(), LocationInfo.Empty));
+                f.AddOverload(new PythonFunctionOverload(name, this, LocationInfo.Empty));
                 Analysis.GlobalScope.DeclareVariable(name, f, LocationInfo.Empty);
             }
             return f;

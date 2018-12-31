@@ -23,9 +23,9 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal partial class AnalysisWalker {
-        public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
+        public override Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
             if (node.IsLambda || _replacedByStubs.Contains(node)) {
-                return false;
+                return Task.FromResult(false);
             }
 
             var cls = Lookup.GetInScope("__class__").GetPythonType();
@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ProcessFunctionDefinition(node, cls, loc);
             }
             // Do not recurse into functions
-            return false;
+            return Task.FromResult(false);
         }
 
         public void ProcessFunctionDefinition(FunctionDefinition node, IPythonType declaringType, LocationInfo loc) {
@@ -54,40 +54,36 @@ namespace Microsoft.Python.Analysis.Analyzer {
             AddOverload(node, existing, o => existing.AddOverload(o));
         }
 
-        private PythonFunctionOverload CreateFunctionOverload(ExpressionLookup lookup, FunctionDefinition node, IPythonClassMember function) {
-            var parameters = node.Parameters
-                .Select(p => new ParameterInfo(Ast, p, Lookup.GetTypeFromAnnotation(p.Annotation)))
-                .ToArray();
-
-            var overload = new PythonFunctionOverload(
-                node,
-                parameters,
-                lookup.GetLocOfName(node, node.NameExpression),
-                node.ReturnAnnotation?.ToCodeString(Ast));
-
-            FunctionWalkers.Add(new AnalysisFunctionWalker(lookup, node, overload, function));
-            return overload;
-        }
-
         private void AddOverload(FunctionDefinition node, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
             // Check if function exists in stubs. If so, take overload from stub
             // and the documentation from this actual module.
-            var stubOverload = GetOverloadFromStub(node);
-            if (stubOverload != null) {
-                if (!string.IsNullOrEmpty(node.Documentation)) {
-                    stubOverload.SetDocumentationProvider(_ => node.Documentation);
+            if (!_replacedByStubs.Contains(node)) {
+                var stubOverload = GetOverloadFromStub(node);
+                if (stubOverload != null) {
+                    if (!string.IsNullOrEmpty(node.Documentation)) {
+                        stubOverload.SetDocumentationProvider(_ => node.Documentation);
+                    }
+
+                    addOverload(stubOverload);
+                    _replacedByStubs.Add(node);
+                    return;
                 }
-                addOverload(stubOverload);
-                _replacedByStubs.Add(node);
-                return;
             }
 
             if (!FunctionWalkers.Contains(node)) {
-                var overload = CreateFunctionOverload(Lookup, node, function);
-                if (overload != null) {
-                    addOverload(overload);
-                }
+                // Do not evaluate parameter types if this is light-weight top-level information collection.
+                var location = Lookup.GetLocOfName(node, node.NameExpression);
+                var returnDoc = node.ReturnAnnotation?.ToCodeString(Ast);
+                var overload = new PythonFunctionOverload(node, Module, location, returnDoc);
+                addOverload(overload);
+                FunctionWalkers.Add(new AnalysisFunctionWalker(Lookup, node, overload, function));
+                return;
             }
+
+            // Full walk
+            var parameters = node.Parameters.Select(p => new ParameterInfo(Ast, p, Lookup.GetTypeFromAnnotation(p.Annotation))).ToArray();
+            var walker = FunctionWalkers.Get(node);
+            walker.Overload.SetParameters(parameters);
         }
 
         private PythonFunctionOverload GetOverloadFromStub(FunctionDefinition node) {

@@ -41,10 +41,10 @@ namespace Microsoft.Python.Analysis.Types {
             _methods[1] = new PythonFunctionType(_methodNames[1], declaringModule, this, string.Empty, LocationInfo.Empty);
 
             // Both members share the same overload.
-            var overload = new PythonFunctionOverload("next", Array.Empty<IParameterInfo>(), LocationInfo.Empty);
+            var overload = new PythonFunctionOverload("next", declaringModule, LocationInfo.Empty);
 
             // Set up the overload return type handler.
-            overload.SetReturnValueProvider(args => {
+            overload.SetReturnValueProvider((module, o, loc, args) => {
                 if (args.Count > 0) {
                     if (args[0] is IPythonIterator iter) {
                         return iter.Next;

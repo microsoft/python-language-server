@@ -18,7 +18,7 @@ using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal class TypingTupleType : TypingSequenceType {
+    internal class TypingTupleType : TypedSequenceType {
         public TypingTupleType(IPythonModule declaringModule, IReadOnlyList<IPythonType> contentTypes)
             : base("Tuple", BuiltinTypeId.Tuple, declaringModule, contentTypes, false) { }
 

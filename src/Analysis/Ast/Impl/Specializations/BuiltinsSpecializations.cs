@@ -13,22 +13,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations {
     public static class BuiltinsSpecializations {
-        public static Func<IReadOnlyList<IMember>, IMember> Identity
-            => (args => args.Count > 0 ? args[0] : null);
+        public static ReturnValueProvider Identity
+            => (module, overload, location, args) => args.Count > 0 ? args[0] : null;
 
-        public static Func<IReadOnlyList<IMember>, IMember> TypeInfo
-            => (args => args.Count > 0 ? args[0].GetPythonType() : null);
+        public static ReturnValueProvider TypeInfo
+            => (module, overload, location, args) => args.Count > 0 ? args[0].GetPythonType() : null;
 
-        public static IMember Iterator(IReadOnlyList<IMember> args) {
+        public static IMember Iterator(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args) {
             if (args.Count > 0) {
                 if (args[0] is IPythonSequence seq) {
                     return seq.GetIterator();
@@ -41,12 +39,12 @@ namespace Microsoft.Python.Analysis.Specializations {
             return null;
         }
 
-        public static Func<IReadOnlyList<IMember>, IMember> Next
-                => (args => args.Count > 0 && args[0] is IPythonIterator it ? it.Next : null);
+        public static ReturnValueProvider Next
+                => (module, overload, location, args) => args.Count > 0 && args[0] is IPythonIterator it ? it.Next : null;
 
-        public static IMember __iter__(IPythonModule  declaringModule, BuiltinTypeId contentTypeId) {
+        public static IMember __iter__(IPythonModule declaringModule, BuiltinTypeId contentTypeId) {
             var fn = new PythonFunctionType(@"__iter__", declaringModule, null, string.Empty, LocationInfo.Empty);
-            var o = new PythonFunctionOverload(fn.Name, Enumerable.Empty<IParameterInfo>(), _ => fn.Location);
+            var o = new PythonFunctionOverload(fn.Name, declaringModule, _ => fn.Location);
             o.AddReturnValue(PythonTypeIterator.FromTypeId(declaringModule, contentTypeId));
             fn.AddOverload(o);
             return fn;

@@ -16,8 +16,14 @@
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class CallableArgumentType : PythonTypeWrapper, IPythonCallableArgumentType {
-        public CallableArgumentType(int parameterIndex, IPythonType parameterType) :
+    /// <summary>
+    /// Describes function argument which type is not known from
+    /// the function signature and is only known at the call time.
+    /// Serves as a placeholder argument type until function return
+    /// value can be determined by using actual call arguments.
+    /// </summary>
+    internal sealed class FunctionArgumentType : PythonTypeWrapper, IFunctionArgumentType {
+        public FunctionArgumentType(int parameterIndex, IPythonType parameterType) :
             base(parameterType) {
             ParameterIndex = parameterIndex;
         }

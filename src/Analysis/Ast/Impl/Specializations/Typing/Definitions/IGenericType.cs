@@ -19,12 +19,13 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
     /// Represents generic type, such as class or function.
+    /// Generic type is a template for the actual type.
     /// </summary>
     public interface IGenericType: IPythonType {
         /// <summary>
         /// Creates instance of a type information with the specific
         /// type arguments from the generic template.
         /// </summary>
-        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declatingModule, LocationInfo location = null);
+        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null);
     }
 }

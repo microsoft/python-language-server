@@ -35,31 +35,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override async Task<bool> WalkAsync(PythonAst node, CancellationToken cancellationToken = default) {
             Check.InvalidOperation(() => Ast == node, "walking wrong AST");
 
-            await CollectTopLevelDefinitionsAsync(cancellationToken);
-
+            // Collect basic information about classes and functions in order
+            // to correctly process forward references. Does not determine
+            // types yet since at this time imports or generic definitions
+            // have not been processed.
+            CollectTopLevelDefinitions();
             return await base.WalkAsync(node, cancellationToken);
         }
 
-        private async Task CollectTopLevelDefinitionsAsync(CancellationToken cancellationToken = default) {
+        private void CollectTopLevelDefinitions() {
             var statement = (Ast.Body as SuiteStatement)?.Statements.ToArray() ?? Array.Empty<Statement>();
 
-            foreach (var node in statement.OfType<ImportStatement>()) {
-                cancellationToken.ThrowIfCancellationRequested();
-                await HandleImportAsync(node, cancellationToken);
-            }
-
-            foreach (var node in statement.OfType<FromImportStatement>()) {
-                cancellationToken.ThrowIfCancellationRequested();
-                await HandleFromImportAsync(node, cancellationToken);
-            }
-
             foreach (var node in statement.OfType<FunctionDefinition>()) {
-                cancellationToken.ThrowIfCancellationRequested();
                 ProcessFunctionDefinition(node, null, Lookup.GetLoc(node));
             }
 
             foreach (var node in statement.OfType<ClassDefinition>()) {
-                cancellationToken.ThrowIfCancellationRequested();
                 var classInfo = CreateClass(node);
                 Lookup.DeclareVariable(node.Name, classInfo, GetLoc(node));
             }

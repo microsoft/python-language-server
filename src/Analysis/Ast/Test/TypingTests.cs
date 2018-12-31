@@ -121,6 +121,20 @@ x = f(1)
 from typing import TypeVar
 
 T = TypeVar('T', str, bytes)
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("T")
+                .Which.Value.Should().HaveDocumentation("TypeVar('T', str, bytes)");
+            analysis.Should().HaveVariable("T").OfType(typeof(IGenericTypeParameter));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericArguments() {
+            const string code = @"
+from typing import TypeVar
+
+T = TypeVar('T', str, bytes)
 
 def longest(x: T, y: T):
     return x if len(x) >= len(y) else y
@@ -129,8 +143,13 @@ x = longest('a', 'bc')
 ";
 
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("T").OfType(typeof(IPythonTypeDeclaration))
-                .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
+            analysis.Should().HaveFunction("longest")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameterAt(0)
+                .Which.Should().HaveName("x")
+                .And.HaveType("T");
+
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
@@ -189,6 +208,36 @@ z1 = x[1]
                 .And.HaveVariable("y").OfType(BuiltinTypeId.Bool)
                 .And.HaveVariable("z0").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("z1").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OverloadsParamTypeMatch() {
+            const string code = @"
+from typing import List, Sequence, TypeVar
+
+T = TypeVar('T')
+
+def f(a: Sequence[T]) -> str: ...
+def f(a: int) -> float: ...
+
+a: List[str] = ['a', 'b', 'c']
+x = f(a)
+";
+            var analysis = await GetAnalysisAsync(code);
+            var f = analysis.Should().HaveFunction("f").Which;
+
+            f.Should().HaveOverloadAt(0)
+                .Which.Should().HaveReturnType(BuiltinTypeId.Str)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType("Sequence[T]");
+
+            f.Should().HaveOverloadAt(1)
+                .Which.Should().HaveReturnType(BuiltinTypeId.Float)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.Int);
+
+            analysis.Should().HaveVariable("a").OfType("List[str]")
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
     }
 }

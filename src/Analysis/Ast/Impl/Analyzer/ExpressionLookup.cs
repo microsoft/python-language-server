@@ -65,33 +65,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IServiceContainer Services { get; }
         public AnalysisFunctionWalkerSet FunctionWalkers { get; } = new AnalysisFunctionWalkerSet();
 
-        public LocationInfo GetLoc(Node node) {
-            if (node == null || node.StartIndex >= node.EndIndex) {
-                return LocationInfo.Empty;
-            }
-
-            var start = node.GetStart(Ast);
-            var end = node.GetEnd(Ast);
-            return new LocationInfo(Module.FilePath, Module.Uri, start.Line, start.Column, end.Line, end.Column);
-        }
-
-        public LocationInfo GetLocOfName(Node node, NameExpression header) {
-            var loc = GetLoc(node);
-            if (loc == null || header == null) {
-                return LocationInfo.Empty;
-            }
-
-            var nameStart = header.GetStart(Ast);
-            if (!nameStart.IsValid) {
-                return loc;
-            }
-
-            if (nameStart.Line > loc.StartLine || (nameStart.Line == loc.StartLine && nameStart.Column > loc.StartColumn)) {
-                return new LocationInfo(loc.FilePath, loc.DocumentUri, nameStart.Line, nameStart.Column, loc.EndLine, loc.EndColumn);
-            }
-
-            return loc;
-        }
+        public LocationInfo GetLoc(Node node) => node.GetLocation(Module, Ast);
+        public LocationInfo GetLocOfName(Node node, NameExpression header) => node.GetLocationOfName(header, Module, Ast);
 
         [DebuggerStepThrough]
         public Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default)

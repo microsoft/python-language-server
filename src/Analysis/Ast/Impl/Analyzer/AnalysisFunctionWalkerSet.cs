@@ -33,7 +33,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly ConcurrentBag<FunctionDefinition> _processed = new ConcurrentBag<FunctionDefinition>();
 
         public void Add(AnalysisFunctionWalker walker)
-            => _functionWalkers[walker.Target] = walker;
+            => _functionWalkers[walker.FunctionDefinition] = walker;
+
+        public AnalysisFunctionWalker Get(FunctionDefinition fd)
+            => _functionWalkers.TryGetValue(fd, out var w) ? w : null;
 
         public async Task ProcessSetAsync(CancellationToken cancellationToken = default) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
@@ -83,8 +86,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Remove walker before processing as to prevent reentrancy.
             // NOTE: first add then remove so we don't get moment when
             // walker is missing from either set.
-            _processed.Add(walker.Target);
-            _functionWalkers.TryRemove(walker.Target, out _);
+            _processed.Add(walker.FunctionDefinition);
+            _functionWalkers.TryRemove(walker.FunctionDefinition, out _);
             return walker.WalkAsync(cancellationToken);
         }
 

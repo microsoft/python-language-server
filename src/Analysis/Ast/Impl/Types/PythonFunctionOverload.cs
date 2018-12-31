@@ -21,12 +21,29 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
+    /// <summary>
+    /// Delegate that is invoked to determine function return type dynamically.
+    /// Can be used in specializations or when return type depends on actual arguments.
+    /// </summary>
+    /// <param name="declaringModule">Module making the call.</param>
+    /// <param name="overload">Function overload the return value is requested for.</param>
+    /// <param name="location">Call location, if any.</param>
+    /// <param name="args">Call arguments.</param>
+    /// <returns></returns>
+    public delegate IMember ReturnValueProvider(
+        IPythonModule declaringModule,
+        IPythonFunctionOverload overload,
+        LocationInfo location,
+        IReadOnlyList<IMember> args);
+
     internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
         private readonly Func<string, LocationInfo> _locationProvider;
+        private readonly IPythonModule _declaringModule;
 
         // Allow dynamic function specialization, such as defining return types for builtin
         // functions that are impossible to scrape and that are missing from stubs.
-        private Func<IReadOnlyList<IMember>, IMember> _returnValueProvider;
+        //  Parameters: declaring module, overload for the return value, list of arguments.
+        private ReturnValueProvider _returnValueProvider;
 
         // Return value can be an instance or a type info. Consider type(C()) returning
         // type info of C vs. return C() that returns an instance of C.
@@ -35,24 +52,25 @@ namespace Microsoft.Python.Analysis.Types {
         private IMember _returnValue;
         private bool _fromAnnotation;
 
-        public PythonFunctionOverload(string name, IEnumerable<IParameterInfo> parameters,
-            LocationInfo location, string returnDocumentation = null
-        ) : this(name, parameters, _ => location ?? LocationInfo.Empty, returnDocumentation) { }
+        public PythonFunctionOverload(string name, IPythonModule declaringModule, LocationInfo location, string returnDocumentation = null)
+            : this(name, declaringModule, _ => location ?? LocationInfo.Empty, returnDocumentation) {
+            _declaringModule = declaringModule;
+        }
 
-        public PythonFunctionOverload(FunctionDefinition fd, IEnumerable<IParameterInfo> parameters,
-            LocationInfo location, string returnDocumentation = null
-        ) : this(fd.Name, parameters, _ => location, returnDocumentation) {
+        public PythonFunctionOverload(FunctionDefinition fd, IPythonModule declaringModule, LocationInfo location, string returnDocumentation = null)
+            : this(fd.Name, declaringModule, _ => location, returnDocumentation) {
             FunctionDefinition = fd;
         }
 
-        public PythonFunctionOverload(string name, IEnumerable<IParameterInfo> parameters,
-            Func<string, LocationInfo> locationProvider, string returnDocumentation = null
-        ) {
+        public PythonFunctionOverload(string name, IPythonModule declaringModule,
+            Func<string, LocationInfo> locationProvider, string returnDocumentation = null) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            Parameters = parameters?.ToArray() ?? throw new ArgumentNullException(nameof(parameters));
-            _locationProvider = locationProvider;
             ReturnDocumentation = returnDocumentation;
+            _declaringModule = declaringModule;
+            _locationProvider = locationProvider;
         }
+
+        internal void SetParameters(IReadOnlyList<IParameterInfo> parameters) => Parameters = parameters;
 
         internal void SetDocumentationProvider(Func<string, string> documentationProvider) {
             if (_documentationProvider != null) {
@@ -79,7 +97,7 @@ namespace Microsoft.Python.Analysis.Types {
             _fromAnnotation = fromAnnotation;
         }
 
-        internal void SetReturnValueProvider(Func<IReadOnlyList<IMember>, IMember> provider)
+        internal void SetReturnValueProvider(ReturnValueProvider provider)
             => _returnValueProvider = provider;
 
         #region IPythonFunctionOverload
@@ -87,14 +105,14 @@ namespace Microsoft.Python.Analysis.Types {
         public string Name { get; }
         public string Documentation => _documentationProvider?.Invoke(Name) ?? string.Empty;
         public string ReturnDocumentation { get; }
-        public IReadOnlyList<IParameterInfo> Parameters { get; }
+        public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
         public LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
         public PythonMemberType MemberType => PythonMemberType.Function;
 
-        public IMember GetReturnValue(IPythonInstance instance, IReadOnlyList<IMember> args) {
+        public IMember GetReturnValue(LocationInfo callLocation, IReadOnlyList<IMember> args) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
-                var rt = _returnValueProvider?.Invoke(args);
+                var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args);
                 if (!rt.IsUnknown()) {
                     return rt;
                 }
@@ -102,11 +120,11 @@ namespace Microsoft.Python.Analysis.Types {
 
             // Then see if return value matches type of one of the input arguments.
             var t = _returnValue.GetPythonType();
-            if (!(t is IPythonCallableArgumentType) && !t.IsUnknown()) {
+            if (!(t is IFunctionArgumentType) && !t.IsUnknown()) {
                 return _returnValue;
             }
 
-            if (t is IPythonCallableArgumentType cat && args != null) {
+            if (t is IFunctionArgumentType cat && args != null) {
                 var rt = cat.ParameterIndex < args.Count ? args[cat.ParameterIndex] : null;
                 if (!rt.IsUnknown()) {
                     return rt;

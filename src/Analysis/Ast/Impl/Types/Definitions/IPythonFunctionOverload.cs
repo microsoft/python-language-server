@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -43,10 +44,10 @@ namespace Microsoft.Python.Analysis.Types {
         IReadOnlyList<IParameterInfo> Parameters { get; }
 
         /// <summary>
-        /// Determines return value type given arguments for the particular instance.
+        /// Determines return value type given arguments for the particular call.
         /// For annotated or stubbed functions the annotation type is always returned.
         /// </summary>
-        IMember GetReturnValue(IPythonInstance instance, IReadOnlyList<IMember> args = null);
+        IMember GetReturnValue(LocationInfo callLocation, IReadOnlyList<IMember> args = null);
 
         /// <summary>
         /// Return value documentation.

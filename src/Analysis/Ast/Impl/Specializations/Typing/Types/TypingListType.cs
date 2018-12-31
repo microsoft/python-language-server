@@ -20,9 +20,9 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingListType : TypingSequenceType {
         public TypingListType(IPythonModule declaringModule, IPythonType contentType)
-            : base("List", BuiltinTypeId.List, declaringModule, contentType, true) { }
+            : base(declaringModule, contentType, true) { }
 
-        public static IPythonType Create(
+        public new static IPythonType Create(
             IPythonModule declaringModule,
             IReadOnlyList<IPythonType> typeArguments
         ) {

@@ -13,11 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis {
     public static class PythonTypeExtensions {
         public static bool IsUnknown(this IPythonType value) =>
             value == null || value.TypeId == BuiltinTypeId.Unknown;
+
+        public static bool IsGenericParameter(this IPythonType value) 
+            => value is IGenericTypeParameter;
     }
 }

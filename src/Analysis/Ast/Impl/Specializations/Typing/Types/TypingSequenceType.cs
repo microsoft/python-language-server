@@ -15,37 +15,26 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Utilities;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal abstract class TypingSequenceType : PythonSequenceType, ITypingSequenceType {
-        protected TypingSequenceType(
-            string name,
-            BuiltinTypeId typeId,
+    internal class TypingSequenceType : TypedSequenceType {
+        protected TypingSequenceType(IPythonModule declaringModule, IPythonType contentType, bool mutable)
+            : base("List", BuiltinTypeId.List, declaringModule, contentType, mutable) { }
+
+        public static IPythonType Create(
             IPythonModule declaringModule,
-            IPythonType contentType,
-            bool isMutable
-            ) : base(name, typeId, declaringModule, contentType, isMutable) {
-            Name = $"{name}[{contentType.Name}]";
-            ContentTypes = new[] { contentType };
+            IReadOnlyList<IPythonType> typeArguments
+        ) {
+            if (typeArguments.Count == 1) {
+                return new TypingSequenceType(declaringModule, typeArguments[0], false);
+            }
+            // TODO: report wrong number of arguments
+            return declaringModule.Interpreter.UnknownType;
         }
 
-        protected TypingSequenceType(
-            string name,
-            BuiltinTypeId typeId,
-            IPythonModule declaringModule,
-            IReadOnlyList<IPythonType> contentTypes,
-            bool isMutable
-        ) : base(name, typeId, declaringModule, contentTypes, isMutable) {
-            Name = CodeFormatter.FormatSequence(name, contentTypes, '[');
-            ContentTypes = contentTypes;
-        }
+        public override bool IsAbstract => true;
 
-        public override string Name { get; }
-
-        /// <summary>
-        /// Sequence types.
-        /// </summary>
-        public IReadOnlyList<IPythonType> ContentTypes { get; }
+        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
+            => declaringModule.Interpreter.UnknownType;
     }
 }

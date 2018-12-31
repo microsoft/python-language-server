@@ -52,6 +52,15 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return constraint;
         }
 
+        public AndWhichConstraint<MemberAssertions, IMember> HaveDocumentation(string documentation, string because = "", params object[] reasonArgs) {
+            var t = Subject.GetPythonType();
+            Execute.Assertion.ForCondition(t.Documentation == documentation)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName(t)} to have documentation {documentation}, but it has {t.Documentation}.");
+
+            return new AndWhichConstraint<MemberAssertions, IMember>(this, Subject);
+        }
+
         public AndWhichConstraint<MemberAssertions, PythonFunctionType> HaveMethod(string name, string because = "", params object[] reasonArgs)
             => HaveMember<PythonFunctionType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Method);
 
@@ -61,7 +70,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             NotBeNull();
 
             var t = Subject.GetPythonType();
-            var mc =  t as IMemberContainer;
+            var mc =  (IMemberContainer) t;
             Execute.Assertion.ForCondition(mc != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName(t)} to be a member container{{reason}}.");

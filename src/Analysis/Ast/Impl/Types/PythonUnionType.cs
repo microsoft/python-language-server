@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Types {
         public string Name {
             get {
                 lock (_lock) {
-                    return CodeFormatter.FormatSequence("Union", _types.ToArray(), '[');
+                    return CodeFormatter.FormatSequence("Union", '[', _types.ToArray());
                 }
             }
         }

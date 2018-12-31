@@ -22,7 +22,7 @@ namespace Microsoft.Python.Analysis.Types {
         private static PythonListType _instance;
 
         public static PythonListType GetPythonListType(IPythonInterpreter interpreter)
-            => _instance ?? (_instance = new PythonListType(interpreter));
+            => _instance.IsUnknown() ? _instance = new PythonListType(interpreter) : _instance;
 
         private PythonListType(IPythonInterpreter interpreter)
             : base(null, BuiltinTypeId.List, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) { }
