@@ -65,8 +65,9 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual PythonMemberType MemberType => _typeId.GetMemberId();
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
+        public virtual bool IsAbstract => false;
 
-        public virtual IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args)
+        public virtual IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
             => new PythonInstance(this, location);
         #endregion
 

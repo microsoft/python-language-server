@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// is implemented manually via specialized function overload.
     /// </summary>
     internal sealed class PythonIteratorType : PythonType, IPythonIteratorType {
-        private static readonly string[] _methodNames = new[] { "next", "__next__" };
+        private static readonly string[] _methodNames = { "next", "__next__" };
         private readonly PythonFunctionType[] _methods = new PythonFunctionType[2];
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Types {
                         return t.GetNext(fn.Self);
                     }
                 }
-                return DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
+                return DeclaringModule.Interpreter.UnknownType;
             });
 
             foreach (var m in _methods) {
@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
         public IMember GetNext(IPythonInstance instance)
-            => (instance as IPythonIterator)?.Next ?? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
+            => (instance as IPythonIterator)?.Next ?? DeclaringModule.Interpreter.UnknownType;
 
         public override IEnumerable<string> GetMemberNames() => _methodNames;
         public override IMember GetMember(string name) => _methods.FirstOrDefault(m => m.Name == name);

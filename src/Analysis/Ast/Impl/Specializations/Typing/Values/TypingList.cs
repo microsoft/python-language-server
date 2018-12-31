@@ -13,13 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using Microsoft.Python.Analysis.Specializations.Typing.Types;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonIterableType : IPythonType {
-        /// <summary>
-        /// Invokes 'GetIterator' on the supplied instance.
-        /// </summary>
-        IPythonIterator GetIterator(IPythonInstance instance);
+namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
+    internal class TypingList : PythonSequence {
+        public TypingList(TypingListType listType, LocationInfo location = null)
+            : base(listType, Array.Empty<IMember>(), location ?? LocationInfo.Empty) { }
+
+        public override IMember GetValueAt(int index) {
+            var type = ((TypingListType)Type).ContentTypes[0];
+            return type.CreateInstance(Type.DeclaringModule, Location);
+        }
     }
 }

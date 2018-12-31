@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
             // If return value is set from annotation, it should not be changing.
             if (!_fromAnnotation) {
-                var type = PythonUnion.Combine(_returnValue.GetPythonType(), value.GetPythonType());
+                var type = PythonUnionType.Combine(_returnValue.GetPythonType(), value.GetPythonType());
                 // Track instance vs type info.
                 _returnValue = value is IPythonInstance ? new PythonInstance(type) : (IMember)type;
             }

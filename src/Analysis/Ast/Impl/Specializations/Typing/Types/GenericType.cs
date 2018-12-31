@@ -50,16 +50,17 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
         public virtual string Documentation => (TypingModule?.GetMember(Name) as IPythonType)?.Documentation;
         public bool IsBuiltin => false;
+        public bool IsAbstract => true;
 
-        public IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args) {
+        public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args) {
             var types = args.OfType<IPythonType>().ToArray();
             if (types.Length != args.Length) {
                 throw new ArgumentException(@"Generic type instance construction arguments must be all of IPythonType", nameof(args));
             }
             var specific = CreateSpecificType(types, DeclaringModule, location);
             return specific == null 
-                ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown) 
-                : specific.CreateInstance(interpreter, location);
+                ? DeclaringModule.Interpreter.UnknownType 
+                : specific.CreateInstance(declaringModule, location);
         }
         #endregion
     }

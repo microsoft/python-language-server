@@ -176,7 +176,7 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             // Set up a sentinel so we can detect recursive imports
-            var sentinelValue = new SentinelModule(name);
+            var sentinelValue = new SentinelModule(name, _services);
             if (!_modules.TryAdd(name, sentinelValue)) {
                 // Try to get the new module, in case we raced with a .Clear()
                 if (_modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
@@ -469,6 +469,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         // For tests
-        internal void AddUnimportableModule(string moduleName) => _modules[moduleName] = new SentinelModule(moduleName);
+        internal void AddUnimportableModule(string moduleName) 
+            => _modules[moduleName] = new SentinelModule(moduleName, _services);
     }
 }

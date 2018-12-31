@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -82,14 +83,15 @@ namespace Microsoft.Python.Analysis.Tests {
         public async Task Mro() {
             using (var s = await CreateServicesAsync(null)) {
                 var interpreter = s.GetService<IPythonInterpreter>();
+                var m = new SentinelModule("test", s);
 
-                var O = new PythonClassType("O");
-                var A = new PythonClassType("A");
-                var B = new PythonClassType("B");
-                var C = new PythonClassType("C");
-                var D = new PythonClassType("D");
-                var E = new PythonClassType("E");
-                var F = new PythonClassType("F");
+                var O = new PythonClassType("O", m);
+                var A = new PythonClassType("A", m);
+                var B = new PythonClassType("B", m);
+                var C = new PythonClassType("C", m);
+                var D = new PythonClassType("D", m);
+                var E = new PythonClassType("E", m);
+                var F = new PythonClassType("F", m);
 
                 F.SetBases(interpreter, new[] { O });
                 E.SetBases(interpreter, new[] { O });

@@ -14,28 +14,38 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Utilities;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal sealed class TypingSequenceType : PythonSequenceType {
-        public TypingSequenceType(string name, BuiltinTypeId typeId, IPythonModule declaringModule, IPythonType contentType)
-            : base(name, typeId, declaringModule.Interpreter, declaringModule, contentType) {
+    internal abstract class TypingSequenceType : PythonSequenceType, ITypingSequenceType {
+        protected TypingSequenceType(
+            string name,
+            BuiltinTypeId typeId,
+            IPythonModule declaringModule,
+            IPythonType contentType,
+            bool isMutable
+            ) : base(name, typeId, declaringModule, contentType, isMutable) {
             Name = $"{name}[{contentType.Name}]";
+            ContentTypes = new[] { contentType };
         }
 
-        public static IPythonType Create(string name, BuiltinTypeId typeId, IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
-            if (typeArguments.Count == 1) {
-                return new TypingSequenceType(name, typeId, declaringModule, typeArguments[0]);
-            }
-            // TODO: report wrong number of arguments
-            return null;
+        protected TypingSequenceType(
+            string name,
+            BuiltinTypeId typeId,
+            IPythonModule declaringModule,
+            IReadOnlyList<IPythonType> contentTypes,
+            bool isMutable
+        ) : base(name, typeId, declaringModule, contentTypes, isMutable) {
+            Name = CodeFormatter.FormatSequence(name, contentTypes, '[');
+            ContentTypes = contentTypes;
         }
-
-        public override IMember GetValueAt(IPythonInstance instance, int index) => ContentType;
-        public override IEnumerable<IMember> GetContents(IPythonInstance instance) => Enumerable.Repeat(ContentType, 1);
 
         public override string Name { get; }
+
+        /// <summary>
+        /// Sequence types.
+        /// </summary>
+        public IReadOnlyList<IPythonType> ContentTypes { get; }
     }
 }

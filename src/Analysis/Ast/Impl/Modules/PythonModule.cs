@@ -104,7 +104,8 @@ namespace Microsoft.Python.Analysis.Modules {
         public virtual IPythonModule DeclaringModule => null;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
-        public IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args) => this;
+        public bool IsAbstract => false;
+        public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args) => this;
         public PythonMemberType MemberType => PythonMemberType.Module;
 
         public virtual string Documentation {

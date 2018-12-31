@@ -140,6 +140,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void MakeUnresolvedImport(string name, Node node)
-            => Lookup.DeclareVariable(name, new SentinelModule(name), GetLoc(node));
+            => Lookup.DeclareVariable(name, new SentinelModule(name, Services), GetLoc(node));
     }
 }

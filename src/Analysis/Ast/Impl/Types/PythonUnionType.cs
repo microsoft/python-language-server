@@ -17,15 +17,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Python.Analysis.Utilities;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
-    internal sealed class PythonUnion : IPythonUnionType {
+    internal sealed class PythonUnionType : IPythonUnionType {
         private readonly HashSet<IPythonType> _types = new HashSet<IPythonType>(PythonTypeComparer.Instance);
         private readonly object _lock = new object();
 
-        private PythonUnion(IPythonType x, IPythonType y) {
+        private PythonUnionType(IPythonType x, IPythonType y) {
             Check.Argument(nameof(x), () => !(x is IPythonUnionType));
             Check.Argument(nameof(y), () => !(y is IPythonUnionType));
             _types.Add(x);
@@ -33,19 +35,12 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         #region IPythonType
+
         public string Name {
             get {
-                var sb = new StringBuilder("Union[");
-                IPythonType[] array;
                 lock (_lock) {
-                    array = _types.ToArray();
+                    return CodeFormatter.FormatSequence("Union", _types.ToArray(), '[');
                 }
-                for (var i = 0; i < array.Length; i++) {
-                    sb.AppendIf(i > 0, ", ");
-                    sb.Append(array[i].Name);
-                }
-                sb.Append(']');
-                return sb.ToString();
             }
         }
 
@@ -53,16 +48,13 @@ namespace Microsoft.Python.Analysis.Types {
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public PythonMemberType MemberType => PythonMemberType.Union;
         public string Documentation => Name;
-
         public bool IsBuiltin {
-            get {
-                lock (_lock) {
-                    return _types.All(t => t.IsBuiltin);
-                }
-            }
+            get { lock (_lock) { return _types.All(t => t.IsBuiltin); } }
         }
+        public bool IsAbstract => false;
+        public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
+            => new PythonUnion(this, location);
 
-        public IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args) => this;
         #endregion
 
         #region IPythonUnionType
@@ -85,8 +77,6 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IPythonFunctionType GetConstructor() => null;
-
         public IEnumerator<IPythonType> GetEnumerator() {
             lock (_lock) {
                 return _types.ToList().GetEnumerator();
@@ -94,7 +84,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public IMember GetMember(string name) {
-            lock(_lock) {
+            lock (_lock) {
                 return _types.Select(t => t.GetMember(name)).ExcludeDefault().FirstOrDefault();
             }
         }
@@ -111,7 +101,7 @@ namespace Microsoft.Python.Analysis.Types {
             var utx = x as IPythonUnionType;
             var uty = y as IPythonUnionType;
 
-            if(x == null) {
+            if (x == null) {
                 return y;
             }
             if (y == null) {
@@ -119,7 +109,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             if (utx == null && uty == null) {
-                return new PythonUnion(x, y);
+                return new PythonUnionType(x, y);
             }
 
             if (utx != null && uty == null) {
@@ -128,7 +118,5 @@ namespace Microsoft.Python.Analysis.Types {
 
             return utx == null ? uty.Add(x) : utx.Add(uty);
         }
-
-
     }
 }

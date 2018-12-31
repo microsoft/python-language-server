@@ -45,11 +45,16 @@ namespace Microsoft.Python.Analysis.Types {
         bool IsBuiltin { get; }
 
         /// <summary>
+        /// Indicates if type is an abstract type.
+        /// </summary>
+        bool IsAbstract { get; }
+
+        /// <summary>
         /// Create instance of the type, if any.
         /// </summary>
-        /// <param name="interpreter">Python interpreter</param>
+        /// <param name="declaringModule">Declaring module.</param>
         /// <param name="location">Instance location</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
-        IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args);
+        IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args);
     }
 }

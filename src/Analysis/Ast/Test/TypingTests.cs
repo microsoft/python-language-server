@@ -132,5 +132,63 @@ x = longest('a', 'bc')
             analysis.Should().HaveVariable("T").OfType(typeof(IPythonTypeDeclaration))
                 .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeAlias() {
+            const string code = @"
+Url = str
+
+def f(a: Url) -> Url: ...
+def f(a: int) -> float: ...
+
+u: Url
+x = f('s')
+y = f(u)
+z = f(1)
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            // TODO: should it be Url? Should we rename type copy on assignment? How to match types then?
+            analysis.Should().HaveVariable("u").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("z").OfType(BuiltinTypeId.Float);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TupleContent() {
+            const string code = @"
+from typing import Tuple
+
+t: Tuple[int, str]
+x = t[0]
+y = t[1]
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("t").OfType("Tuple[int, str]")
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TupleOfTuple() {
+            const string code = @"
+from typing import Tuple
+
+t: Tuple[Tuple[int, str], bool]
+x = t[0]
+y = t[1]
+z0 = x[0]
+z1 = x[1]
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable(@"lst").OfType("Tuple[Tuple[int, str], bool]")
+                .And.HaveVariable("x").OfType("Tuple[int, str]")
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Bool)
+                .And.HaveVariable("z1").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("z2").OfType(BuiltinTypeId.Str);
+        }
     }
 }

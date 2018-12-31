@@ -33,7 +33,8 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly AsyncLocal<bool> _isProcessing = new AsyncLocal<bool>();
 
         // For tests
-        internal PythonClassType(string name) : base(name, BuiltinTypeId.Type) { }
+        internal PythonClassType(string name, IPythonModule declaringModule)
+            : base(name, declaringModule, string.Empty, LocationInfo.Empty, BuiltinTypeId.Type) { }
 
         public PythonClassType(
             ClassDefinition classDefinition,
@@ -71,9 +72,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // Special case names that we want to add to our own Members dict
                 switch (name) {
                     case "__mro__":
-                        member = AddMember(name, new PythonTuple(
-                            _interpreter.GetBuiltinType(BuiltinTypeId.Tuple),
-                            _interpreter) , true);
+                        member = AddMember(name, new PythonList(DeclaringModule.Interpreter, Mro), true);
                         return member;
                 }
             }
@@ -127,8 +126,8 @@ namespace Microsoft.Python.Analysis.Types {
                 }
 
                 if (!(DeclaringModule is BuiltinsPythonModule)) {
-                    // TODO: If necessary,  we can set __bases__ on builtins when the module is fully analyzed.
-                    AddMember("__bases__", new PythonSequence(null, BuiltinTypeId.List, Bases, interpreter), true);
+                    // TODO: If necessary, we can set __bases__ on builtins when the module is fully analyzed.
+                    AddMember("__bases__", new PythonList(interpreter, Bases), true);
                 }
             }
         }
@@ -149,9 +148,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                 var bases = (cls as PythonClassType)?.Bases;
                 if (bases == null) {
-                    var instance = cls.GetMember("__bases__") as IPythonInstance;
-                    var seq = instance?.GetPythonType() as IPythonSequenceType;
-                    var members = seq?.GetContents(instance) ?? Array.Empty<IMember>();
+                    var members = (cls.GetMember("__bases__") as IPythonSequence)?.Contents ?? Array.Empty<IMember>();
                     bases = members.Select(m => m.GetPythonType()).ToArray();
                 }
 

@@ -30,13 +30,13 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IPythonType DeclareType(IReadOnlyList<IMember> args, IPythonModule declaringModule, string documentation, LocationInfo location) {
             if (args.Count == 0) {
                 // TODO: report that at least one argument is required.
-                return DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
+                return DeclaringModule.Interpreter.UnknownType;
             }
 
             var name = (args[0] as IPythonConstant)?.Value as string;
             if (string.IsNullOrEmpty(name)) {
                 // TODO: report that type name is not a string.
-                return DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Unknown);
+                return DeclaringModule.Interpreter.UnknownType;
             }
 
             var constraints = args.Skip(1).ToArray();

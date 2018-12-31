@@ -90,7 +90,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
         public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
-        public virtual bool IsAbstract { get; private set; }
+        public virtual bool IsAbstractMember { get; private set; }
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
         #endregion
 
@@ -119,15 +119,15 @@ namespace Microsoft.Python.Analysis.Types {
                         IsClassMethod = true;
                         break;
                     case @"abstractmethod":
-                        IsAbstract = true;
+                        IsAbstractMember = true;
                         break;
                     case @"abstractstaticmethod":
                         IsStatic = true;
-                        IsAbstract = true;
+                        IsAbstractMember = true;
                         break;
                     case @"abstractclassmethod":
                         IsClassMethod = true;
-                        IsAbstract = true;
+                        IsAbstractMember = true;
                         break;
                     case @"property":
                     case @"abstractproperty":
@@ -151,7 +151,8 @@ namespace Microsoft.Python.Analysis.Types {
             public IPythonType DeclaringType => _pf.DeclaringType;
             public bool IsStatic => _pf.IsStatic;
             public bool IsClassMethod => _pf.IsClassMethod;
-            public bool IsAbstract => _pf.IsAbstract;
+            public override bool IsAbstract => false;
+            public bool IsAbstractMember => _pf.IsAbstractMember;
 
             public IReadOnlyList<IPythonFunctionOverload> Overloads => _pf.Overloads;
             public override BuiltinTypeId TypeId => BuiltinTypeId.Function;

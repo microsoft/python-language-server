@@ -15,13 +15,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Parsing;
@@ -33,14 +32,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class PythonInterpreter : IPythonInterpreter {
         private ModuleResolution _moduleResolution;
         private readonly object _lock = new object();
+
         private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>() {
-            { BuiltinTypeId.NoneType, new PythonType("NoneType", BuiltinTypeId.NoneType) },
-            { BuiltinTypeId.Unknown, new PythonType("Unknown", BuiltinTypeId.Unknown) }
+            {BuiltinTypeId.NoneType, new PythonType("NoneType", BuiltinTypeId.NoneType)},
+            {BuiltinTypeId.Unknown, new PythonType("Unknown", BuiltinTypeId.Unknown)}
         };
 
         private PythonInterpreter(InterpreterConfiguration configuration) {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             LanguageVersion = Configuration.Version.ToLanguageVersion();
+            UnknownType = _builtinTypes[BuiltinTypeId.Unknown];
         }
 
         public static async Task<IPythonInterpreter> CreateAsync(InterpreterConfiguration configuration, string root, IServiceManager sm, CancellationToken cancellationToken = default) {
@@ -104,6 +105,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return res;
             }
         }
+
+        /// <summary>
+        /// Unknown type.
+        /// </summary>
+        public IPythonType UnknownType { get; }
 
         public void NotifyImportableModulesChanged() => ModuleResolution.ReloadAsync().DoNotWait();
     }

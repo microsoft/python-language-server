@@ -17,17 +17,14 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
-    internal sealed class PythonTuple: PythonSequence {
-        /// <summary>
-        /// Creates list with consistent content (i.e. all strings)
-        /// </summary>
-        public PythonTuple(IMember contentType, IPythonInterpreter interpreter, LocationInfo location = null) 
-            : base(null, BuiltinTypeId.Tuple, contentType, interpreter, location) { }
+    /// <summary>
+    /// Default mutable list with mixed content.
+    /// </summary>
+    internal class PythonList : PythonSequence {
+        public PythonList(PythonListType listType, IEnumerable<IMember> contents, LocationInfo location = null) :
+            base(listType, contents, location) { }
 
-        /// <summary>
-        /// Creates list with mixed content.
-        /// </summary>
-        public PythonTuple(IEnumerable<IMember> contentTypes, IPythonInterpreter interpreter, LocationInfo location = null):
-            base(null, BuiltinTypeId.Tuple, contentTypes, interpreter, location) { }
+        public PythonList(IPythonInterpreter interpreter, IEnumerable<IMember> contents, LocationInfo location = null) :
+            base(PythonListType.GetPythonListType(interpreter), contents, location) { }
     }
 }

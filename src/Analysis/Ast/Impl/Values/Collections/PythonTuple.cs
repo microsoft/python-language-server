@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,12 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Types {
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Types;
+
+namespace Microsoft.Python.Analysis.Values {
     /// <summary>
-    /// Represents member of a class.
+    /// Default immutable tuple.
     /// </summary>
-    public interface IPythonClassMember : IPythonType {
-        IPythonType DeclaringType { get; }
-        bool IsAbstractMember { get; }
+    internal class PythonTuple: PythonSequence {
+        public PythonTuple(PythonTupleType tupleType, IEnumerable<IMember> contents, LocationInfo location = null) :
+            base(tupleType, contents, location) { }
+
+        public PythonTuple(IPythonInterpreter interpreter, IEnumerable<IMember> contents, LocationInfo location = null) :
+            base(PythonTupleType.GetPythonTupleType(interpreter), contents, location) { }
     }
 }

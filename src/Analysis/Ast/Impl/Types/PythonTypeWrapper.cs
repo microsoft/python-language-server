@@ -40,8 +40,9 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual  BuiltinTypeId TypeId => InnerType.TypeId;
         public virtual  PythonMemberType MemberType => InnerType.MemberType;
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;
-        public virtual IMember CreateInstance(IPythonInterpreter interpreter, LocationInfo location, params object[] args)
-            => new PythonInstance(this, location);
+        public virtual bool IsAbstract => InnerType.IsAbstract;
+        public virtual IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
+            => IsAbstract ? null : new PythonInstance(this, location);
         #endregion
 
         #region ILocatedMember

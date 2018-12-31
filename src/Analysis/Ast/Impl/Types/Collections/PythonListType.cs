@@ -13,16 +13,21 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using System;
+using System.Linq;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Represents type that has values at indexes, such as list or tuple.
-    /// </summary>
-    public interface IPythonSequenceType : IPythonType {
-        /// <summary>
-        /// Indicates if sequence is mutable (such as list) or not (such as tuple).
-        /// </summary>
-        bool IsMutable { get; }
+    internal sealed class PythonListType : PythonSequenceType {
+        private static PythonListType _instance;
+
+        public static PythonListType GetPythonListType(IPythonInterpreter interpreter)
+            => _instance ?? (_instance = new PythonListType(interpreter));
+
+        private PythonListType(IPythonInterpreter interpreter)
+            : base(null, BuiltinTypeId.List, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) { }
+
+        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
+            => new PythonList(_instance, args.OfType<IMember>(), location);
     }
 }

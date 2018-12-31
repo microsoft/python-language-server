@@ -80,7 +80,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                     instance = value;
                 } else {
-                    instance = variableType?.CreateInstance(Interpreter, GetLoc(expr.Expression)) ?? Lookup.UnknownType;
+                    instance = variableType?.CreateInstance(Module, GetLoc(expr.Expression)) ?? Lookup.UnknownType;
                 }
                 Lookup.DeclareVariable(ne.Name, instance, expr.Expression);
             }

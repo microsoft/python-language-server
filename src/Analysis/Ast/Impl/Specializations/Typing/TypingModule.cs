@@ -50,7 +50,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["TypeVar"] = fn;
 
             _members["List"] = new GenericType("List", this, 
-                (typeArgs, module, location) => TypingSequenceType.Create("List", BuiltinTypeId.List, module, typeArgs));
+                (typeArgs, module, location) => TypingListType.Create(module, typeArgs));
+            _members["Tuple"] = new GenericType("Tuple", this,
+                (typeArgs, module, location) => TypingTupleType.Create(module, typeArgs));
         }
 
 

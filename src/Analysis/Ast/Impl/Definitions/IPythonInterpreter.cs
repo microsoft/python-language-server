@@ -45,6 +45,11 @@ namespace Microsoft.Python.Analysis {
         IPythonType GetBuiltinType(BuiltinTypeId id);
 
         /// <summary>
+        /// Unknown type.
+        /// </summary>
+        IPythonType UnknownType { get; }
+
+        /// <summary>
         /// Module resolution service.
         /// </summary>
         IModuleResolution ModuleResolution { get; }

@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,12 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Represents member of a class.
-    /// </summary>
-    public interface IPythonClassMember : IPythonType {
-        IPythonType DeclaringType { get; }
-        bool IsAbstractMember { get; }
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Types;
+
+namespace Microsoft.Python.Analysis.Specializations.Typing {
+    public interface ITypingSequenceType {
+        /// <summary>
+        /// Sequence elements types if the sequence is typed.
+        /// This is different from the actual types that untyped
+        /// instance may be holding.
+        /// </summary>
+        IReadOnlyList<IPythonType> ContentTypes { get; }
     }
 }

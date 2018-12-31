@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Types {
             : base(fd.Name, declaringModule, null, location) {
             FunctionDefinition = fd;
             DeclaringType = declaringType;
-            IsAbstract = isAbstract;
+            IsAbstractMember = isAbstract;
         }
 
         #region IPythonType
@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IPythonPropertyType
-        public bool IsAbstract { get; }
+        public bool IsAbstractMember { get; }
         public bool IsReadOnly { get; private set; } = true;
         public IPythonType DeclaringType { get; }
         public string Description 

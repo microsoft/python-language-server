@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Log = services.GetService<ILogger>();
             DefaultLookupOptions = LookupOptions.Normal;
 
-            UnknownType = Interpreter.GetBuiltinType(BuiltinTypeId.Unknown) ??
+            UnknownType = Interpreter.UnknownType ??
                 new FallbackBuiltinPythonType(new FallbackBuiltinsModule(Ast.LanguageVersion), BuiltinTypeId.Unknown);
         }
 

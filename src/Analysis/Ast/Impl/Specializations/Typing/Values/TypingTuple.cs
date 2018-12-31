@@ -13,29 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Values {
-    /// <summary>
-    /// Represents an instance of a sequence.
-    /// </summary>
-    public interface IPythonSequence: IPythonInstance {
-        /// <summary>
-        /// Retrieves value at a specific index.
-        /// </summary>
-        /// <returns>Element at the index or Unknown type if index is out of bounds.</returns>
-        IMember GetValueAt(int index);
+namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
+    internal class TypingTuple : PythonSequence {
+        public TypingTuple(TypingTupleType tupleType, LocationInfo location = null)
+            : base(tupleType, Array.Empty<IMember>(), location) { }
 
-        /// <summary>
-        /// Retrieves the entire sequence.
-        /// </summary>
-        IReadOnlyList<IMember> Contents { get; }
-
-        /// <summary>
-        /// Retrieves iterator for the collection.
-        /// </summary>
-        /// <returns></returns>
-        IPythonIterator GetIterator();
+        public override IMember GetValueAt(int index) {
+            var contentTypes = ((TypingTupleType)Type).ContentTypes;
+            return index >= 0 && index < contentTypes.Count 
+                ? contentTypes[index].CreateInstance(Type.DeclaringModule, Location)
+                : Type.DeclaringModule.Interpreter.UnknownType;
+        }
     }
 }
