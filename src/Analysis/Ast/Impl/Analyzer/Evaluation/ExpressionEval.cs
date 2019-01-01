@@ -25,17 +25,17 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// <summary>
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionLookup {
+    internal sealed partial class ExpressionEval {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
 
         internal IPythonType UnknownType { get; }
 
-        public ExpressionLookup(
+        public ExpressionEval(
             IServiceContainer services,
             IPythonModule module,
             PythonAst ast

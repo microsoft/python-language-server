@@ -21,8 +21,8 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed partial class ExpressionLookup {
+namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
+    internal sealed partial class ExpressionEval {
         public IPythonInstance GetConstantFromLiteral(Expression expr, LookupOptions options) {
             var location = GetLoc(expr);
             if (expr is ConstantExpression ce) {

@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -30,20 +31,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal abstract partial class AnalysisWalker : PythonWalkerAsync {
         private readonly HashSet<Node> _replacedByStubs = new HashSet<Node>();
 
-        public ExpressionLookup Lookup { get; }
-        public IServiceContainer Services => Lookup.Services;
-        public ILogger Log => Lookup.Log;
-        public IPythonModule Module => Lookup.Module;
-        public IPythonInterpreter Interpreter => Lookup.Interpreter;
-        public GlobalScope GlobalScope => Lookup.GlobalScope;
-        public PythonAst Ast => Lookup.Ast;
-        protected AnalysisFunctionWalkerSet FunctionWalkers => Lookup.FunctionWalkers;
+        public ExpressionEval Eval { get; }
+        public IServiceContainer Services => Eval.Services;
+        public ILogger Log => Eval.Log;
+        public IPythonModule Module => Eval.Module;
+        public IPythonInterpreter Interpreter => Eval.Interpreter;
+        public GlobalScope GlobalScope => Eval.GlobalScope;
+        public PythonAst Ast => Eval.Ast;
+        protected AnalysisFunctionWalkerSet FunctionWalkers => Eval.FunctionWalkers;
 
-        protected AnalysisWalker(ExpressionLookup lookup) {
-            Lookup = lookup;
+        protected AnalysisWalker(ExpressionEval eval) {
+            Eval = eval;
         }
         protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast) {
-            Lookup = new ExpressionLookup(services, module, ast);
+            Eval = new ExpressionEval(services, module, ast);
         }
 
         public virtual async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
@@ -62,7 +63,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return new LocationInfo(Module.FilePath, Module.Uri, start.Line, start.Column, end.Line, end.Column);
         }
 
-        private LocationInfo GetLoc(Node node) => Lookup.GetLoc(node);
+        private LocationInfo GetLoc(Node node) => Eval.GetLoc(node);
 
         protected static string GetDoc(SuiteStatement node) {
             var docExpr = node?.Statements?.FirstOrDefault() as ExpressionStatement;
@@ -76,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var memberNameChain = new List<string>(Enumerable.Repeat(name, 1));
-            IScope scope = Lookup.CurrentScope;
+            IScope scope = Eval.CurrentScope;
 
             while (scope != GlobalScope) {
                 memberNameChain.Add(scope.Name);

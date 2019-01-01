@@ -13,21 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
+using System;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    /// <summary>
-    /// Describes function argument which type is not known from
-    /// the function signature and is only known at the call time.
-    /// Serves as a placeholder argument type until function return
-    /// value can be determined by using actual call arguments.
-    /// </summary>
-    internal sealed class FunctionArgumentType : PythonTypeWrapper, IFunctionArgumentType {
-        public FunctionArgumentType(int parameterIndex, IPythonType parameterType) :
-            base(parameterType) {
-            ParameterIndex = parameterIndex;
-        }
-
-        public int ParameterIndex { get; }
+namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
+    [Flags]
+    internal enum LookupOptions {
+        None = 0,
+        Local,
+        Nonlocal,
+        Global,
+        Builtins,
+        Normal = Local | Nonlocal | Global | Builtins
     }
 }

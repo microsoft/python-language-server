@@ -43,12 +43,12 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var constraints = args.Skip(1).Select(a => a as IPythonType).ToArray();
+            var constraints = args.Skip(1).Select(a => a.GetPythonType()).ToArray();
             if (constraints.Any(c => c.IsUnknown())) {
                 // TODO: report that some constraints could be be resolved.
             }
 
-            var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.Name));
+            var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.IsUnknown() ? "?" : c.Name));
             var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
 
             return new GenericTypeParameter(name, declaringModule, constraints, documentation, location);

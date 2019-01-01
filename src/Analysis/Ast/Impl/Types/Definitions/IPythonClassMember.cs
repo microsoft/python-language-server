@@ -19,6 +19,5 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     public interface IPythonClassMember : IPythonType {
         IPythonType DeclaringType { get; }
-        bool IsAbstractMember { get; }
     }
 }

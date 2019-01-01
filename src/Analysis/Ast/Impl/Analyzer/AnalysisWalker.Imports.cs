@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 IPythonModule module = null;
                 switch (imports) {
                     case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
-                        Lookup.DeclareVariable(memberName, Module, location);
+                        Eval.DeclareVariable(memberName, Module, location);
                         break;
                     case ModuleImport moduleImport:
                         module = await HandleImportAsync(node, moduleImport, cancellationToken);
@@ -107,7 +107,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // "import fob.oar as baz" is handled as
             // baz = import_module('fob.oar')
             if (asNameExpression != null) {
-                Lookup.DeclareVariable(asNameExpression.Name, module, asNameExpression);
+                Eval.DeclareVariable(asNameExpression.Name, module, asNameExpression);
                 return;
             }
 
@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             PythonPackage pythonPackage = null;
             var existingDepth = 0;
 
-            var childPackage = Lookup.GetInScope<PythonPackage>(importNames[0].Name);
+            var childPackage = Eval.GetInScope<PythonPackage>(importNames[0].Name);
             while (childPackage != null && existingDepth < importNames.Count - 1) {
                 existingDepth++;
                 pythonPackage = childPackage;
@@ -136,13 +136,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (pythonPackage == null) {
-                Lookup.DeclareVariable(importNames[0].Name, child, importNames[0]);
+                Eval.DeclareVariable(importNames[0].Name, child, importNames[0]);
             } else {
                 pythonPackage.AddChildModule(importNames[existingDepth].Name, child);
             }
         }
 
         private void MakeUnresolvedImport(string name, Node node)
-            => Lookup.DeclareVariable(name, new SentinelModule(name, Services), GetLoc(node));
+            => Eval.DeclareVariable(name, new SentinelModule(name, Services), GetLoc(node));
     }
 }

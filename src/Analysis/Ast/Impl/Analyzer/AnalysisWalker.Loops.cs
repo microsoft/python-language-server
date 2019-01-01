@@ -22,8 +22,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override async Task<bool> WalkAsync(ForStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             if (node.Left is NameExpression nex) {
-                var value = await Lookup.GetValueFromExpressionAsync(node.List, cancellationToken);
-                Lookup.DeclareVariable(nex.Name, value, GetLoc(node.Left));
+                var value = await Eval.GetValueFromExpressionAsync(node.List, cancellationToken);
+                Eval.DeclareVariable(nex.Name, value, GetLoc(node.Left));
             }
             if (node.Body != null) {
                 await node.Body.WalkAsync(this, cancellationToken);

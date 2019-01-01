@@ -19,9 +19,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -31,44 +31,46 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class AnalysisFunctionWalker : AnalysisWalker {
         private readonly Scope _parentScope;
         private readonly IPythonClassMember _function;
+        private readonly PythonFunctionOverload _overload;
         private IPythonClassType _self;
 
         public AnalysisFunctionWalker(
-            ExpressionLookup lookup,
+            ExpressionEval eval,
             FunctionDefinition targetFunction,
             PythonFunctionOverload overload,
             IPythonClassMember function
-        ) : base(lookup) {
+        ) : base(eval) {
             FunctionDefinition = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
-            Overload = overload ?? throw new ArgumentNullException(nameof(overload));
+            _overload = overload ?? throw new ArgumentNullException(nameof(overload));
             _function = function ?? throw new ArgumentNullException(nameof(function));
-            _parentScope = Lookup.CurrentScope;
+            _parentScope = Eval.CurrentScope;
         }
 
         public FunctionDefinition FunctionDefinition { get; }
-        public PythonFunctionOverload Overload { get; }
 
         public async Task WalkAsync(CancellationToken cancellationToken = default) {
-            using (Lookup.OpenScope(_parentScope)) {
-                _self = Lookup.LookupNameInScopes("__class__", ExpressionLookup.LookupOptions.Local) as IPythonClassType;
+            using (Eval.OpenScope(_parentScope)) {
+                // Fetch class type, if any.
+                _self = Eval.LookupNameInScopes("__class__", LookupOptions.Local) as IPythonClassType;
+
                 // Ensure constructors are processed so class members are initialized.
                 if (_self != null) {
                     await FunctionWalkers.ProcessConstructorsAsync(_self.ClassDefinition, cancellationToken);
                 }
 
-                using (Lookup.CreateScope(FunctionDefinition, _parentScope)) {
+                using (Eval.CreateScope(FunctionDefinition, _parentScope)) {
                     // Process annotations.
-                    var annotationType = Lookup.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+                    var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
                     if (!annotationType.IsUnknown()) {
-                        Overload.SetReturnValue(annotationType, true);
+                        _overload.SetReturnValue(annotationType, true);
                     }
 
                     await DeclareParametersAsync(cancellationToken);
-                    if (string.IsNullOrEmpty(Overload.Documentation)) {
+                    if (string.IsNullOrEmpty(_overload.Documentation)) {
                         var docNode = (FunctionDefinition.Body as SuiteStatement)?.Statements.FirstOrDefault();
                         var ce = (docNode as ExpressionStatement)?.Expression as ConstantExpression;
                         if (ce?.Value is string doc) {
-                            Overload.SetDocumentationProvider(_ => doc);
+                            _overload.SetDocumentationProvider(_ => doc);
                         }
                     }
 
@@ -84,7 +86,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
-            var value = await Lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
+            var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
 
             foreach (var lhs in node.Left) {
                 if (lhs is MemberExpression memberExp && memberExp.Target is NameExpression nameExp1) {
@@ -102,9 +104,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
-            var value = await Lookup.GetValueFromExpressionAsync(node.Expression, cancellationToken);
+            var value = await Eval.GetValueFromExpressionAsync(node.Expression, cancellationToken);
             if (value != null) {
-                Overload.AddReturnValue(value);
+                _overload.AddReturnValue(value);
             }
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
@@ -119,31 +121,47 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // For static and unbound methods do not add or set anything.
             // For regular bound methods add first parameter and set it to the class.
 
+            var parameters = new List<ParameterInfo>();
             var skip = 0;
             if (_self != null && _function.HasClassFirstArgument()) {
                 var p0 = FunctionDefinition.Parameters.FirstOrDefault();
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
-                    if (Overload.Parameters.Count > 0 && Overload.Parameters[0] is ParameterInfo pi) {
-                        // TODO: set instance vs class type info for regular methods.
-                        Lookup.DeclareVariable(p0.Name, _self, p0.NameExpression);
-                        pi.SetType(_self);
-                        skip++;
-                    }
+                    // TODO: set instance vs class type info for regular methods.
+                    var pi = new ParameterInfo(Ast, p0, Eval.GetTypeFromAnnotation(p0.Annotation, LookupOptions.Local));
+                    Eval.DeclareVariable(p0.Name, _self, p0.NameExpression);
+                    pi.SetType(_self);
+                    parameters.Add(pi);
+                    skip++;
                 }
             }
 
             // Declare parameters in scope
-            var parameterCount = Math.Min(FunctionDefinition.Parameters.Length, Overload.Parameters.Count);
-            for (var i = skip; i < parameterCount; i++) {
+            for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var p = FunctionDefinition.Parameters[i];
-                var pi = Overload.Parameters[i] as ParameterInfo;
-
                 if (!string.IsNullOrEmpty(p.Name)) {
+                    // If parameter has default value, look for the annotation locally first
+                    // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
+                    IPythonType paramType = null;
+                    if (p.DefaultValue != null) {
+                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, LookupOptions.Local | LookupOptions.Builtins);
+                        if (paramType == null) {
+                            var defaultValue = await Eval.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken);
+                            if (!defaultValue.IsUnknown()) {
+                                paramType = defaultValue.GetPythonType();
+                            }
+                        }
+                    }
+                    // If all else fails, look up globally.
+                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation);
+
+                    var pi = new ParameterInfo(Ast, p, paramType);
                     await DeclareParameterAsync(p, i, pi, cancellationToken);
+                    parameters.Add(pi);
                 }
             }
+            _overload.SetParameters(parameters);
         }
 
         private async Task DeclareParameterAsync(Parameter p, int index, ParameterInfo pi, CancellationToken cancellationToken = default) {
@@ -155,7 +173,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 paramType = pi.Type;
             } else {
                 // Declare as an argument which type is only known at the invocation time.
-                var defaultValue = await Lookup.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? Lookup.UnknownType;
+                var defaultValue = await Eval.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? Eval.UnknownType;
                 var defaultValueType = defaultValue.GetPythonType();
 
                 paramType = new FunctionArgumentType(index, defaultValueType);
@@ -164,7 +182,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            Lookup.DeclareVariable(p.Name, paramType, p.NameExpression);
+            Eval.DeclareVariable(p.Name, paramType, p.NameExpression);
         }
     }
 }

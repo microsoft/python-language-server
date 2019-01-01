@@ -18,15 +18,15 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingSequenceType : TypedSequenceType {
-        protected TypingSequenceType(IPythonModule declaringModule, IPythonType contentType, bool mutable)
-            : base("List", BuiltinTypeId.List, declaringModule, contentType, mutable) { }
+        protected TypingSequenceType(string typeName, IPythonModule declaringModule, IPythonType contentType, bool mutable)
+            : base(typeName, BuiltinTypeId.List, declaringModule, contentType, mutable) { }
 
         public static IPythonType Create(
             IPythonModule declaringModule,
             IReadOnlyList<IPythonType> typeArguments
         ) {
             if (typeArguments.Count == 1) {
-                return new TypingSequenceType(declaringModule, typeArguments[0], false);
+                return new TypingSequenceType("Sequence", declaringModule, typeArguments[0], false);
             }
             // TODO: report wrong number of arguments
             return declaringModule.Interpreter.UnknownType;

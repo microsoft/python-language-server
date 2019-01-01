@@ -15,7 +15,7 @@
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Indicates the type of a variable result lookup.
+    /// Indicates the type of a variable result eval.
     /// 
     /// Types can indicate a physical 1st class object (function, module, etc...) or they can
     /// represent a logic piece of storage (field)

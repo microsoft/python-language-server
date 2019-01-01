@@ -83,7 +83,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
 
                 var member = Module.GetMember(importName);
-                Lookup.DeclareVariable(memberName, member ?? Lookup.UnknownType, GetLoc(names[i]));
+                Eval.DeclareVariable(memberName, member ?? Eval.UnknownType, GetLoc(names[i]));
             }
         }
 
@@ -107,7 +107,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
 
                 var type = module?.GetMember(memberReference.Name);
-                Lookup.DeclareVariable(memberName, type, names[i]);
+                Eval.DeclareVariable(memberName, type, names[i]);
             }
         }
 
@@ -122,12 +122,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     Log?.Log(TraceEventType.Verbose, $"Unknown import: {module.Name}, {memberName}");
                 }
 
-                member = member ?? Lookup.UnknownType;
+                member = member ?? Eval.UnknownType;
                 if (member is IPythonModule m) {
                     await Interpreter.ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
                 }
 
-                Lookup.DeclareVariable(memberName, member, module.Location);
+                Eval.DeclareVariable(memberName, member, module.Location);
             }
         }
 
@@ -137,7 +137,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: Need tracking of previous imports to determine possible imports for namespace package. For now import nothing
-                Lookup.DeclareVariable("*", Lookup.UnknownType, GetLoc(names[0]));
+                Eval.DeclareVariable("*", Eval.UnknownType, GetLoc(names[0]));
                 return;
             }
 
@@ -152,10 +152,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
                     member = await Interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
                 } else {
-                    member = Lookup.UnknownType;
+                    member = Eval.UnknownType;
                 }
 
-                Lookup.DeclareVariable(memberName, member, location);
+                Eval.DeclareVariable(memberName, member, location);
             }
         }
     }

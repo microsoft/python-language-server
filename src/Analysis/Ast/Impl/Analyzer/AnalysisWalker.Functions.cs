@@ -17,6 +17,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -28,28 +29,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return Task.FromResult(false);
             }
 
-            var cls = Lookup.GetInScope("__class__").GetPythonType();
+            var cls = Eval.GetInScope("__class__").GetPythonType();
             var loc = GetLoc(node);
-            if (ProcessFunctionDecorators(node, cls, loc)) {
-                ProcessFunctionDefinition(node, cls, loc);
+            if (!TryAddProperty(node, cls, loc)) {
+                AddFunction(node, cls, loc);
             }
             // Do not recurse into functions
             return Task.FromResult(false);
         }
 
-        public void ProcessFunctionDefinition(FunctionDefinition node, IPythonType declaringType, LocationInfo loc) {
-            if (!(Lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonFunctionType existing)) {
+        public void AddFunction(FunctionDefinition node, IPythonType declaringType, LocationInfo loc) {
+            if (!(Eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonFunctionType existing)) {
                 existing = new PythonFunctionType(node, Module, declaringType, loc);
-                Lookup.DeclareVariable(node.Name, existing, loc);
-            }
-            AddOverload(node, existing, o => existing.AddOverload(o));
-        }
-
-
-        private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo loc) {
-            if (!(Lookup.LookupNameInScopes(node.Name, ExpressionLookup.LookupOptions.Local) is PythonPropertyType existing)) {
-                existing = new PythonPropertyType(node, declaringModule, declaringType, isAbstract, loc);
-                Lookup.DeclareVariable(node.Name, existing, loc);
+                Eval.DeclareVariable(node.Name, existing, loc);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
         }
@@ -71,19 +63,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (!FunctionWalkers.Contains(node)) {
-                // Do not evaluate parameter types if this is light-weight top-level information collection.
-                var location = Lookup.GetLocOfName(node, node.NameExpression);
+                // Do not evaluate parameter types just yet. During light-weight top-level information
+                // collection types cannot be determined as imports haven't been processed.
+                var location = Eval.GetLocOfName(node, node.NameExpression);
                 var returnDoc = node.ReturnAnnotation?.ToCodeString(Ast);
                 var overload = new PythonFunctionOverload(node, Module, location, returnDoc);
                 addOverload(overload);
-                FunctionWalkers.Add(new AnalysisFunctionWalker(Lookup, node, overload, function));
-                return;
+                FunctionWalkers.Add(new AnalysisFunctionWalker(Eval, node, overload, function));
             }
-
-            // Full walk
-            var parameters = node.Parameters.Select(p => new ParameterInfo(Ast, p, Lookup.GetTypeFromAnnotation(p.Annotation))).ToArray();
-            var walker = FunctionWalkers.Get(node);
-            walker.Overload.SetParameters(parameters);
         }
 
         private PythonFunctionOverload GetOverloadFromStub(FunctionDefinition node) {
@@ -96,7 +83,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return null;
         }
 
-        private bool ProcessFunctionDecorators(FunctionDefinition node, IPythonType declaringType, LocationInfo location) {
+        private bool TryAddProperty(FunctionDefinition node, IPythonType declaringType, LocationInfo location) {
             var dec = node.Decorators?.Decorators;
             var decorators = dec != null ? dec.ExcludeDefault().ToArray() : Array.Empty<Expression>();
 
@@ -104,13 +91,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 switch (d.Name) {
                     case "property":
                         AddProperty(node, Module, declaringType, false, location);
-                        return false;
+                        return true;
                     case "abstractproperty":
                         AddProperty(node, Module, declaringType, true, location);
-                        return false;
+                        return true;
                 }
             }
-            return true;
+            return false;
+        }
+
+        private void AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo loc) {
+            if (!(Eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonPropertyType existing)) {
+                existing = new PythonPropertyType(node, declaringModule, declaringType, isAbstract, loc);
+                Eval.DeclareVariable(node.Name, existing, loc);
+            }
+            AddOverload(node, existing, o => existing.AddOverload(o));
         }
     }
 }

@@ -24,31 +24,27 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal partial class AnalysisWalker {
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            var value = await Lookup.GetValueFromExpressionAsync(node.Right, cancellationToken);
+            var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
 
             if (value.IsUnknown()) {
                 Log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(Ast).Trim()}");
             }
 
             if (value?.GetPythonType().TypeId == BuiltinTypeId.Ellipsis) {
-                value = Lookup.UnknownType;
+                value = Eval.UnknownType;
             }
 
             if (node.Left.FirstOrDefault() is TupleExpression lhs) {
                 // Tuple = Tuple. Transfer values.
-                var texHandler = new TupleExpressionHandler(Lookup);
+                var texHandler = new TupleExpressionHandler(Eval);
                 await texHandler.HandleTupleAssignmentAsync(lhs, node.Right, value, cancellationToken);
             } else {
                 foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                     // x: List[str] = [...]
                     AssignAnnotatedVariable(expr, value);
-                    if (!value.IsUnknown() && expr.Expression is NameExpression ne) {
-                        Lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
-                    }
                 }
-
                 foreach (var ne in node.Left.OfType<NameExpression>()) {
-                    Lookup.DeclareVariable(ne.Name, value, GetLoc(ne));
+                    Eval.DeclareVariable(ne.Name, value, GetLoc(ne));
                 }
             }
 
@@ -62,25 +58,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void AssignAnnotatedVariable(ExpressionWithAnnotation expr, IMember value) {
             if (expr?.Annotation != null && expr.Expression is NameExpression ne) {
-                var variableType = Lookup.GetTypeFromAnnotation(expr.Annotation);
+                var variableType = Eval.GetTypeFromAnnotation(expr.Annotation);
                 // If value is null, then this is a pure declaration like 
                 //   x: List[str]
                 // without a value. If value is provided, then this is
                 //   x: List[str] = [...]
 
                 // Check value type for compatibility
-                IMember instance;
+                IMember instance = null;
                 if (value != null) {
                     var valueType = value.GetPythonType();
                     if (!valueType.IsUnknown() && !variableType.IsUnknown() && !valueType.Equals(variableType)) {
                         // TODO: warn incompatible value type.
-                        return;
+                        // TODO: verify values. Value may be list() while variable type is List[str].
+                        // Leave it as variable type.
+                    } else {
+                        instance = value;
                     }
-                    instance = value;
-                } else {
-                    instance = variableType?.CreateInstance(Module, GetLoc(expr.Expression)) ?? Lookup.UnknownType;
                 }
-                Lookup.DeclareVariable(ne.Name, instance, expr.Expression);
+                instance = instance ?? variableType?.CreateInstance(Module, GetLoc(expr.Expression)) ?? Eval.UnknownType;
+                Eval.DeclareVariable(ne.Name, instance, expr.Expression);
             }
         }
     }

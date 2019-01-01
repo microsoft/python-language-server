@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -26,6 +27,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly List<IPythonFunctionOverload> _overloads = new List<IPythonFunctionOverload>();
         private readonly string _doc;
         private readonly object _lock = new object();
+        private bool _isAbstract;
 
         /// <summary>
         /// Creates function for specializations
@@ -38,6 +40,11 @@ namespace Microsoft.Python.Analysis.Types {
             DeclaringType = declaringModule;
         }
 
+        /// <summary>
+        /// Creates function type to use in special cases when function is dynamically
+        /// created, such as in specializations and custom iterators, without the actual
+        /// function definition in the AST.
+        /// </summary>
         public PythonFunctionType(
             string name,
             IPythonModule declaringModule,
@@ -46,6 +53,11 @@ namespace Microsoft.Python.Analysis.Types {
             LocationInfo location = null
         ) : this(name, declaringModule, declaringType, _ => documentation, _ => location ?? LocationInfo.Empty) { }
 
+        /// <summary>
+        /// Creates function type to use in special cases when function is dynamically
+        /// created, such as in specializations and custom iterators, without the actual
+        /// function definition in the AST.
+        /// </summary>
         public PythonFunctionType(
             string name,
             IPythonModule declaringModule,
@@ -90,7 +102,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
         public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
-        public virtual bool IsAbstractMember { get; private set; }
+        public override bool IsAbstract => _isAbstract;
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
         #endregion
 
@@ -119,15 +131,15 @@ namespace Microsoft.Python.Analysis.Types {
                         IsClassMethod = true;
                         break;
                     case @"abstractmethod":
-                        IsAbstractMember = true;
+                        _isAbstract = true;
                         break;
                     case @"abstractstaticmethod":
                         IsStatic = true;
-                        IsAbstractMember = true;
+                        _isAbstract = true;
                         break;
                     case @"abstractclassmethod":
                         IsClassMethod = true;
-                        IsAbstractMember = true;
+                        _isAbstract = true;
                         break;
                     case @"property":
                     case @"abstractproperty":
@@ -151,8 +163,6 @@ namespace Microsoft.Python.Analysis.Types {
             public IPythonType DeclaringType => _pf.DeclaringType;
             public bool IsStatic => _pf.IsStatic;
             public bool IsClassMethod => _pf.IsClassMethod;
-            public override bool IsAbstract => false;
-            public bool IsAbstractMember => _pf.IsAbstractMember;
 
             public IReadOnlyList<IPythonFunctionOverload> Overloads => _pf.Overloads;
             public override BuiltinTypeId TypeId => BuiltinTypeId.Function;

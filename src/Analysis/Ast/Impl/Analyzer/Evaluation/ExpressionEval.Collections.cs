@@ -21,8 +21,8 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed partial class ExpressionLookup {
+namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
+    internal sealed partial class ExpressionEval {
         private async Task<IMember> GetValueFromListAsync(ListExpression expression, CancellationToken cancellationToken = default) {
             var contents = new List<IMember>();
             foreach (var item in expression.Items) {

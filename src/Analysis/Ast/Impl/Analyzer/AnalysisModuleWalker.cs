@@ -47,12 +47,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var statement = (Ast.Body as SuiteStatement)?.Statements.ToArray() ?? Array.Empty<Statement>();
 
             foreach (var node in statement.OfType<FunctionDefinition>()) {
-                ProcessFunctionDefinition(node, null, Lookup.GetLoc(node));
+                AddFunction(node, null, Eval.GetLoc(node));
             }
 
             foreach (var node in statement.OfType<ClassDefinition>()) {
                 var classInfo = CreateClass(node);
-                Lookup.DeclareVariable(node.Name, classInfo, GetLoc(node));
+                Eval.DeclareVariable(node.Name, classInfo, GetLoc(node));
             }
         }
 
@@ -98,7 +98,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Or the stub can have definitions that scraping had missed. Therefore
             // merge is the combination of the two with documentation coming from scrape.
             foreach (var v in stubAnalysis.TopLevelVariables) {
-                var currentVar = Lookup.GlobalScope.Variables[v.Name];
+                var currentVar = Eval.GlobalScope.Variables[v.Name];
 
                 var stub = v.Value.GetPythonType<PythonClassType>();
                 if (stub == null) {
@@ -128,7 +128,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Re-declare variable with the data from the stub.
                     if (currentVar != null && currentVar.Value.IsUnknown() && !v.Value.IsUnknown()) {
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
-                        Lookup.DeclareVariable(v.Name, v.Value, LocationInfo.Empty, overwrite: true);
+                        Eval.DeclareVariable(v.Name, v.Value, LocationInfo.Empty, overwrite: true);
                     }
                 }
             }
@@ -142,7 +142,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 GetDoc(node.Body as SuiteStatement),
                 GetLoc(node),
                 Interpreter,
-                Lookup.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
+                Eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
         }
 
     }

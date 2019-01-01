@@ -10,8 +10,8 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed partial class ExpressionLookup {
+namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
+    internal sealed partial class ExpressionEval {
         private async Task<IMember> GetValueFromCallableAsync(CallExpression expr, CancellationToken cancellationToken = default) {
             if (expr?.Target == null) {
                 return null;
@@ -84,16 +84,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private async Task<IMember> GetValueFromFunctionAsync(IPythonFunctionType fn, Expression invokingExpression, IReadOnlyList<IMember> args, CancellationToken cancellationToken = default) {
             IMember value = null;
+            // If order to be able to find matching overload, we need to know
+            // parameter types and count. This requires function to be analyzed.
+            // Since we don't know which overload we will need, we have to 
+            // process all known overloads for the function.
+            foreach (var o in fn.Overloads) {
+                await FunctionWalkers.ProcessFunctionAsync(o.FunctionDefinition, cancellationToken);
+            }
+            // Now we can go and find overload with matching arguments.
             var overload = FindOverload(fn, args);
             if (overload != null) {
                 var location = GetLoc(invokingExpression);
                 value = GetFunctionReturnValue(overload, location, args);
-                if (value.IsUnknown() && overload.FunctionDefinition != null) {
-                    // Function may not have been walked yet. Do it now.
-                    if (await FunctionWalkers.ProcessFunctionAsync(overload.FunctionDefinition, cancellationToken)) {
-                        value = GetFunctionReturnValue(overload, location, args);
-                    }
-                }
             }
             return value ?? UnknownType;
         }

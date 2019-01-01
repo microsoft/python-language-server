@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IHasQualifiedName
         public virtual string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
-        public virtual KeyValuePair<string, string> FullyQualifiedNamePair 
+        public virtual KeyValuePair<string, string> FullyQualifiedNamePair
             => new KeyValuePair<string, string>(DeclaringModule?.Name ?? string.Empty, Name);
         #endregion
 

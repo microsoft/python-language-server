@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (name != null && typeName != null) {
                     var typeId = typeName.GetTypeId();
                     if (typeId != BuiltinTypeId.Unknown) {
-                        Lookup.DeclareVariable(name, new PythonType(typeName, typeId), nex);
+                        Eval.DeclareVariable(name, new PythonType(typeName, typeId), nex);
                     }
                 }
             }

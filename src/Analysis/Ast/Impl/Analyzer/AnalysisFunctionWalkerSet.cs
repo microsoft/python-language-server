@@ -71,12 +71,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public async Task<bool> ProcessFunctionAsync(FunctionDefinition fn, CancellationToken cancellationToken = default) {
-            if (_functionWalkers.TryGetValue(fn, out var w)) {
+        public async Task ProcessFunctionAsync(FunctionDefinition fn, CancellationToken cancellationToken = default) {
+            if (fn != null && _functionWalkers.TryGetValue(fn, out var w)) {
                 await ProcessWalkerAsync(w, cancellationToken);
-                return true;
             }
-            return false;
         }
 
         public bool Contains(FunctionDefinition node)

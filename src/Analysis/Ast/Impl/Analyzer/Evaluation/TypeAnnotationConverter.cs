@@ -15,16 +15,19 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Specializations.Typing;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed class TypeAnnotationConverter : TypeAnnotationConverter<IPythonType> {
-        private readonly ExpressionLookup _lookup;
+        private readonly ExpressionEval _eval;
+        private readonly LookupOptions _options;
 
-        public TypeAnnotationConverter(ExpressionLookup lookup) {
-            _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
+        public TypeAnnotationConverter(ExpressionEval eval, 
+            LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
+            _eval = eval ?? throw new ArgumentNullException(nameof(eval));
+            _options = options;
         }
 
         public override IPythonType Finalize(IPythonType type) {
@@ -34,25 +37,14 @@ namespace Microsoft.Python.Analysis.Types {
 
             var n = GetName(type);
             if (!string.IsNullOrEmpty(n)) {
-                return _lookup.LookupNameInScopes(n).GetPythonType();
+                return _eval.LookupNameInScopes(n).GetPythonType();
             }
 
             return type;
         }
 
-        private IEnumerable<IPythonType> FinalizeList(IPythonType type) {
-            //if (type is UnionType ut) {
-            //    foreach (var t in ut.Types.MaybeEnumerate()) {
-            //        yield return Finalize(t);
-            //    }
-            //    yield break;
-            //}
-
-            yield return Finalize(type);
-        }
-
         public override IPythonType LookupName(string name)
-            => _lookup.LookupNameInScopes(name, ExpressionLookup.LookupOptions.Global | ExpressionLookup.LookupOptions.Builtins)?.GetPythonType();
+            => _eval.LookupNameInScopes(name, _options)?.GetPythonType();
 
         public override IPythonType GetTypeMember(IPythonType baseType, string member) 
             => baseType.GetMember(member)?.GetPythonType();
@@ -62,7 +54,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // TODO: report unhandled generic?
                 return null;
             }
-            return gt.CreateSpecificType(args, _lookup.Module, LocationInfo.Empty);
+            return gt.CreateSpecificType(args, _eval.Module, LocationInfo.Empty);
         }
     }
 }

@@ -20,8 +20,8 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed partial class ExpressionLookup {
+namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
+    internal sealed partial class ExpressionEval {
         public IMember GetInScope(string name)
             => CurrentScope.Variables.TryGetVariable(name, out var variable) ? variable.Value : null;
 
@@ -40,16 +40,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             } else {
                 CurrentScope.DeclareVariable(name, value, location);
             }
-        }
-
-        [Flags]
-        public enum LookupOptions {
-            None = 0,
-            Local,
-            Nonlocal,
-            Global,
-            Builtins,
-            Normal = Local | Nonlocal | Global | Builtins
         }
 
         [DebuggerStepThrough]
@@ -88,14 +78,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return value;
         }
 
-        public IPythonType GetTypeFromAnnotation(Expression expr) {
+        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
             if (expr == null) {
                 return null;
             }
-
             // Look at specialization and typing first
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
-            return ann.GetValue(new TypeAnnotationConverter(this));
+            return ann.GetValue(new TypeAnnotationConverter(this, options));
         }
 
         /// <summary>
@@ -122,15 +111,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private class ScopeTracker : IDisposable {
-            private readonly ExpressionLookup _lookup;
+            private readonly ExpressionEval _eval;
 
-            public ScopeTracker(ExpressionLookup lookup) {
-                _lookup = lookup;
+            public ScopeTracker(ExpressionEval eval) {
+                _eval = eval;
             }
 
             public void Dispose() {
-                Debug.Assert(_lookup._openScopes.Count > 0, "Attempt to close global scope");
-                _lookup.CurrentScope = _lookup._openScopes.Pop();
+                Debug.Assert(_eval._openScopes.Count > 0, "Attempt to close global scope");
+                _eval.CurrentScope = _eval._openScopes.Pop();
             }
         }
     }

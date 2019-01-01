@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Types {
         string FullyQualifiedName { get; }
 
         /// <summary>
-        /// Gets the import and lookup names of the value. The first part
+        /// Gets the import and eval names of the value. The first part
         /// should be importable, and the second is a name that can be
         /// resolved with getattr().
         /// These are often seen separated with a colon.

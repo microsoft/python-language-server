@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly ClassDefinition _target;
         private IDisposable _classScope;
 
-        public AnalysisClassWalker(AnalysisModuleWalker moduleWalker, ClassDefinition target) : base(moduleWalker.Lookup) {
+        public AnalysisClassWalker(AnalysisModuleWalker moduleWalker, ClassDefinition target) : base(moduleWalker.Eval) {
             _moduleWalker = moduleWalker;
             _target = target;
         }
@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var instance = Lookup.GetInScope(node.Name);
+            var instance = Eval.GetInScope(node.Name);
             if (instance != null && !(instance.GetPythonType() is PythonClassType)) {
                 // TODO: warning that variable is already declared of a different type.
                 return Task.FromResult(false);
@@ -46,30 +46,30 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (!(instance.GetPythonType() is PythonClassType classInfo)) {
                 classInfo = _moduleWalker.CreateClass(node);
-                Lookup.DeclareVariable(node.Name, classInfo, node);
+                Eval.DeclareVariable(node.Name, classInfo, node);
             }
 
             var bases = node.Bases.Where(a => string.IsNullOrEmpty(a.Name))
                 // We cheat slightly and treat base classes as annotations.
-                .Select(a => Lookup.GetTypeFromAnnotation(a.Expression))
+                .Select(a => Eval.GetTypeFromAnnotation(a.Expression))
                 .ToArray();
 
             classInfo.SetBases(Interpreter, bases);
-            _classScope = Lookup.CreateScope(node, Lookup.CurrentScope);
-            Lookup.DeclareVariable("__class__", classInfo, node);
+            _classScope = Eval.CreateScope(node, Eval.CurrentScope);
+            Eval.DeclareVariable("__class__", classInfo, node);
 
             return Task.FromResult(true);
         }
 
         public override Task PostWalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
-            var cls = Lookup.GetInScope("__class__")?.GetPythonType() as PythonClassType;
-            Debug.Assert(cls != null || Lookup.GetInScope("__class__") == null, "__class__ variable is not a PythonClass.");
+            var cls = Eval.GetInScope("__class__")?.GetPythonType() as PythonClassType;
+            Debug.Assert(cls != null || Eval.GetInScope("__class__") == null, "__class__ variable is not a PythonClass.");
             if (cls != null) {
                 // Add members from this file
-                cls.AddMembers(Lookup.CurrentScope.Variables, true);
+                cls.AddMembers(Eval.CurrentScope.Variables, true);
 
                 // Add members from stub
-                var stubClass = Lookup.Module.Stub?.GetMember<IPythonClassType>(cls.Name);
+                var stubClass = Eval.Module.Stub?.GetMember<IPythonClassType>(cls.Name);
                 cls.AddMembers(stubClass, false);
                 _classScope?.Dispose();
             }
