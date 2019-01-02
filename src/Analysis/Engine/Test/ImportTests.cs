@@ -19,11 +19,15 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
+using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
+using Resources = Microsoft.PythonTools.Analysis.Resources;
 
 namespace AnalysisTests {
     [TestClass]
@@ -249,6 +253,145 @@ projectA.";
 
             var completion = await server.SendCompletion(appUri, 6, 9);
             completion.Should().HaveLabels("foo");
+        }
+
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        [AddTestSpecificSearchPath("src")]
+        public async Task Diagnostics_InvalidRelativeImportInUserSearchPath(Server server) {
+            var modulePath = "src/module.py";
+            var moduleCode = "TEST = 0";
+            var appPath = "src/app.py";
+            var appCode = "from .module import TEST";
+            var args = new PublishDiagnosticsEventArgs();
+            server.OnPublishDiagnostics += (o, e) => args = e;
+
+            await server.OpenDocumentAndGetUriAsync(modulePath, moduleCode);
+            await server.OpenDocumentAndGetUriAsync(appPath, appCode);
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+
+            args.diagnostics.Should().ContainSingle()
+                .Which.message.Should().Be(Resources.ErrorRelativeImportNoPackage);
+        }
+
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        public async Task Diagnostics_RelativeImportInWorkingDirectory(Server server) {
+            var modulePath = "module.py";
+            var moduleCode = "TEST = 0";
+            var appPath = "app.py";
+            var appCode = "from .module import *";
+            var args = new PublishDiagnosticsEventArgs();
+            server.OnPublishDiagnostics += (o, e) => args = e;
+
+            await server.OpenDocumentAndGetUriAsync(modulePath, moduleCode);
+            await server.OpenDocumentAndGetUriAsync(appPath, appCode);
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+
+            args.diagnostics.Should().BeEmpty();
+        }
+
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        [AddTestSpecificSearchPath("src")]
+        public async Task Diagnostics_InvalidRelativeImportInWorkingDirectory(Server server) {
+            var modulePath = "src/module.py";
+            var moduleCode = "TEST = 0";
+            var appPath = "app.py";
+            var appCode = "from .module import TEST";
+            var args = new PublishDiagnosticsEventArgs();
+            server.OnPublishDiagnostics += (o, e) => args = e;
+
+            await server.OpenDocumentAndGetUriAsync(modulePath, moduleCode);
+            await server.OpenDocumentAndGetUriAsync(appPath, appCode);
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+
+            args.diagnostics.Should().ContainSingle()
+                .Which.message.Should().Be(ErrorMessages.UnresolvedImport("module"));
+        }
+
+        [ServerTestMethod(LatestAvailable3X = true), Priority(0)]
+        public async Task Diagnostics_RelativeImportInNonRooted(Server server) {
+            var modulePath = "module.py";
+            var moduleCode = "TEST = 0";
+            var appPath = "app.py";
+            var appCode = "from .module import TEST";
+            var args = new PublishDiagnosticsEventArgs();
+            server.OnPublishDiagnostics += (o, e) => args = e;
+
+            await server.OpenDocumentAndGetUriAsync(modulePath, moduleCode);
+            await server.OpenDocumentAndGetUriAsync(appPath, appCode);
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+
+            args.diagnostics.Should().BeEmpty();
+        }
+
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        public async Task Diagnostics_RelativeImportInPackage(Server server) {
+            var module2Path = "package/module2.py";
+            var module2Code = "TEST = 0";
+            var module1Path = "package/module1.py";
+            var module1Code = "from .module2 import TEST";
+            var initPath = "package/__init__.py";
+            var args = new PublishDiagnosticsEventArgs();
+            server.OnPublishDiagnostics += (o, e) => args = e;
+
+            await server.OpenDocumentAndGetUriAsync(initPath, string.Empty);
+            await server.OpenDocumentAndGetUriAsync(module1Path, module1Code);
+            await server.OpenDocumentAndGetUriAsync(module2Path, module2Code);
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+
+            args.diagnostics.Should().BeEmpty();
+        }
+
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        public async Task Diagnostics_RelativeImportInPackage_ModuleWithNameOfFolderWithInitPy(Server server) {
+            var initPyPath = "package/module/__init__.py";
+            var module1Path = "package/module.py";
+            var module1Code = "TEST = 1";
+            var module2Path = "package/module/sub/module.py";
+            var module2Code = "TEST = 2";
+            var testPath = "package/test.py";
+            var testCode = "from .module.sub.module import TEST";
+            var args = new PublishDiagnosticsEventArgs();
+
+            var testUri = await server.OpenDocumentAndGetUriAsync(testPath, testCode);
+            server.OnPublishDiagnostics += (o, e) => {
+                if (e.uri == testUri) {
+                    args = e;
+                }
+            };
+
+            await server.OpenDocumentAndGetUriAsync(initPyPath, string.Empty);
+            await server.OpenDocumentAndGetUriAsync(module1Path, module1Code);
+            await server.OpenDocumentAndGetUriAsync(module2Path, module2Code);
+
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+
+            args.diagnostics.Should().BeEmpty();
+        }
+
+        [ServerTestMethod(LatestAvailable3X = true, TestSpecificRootUri = true), Priority(0)]
+        public async Task Diagnostics_InvalidRelativeImportInPackage_ModuleWithNameOfFolder(Server server) {
+            var module2Path = "package/module/submodule.py";
+            var module2Code = "TEST = 2";
+            var module1Path = "package/module.py";
+            var module1Code = "TEST = 1";
+            var testPath = "package/test.py";
+            var testCode = "from .module.submodule import TEST";
+            var args = new PublishDiagnosticsEventArgs();
+
+            var testUri = await server.OpenDocumentAndGetUriAsync(testPath, testCode);
+            server.OnPublishDiagnostics += (o, e) => {
+                if (e.uri == testUri) {
+                    args = e;
+                }
+            };
+
+            await server.OpenDocumentAndGetUriAsync(module1Path, module1Code);
+            await server.OpenDocumentAndGetUriAsync(module2Path, module2Code);
+            
+            await server.WaitForCompleteAnalysisAsync(CancellationToken.None);
+
+            args.diagnostics.Should().ContainSingle()
+                .Which.message.Should().Be(ErrorMessages.UnresolvedImport("package.module.submodule"));
         }
 
         [ServerTestMethod(LatestAvailable3X = true), Priority(0)]

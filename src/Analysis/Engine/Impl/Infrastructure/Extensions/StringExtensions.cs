@@ -195,6 +195,9 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         public static bool EqualsOrdinal(this string s, string other)
             => string.Equals(s, other, StringComparison.Ordinal);
 
+        public static bool EqualsOrdinal(this string s, string other, bool ignoreCase)
+            => string.Equals(s, other, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+
         public static bool EqualsOrdinal(this string s, int index, string other, int otherIndex, int length, bool ignoreCase = false)
             => string.Compare(s, index, other, otherIndex, length, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) == 0;
 

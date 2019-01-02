@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Implementation;
 using Microsoft.PythonTools.Analysis;
@@ -45,6 +46,7 @@ namespace AnalysisTests {
         private TestResult ExecuteWithServer(ITestMethod testMethod) {
             var arguments = ExtendArguments(testMethod.Arguments);
             var filesToCreate = testMethod.GetAttributes<CreateTestSpecificFileAttribute>(false);
+            var searchPathToAdd = testMethod.GetAttributes<AddTestSpecificSearchPathAttribute>(false);
 
             TestEnvironmentImpl.AddBeforeAfterTest(async () => {
                 var interpreterConfiguration = GetInterpreterConfiguration(arguments);
@@ -53,7 +55,8 @@ namespace AnalysisTests {
                     await TestData.CreateTestSpecificFileAsync(file.RelativeFilePath, file.Content);
                 }
 
-                var server = await new Server().InitializeAsync(interpreterConfiguration, rootUri);
+                var searchPaths = searchPathToAdd.Select(a => TestData.GetTestSpecificPath(a.RelativeSearchPath));
+                var server = await new Server().InitializeAsync(interpreterConfiguration, rootUri, searchPaths);
                 if (DefaultTypeshedPath) {
                     var limits = server.Analyzer.Limits;
                     limits.UseTypeStubPackages = true;
