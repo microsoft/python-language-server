@@ -534,6 +534,8 @@ namespace Microsoft.PythonTools.Analysis {
     sealed class ObjectComparer : IEqualityComparer<AnalysisValue>, IEqualityComparer<IAnalysisSet> {
         public static readonly ObjectComparer Instance = new ObjectComparer();
 
+        private ObjectComparer() { }
+
         public bool Equals(AnalysisValue x, AnalysisValue y) {
 #if FULL_VALIDATION
             if (x != null && y != null) {
@@ -574,7 +576,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public readonly int Strength;
 
-        public UnionComparer(int strength = 0) {
+        private UnionComparer(int strength = 0) {
             Strength = strength;
         }
 

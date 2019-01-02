@@ -275,7 +275,19 @@ namespace Microsoft.PythonTools.Analysis.AnalysisSetDetails {
                 return true;
             }
 
+            // Only access Count once to prevent wasted time in bucket locks.
+            var lCount = Count;
+            var rCount = other.Count;
+
+            if (lCount == 0 && rCount == 0) {
+                return true;
+            }
+
             if (Comparer == other.Comparer) {
+                if (lCount != rCount) {
+                    return false;
+                }
+
                 // Quick check for any unmatched hashcodes.
                 // This can conclusively prove the sets are not equal, but cannot
                 // prove equality.
@@ -290,17 +302,16 @@ namespace Microsoft.PythonTools.Analysis.AnalysisSetDetails {
                 }
             }
 
-            var otherHc = new HashSet<AnalysisValue>(other, _comparer);
-            foreach (var key in this) {
-                if (!otherHc.Remove(key)) {
-                    return false;
-                }
-            }
-            if (otherHc.Any()) {
+            if (lCount == 0 || rCount == 0) {
                 return false;
             }
 
-            return true;
+            if (lCount == 1 && rCount == 1) {
+                return _comparer.Equals(this.First(), other.First());
+            }
+
+            var hs = new HashSet<AnalysisValue>(other, _comparer);
+            return hs.SetEquals(this);
         }
 
         /// <summary>

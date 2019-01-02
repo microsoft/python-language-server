@@ -425,8 +425,8 @@ namespace Microsoft.PythonTools.Analysis {
     }
 
     class OverloadResultComparer : EqualityComparer<OverloadResult> {
-        public static IEqualityComparer<OverloadResult> Instance = new OverloadResultComparer(false);
-        public static IEqualityComparer<OverloadResult> WeakInstance = new OverloadResultComparer(true);
+        public static readonly IEqualityComparer<OverloadResult> Instance = new OverloadResultComparer(false);
+        public static readonly IEqualityComparer<OverloadResult> WeakInstance = new OverloadResultComparer(true);
 
         private readonly bool _weak;
 
