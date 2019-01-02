@@ -37,6 +37,11 @@ namespace AnalysisTests {
                 new EventTaskSource<Microsoft.Python.LanguageServer.Implementation.Server, Microsoft.Python.LanguageServer.ParseCompleteEventArgs>(
                     (o, e) => o.OnParseComplete += e,
                     (o, e) => o.OnParseComplete -= e);
+
+            public static readonly EventTaskSource<Microsoft.Python.LanguageServer.Implementation.Server, Microsoft.Python.LanguageServer.PublishDiagnosticsEventArgs> OnPublishDiagnostics =
+                new EventTaskSource<Microsoft.Python.LanguageServer.Implementation.Server, Microsoft.Python.LanguageServer.PublishDiagnosticsEventArgs>(
+                    (o, e) => o.OnPublishDiagnostics += e,
+                    (o, e) => o.OnPublishDiagnostics -= e);
         }
     }
 }

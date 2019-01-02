@@ -186,16 +186,11 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 return default;
             }
 
-            if (parentCount > lastEdge.PathLength) {
-                // Can't get outside of the root
-                return default;
-            }
-
             var fullNameList = relativePath.ToList();
             if (lastEdge.IsNonRooted) {
                 // Handle relative imports only for modules in the same folder
                 if (parentCount > 1) {
-                    return default;
+                    return new NoKnownParentPackage();
                 }
 
                 if (parentCount == 1 && fullNameList.Count == 1 && lastEdge.Start.TryGetChild(fullNameList[0], out var nameNode)) {
@@ -208,12 +203,27 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                     .ToString());
             }
 
+            var relativeInWorkDirectory = false;
+            if (parentCount > lastEdge.PathLength - 2) {
+                relativeInWorkDirectory = _workDirectory.EqualsOrdinal(lastEdge.FirstEdge.End.Name, IgnoreCaseInPaths);
+
+                // Relative path must be only inside package
+                // Exception for working directory cause it can be a root directory of the package
+                if (!relativeInWorkDirectory) {
+                    return new NoKnownParentPackage();
+                }
+            }
+
             var relativeParentEdge = lastEdge.GetPrevious(parentCount);
 
             var rootEdges = new List<Edge>();
-            for (var i = 0; i < _roots.Count; i++) {
-                if (RootContains(i, relativeParentEdge, out var rootEdge)) {
-                    rootEdges.Add(rootEdge);
+            if (relativeInWorkDirectory) {
+                rootEdges.Add(lastEdge.FirstEdge);
+            } else {
+                for (var i = 0; i < _roots.Count; i++) {
+                    if (RootContains(i, relativeParentEdge, out var rootEdge)) {
+                        rootEdges.Add(rootEdge);
+                    }
                 }
             }
 
@@ -225,7 +235,13 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
                 return default;
             }
 
-            var fullName = GetFullModuleNameBuilder(relativeParentEdge).Append(".", fullNameList).ToString();
+            var fullNameBuilder = GetFullModuleNameBuilder(relativeParentEdge);
+            if (!relativeParentEdge.IsFirst) {
+                AppendName(fullNameBuilder, relativeParentEdge.End.Name);
+                fullNameBuilder.Append(".");
+            }
+            var fullName = fullNameBuilder.Append(".", fullNameList).ToString();
+
             return new ImportNotFound(fullName);
         }
 
@@ -249,7 +265,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             => TryCreateModuleImport(lastEdge.FirstEdge.End, lastEdge.End, out moduleImport);
 
         private static bool TryCreateModuleImport(Node rootNode, Node moduleNode, out ModuleImport moduleImport) {
-            if (moduleNode.TryGetChild("__init__", out var initPyNode) && initPyNode.IsModule) {
+            if (IsPackageWithInitPy(moduleNode, out var initPyNode)) {
                 moduleImport = new ModuleImport(moduleNode.Name, initPyNode.FullModuleName, rootNode.Name, initPyNode.ModulePath, false);
                 return true;
             }
@@ -516,7 +532,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
         private static bool TryFindName(in Edge edge, in IEnumerable<string> nameParts, out Edge lastEdge) {
             lastEdge = edge;
             foreach (var name in nameParts) {
-                if (lastEdge.End.IsModule) {
+                if (lastEdge.End.IsModule && !IsPackageWithInitPy(lastEdge.End, out _)) {
                     return false;
                 }
                 var index = lastEdge.End.GetChildIndex(name);
@@ -652,7 +668,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
             while (edge != lastEdge) {
                 AppendName(sb, edge.End.Name);
                 edge = edge.Next;
-            };
+            }
 
             return sb;
         }
@@ -742,6 +758,9 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
 
         private static int GetModuleNameEnd(string rootedModulePath) 
             => IsPythonCompiled(rootedModulePath) ? rootedModulePath.IndexOf('.', GetModuleNameStart(rootedModulePath)) : rootedModulePath.LastIndexOf('.');
+
+        private static bool IsPackageWithInitPy(Node node, out Node initPyNode)
+            => node.TryGetChild("__init__", out initPyNode) && initPyNode.IsModule;
 
         private static bool IsNotInitPy(string name)
             => !name.EqualsOrdinal("__init__");
