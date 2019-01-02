@@ -152,5 +152,12 @@ x = f()
                 .Which.Should().HaveType<IPythonModule>()
                 .Which.Should().HaveMember("ArrayType");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task OsPathMembers() {
+            var analysis = await GetAnalysisAsync(@"import os.path as P");
+            analysis.Should().HaveVariable("P")
+                .Which.Should().HaveMembers(@"abspath", @"dirname");
+        }
     }
 }

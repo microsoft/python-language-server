@@ -49,6 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case ITypedSequenceType seqt:
                     return await GetValueFromSequenceTypeAsync(expr, seqt, cancellationToken);
                 default:
+                    // TODO: handle __getitem__() ?
                     return UnknownType;
             }
         }

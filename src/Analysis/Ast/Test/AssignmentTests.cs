@@ -154,5 +154,78 @@ x, y, z = 1, 'str', 3.0
                 .And.HaveVariable("y").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Float);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task AnnotatedAssign() {
+            const string code = @"
+x : int = 42
+
+class C:
+    y : int = 42
+
+    def __init__(self):
+        self.abc : int = 42
+
+a = C()
+fob1 = a.abc
+fob2 = a.y
+fob3 = x
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("fob1").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("fob2").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("fob3").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("a")
+                .Which.Should().HaveMembers("abc", "func", "y", "__doc__", "__class__");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task BaseInstanceVariable() {
+            const string code = @"
+class C:
+    def __init__(self):
+        self.abc = 42
+
+
+class D(C):
+    def __init__(self):
+        self.fob = self.abc
+";
+            var analysis = await GetAnalysisAsync(code);
+            var d = analysis.Should().HaveClass("D").Which;
+
+            d.Should().HaveMethod("__init__")
+            .Which.Should().HaveSingleOverload()
+            .Which.Should().HaveParameterAt(0).Which.Name.Should().Be("self");
+
+            d.Should().HaveMember<IPythonConstant>("fob")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
+            d.Should().HaveMember<IPythonConstant>("abc")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task LambdaExpression1() {
+            const string code = @"
+x = lambda a: a
+y = x(42)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task LambdaExpression2() {
+            const string code = @"
+def f(a):
+    return a
+
+x = lambda b: f(b)
+y = x(42)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);
+        }
     }
 }

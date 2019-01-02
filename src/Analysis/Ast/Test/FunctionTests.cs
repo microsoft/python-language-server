@@ -197,6 +197,13 @@ f = pow(1)
 g = pow(3.0)
 h = type(C())
 i = h()
+
+x = dir()
+v = x[0]
+
+va = vars()
+kv = x.keys()[0]
+vv = x['a']
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
@@ -207,7 +214,12 @@ i = h()
                 .And.HaveVariable("f").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("g").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("h").OfType(BuiltinTypeId.Type)
-                .And.HaveVariable("i").OfType("C");
+                .And.HaveVariable("i").OfType("C")
+                .And.HaveVariable("x").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("v").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("va").OfType(BuiltinTypeId.Dict)
+                .And.HaveVariable("kv").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("vv").OfType(BuiltinTypeId.Object);
             ;
         }
 
@@ -335,6 +347,21 @@ z = f('s')
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.NoneType)
                 .And.HaveVariable("y").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Bytes);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReturnFunc() {
+            const string code = @"
+def g():
+    return []
+
+def f():
+    return g
+    
+x = f()()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.List);
         }
     }
 }

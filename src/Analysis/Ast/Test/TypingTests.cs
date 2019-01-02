@@ -130,6 +130,18 @@ T = TypeVar('T', str, bytes)
         }
 
         [TestMethod, Priority(0)]
+        public async Task TypeVarIncomplete() {
+            const string code = @"
+from typing import TypeVar
+
+_ = TypeVar()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("_").WithNoTypes();
+        }
+
+
+        [TestMethod, Priority(0)]
         public async Task GenericArguments() {
             const string code = @"
 from typing import TypeVar
@@ -238,6 +250,72 @@ x = f(a)
 
             analysis.Should().HaveVariable("a").OfType("List[str]")
                 .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericDictBase() {
+            const string code = @"
+from typing import Dict
+
+def func(a: Dict[int, str]):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("func")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameterAt(0)
+                .Which.Should().HaveName("a").And.HaveType("Dict[int, str]");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericListBase() {
+            const string code = @"
+from typing import List
+
+def func(a: List[str]):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("func").Which
+                .Should().HaveSingleOverload()
+                .Which.Should().HaveParameterAt(0)
+                .Which.Should().HaveName("a").And.HaveType("List[str]");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypingListOfTuples() {
+            const string code = @"
+from typing import List
+
+def ls() -> List[tuple]:
+    pass
+
+x = ls()[0]
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("ls")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveReturnDocumentation("List[tuple]");
+
+            analysis.Should().HaveVariable("x").Which
+                .Should().HaveType(BuiltinTypeId.Tuple);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnassignedClassMembers() {
+            const string code = @"
+from typing import NamedTuple
+
+class Employee(NamedTuple):
+    name: str
+    id: int = 3
+
+e = Employee('Guido')
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("e")
+                .Which.Should().HaveMembers("name", "id", "__doc__", "__class__");
         }
     }
 }

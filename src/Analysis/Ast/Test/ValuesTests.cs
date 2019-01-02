@@ -55,5 +55,112 @@ namespace Microsoft.Python.Analysis.Tests {
                 .And.HaveVariable("D").OfType(BuiltinTypeId.Dict)
                 .And.HaveVariable("S").OfType(BuiltinTypeId.Set);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task DocStrings() {
+            var code = @"
+def f():
+    '''func doc'''
+
+
+def funicode():
+    u'''unicode func doc'''
+
+class C:
+    '''class doc'''
+
+class CUnicode:
+    u'''unicode class doc'''
+
+class CNewStyle(object):
+    '''new-style class doc'''
+
+class CInherited(CNewStyle):
+    pass
+
+class CInit:
+    '''class doc'''
+    def __init__(self):
+        '''init doc'''
+        pass
+
+class CUnicodeInit:
+    u'''unicode class doc'''
+    def __init__(self):
+        u'''unicode init doc'''
+        pass
+
+class CNewStyleInit(object):
+    '''new-style class doc'''
+    def __init__(self):
+        '''new-style init doc'''
+        pass
+
+class CInheritedInit(CNewStyleInit):
+    pass
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("f")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveDocumentation("func doc");
+
+            analysis.Should().HaveClass("C")
+                .Which.Should().HaveDocumentation("class doc");
+
+            analysis.Should().HaveFunction(@"funicode")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveDocumentation("unicode func doc");
+
+            analysis.Should().HaveClass("CUnicode")
+                .Which.Should().HaveDocumentation("unicode class doc");
+
+            analysis.Should().HaveClass("CNewStyle")
+                .Which.Should().HaveDocumentation("new-style class doc");
+
+            analysis.Should().HaveClass("CInherited")
+                .Which.Should().HaveDocumentation("new-style class doc");
+
+            analysis.Should().HaveClass("CInit")
+                .Which.Should().HaveDocumentation("init doc");
+
+            analysis.Should().HaveClass("CUnicodeInit")
+                .Which.Should().HaveDocumentation("unicode init doc");
+
+            analysis.Should().HaveClass("CNewStyleInit")
+                .Which.Should().HaveDocumentation("new-style init doc");
+
+            analysis.Should().HaveClass("CInheritedInit")
+                .Which.Should().HaveDocumentation("new-style init doc");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithStatement() {
+            const string code = @"
+class X(object):
+    def x_method(self): pass
+    def __enter__(self): return self
+    def __exit__(self, exc_type, exc_value, traceback): return False
+       
+class Y(object):
+    def y_method(self): pass
+    def __enter__(self): return 123
+    def __exit__(self, exc_type, exc_value, traceback): return False
+ 
+with X() as x:
+    pass #x
+
+with Y() as y:
+    pass #y
+    
+with X():
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("x")
+                    .Which.Should().HaveMember("x_method");
+        }
     }
 }

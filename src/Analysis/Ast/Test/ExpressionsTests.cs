@@ -124,6 +124,28 @@ oar2 = fob2 * 100"; ;
         }
 
         [TestMethod, Priority(0)]
+        public async Task StringConcatenation() {
+            const string code = @"
+x = u'abc'
+y = x + u'dEf'
+
+x1 = 'abc'
+y1 = x1 + 'def'
+
+fob = 'abc'.lower()
+oar = fob + 'Def'
+
+fob2 = u'ab' + u'cd'
+oar2 = fob2 + u'ef'";
+
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Unicode)
+                .And.HaveVariable("y1").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("oar").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("oar2").OfType(BuiltinTypeId.Unicode);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task RangeIteration() {
             const string code = @"
 for i in range(5):

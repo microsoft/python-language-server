@@ -239,21 +239,33 @@ a = X(2)
                 .Which.Should().HaveParameterAt(0).Which.Should().HaveName("self").And.HaveType("X");
         }
 
-        //        [TestMethod, Priority(0)]
-        //        public async Task ClassVariables() {
-        //            const string code = @"
-        //class A:
-        //    x: int
+        [TestMethod, Priority(0)]
+        public async Task ClassNew() {
+            const string code = @"
+class X:
+    def __new__(cls, value: int):
+        res = object.__new__(cls)
+        res.value = value
+        return res
 
-        //";
-        //            var analysis = await GetAnalysisAsync(code);
-        //            analysis.Should().HaveClass("A")
-        //                .Which.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
-        //        }
+a = X(2)
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            var cls = analysis.Should().HaveClass("X").Which;
+            var o = cls.Should().HaveMethod("__new__").Which.Should().HaveSingleOverload().Which;
+
+            o.Should().HaveParameterAt(0).Which.Should().HaveName("cls").And.HaveType("X");
+            o.Should().HaveParameterAt(1).Which.Should().HaveName("value").And.HaveType(BuiltinTypeId.Int);
+            cls.Should().HaveMember<IPythonConstant>("res").Which.Should().HaveType("X");
+
+            var v = analysis.Should().HaveVariable("a").OfType("X").Which;
+            v.Should().HaveMember("value").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
 
         [TestMethod, Priority(0)]
         public async Task InstanceCall() {
-            var code = @"
+            const string code = @"
 class X:
     def __call__(self, value):
         return value
