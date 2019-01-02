@@ -904,7 +904,9 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         class AggregateComparer : IEqualityComparer<IProjectEntry[]> {
-            public static AggregateComparer Instance = new AggregateComparer();
+            public static readonly AggregateComparer Instance = new AggregateComparer();
+
+            private AggregateComparer() { }
 
             public bool Equals(IProjectEntry[] x, IProjectEntry[] y) {
                 if (x.Length != y.Length) {
