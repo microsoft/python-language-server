@@ -114,7 +114,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _log?.Log(TraceEventType.Verbose, $"Parse of {node.Document.Name}({node.Document.ModuleType}) complete in {(DateTime.Now - _startTime).TotalMilliseconds} ms.");
 
             // Now run the analysis.
-            var walker = new AnalysisModuleWalker(_services, node.Document, ast);
+            var walker = new ModuleWalker(_services, node.Document, ast);
 
             await ast.WalkAsync(walker, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();

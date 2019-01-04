@@ -33,29 +33,100 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task AstForwardRefGlobalFunction() {
-            var analysis = await GetAnalysisAsync(@"
-from ForwardRefGlobalFunc import *
+        public async Task ForwardRefGlobalFunction() {
+            const string code = @"
+def func1():
+    return func2()
+
+def func2():
+    return func3()
+
+def func3():
+    return 's'
+
 x = func1()
-");
+";
+            var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
-        public async Task AstForwardRefFunction1() {
-            var analysis = await GetAnalysisAsync(@"
-from ForwardRefFunc1 import *
+        public async Task ForwardRefFunction1() {
+            const string code = @"
+class A(object):
+    def methodA(self):
+        return 's'
+
+class B(object):
+    def getA(self):
+        return self.funcA()
+
+    def funcA(self):
+        return A()
+
 x = B().getA().methodA()
-");
+";
+            var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
-        public async Task AstForwardRefFunction2() {
-            var analysis = await GetAnalysisAsync(@"
-from ForwardRefFunc2 import *
+        public async Task ForwardRefFunction2() {
+            const string code = @"
+class A(object):
+    def methodA(self):
+        return 's'
+
+class B(object):
+    def getA(self):
+        return self.func1()
+
+    def func1(self):
+        return self.func2()
+
+    def func2(self):
+        return self.func3()
+
+    def func3(self):
+        return A()
+
 x = B().getA().methodA()
-");
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefClass() {
+            const string code = @"
+class A:
+    def funcA(self):
+        return B().methodB()
+
+class B:
+    def methodB(self):
+        return 's'
+
+x = A().funcA()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefClassMember() {
+            const string code = @"
+class A:
+    def __init__(self):
+        self.b = B().methodB()
+
+class B:
+    def methodB(self):
+        return 's'
+
+x = A().b
+";
+            var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
     }

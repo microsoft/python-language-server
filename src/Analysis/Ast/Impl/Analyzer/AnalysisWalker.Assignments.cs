@@ -22,7 +22,10 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal partial class AnalysisWalker {
-        public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
+        public override Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default)
+            => HandleAssignmentAsync(node, cancellationToken);
+
+        public async Task<bool> HandleAssignmentAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
 
@@ -41,7 +44,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             } else {
                 foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                     // x: List[str] = [...]
-                    AssignAnnotatedVariable(expr, value);
+                    await AssignAnnotatedVariableAsync(expr, value, cancellationToken);
                 }
                 foreach (var ne in node.Left.OfType<NameExpression>()) {
                     Eval.DeclareVariable(ne.Name, value, GetLoc(ne));
@@ -51,33 +54,50 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return await base.WalkAsync(node, cancellationToken);
         }
 
-        public override Task<bool> WalkAsync(ExpressionStatement node, CancellationToken cancellationToken = default) {
-            AssignAnnotatedVariable(node.Expression as ExpressionWithAnnotation, null);
-            return Task.FromResult(false);
+        public override async Task<bool> WalkAsync(ExpressionStatement node, CancellationToken cancellationToken = default) {
+            await AssignAnnotatedVariableAsync(node.Expression as ExpressionWithAnnotation, null, cancellationToken);
+            return false;
         }
 
-        private void AssignAnnotatedVariable(ExpressionWithAnnotation expr, IMember value) {
-            if (expr?.Annotation != null && expr.Expression is NameExpression ne) {
-                var variableType = Eval.GetTypeFromAnnotation(expr.Annotation);
-                // If value is null, then this is a pure declaration like 
-                //   x: List[str]
-                // without a value. If value is provided, then this is
-                //   x: List[str] = [...]
+        private async Task AssignAnnotatedVariableAsync(ExpressionWithAnnotation expr, IMember value, CancellationToken cancellationToken = default) {
+            if (expr?.Annotation == null) {
+                return;
+            }
 
-                // Check value type for compatibility
-                IMember instance = null;
-                if (value != null) {
-                    var valueType = value.GetPythonType();
-                    if (!valueType.IsUnknown() && !variableType.IsUnknown() && !valueType.Equals(variableType)) {
-                        // TODO: warn incompatible value type.
-                        // TODO: verify values. Value may be list() while variable type is List[str].
-                        // Leave it as variable type.
-                    } else {
-                        instance = value;
+            var variableType = Eval.GetTypeFromAnnotation(expr.Annotation);
+            // If value is null, then this is a pure declaration like 
+            //   x: List[str]
+            // without a value. If value is provided, then this is
+            //   x: List[str] = [...]
+
+            // Check value type for compatibility
+            IMember instance = null;
+            if (value != null) {
+                var valueType = value.GetPythonType();
+                if (!valueType.IsUnknown() && !variableType.IsUnknown() && !valueType.Equals(variableType)) {
+                    // TODO: warn incompatible value type.
+                    // TODO: verify values. Value may be list() while variable type is List[str].
+                    // Leave it as variable type.
+                } else {
+                    instance = value;
+                }
+            }
+            instance = instance ?? variableType?.CreateInstance(Module, GetLoc(expr.Expression)) ?? Eval.UnknownType;
+
+            if (expr.Expression is NameExpression ne) {
+                Eval.DeclareVariable(ne.Name, instance, expr.Expression);
+                return;
+            }
+
+            if (expr.Expression is MemberExpression m) {
+                // self.x : int = 42
+                var self = Eval.LookupNameInScopes("self", out var scope);
+                if (self is PythonClassType cls && scope != null) {
+                    var selfCandidate = await Eval.GetValueFromExpressionAsync(m.Target, cancellationToken);
+                    if (self.Equals(selfCandidate.GetPythonType())) {
+                        cls.AddMember(m.Name, instance, true);
                     }
                 }
-                instance = instance ?? variableType?.CreateInstance(Module, GetLoc(expr.Expression)) ?? Eval.UnknownType;
-                Eval.DeclareVariable(ne.Name, instance, expr.Expression);
             }
         }
     }

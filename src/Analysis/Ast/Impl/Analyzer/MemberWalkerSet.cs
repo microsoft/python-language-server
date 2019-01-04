@@ -27,41 +27,52 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// it can be walked, and so on recursively, until return type is determined
     /// or there is nothing left to walk.
     /// </summary>
-    class AnalysisFunctionWalkerSet {
-        private readonly ConcurrentDictionary<FunctionDefinition, AnalysisFunctionWalker> _functionWalkers
-            = new ConcurrentDictionary<FunctionDefinition, AnalysisFunctionWalker>();
-        private readonly ConcurrentBag<FunctionDefinition> _processed = new ConcurrentBag<FunctionDefinition>();
+    internal sealed class MemberWalkerSet {
+        private readonly ConcurrentDictionary<ScopeStatement, MemberWalker> _walkers
+            = new ConcurrentDictionary<ScopeStatement, MemberWalker>();
+        private readonly ConcurrentBag<ScopeStatement> _processed = new ConcurrentBag<ScopeStatement>();
 
-        public void Add(AnalysisFunctionWalker walker)
-            => _functionWalkers[walker.FunctionDefinition] = walker;
+        public void Add(MemberWalker walker)
+            => _walkers[walker.Target] = walker;
 
-        public AnalysisFunctionWalker Get(FunctionDefinition fd)
-            => _functionWalkers.TryGetValue(fd, out var w) ? w : null;
+        public MemberWalker Get(ScopeStatement target)
+            => _walkers.TryGetValue(target, out var w) ? w : null;
 
         public async Task ProcessSetAsync(CancellationToken cancellationToken = default) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
-            var constructors = _functionWalkers
-                .Where(kvp => kvp.Key.Name == "__init__" || kvp.Key.Name == "__new__")
-                .Select(c => c.Value)
-                .ExcludeDefault()
-                .ToArray();
-
-            foreach (var ctor in constructors) {
-                await ProcessWalkerAsync(ctor, cancellationToken);
-            }
-
-            while (_functionWalkers.Count > 0) {
-                var walker = _functionWalkers.First().Value;
+            while (_walkers.Count > 0) {
+                var walker = _walkers.First().Value;
                 await ProcessWalkerAsync(walker, cancellationToken);
             }
         }
 
+        public async Task ProcessMembersAsync(ScopeStatement target, CancellationToken cancellationToken = default) {
+            // Do not use foreach since walker list is dynamically modified and walkers are removed
+            // after processing. Handle __init__ and __new__ first so class variables are initialized.
+            while (_walkers.Count > 0) {
+                var member = _walkers.Keys.FirstOrDefault(w => w.Parent == target);
+                if (member == null) {
+                    break;
+                }
+                await ProcessWalkerAsync(_walkers[member], cancellationToken);
+            }
+        }
+
+        public async Task ProcessMemberAsync(ScopeStatement target, CancellationToken cancellationToken = default) {
+            if (target != null && _walkers.TryGetValue(target, out var w)) {
+                await ProcessWalkerAsync(w, cancellationToken);
+            }
+        }
+
+        public bool Contains(ScopeStatement node)
+            => _walkers.ContainsKey(node) || _processed.Contains(node);
+
         public async Task ProcessConstructorsAsync(ClassDefinition cd, CancellationToken cancellationToken = default) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
-            var constructors = _functionWalkers
-                .Where(kvp => GetClassParent(kvp.Key) == cd && (kvp.Key.Name == "__init__" || kvp.Key.Name == "__new__"))
+            var constructors = _walkers
+                .Where(kvp => kvp.Key.Parent == cd && (kvp.Key.Name == "__init__" || kvp.Key.Name == "__new__"))
                 .Select(c => c.Value)
                 .ExcludeDefault()
                 .ToArray();
@@ -71,33 +82,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public async Task ProcessFunctionAsync(FunctionDefinition fn, CancellationToken cancellationToken = default) {
-            if (fn != null && _functionWalkers.TryGetValue(fn, out var w)) {
-                await ProcessWalkerAsync(w, cancellationToken);
-            }
-        }
-
-        public bool Contains(FunctionDefinition node)
-            => _functionWalkers.ContainsKey(node) || _processed.Contains(node);
-
-        private Task ProcessWalkerAsync(AnalysisFunctionWalker walker, CancellationToken cancellationToken = default) {
+        private Task ProcessWalkerAsync(MemberWalker walker, CancellationToken cancellationToken = default) {
             // Remove walker before processing as to prevent reentrancy.
             // NOTE: first add then remove so we don't get moment when
             // walker is missing from either set.
-            _processed.Add(walker.FunctionDefinition);
-            _functionWalkers.TryRemove(walker.FunctionDefinition, out _);
+            _processed.Add(walker.Target);
+            _walkers.TryRemove(walker.Target, out _);
             return walker.WalkAsync(cancellationToken);
-        }
-
-        private static ClassDefinition GetClassParent(FunctionDefinition fd) {
-            ScopeStatement node = fd;
-            while (node != null) {
-                if (node is ClassDefinition cd) {
-                    return cd;
-                }
-                node = node.Parent;
-            }
-            return null;
         }
     }
 }

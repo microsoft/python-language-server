@@ -18,15 +18,19 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        public IMember GetInScope(string name)
-            => CurrentScope.Variables.TryGetVariable(name, out var variable) ? variable.Value : null;
+        public IMember GetInScope(string name, IScope scope)
+            => scope.Variables.TryGetVariable(name, out var variable) ? variable.Value : null;
 
-        public T GetInScope<T>(string name) where T : class, IMember
-            => CurrentScope.Variables.TryGetVariable(name, out var variable) ? variable.Value as T : null;
+        public T GetInScope<T>(string name, IScope scope) where T : class, IMember
+            => scope.Variables.TryGetVariable(name, out var variable) ? variable.Value as T : null;
+
+        public IMember GetInScope(string name) => GetInScope(name, CurrentScope);
+        public T GetInScope<T>(string name) where T : class, IMember => GetInScope<T>(name, CurrentScope);
 
         public void DeclareVariable(string name, IMember value, Node expression)
             => DeclareVariable(name, value, GetLoc(expression));
@@ -43,9 +47,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         [DebuggerStepThrough]
+        public IMember LookupNameInScopes(string name, out IScope scope) => LookupNameInScopes(name, out scope, DefaultLookupOptions);
+
+        [DebuggerStepThrough]
         public IMember LookupNameInScopes(string name) => LookupNameInScopes(name, DefaultLookupOptions);
 
-        public IMember LookupNameInScopes(string name, LookupOptions options) {
+        [DebuggerStepThrough]
+        public IMember LookupNameInScopes(string name, LookupOptions options) => LookupNameInScopes(name, out _, options);
+
+        public IMember LookupNameInScopes(string name, out IScope scope, LookupOptions options) {
             var scopes = CurrentScope.ToChainTowardsGlobal().ToList();
             if (scopes.Count == 1) {
                 if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
@@ -67,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
 
-            var scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
+            scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             var value = scope?.Variables[name].Value;
             if (value == null) {
                 if (Module != Interpreter.ModuleResolution.BuiltinsModule && options.HasFlag(LookupOptions.Builtins)) {
@@ -88,26 +98,27 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         /// <summary>
-        /// Moves current scope to the specified scope.
-        /// New scope is pushed on the stack and will be removed 
-        /// when returned disposable is disposed.
+        /// Locates and opens existing scope for a node or creates a new scope
+        /// as a child of the specified scope. Scope is pushed on the stack
+        /// and will be removed when returned the disposable is disposed.
         /// </summary>
-        /// <param name="scope"></param>
-        public IDisposable OpenScope(Scope scope) {
-            _openScopes.Push(CurrentScope);
+        public IDisposable OpenScope(ScopeStatement node, out Scope fromScope) {
+            fromScope = null;
+            if (node.Parent != null) {
+                fromScope = (GlobalScope as Scope)
+                    .TraverseBreadthFirst(s => s.Children.OfType<Scope>())
+                    .FirstOrDefault(s => s.Node == node.Parent);
+            }
+
+            fromScope = fromScope ?? GlobalScope;
+            var scope = fromScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
+            if (scope == null) {
+                scope = new Scope(node, fromScope, true);
+                fromScope.AddChildScope(scope);
+            }
+            _openScopes.Push(scope);
             CurrentScope = scope;
             return new ScopeTracker(this);
-        }
-
-        /// <summary>
-        /// Creates new scope as a child of the specified scope.
-        /// New scope is pushed on the stack and will be removed 
-        /// when returned disposable is disposed.
-        /// </summary>
-        public IDisposable CreateScope(Node node, Scope fromScope, bool visibleToChildren = true) {
-            var s = new Scope(node, fromScope, visibleToChildren);
-            fromScope.AddChildScope(s);
-            return OpenScope(s);
         }
 
         private class ScopeTracker : IDisposable {
@@ -119,7 +130,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             public void Dispose() {
                 Debug.Assert(_eval._openScopes.Count > 0, "Attempt to close global scope");
-                _eval.CurrentScope = _eval._openScopes.Pop();
+                _eval._openScopes.Pop();
+                _eval.CurrentScope = _eval._openScopes.Count == 0 ? _eval.GlobalScope : _eval._openScopes.Peek();
             }
         }
     }

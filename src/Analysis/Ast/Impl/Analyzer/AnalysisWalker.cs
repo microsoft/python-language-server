@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -29,8 +30,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// Base class with common functionality to module and function analysis walkers.
     /// </summary>
     internal abstract partial class AnalysisWalker : PythonWalkerAsync {
-        private readonly HashSet<Node> _replacedByStubs = new HashSet<Node>();
-
         public ExpressionEval Eval { get; }
         public IServiceContainer Services => Eval.Services;
         public ILogger Log => Eval.Log;
@@ -38,19 +37,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IPythonInterpreter Interpreter => Eval.Interpreter;
         public GlobalScope GlobalScope => Eval.GlobalScope;
         public PythonAst Ast => Eval.Ast;
-        protected AnalysisFunctionWalkerSet FunctionWalkers => Eval.FunctionWalkers;
+        protected MemberWalkerSet MemberWalkers => Eval.MemberWalkers;
+        protected HashSet<Node> ReplacedByStubs { get; } = new HashSet<Node>();
 
         protected AnalysisWalker(ExpressionEval eval) {
             Eval = eval;
         }
         protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast) {
             Eval = new ExpressionEval(services, module, ast);
-        }
-
-        public virtual async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
-            await FunctionWalkers.ProcessSetAsync(cancellationToken);
-            _replacedByStubs.Clear();
-            return GlobalScope;
         }
 
         internal LocationInfo GetLoc(ClassDefinition node) {
@@ -97,5 +91,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             return member;
         }
+
+        protected PythonClassType CreateClass(ClassDefinition node) {
+            node = node ?? throw new ArgumentNullException(nameof(node));
+            return new PythonClassType(
+                node,
+                Module,
+                GetDoc(node.Body as SuiteStatement),
+                GetLoc(node),
+                Interpreter,
+                Eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
+        }
+
+        protected T[] GetStatements<T>(ScopeStatement s)
+            => (s.Body as SuiteStatement)?.Statements.OfType<T>().ToArray() ?? Array.Empty<T>();
     }
 }

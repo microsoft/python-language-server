@@ -23,65 +23,55 @@ using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{FunctionDefinition.Name}")]
-    internal sealed class AnalysisFunctionWalker : AnalysisWalker {
-        private readonly Scope _parentScope;
+    internal sealed class FunctionWalker : MemberWalker {
         private readonly IPythonClassMember _function;
         private readonly PythonFunctionOverload _overload;
-        private IPythonClassType _self;
+        private readonly IPythonClassType _self;
 
-        public AnalysisFunctionWalker(
+        public FunctionWalker(
             ExpressionEval eval,
             FunctionDefinition targetFunction,
             PythonFunctionOverload overload,
-            IPythonClassMember function
-        ) : base(eval) {
+            IPythonClassMember function,
+            IPythonClassType self
+        ) : base(eval, targetFunction) {
             FunctionDefinition = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
             _overload = overload ?? throw new ArgumentNullException(nameof(overload));
             _function = function ?? throw new ArgumentNullException(nameof(function));
-            _parentScope = Eval.CurrentScope;
+            _self = self;
         }
 
         public FunctionDefinition FunctionDefinition { get; }
 
-        public async Task WalkAsync(CancellationToken cancellationToken = default) {
-            using (Eval.OpenScope(_parentScope)) {
-                // Fetch class type, if any.
-                _self = Eval.LookupNameInScopes("__class__", LookupOptions.Local) as IPythonClassType;
-
+        public override async Task WalkAsync(CancellationToken cancellationToken = default) {
+            using (Eval.OpenScope(Target, out _)) {
                 // Ensure constructors are processed so class members are initialized.
-                if (_self != null) {
-                    await FunctionWalkers.ProcessConstructorsAsync(_self.ClassDefinition, cancellationToken);
+                // Process annotations.
+                var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+                if (!annotationType.IsUnknown()) {
+                    _overload.SetReturnValue(annotationType, true);
                 }
 
-                using (Eval.CreateScope(FunctionDefinition, _parentScope)) {
-                    // Process annotations.
-                    var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
-                    if (!annotationType.IsUnknown()) {
-                        _overload.SetReturnValue(annotationType, true);
+                await DeclareParametersAsync(cancellationToken);
+                if (string.IsNullOrEmpty(_overload.Documentation)) {
+                    var docNode = (FunctionDefinition.Body as SuiteStatement)?.Statements.FirstOrDefault();
+                    var ce = (docNode as ExpressionStatement)?.Expression as ConstantExpression;
+                    if (ce?.Value is string doc) {
+                        _overload.SetDocumentationProvider(_ => doc);
                     }
+                }
 
-                    await DeclareParametersAsync(cancellationToken);
-                    if (string.IsNullOrEmpty(_overload.Documentation)) {
-                        var docNode = (FunctionDefinition.Body as SuiteStatement)?.Statements.FirstOrDefault();
-                        var ce = (docNode as ExpressionStatement)?.Expression as ConstantExpression;
-                        if (ce?.Value is string doc) {
-                            _overload.SetDocumentationProvider(_ => doc);
-                        }
+                if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
+                    // Return type from the annotation is sufficient for libraries
+                    // and stubs, no need to walk the body.
+                    if (FunctionDefinition.Body != null && Module.ModuleType != ModuleType.Specialized) {
+                        await FunctionDefinition.Body.WalkAsync(this, cancellationToken);
                     }
-
-                    if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
-                        // Return type from the annotation is sufficient for libraries
-                        // and stubs, no need to walk the body.
-                        if (FunctionDefinition.Body != null && Module.ModuleType != ModuleType.Specialized) {
-                            await FunctionDefinition.Body.WalkAsync(this, cancellationToken);
-                        }
-                    }
-                } // Function scope
+                }
             } // Restore original scope at the entry
         }
 
@@ -115,6 +105,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // TODO: report that classes are not supposed to appear inside functions.
             return Task.FromResult(false);
         }
+
+        protected override IPythonClassType GetSelf() => _self;
 
         private async Task DeclareParametersAsync(CancellationToken cancellationToken = default) {
             // For class method no need to add extra parameters, but first parameter type should be the class.

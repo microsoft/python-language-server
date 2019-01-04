@@ -25,20 +25,20 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     internal partial class AnalysisWalker {
         public override Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
-            if (node.IsLambda || _replacedByStubs.Contains(node)) {
+            if (node.IsLambda || ReplacedByStubs.Contains(node)) {
                 return Task.FromResult(false);
             }
 
-            var cls = Eval.GetInScope("__class__").GetPythonType();
-            var loc = GetLoc(node);
-            if (!TryAddProperty(node, cls, loc)) {
-                AddFunction(node, cls, loc);
-            }
+            // This part only adds definition for the function and its overloads
+            // to the walker list. It does NOT resolve return types or parameters.
+            // Function body is not walked. For the actual function code walk
+            // and the type resolution see FunctionWalker class.
+            AddFunctionOrProperty(node);
             // Do not recurse into functions
             return Task.FromResult(false);
         }
 
-        public void AddFunction(FunctionDefinition node, IPythonType declaringType, LocationInfo loc) {
+        protected void AddFunction(FunctionDefinition node, IPythonType declaringType, LocationInfo loc) {
             if (!(Eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonFunctionType existing)) {
                 existing = new PythonFunctionType(node, Module, declaringType, loc);
                 Eval.DeclareVariable(node.Name, existing, loc);
@@ -46,10 +46,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
             AddOverload(node, existing, o => existing.AddOverload(o));
         }
 
+        protected virtual IPythonClassType GetSelf() => Eval.GetInScope("__class__")?.GetPythonType<IPythonClassType>();
+
+        protected void AddFunctionOrProperty(FunctionDefinition fd) {
+            var cls = GetSelf();
+            var loc = GetLoc(fd);
+            if (!TryAddProperty(fd, cls, loc)) {
+                AddFunction(fd, cls, loc);
+            }
+        }
+
         private void AddOverload(FunctionDefinition node, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
             // Check if function exists in stubs. If so, take overload from stub
             // and the documentation from this actual module.
-            if (!_replacedByStubs.Contains(node)) {
+            if (!ReplacedByStubs.Contains(node)) {
                 var stubOverload = GetOverloadFromStub(node);
                 if (stubOverload != null) {
                     if (!string.IsNullOrEmpty(node.Documentation)) {
@@ -57,19 +67,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
 
                     addOverload(stubOverload);
-                    _replacedByStubs.Add(node);
+                    ReplacedByStubs.Add(node);
                     return;
                 }
             }
 
-            if (!FunctionWalkers.Contains(node)) {
+            if (!MemberWalkers.Contains(node)) {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
                 var location = Eval.GetLocOfName(node, node.NameExpression);
                 var returnDoc = node.ReturnAnnotation?.ToCodeString(Ast);
                 var overload = new PythonFunctionOverload(node, Module, location, returnDoc);
                 addOverload(overload);
-                FunctionWalkers.Add(new AnalysisFunctionWalker(Eval, node, overload, function));
+                MemberWalkers.Add(new FunctionWalker(Eval, node, overload, function, GetSelf()));
             }
         }
 
@@ -89,10 +99,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             foreach (var d in decorators.OfType<NameExpression>()) {
                 switch (d.Name) {
-                    case "property":
+                    case @"property":
                         AddProperty(node, Module, declaringType, false, location);
                         return true;
-                    case "abstractproperty":
+                    case @"abstractproperty":
                         AddProperty(node, Module, declaringType, true, location);
                         return true;
                 }

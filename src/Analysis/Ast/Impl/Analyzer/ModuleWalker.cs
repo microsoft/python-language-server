@@ -28,8 +28,8 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Module.Name} : {Module.ModuleType}")]
-    internal class AnalysisModuleWalker : AnalysisWalker {
-        public AnalysisModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
+    internal class ModuleWalker : AnalysisWalker {
+        public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
             : base(services, module, ast) { }
 
         public override async Task<bool> WalkAsync(PythonAst node, CancellationToken cancellationToken = default) {
@@ -43,29 +43,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return await base.WalkAsync(node, cancellationToken);
         }
 
-        private void CollectTopLevelDefinitions() {
-            var statement = (Ast.Body as SuiteStatement)?.Statements.ToArray() ?? Array.Empty<Statement>();
+        public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
+            await MemberWalkers.ProcessSetAsync(cancellationToken);
+            ReplacedByStubs.Clear();
+            MergeStub();
+            return Eval.GlobalScope;
+        }
 
-            foreach (var node in statement.OfType<FunctionDefinition>()) {
+        private void CollectTopLevelDefinitions() {
+            foreach (var node in GetStatements<FunctionDefinition>(Ast)) {
                 AddFunction(node, null, Eval.GetLoc(node));
             }
 
-            foreach (var node in statement.OfType<ClassDefinition>()) {
-                var classInfo = CreateClass(node);
-                Eval.DeclareVariable(node.Name, classInfo, GetLoc(node));
+            foreach (var cd in GetStatements<ClassDefinition>(Ast)) {
+                var classInfo = CreateClass(cd);
+                Eval.DeclareVariable(cd.Name, classInfo, GetLoc(cd));
+                Eval.MemberWalkers.Add(new ClassWalker(Eval, cd));
             }
-        }
-
-        public override async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
-            var gs = await base.CompleteAsync(cancellationToken);
-            MergeStub();
-            return gs;
-        }
-
-        public override async Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
-            var classWalker = new AnalysisClassWalker(this, node);
-            await classWalker.WalkAsync(cancellationToken);
-            return false;
         }
 
         /// <summary>
@@ -133,17 +127,5 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
         }
-
-        public PythonClassType CreateClass(ClassDefinition node) {
-            node = node ?? throw new ArgumentNullException(nameof(node));
-            return new PythonClassType(
-                node,
-                Module,
-                GetDoc(node.Body as SuiteStatement),
-                GetLoc(node),
-                Interpreter,
-                Eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
-        }
-
     }
 }

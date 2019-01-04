@@ -63,7 +63,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public bool SuppressBuiltinLookup => Module.ModuleType == ModuleType.Builtins;
         public ILogger Log { get; }
         public IServiceContainer Services { get; }
-        public AnalysisFunctionWalkerSet FunctionWalkers { get; } = new AnalysisFunctionWalkerSet();
+        public MemberWalkerSet MemberWalkers { get; } = new MemberWalkerSet();
 
         public LocationInfo GetLoc(Node node) => node.GetLocation(Module, Ast);
         public LocationInfo GetLocOfName(Node node, NameExpression header) => node.GetLocationOfName(header, Module, Ast);
