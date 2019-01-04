@@ -39,27 +39,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // to correctly process forward references. Does not determine
             // types yet since at this time imports or generic definitions
             // have not been processed.
-            CollectTopLevelDefinitions();
+            await SymbolTable.BuildAsync(Eval, cancellationToken);
             return await base.WalkAsync(node, cancellationToken);
         }
 
         public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
-            await MemberWalkers.ProcessSetAsync(cancellationToken);
-            ReplacedByStubs.Clear();
+            await SymbolTable.ProcessAllAsync(cancellationToken);
+            SymbolTable.ReplacedByStubs.Clear();
             MergeStub();
             return Eval.GlobalScope;
-        }
-
-        private void CollectTopLevelDefinitions() {
-            foreach (var node in GetStatements<FunctionDefinition>(Ast)) {
-                AddFunction(node, null, Eval.GetLoc(node));
-            }
-
-            foreach (var cd in GetStatements<ClassDefinition>(Ast)) {
-                var classInfo = CreateClass(cd);
-                Eval.DeclareVariable(cd.Name, classInfo, GetLoc(cd));
-                Eval.MemberWalkers.Add(new ClassWalker(Eval, cd));
-            }
         }
 
         /// <summary>

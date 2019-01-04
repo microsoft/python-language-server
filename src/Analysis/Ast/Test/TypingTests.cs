@@ -301,21 +301,5 @@ x = ls()[0]
             analysis.Should().HaveVariable("x").Which
                 .Should().HaveType(BuiltinTypeId.Tuple);
         }
-
-        [TestMethod, Priority(0)]
-        public async Task UnassignedClassMembers() {
-            const string code = @"
-from typing import NamedTuple
-
-class Employee(NamedTuple):
-    name: str
-    id: int = 3
-
-e = Employee('Guido')
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("e")
-                .Which.Should().HaveMembers("name", "id", "__doc__", "__class__");
-        }
     }
 }

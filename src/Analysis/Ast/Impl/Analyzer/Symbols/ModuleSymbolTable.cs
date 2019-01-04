@@ -14,31 +14,46 @@
 // permissions and limitations under the License.
 
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// <summary>
     /// Represents set of function body walkers. Functions are walked after
     /// all classes are collected. If function or property return type is unknown,
     /// it can be walked, and so on recursively, until return type is determined
     /// or there is nothing left to walk.
     /// </summary>
-    internal sealed class MemberWalkerSet {
-        private readonly ConcurrentDictionary<ScopeStatement, MemberWalker> _walkers
-            = new ConcurrentDictionary<ScopeStatement, MemberWalker>();
+    internal sealed class ModuleSymbolTable {
+        private readonly ConcurrentDictionary<ScopeStatement, MemberEvalWalker> _walkers
+            = new ConcurrentDictionary<ScopeStatement, MemberEvalWalker>();
         private readonly ConcurrentBag<ScopeStatement> _processed = new ConcurrentBag<ScopeStatement>();
 
-        public void Add(MemberWalker walker)
+        public HashSet<Node> ReplacedByStubs { get; }= new HashSet<Node>();
+
+        public void Add(MemberEvalWalker walker)
             => _walkers[walker.Target] = walker;
 
-        public MemberWalker Get(ScopeStatement target)
+        public MemberEvalWalker Get(ScopeStatement target)
             => _walkers.TryGetValue(target, out var w) ? w : null;
 
-        public async Task ProcessSetAsync(CancellationToken cancellationToken = default) {
+        public bool Contains(ScopeStatement node)
+            => _walkers.ContainsKey(node) || _processed.Contains(node);
+
+
+        public Task BuildAsync(ExpressionEval eval, CancellationToken cancellationToken = default)
+            // This part only adds definition for the function and its overloads
+            // to the walker list. It does NOT resolve return types or parameters.
+            // Function body is not walked. For the actual function code walk
+            // and the type resolution see FunctionWalker class.
+            => SymbolCollector.CollectSymbolsAsync(this, eval, cancellationToken);
+
+        public async Task ProcessAllAsync(CancellationToken cancellationToken = default) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             while (_walkers.Count > 0) {
@@ -47,7 +62,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public async Task ProcessMembersAsync(ScopeStatement target, CancellationToken cancellationToken = default) {
+        public async Task ProcessScopeMembersAsync(ScopeStatement target, CancellationToken cancellationToken = default) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             while (_walkers.Count > 0) {
@@ -65,9 +80,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public bool Contains(ScopeStatement node)
-            => _walkers.ContainsKey(node) || _processed.Contains(node);
-
         public async Task ProcessConstructorsAsync(ClassDefinition cd, CancellationToken cancellationToken = default) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
@@ -82,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private Task ProcessWalkerAsync(MemberWalker walker, CancellationToken cancellationToken = default) {
+        private Task ProcessWalkerAsync(MemberEvalWalker walker, CancellationToken cancellationToken = default) {
             // Remove walker before processing as to prevent reentrancy.
             // NOTE: first add then remove so we don't get moment when
             // walker is missing from either set.

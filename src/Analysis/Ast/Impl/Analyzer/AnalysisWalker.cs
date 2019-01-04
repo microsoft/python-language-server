@@ -19,89 +19,68 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Analyzer.Handlers;
+using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Base class with common functionality to module and function analysis walkers.
     /// </summary>
-    internal abstract partial class AnalysisWalker : PythonWalkerAsync {
+    internal abstract class AnalysisWalker : PythonWalkerAsync {
+        protected ImportHandler ImportHandler { get; }
+        protected FromImportHandler FromImportHandler { get; }
+        protected LoopHandler LoopHandler { get; }
+        protected ConditionalHandler ConditionalHandler { get; }
+        protected AssignmentHandler AssignmentHandler { get; }
+
         public ExpressionEval Eval { get; }
-        public IServiceContainer Services => Eval.Services;
-        public ILogger Log => Eval.Log;
         public IPythonModule Module => Eval.Module;
         public IPythonInterpreter Interpreter => Eval.Interpreter;
-        public GlobalScope GlobalScope => Eval.GlobalScope;
         public PythonAst Ast => Eval.Ast;
-        protected MemberWalkerSet MemberWalkers => Eval.MemberWalkers;
-        protected HashSet<Node> ReplacedByStubs { get; } = new HashSet<Node>();
+        protected ModuleSymbolTable SymbolTable => Eval.SymbolTable;
 
         protected AnalysisWalker(ExpressionEval eval) {
             Eval = eval;
-        }
-        protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast) {
-            Eval = new ExpressionEval(services, module, ast);
-        }
-
-        internal LocationInfo GetLoc(ClassDefinition node) {
-            if (node == null || node.StartIndex >= node.EndIndex) {
-                return null;
-            }
-
-            var start = node.NameExpression?.GetStart(Ast) ?? node.GetStart(Ast);
-            var end = node.GetEnd(Ast);
-            return new LocationInfo(Module.FilePath, Module.Uri, start.Line, start.Column, end.Line, end.Column);
+            ImportHandler = new ImportHandler(this);
+            FromImportHandler = new FromImportHandler(this);
+            AssignmentHandler = new AssignmentHandler(this);
+            LoopHandler = new LoopHandler(this);
+            ConditionalHandler = new ConditionalHandler(this);
         }
 
-        private LocationInfo GetLoc(Node node) => Eval.GetLoc(node);
-
-        protected static string GetDoc(SuiteStatement node) {
-            var docExpr = node?.Statements?.FirstOrDefault() as ExpressionStatement;
-            var ce = docExpr?.Expression as ConstantExpression;
-            return ce?.Value as string;
+        protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
+            : this(new ExpressionEval(services, module, ast)) {
         }
 
-        protected IMember GetMemberFromStub(string name) {
-            if (Module.Stub == null) {
-                return null;
-            }
+        #region AST walker overrides
+        public override Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default)
+            => ImportHandler.HandleImportAsync(node, cancellationToken);
 
-            var memberNameChain = new List<string>(Enumerable.Repeat(name, 1));
-            IScope scope = Eval.CurrentScope;
+        public override Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
+            => FromImportHandler.HandleFromImportAsync(node, cancellationToken);
 
-            while (scope != GlobalScope) {
-                memberNameChain.Add(scope.Name);
-                scope = scope.OuterScope;
-            }
-
-            IMember member = Module.Stub;
-            for (var i = memberNameChain.Count - 1; i >= 0; i--) {
-                if (!(member is IMemberContainer mc)) {
-                    return null;
-                }
-                member = mc.GetMember(memberNameChain[i]);
-                if (member == null) {
-                    return null;
-                }
-            }
-
-            return member;
+        public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
+            await AssignmentHandler.HandleAssignmentAsync(node, cancellationToken);
+            return await base.WalkAsync(node, cancellationToken);
         }
 
-        protected PythonClassType CreateClass(ClassDefinition node) {
-            node = node ?? throw new ArgumentNullException(nameof(node));
-            return new PythonClassType(
-                node,
-                Module,
-                GetDoc(node.Body as SuiteStatement),
-                GetLoc(node),
-                Interpreter,
-                Eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type); // built-ins set type later
+        public override async Task<bool> WalkAsync(ForStatement node, CancellationToken cancellationToken = default) {
+            await LoopHandler.HandleForAsync(node, cancellationToken);
+            return await base.WalkAsync(node, cancellationToken);
         }
+
+        public override Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default)
+            => ConditionalHandler.HandleIfAsync(node, cancellationToken);
+
+        public override async Task<bool> WalkAsync(ExpressionStatement node, CancellationToken cancellationToken = default) {
+            await AssignmentHandler.HandleAnnotatedExpressionAsync(node.Expression as ExpressionWithAnnotation, null, cancellationToken);
+            return false;
+        }
+        #endregion
 
         protected T[] GetStatements<T>(ScopeStatement s)
             => (s.Body as SuiteStatement)?.Statements.OfType<T>().ToArray() ?? Array.Empty<T>();

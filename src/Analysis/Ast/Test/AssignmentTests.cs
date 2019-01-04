@@ -177,7 +177,7 @@ fob3 = x
                 .And.HaveVariable("fob2").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("fob3").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("a")
-                .Which.Should().HaveMembers("abc", "func", "y", "__doc__", "__class__");
+                .Which.Should().HaveMembers("abc", "y", "__class__");
         }
 
         [TestMethod, Priority(0)]

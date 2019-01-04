@@ -239,7 +239,7 @@ a = X(2)
                 .Which.Should().HaveParameterAt(0).Which.Should().HaveName("self").And.HaveType("X");
         }
 
-        [TestMethod, Priority(0)]
+        //[TestMethod, Priority(0)]
         public async Task ClassNew() {
             const string code = @"
 class X:
@@ -372,7 +372,7 @@ class H(object):
         }
 
         [TestMethod, Priority(0)]
-        public async Task SelfNestedMethod() {
+        public async Task NestedMethod() {
             const string code = @"
 class MyClass:
     def func1(self):
@@ -386,6 +386,20 @@ x = MyClass().func1()
 
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnassignedClassMembers() {
+            const string code = @"
+class Employee:
+    name: str
+    id: int = 3
+
+e = Employee('Guido')
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("e")
+                .Which.Should().HaveMembers("name", "id", "__class__");
         }
     }
 }

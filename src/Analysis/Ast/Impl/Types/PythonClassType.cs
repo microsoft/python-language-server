@@ -90,6 +90,21 @@ namespace Microsoft.Python.Analysis.Types {
             }
             return null;
         }
+
+        public override string Documentation {
+            get {
+                var doc = base.Documentation;
+                if (string.IsNullOrEmpty(doc) && Bases != null) {
+                    // Try bases
+                    doc = Bases.FirstOrDefault(b => !string.IsNullOrEmpty(b?.Documentation))?.Documentation;
+                }
+                if (string.IsNullOrEmpty(doc)) {
+                    doc = GetMember("__init__")?.GetPythonType()?.Documentation;
+                }
+                return doc;
+            }
+        }
+
         #endregion
 
         #region IPythonClass
@@ -168,7 +183,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                     if (nextInMro == null) {
                         // MRO is invalid, so return just this class
-                        return new IPythonType[] { cls };
+                        return new [] { cls };
                     }
 
                     finalMro.Add(nextInMro);

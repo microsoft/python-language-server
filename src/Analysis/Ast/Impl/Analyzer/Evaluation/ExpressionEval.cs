@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -63,7 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public bool SuppressBuiltinLookup => Module.ModuleType == ModuleType.Builtins;
         public ILogger Log { get; }
         public IServiceContainer Services { get; }
-        public MemberWalkerSet MemberWalkers { get; } = new MemberWalkerSet();
+        public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
 
         public LocationInfo GetLoc(Node node) => node.GetLocation(Module, Ast);
         public LocationInfo GetLocOfName(Node node, NameExpression header) => node.GetLocationOfName(header, Module, Ast);

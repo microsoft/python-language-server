@@ -18,24 +18,17 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Target.Name}")]
-    internal abstract class MemberWalker : AnalysisWalker {
-        protected MemberWalker(ExpressionEval eval, ScopeStatement target) : base(eval) {
+    internal abstract class MemberEvalWalker : AnalysisWalker {
+        protected MemberEvalWalker(ExpressionEval eval, ScopeStatement target) : base(eval) {
             Target = target ?? throw new ArgumentNullException(nameof(target));
         }
 
         public ScopeStatement Target { get; }
 
         public abstract Task WalkAsync(CancellationToken cancellationToken = default);
-
-        protected void CollectMemberDefinitions(ScopeStatement s) {
-            foreach (var node in GetStatements<FunctionDefinition>(s)) {
-                AddFunctionOrProperty(node);
-            }
-        }
     }
 }

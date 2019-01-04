@@ -79,13 +79,11 @@ class CInherited(CNewStyle):
     pass
 
 class CInit:
-    '''class doc'''
     def __init__(self):
         '''init doc'''
         pass
 
 class CUnicodeInit:
-    u'''unicode class doc'''
     def __init__(self):
         u'''unicode init doc'''
         pass
@@ -93,7 +91,6 @@ class CUnicodeInit:
 class CNewStyleInit(object):
     '''new-style class doc'''
     def __init__(self):
-        '''new-style init doc'''
         pass
 
 class CInheritedInit(CNewStyleInit):
@@ -128,13 +125,14 @@ class CInheritedInit(CNewStyleInit):
                 .Which.Should().HaveDocumentation("unicode init doc");
 
             analysis.Should().HaveClass("CNewStyleInit")
-                .Which.Should().HaveDocumentation("new-style init doc");
+                .Which.Should().HaveDocumentation("new-style class doc");
 
             analysis.Should().HaveClass("CInheritedInit")
-                .Which.Should().HaveDocumentation("new-style init doc");
+                .Which.Should().HaveDocumentation("new-style class doc");
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("not yet")]
         public async Task WithStatement() {
             const string code = @"
 class X(object):

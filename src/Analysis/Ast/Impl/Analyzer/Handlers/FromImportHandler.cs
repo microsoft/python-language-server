@@ -23,9 +23,11 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal partial class AnalysisWalker {
-        public override async Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default) { 
+namespace Microsoft.Python.Analysis.Analyzer.Handlers {
+    internal sealed class FromImportHandler: StatementHandler {
+        public FromImportHandler(AnalysisWalker walker) : base(walker) { }
+
+        public async Task<bool> HandleFromImportAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             if (node.Root == null || node.Names == null || Module.ModuleType == ModuleType.Specialized) {
                 return false;
@@ -39,7 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            var imports = Interpreter.ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
+            var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
             // If we are processing stub, ignore imports of the original module.
             // For example, typeshed stub for sys imports sys.
             if (Module.ModuleType == ModuleType.Stub && imports is ModuleImport mi && mi.Name == Module.Name) {
@@ -83,14 +85,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var memberName = memberReference.Name;
 
                 var member = Module.GetMember(importName);
-                Eval.DeclareVariable(memberName, member ?? Eval.UnknownType, GetLoc(names[i]));
+                Eval.DeclareVariable(memberName, member ?? Eval.UnknownType, Eval.GetLoc(names[i]));
             }
         }
 
         private async Task ImportMembersFromModuleAsync(FromImportStatement node, string moduleName, CancellationToken cancellationToken = default) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var module = await Interpreter.ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
+            var module = await ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
 
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: warn this is not a good style per
@@ -124,7 +126,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 member = member ?? Eval.UnknownType;
                 if (member is IPythonModule m) {
-                    await Interpreter.ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
+                    await ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
                 }
 
                 Eval.DeclareVariable(memberName, member, module.Location);
@@ -137,7 +139,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: Need tracking of previous imports to determine possible imports for namespace package. For now import nothing
-                Eval.DeclareVariable("*", Eval.UnknownType, GetLoc(names[0]));
+                Eval.DeclareVariable("*", Eval.UnknownType, Eval.GetLoc(names[0]));
                 return;
             }
 
@@ -145,12 +147,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var importName = names[i].Name;
                 var memberReference = asNames[i] ?? names[i];
                 var memberName = memberReference.Name;
-                var location = GetLoc(memberReference);
+                var location = Eval.GetLoc(memberReference);
 
                 ModuleImport moduleImport;
                 IPythonType member;
                 if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
-                    member = await Interpreter.ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
+                    member = await ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
                 } else {
                     member = Eval.UnknownType;
                 }

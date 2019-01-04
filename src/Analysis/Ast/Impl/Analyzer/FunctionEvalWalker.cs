@@ -27,12 +27,12 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{FunctionDefinition.Name}")]
-    internal sealed class FunctionWalker : MemberWalker {
+    internal sealed class FunctionEvalWalker : MemberEvalWalker {
         private readonly IPythonClassMember _function;
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassType _self;
 
-        public FunctionWalker(
+        public FunctionEvalWalker(
             ExpressionEval eval,
             FunctionDefinition targetFunction,
             PythonFunctionOverload overload,
@@ -48,6 +48,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public FunctionDefinition FunctionDefinition { get; }
 
         public override async Task WalkAsync(CancellationToken cancellationToken = default) {
+            if (SymbolTable.ReplacedByStubs.Contains(Target)) {
+                return;
+            }
+
             using (Eval.OpenScope(Target, out _)) {
                 // Ensure constructors are processed so class members are initialized.
                 // Process annotations.
@@ -106,7 +110,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return Task.FromResult(false);
         }
 
-        protected override IPythonClassType GetSelf() => _self;
+        private IPythonClassType GetSelf() => _self;
 
         private async Task DeclareParametersAsync(CancellationToken cancellationToken = default) {
             // For class method no need to add extra parameters, but first parameter type should be the class.

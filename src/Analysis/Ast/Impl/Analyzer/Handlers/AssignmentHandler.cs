@@ -20,12 +20,11 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal partial class AnalysisWalker {
-        public override Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default)
-            => HandleAssignmentAsync(node, cancellationToken);
+namespace Microsoft.Python.Analysis.Analyzer.Handlers {
+    internal sealed class AssignmentHandler: StatementHandler {
+        public AssignmentHandler(AnalysisWalker walker) : base(walker) { }
 
-        public async Task<bool> HandleAssignmentAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
+        public async Task HandleAssignmentAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
 
@@ -39,27 +38,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (node.Left.FirstOrDefault() is TupleExpression lhs) {
                 // Tuple = Tuple. Transfer values.
-                var texHandler = new TupleExpressionHandler(Eval);
+                var texHandler = new TupleExpressionHandler(Walker);
                 await texHandler.HandleTupleAssignmentAsync(lhs, node.Right, value, cancellationToken);
             } else {
                 foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                     // x: List[str] = [...]
-                    await AssignAnnotatedVariableAsync(expr, value, cancellationToken);
+                    await HandleAnnotatedExpressionAsync(expr, value, cancellationToken);
                 }
                 foreach (var ne in node.Left.OfType<NameExpression>()) {
-                    Eval.DeclareVariable(ne.Name, value, GetLoc(ne));
+                    Eval.DeclareVariable(ne.Name, value, Eval.GetLoc(ne));
                 }
             }
-
-            return await base.WalkAsync(node, cancellationToken);
         }
 
-        public override async Task<bool> WalkAsync(ExpressionStatement node, CancellationToken cancellationToken = default) {
-            await AssignAnnotatedVariableAsync(node.Expression as ExpressionWithAnnotation, null, cancellationToken);
-            return false;
-        }
-
-        private async Task AssignAnnotatedVariableAsync(ExpressionWithAnnotation expr, IMember value, CancellationToken cancellationToken = default) {
+        public async Task HandleAnnotatedExpressionAsync(ExpressionWithAnnotation expr, IMember value, CancellationToken cancellationToken = default) {
             if (expr?.Annotation == null) {
                 return;
             }
@@ -82,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     instance = value;
                 }
             }
-            instance = instance ?? variableType?.CreateInstance(Module, GetLoc(expr.Expression)) ?? Eval.UnknownType;
+            instance = instance ?? variableType?.CreateInstance(Module, Eval.GetLoc(expr.Expression)) ?? Eval.UnknownType;
 
             if (expr.Expression is NameExpression ne) {
                 Eval.DeclareVariable(ne.Name, instance, expr.Expression);

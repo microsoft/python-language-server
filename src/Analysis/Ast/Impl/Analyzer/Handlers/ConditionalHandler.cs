@@ -21,9 +21,11 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal partial class AnalysisWalker {
-        public override async Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default) {
+namespace Microsoft.Python.Analysis.Analyzer.Handlers {
+    internal sealed class ConditionalHandler: StatementHandler {
+        public ConditionalHandler(AnalysisWalker walker) : base(walker) { }
+
+        public async Task<bool> HandleIfAsync(IfStatement node, CancellationToken cancellationToken = default) {
             var allValidComparisons = true;
             foreach (var test in node.Tests) {
                 if (test.Test is BinaryExpression cmp &&
@@ -58,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                     if (shouldWalk) {
                         // Supported comparison, so only walk the one block
-                        await test.WalkAsync(this, cancellationToken);
+                        await test.WalkAsync(Walker, cancellationToken);
                         return false;
                     }
                 } else {
@@ -82,7 +84,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 }
             }
-
             return !allValidComparisons;
         }
     }

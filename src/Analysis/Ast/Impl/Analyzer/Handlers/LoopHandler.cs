@@ -17,18 +17,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal partial class AnalysisWalker {
-        public override async Task<bool> WalkAsync(ForStatement node, CancellationToken cancellationToken = default) {
+namespace Microsoft.Python.Analysis.Analyzer.Handlers {
+    internal sealed class LoopHandler : StatementHandler {
+        public LoopHandler(AnalysisWalker walker) : base(walker) { }
+
+        public async Task HandleForAsync(ForStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             if (node.Left is NameExpression nex) {
                 var value = await Eval.GetValueFromExpressionAsync(node.List, cancellationToken);
-                Eval.DeclareVariable(nex.Name, value, GetLoc(node.Left));
+                Eval.DeclareVariable(nex.Name, value, Eval.GetLoc(node.Left));
             }
             if (node.Body != null) {
-                await node.Body.WalkAsync(this, cancellationToken);
+                await node.Body.WalkAsync(Walker, cancellationToken);
             }
-            return await base.WalkAsync(node, cancellationToken);
         }
     }
 }

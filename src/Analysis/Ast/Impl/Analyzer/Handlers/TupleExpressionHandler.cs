@@ -17,18 +17,13 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class TupleExpressionHandler {
-        private readonly ExpressionEval _eval;
-
-        public TupleExpressionHandler(ExpressionEval eval) {
-            _eval = eval;
-        }
+namespace Microsoft.Python.Analysis.Analyzer.Handlers {
+    internal sealed class TupleExpressionHandler: StatementHandler {
+        public TupleExpressionHandler(AnalysisWalker walker): base(walker) { }
 
         public async Task HandleTupleAssignmentAsync(TupleExpression lhs, Expression rhs, IMember value, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
@@ -38,9 +33,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var names = lhs.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
                 for (var i = 0; i < Math.Min(names.Length, returnedExpressions.Length); i++) {
                     if (returnedExpressions[i] != null && !string.IsNullOrEmpty(names[i])) {
-                        var v = await _eval.GetValueFromExpressionAsync(returnedExpressions[i], cancellationToken);
+                        var v = await Eval.GetValueFromExpressionAsync(returnedExpressions[i], cancellationToken);
                         if (v != null) {
-                            _eval.DeclareVariable(names[i], v, returnedExpressions[i]);
+                            Eval.DeclareVariable(names[i], v, returnedExpressions[i]);
                         }
                     }
                 }
@@ -54,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var names = expressions.Select(x => x.Name).ToArray();
                 for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {
                     if (names[i] != null && types[i] != null) {
-                        _eval.DeclareVariable(names[i], types[i], expressions[i]);
+                        Eval.DeclareVariable(names[i], types[i], expressions[i]);
                     }
                 }
             }
