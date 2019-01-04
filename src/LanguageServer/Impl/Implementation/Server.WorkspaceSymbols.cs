@@ -16,14 +16,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.Indexing;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
+using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
@@ -31,41 +34,77 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private static int _symbolHierarchyMaxSymbols = 1000;
 
         public override async Task<SymbolInformation[]> WorkspaceSymbols(WorkspaceSymbolParams @params, CancellationToken cancellationToken) {
-            await WaitForCompleteAnalysisAsync(cancellationToken);
+            var symbols = await SymbolIndex.WorkspaceSymbolsAsync(@params.query, cancellationToken);
+            return symbols.Take(_symbolHierarchyMaxSymbols).Select(s => new SymbolInformation {
+                name = s.Name,
+                kind = (SymbolKind)s.Kind,
+                location = new Location {
+                    range = s.Range,
+                    uri = s.DocumentUri,
+                },
+                containerName = s.ContainerName,
+            }).ToArray();
 
-            var members = Enumerable.Empty<IMemberResult>();
-            var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
-
-            foreach (var entry in ProjectFiles) {
-                members = members.Concat(
-                    await GetModuleVariablesAsync(entry as ProjectEntry, opts, @params.query, 50, cancellationToken)
-                );
-            }
-
-            members = members.GroupBy(mr => mr.Name).Select(g => g.First());
-            return members.Select(ToSymbolInformation).ToArray();
+            // await WaitForCompleteAnalysisAsync(cancellationToken);
+            // 
+            // var members = Enumerable.Empty<IMemberResult>();
+            // var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
+            // 
+            // foreach (var entry in ProjectFiles) {
+            //     members = members.Concat(
+            //         await GetModuleVariablesAsync(entry as ProjectEntry, opts, @params.query, 50, cancellationToken)
+            //     );
+            // }
+            // 
+            // members = members.GroupBy(mr => mr.Name).Select(g => g.First());
+            // return members.Select(ToSymbolInformation).ToArray();
         }
 
         public override async Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
-            await WaitForCompleteAnalysisAsync(cancellationToken);
-            var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
-            var entry = ProjectFiles.GetEntry(@params.textDocument.uri);
+            // var uri = @params.textDocument.uri;
+            // var symbols = await SymbolIndex.HierarchicalDocumentSymbolsAsync(uri, cancellationToken);
+            // var flat = symbols.Flatten(uri);
+            
+            throw new Exception("this function is not called");
 
-            var members = await GetModuleVariablesAsync(entry as ProjectEntry, opts, string.Empty, 50, cancellationToken);
-            return members
-                .GroupBy(mr => mr.Name)
-                .Select(g => g.First())
-                .Select(ToSymbolInformation)
-                .ToArray();
+            // var uri = @params.textDocument.uri;
+            // var symbols = await SymbolIndex.WorkspaceSymbolsAsync(string.Empty, cancellationToken);
+            // return Array.Empty<SymbolInformation>();
+
+            // var ast = GetCurrentAst(uri);
+            // var walker = new IndexerWalker(ast);
+            // ast.Walk(walker);
+            // return IndexerWalker.DocSymsToSymInfos(uri, walker.Symbols).ToArray();
+            // 
+            // await WaitForCompleteAnalysisAsync(cancellationToken);
+            // var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
+            // var entry = ProjectFiles.GetEntry(@params.textDocument.uri);
+            // 
+            // var members = await GetModuleVariablesAsync(entry as ProjectEntry, opts, string.Empty, 50, cancellationToken);
+            // return members
+            //     .GroupBy(mr => mr.Name)
+            //     .Select(g => g.First())
+            //     .Select(ToSymbolInformation)
+            //     .ToArray();
         }
 
         public override async Task<DocumentSymbol[]> HierarchicalDocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
-            await WaitForCompleteAnalysisAsync(cancellationToken);
-            var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
-            var entry = ProjectFiles.GetEntry(@params.textDocument.uri);
+            var uri = @params.textDocument.uri;
+            var symbols = await SymbolIndex.HierarchicalDocumentSymbolsAsync(uri, cancellationToken);
+            return ToDocumentSymbols(symbols);
 
-            var members = await GetModuleVariablesAsync(entry as ProjectEntry, opts, string.Empty, 50, cancellationToken);
-            return ToDocumentSymbols(members);
+            // var uri = @params.textDocument.uri;
+            // var ast = GetCurrentAst(uri);
+            // var walker = new IndexerWalker(ast);
+            // ast.Walk(walker);
+            // return walker.Symbols.ToArray();
+
+            // await WaitForCompleteAnalysisAsync(cancellationToken);
+            // var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
+            // var entry = ProjectFiles.GetEntry(@params.textDocument.uri);
+            // 
+            // var members = await GetModuleVariablesAsync(entry as ProjectEntry, opts, string.Empty, 50, cancellationToken);
+            // return ToDocumentSymbols(members);
         }
 
         private static async Task<List<IMemberResult>> GetModuleVariablesAsync(ProjectEntry entry, GetMemberOptions opts, string prefix, int timeout, CancellationToken token) {
@@ -89,6 +128,28 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 })
                 .Take(_symbolHierarchyMaxSymbols);
             return result;
+        }
+
+        private DocumentSymbol[] ToDocumentSymbols(IEnumerable<HierarchicalSymbol> hSymbols) {
+            return hSymbols.MaybeEnumerate().Select(hSym => new DocumentSymbol {
+                name = hSym.Name,
+                detail = hSym.Detail,
+                kind = (SymbolKind)hSym.Kind,
+                deprecated = hSym.Deprecated ?? false,
+                range = hSym.Range,
+                selectionRange = hSym.SelectionRange,
+                children = ToDocumentSymbols(hSym.Children),
+            }).Select(v => {
+                if (v.selectionRange.start < v.range.start) {
+                    Debug.Fail("out of range");
+                }
+
+                if (v.selectionRange.end > v.range.end) {
+                    Debug.Fail("out of range");
+                }
+
+                return v;
+            }).ToArray();
         }
 
         private SymbolInformation ToSymbolInformation(IMemberResult m) {
