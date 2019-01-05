@@ -13,11 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Extensions {
+namespace Microsoft.Python.Analysis {
     public static class AstExtensions {
         public static Expression FindExpression(this PythonAst ast, int index, FindExpressionOptions options) 
             => new ExpressionFinder(ast, options).GetExpression(index) as Expression;

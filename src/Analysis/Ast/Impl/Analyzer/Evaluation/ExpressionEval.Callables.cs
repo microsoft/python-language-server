@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
                 case IPythonClassType cls:
                     // Ensure class is processed
-                    await SymbolTable.ProcessMemberAsync(cls.ClassDefinition, cancellationToken);
+                    await SymbolTable.EvaluateAsync(cls.ClassDefinition, cancellationToken);
                     value = new PythonInstance(cls, GetLoc(expr));
                     break;
                 case IPythonType t:
@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Since we don't know which overload we will need, we have to 
             // process all known overloads for the function.
             foreach (var o in fn.Overloads) {
-                await SymbolTable.ProcessMemberAsync(o.FunctionDefinition, cancellationToken);
+                await SymbolTable.EvaluateAsync(o.FunctionDefinition, cancellationToken);
             }
             // Now we can go and find overload with matching arguments.
             var overload = FindOverload(fn, args);
@@ -140,7 +140,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private async Task<IPythonType> GetPropertyReturnTypeAsync(IPythonPropertyType p, Expression expr, CancellationToken cancellationToken = default) {
             if (p.Type.IsUnknown()) {
                 // Function may not have been walked yet. Do it now.
-                await SymbolTable.ProcessMemberAsync(p.FunctionDefinition, cancellationToken);
+                await SymbolTable.EvaluateAsync(p.FunctionDefinition, cancellationToken);
             }
             return p.Type ?? UnknownType;
         }

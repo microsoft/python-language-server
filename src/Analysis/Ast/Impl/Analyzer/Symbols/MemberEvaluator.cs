@@ -20,15 +20,17 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     [DebuggerDisplay("{Target.Name}")]
-    internal abstract class MemberEvalWalker : AnalysisWalker {
-        protected MemberEvalWalker(ExpressionEval eval, ScopeStatement target) : base(eval) {
+    internal abstract class MemberEvaluator : AnalysisWalker {
+        protected MemberEvaluator(ExpressionEval eval, ScopeStatement target) : base(eval) {
             Target = target ?? throw new ArgumentNullException(nameof(target));
         }
 
         public ScopeStatement Target { get; }
+        public bool IsClass => Target is ClassDefinition;
+        public bool IsFunction => Target is FunctionDefinition;
 
-        public abstract Task WalkAsync(CancellationToken cancellationToken = default);
+        public abstract Task EvaluateAsync(CancellationToken cancellationToken = default);
     }
 }

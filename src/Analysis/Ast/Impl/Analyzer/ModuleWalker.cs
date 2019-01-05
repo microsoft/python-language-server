@@ -43,8 +43,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return await base.WalkAsync(node, cancellationToken);
         }
 
+        // Classes and functions are walked by their respective evaluators
+        public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public override Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
+
         public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
-            await SymbolTable.ProcessAllAsync(cancellationToken);
+            await SymbolTable.EvaluateAllAsync(cancellationToken);
             SymbolTable.ReplacedByStubs.Clear();
             MergeStub();
             return Eval.GlobalScope;

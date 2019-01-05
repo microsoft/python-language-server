@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             GlobalScope = new GlobalScope(module);
             CurrentScope = GlobalScope;
 
-            Log = services.GetService<ILogger>();
+            //Log = services.GetService<ILogger>();
             DefaultLookupOptions = LookupOptions.Normal;
 
             UnknownType = Interpreter.UnknownType ??

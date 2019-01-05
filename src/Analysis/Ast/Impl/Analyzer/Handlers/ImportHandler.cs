@@ -84,9 +84,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private async Task<IPythonModule> HandlePossibleImportAsync(ImportStatement node, PossibleModuleImport possibleModuleImport, CancellationToken cancellationToken) {
             var fullName = possibleModuleImport.PrecedingModuleFullName;
-            var module = await ModuleResolution.ImportModuleAsync(possibleModuleImport.PossibleModuleFullName, cancellationToken);
+            var module = await ModuleResolution.ImportModuleAsync(possibleModuleImport.PrecedingModuleFullName, cancellationToken);
             if (module == null) {
-                MakeUnresolvedImport(possibleModuleImport.PossibleModuleFullName, node);
+                MakeUnresolvedImport(possibleModuleImport.PrecedingModuleFullName, node);
                 return null;
             }
 

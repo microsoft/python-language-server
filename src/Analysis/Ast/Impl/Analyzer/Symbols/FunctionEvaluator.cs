@@ -23,16 +23,17 @@ using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     [DebuggerDisplay("{FunctionDefinition.Name}")]
-    internal sealed class FunctionEvalWalker : MemberEvalWalker {
+    internal sealed class FunctionEvaluator : MemberEvaluator {
         private readonly IPythonClassMember _function;
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassType _self;
 
-        public FunctionEvalWalker(
+        public FunctionEvaluator(
             ExpressionEval eval,
             FunctionDefinition targetFunction,
             PythonFunctionOverload overload,
@@ -47,10 +48,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public FunctionDefinition FunctionDefinition { get; }
 
-        public override async Task WalkAsync(CancellationToken cancellationToken = default) {
+        public override async Task EvaluateAsync(CancellationToken cancellationToken = default) {
             if (SymbolTable.ReplacedByStubs.Contains(Target)) {
                 return;
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             using (Eval.OpenScope(Target, out _)) {
                 // Ensure constructors are processed so class members are initialized.
@@ -68,6 +71,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         _overload.SetDocumentationProvider(_ => doc);
                     }
                 }
+
+                //  Evaluate inner functions after we declared parameters.
+                await EvaluateInnerFunctionsAsync(FunctionDefinition, cancellationToken);
 
                 if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries
@@ -109,8 +115,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // TODO: report that classes are not supposed to appear inside functions.
             return Task.FromResult(false);
         }
-
-        private IPythonClassType GetSelf() => _self;
 
         private async Task DeclareParametersAsync(CancellationToken cancellationToken = default) {
             // For class method no need to add extra parameters, but first parameter type should be the class.
@@ -179,6 +183,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             Eval.DeclareVariable(p.Name, paramType, p.NameExpression);
+        }
+
+        private async Task EvaluateInnerFunctionsAsync(FunctionDefinition fd, CancellationToken cancellationToken = default) {
+            // Do not use foreach since walker list is dynamically modified and walkers are removed
+            // after processing. Handle __init__ and __new__ first so class variables are initialized.
+            var innerFunctions = SymbolTable.Evaluators
+                .Where(kvp => kvp.Key.Parent == fd && (kvp.Key is FunctionDefinition))
+                .Select(c => c.Value)
+                .ExcludeDefault()
+                .ToArray();
+
+            foreach (var c in innerFunctions) {
+                await SymbolTable.EvaluateAsync(c, cancellationToken);
+            }
         }
     }
 }

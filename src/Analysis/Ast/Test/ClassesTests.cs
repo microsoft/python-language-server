@@ -62,10 +62,9 @@ namespace Microsoft.Python.Analysis.Tests {
 
             all.First(x => x.Name == "D").Value.Should().BeAssignableTo<IPythonClassType>();
             all.First(x => x.Name == "E").Value.Should().BeAssignableTo<IPythonClassType>();
-            all.First(x => x.Name == "f").Value.Should().BeAssignableTo<IPythonFunctionType>();
 
             all.First(x => x.Name == "f").Value.Should().BeAssignableTo<IPythonFunctionType>();
-
+ 
             var f1 = all.First(x => x.Name == "F1");
             var c = f1.Value.Should().BeAssignableTo<IPythonClassType>().Which;
 
@@ -378,12 +377,10 @@ class MyClass:
     def func1(self):
         def func2(a, b):
             return a
-
         return func2('abc', 123)
 
 x = MyClass().func1()
 ";
-
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
         }

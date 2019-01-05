@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Types {
