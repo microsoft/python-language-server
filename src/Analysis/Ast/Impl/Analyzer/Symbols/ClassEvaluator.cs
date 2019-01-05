@@ -36,11 +36,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public async Task EvaluateClassAsync(CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Evaluate inner classes, if any
-            await EvaluateInnerClassesAsync(_classDef, cancellationToken);
-
             // Open class scope chain
-            using (Eval.OpenScope(Target, out var outerScope)) {
+            using (Eval.OpenScope(_classDef, out var outerScope)) {
                 var instance = Eval.GetInScope(_classDef.Name, outerScope);
                 if (!(instance?.GetPythonType() is PythonClassType classInfo)) {
                     if (instance != null) {
@@ -50,6 +47,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     return;
                 }
 
+                // Evaluate inner classes, if any
+                await EvaluateInnerClassesAsync(_classDef, cancellationToken);
+
                 _class = classInfo;
                 // Set bases to the class.
                 var bases = _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))
@@ -58,14 +58,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     .ToArray();
                 _class.SetBases(Interpreter, bases);
 
-                // Open new scope for the class off the parent scope that
-                // was recorded when walker for this class was created.
-                using (Eval.OpenScope(_classDef, out _)) {
-                    // Declare __class__ variable in the scope.
-                    Eval.DeclareVariable("__class__", _class, _classDef);
+                // Declare __class__ variable in the scope.
+                Eval.DeclareVariable("__class__", _class, _classDef);
 
-                    await ProcessClassBody(cancellationToken);
-                }
+                await ProcessClassBody(cancellationToken);
             }
         }
 
@@ -143,5 +139,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var stubClass = Eval.Module.Stub?.GetMember<IPythonClassType>(_class.Name);
             _class.AddMembers(stubClass, false);
         }
+
+        // Classes and functions are walked by their respective evaluators
+        public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public override Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
     }
 }

@@ -30,6 +30,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// so the symbol table can resolve references on demand.
     /// </summary>
     internal sealed class SymbolCollector : PythonWalkerAsync {
+        private readonly Dictionary<ScopeStatement, IPythonType> _typeMap = new Dictionary<ScopeStatement, IPythonType>();
         private readonly Stack<IDisposable> _scopes = new Stack<IDisposable>();
         private readonly ModuleSymbolTable _table;
         private readonly ExpressionEval _eval;
@@ -74,17 +75,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return base.PostWalkAsync(fd, cancellationToken);
         }
 
-        private PythonClassType CreateClass(ClassDefinition node)
-            => new PythonClassType(node, _eval.Module, GetDoc(node.Body as SuiteStatement),
-                    GetLoc(node), _eval.Interpreter,
-                    _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
+        private PythonClassType CreateClass(ClassDefinition node) {
+            var cls = new PythonClassType(node, _eval.Module, GetDoc(node.Body as SuiteStatement),
+                GetLoc(node), _eval.Interpreter,
+                _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
+            _typeMap[node] = cls;
+            return cls;
+        }
 
 
         private void AddFunctionOrProperty(FunctionDefinition fd) {
-            var cls = GetSelf();
+            var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
             var loc = GetLoc(fd);
-            if (!TryAddProperty(fd, cls, loc)) {
-                AddFunction(fd, cls, loc);
+            if (!TryAddProperty(fd, declaringType, loc)) {
+                AddFunction(fd, declaringType, loc);
             }
         }
 
@@ -93,11 +97,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 existing = new PythonFunctionType(node, _eval.Module, declaringType, loc);
                 _eval.DeclareVariable(node.Name, existing, loc);
             }
-            AddOverload(node, existing, o => existing.AddOverload(o));
+            AddOverload(node, existing, declaringType, o => existing.AddOverload(o));
             return existing;
         }
 
-        private void AddOverload(FunctionDefinition node, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
+        private void AddOverload(FunctionDefinition node, IPythonClassMember function, IPythonType declaringType, Action<IPythonFunctionOverload> addOverload) {
             // Check if function exists in stubs. If so, take overload from stub
             // and the documentation from this actual module.
             if (!_table.ReplacedByStubs.Contains(node)) {
@@ -120,7 +124,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var returnDoc = node.ReturnAnnotation?.ToCodeString(_eval.Ast);
                 var overload = new PythonFunctionOverload(node, _eval.Module, location, returnDoc);
                 addOverload(overload);
-                _table.Add(new FunctionEvaluator(_eval, node, overload, function, GetSelf()));
+                _table.Add(new FunctionEvaluator(_eval, node, overload, function, declaringType));
             }
         }
 
@@ -156,7 +160,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 existing = new PythonPropertyType(node, declaringModule, declaringType, isAbstract, loc);
                 _eval.DeclareVariable(node.Name, existing, loc);
             }
-            AddOverload(node, existing, o => existing.AddOverload(o));
+            AddOverload(node, existing, declaringType, o => existing.AddOverload(o));
             return existing;
         }
 
@@ -175,8 +179,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var ce = docExpr?.Expression as ConstantExpression;
             return ce?.Value as string;
         }
-
-        private IPythonClassType GetSelf() => _eval.GetInScope("__class__")?.GetPythonType<IPythonClassType>();
 
         private LocationInfo GetLoc(Node node) => _eval.GetLoc(node);
 

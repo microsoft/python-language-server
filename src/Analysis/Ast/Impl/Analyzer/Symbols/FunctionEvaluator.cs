@@ -31,6 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     internal sealed class FunctionEvaluator : MemberEvaluator {
         private readonly IPythonClassMember _function;
         private readonly PythonFunctionOverload _overload;
+        private readonly IPythonType _declaringType;
         private readonly IPythonClassType _self;
 
         public FunctionEvaluator(
@@ -38,12 +39,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             FunctionDefinition targetFunction,
             PythonFunctionOverload overload,
             IPythonClassMember function,
-            IPythonClassType self
+            IPythonType declaringType
         ) : base(eval, targetFunction) {
             FunctionDefinition = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
             _overload = overload ?? throw new ArgumentNullException(nameof(overload));
             _function = function ?? throw new ArgumentNullException(nameof(function));
-            _self = self;
+            _declaringType = declaringType;
+            _self = _declaringType as PythonClassType;
         }
 
         public FunctionDefinition FunctionDefinition { get; }
@@ -54,24 +56,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
 
             cancellationToken.ThrowIfCancellationRequested();
+            // Process annotations.
+            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+            if (!annotationType.IsUnknown()) {
+                _overload.SetReturnValue(annotationType, true);
+            }
 
-            using (Eval.OpenScope(Target, out _)) {
-                // Ensure constructors are processed so class members are initialized.
-                // Process annotations.
-                var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
-                if (!annotationType.IsUnknown()) {
-                    _overload.SetReturnValue(annotationType, true);
+            // Fetch documentation
+            if (string.IsNullOrEmpty(_overload.Documentation)) {
+                var docNode = (FunctionDefinition.Body as SuiteStatement)?.Statements.FirstOrDefault();
+                var ce = (docNode as ExpressionStatement)?.Expression as ConstantExpression;
+                if (ce?.Value is string doc) {
+                    _overload.SetDocumentationProvider(_ => doc);
                 }
+            }
 
+            using (Eval.OpenScope(FunctionDefinition, out _)) {
                 await DeclareParametersAsync(cancellationToken);
-                if (string.IsNullOrEmpty(_overload.Documentation)) {
-                    var docNode = (FunctionDefinition.Body as SuiteStatement)?.Statements.FirstOrDefault();
-                    var ce = (docNode as ExpressionStatement)?.Expression as ConstantExpression;
-                    if (ce?.Value is string doc) {
-                        _overload.SetDocumentationProvider(_ => doc);
-                    }
-                }
-
                 //  Evaluate inner functions after we declared parameters.
                 await EvaluateInnerFunctionsAsync(FunctionDefinition, cancellationToken);
 
@@ -82,7 +83,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         await FunctionDefinition.Body.WalkAsync(this, cancellationToken);
                     }
                 }
-            } // Restore original scope at the entry
+            }
         }
 
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
@@ -90,7 +91,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             foreach (var lhs in node.Left) {
                 if (lhs is MemberExpression memberExp && memberExp.Target is NameExpression nameExp1) {
-                    if (_self.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
+                    if (_declaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
                         t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, true);
                     }
                     continue;
@@ -111,10 +112,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return true; // We want to evaluate all code so all private variables in __new__ get defined
         }
 
-        public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
-            // TODO: report that classes are not supposed to appear inside functions.
-            return Task.FromResult(false);
-        }
+        // Classes and functions are walked by their respective evaluators
+        public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public override Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
 
         private async Task DeclareParametersAsync(CancellationToken cancellationToken = default) {
             // For class method no need to add extra parameters, but first parameter type should be the class.
