@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
@@ -60,8 +61,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var specific = CreateSpecificType(types, DeclaringModule, location);
             return specific == null 
                 ? DeclaringModule.Interpreter.UnknownType 
-                : specific.CreateInstance(declaringModule, location);
+                : specific.CreateInstance(declaringModule, location, null);
         }
+
+        public virtual IMember Call(IPythonInstance instance, string memberName, params object[] args) => DeclaringModule.Interpreter.UnknownType;
+        public virtual IMember Index(IPythonInstance instance, object index) => DeclaringModule.Interpreter.UnknownType;
         #endregion
     }
 }

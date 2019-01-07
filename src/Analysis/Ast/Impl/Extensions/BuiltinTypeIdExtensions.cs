@@ -190,6 +190,7 @@ namespace Microsoft.Python.Analysis.Types {
                 case BuiltinTypeId.Bytes:
                     return BuiltinTypeId.BytesIterator;
                 case BuiltinTypeId.Set:
+                case BuiltinTypeId.Dict:
                     return BuiltinTypeId.SetIterator;
                 case BuiltinTypeId.Str:
                     return BuiltinTypeId.StrIterator;

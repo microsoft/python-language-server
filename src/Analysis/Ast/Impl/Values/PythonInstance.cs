@@ -33,5 +33,7 @@ namespace Microsoft.Python.Analysis.Values {
         public virtual IPythonType Type { get; }
         public LocationInfo Location { get; }
         public virtual PythonMemberType MemberType => PythonMemberType.Instance;
+        public virtual IMember Call(string memberName, params object[] args) => Type.GetMember(memberName);
+        public virtual IMember Index(object index) => Type.DeclaringModule.Interpreter.UnknownType;
     }
 }

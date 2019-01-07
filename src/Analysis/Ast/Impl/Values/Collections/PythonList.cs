@@ -21,10 +21,10 @@ namespace Microsoft.Python.Analysis.Values {
     /// Default mutable list with mixed content.
     /// </summary>
     internal class PythonList : PythonSequence {
-        public PythonList(PythonListType listType, IEnumerable<IMember> contents, LocationInfo location = null) :
-            base(listType, contents, location) { }
+        public PythonList(PythonListType listType, LocationInfo location, IReadOnlyList<IMember> contents) :
+            base(listType, location, contents) { }
 
-        public PythonList(IPythonInterpreter interpreter, IEnumerable<IMember> contents, LocationInfo location = null) :
-            base(PythonListType.GetPythonListType(interpreter), contents, location) { }
+        public PythonList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents) :
+            this(PythonListType.GetPythonListType(interpreter), location, contents) { }
     }
 }

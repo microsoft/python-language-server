@@ -67,8 +67,29 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
         public virtual bool IsAbstract => false;
 
+        /// <summary>
+        /// Create instance of the type, if any.
+        /// </summary>
+        /// <param name="declaringModule">Declaring module.</param>
+        /// <param name="location">Instance location</param>
+        /// <param name="args">Any custom arguments required to create the instance.</param>
         public virtual IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
             => new PythonInstance(this, location);
+
+        /// <summary>
+        /// Invokes method or property on the specified instance.
+        /// </summary>
+        /// <param name="instance">Instance of the type.</param>
+        /// <param name="memberName">Method name.</param>
+        /// <param name="args">Call arguments.</param>
+        public virtual IMember Call(IPythonInstance instance, string memberName, params object[] args) => GetMember(memberName);
+
+        /// <summary>
+        /// Invokes indexer on the specified instance.
+        /// </summary>
+        /// <param name="instance">Instance of the type.</param>
+        /// <param name="index">Index arguments.</param>
+        public virtual IMember Index(IPythonInstance instance, object index) => DeclaringModule.Interpreter.UnknownType;
         #endregion
 
         #region ILocatedMember

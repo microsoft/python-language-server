@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,26 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Parsing.Ast;
-
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Values {
     /// <summary>
-    /// Represents a built-in property which has a getter/setter.  
+    /// Represents instance of a type that can be enumerated.
     /// </summary>
-    public interface IPythonPropertyType : IPythonClassMember {
+    public interface IPythonIterable: IPythonInstance {
         /// <summary>
-        /// Function definition in the AST.
+        /// Retrieves iterator for the collection.
         /// </summary>
-        FunctionDefinition FunctionDefinition { get; }
-
-        /// <summary>
-        /// A user readable description of the property.
-        /// </summary>
-        string Description { get; }
-
-        /// <summary>
-        /// True if the property is read-only.
-        /// </summary>
-        bool IsReadOnly { get; }
+        IPythonIterator GetIterator();
     }
 }

@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // Special case names that we want to add to our own Members dict
                 switch (name) {
                     case "__mro__":
-                        member = AddMember(name, new PythonList(DeclaringModule.Interpreter, Mro), true);
+                        member = AddMember(name, new PythonList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro), true);
                         return member;
                 }
             }
@@ -142,7 +142,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                 if (!(DeclaringModule is BuiltinsPythonModule)) {
                     // TODO: If necessary, we can set __bases__ on builtins when the module is fully analyzed.
-                    AddMember("__bases__", new PythonList(interpreter, Bases), true);
+                    AddMember("__bases__", new PythonList(interpreter, LocationInfo.Empty, Bases), true);
                 }
             }
         }

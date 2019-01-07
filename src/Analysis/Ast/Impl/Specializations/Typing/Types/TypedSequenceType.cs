@@ -16,9 +16,10 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal class TypedSequenceType : PythonSequenceType, ITypedSequenceType {
+    internal class TypedSequenceType : PythonSequenceType {
         public TypedSequenceType(
             string name,
             BuiltinTypeId typeId,
@@ -27,7 +28,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             bool isMutable
             ) : base(name, typeId, declaringModule, contentType, isMutable) {
             Name = $"{name}[{contentType.Name}]";
-            ContentTypes = new[] { contentType };
         }
 
         public TypedSequenceType(
@@ -38,14 +38,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             bool isMutable
         ) : base(name, typeId, declaringModule, contentTypes, isMutable) {
             Name = CodeFormatter.FormatSequence(name, '[', contentTypes);
-            ContentTypes = contentTypes;
         }
 
         public override string Name { get; }
-
-        /// <summary>
-        /// Sequence types.
-        /// </summary>
-        public IReadOnlyList<IPythonType> ContentTypes { get; }
     }
 }

@@ -16,16 +16,14 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingListType : TypingSequenceType {
         public TypingListType(IPythonModule declaringModule, IPythonType contentType)
             : base("List", declaringModule, contentType, true) { }
 
-        public new static IPythonType Create(
-            IPythonModule declaringModule,
-            IReadOnlyList<IPythonType> typeArguments
-        ) {
+        public new static IPythonType Create(IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
             if (typeArguments.Count == 1) {
                 return new TypingListType(declaringModule, typeArguments[0]);
             }
@@ -35,5 +33,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
             => new TypingList(this, location);
+
+        public override IMember Index(IPythonInstance instance, object index) => ContentTypes[0];
     }
 }

@@ -106,6 +106,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case ListExpression listex:
                     m = await GetValueFromListAsync(listex, cancellationToken);
                     break;
+                case DictionaryExpression dictex:
+                    m = await GetValueFromDictionaryAsync(dictex, cancellationToken);
+                    break;
                 default:
                     m = await GetValueFromBinaryOpAsync(expr, cancellationToken) ?? GetConstantFromLiteral(expr, options);
                     break;

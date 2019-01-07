@@ -20,6 +20,21 @@ namespace Microsoft.Python.Analysis.Values {
     /// Represents instance of a type.
     /// </summary>
     public interface IPythonInstance : ILocatedMember {
+        /// <summary>
+        /// Type of the object the instance represents.
+        /// </summary>
         IPythonType Type { get; }
+
+        /// <summary>
+        /// Invokes method or property on the instance.
+        /// </summary>
+        /// <param name="memberName">Method name.</param>
+        /// <param name="args">Call arguments.</param>
+        IMember Call(string memberName, params object[] args);
+
+        /// <summary>
+        /// Invokes indexer the instance.
+        /// </summary>
+        IMember Index(object index);
     }
 }

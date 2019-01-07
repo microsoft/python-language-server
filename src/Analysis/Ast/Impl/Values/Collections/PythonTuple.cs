@@ -14,17 +14,18 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
     /// Default immutable tuple.
     /// </summary>
-    internal class PythonTuple: PythonSequence {
-        public PythonTuple(PythonTupleType tupleType, IEnumerable<IMember> contents, LocationInfo location = null) :
-            base(tupleType, contents, location) { }
+    internal class PythonTuple : PythonSequence {
+        public PythonTuple(PythonTupleType tupleType, LocationInfo location, params object[] contents) :
+            base(tupleType, location, contents) { }
 
-        public PythonTuple(IPythonInterpreter interpreter, IEnumerable<IMember> contents, LocationInfo location = null) :
-            base(PythonTupleType.GetPythonTupleType(interpreter), contents, location) { }
+        public PythonTuple(IPythonInterpreter interpreter, LocationInfo location, params object[] contents) :
+            this(PythonTupleType.GetPythonTupleType(interpreter), location, contents) { }
     }
 }

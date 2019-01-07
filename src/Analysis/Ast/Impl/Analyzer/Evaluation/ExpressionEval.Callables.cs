@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Extensions;
@@ -55,8 +53,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Call on an instance such as 'a = 1; a()'
             // If instance is a function (such as an unbound method), then invoke it.
             var type = pi.GetPythonType();
-            if (type is IPythonFunctionType pif) {
-                return await GetValueFromFunctionTypeAsync(pif, pi, expr, cancellationToken);
+            if (type is IPythonFunctionType pft) {
+                return await GetValueFromFunctionTypeAsync(pft, pi, expr, cancellationToken);
             }
 
             // Try using __call__
@@ -84,11 +82,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 args.Add(type ?? UnknownType);
             }
 
-            return await GetValueFromFunctionAsync(fn, expr, args, cancellationToken);
-        }
-
-        private async Task<IMember> GetValueFromFunctionAsync(IPythonFunctionType fn, Expression invokingExpression, IReadOnlyList<IMember> args, CancellationToken cancellationToken = default) {
-            IMember value = null;
             // If order to be able to find matching overload, we need to know
             // parameter types and count. This requires function to be analyzed.
             // Since we don't know which overload we will need, we have to 
@@ -96,53 +89,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             foreach (var o in fn.Overloads) {
                 await SymbolTable.EvaluateAsync(o.FunctionDefinition, cancellationToken);
             }
-            // Now we can go and find overload with matching arguments.
-            var overload = FindOverload(fn, args);
-            if (overload != null) {
-                var location = GetLoc(invokingExpression);
-                value = GetFunctionReturnValue(overload, location, args);
-            }
-            return value ?? UnknownType;
+            return fn.Call(instance, fn.Name, args);
         }
 
-        private IPythonFunctionOverload FindOverload(IPythonFunctionType fn, IReadOnlyList<IMember> args) {
-            // Find best overload match. Of only one, use it.
-            // TODO: match better, see ArgumentSet class in DDG.
-            if (fn.Overloads.Count == 1) {
-                return fn.Overloads[0];
-            }
-
-            // Try match number of parameters
-            var matching = fn.Overloads.Where(o => o.Parameters.Count == args.Count);
-            var argTypes = args.Select(a => a.GetPythonType());
-            var overload = matching.FirstOrDefault(o => {
-                var paramTypes = o.Parameters.Select(p => p.Type);
-                return paramTypes.SequenceEqual(argTypes);
-            });
-
-            if (overload != null) {
-                return overload;
-            }
-
-            return fn.Overloads
-                       .Where(o => o.Parameters.Count >= args.Count)
-                       .FirstOrDefault(o => {
-                           // Match so overall param count is bigger, but required params
-                           // count is less or equal to the passed arguments.
-                           var requiredParams = o.Parameters.Where(p => string.IsNullOrEmpty(p.DefaultValueString)).ToArray();
-                           return requiredParams.Length <= args.Count;
-                       });
-        }
-
-        private IMember GetFunctionReturnValue(IPythonFunctionOverload o, LocationInfo location, IReadOnlyList<IMember> args)
-            => o?.GetReturnValue(location, args) ?? UnknownType;
-
-        private async Task<IPythonType> GetPropertyReturnTypeAsync(IPythonPropertyType p, Expression expr, CancellationToken cancellationToken = default) {
-            if (p.Type.IsUnknown()) {
-                // Function may not have been walked yet. Do it now.
-                await SymbolTable.EvaluateAsync(p.FunctionDefinition, cancellationToken);
-            }
-            return p.Type ?? UnknownType;
+        private async Task<IMember> GetPropertyReturnTypeAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
+            // Function may not have been walked yet. Do it now.
+            await SymbolTable.EvaluateAsync(p.FunctionDefinition, cancellationToken);
+            return p.Call(instance, p.Name, null);
         }
     }
 }

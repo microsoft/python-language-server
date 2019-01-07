@@ -20,22 +20,7 @@ namespace Microsoft.Python.Analysis.Values {
     /// <summary>
     /// Represents an instance of a sequence.
     /// </summary>
-    public interface IPythonSequence: IPythonInstance {
-        /// <summary>
-        /// Retrieves value at a specific index.
-        /// </summary>
-        /// <returns>Element at the index or Unknown type if index is out of bounds.</returns>
-        IMember GetValueAt(int index);
-
-        /// <summary>
-        /// Retrieves the entire sequence.
-        /// </summary>
+    public interface IPythonSequence : IPythonIterable {
         IReadOnlyList<IMember> Contents { get; }
-
-        /// <summary>
-        /// Retrieves iterator for the collection.
-        /// </summary>
-        /// <returns></returns>
-        IPythonIterator GetIterator();
     }
 }

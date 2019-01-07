@@ -16,7 +16,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -29,7 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
                 contents.Add(value);
             }
-            return new PythonList(Interpreter, contents, GetLoc(expression));
+            return PythonListType.GetPythonListType(Interpreter).CreateInstance(Module, GetLoc(expression), contents);
         }
 
         private async Task<IMember> GetValueFromIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
@@ -42,40 +41,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             }
 
-            var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            switch (target) {
-                case IPythonSequence seq:
-                    return await GetValueFromSequenceInstanceAsync(expr, seq, cancellationToken);
-                case ITypedSequenceType seqt:
-                    return await GetValueFromSequenceTypeAsync(expr, seqt, cancellationToken);
-                default:
-                    // TODO: handle __getitem__() ?
-                    return UnknownType;
+            IMember result = null;
+            if (await GetValueFromExpressionAsync(expr.Target, cancellationToken) is IPythonInstance instance) {
+                var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
+                var type = instance.GetPythonType();
+                result = type?.Index(instance, index);
             }
+            return result ?? UnknownType;
         }
 
-        private async Task<IMember> GetValueFromSequenceInstanceAsync(IndexExpression expr, IPythonSequence seq, CancellationToken cancellationToken = default) {
-            var index = await GetIndexFromConstantAsync(expr.Index, cancellationToken);
-            return seq.GetValueAt(index);
-        }
-
-        private async Task<IMember> GetValueFromSequenceTypeAsync(IndexExpression expr, ITypedSequenceType seqt, CancellationToken cancellationToken = default) {
-            if (seqt.ContentTypes.Count == 1) {
-                return seqt.ContentTypes[0];
+        private async Task<IMember> GetValueFromDictionaryAsync(DictionaryExpression expression, CancellationToken cancellationToken = default) {
+            var contents = new Dictionary<IMember, IMember>();
+            foreach (var item in expression.Items) {
+                var key = await GetValueFromExpressionAsync(item.SliceStart, cancellationToken) ?? UnknownType;
+                var value = await GetValueFromExpressionAsync(item.SliceStop, cancellationToken) ?? UnknownType;
+                contents[key] = value;
             }
-            var index = await GetIndexFromConstantAsync(expr.Index, cancellationToken);
-            return index >= 0 && index < seqt.ContentTypes.Count ? seqt.ContentTypes[index] : UnknownType;
-        }
-
-        private async Task<int> GetIndexFromConstantAsync(Expression expr, CancellationToken cancellationToken = default) {
-            var m = await GetValueFromExpressionAsync(expr, cancellationToken);
-            if (m is IPythonConstant c) {
-                if (c.Type.TypeId == BuiltinTypeId.Int || c.Type.TypeId == BuiltinTypeId.Long) {
-                    return (int)c.Value;
-                }
-            }
-            // TODO: report bad index type.
-            return -1;
+            return PythonDictionaryType.GetPythonDictionaryType(Interpreter).CreateInstance(Module, GetLoc(expression), contents);
         }
     }
 }

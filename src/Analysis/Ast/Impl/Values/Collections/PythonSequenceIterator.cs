@@ -25,6 +25,8 @@ namespace Microsoft.Python.Analysis.Values {
             _owner = owner;
         }
 
-        public IMember Next => _owner.GetValueAt(_index++);
+        public IMember Next
+            => (_owner.GetPythonType() as IPythonSequenceType)?.Index(this, _index++)
+               ?? _owner.Type.DeclaringModule.Interpreter.UnknownType;
     }
 }

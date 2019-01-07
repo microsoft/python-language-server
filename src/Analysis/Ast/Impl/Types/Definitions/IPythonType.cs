@@ -13,6 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
+
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Type information of an instance.
@@ -56,5 +59,20 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="location">Instance location</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
         IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args);
+
+        /// <summary>
+        /// Invokes method or property on the specified instance.
+        /// </summary>
+        /// <param name="instance">Instance of the type.</param>
+        /// <param name="memberName">Method name.</param>
+        /// <param name="args">Call arguments.</param>
+        IMember Call(IPythonInstance instance, string memberName, params object[] args);
+
+        /// <summary>
+        /// Invokes indexer on the specified instance.
+        /// </summary>
+        /// <param name="instance">Instance of the type.</param>
+        /// <param name="index">Index arguments.</param>
+        IMember Index(IPythonInstance instance, object index);
     }
 }

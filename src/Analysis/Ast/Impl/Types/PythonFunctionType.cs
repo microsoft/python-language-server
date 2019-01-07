@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -32,10 +32,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Creates function for specializations
         /// </summary>
-        public static PythonFunctionType ForSpecialization(string name, IPythonModule declaringModule) 
+        public static PythonFunctionType ForSpecialization(string name, IPythonModule declaringModule)
             => new PythonFunctionType(name, declaringModule);
 
-        private PythonFunctionType(string name, IPythonModule declaringModule): 
+        private PythonFunctionType(string name, IPythonModule declaringModule) :
             base(name, declaringModule, null, LocationInfo.Empty, BuiltinTypeId.Function) {
             DeclaringType = declaringModule;
         }
@@ -94,6 +94,13 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonType
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
+
+        public override IMember Call(IPythonInstance instance, string memberName, params object[] args) {
+            // Now we can go and find overload with matching arguments.
+            var parameters = args.OfType<IMember>().ToArray();
+            var overload = FindOverload(parameters);
+            return overload?.GetReturnValue(instance.Location, parameters) ?? DeclaringModule.Interpreter.UnknownType;
+        }
         #endregion
 
         #region IPythonFunction
@@ -147,6 +154,35 @@ namespace Microsoft.Python.Analysis.Types {
                         break;
                 }
             }
+        }
+
+        private IPythonFunctionOverload FindOverload(IReadOnlyList<IMember> args) {
+            // Find best overload match. Of only one, use it.
+            // TODO: match better, see ArgumentSet class in DDG.
+            if (Overloads.Count == 1) {
+                return Overloads[0];
+            }
+
+            // Try match number of parameters
+            var matching = Overloads.Where(o => o.Parameters.Count == args.Count);
+            var argTypes = args.Select(a => a.GetPythonType());
+            var overload = matching.FirstOrDefault(o => {
+                var paramTypes = o.Parameters.Select(p => p.Type);
+                return paramTypes.SequenceEqual(argTypes);
+            });
+
+            if (overload != null) {
+                return overload;
+            }
+
+            return Overloads
+                .Where(o => o.Parameters.Count >= args.Count)
+                .FirstOrDefault(o => {
+                    // Match so overall param count is bigger, but required params
+                    // count is less or equal to the passed arguments.
+                    var requiredParams = o.Parameters.Where(p => string.IsNullOrEmpty(p.DefaultValueString)).ToArray();
+                    return requiredParams.Length <= args.Count;
+                });
         }
 
         /// <summary>

@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
 
@@ -28,6 +29,6 @@ namespace Microsoft.Python.Analysis.Types {
             : base(null, BuiltinTypeId.Tuple, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), false) { }
 
         public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
-            => new PythonTuple(this, args.OfType<IMember>(), location);
+            => new PythonTuple(this, location, args);
     }
 }

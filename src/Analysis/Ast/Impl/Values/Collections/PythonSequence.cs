@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
@@ -28,22 +27,22 @@ namespace Microsoft.Python.Analysis.Values {
         /// <param name="location">Declaring location.</param>
         protected PythonSequence(
             IPythonSequenceType sequenceType,
-            IEnumerable<IMember> contents,
-            LocationInfo location = null
+            LocationInfo location,
+            params object[] contents
         ) : base(sequenceType, location) {
-            Contents = contents?.ToArray() ?? Array.Empty<IMember>();
+            Contents = contents.OfType<IMember>().ToArray();
         }
 
         /// <summary>
-        /// Retrieves value at a specific index.
+        /// Invokes indexer the instance.
         /// </summary>
-        /// <returns>Element at the index or Unknown type if index is out of bounds.</returns>
-        public virtual IMember GetValueAt(int index) {
-            if (index < 0) {
-                index = Contents.Count + index; // -1 means last, etc.
+        public override IMember Index(object index) {
+            var n = GetIndex(index);
+            if (n < 0) {
+                n = Contents.Count + n; // -1 means last, etc.
             }
-            if (index >= 0 && index < Contents.Count) {
-                return Contents[index];
+            if (n >= 0 && n < Contents.Count) {
+                return Contents[n];
             }
             return Type.DeclaringModule.Interpreter.UnknownType;
         }
@@ -51,5 +50,19 @@ namespace Microsoft.Python.Analysis.Values {
         public IReadOnlyList<IMember> Contents { get; }
 
         public virtual IPythonIterator GetIterator() => new PythonSequenceIterator(this);
+
+        protected int GetIndex(object index) {
+            switch (index) {
+                case IPythonConstant c when c.Type.TypeId == BuiltinTypeId.Int || c.Type.TypeId == BuiltinTypeId.Long:
+                    return (int)c.Value;
+                case int i:
+                    return i;
+                case long l:
+                    return (int)l;
+                default:
+                    // TODO: report bad index type.
+                    return 0;
+            }
+        }
     }
 }

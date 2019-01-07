@@ -43,6 +43,10 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual bool IsAbstract => InnerType.IsAbstract;
         public virtual IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
             => IsAbstract ? null : new PythonInstance(this, location);
+        public virtual IMember Call(IPythonInstance instance, string memberName, params object[] args) 
+            => InnerType.Call(instance, memberName, args);
+        public virtual IMember Index(IPythonInstance instance, object index) 
+            => InnerType.Index(instance, index);
         #endregion
 
         #region ILocatedMember

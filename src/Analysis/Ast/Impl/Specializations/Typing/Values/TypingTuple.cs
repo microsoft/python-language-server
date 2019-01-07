@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -22,13 +21,6 @@ using Microsoft.Python.Analysis.Values;
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingTuple : PythonSequence {
         public TypingTuple(TypingTupleType tupleType, LocationInfo location = null)
-            : base(tupleType, Array.Empty<IMember>(), location) { }
-
-        public override IMember GetValueAt(int index) {
-            var contentTypes = ((TypingTupleType)Type).ContentTypes;
-            return index >= 0 && index < contentTypes.Count 
-                ? contentTypes[index].CreateInstance(Type.DeclaringModule, Location)
-                : Type.DeclaringModule.Interpreter.UnknownType;
-        }
+            : base(tupleType, location) { }
     }
 }

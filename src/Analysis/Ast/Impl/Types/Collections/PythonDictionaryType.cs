@@ -1,0 +1,40 @@
+﻿// Copyright(c) Microsoft Corporation
+// All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the License); you may not use
+// this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0
+//
+// THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
+// OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
+// IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+// MERCHANTABILITY OR NON-INFRINGEMENT.
+//
+// See the Apache Version 2.0 License for specific language governing
+// permissions and limitations under the License.
+
+using System;
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
+
+namespace Microsoft.Python.Analysis.Types {
+    internal sealed class PythonDictionaryType : PythonSequenceType {
+        private static PythonDictionaryType _instance;
+
+        /// <summary>
+        /// Provides singleton of a Python dictionary type. Singleton saves
+        /// memory and ensures that all builtin dictionaries are the same.
+        /// </summary>
+        public static PythonDictionaryType GetPythonDictionaryType(IPythonInterpreter interpreter)
+            => _instance.IsUnknown() ? _instance = new PythonDictionaryType(interpreter) : _instance;
+
+        private PythonDictionaryType(IPythonInterpreter interpreter)
+            : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) { }
+
+        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args) {
+            var contents = args.Length == 1 ? args[0] as IReadOnlyDictionary<IMember, IMember> : EmptyDictionary<IMember, IMember>.Instance;
+            return new PythonDictionary(_instance, location, contents);
+        }
+    }
+}

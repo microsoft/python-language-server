@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,26 +13,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
-    /// Represents a built-in property which has a getter/setter.  
+    /// Represents typed dictionary, such as typing.Dict[KT, VT]
     /// </summary>
-    public interface IPythonPropertyType : IPythonClassMember {
+    public interface ITypedDictionaryType {
         /// <summary>
-        /// Function definition in the AST.
+        /// Key type.
         /// </summary>
-        FunctionDefinition FunctionDefinition { get; }
-
+        IPythonType KeyType { get; }
         /// <summary>
-        /// A user readable description of the property.
+        /// Key type.
         /// </summary>
-        string Description { get; }
-
-        /// <summary>
-        /// True if the property is read-only.
-        /// </summary>
-        bool IsReadOnly { get; }
+        IPythonType ValueType { get; }
     }
 }

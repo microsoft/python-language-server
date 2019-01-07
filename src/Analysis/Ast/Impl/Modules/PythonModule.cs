@@ -26,6 +26,7 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
@@ -107,6 +108,8 @@ namespace Microsoft.Python.Analysis.Modules {
         public bool IsAbstract => false;
         public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args) => this;
         public PythonMemberType MemberType => PythonMemberType.Module;
+        public IMember Call(IPythonInstance instance, string memberName, params object[] args) => GetMember(memberName);
+        public IMember Index(IPythonInstance instance, object index) => Interpreter.UnknownType;
 
         public virtual string Documentation {
             get {

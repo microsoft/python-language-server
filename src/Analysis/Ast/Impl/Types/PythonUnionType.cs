@@ -16,7 +16,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -55,6 +54,8 @@ namespace Microsoft.Python.Analysis.Types {
         public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
             => new PythonUnion(this, location);
 
+        public IMember Call(IPythonInstance instance, string memberName, params object[] args) => DeclaringModule.Interpreter.UnknownType;
+        public IMember Index(IPythonInstance instance, object index) => DeclaringModule.Interpreter.UnknownType;
         #endregion
 
         #region IPythonUnionType

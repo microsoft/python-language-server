@@ -21,6 +21,10 @@ namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonListType : PythonSequenceType {
         private static PythonListType _instance;
 
+        /// <summary>
+        /// Provides singleton of a Python list type. Singleton saves memory
+        /// and ensures that all builtin lists are the same.
+        /// </summary>
         public static PythonListType GetPythonListType(IPythonInterpreter interpreter)
             => _instance.IsUnknown() ? _instance = new PythonListType(interpreter) : _instance;
 
@@ -28,6 +32,6 @@ namespace Microsoft.Python.Analysis.Types {
             : base(null, BuiltinTypeId.List, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) { }
 
         public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
-            => new PythonList(_instance, args.OfType<IMember>(), location);
+            => new PythonList(_instance, location, args.OfType<IMember>().ToArray());
     }
 }

@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Values;
@@ -23,6 +24,8 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     internal abstract class PythonSequenceType : PythonTypeWrapper, IPythonSequenceType {
         private readonly PythonIteratorType _iteratorType;
+
+        protected IReadOnlyList<IPythonType> ContentTypes { get; }
 
         /// <summary>
         /// Creates type info for a sequence.
@@ -38,7 +41,7 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonModule declaringModule,
             IPythonType contentType,
             bool isMutable
-            ) : this(typeName, sequenceTypeId, declaringModule, 
+            ) : this(typeName, sequenceTypeId, declaringModule,
                      new[] { contentType ?? declaringModule.Interpreter.UnknownType }, isMutable) { }
 
         /// <summary>
@@ -59,6 +62,7 @@ namespace Microsoft.Python.Analysis.Types {
             _iteratorType = new PythonIteratorType(sequenceTypeId.GetIteratorTypeId(), DeclaringModule);
             Name = typeName ?? declaringModule.Interpreter.GetBuiltinType(sequenceTypeId).Name;
             IsMutable = isMutable;
+            ContentTypes = contentTypes ?? Array.Empty<IPythonType>();
         }
 
         #region IPythonSequenceType
@@ -77,6 +81,11 @@ namespace Microsoft.Python.Analysis.Types {
             Debug.Fail("Attempt to create instance of an abstract sequence type.");
             return null;
         }
+        public override IMember Call(IPythonInstance instance, string memberName, params object[] args)
+            => (instance as IPythonSequence)?.Call(memberName, args) ?? DeclaringModule.Interpreter.UnknownType;
+
+        public override IMember Index(IPythonInstance instance, object index)
+            => (instance as IPythonSequence)?.Index(index) ?? DeclaringModule.Interpreter.UnknownType;
         #endregion
     }
 }

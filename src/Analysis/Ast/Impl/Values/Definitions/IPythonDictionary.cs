@@ -16,13 +16,14 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing {
-    public interface ITypedSequenceType {
-        /// <summary>
-        /// Sequence elements types if the sequence is typed.
-        /// This is different from the actual types that untyped
-        /// instance may be holding.
-        /// </summary>
-        IReadOnlyList<IPythonType> ContentTypes { get; }
+namespace Microsoft.Python.Analysis.Values {
+    /// <summary>
+    /// Represents instance of a dictionary.
+    /// </summary>
+    public interface IPythonDictionary: IPythonInstance {
+        IReadOnlyList<IMember> Keys { get; }
+        IReadOnlyList<IMember> Values { get; }
+        IReadOnlyList<IPythonSequence> Items { get; }
+        IMember this[IMember key] { get; }
     }
 }

@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -21,11 +20,6 @@ using Microsoft.Python.Analysis.Values;
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingList : PythonSequence {
         public TypingList(TypingListType listType, LocationInfo location = null)
-            : base(listType, Array.Empty<IMember>(), location ?? LocationInfo.Empty) { }
-
-        public override IMember GetValueAt(int index) {
-            var type = ((TypingListType)Type).ContentTypes[0];
-            return type.CreateInstance(Type.DeclaringModule, Location);
-        }
+            : base(listType, location ?? LocationInfo.Empty) { }
     }
 }

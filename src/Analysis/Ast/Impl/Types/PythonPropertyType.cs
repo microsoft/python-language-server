@@ -13,6 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -21,8 +23,12 @@ namespace Microsoft.Python.Analysis.Types {
         private IPythonFunctionOverload _getter;
 
         public PythonPropertyType(FunctionDefinition fd, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo location)
-            : base(fd.Name, declaringModule, null, location) {
+            : this(fd.Name, declaringModule, declaringType, isAbstract, location) {
             FunctionDefinition = fd;
+        }
+
+        public PythonPropertyType(string name, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo location)
+            : base(name, declaringModule, null, location) {
             DeclaringType = declaringType;
             IsAbstract = isAbstract;
         }
@@ -32,18 +38,17 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IPythonPropertyType
+        public FunctionDefinition FunctionDefinition { get; }
         public override bool IsAbstract { get; }
-        public bool IsReadOnly { get; private set; } = true;
+        public bool IsReadOnly => true;
         public IPythonType DeclaringType { get; }
         public string Description 
             => Type == null ? Resources.PropertyOfUnknownType : Resources.PropertyOfType.FormatUI(Type.Name);
-        public FunctionDefinition FunctionDefinition { get; }
+        public override IMember Call(IPythonInstance instance, string memberName, params object[] args)
+            => _getter.GetReturnValue(instance.Location);
         #endregion
 
         internal void AddOverload(IPythonFunctionOverload overload) => _getter = _getter ?? overload;
-
-        public void MakeSettable() => IsReadOnly = false;
-
-        public IPythonType Type => _getter?.GetReturnValue(null)?.GetPythonType();
+        private IPythonType Type => _getter?.GetReturnValue(null)?.GetPythonType();
     }
 }
