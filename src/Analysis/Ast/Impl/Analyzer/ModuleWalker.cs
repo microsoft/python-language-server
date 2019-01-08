@@ -13,9 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
@@ -44,8 +42,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         // Classes and functions are walked by their respective evaluators
-        public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
-        public override Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public override async Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
+            await SymbolTable.EvaluateScopeAsync(node, cancellationToken);
+            return false;
+        }
+
+        public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
+            await SymbolTable.EvaluateScopeAsync(node, cancellationToken);
+            return false;
+        }
 
         public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
             await SymbolTable.EvaluateAllAsync(cancellationToken);

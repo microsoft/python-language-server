@@ -65,7 +65,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         private async Task<IMember> GetValueFromClassCtorAsync(IPythonClassType cls, CallExpression expr, CancellationToken cancellationToken = default) {
-            // Ensure class is processed
             await SymbolTable.EvaluateAsync(cls.ClassDefinition, cancellationToken);
             // Determine argument types
             var args = new List<IMember>();

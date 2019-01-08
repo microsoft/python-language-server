@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -30,5 +29,12 @@ namespace Microsoft.Python.Analysis.Types {
 
         public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
             => new PythonTuple(this, location, args);
+
+        public override IMember Index(IPythonInstance instance, object index) {
+            var n = PythonSequence.GetIndex(index);
+            return n >= 0 && n < _instance.ContentTypes.Count 
+                ? _instance.ContentTypes[n] 
+                : _instance.DeclaringModule.Interpreter.UnknownType;
+        }
     }
 }

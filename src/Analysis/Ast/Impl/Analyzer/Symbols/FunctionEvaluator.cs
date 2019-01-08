@@ -56,9 +56,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 return;
             }
 
-            // We need to make sure class is evaluated before its methods
-            await SymbolTable.EvaluateScopeAsync(FunctionDefinition.Parent, cancellationToken);
-
             cancellationToken.ThrowIfCancellationRequested();
             // Process annotations.
             var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);

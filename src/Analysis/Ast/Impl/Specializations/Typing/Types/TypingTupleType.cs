@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingTupleType : TypedSequenceType {
@@ -36,5 +37,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
             // TODO: report mismatch between type arguments and initialization arguments
             => new TypingTuple(this, location);
+
+        public override IMember Index(IPythonInstance instance, object index) {
+            var n = PythonSequence.GetIndex(index);
+            return n >= 0 && n < ContentTypes.Count ? ContentTypes[n] : DeclaringModule.Interpreter.UnknownType;
+        }
     }
 }

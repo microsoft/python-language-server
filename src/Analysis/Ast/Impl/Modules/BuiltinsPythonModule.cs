@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Modules {
             // TODO: deal with commented out functions.
             SpecializeFunction("abs", BuiltinsSpecializations.Identity);
             SpecializeFunction("cmp", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
-            //SpecializeFunction(_builtinName, "dir", ReturnsListOfString);
+            SpecializeFunction("dir", BuiltinsSpecializations.ListOfStrings);
             SpecializeFunction("eval", Interpreter.GetBuiltinType(BuiltinTypeId.Object));
             //SpecializeFunction(_builtinName, "globals", ReturnsStringToObjectDict);
             SpecializeFunction(@"isinstance", _boolType);

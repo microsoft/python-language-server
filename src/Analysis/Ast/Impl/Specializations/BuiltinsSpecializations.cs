@@ -14,7 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Typing.Types;
+using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
@@ -41,6 +42,10 @@ namespace Microsoft.Python.Analysis.Specializations {
 
         public static IMember List(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
             => new PythonList(module.Interpreter, location, args);
+
+        public static IMember ListOfStrings(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
+            => new TypingList(new TypingListType(module, module.Interpreter.GetBuiltinType(BuiltinTypeId.Str)), location);
+
         //public static IMember Dict(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
         //    => new PythonDictionary(module.Interpreter, location, args);
 

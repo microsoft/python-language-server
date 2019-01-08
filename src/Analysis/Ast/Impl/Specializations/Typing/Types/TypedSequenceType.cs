@@ -41,5 +41,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         }
 
         public override string Name { get; }
+        public override IMember Index(IPythonInstance instance, object index)
+            => (instance as IPythonSequence)?.Index(index) ?? DeclaringModule.Interpreter.UnknownType;
     }
 }

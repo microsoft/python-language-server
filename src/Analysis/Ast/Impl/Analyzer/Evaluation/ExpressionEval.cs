@@ -157,6 +157,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             switch (value) {
                 case IPythonClassType _:
                     return value;
+                case IPythonPropertyType prop:
+                    return prop.Call(instance, prop.Name, Array.Empty<IMember>());
                 case IPythonType p:
                     return new PythonBoundType(p, instance, GetLoc(expr));
                 case null:

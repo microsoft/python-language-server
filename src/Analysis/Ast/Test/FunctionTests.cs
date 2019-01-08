@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
@@ -215,11 +214,11 @@ vv = x['a']
                 .And.HaveVariable("g").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("h").OfType(BuiltinTypeId.Type)
                 .And.HaveVariable("i").OfType("C")
-                .And.HaveVariable("x").OfType(BuiltinTypeId.List)
-                .And.HaveVariable("v").OfType(BuiltinTypeId.Str)
-                .And.HaveVariable("va").OfType(BuiltinTypeId.Dict)
-                .And.HaveVariable("kv").OfType(BuiltinTypeId.Str)
-                .And.HaveVariable("vv").OfType(BuiltinTypeId.Object);
+                .And.HaveVariable("x").OfType("List[str]")
+                .And.HaveVariable("v").OfType(BuiltinTypeId.Str);
+                //.And.HaveVariable("va").OfType(BuiltinTypeId.Dict)
+                //.And.HaveVariable("kv").OfType(BuiltinTypeId.Str)
+                //.And.HaveVariable("vv").OfType(BuiltinTypeId.Object);
             ;
         }
 

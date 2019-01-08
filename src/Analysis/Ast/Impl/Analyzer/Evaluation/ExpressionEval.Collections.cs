@@ -41,13 +41,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             }
 
-            IMember result = null;
-            if (await GetValueFromExpressionAsync(expr.Target, cancellationToken) is IPythonInstance instance) {
-                var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
-                var type = instance.GetPythonType();
-                result = type?.Index(instance, index);
-            }
-            return result ?? UnknownType;
+            var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
+            var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
+
+            var type = target.GetPythonType();
+            return !type.IsUnknown()
+                ? type.Index(target is IPythonInstance pi ? pi : new PythonInstance(type), index)
+                : UnknownType;
         }
 
         private async Task<IMember> GetValueFromDictionaryAsync(DictionaryExpression expression, CancellationToken cancellationToken = default) {

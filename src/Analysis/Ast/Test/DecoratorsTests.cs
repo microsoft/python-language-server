@@ -17,7 +17,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -34,6 +33,7 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task DecoratorClass() {
             const string code = @"
 def dec1(C):
@@ -130,6 +130,7 @@ retGivenBool = returnsGiven(True)
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task DecoratorTypes() {
             var code = @"
 def nop(fn):

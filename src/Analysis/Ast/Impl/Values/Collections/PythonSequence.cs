@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         public virtual IPythonIterator GetIterator() => new PythonSequenceIterator(this);
 
-        protected int GetIndex(object index) {
+        public static int GetIndex(object index) {
             switch (index) {
                 case IPythonConstant c when c.Type.TypeId == BuiltinTypeId.Int || c.Type.TypeId == BuiltinTypeId.Long:
                     return (int)c.Value;
