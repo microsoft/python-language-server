@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
     /// <summary>
@@ -86,11 +85,6 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         }
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override IMember GetMember(string name) => name == @"__iter__" ? _iteratorType : base.GetMember(name);
-
-        public override IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args) {
-            Debug.Fail("Attempt to create instance of an abstract sequence type.");
-            return null;
-        }
         #endregion
     }
 }

@@ -107,8 +107,20 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         // Constructor call
-        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
-            => new PythonInstance(this);
+        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args) {
+            // Specializations
+            switch (typeName) {
+                case "list":
+                    return new PythonList(DeclaringModule.Interpreter, LocationInfo.Empty, args.OfType<IMember>().ToArray());
+                case "dict":
+                    return new PythonDictionary(DeclaringModule.Interpreter, LocationInfo.Empty,
+                        args.Count == 1 && args[0] is IReadOnlyDictionary<IMember, IMember> dict
+                            ? dict : EmptyDictionary<IMember, IMember>.Instance);
+                case "tuple":
+                    return new PythonTuple(DeclaringModule.Interpreter, LocationInfo.Empty, args.OfType<IMember>().ToArray());
+            }
+            return new PythonInstance(this);
+        }
         #endregion
 
         #region IPythonClass
@@ -187,7 +199,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                     if (nextInMro == null) {
                         // MRO is invalid, so return just this class
-                        return new [] { cls };
+                        return new[] { cls };
                     }
 
                     finalMro.Add(nextInMro);

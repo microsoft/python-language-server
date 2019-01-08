@@ -45,12 +45,9 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             => _contents.Select(kvp => new PythonTuple(_interpreter, Location, new[] { kvp.Key, kvp.Value })).ToArray();
 
         public IMember this[IMember key] =>
-            _contents.TryGetValue(key, out var value)
-                ? new PythonTuple(_interpreter, Location, new[] { key, value }) as IMember
-                : Type.DeclaringModule.Interpreter.UnknownType;
+            _contents.TryGetValue(key, out var value) ? value : UnknownType;
 
-        public override IMember Index(object key)
-                => key is IMember m ? this[m] : Type.DeclaringModule.Interpreter.UnknownType;
+        public override IMember Index(object key) => key is IMember m ? this[m] : UnknownType;
 
         public override IMember Call(string memberName, IReadOnlyList<object> args) {
             // Specializations

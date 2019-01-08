@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             return declaringModule.Interpreter.UnknownType;
         }
 
-        public override IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args)
+        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
             // TODO: report mismatch between type arguments and initialization arguments
             => new TypingTuple(this, location);
 

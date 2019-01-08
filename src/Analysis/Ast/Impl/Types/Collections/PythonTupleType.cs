@@ -22,7 +22,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public PythonTupleType(IPythonInterpreter interpreter)
             : base(null, BuiltinTypeId.Tuple, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), false) { }
 
-        public override IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args)
+        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
             => new PythonTuple(this, location, args);
     }
 }

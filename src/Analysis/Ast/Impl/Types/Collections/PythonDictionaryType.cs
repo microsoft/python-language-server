@@ -25,14 +25,14 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) {
         }
 
-        public override IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args) {
+        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args) {
             var contents = args.Count == 1 ? args[0] as IReadOnlyDictionary<IMember, IMember> : EmptyDictionary<IMember, IMember>.Instance;
             return new PythonDictionary(this, location, contents);
         }
 
         // Constructor call
         public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
-            => CreateInstance(instance?.Location ?? LocationInfo.Empty, args);
+            => CreateInstance(Name, instance?.Location ?? LocationInfo.Empty, args);
 
         public override BuiltinTypeId TypeId => BuiltinTypeId.Dict;
         public override PythonMemberType MemberType => PythonMemberType.Class;

@@ -25,12 +25,12 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             : base(null, BuiltinTypeId.List, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) {
         }
 
-        public override IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args)
+        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
             => new PythonList(this, location, args.OfType<IMember>().ToArray());
 
         // Constructor call
         public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
-            => CreateInstance(instance?.Location ?? LocationInfo.Empty, args);
+            => CreateInstance(Name, instance?.Location ?? LocationInfo.Empty, args);
 
         public override BuiltinTypeId TypeId => BuiltinTypeId.List;
         public override PythonMemberType MemberType => PythonMemberType.Class;

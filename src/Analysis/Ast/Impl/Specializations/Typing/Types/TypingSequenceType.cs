@@ -33,8 +33,5 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         }
 
         public override bool IsAbstract => true;
-
-        public override IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args)
-            => DeclaringModule.Interpreter.UnknownType;
     }
 }

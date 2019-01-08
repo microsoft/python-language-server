@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var type = await GetValueFromExpressionAsync(a.Expression, cancellationToken);
                 args.Add(type ?? UnknownType);
             }
-            return cls.Call(null, null, args);
+            return cls.CreateInstance(cls.Name, GetLoc(expr), args);
         }
 
         private async Task<IMember> GetValueFromBoundAsync(IPythonBoundType t, CallExpression expr, CancellationToken cancellationToken = default) {
