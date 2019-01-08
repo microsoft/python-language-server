@@ -205,6 +205,12 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 } catch (OperationCanceledException) {
                     _log?.Log(TraceLevel.Error, "ImportTimeout", name, "ImportFromSearchPaths");
                     return TryImportModuleResult.Timeout;
+                } catch (Exception ex) when (
+                    ex is IOException // FileNotFoundException, DirectoryNotFoundException, PathTooLongException, etc 
+                    || ex is UnauthorizedAccessException
+                ) {
+                    _log?.Log(TraceLevel.Error, "ImportException", name, "ImportFromSearchPaths", ex.GetType().Name, ex.Message);
+                    return TryImportModuleResult.ModuleNotFound;
                 }
             }
 
