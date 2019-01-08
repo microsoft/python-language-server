@@ -286,6 +286,7 @@ s = x['oar']
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task ForIterator() {
             const string code = @"
 class X(object):
@@ -303,6 +304,7 @@ for i in Y():
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task ForSequence() {
             const string code = @"
 x = [('abc', 42, True), ('abc', 23, False),]
@@ -318,6 +320,7 @@ for some_str, some_int, some_bool in x:
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task Generator2X() {
             var code = @"
 def f():
@@ -379,6 +382,7 @@ d = a.__next__()
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task Generator3X() {
             var code = @"
 def f():
