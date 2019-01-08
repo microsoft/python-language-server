@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Types {
                         if (m == this) {
                             return member;
                         }
-                        member = member ?? m.GetMember(name).GetPythonType();
+                        member = member ?? m.GetMember(name);
                     }
                 } finally {
                     Pop();

@@ -23,15 +23,15 @@ namespace Microsoft.Python.Analysis.Values {
     /// Default mutable list with mixed content.
     /// </summary>
     internal sealed class PythonDictionary : PythonSequence, IPythonDictionary {
-        private readonly IReadOnlyDictionary<IMember, IMember> _contents;
+        private readonly Dictionary<IMember, IMember> _contents;
         private readonly IPythonInterpreter _interpreter;
 
-        public PythonDictionary(PythonDictionaryType dictType, LocationInfo location, IReadOnlyDictionary<IMember, IMember> contents) :
+        public PythonDictionary(PythonDictionaryType dictType, LocationInfo location, IDictionary<IMember, IMember> contents) :
             base(dictType, location, contents.Keys.ToArray()) {
-            _contents = contents ?? EmptyDictionary<IMember, IMember>.Instance;
+            _contents = new Dictionary<IMember, IMember>(contents, new KeyComparer());
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyDictionary<IMember, IMember> contents) :
+        public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IDictionary<IMember, IMember> contents) :
             this(PythonDictionaryType.GetPythonDictionaryType(interpreter), location, contents) {
             _interpreter = interpreter;
         }
@@ -40,7 +40,11 @@ namespace Microsoft.Python.Analysis.Values {
         public IReadOnlyList<IMember> Values => _contents.Values.ToArray();
         public IReadOnlyList<IPythonSequence> Items
             => _contents.Select(kvp => new PythonTuple(_interpreter, Location, new[] { kvp.Key, kvp.Value })).ToArray();
-        public IMember this[IMember key] => _contents.TryGetValue(key, out var value) ? value : _interpreter.UnknownType;
+        public IMember this[IMember key]
+            => _contents.TryGetValue(key, out var value) ? value : Type.DeclaringModule.Interpreter.UnknownType;
+
+        public override IMember Index(object key)
+            => key is IMember m ? this[m] : Type.DeclaringModule.Interpreter.UnknownType;
 
         public override IMember Call(string memberName, IReadOnlyList<object> args) {
             // Specializations
@@ -57,6 +61,17 @@ namespace Microsoft.Python.Analysis.Values {
                     return Index(0);
             }
             return base.Call(memberName, args);
+        }
+
+        private sealed class KeyComparer : IEqualityComparer<IMember> {
+            public bool Equals(IMember x, IMember y) {
+                if (x is IPythonConstant cx && y is IPythonConstant cy) {
+                    return cx.Value.Equals(cy.Value);
+                }
+                return x?.Equals(y) == true;
+            }
+
+            public int GetHashCode(IMember obj) => 0;
         }
     }
 }

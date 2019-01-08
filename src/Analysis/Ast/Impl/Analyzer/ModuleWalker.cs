@@ -43,12 +43,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         // Classes and functions are walked by their respective evaluators
         public override async Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
-            await SymbolTable.EvaluateScopeAsync(node, cancellationToken);
+            await SymbolTable.EvaluateAsync(node, cancellationToken);
             return false;
         }
 
         public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
-            await SymbolTable.EvaluateScopeAsync(node, cancellationToken);
+            await SymbolTable.EvaluateAsync(node, cancellationToken);
             return false;
         }
 

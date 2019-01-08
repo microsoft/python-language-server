@@ -243,7 +243,7 @@ k = x.iteritems().next()[1]
         public async Task DictAssign() {
             const string code = @"
 x = {'abc': 42}
-y = x['fob']
+y = x['abc']
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);

@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
             : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) { }
 
         public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args) {
-            var contents = args.Count == 1 ? args[0] as IReadOnlyDictionary<IMember, IMember> : EmptyDictionary<IMember, IMember>.Instance;
+            var contents = args.Count == 1 ? args[0] as IDictionary<IMember, IMember> : new Dictionary<IMember, IMember>();
             return new PythonDictionary(_instance, location, contents);
         }
     }

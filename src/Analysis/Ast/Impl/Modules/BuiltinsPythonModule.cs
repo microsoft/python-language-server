@@ -130,7 +130,7 @@ namespace Microsoft.Python.Analysis.Modules {
             SpecializeFunction(@"isinstance", _boolType);
             SpecializeFunction(@"issubclass", _boolType);
             SpecializeFunction(@"iter", BuiltinsSpecializations.Iterator);
-            SpecializeFunction(@"list", BuiltinsSpecializations.List);
+            //SpecializeFunction(@"list", BuiltinsSpecializations.List);
             //SpecializeFunction(_builtinName, "locals", ReturnsStringToObjectDict);
             //SpecializeFunction(_builtinName, "max", ReturnUnionOfInputs);
             //SpecializeFunction(_builtinName, "min", ReturnUnionOfInputs);
