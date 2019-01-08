@@ -34,7 +34,24 @@ namespace Microsoft.Python.Analysis.Values {
         public virtual IPythonType Type { get; }
         public LocationInfo Location { get; }
         public virtual PythonMemberType MemberType => PythonMemberType.Instance;
-        public virtual IMember Call(string memberName, IReadOnlyList<object> args) => Type.GetMember(memberName);
-        public virtual IMember Index(object index) => Type.DeclaringModule.Interpreter.UnknownType;
+
+        public virtual IMember Call(string memberName, IReadOnlyList<object> args) {
+            var t = Type.GetMember(memberName).GetPythonType();
+            switch (t) {
+                case IPythonFunctionType fn:
+                    return fn.Call(this, null, args);
+                case IPythonPropertyType prop:
+                    return prop.Call(this, null, args);
+                case IPythonClassType cls:
+                    return cls.Call(this, null, args);
+            }
+            // Do NOT call type unless it is specific (see above) since by default Python type
+            // implementation delegates down to the instance and this will yield stack overflow.
+            return UnknownType;
+        }
+
+        public virtual IMember Index(object index) => UnknownType;
+
+        protected IMember UnknownType => Type.DeclaringModule.Interpreter.UnknownType;
     }
 }

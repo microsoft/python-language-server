@@ -14,8 +14,9 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
 
-namespace Microsoft.Python.Analysis.Values {
+namespace Microsoft.Python.Analysis.Values.Collections {
     internal sealed class PythonTypeIterator : PythonInstance, IPythonIterator {
         private readonly BuiltinTypeId _contentType;
         public PythonTypeIterator(IPythonModule declaringModule, BuiltinTypeId iteratorType, BuiltinTypeId contentType)

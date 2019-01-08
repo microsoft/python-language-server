@@ -15,26 +15,14 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Values.Collections;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Types.Collections {
     internal sealed class PythonTupleType : PythonSequenceType {
-        private static PythonTupleType _instance;
-
-        public static PythonTupleType GetPythonTupleType(IPythonInterpreter interpreter)
-            => _instance.IsUnknown() ? _instance = new PythonTupleType(interpreter) : _instance;
-
-        private PythonTupleType(IPythonInterpreter interpreter)
+        public PythonTupleType(IPythonInterpreter interpreter)
             : base(null, BuiltinTypeId.Tuple, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), false) { }
 
-        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
+        public override IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args)
             => new PythonTuple(this, location, args);
-
-        public override IMember Index(IPythonInstance instance, object index) {
-            var n = PythonSequence.GetIndex(index);
-            return n >= 0 && n < _instance.ContentTypes.Count 
-                ? _instance.ContentTypes[n] 
-                : _instance.DeclaringModule.Interpreter.UnknownType;
-        }
     }
 }

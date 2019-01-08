@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public bool IsBuiltin => false;
         public bool IsAbstract => true;
 
-        public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args) {
+        public IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args) {
             var types = args.OfType<IPythonType>().ToArray();
             if (types.Length != args.Count) {
                 throw new ArgumentException(@"Generic type instance construction arguments must be all of IPythonType", nameof(args));
@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var specific = CreateSpecificType(types, DeclaringModule, location);
             return specific == null 
                 ? DeclaringModule.Interpreter.UnknownType 
-                : specific.CreateInstance(declaringModule, location, null);
+                : specific.CreateInstance(location, null);
         }
 
         public virtual IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) => DeclaringModule.Interpreter.UnknownType;

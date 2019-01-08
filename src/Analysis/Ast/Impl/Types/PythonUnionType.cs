@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Types {
             get { lock (_lock) { return _types.All(t => t.IsBuiltin); } }
         }
         public bool IsAbstract => false;
-        public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
+        public IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args)
             => new PythonUnion(this, location);
 
         public IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 

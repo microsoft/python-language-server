@@ -17,28 +17,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Values.Collections;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Types.Collections {
     internal sealed class PythonListType : PythonSequenceType {
-        private static PythonListType _instance;
-
-        /// <summary>
-        /// Provides singleton of a Python list type. Singleton saves memory
-        /// and ensures that all builtin lists are the same.
-        /// </summary>
-        public static PythonListType GetPythonListType(IPythonInterpreter interpreter)
-            => _instance.IsUnknown() ? _instance = new PythonListType(interpreter) : _instance;
-
-        private PythonListType(IPythonInterpreter interpreter)
-            : base(null, BuiltinTypeId.List, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) { }
-
-        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
-            => new PythonList(_instance, location, args.OfType<IMember>().ToArray());
-
-        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) {
-            // Constructor like list([a, b, c])
-            return CreateInstance(DeclaringModule, instance?.Location ?? LocationInfo.Empty, args);
+        public PythonListType(IPythonInterpreter interpreter)
+            : base(null, BuiltinTypeId.List, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) {
         }
+
+        public override IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args)
+            => new PythonList(this, location, args.OfType<IMember>().ToArray());
+
+        // Constructor call
+        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
+            => CreateInstance(instance?.Location ?? LocationInfo.Empty, args);
 
         public override BuiltinTypeId TypeId => BuiltinTypeId.List;
         public override PythonMemberType MemberType => PythonMemberType.Class;

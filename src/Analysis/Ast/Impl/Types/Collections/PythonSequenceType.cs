@@ -16,14 +16,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Types.Collections {
     /// <summary>
     /// Type info for a sequence.
     /// </summary>
     internal abstract class PythonSequenceType : PythonTypeWrapper, IPythonSequenceType {
         private readonly PythonIteratorType _iteratorType;
+        private string _typeName;
 
         protected IReadOnlyList<IPythonType> ContentTypes { get; }
 
@@ -58,9 +58,9 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonModule declaringModule,
             IReadOnlyList<IPythonType> contentTypes,
             bool isMutable
-        ) : base(declaringModule.Interpreter.GetBuiltinType(sequenceTypeId), declaringModule) {
+        ) : base(sequenceTypeId, declaringModule) {
             _iteratorType = new PythonIteratorType(sequenceTypeId.GetIteratorTypeId(), DeclaringModule);
-            Name = typeName ?? declaringModule.Interpreter.GetBuiltinType(sequenceTypeId).Name;
+            _typeName = typeName;
             IsMutable = isMutable;
             ContentTypes = contentTypes ?? Array.Empty<IPythonType>();
         }
@@ -73,19 +73,24 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IPythonType
-        public override string Name { get; }
+        public override string Name {
+            get {
+                if (_typeName == null) {
+                    var type = DeclaringModule.Interpreter.GetBuiltinType(TypeId);
+                    if(!type.IsUnknown()) {
+                        _typeName = type.Name;
+                    }
+                }
+                return _typeName ?? "<not set>";;
+            }
+        }
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override IMember GetMember(string name) => name == @"__iter__" ? _iteratorType : base.GetMember(name);
 
-        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args) {
+        public override IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args) {
             Debug.Fail("Attempt to create instance of an abstract sequence type.");
             return null;
         }
-        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
-            => (instance as IPythonSequence)?.Call(memberName, args) ?? DeclaringModule.Interpreter.UnknownType;
-
-        public override IMember Index(IPythonInstance instance, object index)
-            => (instance as IPythonSequence)?.Index(index) ?? DeclaringModule.Interpreter.UnknownType;
         #endregion
     }
 }

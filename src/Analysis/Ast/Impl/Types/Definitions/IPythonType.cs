@@ -55,10 +55,9 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Create instance of the type, if any.
         /// </summary>
-        /// <param name="declaringModule">Declaring module.</param>
         /// <param name="location">Instance location</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
-        IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args);
+        IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args);
 
         /// <summary>
         /// Invokes method or property on the specified instance.

@@ -16,6 +16,7 @@
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -209,7 +210,7 @@ for x in {42:'abc'}:
         }
 
         [TestMethod, Priority(0)]
-        public async Task DictMethods() {
+        public async Task DictMethods_V3() {
             const string code = @"
 x = {42:'abc'}
 a = x.items()[0][0]
@@ -219,10 +220,6 @@ d = x.values()[0]
 e = x.pop(1)
 f = x.popitem()[0]
 g = x.popitem()[1]
-h = x.iterkeys().next()
-i = x.itervalues().next()
-j = x.iteritems().next()[0]
-k = x.iteritems().next()[1]
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x")
@@ -232,7 +229,21 @@ k = x.iteritems().next()[1]
                 .And.HaveVariable("d").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("e").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("f").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("g").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("g").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DictMethods_V2() {
+            const string code = @"
+x = {42:'abc'}
+h = x.iterkeys().next()
+i = x.itervalues().next()
+n = x.iteritems().next();
+j = n[0]
+k = n[1]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveVariable("x")
                 .And.HaveVariable("h").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("i").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("j").OfType(BuiltinTypeId.Int)

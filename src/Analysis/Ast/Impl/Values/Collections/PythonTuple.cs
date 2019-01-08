@@ -15,8 +15,9 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
 
-namespace Microsoft.Python.Analysis.Values {
+namespace Microsoft.Python.Analysis.Values.Collections {
     /// <summary>
     /// Default immutable tuple.
     /// </summary>
@@ -25,6 +26,6 @@ namespace Microsoft.Python.Analysis.Values {
             base(tupleType, location, contents) { }
 
         public PythonTuple(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<object> contents) :
-            this(PythonTupleType.GetPythonTupleType(interpreter), location, contents) { }
+            this(SequenceTypeCache.GetType<PythonTupleType>(interpreter), location, contents) { }
     }
 }

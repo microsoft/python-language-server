@@ -18,21 +18,30 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Values {
+namespace Microsoft.Python.Analysis.Values.Collections {
     internal abstract class PythonSequence : PythonInstance, IPythonSequence {
+        protected PythonSequence(
+            IPythonSequenceType sequenceType,
+            LocationInfo location
+        ) : this(sequenceType, location, null, false) { }
+
         /// <summary>
         /// Creates sequence of the supplied type.
         /// </summary>
         /// <param name="sequenceType">Sequence type.</param>
         /// <param name="contents">Contents of the sequence (typically elements from the initialization).</param>
         /// <param name="location">Declaring location.</param>
+        /// <param name="flatten">If true and contents is a single element
+        /// and is a sequence, the sequence elements are copied rather than creating
+        /// a sequence of sequences with a single element.</param>
         protected PythonSequence(
             IPythonSequenceType sequenceType,
             LocationInfo location,
-            IReadOnlyList<object> contents = null
+            IReadOnlyList<object> contents,
+            bool flatten = true
         ) : base(sequenceType, location) {
             if(contents != null) {
-                if (contents.Count == 1 && contents[0] is IPythonSequence seq) {
+                if (flatten && contents.Count == 1 && contents[0] is IPythonSequence seq) {
                     Contents = seq.Contents;
                 } else {
                     Contents = contents.OfType<IMember>().ToArray();

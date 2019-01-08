@@ -124,13 +124,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             foreach (var o in fn.Overloads) {
                 await SymbolTable.EvaluateAsync(o.FunctionDefinition, cancellationToken);
             }
-            return fn.Call(instance, fn.Name, args.ToArray());
+            return instance?.Call(fn.Name, args);
         }
 
         private async Task<IMember> GetValueFromPropertyAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
             // Function may not have been walked yet. Do it now.
             await SymbolTable.EvaluateAsync(p.FunctionDefinition, cancellationToken);
-            return p.Call(instance, p.Name, Array.Empty<IMember>());
+            return instance.Call(p.Name, Array.Empty<IMember>());
         }
     }
 }

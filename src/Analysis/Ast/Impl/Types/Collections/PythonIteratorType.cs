@@ -13,58 +13,25 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Types.Collections {
     /// <summary>
     /// Implements iterator type. Iterator type is used to supply information
     /// to the analysis on the return type of the 'next' method. 'Next' method
     /// is implemented manually via specialized function overload.
     /// </summary>
-    internal sealed class PythonIteratorType : PythonType, IPythonIteratorType {
-        private static readonly string[] _methodNames = { "next", "__next__" };
-        private readonly PythonFunctionType[] _methods = new PythonFunctionType[2];
-
+    internal sealed class PythonIteratorType : PythonTypeWrapper, IPythonIteratorType {
         /// <summary>
         /// Creates type info for an iterator.
         /// </summary>
         /// <param name="typeId">Iterator type id, such as <see cref="BuiltinTypeId.StrIterator"/>.</param>
         /// <param name="declaringModule">Declaring module</param>
-        public PythonIteratorType(BuiltinTypeId typeId, IPythonModule declaringModule)
-            : base("iterator", declaringModule, string.Empty, LocationInfo.Empty, typeId) {
+        public PythonIteratorType(BuiltinTypeId typeId, IPythonModule declaringModule) : base(typeId, declaringModule) { }
 
-            // Create 'next' members.
-            _methods[0] = new PythonFunctionType(_methodNames[0], declaringModule, this, string.Empty, LocationInfo.Empty);
-            _methods[1] = new PythonFunctionType(_methodNames[1], declaringModule, this, string.Empty, LocationInfo.Empty);
-
-            // Both members share the same overload.
-            var overload = new PythonFunctionOverload("next", declaringModule, LocationInfo.Empty);
-
-            // Set up the overload return type handler.
-            overload.SetReturnValueProvider((module, o, loc, args) => {
-                if (args.Count > 0) {
-                    if (args[0] is IPythonIterator iter) {
-                        return iter.Next;
-                    }
-                    var t = args[0].GetPythonType<IPythonIteratorType>();
-                    if (t != null && args[0] is IPythonBoundType fn) {
-                        return t.GetNext(fn.Self);
-                    }
-                }
-                return DeclaringModule.Interpreter.UnknownType;
-            });
-
-            foreach (var m in _methods) {
-                m.AddOverload(overload);
-            }
-        }
         public IMember GetNext(IPythonInstance instance)
-            => (instance as IPythonIterator)?.Next ?? DeclaringModule.Interpreter.UnknownType;
-
-        public override IEnumerable<string> GetMemberNames() => _methodNames;
-        public override IMember GetMember(string name) => _methods.FirstOrDefault(m => m.Name == name);
+            => (instance as IPythonIterator)?.Next ?? UnknownType;
     }
 }

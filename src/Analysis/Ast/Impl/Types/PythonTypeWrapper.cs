@@ -22,15 +22,37 @@ namespace Microsoft.Python.Analysis.Types {
     /// Delegates most of the methods to the wrapped/inner class.
     /// </summary>
     internal class PythonTypeWrapper : IPythonType, ILocatedMember, IHasQualifiedName {
-        protected IPythonType InnerType { get; }
+        private readonly BuiltinTypeId _builtinTypeId;
+        private IPythonType _innerType;
 
+        protected IPythonType InnerType 
+            => _innerType ?? (_innerType = DeclaringModule.Interpreter.GetBuiltinType(_builtinTypeId));
+
+        /// <summary>
+        /// Creates delegate type wrapper over an existing type.
+        /// Use dedicated constructor for wrapping builtin types.
+        /// </summary>
         public PythonTypeWrapper(IPythonType type)
             : this(type, type.DeclaringModule) {
         }
 
+        /// <summary>
+        /// Creates delegate type wrapper over an existing type.
+        /// Use dedicated constructor for wrapping builtin types.
+        /// </summary>
         public PythonTypeWrapper(IPythonType type, IPythonModule declaringModule) {
-            InnerType = type ?? throw new ArgumentNullException(nameof(type));
+            _innerType = type ?? throw new ArgumentNullException(nameof(type));
             DeclaringModule = declaringModule;
+        }
+
+        /// <summary>
+        /// Creates type wrapper for a built-in type. This is preferable way to
+        /// wrap builtins since it can be done when builtins module is not loaded
+        /// yet - such as when builtins module itself is being imported or specialized.
+        /// </summary>
+        public PythonTypeWrapper(BuiltinTypeId builtinTypeId, IPythonModule declaringModule) {
+            DeclaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
+            _builtinTypeId = builtinTypeId;
         }
 
         #region IPythonType
@@ -41,7 +63,7 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual  PythonMemberType MemberType => InnerType.MemberType;
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;
         public virtual bool IsAbstract => InnerType.IsAbstract;
-        public virtual IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
+        public virtual IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args)
             => IsAbstract ? null : new PythonInstance(this, location);
         public virtual IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
             => InnerType.Call(instance, memberName, args);
@@ -62,5 +84,7 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual string FullyQualifiedName => (InnerType as IHasQualifiedName)?.FullyQualifiedName;
         public virtual KeyValuePair<string, string> FullyQualifiedNamePair => (InnerType as IHasQualifiedName)?.FullyQualifiedNamePair ?? default;
         #endregion
+
+        protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;
     }
 }

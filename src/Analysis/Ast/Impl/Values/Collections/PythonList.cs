@@ -15,16 +15,35 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
 
-namespace Microsoft.Python.Analysis.Values {
+namespace Microsoft.Python.Analysis.Values.Collections {
     /// <summary>
     /// Default mutable list with mixed content.
     /// </summary>
     internal class PythonList : PythonSequence {
-        public PythonList(PythonListType listType, LocationInfo location, IReadOnlyList<IMember> contents) :
-            base(listType, location, contents) { }
+        /// <summary>
+        /// Creates list of the supplied type.
+        /// </summary>
+        /// <param name="listType">List type.</param>
+        /// <param name="contents">Contents of the sequence (typically elements from the initialization).</param>
+        /// <param name="location">Declaring location.</param>
+        /// <param name="flatten">If true and contents is a single element
+        /// and is a sequence, the sequence elements are copied rather than creating
+        /// a sequence of sequences with a single element.</param>
+        public PythonList(PythonListType listType, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) :
+            base(listType, location, contents, flatten) { }
 
-        public PythonList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents) :
-            this(PythonListType.GetPythonListType(interpreter), location, contents) { }
+        /// <summary>
+        /// Creates list. List type is determined fro the interpreter.
+        /// </summary>
+        /// <param name="interpreter">Python interpreter.</param>
+        /// <param name="contents">Contents of the sequence (typically elements from the initialization).</param>
+        /// <param name="location">Declaring location.</param>
+        /// <param name="flatten">If true and contents is a single element
+        /// and is a sequence, the sequence elements are copied rather than creating
+        /// a sequence of sequences with a single element.</param>
+        public PythonList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) :
+            this(SequenceTypeCache.GetType<PythonListType>(interpreter), location, contents, flatten) { }
     }
 }

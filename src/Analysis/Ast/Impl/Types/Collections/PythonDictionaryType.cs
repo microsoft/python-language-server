@@ -16,25 +16,25 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Types.Collections {
     internal sealed class PythonDictionaryType : PythonSequenceType {
-        private static PythonDictionaryType _instance;
-
-        /// <summary>
-        /// Provides singleton of a Python dictionary type. Singleton saves
-        /// memory and ensures that all builtin dictionaries are the same.
-        /// </summary>
-        public static PythonDictionaryType GetPythonDictionaryType(IPythonInterpreter interpreter)
-            => _instance.IsUnknown() ? _instance = new PythonDictionaryType(interpreter) : _instance;
-
-        private PythonDictionaryType(IPythonInterpreter interpreter)
-            : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) { }
-
-        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args) {
-            var contents = args.Count == 1 ? args[0] as IDictionary<IMember, IMember> : new Dictionary<IMember, IMember>();
-            return new PythonDictionary(_instance, location, contents);
+        public PythonDictionaryType(IPythonInterpreter interpreter)
+            : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) {
         }
+
+        public override IMember CreateInstance(LocationInfo location, IReadOnlyList<object> args) {
+            var contents = args.Count == 1 ? args[0] as IReadOnlyDictionary<IMember, IMember> : EmptyDictionary<IMember, IMember>.Instance;
+            return new PythonDictionary(this, location, contents);
+        }
+
+        // Constructor call
+        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
+            => CreateInstance(instance?.Location ?? LocationInfo.Empty, args);
+
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Dict;
+        public override PythonMemberType MemberType => PythonMemberType.Class;
     }
 }
