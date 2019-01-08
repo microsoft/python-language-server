@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var fn = instance.GetPythonType()?.GetMember<IPythonFunctionType>(op);
                 // Process functions declared in code modules. Scraped/compiled/stub modules do not actually perform any operations.
                 if (fn?.DeclaringModule != null && (fn.DeclaringModule.ModuleType == ModuleType.User || fn.DeclaringModule.ModuleType == ModuleType.Library)) {
-                    var result = fn.Call(instance, op);
+                    var result = fn.Call(instance, op, Array.Empty<IMember>());
                     if (!result.IsUnknown()) {
                         return result;
                     }

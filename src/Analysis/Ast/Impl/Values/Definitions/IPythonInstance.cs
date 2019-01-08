@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -30,7 +31,7 @@ namespace Microsoft.Python.Analysis.Values {
         /// </summary>
         /// <param name="memberName">Method name.</param>
         /// <param name="args">Call arguments.</param>
-        IMember Call(string memberName, params object[] args);
+        IMember Call(string memberName, IReadOnlyList<object> args);
 
         /// <summary>
         /// Invokes indexer the instance.

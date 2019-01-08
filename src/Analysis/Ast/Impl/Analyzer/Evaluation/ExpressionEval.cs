@@ -145,6 +145,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (m is IPythonType typeInfo) {
                 var member = typeInfo.GetMember(expr.Name);
                 // If container is class/type info rather than the instance, then the method is an unbound function.
+                // Example: C.f where f is a method of C. Compare to C().f where f is bound to the instance of C.
                 if (member is PythonFunctionType f && !f.IsStatic) {
                     return f.ToUnbound();
                 }
@@ -154,12 +155,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var type = m.GetPythonType(); // Try inner type
             var value = type?.GetMember(expr.Name);
             switch (value) {
-                case IPythonPropertyType p:
-                    return await GetPropertyReturnTypeAsync(p, expr, cancellationToken);
-                case IPythonFunctionType fn:
-                    return new PythonFunction(fn, instance, GetLoc(expr));
-                case IPythonIteratorType _ when instance is IPythonSequence seq:
-                    return new PythonSequenceIterator(seq);
+                case IPythonClassType _:
+                    return value;
+                case IPythonType p:
+                    return new PythonBoundType(p, instance, GetLoc(expr));
                 case null:
                     Log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
                     return UnknownType;

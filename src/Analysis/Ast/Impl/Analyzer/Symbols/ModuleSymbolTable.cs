@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             = new ConcurrentDictionary<ScopeStatement, MemberEvaluator>();
         private readonly ConcurrentBag<ScopeStatement> _processed = new ConcurrentBag<ScopeStatement>();
 
-        public HashSet<Node> ReplacedByStubs { get; }= new HashSet<Node>();
+        public HashSet<Node> ReplacedByStubs { get; } = new HashSet<Node>();
 
         public IEnumerable<KeyValuePair<ScopeStatement, MemberEvaluator>> Evaluators => _evaluators.ToArray();
         public void Add(MemberEvaluator e) => _evaluators[e.Target] = e;
@@ -49,6 +49,24 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             => SymbolCollector.CollectSymbolsAsync(this, eval, cancellationToken);
 
         public async Task EvaluateAllAsync(CancellationToken cancellationToken = default) {
+            // Evaluate top-level functions first.
+            while (_evaluators.Count > 0) {
+                var walker = _evaluators.FirstOrDefault(e => e.Value.Target is FunctionDefinition fd && fd.Parent == null).Value;
+                if (walker == null) {
+                    break;
+                }
+                await EvaluateAsync(walker, cancellationToken);
+            }
+
+            // Evaluate classes.
+            while (_evaluators.Count > 0) {
+                var walker = _evaluators.FirstOrDefault(e => e.Value.Target is ClassDefinition).Value;
+                if (walker == null) {
+                    break;
+                }
+                await EvaluateAsync(walker, cancellationToken);
+            }
+
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             while (_evaluators.Count > 0) {

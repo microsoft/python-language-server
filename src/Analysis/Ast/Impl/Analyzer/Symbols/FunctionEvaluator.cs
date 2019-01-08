@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -54,6 +55,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (SymbolTable.ReplacedByStubs.Contains(Target)) {
                 return;
             }
+
+            // We need to make sure class is evaluated before its methods
+            await SymbolTable.EvaluateScopeAsync(FunctionDefinition.Parent, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
             // Process annotations.
@@ -128,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
                     // TODO: set instance vs class type info for regular methods.
                     var pi = new ParameterInfo(Ast, p0, Eval.GetTypeFromAnnotation(p0.Annotation, LookupOptions.Local));
-                    Eval.DeclareVariable(p0.Name, _self, p0.NameExpression);
+                    Eval.DeclareVariable(p0.Name, new PythonInstance(_self, Eval.GetLoc(p0.NameExpression)), p0.NameExpression);
                     pi.SetType(_self);
                     parameters.Add(pi);
                     skip++;

@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
@@ -28,9 +29,17 @@ namespace Microsoft.Python.Analysis.Values {
         protected PythonSequence(
             IPythonSequenceType sequenceType,
             LocationInfo location,
-            params object[] contents
+            IReadOnlyList<object> contents = null
         ) : base(sequenceType, location) {
-            Contents = contents.OfType<IMember>().ToArray();
+            if(contents != null) {
+                if (contents.Count == 1 && contents[0] is IPythonSequence seq) {
+                    Contents = seq.Contents;
+                } else {
+                    Contents = contents.OfType<IMember>().ToArray();
+                }
+            } else {
+                Contents = Array.Empty<IMember>();
+            }
         }
 
         /// <summary>

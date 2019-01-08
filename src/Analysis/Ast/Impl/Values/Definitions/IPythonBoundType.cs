@@ -15,9 +15,9 @@
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
-    /// Represents function with the associated class instance.
+    /// Represents type with the associated class instance.
     /// </summary>
-    public interface IPythonFunction: IPythonInstance {
+    public interface IPythonBoundType: IPythonInstance {
         IPythonInstance Self { get; }
     }
 }

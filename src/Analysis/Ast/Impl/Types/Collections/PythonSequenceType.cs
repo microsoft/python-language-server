@@ -77,11 +77,11 @@ namespace Microsoft.Python.Analysis.Types {
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override IMember GetMember(string name) => name == @"__iter__" ? _iteratorType : base.GetMember(name);
 
-        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args) {
+        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args) {
             Debug.Fail("Attempt to create instance of an abstract sequence type.");
             return null;
         }
-        public override IMember Call(IPythonInstance instance, string memberName, params object[] args)
+        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
             => (instance as IPythonSequence)?.Call(memberName, args) ?? DeclaringModule.Interpreter.UnknownType;
 
         public override IMember Index(IPythonInstance instance, object index)

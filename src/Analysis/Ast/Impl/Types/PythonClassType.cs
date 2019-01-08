@@ -105,6 +105,9 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
+        // Constructor call
+        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
+            => new PythonInstance(this);
         #endregion
 
         #region IPythonClass

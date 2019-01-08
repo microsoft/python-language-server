@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
 
@@ -31,7 +32,15 @@ namespace Microsoft.Python.Analysis.Types {
         private PythonListType(IPythonInterpreter interpreter)
             : base(null, BuiltinTypeId.List, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) { }
 
-        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
+        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
             => new PythonList(_instance, location, args.OfType<IMember>().ToArray());
+
+        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) {
+            // Constructor like list([a, b, c])
+            return CreateInstance(DeclaringModule, instance?.Location ?? LocationInfo.Empty, args);
+        }
+
+        public override BuiltinTypeId TypeId => BuiltinTypeId.List;
+        public override PythonMemberType MemberType => PythonMemberType.Class;
     }
 }

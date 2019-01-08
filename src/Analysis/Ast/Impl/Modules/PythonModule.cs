@@ -106,9 +106,9 @@ namespace Microsoft.Python.Analysis.Modules {
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
         public bool IsAbstract => false;
-        public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args) => this;
+        public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args) => this;
         public PythonMemberType MemberType => PythonMemberType.Module;
-        public IMember Call(IPythonInstance instance, string memberName, params object[] args) => GetMember(memberName);
+        public IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, object index) => Interpreter.UnknownType;
 
         public virtual string Documentation {

@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = await GetValueFromExpressionAsync(item.SliceStop, cancellationToken) ?? UnknownType;
                 contents[key] = value;
             }
-            return PythonDictionaryType.GetPythonDictionaryType(Interpreter).CreateInstance(Module, GetLoc(expression), contents);
+            return PythonDictionaryType.GetPythonDictionaryType(Interpreter).CreateInstance(Module, GetLoc(expression), new[] { contents });
         }
     }
 }

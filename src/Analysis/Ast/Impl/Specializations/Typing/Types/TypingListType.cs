@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             return declaringModule.Interpreter.UnknownType;
         }
 
-        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
+        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
             => new TypingList(this, location);
 
         public override IMember Index(IPythonInstance instance, object index) => ContentTypes[0];

@@ -32,8 +32,8 @@ namespace Microsoft.Python.Analysis.Types {
         private PythonDictionaryType(IPythonInterpreter interpreter)
             : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) { }
 
-        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args) {
-            var contents = args.Length == 1 ? args[0] as IReadOnlyDictionary<IMember, IMember> : EmptyDictionary<IMember, IMember>.Instance;
+        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args) {
+            var contents = args.Count == 1 ? args[0] as IReadOnlyDictionary<IMember, IMember> : EmptyDictionary<IMember, IMember>.Instance;
             return new PythonDictionary(_instance, location, contents);
         }
     }

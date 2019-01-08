@@ -95,11 +95,11 @@ namespace Microsoft.Python.Analysis.Types {
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
 
-        public override IMember Call(IPythonInstance instance, string memberName, params object[] args) {
+        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) {
             // Now we can go and find overload with matching arguments.
             var parameters = args.OfType<IMember>().ToArray();
             var overload = FindOverload(parameters);
-            return overload?.GetReturnValue(instance.Location, parameters) ?? DeclaringModule.Interpreter.UnknownType;
+            return overload?.GetReturnValue(instance?.Location ?? LocationInfo.Empty, parameters) ?? DeclaringModule.Interpreter.UnknownType;
         }
         #endregion
 

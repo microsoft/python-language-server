@@ -51,11 +51,13 @@ namespace Microsoft.Python.Analysis.Types {
             get { lock (_lock) { return _types.All(t => t.IsBuiltin); } }
         }
         public bool IsAbstract => false;
-        public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
+        public IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
             => new PythonUnion(this, location);
 
-        public IMember Call(IPythonInstance instance, string memberName, params object[] args) => DeclaringModule.Interpreter.UnknownType;
-        public IMember Index(IPythonInstance instance, object index) => DeclaringModule.Interpreter.UnknownType;
+        public IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
+            => DeclaringModule?.Interpreter.UnknownType ?? this;
+        public IMember Index(IPythonInstance instance, object index) 
+            => DeclaringModule?.Interpreter.UnknownType ?? this;
         #endregion
 
         #region IPythonUnionType

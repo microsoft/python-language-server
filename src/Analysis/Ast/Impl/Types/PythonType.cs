@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="declaringModule">Declaring module.</param>
         /// <param name="location">Instance location</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
-        public virtual IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
+        public virtual IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
             => new PythonInstance(this, location);
 
         /// <summary>
@@ -82,14 +82,14 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="instance">Instance of the type.</param>
         /// <param name="memberName">Method name.</param>
         /// <param name="args">Call arguments.</param>
-        public virtual IMember Call(IPythonInstance instance, string memberName, params object[] args) => GetMember(memberName);
+        public virtual IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) => GetMember(memberName);
 
         /// <summary>
         /// Invokes indexer on the specified instance.
         /// </summary>
         /// <param name="instance">Instance of the type.</param>
         /// <param name="index">Index arguments.</param>
-        public virtual IMember Index(IPythonInstance instance, object index) => DeclaringModule.Interpreter.UnknownType;
+        public virtual IMember Index(IPythonInstance instance, object index) => DeclaringModule?.Interpreter.UnknownType ?? this;
         #endregion
 
         #region ILocatedMember

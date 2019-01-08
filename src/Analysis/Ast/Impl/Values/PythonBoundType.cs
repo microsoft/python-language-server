@@ -13,16 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
-    /// Represents function type and the instance to invoke the method on.
+    /// Represents type that is bound to an instance.
+    /// Typically property or a function.
     /// </summary>
-    internal sealed class PythonFunction: PythonInstance, IPythonFunction {
+    [DebuggerDisplay("Type {Type.Name} bound to {Self.Type.Name}")]
+    internal sealed class PythonBoundType : PythonInstance, IPythonBoundType {
         public IPythonInstance Self { get; }
 
-        public PythonFunction(IPythonFunctionType fn, IPythonInstance self, LocationInfo location) : base(fn, location) {
+        public PythonBoundType(IPythonType fn, IPythonInstance self, LocationInfo location) : base(fn, location) {
             Self = self;
         }
     }

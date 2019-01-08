@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task ListCtor() {
+        public async Task ListAssign() {
             const string code = @"
 l1 = [1, 'str', 3.0]
 x0 = l1[0]
@@ -45,6 +45,30 @@ x4 = l1[x0]
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("l1").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("x0").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("x1").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("x2").OfType(BuiltinTypeId.Float)
+                .And.HaveVariable("x3").WithNoTypes()
+                .And.HaveVariable("x4").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ListCallCtor() {
+            const string code = @"
+import builtins as _mod_builtins
+l = list()
+l0 = _mod_builtins.list()
+l1 = list([1, 'str', 3.0])
+x0 = l1[0]
+x1 = l1[1]
+x2 = l1[2]
+x3 = l1[3]
+x4 = l1[x0]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("l").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("l0").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("l1").OfType(BuiltinTypeId.List)
                 .And.HaveVariable("x0").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("x1").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("x2").OfType(BuiltinTypeId.Float)
@@ -225,6 +249,18 @@ y = x['fob']
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DictIterator() {
+            const string code = @"
+x = {'a': 1, 'b': 2, 'c': 3}
+y = x.keys()
+k = y[1]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("k").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]

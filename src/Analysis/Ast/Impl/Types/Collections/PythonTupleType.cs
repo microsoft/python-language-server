@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Types {
         private PythonTupleType(IPythonInterpreter interpreter)
             : base(null, BuiltinTypeId.Tuple, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), false) { }
 
-        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args)
+        public override IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args)
             => new PythonTuple(this, location, args);
     }
 }

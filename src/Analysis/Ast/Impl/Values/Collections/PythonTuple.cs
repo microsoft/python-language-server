@@ -22,10 +22,10 @@ namespace Microsoft.Python.Analysis.Values {
     /// Default immutable tuple.
     /// </summary>
     internal class PythonTuple : PythonSequence {
-        public PythonTuple(PythonTupleType tupleType, LocationInfo location, params object[] contents) :
+        public PythonTuple(PythonTupleType tupleType, LocationInfo location, IReadOnlyList<object> contents) :
             base(tupleType, location, contents) { }
 
-        public PythonTuple(IPythonInterpreter interpreter, LocationInfo location, params object[] contents) :
+        public PythonTuple(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<object> contents) :
             this(PythonTupleType.GetPythonTupleType(interpreter), location, contents) { }
     }
 }

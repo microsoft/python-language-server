@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Types {
                         return iter.Next;
                     }
                     var t = args[0].GetPythonType<IPythonIteratorType>();
-                    if (t != null && args[0] is IPythonFunction fn) {
+                    if (t != null && args[0] is IPythonBoundType fn) {
                         return t.GetNext(fn.Self);
                     }
                 }

@@ -43,11 +43,11 @@ namespace Microsoft.Python.Analysis.Values {
             => _contents.Select(kvp => new PythonTuple(_interpreter, Location, new[] { kvp.Key, kvp.Value })).ToArray();
         public IMember this[IMember key] => _contents.TryGetValue(key, out var value) ? value : _interpreter.UnknownType;
 
-        public override IMember Call(string memberName, params object[] args) {
+        public override IMember Call(string memberName, IReadOnlyList<object> args) {
             // Specializations
             switch (memberName) {
                 case @"get":
-                    return args.Length > 0 ? Index(args[0]) : _interpreter.UnknownType;
+                    return args.Count > 0 ? Index(args[0]) : _interpreter.UnknownType;
                 case @"items":
                     return new PythonList(_interpreter, LocationInfo.Empty, Items);
                 case @"keys":

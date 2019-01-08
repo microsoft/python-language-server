@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 
@@ -33,7 +34,7 @@ namespace Microsoft.Python.Analysis.Values {
         public virtual IPythonType Type { get; }
         public LocationInfo Location { get; }
         public virtual PythonMemberType MemberType => PythonMemberType.Instance;
-        public virtual IMember Call(string memberName, params object[] args) => Type.GetMember(memberName);
+        public virtual IMember Call(string memberName, IReadOnlyList<object> args) => Type.GetMember(memberName);
         public virtual IMember Index(object index) => Type.DeclaringModule.Interpreter.UnknownType;
     }
 }

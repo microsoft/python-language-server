@@ -1,4 +1,20 @@
-﻿using System.Collections.Generic;
+﻿// Copyright(c) Microsoft Corporation
+// All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the License); you may not use
+// this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0
+//
+// THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
+// OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
+// IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+// MERCHANTABILITY OR NON-INFRINGEMENT.
+//
+// See the Apache Version 2.0 License for specific language governing
+// permissions and limitations under the License.
+
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,29 +27,28 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
         private async Task<IMember> GetValueFromCallableAsync(CallExpression expr, CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
             if (expr?.Target == null) {
                 return null;
             }
 
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
+            // Should only be two types of returns here. First, an bound type
+            // so we can invoke Call over the instance. Second, an type info
+            // so we can create an instance of the type (as in C() where C is class).
             IMember value = null;
             switch (target) {
-                case IPythonFunctionType fnt:
-                    value = await GetValueFromFunctionTypeAsync(fnt, null, expr, cancellationToken);
-                    break;
-                case IPythonFunction fn:
-                    value = await GetValueFromFunctionAsync(fn, expr, cancellationToken);
-                    break;
-                case IPythonIterator _:
-                    value = target;
+                case IPythonBoundType bt: // Bound property, method or an iterator.
+                    value = await GetValueFromBoundAsync(bt, expr, cancellationToken);
                     break;
                 case IPythonInstance pi:
                     value = await GetValueFromInstanceCall(pi, expr, cancellationToken);
                     break;
+                case IPythonFunctionType ft: // Standalone function
+                    value = await GetValueFromFunctionTypeAsync(ft, null, expr, cancellationToken);
+                    break;
                 case IPythonClassType cls:
-                    // Ensure class is processed
-                    await SymbolTable.EvaluateAsync(cls.ClassDefinition, cancellationToken);
-                    value = new PythonInstance(cls, GetLoc(expr));
+                    value = await GetValueFromClassCtorAsync(cls, expr, cancellationToken);
                     break;
                 case IPythonType t:
                     // Target is type (info), the call creates instance.
@@ -47,6 +62,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             return value;
+        }
+
+        private async Task<IMember> GetValueFromClassCtorAsync(IPythonClassType cls, CallExpression expr, CancellationToken cancellationToken = default) {
+            // Ensure class is processed
+            await SymbolTable.EvaluateAsync(cls.ClassDefinition, cancellationToken);
+            // Determine argument types
+            var args = new List<IMember>();
+            foreach (var a in expr.Args.MaybeEnumerate()) {
+                var type = await GetValueFromExpressionAsync(a.Expression, cancellationToken);
+                args.Add(type ?? UnknownType);
+            }
+            return cls.Call(null, null, args);
+        }
+
+        private async Task<IMember> GetValueFromBoundAsync(IPythonBoundType t, CallExpression expr, CancellationToken cancellationToken = default) {
+            switch(t.Type) {
+                case IPythonFunctionType fn:
+                    return await GetValueFromFunctionTypeAsync(fn, t.Self, expr, cancellationToken);
+                case IPythonPropertyType p:
+                    return await GetValueFromPropertyAsync(p, t.Self, cancellationToken);
+                case IPythonIteratorType it when t.Self is IPythonSequence seq:
+                    return seq.GetIterator();
+            }
+            return UnknownType;
         }
 
         private async Task<IMember> GetValueFromInstanceCall(IPythonInstance pi, CallExpression expr, CancellationToken cancellationToken = default) {
@@ -65,9 +104,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             return null;
         }
-
-        private Task<IMember> GetValueFromFunctionAsync(IPythonFunction fn, CallExpression expr, CancellationToken cancellationToken = default)
-            => GetValueFromFunctionTypeAsync(fn.GetPythonType<IPythonFunctionType>(), fn.Self, expr, cancellationToken);
 
         private async Task<IMember> GetValueFromFunctionTypeAsync(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr, CancellationToken cancellationToken = default) {
             // Determine argument types
@@ -89,13 +125,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             foreach (var o in fn.Overloads) {
                 await SymbolTable.EvaluateAsync(o.FunctionDefinition, cancellationToken);
             }
-            return fn.Call(instance, fn.Name, args);
+            return fn.Call(instance, fn.Name, args.ToArray());
         }
 
-        private async Task<IMember> GetPropertyReturnTypeAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
+        private async Task<IMember> GetValueFromPropertyAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
             // Function may not have been walked yet. Do it now.
             await SymbolTable.EvaluateAsync(p.FunctionDefinition, cancellationToken);
-            return p.Call(instance, p.Name, null);
+            return p.Call(instance, p.Name, Array.Empty<IMember>());
         }
     }
 }

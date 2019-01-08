@@ -39,6 +39,11 @@ namespace Microsoft.Python.Analysis.Specializations {
             return null;
         }
 
+        public static IMember List(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
+            => new PythonList(module.Interpreter, location, args);
+        //public static IMember Dict(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
+        //    => new PythonDictionary(module.Interpreter, location, args);
+
         public static ReturnValueProvider Next
                 => (module, overload, location, args) => args.Count > 0 && args[0] is IPythonIterator it ? it.Next : null;
 

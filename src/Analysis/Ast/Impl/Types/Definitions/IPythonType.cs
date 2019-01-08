@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="declaringModule">Declaring module.</param>
         /// <param name="location">Instance location</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
-        IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, params object[] args);
+        IMember CreateInstance(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<object> args);
 
         /// <summary>
         /// Invokes method or property on the specified instance.
@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="instance">Instance of the type.</param>
         /// <param name="memberName">Method name.</param>
         /// <param name="args">Call arguments.</param>
-        IMember Call(IPythonInstance instance, string memberName, params object[] args);
+        IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args);
 
         /// <summary>
         /// Invokes indexer on the specified instance.
