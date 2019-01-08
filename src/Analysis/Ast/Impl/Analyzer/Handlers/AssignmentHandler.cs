@@ -84,9 +84,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (expr.Expression is MemberExpression m) {
                 // self.x : int = 42
                 var self = Eval.LookupNameInScopes("self", out var scope);
-                if (self is PythonClassType cls && scope != null) {
+                if (self.GetPythonType() is PythonClassType cls && scope != null) {
                     var selfCandidate = await Eval.GetValueFromExpressionAsync(m.Target, cancellationToken);
-                    if (self.Equals(selfCandidate.GetPythonType())) {
+                    if (cls.Equals(selfCandidate.GetPythonType())) {
                         cls.AddMember(m.Name, instance, true);
                     }
                 }
