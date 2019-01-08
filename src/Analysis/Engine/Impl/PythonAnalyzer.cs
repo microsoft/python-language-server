@@ -201,9 +201,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
             return entry;
         }
-
-        public void RemoveModule(IProjectEntry entry) => RemoveModule(entry, null);
-
+        
         /// <summary>
         /// Removes the specified project entry from the current analysis.
         /// 
@@ -213,9 +211,8 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="onImporter">Action to perform on each module that
         /// had imported the one being removed.</param>
         public void RemoveModule(IProjectEntry entry, Action<IPythonProjectEntry> onImporter) {
-            if (entry == null) {
-                throw new ArgumentNullException(nameof(entry));
-            }
+            Check.ArgumentNotNull(nameof(entry), entry);
+            Check.ArgumentNotNull(nameof(onImporter), onImporter);
             Contract.EndContractBlock();
 
             var pyEntry = entry as IPythonProjectEntry;
@@ -237,9 +234,6 @@ namespace Microsoft.PythonTools.Analysis {
             entry.Dispose();
             ClearDiagnostics(entry);
 
-            if (onImporter == null) {
-                onImporter = e => e.Analyze(CancellationToken.None, enqueueOnly: true);
-            }
 
             if (!string.IsNullOrEmpty(pyEntry?.ModuleName)) {
                 Modules.TryRemove(pyEntry.ModuleName, out _);

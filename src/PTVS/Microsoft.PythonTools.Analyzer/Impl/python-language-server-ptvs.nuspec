@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>python-language-server-ptvs$os$</id>
+    <version>$version$</version>
+    <title>Python Language Server for PTVS</title>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <license type="expression">Apache-2.0</license>
+    <projectUrl>https://github.com/Microsoft/PTVS</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Microsoft Python Language Server for PTVS</description>
+    <copyright>Copyright (c) 2018</copyright>
+    <tags>Python;VisualStudio</tags>
+  </metadata>
+  <files>
+    <file src="Microsoft.Python.Analysis.Engine.dll" target="lib/vs16" />
+    <file src="Microsoft.Python.Analysis.Engine.pdb" target="lib/vs16" />
+    <file src="Microsoft.Python.LanguageServer.Core.dll" target="lib/vs16" />
+    <file src="Microsoft.Python.LanguageServer.Core.pdb" target="lib/vs16" />
+    <file src="Microsoft.PythonTools.Ipc.Json.dll" target="lib/vs16" />
+    <file src="Microsoft.PythonTools.Ipc.Json.pdb" target="lib/vs16" />
+    <file src="Microsoft.PythonTools.Analyzer.exe" target="lib/vs16" />
+    <file src="Microsoft.PythonTools.Analyzer.exe.config" target="lib/vs16" />
+    <file src="Microsoft.PythonTools.Analyzer.pdb" target="lib/vs16" />
+    <file src="PythonScraper.py" target="lib/vs16" />
+    <file src="BuiltinScraper.py" target="lib/vs16" />
+    <file src="ExtensionScraper.py" target="lib/vs16" />
+    <file src="IronPythonScraper.py" target="lib/vs16" />
+    <file src="scrape_module.py" target="lib/vs16" />
+    <file src="get_search_paths.py" target="lib/vs16" />
+    <file src="typing-stub.pyi" target="lib/vs16" />
+  </files>
+</package>

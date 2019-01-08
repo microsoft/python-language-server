@@ -137,6 +137,8 @@ namespace Microsoft.PythonTools.Intellisense {
         }
 
         private async Task HandleAnalyzable(IAnalyzable item, AnalysisPriority priority, CancellationToken cancellationToken) {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (item is IGroupableAnalysisProjectEntry groupable) {
                 var added = _enqueuedGroups.Add(groupable.AnalysisGroup);
                 if (added) {
@@ -147,7 +149,7 @@ namespace Microsoft.PythonTools.Intellisense {
                     }
                 }
 
-                groupable.Analyze(cancellationToken, true);
+                groupable.PreAnalyze();
             } else {
                 item.Analyze(cancellationToken);
             }

@@ -4,13 +4,16 @@
       <RootNamespace>Microsoft.PythonTools.Analysis</RootNamespace>
       <AssemblyTitle>Visual Studio - Python background analyzer</AssemblyTitle>
       <AssemblyName>Microsoft.PythonTools.Analyzer</AssemblyName>
+      <NuspecFile>python-language-server-ptvs.nuspec</NuspecFile>
+      <NuspecProperties>version=$(NugetVersion)</NuspecProperties>
     </PropertyGroup>
     <Import Project="..\..\..\..\build\NetStandard.settings" />
     <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <DebugType>portable</DebugType>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+      <OutputType>Exe</OutputType>
+      <DebugType>portable</DebugType>
+      <NuspecBasePath>$(OutputPath)</NuspecBasePath>
+      <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
       <CodeAnalysisRuleSet>..\..\..\PLS.ruleset</CodeAnalysisRuleSet>
