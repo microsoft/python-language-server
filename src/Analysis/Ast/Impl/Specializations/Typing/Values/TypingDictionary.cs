@@ -13,14 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Values.Collections;
+using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis {
-    public static class PythonInstanceExtensions {
-        public static bool IsUnknown(this IPythonInstance value) =>
-            value?.Type == null || 
-            (value.Type.TypeId == BuiltinTypeId.Unknown && value.Type.TypeId == BuiltinTypeId.Unknown && 
-             value.Type.MemberType == PythonMemberType.Unknown && value.Type.Name.Equals("Unknown"));
+namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
+    internal class TypingDictionary : PythonDictionary {
+        public TypingDictionary(TypingDictionaryType dictType, LocationInfo location = null)
+            : base(dictType, location ?? LocationInfo.Empty, EmptyDictionary<IMember, IMember>.Instance) { }
     }
 }

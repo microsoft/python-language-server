@@ -17,7 +17,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Python.Core;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 
@@ -25,7 +24,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
     /// <summary>
     /// Default mutable list with mixed content.
     /// </summary>
-    internal sealed class PythonDictionary : PythonSequence, IPythonDictionary {
+    internal class PythonDictionary : PythonSequence, IPythonDictionary {
         private readonly Dictionary<IMember, IMember> _contents = new Dictionary<IMember, IMember>(new KeyComparer());
         private readonly IPythonInterpreter _interpreter;
 
@@ -34,6 +33,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             foreach (var kvp in contents) {
                 _contents[kvp.Key] = kvp.Value;
             }
+            _interpreter = dictType.DeclaringModule.Interpreter;
         }
 
         public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IMember contents) :
@@ -44,6 +44,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
                 }
                 Contents = _contents.Keys.ToArray();
             }
+            _interpreter = interpreter;
         }
 
         public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyDictionary<IMember, IMember> contents) :

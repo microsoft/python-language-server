@@ -23,7 +23,7 @@ namespace Microsoft.Python.Analysis.Values {
     /// </summary>
     public interface IScope {
         string Name { get; }
-        Node Node { get; }
+        ScopeStatement Node { get; }
         IScope OuterScope { get; }
         IGlobalScope GlobalScope { get; }
         bool VisibleToChildren { get; }

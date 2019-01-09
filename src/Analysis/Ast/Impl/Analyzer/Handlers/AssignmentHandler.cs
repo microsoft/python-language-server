@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -74,7 +75,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     instance = value;
                 }
             }
-            instance = instance ?? variableType?.CreateInstance(variableType.Name, Eval.GetLoc(expr.Expression), null) ?? Eval.UnknownType;
+            instance = instance ?? variableType?.CreateInstance(variableType.Name, Eval.GetLoc(expr.Expression), Array.Empty<IMember>()) ?? Eval.UnknownType;
 
             if (expr.Expression is NameExpression ne) {
                 Eval.DeclareVariable(ne.Name, instance, expr.Expression);

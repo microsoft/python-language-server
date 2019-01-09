@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -22,12 +23,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Serves as a placeholder argument type until function return
     /// value can be determined by using actual call arguments.
     /// </summary>
-    internal sealed class FunctionArgumentType : PythonTypeWrapper, IFunctionArgumentType {
+    internal sealed class FunctionArgumentType : PythonTypeWrapper, IFunctionArgumentType, IEquatable<IFunctionArgumentType> {
         public FunctionArgumentType(int parameterIndex, IPythonType parameterType) :
             base(parameterType) {
             ParameterIndex = parameterIndex;
         }
 
         public int ParameterIndex { get; }
+
+        public override string Name => "function argument";
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Type;
+        public override PythonMemberType MemberType => PythonMemberType.Variable;
+        public bool Equals(IFunctionArgumentType other) => ParameterIndex == other?.ParameterIndex;
     }
 }

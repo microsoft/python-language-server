@@ -75,7 +75,6 @@ f = 1 / 2 # f is 'int', should be 'float' under v3.x";
 x = u'abc %d'
 y = x * 100
 
-
 x1 = 'abc %d'
 y1 = x1 * 100
 
@@ -146,6 +145,7 @@ oar2 = fob2 + u'ef'";
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task RangeIteration() {
             const string code = @"
 for i in range(5):

@@ -14,13 +14,25 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis {
-    public static class PythonInstanceExtensions {
-        public static bool IsUnknown(this IPythonInstance value) =>
-            value?.Type == null || 
-            (value.Type.TypeId == BuiltinTypeId.Unknown && value.Type.TypeId == BuiltinTypeId.Unknown && 
-             value.Type.MemberType == PythonMemberType.Unknown && value.Type.Name.Equals("Unknown"));
+namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
+    internal abstract class TypedDictionaryType : PythonDictionaryType {
+        protected TypedDictionaryType(
+            string name,
+            IPythonType keyType,
+            IPythonType valueType
+            ) : base(keyType.DeclaringModule.Interpreter) {
+            KeyType = keyType;
+            ValueType = valueType;
+            Name = $"{name}[{keyType.Name}, {valueType.Name}]";
+        }
+
+        public IPythonType KeyType { get; }
+        public IPythonType ValueType { get; }
+
+        public override string Name { get; }
+        public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ValueType);
     }
 }

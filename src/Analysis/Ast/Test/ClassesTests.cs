@@ -398,5 +398,19 @@ e = Employee('Guido')
             analysis.Should().HaveVariable("e")
                 .Which.Should().HaveMembers("name", "id", "__class__");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task AnnotateToSelf() {
+            const string code = @"
+class A:
+    def func() -> A: ...
+
+x = A().func()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType("A");
+        }
+
     }
 }

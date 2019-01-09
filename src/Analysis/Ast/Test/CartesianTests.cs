@@ -79,7 +79,8 @@ y = f('fob')";
 
         [TestMethod, Priority(0)]
         public async Task LocalsIsInstance() {
-            const string code = @"def f(a, c):
+            const string code = @"
+def f(a, c):
     if isinstance(c, int):
         b = a
         return b

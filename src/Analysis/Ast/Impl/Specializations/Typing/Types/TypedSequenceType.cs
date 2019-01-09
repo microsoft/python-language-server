@@ -20,8 +20,8 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal class TypedSequenceType : PythonSequenceType {
-        public TypedSequenceType(
+    internal abstract class TypedSequenceType : PythonSequenceType {
+        protected TypedSequenceType(
             string name,
             BuiltinTypeId typeId,
             IPythonModule declaringModule,
@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             Name = $"{name}[{contentType.Name}]";
         }
 
-        public TypedSequenceType(
+        protected TypedSequenceType(
             string name,
             BuiltinTypeId typeId,
             IPythonModule declaringModule,
@@ -42,7 +42,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         }
 
         public override string Name { get; }
-        public override IMember Index(IPythonInstance instance, object index)
-            => (instance as IPythonSequence)?.Index(index) ?? DeclaringModule.Interpreter.UnknownType;
+        public override IMember Index(IPythonInstance instance, object index) => instance?.Index(index) ?? UnknownType;
     }
 }

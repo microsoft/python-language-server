@@ -27,9 +27,14 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         /// </summary>
         /// <param name="typeId">Iterator type id, such as <see cref="BuiltinTypeId.StrIterator"/>.</param>
         /// <param name="declaringModule">Declaring module</param>
-        public PythonIteratorType(BuiltinTypeId typeId, IPythonModule declaringModule) : base(typeId, declaringModule) { }
+        public PythonIteratorType(BuiltinTypeId typeId, IPythonModule declaringModule) : base(typeId, declaringModule) {
+            TypeId = typeId;
+        }
 
         public IMember GetNext(IPythonInstance instance)
             => (instance as IPythonIterator)?.Next ?? UnknownType;
+
+        public override BuiltinTypeId TypeId { get; }
+        public override PythonMemberType MemberType => PythonMemberType.Class;
     }
 }

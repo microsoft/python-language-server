@@ -28,15 +28,15 @@ namespace Microsoft.Python.Analysis.Values {
         private VariableCollection _variables;
         private List<Scope> _childScopes;
 
-        public Scope(Node node, IScope outerScope, bool visibleToChildren = true) {
+        public Scope(ScopeStatement node, IScope outerScope, bool visibleToChildren = true) {
             Node = node;
             OuterScope = outerScope;
             VisibleToChildren = visibleToChildren;
         }
 
         #region IScope
-        public string Name => Node?.NodeName ?? "<global>";
-        public Node Node { get; }
+        public string Name => Node?.Name ?? "<global>";
+        public ScopeStatement Node { get; }
         public IScope OuterScope { get; }
         public bool VisibleToChildren { get; }
 
@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Values {
         }
         public IPythonModule Module { get; }
         public string Name => string.Empty;
-        public Node Node => null;
+        public ScopeStatement Node => null;
         public IScope OuterScope => null;
         public IGlobalScope GlobalScope { get; protected set; }
         public bool VisibleToChildren => true;

@@ -79,13 +79,18 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal void AddReturnValue(IMember value) {
+            if (value.IsUnknown()) {
+                return; // Don't add useless values.
+            }
             if (_returnValue.IsUnknown()) {
                 SetReturnValue(value, false);
                 return;
             }
             // If return value is set from annotation, it should not be changing.
-            if (!_fromAnnotation) {
-                var type = PythonUnionType.Combine(_returnValue.GetPythonType(), value.GetPythonType());
+            var currentType = _returnValue.GetPythonType();
+            var valueType = value.GetPythonType();
+            if (!_fromAnnotation && !currentType.Equals(valueType)) {
+                var type = PythonUnionType.Combine(currentType, valueType);
                 // Track instance vs type info.
                 _returnValue = value is IPythonInstance ? new PythonInstance(type) : (IMember)type;
             }

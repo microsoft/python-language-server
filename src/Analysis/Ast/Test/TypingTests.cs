@@ -69,6 +69,21 @@ y = x[0]
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericListArg() {
+            const string code = @"
+from typing import List
+
+def func(a: List[str]):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("func").Which
+                .Should().HaveSingleOverload()
+                .Which.Should().HaveParameterAt(0)
+                .Which.Should().HaveName("a").And.HaveType("List[str]");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task FunctionAnnotatedToList() {
             const string code = @"
 from typing import List
@@ -252,36 +267,6 @@ x = f(a)
                 .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
 
-        [TestMethod, Priority(0)]
-        [Ignore]
-        public async Task GenericDictBase() {
-            const string code = @"
-from typing import Dict
-
-def func(a: Dict[int, str]):
-    pass
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveFunction("func")
-                .Which.Should().HaveSingleOverload()
-                .Which.Should().HaveParameterAt(0)
-                .Which.Should().HaveName("a").And.HaveType("Dict[int, str]");
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task GenericListBase() {
-            const string code = @"
-from typing import List
-
-def func(a: List[str]):
-    pass
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveFunction("func").Which
-                .Should().HaveSingleOverload()
-                .Which.Should().HaveParameterAt(0)
-                .Which.Should().HaveName("a").And.HaveType("List[str]");
-        }
 
         [TestMethod, Priority(0)]
         public async Task TypingListOfTuples() {
@@ -301,6 +286,52 @@ x = ls()[0]
 
             analysis.Should().HaveVariable("x").Which
                 .Should().HaveType(BuiltinTypeId.Tuple);
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task DictContent() {
+            const string code = @"
+from typing import Dict
+
+d: Dict[str, int]
+x = d['a']
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable(@"d").OfType("Dict[str, int]")
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DictOfDicts() {
+            const string code = @"
+from typing import Dict
+
+a: Dict[int, Dict[str, float]]
+x = a[0]
+y = x['a']
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable(@"a").OfType("Dict[int, Dict[str, float]]")
+                .And.HaveVariable("x").OfType("Dict[str, float]")
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Float);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericDictArg() {
+            const string code = @"
+from typing import Dict
+
+def func(a: Dict[int, str]):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("func")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameterAt(0)
+                .Which.Should().HaveName("a").And.HaveType("Dict[int, str]");
         }
     }
 }

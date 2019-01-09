@@ -20,7 +20,7 @@ using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
-    internal sealed class PythonDictionaryType : PythonSequenceType {
+    internal class PythonDictionaryType : PythonSequenceType {
         public PythonDictionaryType(IPythonInterpreter interpreter)
             : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) {
         }

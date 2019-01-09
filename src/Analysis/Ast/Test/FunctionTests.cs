@@ -135,7 +135,7 @@ y = f(1, 2)
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveFunction("f")
                 .Which.Should().HaveSingleOverload()
-                .Which.Should().HaveReturnType(BuiltinTypeId.Unknown);
+                .Which.Should().HaveReturnType(BuiltinTypeId.Type);
 
             analysis.Should()
                 .HaveVariable("x").OfType(BuiltinTypeId.Str).And

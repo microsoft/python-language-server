@@ -38,9 +38,6 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public int GetHashCode(IPythonType obj) {
-            if (obj == null) {
-                return 0;
-            }
             return obj.TypeId.GetHashCode() ^
                    obj.Name?.GetHashCode() ?? 0 ^
                    obj.IsBuiltin.GetHashCode() ^

@@ -21,7 +21,7 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
-    internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName {
+    internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName, IEquatable<IPythonType> {
         private readonly object _lock = new object();
         private Func<string, string> _documentationProvider;
         private Func<string, LocationInfo> _locationProvider;
@@ -157,5 +157,6 @@ namespace Microsoft.Python.Analysis.Types {
 
         protected bool ContainsMember(string name) => Members.ContainsKey(name);
         protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;
+        public bool Equals(IPythonType other) => PythonTypeComparer.Instance.Equals(this, other);
     }
 }

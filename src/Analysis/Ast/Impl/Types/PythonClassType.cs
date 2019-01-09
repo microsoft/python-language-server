@@ -26,8 +26,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
-    internal sealed class PythonClassType : PythonType, IPythonClassType {
-        private readonly IPythonInterpreter _interpreter;
+    internal sealed class PythonClassType : PythonType, IPythonClassType, IEquatable<IPythonClassType> {
         private readonly object _lock = new object();
 
         private IReadOnlyList<IPythonType> _mro;
@@ -46,7 +45,6 @@ namespace Microsoft.Python.Analysis.Types {
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
         ) : base(classDefinition.Name, declaringModule, documentation, loc, builtinTypeId) {
             ClassDefinition = classDefinition;
-            _interpreter = interpreter;
         }
 
         #region IPythonType
@@ -219,5 +217,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         private bool Push() => !_isProcessing.Value && (_isProcessing.Value = true);
         private void Pop() => _isProcessing.Value = false;
+        public bool Equals(IPythonClassType other) 
+            => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
     }
 }

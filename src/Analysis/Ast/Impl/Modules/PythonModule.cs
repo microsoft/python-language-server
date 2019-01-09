@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// to AST and the module analysis.
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
-    public class PythonModule : IDocument, IAnalyzable, IDisposable {
+    public class PythonModule : IDocument, IAnalyzable, IDisposable, IEquatable<IPythonModule> {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private IReadOnlyList<DiagnosticsEntry> _diagnostics = Array.Empty<DiagnosticsEntry>();
@@ -490,5 +490,7 @@ namespace Microsoft.Python.Analysis.Modules {
             }
             return f;
         }
+
+        public bool Equals(IPythonModule other) => Name.Equals(other?.Name) && FilePath.Equals(other?.FilePath);
     }
 }

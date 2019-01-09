@@ -57,7 +57,9 @@ namespace Microsoft.Python.Analysis.Tests {
             dt.Should().HaveReadOnlyProperty("day").And.HaveMethod("now")
                 .Which.Should().BeClassMethod().And.HaveSingleOverload()
                 .Which.Should().HaveReturnType()
-                .Which.Should().HaveSameMembersAs(dt);
+                .Which.Should().HaveMembers(
+                    @"astimezone", @"isocalendar", @"resolution", @"fromordinal", @"fromtimestamp",
+                    @"min", @"max", @"date", @"utcnow", "combine", "replace", "second");
         }
     }
 }

@@ -19,7 +19,7 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis {
     public static class PythonTypeExtensions {
         public static bool IsUnknown(this IPythonType value) =>
-            value == null || value.TypeId == BuiltinTypeId.Unknown;
+            value == null || (value.TypeId == BuiltinTypeId.Unknown && value.MemberType == PythonMemberType.Unknown && value.Name.Equals("Unknown"));
 
         public static bool IsGenericParameter(this IPythonType value) 
             => value is IGenericTypeParameter;

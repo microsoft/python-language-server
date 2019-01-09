@@ -19,22 +19,19 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal class TypingListType : TypingSequenceType {
-        public TypingListType(IPythonModule declaringModule, IPythonType contentType)
-            : base("List", declaringModule, contentType, true) { }
+    internal class TypingDictionaryType : TypedDictionaryType {
+        public TypingDictionaryType(IPythonType keyType, IPythonType valueType)
+            : base("Dict", keyType, valueType) { }
 
-        public new static IPythonType Create(IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
-            if (typeArguments.Count == 1) {
-                return new TypingListType(declaringModule, typeArguments[0]);
+        public static IPythonType Create(IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
+            if (typeArguments.Count == 2) {
+                return new TypingDictionaryType(typeArguments[0], typeArguments[1]);
             }
             // TODO: report wrong number of arguments
             return declaringModule.Interpreter.UnknownType;
         }
 
         public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
-            => new TypingList(this, location);
-
-        public override IMember Index(IPythonInstance instance, object index)
-            => new PythonInstance(ContentTypes[0]);
+            => new TypingDictionary(this, location);
     }
 }
