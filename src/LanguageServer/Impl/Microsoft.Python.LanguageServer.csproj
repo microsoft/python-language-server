@@ -33,6 +33,7 @@
     </ItemGroup>
     <ItemGroup Condition="$(AnalysisReference) == ''">
         <ProjectReference Include="../../Analysis/Engine/Impl/Microsoft.Python.Analysis.Engine.csproj" />
+        <ProjectReference Include="../Core/Impl/Microsoft.Python.LanguageServer.Core.csproj" />
     </ItemGroup>
     <ItemGroup Condition="$(AnalysisReference) != ''">
         <Reference Include="Microsoft.Python.Analysis.Engine">

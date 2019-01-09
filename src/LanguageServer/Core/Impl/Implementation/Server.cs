@@ -583,7 +583,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var pending = _pendingAnalysisEnqueue.Incremented();
             try {
                 var entry = doc as ProjectEntry;
-                entry?.ResetCompleteAnalysis();
+                entry?.NewAnalysisAwaitableOnParse();
 
                 // If we don't need to parse, use null cookie
                 var cookieTask = Task.FromResult<IAnalysisCookie>(null);

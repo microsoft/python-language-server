@@ -1,4 +1,4 @@
-﻿// Python Tools for Visual Studio
+// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -9,21 +9,14 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
-namespace Microsoft.PythonTools.Projects {
-    public sealed class AnalysisCompleteEventArgs : EventArgs {
-        private readonly string _path;
+[assembly: AssemblyDescription("Performs analysis of the Python standard library and installed site packages.")]
 
-        public string Path => _path;
-
-        public AnalysisCompleteEventArgs(string path) {
-            _path = path;
-        }
-    }
-}
+[assembly: ComVisible(false)]

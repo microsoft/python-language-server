@@ -21,6 +21,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,11 +46,10 @@ namespace Microsoft.PythonTools.Analysis {
         private readonly ConcurrentQueue<WeakReference<ReferenceDict>> _backReferences = new ConcurrentQueue<WeakReference<ReferenceDict>>();
         private readonly HashSet<AggregateProjectEntry> _aggregates = new HashSet<AggregateProjectEntry>();
 
-        private TaskCompletionSource<IModuleAnalysis> _analysisTcs = new TaskCompletionSource<IModuleAnalysis>();
+        private AnalysisCompletionToken _analysisCompletionToken;
         private AnalysisUnit _unit;
         private readonly ManualResetEventSlim _pendingParse = new ManualResetEventSlim(true);
         private long _expectedParseVersion;
-        private long _expectedAnalysisVersion;
 
         internal ProjectEntry(
             PythonAnalyzer state,
@@ -66,6 +66,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             MyScope = new ModuleInfo(ModuleName, this, state.Interpreter.CreateModuleContext());
             _unit = new AnalysisUnit(null, MyScope.Scope);
+            _analysisCompletionToken = AnalysisCompletionToken.Default;
 
             _buffers = new SortedDictionary<int, DocumentBuffer> { [0] = new DocumentBuffer() };
             if (Cookie is InitialContentCookie c) {
@@ -137,10 +138,10 @@ namespace Microsoft.PythonTools.Analysis {
             }
         }
 
-        internal Task<IModuleAnalysis> GetAnalysisAsync(int waitingTimeout = -1, CancellationToken cancellationToken = default(CancellationToken)) {
+        internal Task<IModuleAnalysis> GetAnalysisAsync(int waitingTimeout = -1, CancellationToken cancellationToken = default) {
             Task<IModuleAnalysis> task;
             lock (this) {
-                task = _analysisTcs.Task;
+                task = _analysisCompletionToken.Task;
             }
 
             if (task.IsCompleted || waitingTimeout == -1 && !cancellationToken.CanBeCanceled) {
@@ -158,22 +159,15 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal void SetCompleteAnalysis() {
             lock (this) {
-                if (_expectedAnalysisVersion != Analysis.Version) {
-                    return;
-                }
-                _analysisTcs.TrySetResult(Analysis);
+                _analysisCompletionToken.TrySetAnalysis(Analysis);
             }
             RaiseNewAnalysis();
         }
 
-        internal void ResetCompleteAnalysis() {
-            TaskCompletionSource<IModuleAnalysis> analysisTcs = null;
+        internal void NewAnalysisAwaitableOnParse() {
             lock (this) {
-                _expectedAnalysisVersion = AnalysisVersion + 1;
-                analysisTcs = _analysisTcs;
-                _analysisTcs = new TaskCompletionSource<IModuleAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _analysisCompletionToken = _analysisCompletionToken.NewParse();
             }
-            analysisTcs?.TrySetCanceled();
         }
 
         public void SetCurrentParse(PythonAst tree, IAnalysisCookie cookie, bool notify = true) {
@@ -195,38 +189,58 @@ namespace Microsoft.PythonTools.Analysis {
 
         internal bool IsVisible(ProjectEntry assigningScope) => true;
 
-        public void Analyze(CancellationToken cancel) => Analyze(cancel, false);
-
-        public void Analyze(CancellationToken cancel, bool enqueueOnly) {
+        public void Analyze(CancellationToken cancel) {
             if (cancel.IsCancellationRequested) {
                 return;
             }
 
             lock (this) {
-                AnalysisVersion++;
+                PrepareForAnalysis();
 
-                foreach (var aggregate in _aggregates) {
-                    aggregate?.BumpVersion();
-                }
+                ProjectState.AnalyzeQueuedEntries(cancel);
 
-                Parse(enqueueOnly, cancel);
+                // publish the analysis now that it's complete/running
+                Analysis = new ModuleAnalysis(
+                    _unit,
+                    ((ModuleScope)_unit.Scope).CloneForPublish(),
+                    DocumentUri,
+                    AnalysisVersion
+                );
             }
 
-            if (!enqueueOnly) {
-                RaiseNewAnalysis();
+            RaiseNewAnalysis();
+        }
+
+        public void PreAnalyze() {
+            lock (this) {
+                PrepareForAnalysis();
+
+                // publish the analysis now that it's complete/running
+                Analysis = new ModuleAnalysis(
+                    _unit,
+                    ((ModuleScope)_unit.Scope).CloneForPublish(),
+                    DocumentUri,
+                    AnalysisVersion
+                );
             }
         }
 
         private void RaiseNewAnalysis() => NewAnalysis?.Invoke(this, EventArgs.Empty);
 
-        public int AnalysisVersion { get; private set; }
+        public int AnalysisVersion => _analysisCompletionToken.Version;
 
         public bool IsAnalyzed => Analysis != null;
 
-        private void Parse(bool enqueueOnly, CancellationToken cancel) {
+        private void PrepareForAnalysis() {
 #if DEBUG
             Debug.Assert(Monitor.IsEntered(this));
 #endif
+            _analysisCompletionToken = _analysisCompletionToken.NewAnalysis();
+
+            foreach (var aggregate in _aggregates) {
+                aggregate?.BumpVersion();
+            }
+
             var parse = GetCurrentParse();
             var tree = parse?.Tree;
             var cookie = parse?.Cookie;
@@ -306,18 +320,6 @@ namespace Microsoft.PythonTools.Analysis {
             }
 
             _unit.Enqueue();
-
-            if (!enqueueOnly) {
-                ProjectState.AnalyzeQueuedEntries(cancel);
-            }
-
-            // publish the analysis now that it's complete/running
-            Analysis = new ModuleAnalysis(
-                _unit,
-                ((ModuleScope)_unit.Scope).CloneForPublish(),
-                DocumentUri,
-                AnalysisVersion
-            );
         }
 
         public IGroupableAnalysisProject AnalysisGroup => ProjectState;
@@ -348,7 +350,7 @@ namespace Microsoft.PythonTools.Analysis {
 
         public void Dispose() {
             lock (this) {
-                AnalysisVersion = -1;
+                _analysisCompletionToken = AnalysisCompletionToken.Disposed;
 
                 var state = ProjectState;
                 foreach (var aggregatedInto in _aggregates) {
@@ -493,6 +495,55 @@ namespace Microsoft.PythonTools.Analysis {
 
         public void AddBackReference(ReferenceDict referenceDict) {
             _backReferences.Enqueue(new WeakReference<ReferenceDict>(referenceDict));
+        }
+
+        private struct AnalysisCompletionToken {
+            public static readonly AnalysisCompletionToken Default;
+            public static readonly AnalysisCompletionToken Disposed;
+
+            static AnalysisCompletionToken() {
+                var cancelledTcs = CreateTcs();
+                cancelledTcs.SetCanceled();
+
+                Default = new AnalysisCompletionToken(CreateTcs(), -1, false);
+                Disposed = new AnalysisCompletionToken(cancelledTcs, -1, true);
+            }
+
+            private readonly bool _isParse;
+            private readonly TaskCompletionSource<IModuleAnalysis> _tcs;
+
+            public int Version { get; }
+            public Task<IModuleAnalysis> Task => _tcs.Task;
+
+            public AnalysisCompletionToken NewParse() {
+                if (_isParse) {
+                    return this;
+                }
+
+                var tcs = CreateTcs();
+                _tcs.TrySetCanceled();
+                return new AnalysisCompletionToken(tcs, Version + 1, true);
+            }
+
+            public AnalysisCompletionToken NewAnalysis() {
+                var tcs = _tcs.Task.IsCompleted ? CreateTcs() : _tcs;
+                return new AnalysisCompletionToken(tcs, _isParse ? Version : Version + 1, false);
+            }
+
+            private AnalysisCompletionToken(TaskCompletionSource<IModuleAnalysis> tcs, int version, bool isParse) {
+                _tcs = tcs;
+                Version = version;
+                _isParse = isParse;
+            }
+
+            public void TrySetAnalysis(IModuleAnalysis analysis) {
+                if (Version == analysis.Version) {
+                    _tcs.TrySetResult(analysis);
+                }
+            }
+
+            private static TaskCompletionSource<IModuleAnalysis> CreateTcs()
+                => new TaskCompletionSource<IModuleAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
     }
 

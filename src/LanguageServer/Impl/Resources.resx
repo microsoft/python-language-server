@@ -117,40 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Done" xml:space="preserve">
-    <value>done.</value>
-  </data>
   <data name="Error_FailedToCreateInterpreter" xml:space="preserve">
     <value>Failed to create interpreter</value>
-  </data>
-  <data name="InitializingForGenericInterpreter" xml:space="preserve">
-    <value>Initializing for generic interpreter</value>
-  </data>
-  <data name="InitializingForPythonInterpreter" xml:space="preserve">
-    <value>Initializing for {0}</value>
-  </data>
-  <data name="LanguageServerVersion" xml:space="preserve">
-    <value>Microsoft Python Language Server version {0}</value>
-  </data>
-  <data name="LineFormatter_UnmatchedToken" xml:space="preserve">
-    <value>Unmatched token '{0}' on line {1}; line formatting may not be accurate.</value>
-  </data>
-  <data name="ReloadingModules" xml:space="preserve">
-    <value>Reloading modules... </value>
-  </data>
-  <data name="RenameVariable_CannotRename" xml:space="preserve">
-    <value>Cannot rename</value>
-  </data>
-  <data name="RenameVariable_CannotRenameModuleName" xml:space="preserve">
-    <value>Cannot rename modules</value>
-  </data>
-  <data name="RenameVariable_NoInformationAvailableForVariable" xml:space="preserve">
-    <value>No information is available for the variable '{0}'.</value>
-  </data>
-  <data name="RenameVariable_SelectSymbol" xml:space="preserve">
-    <value>Please select a symbol to be renamed.</value>
-  </data>
-  <data name="RenameVariable_UnableGetExpressionAnalysis" xml:space="preserve">
-    <value>Unable to get analysis for the selected expression.</value>
   </data>
 </root>

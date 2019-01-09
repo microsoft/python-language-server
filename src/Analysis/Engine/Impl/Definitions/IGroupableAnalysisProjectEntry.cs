@@ -22,14 +22,14 @@ namespace Microsoft.PythonTools.Analysis {
     /// more efficient analysis.
     /// 
     /// To analyze the full group you call Analyze(true) on all the items in the same group (determined
-    /// by looking at the identity of the AnalysGroup object).  Then you call AnalyzeQueuedEntries on the
+    /// by looking at the identity of the AnalysisGroup object).  Then you call AnalyzeQueuedEntries on the
     /// group.
     /// </summary>
     public interface IGroupableAnalysisProjectEntry {
         /// <summary>
         /// Analyzes this project entry optionally just adding it to the queue shared by the project.
         /// </summary>
-        void Analyze(CancellationToken cancel, bool enqueueOnly);
+        void PreAnalyze();
 
         IGroupableAnalysisProject AnalysisGroup { get; }
     }

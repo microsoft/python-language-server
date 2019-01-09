@@ -61,110 +61,11 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to done..
-        /// </summary>
-        internal static string Done {
-            get {
-                return ResourceManager.GetString("Done", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Failed to create interpreter.
         /// </summary>
         internal static string Error_FailedToCreateInterpreter {
             get {
                 return ResourceManager.GetString("Error_FailedToCreateInterpreter", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Initializing for generic interpreter.
-        /// </summary>
-        internal static string InitializingForGenericInterpreter {
-            get {
-                return ResourceManager.GetString("InitializingForGenericInterpreter", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Initializing for {0}.
-        /// </summary>
-        internal static string InitializingForPythonInterpreter {
-            get {
-                return ResourceManager.GetString("InitializingForPythonInterpreter", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Microsoft Python Language Server version {0}.
-        /// </summary>
-        internal static string LanguageServerVersion {
-            get {
-                return ResourceManager.GetString("LanguageServerVersion", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unmatched token &apos;{0}&apos; on line {1}; line formatting may not be accurate..
-        /// </summary>
-        internal static string LineFormatter_UnmatchedToken {
-            get {
-                return ResourceManager.GetString("LineFormatter_UnmatchedToken", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Reloading modules... .
-        /// </summary>
-        internal static string ReloadingModules {
-            get {
-                return ResourceManager.GetString("ReloadingModules", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cannot rename.
-        /// </summary>
-        internal static string RenameVariable_CannotRename {
-            get {
-                return ResourceManager.GetString("RenameVariable_CannotRename", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cannot rename modules.
-        /// </summary>
-        internal static string RenameVariable_CannotRenameModuleName {
-            get {
-                return ResourceManager.GetString("RenameVariable_CannotRenameModuleName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to No information is available for the variable &apos;{0}&apos;..
-        /// </summary>
-        internal static string RenameVariable_NoInformationAvailableForVariable {
-            get {
-                return ResourceManager.GetString("RenameVariable_NoInformationAvailableForVariable", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Please select a symbol to be renamed..
-        /// </summary>
-        internal static string RenameVariable_SelectSymbol {
-            get {
-                return ResourceManager.GetString("RenameVariable_SelectSymbol", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unable to get analysis for the selected expression..
-        /// </summary>
-        internal static string RenameVariable_UnableGetExpressionAnalysis {
-            get {
-                return ResourceManager.GetString("RenameVariable_UnableGetExpressionAnalysis", resourceCulture);
             }
         }
     }

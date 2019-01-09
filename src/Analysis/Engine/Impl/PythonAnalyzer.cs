@@ -129,8 +129,8 @@ namespace Microsoft.PythonTools.Analysis {
         }
 
         private void ReloadModulePaths(in IEnumerable<string> rootPaths) {
-            foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => ModulePath.GetModulesInPath(p))) {
-                _pathResolver.TryAddModulePath(modulePath.SourceFile, out _);
+            foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(p))) {
+                _pathResolver.TryAddModulePath(modulePath, out _);
             }
         }
 
@@ -201,9 +201,7 @@ namespace Microsoft.PythonTools.Analysis {
             }
             return entry;
         }
-
-        public void RemoveModule(IProjectEntry entry) => RemoveModule(entry, null);
-
+        
         /// <summary>
         /// Removes the specified project entry from the current analysis.
         /// 
@@ -213,9 +211,8 @@ namespace Microsoft.PythonTools.Analysis {
         /// <param name="onImporter">Action to perform on each module that
         /// had imported the one being removed.</param>
         public void RemoveModule(IProjectEntry entry, Action<IPythonProjectEntry> onImporter) {
-            if (entry == null) {
-                throw new ArgumentNullException(nameof(entry));
-            }
+            Check.ArgumentNotNull(nameof(entry), entry);
+            Check.ArgumentNotNull(nameof(onImporter), onImporter);
             Contract.EndContractBlock();
 
             var pyEntry = entry as IPythonProjectEntry;
@@ -237,9 +234,6 @@ namespace Microsoft.PythonTools.Analysis {
             entry.Dispose();
             ClearDiagnostics(entry);
 
-            if (onImporter == null) {
-                onImporter = e => e.Analyze(CancellationToken.None, enqueueOnly: true);
-            }
 
             if (!string.IsNullOrEmpty(pyEntry?.ModuleName)) {
                 Modules.TryRemove(pyEntry.ModuleName, out _);
@@ -375,17 +369,6 @@ namespace Microsoft.PythonTools.Analysis {
                 }
                 return type ?? PythonMemberType.Unknown;
             }
-        }
-
-        private static bool GetPackageNameIfMatch(string name, string fullName, out string packageName) {
-            var lastDot = fullName.LastIndexOf('.');
-            if (lastDot < 0) {
-                packageName = null;
-                return false;
-            }
-
-            packageName = fullName.Remove(lastDot);
-            return String.Compare(fullName, lastDot + 1, name, 0, name.Length, StringComparison.Ordinal) == 0;
         }
 
         /// <summary>

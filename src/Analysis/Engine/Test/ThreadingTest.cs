@@ -131,11 +131,11 @@ mc.fn([])
 
             // One analysis before we start
             foreach (var e in entries) {
-                e.Analyze(cancel, true);
+                e.PreAnalyze();
             }
             state.AnalyzeQueuedEntries(cancel);
 
-            // Repeatedly re-analyse the code
+            // Repeatedly re-analyze the code
             yield return Task.Run(() => {
                 var rnd = new Random();
                 while (!cancel.IsCancellationRequested) {
@@ -146,7 +146,7 @@ mc.fn([])
                         .Select(t => t.Item2)
                         .ToList();
                     foreach (var e in shufEntries) {
-                        e.Analyze(cancel, true);
+                        e.PreAnalyze();
                     }
 
                     state.AnalyzeQueuedEntries(cancel);

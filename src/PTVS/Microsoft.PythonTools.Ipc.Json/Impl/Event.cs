@@ -9,16 +9,24 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.PythonTools.Projects {
-    /// <summary>
-    /// Provides access to an abstract Python project.
-    /// </summary>
-    public interface IPythonProjectProvider {
-        PythonProject Project { get; }
+using System.Collections.Generic;
+using Newtonsoft.Json;
+
+namespace Microsoft.PythonTools.Ipc.Json {
+    public class Event {
+
+        [JsonIgnore]
+        public virtual string name => null;
+    }
+
+
+    public class GenericEvent : Event {
+        public Dictionary<string, object> body;
     }
 }
+
