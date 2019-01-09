@@ -183,7 +183,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 newOptions = newOptions | (IsOpen ? ModuleLoadOptions.Analyze : 0);
 
                 var change = (_options ^ newOptions);
-                var startAnalysis = change.ShouldAlalyze() && _analysisTcs?.Task == null;
+                var startAnalysis = change.ShouldAnalyze() && _analysisTcs?.Task == null;
                 var startParse = change.ShouldParse() && _parsingTask == null;
 
                 _options = newOptions;

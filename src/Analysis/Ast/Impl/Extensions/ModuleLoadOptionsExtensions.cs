@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis.Extensions {
             => (o & ModuleLoadOptions.Load) == ModuleLoadOptions.Load;
         public static bool ShouldParse(this ModuleLoadOptions o)
             => (o & ModuleLoadOptions.Ast) == ModuleLoadOptions.Ast;
-        public static bool ShouldAlalyze(this ModuleLoadOptions o)
+        public static bool ShouldAnalyze(this ModuleLoadOptions o)
             => (o & ModuleLoadOptions.Analyze) == ModuleLoadOptions.Analyze;
     }
 }
