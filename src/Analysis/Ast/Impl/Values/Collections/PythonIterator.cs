@@ -13,19 +13,26 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Types.Collections;
 
 namespace Microsoft.Python.Analysis.Values.Collections {
-    internal class PythonSequenceIterator : PythonIterator {
-        private readonly IPythonSequence _owner;
-        private int _index;
+    /// <summary>
+    /// Base class for specialized iterators.
+    /// </summary>
+    internal abstract class PythonIterator : PythonInstance, IPythonIterator {
+        protected PythonIterator(IPythonType iteratorType): base(iteratorType) { }
 
-        public PythonSequenceIterator(IPythonSequence owner)
-            : base(new PythonIteratorType(owner.GetPythonType().TypeId.GetIteratorTypeId(), owner.Type.DeclaringModule)) {
-            _owner = owner;
+        public abstract IMember Next { get; }
+
+        public override IMember Call(string memberName, IReadOnlyList<object> args) {
+            // Specializations
+            switch (memberName) {
+                case @"__next__":
+                case @"next":
+                    return Next;
+            }
+            return base.Call(memberName, args);
         }
-
-        public override IMember Next => _owner.Index(_index++) ?? UnknownType;
     }
 }

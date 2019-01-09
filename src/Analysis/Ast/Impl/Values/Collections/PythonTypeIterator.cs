@@ -17,13 +17,14 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 
 namespace Microsoft.Python.Analysis.Values.Collections {
-    internal sealed class PythonTypeIterator : PythonInstance, IPythonIterator {
+    internal sealed class PythonTypeIterator : PythonIterator {
         private readonly BuiltinTypeId _contentType;
         public PythonTypeIterator(IPythonModule declaringModule, BuiltinTypeId iteratorType, BuiltinTypeId contentType)
             : base(new PythonIteratorType(iteratorType, declaringModule)) {
             _contentType = contentType;
         }
-        public IMember Next => Type.DeclaringModule.Interpreter.GetBuiltinType(_contentType);
+
+        public override IMember Next => Type.DeclaringModule.Interpreter.GetBuiltinType(_contentType);
 
         public static IPythonIterator FromTypeId(IPythonModule declaringModule, BuiltinTypeId typeId) {
             switch (typeId) {

@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             foreach (var o in fn.Overloads) {
                 await SymbolTable.EvaluateAsync(o.FunctionDefinition, cancellationToken);
             }
-            return instance?.Call(fn.Name, args);
+            return instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
         }
 
         private async Task<IMember> GetValueFromPropertyAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
