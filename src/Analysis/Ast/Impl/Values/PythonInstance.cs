@@ -47,10 +47,10 @@ namespace Microsoft.Python.Analysis.Values {
             }
             // Do NOT call type unless it is specific (see above) since by default Python type
             // implementation delegates down to the instance and this will yield stack overflow.
-            return UnknownType;
+            return this;
         }
 
-        public virtual IMember Index(object index) => UnknownType;
+        public virtual IMember Index(object index) => this; // Helps with str slicing
 
         protected IMember UnknownType => Type.DeclaringModule.Interpreter.UnknownType;
     }

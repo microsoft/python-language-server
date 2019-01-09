@@ -13,8 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Core;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 
@@ -33,19 +36,31 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             }
         }
 
+        public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IMember contents) :
+            base(SequenceTypeCache.GetType<PythonDictionaryType>(interpreter), location, Array.Empty<IMember>()) {
+            if (contents is IPythonDictionary dict) {
+                foreach (var key in dict.Keys) {
+                    _contents[key] = dict[key];
+                }
+                Contents = _contents.Keys.ToArray();
+            }
+        }
+
         public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyDictionary<IMember, IMember> contents) :
             this(SequenceTypeCache.GetType<PythonDictionaryType>(interpreter), location, contents) {
             _interpreter = interpreter;
         }
 
-        public IReadOnlyList<IMember> Keys => _contents.Keys.ToArray();
-        public IReadOnlyList<IMember> Values => _contents.Values.ToArray();
+        public IEnumerable<IMember> Keys => _contents.Keys.ToArray();
+        public IEnumerable<IMember> Values => _contents.Values.ToArray();
 
         public IReadOnlyList<IPythonSequence> Items
             => _contents.Select(kvp => new PythonTuple(_interpreter, Location, new[] { kvp.Key, kvp.Value })).ToArray();
 
         public IMember this[IMember key] =>
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
+
+        public override IPythonIterator GetIterator() => Call(@"iterkeys", Array.Empty<object>()) as IPythonIterator;
 
         public override IMember Index(object key) => key is IMember m ? this[m] : UnknownType;
 
@@ -84,5 +99,11 @@ namespace Microsoft.Python.Analysis.Values.Collections {
 
             public int GetHashCode(IMember obj) => 0;
         }
+
+        public IEnumerator<KeyValuePair<IMember, IMember>> GetEnumerator() => _contents.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _contents.GetEnumerator();
+        public int Count => _contents.Count;
+        public bool ContainsKey(IMember key) => _contents.ContainsKey(key);
+        public bool TryGetValue(IMember key, out IMember value) => _contents.TryGetValue(key, out value);
     }
 }

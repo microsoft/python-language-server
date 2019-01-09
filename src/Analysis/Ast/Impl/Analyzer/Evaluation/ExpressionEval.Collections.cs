@@ -23,15 +23,6 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        private async Task<IMember> GetValueFromListAsync(ListExpression expression, CancellationToken cancellationToken = default) {
-            var contents = new List<IMember>();
-            foreach (var item in expression.Items) {
-                var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
-                contents.Add(value);
-            }
-            return new PythonList(Module.Interpreter, GetLoc(expression), contents);
-        }
-
         private async Task<IMember> GetValueFromIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
             if (expr?.Target == null) {
                 return null;
@@ -51,6 +42,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 : UnknownType;
         }
 
+        private async Task<IMember> GetValueFromListAsync(ListExpression expression, CancellationToken cancellationToken = default) {
+            var contents = new List<IMember>();
+            foreach (var item in expression.Items) {
+                var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
+                contents.Add(value);
+            }
+            return new PythonList(Module.Interpreter, GetLoc(expression), contents);
+        }
+
         private async Task<IMember> GetValueFromDictionaryAsync(DictionaryExpression expression, CancellationToken cancellationToken = default) {
             var contents = new Dictionary<IMember, IMember>();
             foreach (var item in expression.Items) {
@@ -59,6 +59,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 contents[key] = value;
             }
             return new PythonDictionary(Interpreter, GetLoc(expression), contents);
+        }
+
+        private async Task<IMember> GetValueFromTupleAsync(TupleExpression expression, CancellationToken cancellationToken = default) {
+            var contents = new List<IMember>();
+            foreach (var item in expression.Items) {
+                var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
+                contents.Add(value);
+            }
+            return new PythonTuple(Module.Interpreter, GetLoc(expression), contents);
         }
     }
 }

@@ -37,17 +37,14 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         protected PythonSequence(
             IPythonSequenceType sequenceType,
             LocationInfo location,
-            IReadOnlyList<object> contents,
+            IEnumerable<object> contents,
             bool flatten = true
         ) : base(sequenceType, location) {
-            if(contents != null) {
-                if (flatten && contents.Count == 1 && contents[0] is IPythonSequence seq) {
-                    Contents = seq.Contents;
-                } else {
-                    Contents = contents.OfType<IMember>().ToArray();
-                }
+            var c = contents?.ToArray() ?? Array.Empty<IMember>();
+            if (flatten && c.Length == 1 && c[0] is IPythonSequence seq) {
+                Contents = seq.Contents;
             } else {
-                Contents = Array.Empty<IMember>();
+                Contents = c.OfType<IMember>().ToArray();
             }
         }
 
@@ -65,7 +62,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             return Type.DeclaringModule.Interpreter.UnknownType;
         }
 
-        public IReadOnlyList<IMember> Contents { get; }
+        public IReadOnlyList<IMember> Contents { get; protected set; }
 
         public virtual IPythonIterator GetIterator() => new PythonSequenceIterator(this);
 

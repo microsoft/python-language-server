@@ -111,15 +111,13 @@ namespace Microsoft.Python.Analysis.Types {
             // Specializations
             switch (typeName) {
                 case "list":
-                    return new PythonList(DeclaringModule.Interpreter, LocationInfo.Empty, args.OfType<IMember>().ToArray());
+                    return new PythonList(DeclaringModule.Interpreter, location, args.OfType<IMember>().ToArray());
                 case "dict":
-                    return new PythonDictionary(DeclaringModule.Interpreter, LocationInfo.Empty,
-                        args.Count == 1 && args[0] is IReadOnlyDictionary<IMember, IMember> dict
-                            ? dict : EmptyDictionary<IMember, IMember>.Instance);
+                    return new PythonDictionary(DeclaringModule.Interpreter, location, args.OfType<IMember>().FirstOrDefault());
                 case "tuple":
-                    return new PythonTuple(DeclaringModule.Interpreter, LocationInfo.Empty, args.OfType<IMember>().ToArray());
+                    return new PythonTuple(DeclaringModule.Interpreter, location, args.OfType<IMember>().ToArray());
             }
-            return new PythonInstance(this);
+            return new PythonInstance(this, location);
         }
         #endregion
 

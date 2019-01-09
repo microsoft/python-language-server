@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         /// <param name="flatten">If true and contents is a single element
         /// and is a sequence, the sequence elements are copied rather than creating
         /// a sequence of sequences with a single element.</param>
-        public PythonList(PythonListType listType, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) :
+        public PythonList(PythonListType listType, LocationInfo location, IEnumerable<IMember> contents, bool flatten = true) :
             base(listType, location, contents, flatten) { }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         /// <param name="flatten">If true and contents is a single element
         /// and is a sequence, the sequence elements are copied rather than creating
         /// a sequence of sequences with a single element.</param>
-        public PythonList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) :
+        public PythonList(IPythonInterpreter interpreter, LocationInfo location, IEnumerable<IMember> contents, bool flatten = true) :
             this(SequenceTypeCache.GetType<PythonListType>(interpreter), location, contents, flatten) { }
     }
 }

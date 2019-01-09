@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
@@ -24,5 +25,13 @@ namespace Microsoft.Python.Analysis.Types.Collections {
 
         public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
             => new PythonTuple(this, location, args);
+
+        // Constructor call
+        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
+            => CreateInstance(Name, instance?.Location ?? LocationInfo.Empty, args);
+
+        public override BuiltinTypeId TypeId => BuiltinTypeId.Tuple;
+        public override PythonMemberType MemberType => PythonMemberType.Class;
+
     }
 }

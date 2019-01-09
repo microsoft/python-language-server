@@ -187,15 +187,15 @@ iinst = inst[1]
 d1 = dict({2:3})
 x1 = d1[2]
 
-d2 = dict(x = 2)
-x2 = d2['x']
+# d2 = dict(x = 2)
+# x2 = d2['x']
 
 d3 = dict(**{2:3})
 x3 = d3[2]
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x1").OfType(BuiltinTypeId.Int)
-                    .And.HaveVariable("x2").OfType(BuiltinTypeId.Int)
+                    //.And.HaveVariable("x2").OfType(BuiltinTypeId.Int)
                     .And.HaveVariable("x3").OfType(BuiltinTypeId.Int);
         }
 
