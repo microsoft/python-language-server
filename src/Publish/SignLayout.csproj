@@ -11,6 +11,7 @@
     <SignEngine Condition="$(SignEngine) == ''">false</SignEngine>
     <SignServer Condition="$(SignServer) == ''">false</SignServer>
     <SignPackage Condition="$(SignPackage) == ''">false</SignPackage>
+    <SignAnalyzer Condition="$(SignAnalyzer) == ''">false</SignAnalyzer>
   </PropertyGroup>
 
   <ItemGroup>
