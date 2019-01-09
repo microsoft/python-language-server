@@ -13,12 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
-    internal class TypingList : TypedSequence {
-        public TypingList(TypingListType listType, LocationInfo location = null)
-            : base(listType, location ?? LocationInfo.Empty) { }
+    internal sealed class TypedIterator : PythonIterator {
+        private readonly IPythonType _contentType;
+        public TypedIterator(IPythonType iteratorType, IPythonType contentType) : base(iteratorType) {
+            _contentType = contentType;
+        }
+
+        public override IMember Next => new PythonInstance(_contentType);
     }
 }

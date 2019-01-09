@@ -238,6 +238,37 @@ z1 = x[1]
         }
 
         [TestMethod, Priority(0)]
+        public async Task IteratorParamTypeMatch() {
+            const string code = @"
+from typing import Iterator, List, TypeVar
+
+T = TypeVar('T')
+
+def f(a: Iterator[T]) -> str: ...
+def f(a: int) -> float: ...
+
+a: List[str] = ['a', 'b', 'c']
+x = f(iter(a))
+";
+            var analysis = await GetAnalysisAsync(code);
+            var f = analysis.Should().HaveFunction("f").Which;
+
+            f.Should().HaveOverloadAt(0)
+                .Which.Should().HaveReturnType(BuiltinTypeId.Str)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType("Iterator[T]");
+
+            f.Should().HaveOverloadAt(1)
+                .Which.Should().HaveReturnType(BuiltinTypeId.Float)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.Int);
+
+            analysis.Should().HaveVariable("a").OfType("List[str]")
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
+
+
+        [TestMethod, Priority(0)]
         public async Task IterableParamTypeMatch() {
             const string code = @"
 from typing import Iterable, List, Tuple, TypeVar
@@ -397,6 +428,22 @@ def func(a: Dict[int, str]):
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveParameterAt(0)
                 .Which.Should().HaveName("a").And.HaveType("Dict[int, str]");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericIterator() {
+            const string code = @"
+from typing import Iterator, List
+
+a: List[str] = ['a', 'b', 'c']
+ia = iter(a);
+x = next(ia);
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("a").OfType("List[str]")
+                .And.HaveVariable("ia").OfType(BuiltinTypeId.ListIterator)
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
     }
 }

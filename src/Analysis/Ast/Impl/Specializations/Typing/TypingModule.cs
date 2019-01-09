@@ -54,6 +54,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             fn.AddOverload(o);
             _members["TypeVar"] = fn;
 
+            _members["Iterator"] = new GenericType("Iterator", this,
+                (typeArgs, module, location) => TypingIteratorType.Create(module, typeArgs));
+
             _members["Iterable"] = new GenericType("Iterable", this,
                 (typeArgs, module, location) => TypingIterableType.Create(module, typeArgs));
             _members["Sequence"] = new GenericType("Sequence", this,

@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         }
 
         #region IPythonIterableType
-        public IPythonIterator GetIterator(IPythonInstance instance) => (instance as IPythonIterable)?.GetIterator();
+        public virtual IPythonIterator GetIterator(IPythonInstance instance) => (instance as IPythonIterable)?.GetIterator();
         #endregion
 
         #region IPythonType

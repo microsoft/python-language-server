@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
     /// to the analysis on the return type of the 'next' method. 'Next' method
     /// is implemented manually via specialized function overload.
     /// </summary>
-    internal sealed class PythonIteratorType : PythonTypeWrapper, IPythonIteratorType {
+    internal class PythonIteratorType : PythonTypeWrapper, IPythonIteratorType {
         /// <summary>
         /// Creates type info for an iterator.
         /// </summary>
@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             TypeId = typeId;
         }
 
-        public IMember Next(IPythonInstance instance) => (instance as IPythonIterator)?.Next ?? UnknownType;
+        public virtual IMember Next(IPythonInstance instance) => (instance as IPythonIterator)?.Next ?? UnknownType;
 
         public override BuiltinTypeId TypeId { get; }
         public override PythonMemberType MemberType => PythonMemberType.Class;

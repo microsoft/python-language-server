@@ -24,8 +24,12 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             IPythonType contentType,
             bool isMutable
             ) : base(name, typeId, declaringModule, contentType) {
+            ContentType = contentType;
             IsMutable = isMutable;
         }
+
+        public IPythonType ContentType { get; }
+        public BuiltinTypeId IteratorTypeId => TypeId.GetIteratorTypeId();
 
         /// <summary>
         /// Indicates if collection is mutable (such as list) or not (such as tuple).
