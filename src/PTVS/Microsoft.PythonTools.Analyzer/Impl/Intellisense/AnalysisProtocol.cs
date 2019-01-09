@@ -491,9 +491,6 @@ namespace Microsoft.PythonTools.Intellisense {
             public string newText;
             public int startLine, startColumn;
             public int endLine, endColumn;
-#if DEBUG
-            public int _startIndex, _endIndex;
-#endif
 
             public static ChangeInfo FromDocumentChange(DocumentChange c) {
                 return new ChangeInfo {

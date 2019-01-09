@@ -38,8 +38,7 @@ using Microsoft.PythonTools.Projects;
 
 namespace Microsoft.PythonTools.Intellisense {
     using AP = AnalysisProtocol;
-    using LS = Microsoft.PythonTools.Analysis.LanguageServer;
-    using LS2 = Microsoft.Python.LanguageServer;
+    using LS = Microsoft.Python.LanguageServer;
 
     /// <summary>
     /// Performs centralized parsing and analysis of Python source code for a remotely running process.
@@ -90,7 +89,7 @@ namespace Microsoft.PythonTools.Intellisense {
             }
         }
 
-        private void Server_OnLogMessage(object sender, LS2.LogMessageEventArgs e) {
+        private void Server_OnLogMessage(object sender, LS.LogMessageEventArgs e) {
             if (_log != null && Options.traceLevel.HasValue && e.type <= Options.traceLevel.Value) {
                 _log(e.message);
                 _connection?.SendEventAsync(new AP.AnalyzerWarningEvent { message = e.message }).DoNotWait();
@@ -169,11 +168,11 @@ namespace Microsoft.PythonTools.Intellisense {
                 object result = null;
 
                 switch (request.name) {
-                    case "textDocument/completion": result = await _server.Completion(body.ToObject<LS2.CompletionParams>(), CancellationToken.None); break;
-                    case "textDocument/hover": result = await _server.Hover(body.ToObject<LS2.TextDocumentPositionParams>(), CancellationToken.None); break;
-                    case "textDocument/definition": result = await _server.GotoDefinition(body.ToObject<LS2.TextDocumentPositionParams>(), CancellationToken.None); break;
-                    case "textDocument/references": result = await _server.FindReferences(body.ToObject<LS2.ReferencesParams>(), CancellationToken.None); break;
-                    case "textDocument/signatureHelp": result = await _server.SignatureHelp(body.ToObject<LS2.TextDocumentPositionParams>(), CancellationToken.None); break;
+                    case "textDocument/completion": result = await _server.Completion(body.ToObject<LS.CompletionParams>(), CancellationToken.None); break;
+                    case "textDocument/hover": result = await _server.Hover(body.ToObject<LS.TextDocumentPositionParams>(), CancellationToken.None); break;
+                    case "textDocument/definition": result = await _server.GotoDefinition(body.ToObject<LS.TextDocumentPositionParams>(), CancellationToken.None); break;
+                    case "textDocument/references": result = await _server.FindReferences(body.ToObject<LS.ReferencesParams>(), CancellationToken.None); break;
+                    case "textDocument/signatureHelp": result = await _server.SignatureHelp(body.ToObject<LS.TextDocumentPositionParams>(), CancellationToken.None); break;
                 }
 
                 if (result != null) {
@@ -250,10 +249,10 @@ namespace Microsoft.PythonTools.Intellisense {
 
         private async Task<Response> Initialize(AP.InitializeRequest request) {
             try {
-                await _server.Initialize(new LS2.InitializeParams {
+                await _server.Initialize(new LS.InitializeParams {
                     rootUri = request.rootUri,
-                    initializationOptions = new LS2.PythonInitializationOptions {
-                        interpreter = new LS2.PythonInitializationOptions.Interpreter {
+                    initializationOptions = new LS.PythonInitializationOptions {
+                        interpreter = new LS.PythonInitializationOptions.Interpreter {
                             assembly = request.interpreter?.assembly,
                             typeName = request.interpreter?.typeName,
                             properties = request.interpreter?.properties
@@ -268,26 +267,26 @@ namespace Microsoft.PythonTools.Intellisense {
                         analysisUpdates = true,
                         traceLogging = request.traceLogging,
                     },
-                    capabilities = new LS2.ClientCapabilities {
-                        python = new LS2.PythonClientCapabilities {
+                    capabilities = new LS.ClientCapabilities {
+                        python = new LS.PythonClientCapabilities {
                             manualFileLoad = !request.analyzeAllFiles,
                             liveLinting = request.liveLinting
                         },
-                        textDocument = new LS2.TextDocumentClientCapabilities {
-                            completion = new LS2.TextDocumentClientCapabilities.CompletionCapabilities {
-                                completionItem = new LS2.TextDocumentClientCapabilities.CompletionCapabilities.CompletionItemCapabilities {
-                                    documentationFormat = new[] { LS.MarkupKind.PlainText },
+                        textDocument = new LS.TextDocumentClientCapabilities {
+                            completion = new LS.TextDocumentClientCapabilities.CompletionCapabilities {
+                                completionItem = new LS.TextDocumentClientCapabilities.CompletionCapabilities.CompletionItemCapabilities {
+                                    documentationFormat = new[] { MarkupKind.PlainText },
                                     snippetSupport = false
                                 }
                             },
-                            signatureHelp = new LS2.TextDocumentClientCapabilities.SignatureHelpCapabilities {
-                                signatureInformation = new LS2.TextDocumentClientCapabilities.SignatureHelpCapabilities.SignatureInformationCapabilities {
-                                    documentationFormat = new[] { LS.MarkupKind.PlainText },
+                            signatureHelp = new LS.TextDocumentClientCapabilities.SignatureHelpCapabilities {
+                                signatureInformation = new LS.TextDocumentClientCapabilities.SignatureHelpCapabilities.SignatureInformationCapabilities {
+                                    documentationFormat = new[] { MarkupKind.PlainText },
                                     _shortLabel = true
                                 }
                             },
-                            hover = new LS2.TextDocumentClientCapabilities.HoverCapabilities {
-                                contentFormat = new[] { LS.MarkupKind.PlainText }
+                            hover = new LS.TextDocumentClientCapabilities.HoverCapabilities {
+                                contentFormat = new[] { MarkupKind.PlainText }
                             }
                         }
                     }
@@ -1027,8 +1026,8 @@ namespace Microsoft.PythonTools.Intellisense {
         }
 
         private async Task<Response> GetNavigationsAsync(AP.NavigationRequest request) {
-            var symbols = await _server.HierarchicalDocumentSymbol(new LS2.DocumentSymbolParams {
-                textDocument = new LS2.TextDocumentIdentifier { uri = request.documentUri }
+            var symbols = await _server.HierarchicalDocumentSymbol(new LS.DocumentSymbolParams {
+                textDocument = new LS.TextDocumentIdentifier { uri = request.documentUri }
             }, CancellationToken.None);
 
             var navs = symbols.Select(ToNavigation).ToArray();
@@ -1039,7 +1038,7 @@ namespace Microsoft.PythonTools.Intellisense {
             };
         }
 
-        private AP.Navigation ToNavigation(LS2.DocumentSymbol symbol) =>
+        private AP.Navigation ToNavigation(LS.DocumentSymbol symbol) =>
             new AP.Navigation {
                 name = symbol.name,
                 startLine = symbol.range.start.line + 1,
@@ -1115,10 +1114,10 @@ namespace Microsoft.PythonTools.Intellisense {
                 return IncorrectFileType();
             }
 
-            var references = await _server.FindReferences(new LS2.ReferencesParams {
+            var references = await _server.FindReferences(new LS.ReferencesParams {
                 textDocument = request.documentUri,
                 position = new SourceLocation(request.line, request.column),
-                context = new LS2.ReferenceContext {
+                context = new LS.ReferenceContext {
                     includeDeclaration = true,
                     _includeValues = true
                 }
@@ -1132,7 +1131,7 @@ namespace Microsoft.PythonTools.Intellisense {
             };
         }
 
-        private AP.AnalysisReference MakeReference(LS2.Reference r) {
+        private AP.AnalysisReference MakeReference(LS.Reference r) {
             var range = (SourceSpan)r.range;
 
             return new AP.AnalysisReference {
@@ -1156,20 +1155,20 @@ namespace Microsoft.PythonTools.Intellisense {
             return null;
         }
 
-        private static string GetVariableType(LS2.ReferenceKind? type) {
+        private static string GetVariableType(LS.ReferenceKind? type) {
             if (!type.HasValue) {
                 return null;
             }
             switch (type.Value) {
-                case LS2.ReferenceKind.Definition: return "definition";
-                case LS2.ReferenceKind.Reference: return "reference";
-                case LS2.ReferenceKind.Value: return "value";
+                case LS.ReferenceKind.Definition: return "definition";
+                case LS.ReferenceKind.Reference: return "reference";
+                case LS.ReferenceKind.Value: return "value";
             }
             return null;
         }
 
         private async Task<Response> GetQuickInfo(AP.QuickInfoRequest request) {
-            LS2.Hover hover = await _server.Hover(new LS2.TextDocumentPositionParams {
+            LS.Hover hover = await _server.Hover(new LS.TextDocumentPositionParams {
                 textDocument = request.documentUri,
                 position = new SourceLocation(request.line, request.column),
                 _expr = request.expr,
@@ -1181,7 +1180,7 @@ namespace Microsoft.PythonTools.Intellisense {
         }
 
         private async Task<Response> GetSignatures(AP.SignaturesRequest request) {
-            var sigs = await _server.SignatureHelp(new LS2.TextDocumentPositionParams {
+            var sigs = await _server.SignatureHelp(new LS.TextDocumentPositionParams {
                 textDocument = request.documentUri,
                 position = new SourceLocation(request.line, request.column),
                 _expr = request.text
@@ -1210,12 +1209,12 @@ namespace Microsoft.PythonTools.Intellisense {
             var getModules = (AP.GetModulesRequest)request;
             var prefix = getModules.package == null ? null : (string.Join(".", getModules.package));
 
-            var modules = await _server.Completion(new LS2.CompletionParams {
+            var modules = await _server.Completion(new LS.CompletionParams {
                 textDocument = getModules.documentUri,
                 _expr = prefix,
-                context = new LS2.CompletionContext {
-                    triggerKind = LS2.CompletionTriggerKind.Invoked,
-                    _filterKind = LS2.CompletionItemKind.Module,
+                context = new LS.CompletionContext {
+                    triggerKind = LS.CompletionTriggerKind.Invoked,
+                    _filterKind = LS.CompletionItemKind.Module,
                     //_includeAllModules = getModules.package == null
                 }
             }, CancellationToken.None);
@@ -1228,10 +1227,10 @@ namespace Microsoft.PythonTools.Intellisense {
         private async Task<Response> GetCompletions(Request request) {
             var req = (AP.CompletionsRequest)request;
 
-            var members = await _server.Completion(new LS2.CompletionParams {
+            var members = await _server.Completion(new LS.CompletionParams {
                 position = new Position { line = req.line - 1, character = req.column - 1 },
                 textDocument = req.documentUri,
-                context = new LS2.CompletionContext {
+                context = new LS.CompletionContext {
                     _intersection = req.options.HasFlag(GetMemberOptions.IntersectMultipleResults),
                     //_statementKeywords = req.options.HasFlag(GetMemberOptions.IncludeStatementKeywords),
                     //_expressionKeywords = req.options.HasFlag(GetMemberOptions.IncludeExpressionKeywords),
@@ -1248,7 +1247,7 @@ namespace Microsoft.PythonTools.Intellisense {
         private async Task<Response> GetAllMembers(Request request) {
             var req = (AP.GetAllMembersRequest)request;
 
-            var members = await _server.WorkspaceSymbols(new LS2.WorkspaceSymbolParams {
+            var members = await _server.WorkspaceSymbols(new LS.WorkspaceSymbolParams {
                 query = req.prefix
             }, CancellationToken.None).ConfigureAwait(false);
 
@@ -1257,7 +1256,7 @@ namespace Microsoft.PythonTools.Intellisense {
             };
         }
 
-        private async Task<AP.Completion[]> ToCompletions(IEnumerable<LS2.SymbolInformation> symbols) {
+        private async Task<AP.Completion[]> ToCompletions(IEnumerable<LS.SymbolInformation> symbols) {
             if (symbols == null) {
                 return null;
             }
@@ -1294,7 +1293,7 @@ namespace Microsoft.PythonTools.Intellisense {
         }
 
 
-        private async Task<AP.Completion[]> ToCompletions(IEnumerable<LS2.CompletionItem> completions, GetMemberOptions options) {
+        private async Task<AP.Completion[]> ToCompletions(IEnumerable<LS.CompletionItem> completions, GetMemberOptions options) {
             if (completions == null) {
                 return null;
             }
@@ -1334,77 +1333,77 @@ namespace Microsoft.PythonTools.Intellisense {
             return res.ToArray();
         }
 
-        private PythonMemberType ToMemberType(string originalKind, LS2.CompletionItemKind kind) {
+        private PythonMemberType ToMemberType(string originalKind, LS.CompletionItemKind kind) {
             PythonMemberType res;
             if (!string.IsNullOrEmpty(originalKind) && Enum.TryParse(originalKind, true, out res)) {
                 return res;
             }
 
             switch (kind) {
-                case LS2.CompletionItemKind.None: return PythonMemberType.Unknown;
-                case LS2.CompletionItemKind.Text: return PythonMemberType.Constant;
-                case LS2.CompletionItemKind.Method: return PythonMemberType.Method;
-                case LS2.CompletionItemKind.Function: return PythonMemberType.Function;
-                case LS2.CompletionItemKind.Constructor: return PythonMemberType.Function;
-                case LS2.CompletionItemKind.Field: return PythonMemberType.Field;
-                case LS2.CompletionItemKind.Variable: return PythonMemberType.Instance;
-                case LS2.CompletionItemKind.Class: return PythonMemberType.Class;
-                case LS2.CompletionItemKind.Interface: return PythonMemberType.Class;
-                case LS2.CompletionItemKind.Module: return PythonMemberType.Module;
-                case LS2.CompletionItemKind.Property: return PythonMemberType.Property;
-                case LS2.CompletionItemKind.Unit: return PythonMemberType.Unknown;
-                case LS2.CompletionItemKind.Value: return PythonMemberType.Instance;
-                case LS2.CompletionItemKind.Enum: return PythonMemberType.Enum;
-                case LS2.CompletionItemKind.Keyword: return PythonMemberType.Keyword;
-                case LS2.CompletionItemKind.Snippet: return PythonMemberType.CodeSnippet;
-                case LS2.CompletionItemKind.Color: return PythonMemberType.Instance;
-                case LS2.CompletionItemKind.File: return PythonMemberType.Module;
-                case LS2.CompletionItemKind.Reference: return PythonMemberType.Unknown;
-                case LS2.CompletionItemKind.Folder: return PythonMemberType.Module;
-                case LS2.CompletionItemKind.EnumMember: return PythonMemberType.EnumInstance;
-                case LS2.CompletionItemKind.Constant: return PythonMemberType.Constant;
-                case LS2.CompletionItemKind.Struct: return PythonMemberType.Class;
-                case LS2.CompletionItemKind.Event: return PythonMemberType.Delegate;
-                case LS2.CompletionItemKind.Operator: return PythonMemberType.Unknown;
-                case LS2.CompletionItemKind.TypeParameter: return PythonMemberType.Class;
+                case LS.CompletionItemKind.None: return PythonMemberType.Unknown;
+                case LS.CompletionItemKind.Text: return PythonMemberType.Constant;
+                case LS.CompletionItemKind.Method: return PythonMemberType.Method;
+                case LS.CompletionItemKind.Function: return PythonMemberType.Function;
+                case LS.CompletionItemKind.Constructor: return PythonMemberType.Function;
+                case LS.CompletionItemKind.Field: return PythonMemberType.Field;
+                case LS.CompletionItemKind.Variable: return PythonMemberType.Instance;
+                case LS.CompletionItemKind.Class: return PythonMemberType.Class;
+                case LS.CompletionItemKind.Interface: return PythonMemberType.Class;
+                case LS.CompletionItemKind.Module: return PythonMemberType.Module;
+                case LS.CompletionItemKind.Property: return PythonMemberType.Property;
+                case LS.CompletionItemKind.Unit: return PythonMemberType.Unknown;
+                case LS.CompletionItemKind.Value: return PythonMemberType.Instance;
+                case LS.CompletionItemKind.Enum: return PythonMemberType.Enum;
+                case LS.CompletionItemKind.Keyword: return PythonMemberType.Keyword;
+                case LS.CompletionItemKind.Snippet: return PythonMemberType.CodeSnippet;
+                case LS.CompletionItemKind.Color: return PythonMemberType.Instance;
+                case LS.CompletionItemKind.File: return PythonMemberType.Module;
+                case LS.CompletionItemKind.Reference: return PythonMemberType.Unknown;
+                case LS.CompletionItemKind.Folder: return PythonMemberType.Module;
+                case LS.CompletionItemKind.EnumMember: return PythonMemberType.EnumInstance;
+                case LS.CompletionItemKind.Constant: return PythonMemberType.Constant;
+                case LS.CompletionItemKind.Struct: return PythonMemberType.Class;
+                case LS.CompletionItemKind.Event: return PythonMemberType.Delegate;
+                case LS.CompletionItemKind.Operator: return PythonMemberType.Unknown;
+                case LS.CompletionItemKind.TypeParameter: return PythonMemberType.Class;
                 default: return PythonMemberType.Unknown;
             }
         }
 
-        private PythonMemberType ToMemberType(string originalKind, LS2.SymbolKind kind) {
+        private PythonMemberType ToMemberType(string originalKind, LS.SymbolKind kind) {
             PythonMemberType res;
             if (!string.IsNullOrEmpty(originalKind) && Enum.TryParse(originalKind, true, out res)) {
                 return res;
             }
 
             switch (kind) {
-                case LS2.SymbolKind.None: return PythonMemberType.Unknown;
-                case LS2.SymbolKind.File: return PythonMemberType.Module;
-                case LS2.SymbolKind.Module: return PythonMemberType.Module;
-                case LS2.SymbolKind.Namespace: return PythonMemberType.Namespace;
-                case LS2.SymbolKind.Package: return PythonMemberType.Module;
-                case LS2.SymbolKind.Class: return PythonMemberType.Class;
-                case LS2.SymbolKind.Method: return PythonMemberType.Method;
-                case LS2.SymbolKind.Property: return PythonMemberType.Property;
-                case LS2.SymbolKind.Field: return PythonMemberType.Field;
-                case LS2.SymbolKind.Constructor: return PythonMemberType.Method;
-                case LS2.SymbolKind.Enum: return PythonMemberType.Enum;
-                case LS2.SymbolKind.Interface: return PythonMemberType.Class;
-                case LS2.SymbolKind.Function: return PythonMemberType.Function;
-                case LS2.SymbolKind.Variable: return PythonMemberType.Field;
-                case LS2.SymbolKind.Constant: return PythonMemberType.Constant;
-                case LS2.SymbolKind.String: return PythonMemberType.Constant;
-                case LS2.SymbolKind.Number: return PythonMemberType.Constant;
-                case LS2.SymbolKind.Boolean: return PythonMemberType.Constant;
-                case LS2.SymbolKind.Array: return PythonMemberType.Instance;
-                case LS2.SymbolKind.Object: return PythonMemberType.Instance;
-                case LS2.SymbolKind.Key: return PythonMemberType.Unknown;
-                case LS2.SymbolKind.Null: return PythonMemberType.Unknown;
-                case LS2.SymbolKind.EnumMember: return PythonMemberType.EnumInstance;
-                case LS2.SymbolKind.Struct: return PythonMemberType.Class;
-                case LS2.SymbolKind.Event: return PythonMemberType.Event;
-                case LS2.SymbolKind.Operator: return PythonMemberType.Method;
-                case LS2.SymbolKind.TypeParameter: return PythonMemberType.NamedArgument;
+                case LS.SymbolKind.None: return PythonMemberType.Unknown;
+                case LS.SymbolKind.File: return PythonMemberType.Module;
+                case LS.SymbolKind.Module: return PythonMemberType.Module;
+                case LS.SymbolKind.Namespace: return PythonMemberType.Namespace;
+                case LS.SymbolKind.Package: return PythonMemberType.Module;
+                case LS.SymbolKind.Class: return PythonMemberType.Class;
+                case LS.SymbolKind.Method: return PythonMemberType.Method;
+                case LS.SymbolKind.Property: return PythonMemberType.Property;
+                case LS.SymbolKind.Field: return PythonMemberType.Field;
+                case LS.SymbolKind.Constructor: return PythonMemberType.Method;
+                case LS.SymbolKind.Enum: return PythonMemberType.Enum;
+                case LS.SymbolKind.Interface: return PythonMemberType.Class;
+                case LS.SymbolKind.Function: return PythonMemberType.Function;
+                case LS.SymbolKind.Variable: return PythonMemberType.Field;
+                case LS.SymbolKind.Constant: return PythonMemberType.Constant;
+                case LS.SymbolKind.String: return PythonMemberType.Constant;
+                case LS.SymbolKind.Number: return PythonMemberType.Constant;
+                case LS.SymbolKind.Boolean: return PythonMemberType.Constant;
+                case LS.SymbolKind.Array: return PythonMemberType.Instance;
+                case LS.SymbolKind.Object: return PythonMemberType.Instance;
+                case LS.SymbolKind.Key: return PythonMemberType.Unknown;
+                case LS.SymbolKind.Null: return PythonMemberType.Unknown;
+                case LS.SymbolKind.EnumMember: return PythonMemberType.EnumInstance;
+                case LS.SymbolKind.Struct: return PythonMemberType.Class;
+                case LS.SymbolKind.Event: return PythonMemberType.Event;
+                case LS.SymbolKind.Operator: return PythonMemberType.Method;
+                case LS.SymbolKind.TypeParameter: return PythonMemberType.NamedArgument;
                 default: return PythonMemberType.Unknown;
             }
         }
@@ -1505,14 +1504,14 @@ namespace Microsoft.PythonTools.Intellisense {
         private async Task<Response> UpdateContent(AP.FileUpdateRequest request) {
             int version = -1;
             foreach (var fileChange in request.updates) {
-                var changes = new List<LS2.TextDocumentContentChangedEvent>();
+                var changes = new List<LS.TextDocumentContentChangedEvent>();
                 if (fileChange.kind == AP.FileUpdateKind.reset) {
-                    changes.Add(new LS2.TextDocumentContentChangedEvent {
+                    changes.Add(new LS.TextDocumentContentChangedEvent {
                         text = fileChange.content
                     });
                     version = fileChange.version;
                 } else if (fileChange.kind == AP.FileUpdateKind.changes) {
-                    changes.AddRange(fileChange.changes.Select(c => new LS2.TextDocumentContentChangedEvent {
+                    changes.AddRange(fileChange.changes.Select(c => new LS.TextDocumentContentChangedEvent {
                         range = new SourceSpan(
                             new SourceLocation(c.startLine, c.startColumn),
                             new SourceLocation(c.endLine, c.endColumn)
@@ -1524,8 +1523,8 @@ namespace Microsoft.PythonTools.Intellisense {
                     continue;
                 }
 
-                _server.DidChangeTextDocument(new LS2.DidChangeTextDocumentParams {
-                    textDocument = new LS2.VersionedTextDocumentIdentifier {
+                _server.DidChangeTextDocument(new LS.DidChangeTextDocumentParams {
+                    textDocument = new LS.VersionedTextDocumentIdentifier {
                         uri = request.documentUri,
                         version = version,
                         _fromVersion = Math.Max(version - 1, 0)
@@ -1571,16 +1570,16 @@ namespace Microsoft.PythonTools.Intellisense {
         }
 
         private void OnModulesChanged(object sender, EventArgs args) {
-            _server.DidChangeConfiguration(new LS2.DidChangeConfigurationParams(), CancellationToken.None).DoNotWait();
+            _server.DidChangeConfiguration(new LS.DidChangeConfigurationParams(), CancellationToken.None).DoNotWait();
         }
 
         private void OnFileChanged(AP.FileChangedEvent e) {
-            _server.DidChangeWatchedFiles(new LS2.DidChangeWatchedFilesParams {
-                changes = e.changes.MaybeEnumerate().Select(c => new LS2.FileEvent { uri = c.documentUri, type = c.kind }).ToArray()
+            _server.DidChangeWatchedFiles(new LS.DidChangeWatchedFilesParams {
+                changes = e.changes.MaybeEnumerate().Select(c => new LS.FileEvent { uri = c.documentUri, type = c.kind }).ToArray()
             }, CancellationToken.None).DoNotWait();
         }
 
-        private void OnAnalysisComplete(object sender, LS2.AnalysisCompleteEventArgs e) {
+        private void OnAnalysisComplete(object sender, LS.AnalysisCompleteEventArgs e) {
             _connection.SendEventAsync(
                 new AP.FileAnalysisCompleteEvent {
                     documentUri = e.uri,
@@ -1649,7 +1648,7 @@ namespace Microsoft.PythonTools.Intellisense {
         /// </remarks>
         public PythonAnalyzer Project => _server.Analyzer;
 
-        private void OnPublishDiagnostics(object sender, LS2.PublishDiagnosticsEventArgs e) {
+        private void OnPublishDiagnostics(object sender, LS.PublishDiagnosticsEventArgs e) {
             _connection.SendEventAsync(
                 new AP.DiagnosticsEvent {
                     documentUri = e.uri,
@@ -1659,7 +1658,7 @@ namespace Microsoft.PythonTools.Intellisense {
             ).DoNotWait();
         }
 
-        private void OnParseComplete(object sender, LS2.ParseCompleteEventArgs e) {
+        private void OnParseComplete(object sender, LS.ParseCompleteEventArgs e) {
             _connection.SendEventAsync(
                 new AP.FileParsedEvent {
                     documentUri = e.uri,
