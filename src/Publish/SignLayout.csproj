@@ -35,6 +35,13 @@
     <SignFiles Include="$(OutputPath)\Microsoft.Python.LanguageServer.exe" Condition="Exists('$(OutputPath)\Microsoft.Python.LanguageServer.exe')" />
   </ItemGroup>
 
+  <ItemGroup Condition="$(SignAnalyzer)">
+    <SignFiles Include="$(OutputPath)\Microsoft.Python.Analysis.Engine.dll" />
+    <SignFiles Include="$(OutputPath)\Microsoft.Python.LanguageServer.Core.dll" />
+    <SignFiles Include="$(OutputPath)\Microsoft.PythonTools.Ipc.Json.dll" />
+    <SignFiles Include="$(OutputPath)\Microsoft.PythonTools.Analyzer.exe" />
+  </ItemGroup>
+
   <ItemGroup Condition="$(SignPackage)">
     <SignFiles Include="$(OutputPath)\Python-Language-Server-*.nupkg" />
   </ItemGroup>
