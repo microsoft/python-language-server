@@ -13,20 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     public interface IPythonIteratorType : IPythonType {
-        IMember GetNext(IPythonInstance instance);
-    }
-
-    /// <summary>
-    /// Represents dictionary-like type, such as tuple.
-    /// </summary>
-    public interface IPythonLookupType : IPythonType {
-        IEnumerable<IMember> Keys { get; }
-        IEnumerable<IMember> Values { get; }
-        IMember GetValueAt(IPythonInstance instance, IMember key);
+        IMember Next(IPythonInstance instance);
     }
 }

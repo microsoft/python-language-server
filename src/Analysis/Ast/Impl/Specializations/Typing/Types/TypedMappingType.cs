@@ -18,12 +18,13 @@ using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal abstract class TypedDictionaryType : PythonDictionaryType {
-        protected TypedDictionaryType(
+    internal abstract class TypedMappingType : PythonDictionaryType {
+        protected TypedMappingType(
             string name,
             IPythonType keyType,
-            IPythonType valueType
-            ) : base(keyType.DeclaringModule.Interpreter) {
+            IPythonType valueType,
+            bool isMutable
+            ) : base(keyType.DeclaringModule.Interpreter, isMutable) {
             KeyType = keyType;
             ValueType = valueType;
             Name = $"{name}[{keyType.Name}, {valueType.Name}]";
@@ -34,5 +35,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public override string Name { get; }
         public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ValueType);
+        public override bool IsAbstract => true;
     }
 }

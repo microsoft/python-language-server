@@ -36,5 +36,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public override IMember Index(IPythonInstance instance, object index)
             => new PythonInstance(ContentTypes[0]);
+
+        public override bool IsAbstract => false;
     }
 }

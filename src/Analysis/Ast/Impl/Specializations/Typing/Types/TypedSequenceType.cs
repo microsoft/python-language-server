@@ -43,5 +43,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public override string Name { get; }
         public override IMember Index(IPythonInstance instance, object index) => instance?.Index(index) ?? UnknownType;
+        public override bool IsAbstract => true;
     }
 }

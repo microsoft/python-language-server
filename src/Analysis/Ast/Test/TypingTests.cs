@@ -238,7 +238,7 @@ z1 = x[1]
         }
 
         [TestMethod, Priority(0)]
-        public async Task OverloadsParamTypeMatch() {
+        public async Task SequenceParamTypeMatch() {
             const string code = @"
 from typing import List, Sequence, TypeVar
 
@@ -267,6 +267,36 @@ x = f(a)
                 .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task MappingParamTypeMatch() {
+            const string code = @"
+from typing import Dict, Mapping, TypeVar
+
+KT = TypeVar('KT')
+KV = TypeVar('KV')
+
+def f(a: Mapping[KT, KV]) -> str: ...
+def f(a: int) -> float: ...
+
+a: Dict[str, int]
+x = f(a)
+";
+            var analysis = await GetAnalysisAsync(code);
+            var f = analysis.Should().HaveFunction("f").Which;
+
+            f.Should().HaveOverloadAt(0)
+                .Which.Should().HaveReturnType(BuiltinTypeId.Str)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType("Mapping[KT, KV]");
+
+            f.Should().HaveOverloadAt(1)
+                .Which.Should().HaveReturnType(BuiltinTypeId.Float)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.Int);
+
+            analysis.Should().HaveVariable("a").OfType("Dict[str, int]")
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
 
         [TestMethod, Priority(0)]
         public async Task TypingListOfTuples() {

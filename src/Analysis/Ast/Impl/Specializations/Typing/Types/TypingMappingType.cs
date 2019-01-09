@@ -14,24 +14,21 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal class TypingDictionaryType : TypedMappingType {
-        public TypingDictionaryType(IPythonType keyType, IPythonType valueType)
-            : base("Dict", keyType, valueType, true) { }
+    internal class TypingMappingType : TypedMappingType {
+        public TypingMappingType(IPythonType keyType, IPythonType valueType)
+            : base("Mapping", keyType, valueType, false) { }
 
         public static IPythonType Create(IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
             if (typeArguments.Count == 2) {
-                return new TypingDictionaryType(typeArguments[0], typeArguments[1]);
+                return new TypingMappingType(typeArguments[0], typeArguments[1]);
             }
             // TODO: report wrong number of arguments
             return declaringModule.Interpreter.UnknownType;
         }
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
-            => new TypingDictionary(this, location);
-        public override bool IsAbstract => false;
+        public override bool IsAbstract => true;
     }
 }

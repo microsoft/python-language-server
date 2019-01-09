@@ -362,5 +362,23 @@ x = f()()
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.List);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleReturnTypes() {
+            const string code = @"
+def f():
+    if True:
+        return 1
+    if False:
+        return 'a'
+
+x = f()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("f")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveReturnType("Union[int, str]");
+            analysis.Should().HaveVariable("x").OfType("Union[int, str]");
+        }
     }
 }

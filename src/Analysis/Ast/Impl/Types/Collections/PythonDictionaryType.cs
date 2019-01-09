@@ -21,8 +21,8 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
     internal class PythonDictionaryType : PythonSequenceType {
-        public PythonDictionaryType(IPythonInterpreter interpreter)
-            : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), true) {
+        public PythonDictionaryType(IPythonInterpreter interpreter, bool isMutable = true)
+            : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), isMutable) {
         }
 
         public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args) {

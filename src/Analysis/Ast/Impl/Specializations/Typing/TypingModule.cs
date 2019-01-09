@@ -60,8 +60,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 (typeArgs, module, location) => TypingSequenceType.Create(module, typeArgs));
             _members["Tuple"] = new GenericType("Tuple", this,
                 (typeArgs, module, location) => TypingTupleType.Create(module, typeArgs));
+
             _members["Dict"] = new GenericType("Dict", this,
                 (typeArgs, module, location) => TypingDictionaryType.Create(module, typeArgs));
+            _members["Mapping"] = new GenericType("Mapping", this,
+                (typeArgs, module, location) => TypingMappingType.Create(module, typeArgs));
         }
 
 

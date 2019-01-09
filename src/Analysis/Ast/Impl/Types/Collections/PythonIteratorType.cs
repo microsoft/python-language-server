@@ -31,8 +31,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             TypeId = typeId;
         }
 
-        public IMember GetNext(IPythonInstance instance)
-            => (instance as IPythonIterator)?.Next ?? UnknownType;
+        public IMember Next(IPythonInstance instance) => (instance as IPythonIterator)?.Next ?? UnknownType;
 
         public override BuiltinTypeId TypeId { get; }
         public override PythonMemberType MemberType => PythonMemberType.Class;

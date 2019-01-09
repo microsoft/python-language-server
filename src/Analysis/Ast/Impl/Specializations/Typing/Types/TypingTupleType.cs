@@ -43,5 +43,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var n = PythonSequence.GetIndex(index);
             return n >= 0 && n < ContentTypes.Count ? ContentTypes[n] : DeclaringModule.Interpreter.UnknownType;
         }
+
+        public override bool IsAbstract => false;
     }
 }
