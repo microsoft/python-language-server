@@ -13,11 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Values;
+
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents type that has values at indexes, such as list or tuple.
     /// </summary>
-    public interface IPythonSequenceType : IPythonType {
+    public interface IPythonSequenceType : IPythonIterableType {
         /// <summary>
         /// Indicates if sequence is mutable (such as list) or not (such as tuple).
         /// </summary>

@@ -238,6 +238,41 @@ z1 = x[1]
         }
 
         [TestMethod, Priority(0)]
+        public async Task IterableParamTypeMatch() {
+            const string code = @"
+from typing import Iterable, List, Tuple, TypeVar
+
+T = TypeVar('T')
+
+def f(a: Iterable[T]) -> str: ...
+def f(a: int) -> float: ...
+
+a: List[str] = ['a', 'b', 'c']
+b: Tuple[str, int, float]
+
+x = f(a)
+y = f(b)
+";
+            var analysis = await GetAnalysisAsync(code);
+            var f = analysis.Should().HaveFunction("f").Which;
+
+            f.Should().HaveOverloadAt(0)
+                .Which.Should().HaveReturnType(BuiltinTypeId.Str)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType("Iterable[T]");
+
+            f.Should().HaveOverloadAt(1)
+                .Which.Should().HaveReturnType(BuiltinTypeId.Float)
+                .Which.Should().HaveSingleParameter()
+                .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.Int);
+
+            analysis.Should().HaveVariable("a").OfType("List[str]")
+                .And.HaveVariable("b").OfType("Tuple[str, int, float]")
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task SequenceParamTypeMatch() {
             const string code = @"
 from typing import List, Sequence, TypeVar

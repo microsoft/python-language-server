@@ -16,18 +16,23 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal class TypingTupleType : TypedSequenceType {
+    /// <summary>
+    /// Represents typing.Tuple[T1, T2, ...].
+    /// </summary>
+    /// <remarks>Maps to untyped Python sequence.</remarks>
+    internal class TypingTupleType : PythonSequenceType {
         public TypingTupleType(IPythonModule declaringModule, IReadOnlyList<IPythonType> contentTypes)
-            : base("Tuple", BuiltinTypeId.Tuple, declaringModule, contentTypes, false) { }
+            : base("Tuple", BuiltinTypeId.Tuple, declaringModule, contentTypes, false) {
+            Name = CodeFormatter.FormatSequence("Tuple", '[', contentTypes);
+        }
 
-        public static IPythonType Create(
-            IPythonModule declaringModule,
-            IReadOnlyList<IPythonType> typeArguments
-        ) {
+        public static IPythonType Create(IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
             if (typeArguments.Count > 0) {
                 return new TypingTupleType(declaringModule, typeArguments);
             }
@@ -39,11 +44,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             // TODO: report mismatch between type arguments and initialization arguments
             => new TypingTuple(this, location);
 
-        public override IMember Index(IPythonInstance instance, object index) {
-            var n = PythonSequence.GetIndex(index);
-            return n >= 0 && n < ContentTypes.Count ? ContentTypes[n] : DeclaringModule.Interpreter.UnknownType;
-        }
-
+        public override string Name { get; }
         public override bool IsAbstract => false;
     }
 }

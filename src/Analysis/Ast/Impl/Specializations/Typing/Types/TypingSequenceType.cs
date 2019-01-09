@@ -17,6 +17,9 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
+    /// <summary>
+    /// Represents typing.Sequence[T].
+    /// </summary>
     internal class TypingSequenceType : TypedSequenceType {
         protected TypingSequenceType(string typeName, IPythonModule declaringModule, IPythonType contentType, bool mutable)
             : base(typeName, BuiltinTypeId.List, declaringModule, contentType, mutable) { }
@@ -31,7 +34,5 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             // TODO: report wrong number of arguments
             return declaringModule.Interpreter.UnknownType;
         }
-
-        public override bool IsAbstract => true;
     }
 }

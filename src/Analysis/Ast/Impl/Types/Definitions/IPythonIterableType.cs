@@ -13,23 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal abstract class TypedSequenceType : TypedIterableType, IPythonSequenceType {
-        protected TypedSequenceType(
-            string name,
-            BuiltinTypeId typeId,
-            IPythonModule declaringModule,
-            IPythonType contentType,
-            bool isMutable
-            ) : base(name, typeId, declaringModule, contentType) {
-            IsMutable = isMutable;
-        }
-
+namespace Microsoft.Python.Analysis.Types {
+    /// <summary>
+    /// Represents instance of a type that can be enumerated.
+    /// </summary>
+    public interface IPythonIterableType : IPythonType {
         /// <summary>
-        /// Indicates if collection is mutable (such as list) or not (such as tuple).
+        /// Retrieves iterator from an instance.
         /// </summary>
-        public bool IsMutable { get; }
+        IPythonIterator GetIterator(IPythonInstance instance);
     }
 }

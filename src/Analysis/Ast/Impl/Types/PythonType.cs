@@ -84,14 +84,14 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="memberName">Method name.</param>
         /// <param name="args">Call arguments.</param>
         public virtual IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
-            => instance.Call(memberName, args);
+            => instance?.Call(memberName, args) ?? UnknownType;
 
         /// <summary>
         /// Invokes indexer on the specified instance.
         /// </summary>
         /// <param name="instance">Instance of the type.</param>
         /// <param name="index">Index arguments.</param>
-        public virtual IMember Index(IPythonInstance instance, object index) => instance.Index(index);
+        public virtual IMember Index(IPythonInstance instance, object index) => instance?.Index(index) ?? UnknownType;
         #endregion
 
         #region ILocatedMember

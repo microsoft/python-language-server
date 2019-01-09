@@ -13,19 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
     /// <summary>
     /// Type info for a sequence.
     /// </summary>
-    internal abstract class PythonSequenceType : PythonTypeWrapper, IPythonSequenceType {
-        private readonly PythonIteratorType _iteratorType;
-        private string _typeName;
-
-        protected IReadOnlyList<IPythonType> ContentTypes { get; }
-
+    internal abstract class PythonSequenceType : PythonIterableType, IPythonSequenceType {
         /// <summary>
         /// Creates type info for a sequence.
         /// </summary>
@@ -57,11 +53,8 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             IPythonModule declaringModule,
             IReadOnlyList<IPythonType> contentTypes,
             bool isMutable
-        ) : base(sequenceTypeId, declaringModule) {
-            _iteratorType = new PythonIteratorType(sequenceTypeId.GetIteratorTypeId(), DeclaringModule);
-            _typeName = typeName;
+        ) : base(typeName, sequenceTypeId, declaringModule, contentTypes) {
             IsMutable = isMutable;
-            ContentTypes = contentTypes ?? Array.Empty<IPythonType>();
         }
 
         #region IPythonSequenceType
@@ -71,21 +64,9 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public bool IsMutable { get; }
         #endregion
 
-        #region IPythonType
-        public override string Name {
-            get {
-                if (_typeName == null) {
-                    var type = DeclaringModule.Interpreter.GetBuiltinType(TypeId);
-                    if(!type.IsUnknown()) {
-                        _typeName = type.Name;
-                    }
-                }
-                return _typeName ?? "<not set>";;
-            }
+        public override IMember Index(IPythonInstance instance, object index) {
+            var n = PythonSequence.GetIndex(index);
+            return n >= 0 && n < ContentTypes.Count ? ContentTypes[n] : DeclaringModule.Interpreter.UnknownType;
         }
-
-        public override PythonMemberType MemberType => PythonMemberType.Class;
-        public override IMember GetMember(string name) => name == @"__iter__" ? _iteratorType : base.GetMember(name);
-        #endregion
     }
 }
