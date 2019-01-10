@@ -15,12 +15,27 @@
 
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
+    /// <summary>
+    /// Represents instance of typing.Dict[TK, TV]
+    /// </summary>
     internal class TypingDictionary : PythonDictionary {
+        private readonly TypingDictionaryType _dictType;
+
         public TypingDictionary(TypingDictionaryType dictType, LocationInfo location = null)
-            : base(dictType, location ?? LocationInfo.Empty, EmptyDictionary<IMember, IMember>.Instance) { }
+            : base(dictType, location ?? LocationInfo.Empty, EmptyDictionary<IMember, IMember>.Instance) {
+            _dictType = dictType;
+        }
+
+        public override IPythonIterator GetIterator() {
+            var iteratorTypeId = _dictType.TypeId.GetIteratorTypeId();
+            var itemType = new TypingTupleType(new[] {_dictType.KeyType, _dictType.ValueType}, Type.DeclaringModule.Interpreter);
+            var iteratorType = new TypingIteratorType(itemType, iteratorTypeId, Type.DeclaringModule.Interpreter);
+            return new TypingIterator(iteratorType, this);
+        }
     }
 }

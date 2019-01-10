@@ -155,13 +155,11 @@ namespace Microsoft.Python.Parsing {
         /// </summary>
         /// <returns>null if input is not yet valid but could be with more lines</returns>
         public PythonAst ParseInteractiveCode(out ParseResult properties) {
-            bool parsingMultiLineCmpdStmt;
-            var isEmptyStmt = false;
 
             properties = ParseResult.Complete;
 
             StartParsing();
-            var ret = InternalParseInteractiveInput(out parsingMultiLineCmpdStmt, out isEmptyStmt);
+            var ret = InternalParseInteractiveInput(out var parsingMultiLineCmpdStmt, out var isEmptyStmt);
 
             if (_errorCode == 0) {
                 if (isEmptyStmt) {
@@ -375,8 +373,7 @@ namespace Microsoft.Python.Parsing {
                     return Name.Async;
                 }
             }
-            var n = t as NameToken;
-            if (n != null) {
+            if (t is NameToken n) {
                 return new Name(FixName(n.Name), n.Name);
             }
             return Name.Empty;
@@ -592,14 +589,13 @@ namespace Microsoft.Python.Parsing {
             NextToken();
             var delWhiteSpace = _tokenWhiteSpace;
             var start = GetStart();
-            List<string> itemWhiteSpace;
 
             DelStatement ret;
             if (PeekToken(TokenKind.NewLine) || PeekToken(TokenKind.EndOfFile)) {
                 ReportSyntaxError(curLookahead.Span.Start, curLookahead.Span.End, "expected expression after del");
                 ret = new DelStatement(new Expression[0]);
             } else {
-                var l = ParseExprList(out itemWhiteSpace);
+                var l = ParseExprList(out var itemWhiteSpace);
                 foreach (var e in l) {
                     if (e is ErrorExpression) {
                         continue;
@@ -734,10 +730,7 @@ namespace Microsoft.Python.Parsing {
                 NextToken();
                 fromWhitespace = _tokenWhiteSpace;
             }
-
-            bool trailingComma;
-            List<string> itemWhiteSpace;
-            var l = ParseTestListAsExpr(null, out itemWhiteSpace, out trailingComma);
+            var l = ParseTestListAsExpr(null, out var itemWhiteSpace, out var trailingComma);
             if (l.Count == 0) {
                 if (_langVersion < PythonLanguageVersion.V25 && !suppressSyntaxError) {
                     // 2.4 doesn't allow plain yield
@@ -896,8 +889,7 @@ namespace Microsoft.Python.Parsing {
                 var image = ws2 + ":";
                 Dictionary<object, object> attr = null;
                 if (_verbatim && _attributes.TryGetValue(err, out attr)) {
-                    object o;
-                    if (attr.TryGetValue(NodeAttributes.PreceedingWhiteSpace, out o)) {
+                    if (attr.TryGetValue(NodeAttributes.PreceedingWhiteSpace, out var o)) {
                         image += o.ToString();
                     }
                 }
@@ -939,9 +931,8 @@ namespace Microsoft.Python.Parsing {
 
             if (PeekToken(TokenKind.Assign)) {
                 if (_stubFile || _langVersion.Is3x()) {
-                    var seq = ret as SequenceExpression;
                     var hasStar = false;
-                    if (seq != null) {
+                    if (ret is SequenceExpression seq) {
                         for (var i = 0; i < seq.Items.Count; i++) {
                             if (seq.Items[i] is StarredExpression) {
                                 if (hasStar) {
@@ -1070,8 +1061,7 @@ namespace Microsoft.Python.Parsing {
 
         // module: (identifier '.')* identifier
         private ModuleName ParseModuleName() {
-            List<string> dotWhiteSpace;
-            var ret = new ModuleName(ReadDottedName(out dotWhiteSpace));
+            var ret = new ModuleName(ReadDottedName(out var dotWhiteSpace));
             if (_verbatim) {
                 AddNamesWhiteSpace(ret, dotWhiteSpace.ToArray());
             }
@@ -1400,10 +1390,8 @@ namespace Microsoft.Python.Parsing {
             Eat(TokenKind.KeywordGlobal);
             var start = GetStart();
             var globalWhiteSpace = _tokenWhiteSpace;
-            List<string> commaWhiteSpace;
-            List<string> namesWhiteSpace;
 
-            var l = ReadNameList(out commaWhiteSpace, out namesWhiteSpace);
+            var l = ReadNameList(out var commaWhiteSpace, out var namesWhiteSpace);
             var names = l.ToArray();
             var ret = new GlobalStatement(names);
             ret.SetLoc(start, GetEndForStatement());
@@ -1423,10 +1411,8 @@ namespace Microsoft.Python.Parsing {
             Eat(TokenKind.KeywordNonlocal);
             var localWhiteSpace = _tokenWhiteSpace;
             var start = GetStart();
-            List<string> commaWhiteSpace;
-            List<string> namesWhiteSpace;
 
-            var l = ReadNameList(out commaWhiteSpace, out namesWhiteSpace);
+            var l = ReadNameList(out var commaWhiteSpace, out var namesWhiteSpace);
             var names = l.ToArray();
             var ret = new NonlocalStatement(names);
             ret.SetLoc(start, GetEndForStatement());
@@ -1775,8 +1761,7 @@ namespace Microsoft.Python.Parsing {
                 if (MaybeEat(TokenKind.LeftParenthesis)) {
                     var parenWhiteSpace = _tokenWhiteSpace;
                     var commaWhiteSpace = MakeWhiteSpaceList();
-                    bool ateTerminator;
-                    var args = FinishArgumentList(null, commaWhiteSpace, out ateTerminator);
+                    var args = FinishArgumentList(null, commaWhiteSpace, out var ateTerminator);
                     decorator = FinishCallExpr(decorator, args);
 
                     if (_verbatim) {
@@ -1792,8 +1777,7 @@ namespace Microsoft.Python.Parsing {
                     decorator.SetLoc(start, GetEnd());
                 }
 
-                string newline;
-                EatNewLine(out newline);
+                EatNewLine(out var newline);
                 if (newlineWhiteSpace != null) {
                     newlineWhiteSpace.Add(newline);
                 }
@@ -1811,8 +1795,7 @@ namespace Microsoft.Python.Parsing {
         //  decorated: decorators (classdef | funcdef)
         // this gets called with "@" look-ahead
         private Statement ParseDecorated() {
-            List<string> newlineWhiteSpace;
-            var decorators = ParseDecorators(out newlineWhiteSpace);
+            var decorators = ParseDecorators(out var newlineWhiteSpace);
 
             Statement res;
 
@@ -2175,9 +2158,7 @@ namespace Microsoft.Python.Parsing {
         //Python2.5 -> old_lambdef: 'lambda' [varargslist] ':' old_expression
         private Expression FinishOldLambdef() {
             var whitespace = _tokenWhiteSpace;
-            List<string> commaWhiteSpace;
-            bool ateTerminator;
-            var func = ParseLambdaHelperStart(out commaWhiteSpace, out ateTerminator);
+            var func = ParseLambdaHelperStart(out var commaWhiteSpace, out var ateTerminator);
             var colonWhiteSpace = ateTerminator || PeekToken(TokenKind.EndOfFile) ? _tokenWhiteSpace : null;
 
             var expr = ateTerminator ? ParseOldExpression() : Error(string.Empty);
@@ -2187,9 +2168,7 @@ namespace Microsoft.Python.Parsing {
         //lambdef: 'lambda' [varargslist] ':' expression
         private Expression FinishLambdef() {
             var whitespace = _tokenWhiteSpace;
-            List<string> commaWhiteSpace;
-            bool ateTerminator;
-            var func = ParseLambdaHelperStart(out commaWhiteSpace, out ateTerminator);
+            var func = ParseLambdaHelperStart(out var commaWhiteSpace, out var ateTerminator);
             var colonWhiteSpace = ateTerminator || PeekToken(TokenKind.EndOfFile) ? _tokenWhiteSpace : null;
 
             var expr = ateTerminator ? ParseExpression() : Error(string.Empty);
@@ -2348,10 +2327,7 @@ namespace Microsoft.Python.Parsing {
             var keywordEnd = GetEnd();
             var forWhiteSpace = _tokenWhiteSpace;
 
-            bool trailingComma;
-            List<string> listWhiteSpace;
-
-            var l = ParseExpressionList(out trailingComma, out listWhiteSpace);
+            var l = ParseExpressionList(out var trailingComma, out var listWhiteSpace);
 
             // expr list is something like:
             //  ()
@@ -2921,8 +2897,7 @@ namespace Microsoft.Python.Parsing {
                 if (_langVersion >= PythonLanguageVersion.V35 && t.Kind == TokenKind.At) {
                     t = Tokens.MatMultiplyToken;
                 }
-                var ot = t as OperatorToken;
-                if (ot == null) {
+                if (!(t is OperatorToken ot)) {
                     return ret;
                 }
 
@@ -3182,9 +3157,8 @@ namespace Microsoft.Python.Parsing {
             var t = PeekToken();
             while (true) {
                 if (t is ConstantValueToken) {
-                    string cvs;
                     AsciiString bytes;
-                    if ((cvs = t.Value as String) != null) {
+                    if (t.Value is String cvs) {
                         s += cvs;
                         NextToken();
                         if (_verbatim) {
@@ -3248,9 +3222,8 @@ namespace Microsoft.Python.Parsing {
             var t = PeekToken();
             while (true) {
                 if (t is ConstantValueToken) {
-                    AsciiString cvs;
                     string str;
-                    if ((cvs = t.Value as AsciiString) != null) {
+                    if (t.Value is AsciiString cvs) {
                         var res = new List<byte>(s.Bytes);
                         res.AddRange(cvs.Bytes);
                         s = new AsciiString(res.ToArray(), s.String + cvs.String);
@@ -3563,10 +3536,9 @@ namespace Microsoft.Python.Parsing {
         private Arg FinishKeywordArgument(Expression t) {
             Debug.Assert(_token.Token.Kind == TokenKind.Assign);
             var equalWhiteSpace = _tokenWhiteSpace;
-            var n = t as NameExpression;
 
             string name;
-            if (n == null) {
+            if (!(t is NameExpression n)) {
                 ReportSyntaxError(t.StartIndex, t.EndIndex, "expected name");
                 name = null;
             } else {
@@ -3659,9 +3631,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private Expression ParseOldExpressionListAsExpr() {
-            bool trailingComma;
-            List<string> itemWhiteSpace;
-            var l = ParseOldExpressionList(out trailingComma, out itemWhiteSpace);
+            var l = ParseOldExpressionList(out var trailingComma, out var itemWhiteSpace);
             //  the case when no expression was parsed e.g. when we have an empty expression list
             if (l.Count == 0 && !trailingComma) {
                 ReportSyntaxError("invalid syntax");
@@ -3752,9 +3722,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private Expression ParseTestListAsExpr(Expression expr) {
-            List<string> itemWhiteSpace;
-            bool trailingComma;
-            var l = ParseTestListAsExpr(expr, out itemWhiteSpace, out trailingComma);
+            var l = ParseTestListAsExpr(expr, out var itemWhiteSpace, out var trailingComma);
             return MakeTupleOrExpr(l, itemWhiteSpace, trailingComma, parenFreeTuple: true);
         }
 
@@ -3919,9 +3887,8 @@ namespace Microsoft.Python.Parsing {
         }
 
         private static Statement NestGenExpr(Statement current, Statement nested) {
-            var fes = current as ForStatement;
             IfStatement ifs;
-            if (fes != null) {
+            if (current is ForStatement fes) {
                 fes.Body = nested;
             } else if ((ifs = current as IfStatement) != null) {
                 ifs.Tests[0].Body = nested;
@@ -4217,10 +4184,7 @@ namespace Microsoft.Python.Parsing {
             if (start < 0) {
                 start = GetStart();
             }
-
-            bool trailingComma;
-            List<string> listWhiteSpace;
-            var l = ParseExpressionList(out trailingComma, out listWhiteSpace);
+            var l = ParseExpressionList(out var trailingComma, out var listWhiteSpace);
 
             // expr list is something like:
             //  ()
@@ -4282,9 +4246,7 @@ namespace Microsoft.Python.Parsing {
                     var t0 = ParseExpression();
                     if (MaybeEat(TokenKind.Comma)) {
                         var commaWhiteSpace = _tokenWhiteSpace;
-                        bool trailingComma;
-                        List<string> listWhiteSpace;
-                        var l = ParseTestListAsExpr(t0, out listWhiteSpace, out trailingComma);
+                        var l = ParseTestListAsExpr(t0, out var listWhiteSpace, out var trailingComma);
                         ateRightBracket = Eat(TokenKind.RightBracket);
 
                         ret = new ListExpression(l.ToArray());
@@ -4362,10 +4324,7 @@ namespace Microsoft.Python.Parsing {
             if (start < 0) {
                 start = GetStart();
             }
-
-            bool trailingComma;
-            List<string> listWhiteSpace;
-            var l = ParseExpressionList(out trailingComma, out listWhiteSpace);
+            var l = ParseExpressionList(out var trailingComma, out var listWhiteSpace);
 
             // expr list is something like:
             //  ()
@@ -4600,10 +4559,8 @@ namespace Microsoft.Python.Parsing {
                 var s = ParseStmt();
                 l.Add(s);
                 _fromFutureAllowed = false;
-                var es = s as ExpressionStatement;
-                if (es != null) {
-                    var ce = es.Expression as ConstantExpression;
-                    if (ce != null && IsString(ce)) {
+                if (s is ExpressionStatement es) {
+                    if (es.Expression is ConstantExpression ce && IsString(ce)) {
                         // doc string
                         _fromFutureAllowed = true;
                     }
@@ -4617,8 +4574,7 @@ namespace Microsoft.Python.Parsing {
                 while (PeekToken(Tokens.KeywordFromToken)) {
                     var s = ParseStmt();
                     l.Add(s);
-                    var fis = s as FromImportStatement;
-                    if (fis != null && !fis.IsFromFuture) {
+                    if (s is FromImportStatement fis && !fis.IsFromFuture) {
                         // end of from __future__
                         break;
                     }
@@ -4727,8 +4683,7 @@ namespace Microsoft.Python.Parsing {
         /// </summary>
         private bool MaybeEatNewLine() {
             var curWhiteSpace = string.Empty;
-            string newWhiteSpace;
-            if (MaybeEatNewLine(out newWhiteSpace)) {
+            if (MaybeEatNewLine(out var newWhiteSpace)) {
                 if (_verbatim) {
                     _lookaheadWhiteSpace = curWhiteSpace + newWhiteSpace + _lookaheadWhiteSpace;
                 }
@@ -5007,15 +4962,12 @@ namespace Microsoft.Python.Parsing {
                     }
                 }
 
-                int lineLength;
-                var line = ReadOneLine(readBytes, ref bytesRead, stream, out lineLength);
+                var line = ReadOneLine(readBytes, ref bytesRead, stream, out var lineLength);
 
                 bool? gotEncoding = false;
-                string encodingName = null;
                 // magic encoding must be on line 1 or 2
                 var lineNo = 1;
-                var encodingIndex = 0;
-                if ((gotEncoding = TryGetEncoding(line, ref encoding, out encodingName, out encodingIndex)) == false) {
+                if ((gotEncoding = TryGetEncoding(line, ref encoding, out var encodingName, out var encodingIndex)) == false) {
                     var prevLineLength = lineLength;
                     line = ReadOneLine(readBytes, ref bytesRead, stream, out lineLength);
                     lineNo = 2;
@@ -5128,8 +5080,7 @@ namespace Microsoft.Python.Parsing {
         internal static bool TryGetEncoding(string name, out Encoding encoding) {
             name = NormalizeEncodingName(name);
 
-            EncodingInfoWrapper encInfo;
-            if (CodecsInfo.Codecs.TryGetValue(name, out encInfo)) {
+            if (CodecsInfo.Codecs.TryGetValue(name, out var encInfo)) {
                 encoding = (Encoding)encInfo.GetEncoding().Clone();
                 return true;
             }

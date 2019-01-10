@@ -397,10 +397,9 @@ namespace Microsoft.Python.Parsing.Ast {
                     continue;
                 }
 
-                PythonVariable conflict;
                 // Check current scope for conflicting variable
                 var assignedGlobal = false;
-                if (_currentScope.TryGetVariable(n, out conflict)) {
+                if (_currentScope.TryGetVariable(n, out var conflict)) {
                     // conflict?
                     switch (conflict.Kind) {
                         case VariableKind.Global:

@@ -343,7 +343,6 @@ namespace Microsoft.Python.Parsing {
             try {
                 var saveStart = start;
                 for (; ; ) {
-                    int digit;
                     if (start >= end) {
                         if (saveStart == start) {
                             throw new ArgumentException("Invalid integer literal");
@@ -352,7 +351,7 @@ namespace Microsoft.Python.Parsing {
                     }
                     var c = text[start];
                     if (c != '_') {
-                        if (!HexValue(c, out digit)) {
+                        if (!HexValue(c, out var digit)) {
                             break;
                         }
 

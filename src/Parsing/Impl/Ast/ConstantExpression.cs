@@ -125,8 +125,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (!version.Is3x()) {
                     return "{0}L".FormatInvariant(Value);
                 }
-            } else if (Value is double) {
-                var n = (double)Value;
+            } else if (Value is double n) {
                 var s = NegativeZeroAwareToString(n);
                 // If there's no fractional part, and this is not NaN or +-Inf, G format will not include the decimal
                 // point. This is okay if we're using scientific notation as this implies float, but if not, add the

@@ -52,28 +52,28 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var o = new PythonFunctionOverload(fn.Name, this, _ => fn.Location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((module, overload, location, args) => GenericTypeParameter.FromTypeVar(args, module, location));
+            o.SetReturnValueProvider((interpreter, overload, location, args) => GenericTypeParameter.FromTypeVar(args, interpreter, location));
 
             fn.AddOverload(o);
             _members["TypeVar"] = fn;
 
             _members["Iterator"] = new GenericType("Iterator", this,
-                (typeArgs, module, location) => TypingIteratorType.Create(module, typeArgs));
+                (typeArgs, module, location) => CreateIterator(typeArgs));
 
             _members["Iterable"] = new GenericType("Iterable", this,
-                (typeArgs, module, location) => CreateList("Iterable", module, typeArgs, false));
+                (typeArgs, module, location) => CreateList("Iterable", typeArgs, false));
             _members["Sequence"] = new GenericType("Sequence", this,
-                (typeArgs, module, location) => CreateList("Sequence", module, typeArgs, false));
+                (typeArgs, module, location) => CreateList("Sequence", typeArgs, false));
             _members["List"] = new GenericType("List", this,
-                (typeArgs, module, location) => CreateList("List", module, typeArgs, false));
+                (typeArgs, module, location) => CreateList("List", typeArgs, false));
 
             _members["Tuple"] = new GenericType("Tuple", this,
-                (typeArgs, module, location) => CreateCollectionType("Tuple", BuiltinTypeId.ListIterator, module, typeArgs.Count, typeArgs, false));
+                (typeArgs, module, location) => CreateTuple(typeArgs));
 
             _members["Mapping"] = new GenericType("Mapping", this,
-                (typeArgs, module, location) => new TypingDictionaryType("Mapping", ));
+                (typeArgs, module, location) => CreateDictionary("Mapping", typeArgs, false));
             _members["Dict"] = new GenericType("Dict", this,
-                (typeArgs, module, location) => TypingDictionaryType.Create(module, typeArgs));
+                (typeArgs, module, location) => CreateDictionary("Dict", typeArgs, true));
         }
 
 
@@ -82,19 +82,36 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         private LocationInfo GetMemberLocation(string name)
             => (base.GetMember(name)?.GetPythonType() as ILocatedMember)?.Location ?? LocationInfo.Empty;
 
-        private IPythonType CreateList(string typeName,  IPythonModule module, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
+        private IPythonType CreateList(string typeName, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
             if (typeArgs.Count == 1) {
-                return new TypingListType(typeName, BuiltinTypeId.ListIterator, module, typeArgs[0], isMutable);
+                return new TypingListType(typeName, typeArgs[0], Interpreter, isMutable);
             }
             // TODO: report wrong number of arguments
-            return module.Interpreter.UnknownType;
+            return Interpreter.UnknownType;
         }
-        private IPythonType CreateTuple(string typeName, IPythonModule module, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
+
+        private IPythonType CreateTuple(IReadOnlyList<IPythonType> typeArgs) {
             if (typeArgs.Count == 1) {
-                return new TypingTupleType(typeName, BuiltinTypeId.ListIterator, module, typeArgs[0], isMutable);
+                return new TypingTupleType(typeArgs, Interpreter);
             }
             // TODO: report wrong number of arguments
-            return module.Interpreter.UnknownType;
+            return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateIterator(IReadOnlyList<IPythonType> typeArgs) {
+            if (typeArgs.Count == 1) {
+                return new TypingIteratorType(typeArgs[0], BuiltinTypeId.ListIterator, Interpreter);
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateDictionary(string typeName, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
+            if (typeArgs.Count == 2) {
+                return new TypingDictionaryType(typeName, typeArgs[0], typeArgs[1], Interpreter, isMutable);
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
         }
     }
 }

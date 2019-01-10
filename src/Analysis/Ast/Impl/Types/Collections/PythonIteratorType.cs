@@ -26,8 +26,9 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         /// Creates type info for an iterator.
         /// </summary>
         /// <param name="typeId">Iterator type id, such as <see cref="BuiltinTypeId.StrIterator"/>.</param>
-        /// <param name="declaringModule">Declaring module</param>
-        public PythonIteratorType(BuiltinTypeId typeId, IPythonModule declaringModule) : base(typeId, declaringModule) {
+        /// <param name="interpreter">Python interpreter</param>
+        public PythonIteratorType(BuiltinTypeId typeId, IPythonInterpreter interpreter) 
+            : base(typeId, interpreter.ModuleResolution.BuiltinsModule) {
             TypeId = typeId;
         }
 

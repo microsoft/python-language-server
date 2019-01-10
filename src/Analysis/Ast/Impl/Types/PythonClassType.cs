@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // Special case names that we want to add to our own Members dict
                 switch (name) {
                     case "__mro__":
-                        member = AddMember(name, PythonCollectionType.CreateList(DeclaringModule, LocationInfo.Empty, Mro), true);
+                        member = AddMember(name, PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro), true);
                         return member;
                 }
             }
@@ -110,11 +110,11 @@ namespace Microsoft.Python.Analysis.Types {
             // Specializations
             switch (typeName) {
                 case "list":
-                    return PythonCollectionType.CreateList(DeclaringModule, location, args.OfType<IMember>().ToArray());
+                    return PythonCollectionType.CreateList(DeclaringModule.Interpreter, location, args.OfType<IMember>().ToArray());
                 case "dict":
                     return new PythonDictionary(DeclaringModule.Interpreter, location, args.OfType<IMember>().FirstOrDefault());
                 case "tuple":
-                    return PythonCollectionType.CreateTuple(DeclaringModule, location, args.OfType<IMember>().ToArray());
+                    return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, location, args.OfType<IMember>().ToArray());
             }
             return new PythonInstance(this, location);
         }
@@ -155,7 +155,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                 if (!(DeclaringModule is BuiltinsPythonModule)) {
                     // TODO: If necessary, we can set __bases__ on builtins when the module is fully analyzed.
-                    AddMember("__bases__", new PythonList(interpreter, LocationInfo.Empty, Bases), true);
+                    AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Bases), true);
                 }
             }
         }

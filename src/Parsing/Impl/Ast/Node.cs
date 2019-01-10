@@ -127,16 +127,14 @@ namespace Microsoft.Python.Parsing.Ast {
         internal virtual string GetDocumentation(Statement/*!*/ stmt) => stmt.Documentation;
 
         internal static PythonReference GetVariableReference(Node node, PythonAst ast) {
-            object reference;
-            if (ast.TryGetAttribute(node, NodeAttributes.VariableReference, out reference)) {
+            if (ast.TryGetAttribute(node, NodeAttributes.VariableReference, out var reference)) {
                 return (PythonReference)reference;
             }
             return null;
         }
 
         internal static PythonReference[] GetVariableReferences(Node node, PythonAst ast) {
-            object reference;
-            if (ast.TryGetAttribute(node, NodeAttributes.VariableReference, out reference)) {
+            if (ast.TryGetAttribute(node, NodeAttributes.VariableReference, out var reference)) {
                 return (PythonReference[])reference;
             }
             return null;

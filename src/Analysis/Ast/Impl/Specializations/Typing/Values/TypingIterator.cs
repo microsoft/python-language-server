@@ -20,13 +20,24 @@ using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     /// <summary>
-    /// Implements typing.Iterator[T]
+    /// Implements iterator over a typed collection.
     /// </summary>
     internal sealed class TypingIterator : PythonIterator {
         private readonly TypingIteratorType _iteratorType;
-        public TypingIterator(TypingIteratorType iteratorType, IPythonCollection collection) 
-            : base(iteratorType.TypeId, collection) { }
+        private int _index;
 
-        public override IMember Next => new PythonInstance(_iteratorType.);
-    }
+        public TypingIterator(TypingIteratorType iteratorType, IPythonCollection collection)
+            : base(iteratorType.TypeId, collection) {
+            _iteratorType = iteratorType;
+        }
+
+        public override IMember Next {
+            get {
+                if (_iteratorType.Repeat) {
+                    return new PythonInstance(_iteratorType.ItemTypes[0]);
+                }
+                return _index < _iteratorType.ItemTypes.Count ? new PythonInstance(_iteratorType.ItemTypes[_index++]) : UnknownType;
+            }
+        }
+}
 }

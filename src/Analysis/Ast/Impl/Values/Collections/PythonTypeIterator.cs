@@ -19,21 +19,21 @@ using Microsoft.Python.Analysis.Types.Collections;
 namespace Microsoft.Python.Analysis.Values.Collections {
     internal sealed class PythonTypeIterator : PythonInstance, IPythonIterator {
         private readonly BuiltinTypeId _contentType;
-        public PythonTypeIterator(IPythonModule declaringModule, BuiltinTypeId iteratorType, BuiltinTypeId contentType)
-            : base(new PythonIteratorType(iteratorType, declaringModule)) {
+        public PythonTypeIterator(BuiltinTypeId iteratorType, BuiltinTypeId contentType, IPythonInterpreter interpreter)
+            : base(new PythonIteratorType(iteratorType, interpreter)) {
             _contentType = contentType;
         }
 
         public IMember Next => Type.DeclaringModule.Interpreter.GetBuiltinType(_contentType);
 
-        public static IPythonIterator FromTypeId(IPythonModule declaringModule, BuiltinTypeId typeId) {
+        public static IPythonIterator FromTypeId(IPythonInterpreter interpreter, BuiltinTypeId typeId) {
             switch (typeId) {
                 case BuiltinTypeId.Str:
-                    return new PythonTypeIterator(declaringModule, BuiltinTypeId.StrIterator, BuiltinTypeId.Str);
+                    return new PythonTypeIterator(BuiltinTypeId.StrIterator, BuiltinTypeId.Str, interpreter);
                 case BuiltinTypeId.Bytes:
-                    return new PythonTypeIterator(declaringModule, BuiltinTypeId.BytesIterator, BuiltinTypeId.Bytes);
+                    return new PythonTypeIterator(BuiltinTypeId.BytesIterator, BuiltinTypeId.Bytes, interpreter);
                 case BuiltinTypeId.Unicode:
-                    return new PythonTypeIterator(declaringModule, BuiltinTypeId.UnicodeIterator, BuiltinTypeId.Unicode);
+                    return new PythonTypeIterator(BuiltinTypeId.UnicodeIterator, BuiltinTypeId.Unicode, interpreter);
                 default:
                     // TODO: Add more?
                     return null;

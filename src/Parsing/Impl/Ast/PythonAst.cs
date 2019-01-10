@@ -197,8 +197,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// but not defined in the lexical scope.
         /// </summary>
         internal PythonVariable/*!*/ EnsureGlobalVariable(string name) {
-            PythonVariable variable;
-            if (!TryGetVariable(name, out variable)) {
+            if (!TryGetVariable(name, out var variable)) {
                 variable = CreateVariable(name, VariableKind.Global);
             }
 
@@ -207,8 +206,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
 
         internal PythonVariable/*!*/ EnsureNonlocalVariable(string name) {
-            PythonVariable variable;
-            if (!TryGetVariable(name, out variable)) {
+            if (!TryGetVariable(name, out var variable)) {
                 variable = CreateVariable(name, VariableKind.Nonlocal);
             }
 

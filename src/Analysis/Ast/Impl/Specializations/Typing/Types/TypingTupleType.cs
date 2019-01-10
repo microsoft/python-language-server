@@ -18,26 +18,18 @@ using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Utilities;
-using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingTupleType : PythonCollectionType, ITypingTupleType {
         /// <summary>
-        /// Creates type info for a list-type typed collection.
+        /// Creates type info for a strongly-typed tuple, such as Tuple[T1, T2, ...].
         /// </summary>
-        /// <param name="typeName">Collection type name.</param>
-        /// <param name="sequenceTypeId">Iterable type id, such as <see cref="BuiltinTypeId.List"/>.</param>
-        /// <param name="declaringModule">Declaring module. Can be null of module is 'builtins'.</param>
         /// <param name="itemTypes">Tuple item types.</param>
-        public TypingTupleType(
-            string typeName,
-            BuiltinTypeId sequenceTypeId,
-            IPythonModule declaringModule,
-            IReadOnlyList<IPythonType> itemTypes
-            ) : base(typeName, sequenceTypeId, declaringModule, false) {
-            Check.ArgumentNotNullOrEmpty(typeName, nameof(typeName));
+        /// <param name="interpreter">Python interpreter.</param>
+        public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter) 
+            : base(null, BuiltinTypeId.Tuple, interpreter, false) {
             ItemTypes = itemTypes;
-            Name = CodeFormatter.FormatSequence(typeName, '[', itemTypes);
+            Name = CodeFormatter.FormatSequence("Tuple" ,'[', itemTypes);
         }
 
         public override string Name { get; }

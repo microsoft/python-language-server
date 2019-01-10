@@ -33,8 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public IList<Arg> Args => _args;
 
         public bool NeedsLocalsDictionary() {
-            var nameExpr = Target as NameExpression;
-            if (nameExpr == null) {
+            if (!(Target is NameExpression nameExpr)) {
                 return false;
             }
 

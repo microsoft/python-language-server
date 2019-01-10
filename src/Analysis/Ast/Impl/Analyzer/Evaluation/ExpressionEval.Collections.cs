@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateList(Module, GetLoc(expression), contents);
+            return PythonCollectionType.CreateList(Module.Interpreter, GetLoc(expression), contents);
         }
 
         private async Task<IMember> GetValueFromDictionaryAsync(DictionaryExpression expression, CancellationToken cancellationToken = default) {
@@ -68,8 +68,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
                 contents.Add(value);
             }
-
-            return PythonCollectionType.CreateTuple(Module, GetLoc(expression), contents);
+            return PythonCollectionType.CreateTuple(Module.Interpreter, GetLoc(expression), contents);
         }
     }
 }

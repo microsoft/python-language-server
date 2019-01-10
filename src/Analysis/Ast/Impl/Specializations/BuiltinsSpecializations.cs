@@ -36,17 +36,19 @@ namespace Microsoft.Python.Analysis.Specializations {
                 }
                 var t = args[0].GetPythonType();
                 if (t.IsBuiltin && t.Name == "str") {
-                    return new PythonTypeIterator(t.DeclaringModule, BuiltinTypeId.StrIterator, BuiltinTypeId.Str);
+                    return new PythonTypeIterator(BuiltinTypeId.StrIterator, BuiltinTypeId.Str, module.Interpreter);
                 }
             }
             return null;
         }
 
-        public static IMember List(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
-            => PythonCollectionType.CreateList(module, location, args);
+        public static IMember List(IPythonInterpreter interpreter, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
+            => PythonCollectionType.CreateList(interpreter, location, args);
 
-        public static IMember ListOfStrings(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
-            => new TypingList(new TypingListType(module, module.Interpreter.GetBuiltinType(BuiltinTypeId.Str)), location);
+        public static IMember ListOfStrings(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args) {
+            var type = new TypingListType("List", module.Interpreter.GetBuiltinType(BuiltinTypeId.Str), module.Interpreter, false);
+            return new TypingList(type, location);
+        }
 
         //public static IMember Dict(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
         //    => new PythonDictionary(module.Interpreter, location, args);
@@ -54,10 +56,10 @@ namespace Microsoft.Python.Analysis.Specializations {
         public static ReturnValueProvider Next
                 => (module, overload, location, args) => args.Count > 0 && args[0] is IPythonIterator it ? it.Next : null;
 
-        public static IMember __iter__(IPythonModule declaringModule, BuiltinTypeId contentTypeId) {
-            var fn = new PythonFunctionType(@"__iter__", declaringModule, null, string.Empty, LocationInfo.Empty);
-            var o = new PythonFunctionOverload(fn.Name, declaringModule, _ => fn.Location);
-            o.AddReturnValue(PythonTypeIterator.FromTypeId(declaringModule, contentTypeId));
+        public static IMember __iter__(IPythonInterpreter interpreter, BuiltinTypeId contentTypeId) {
+            var fn = new PythonFunctionType(@"__iter__", interpreter.ModuleResolution.BuiltinsModule, null, string.Empty, LocationInfo.Empty);
+            var o = new PythonFunctionOverload(fn.Name, interpreter.ModuleResolution.BuiltinsModule, _ => fn.Location);
+            o.AddReturnValue(PythonTypeIterator.FromTypeId(interpreter, contentTypeId));
             fn.AddOverload(o);
             return fn;
         }

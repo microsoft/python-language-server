@@ -18,13 +18,20 @@ using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
+    /// <summary>
+    /// Represents type info of typing.Dict[TK, TV]
+    /// </summary>
     internal class TypingDictionaryType : PythonDictionaryType, ITypingDictionaryType {
-        protected TypingDictionaryType(
-            string name,
-            IPythonType keyType,
-            IPythonType valueType,
-            bool isMutable
-            ) : base(keyType.DeclaringModule.Interpreter, isMutable) {
+        /// <summary>
+        /// Creates type info of typing.Dict[TK, TV]
+        /// </summary>
+        /// <param name="name">Type name (Dict, Mapping, ...)</param>
+        /// <param name="keyType">Type of dictionary keys.</param>
+        /// <param name="valueType">Type of dictionary values.</param>
+        /// <param name="interpreter">Python interpreter</param>
+        /// <param name="isMutable">Tells if collection is mutable (Dict) or not (Mapping)</param>
+        public TypingDictionaryType(string name, IPythonType keyType, IPythonType valueType, IPythonInterpreter interpreter, bool isMutable) 
+            : base(interpreter, isMutable) {
             KeyType = keyType;
             ValueType = valueType;
             Name = $"{name}[{keyType.Name}, {valueType.Name}]";

@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
@@ -31,17 +30,17 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         /// </summary>
         /// <param name="typeName">Iterable type name. If null, name of the type id will be used.</param>
         /// <param name="collectionTypeId">Collection type id, such as <see cref="BuiltinTypeId.List"/>.</param>
-        /// <param name="declaringModule">Declaring module. Can be null of module is 'builtins'.</param>
+        /// <param name="interpreter">Python interpreter.</param>
         /// <param name="isMutable">Indicates if collection is mutable (like list) or immutable (like tuple).</param>
         public PythonCollectionType(
             string typeName,
             BuiltinTypeId collectionTypeId,
-            IPythonModule declaringModule,
+            IPythonInterpreter interpreter,
             bool isMutable
-        ) : base(collectionTypeId, declaringModule) {
+        ) : base(collectionTypeId, interpreter.ModuleResolution.BuiltinsModule) {
             _typeName = typeName;
             TypeId = collectionTypeId;
-            IteratorType = new PythonIteratorType(collectionTypeId.GetIteratorTypeId(), DeclaringModule);
+            IteratorType = new PythonIteratorType(collectionTypeId.GetIteratorTypeId(), interpreter);
             IsMutable = isMutable;
         }
 
@@ -79,13 +78,13 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             => CreateInstance(Name, instance?.Location ?? LocationInfo.Empty, args);
         #endregion
 
-        public static IPythonCollection CreateList(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, declaringModule, true);
+        public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) {
+            var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, interpreter, true);
             return new PythonCollection(collectionType, location, contents, flatten);
         }
 
-        public static IPythonCollection CreateTuple(IPythonModule declaringModule, LocationInfo location, IReadOnlyList<IMember> contents) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, declaringModule, false);
+        public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents) {
+            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, interpreter, false);
             return new PythonCollection(collectionType, location, contents);
         }
     }

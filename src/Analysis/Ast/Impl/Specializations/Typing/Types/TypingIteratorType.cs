@@ -16,33 +16,39 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Utilities;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
-    /// Implements typing.Iterator[T].
+    /// Describes iterator for a typed collection.
     /// </summary>
     internal sealed class TypingIteratorType : PythonIteratorType {
-        private readonly IPythonType _contentType;
-
-        public TypingIteratorType(IPythonModule declaringModule, IPythonType contentType, BuiltinTypeId iteratorType)
-            : base(iteratorType, declaringModule) {
-            _contentType = contentType;
-            Name = $"Iterator[{contentType.Name}]";
+        /// <summary>
+        /// Implements iteration over list-like typed collection such as List[T]
+        /// or Sequence[T]. Similar to the Iterator[T]. The iterator does not
+        /// track items in the collection, it repeats the same item endlessly.
+        /// </summary>
+        public TypingIteratorType(IPythonType itemType, BuiltinTypeId iteratorType, IPythonInterpreter interpreter)
+            : base(iteratorType, interpreter) {
+            ItemTypes = new[] { itemType };
+            Repeat = true;
+            Name = $"Iterator[{itemType.Name}]";
         }
 
-        public static IPythonType Create(
-            IPythonModule declaringModule,
-            IReadOnlyList<IPythonType> typeArguments
-        ) {
-            if (typeArguments.Count == 1) {
-                return new TypingIteratorType(declaringModule, typeArguments[0], BuiltinTypeId.SetIterator);
-            }
-            // TODO: report wrong number of arguments
-            return declaringModule.Interpreter.UnknownType;
+        /// <summary>
+        /// Implements iteration over tuple-like typed collection such as Tuple[T1, T2, T3, ...]
+        /// The iterator goes along declared items types and stops when there are no more types.
+        /// </summary>
+        public TypingIteratorType(IReadOnlyList<IPythonType> itemTypes, BuiltinTypeId iteratorType, IPythonInterpreter interpreter)
+            : base(iteratorType, interpreter) {
+            Check.ArgumentOutOfRange(nameof(itemTypes), () => itemTypes.Count > 0);
+            ItemTypes = itemTypes;
+            Name = $"Iterator[{CodeFormatter.FormatSequence(string.Empty, '(', itemTypes)}]";
         }
 
+        public IReadOnlyList<IPythonType> ItemTypes { get; }
+        public bool Repeat { get; }
         public override string Name { get; }
-        public override IMember Next(IPythonInstance instance) => new PythonInstance(_contentType);
     }
 }

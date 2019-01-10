@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         }
 
         public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IMember contents) :
-            base(CollectionTypesCache.GetType<PythonDictionaryType>(interpreter), location, Array.Empty<IMember>()) {
+            base(new PythonDictionaryType(interpreter), location, Array.Empty<IMember>()) {
             if (contents is IPythonDictionary dict) {
                 foreach (var key in dict.Keys) {
                     _contents[key] = dict[key];
@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         }
 
         public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyDictionary<IMember, IMember> contents) :
-            this(CollectionTypesCache.GetType<PythonDictionaryType>(interpreter), location, contents) {
+            this(new PythonDictionaryType(interpreter), location, contents) {
             _interpreter = interpreter;
         }
 
@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         public IEnumerable<IMember> Values => _contents.Values.ToArray();
 
         public IReadOnlyList<IPythonCollection> Items
-            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule, Location, new[] { kvp.Key, kvp.Value })).ToArray();
+            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter, Location, new[] { kvp.Key, kvp.Value })).ToArray();
 
         public IMember this[IMember key] =>
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
@@ -71,17 +71,17 @@ namespace Microsoft.Python.Analysis.Values.Collections {
                 case @"get":
                     return args.Count > 0 ? Index(args[0]) : _interpreter.UnknownType;
                 case @"items":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Items, false);
+                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Items, false);
                 case @"keys":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Keys.ToArray());
+                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Keys.ToArray());
                 case @"values":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Values.ToArray());
+                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Values.ToArray());
                 case @"iterkeys":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Keys.ToArray()).GetIterator();
+                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Keys.ToArray()).GetIterator();
                 case @"itervalues":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Values.ToArray()).GetIterator();
+                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Values.ToArray()).GetIterator();
                 case @"iteritems":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Items, false).GetIterator();
+                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Items, false).GetIterator();
                 case @"pop":
                     return Values.FirstOrDefault() ?? _interpreter.UnknownType;
                 case @"popitem":

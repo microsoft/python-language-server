@@ -17,26 +17,18 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
-using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingListType : PythonCollectionType, ITypingListType {
         /// <summary>
-        /// Creates type info for a list-type typed collection.
+        /// Creates type info for a list-like strongly typed collection, such as List[T].
         /// </summary>
-        /// <param name="typeName">Collection type name. </param>
-        /// <param name="sequenceTypeId">Collection type id, such as <see cref="BuiltinTypeId.List"/>.</param>
-        /// <param name="declaringModule">Declaring module. Can be null of module is 'builtins'.</param>
+        /// <param name="typeName">Type name.</param>
         /// <param name="itemType">List item type.</param>
-        /// <param name="isMutable">Indicates if collection is mutable.</param>
-        public TypingListType(
-            string typeName,
-            BuiltinTypeId sequenceTypeId,
-            IPythonModule declaringModule,
-            IPythonType itemType,
-            bool isMutable
-            ) : base(typeName, sequenceTypeId, declaringModule, isMutable) {
-            Check.ArgumentNotNullOrEmpty(typeName, nameof(typeName));
+        /// <param name="interpreter">Python interpreter</param>
+        /// <param name="isMutable">Tells of list represents a mutable collection.</param>
+        public TypingListType(string typeName, IPythonType itemType, IPythonInterpreter interpreter, bool isMutable) 
+            : base(null, BuiltinTypeId.List, interpreter, isMutable) {
             ItemType = itemType;
             Name = $"{typeName}[{itemType.Name}]";
         }

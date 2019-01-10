@@ -30,8 +30,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
 
         public override IPythonIterator GetIterator() {
             var iteratorTypeId = _collectionType.TypeId.GetIteratorTypeId();
-            var iteratorType = new TypingIteratorType(_collectionType.DeclaringModule, _collectionType.ItemType, iteratorTypeId);
-            return new TypingIterator(iteratorTypeId, this);
+            var iteratorType = new TypingIteratorType(_collectionType.ItemType, iteratorTypeId, _collectionType.DeclaringModule.Interpreter);
+            return new TypingIterator(iteratorType, this);
         }
     }
 }

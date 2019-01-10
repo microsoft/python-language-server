@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             cancellationToken.ThrowIfCancellationRequested();
             if (node.Left is NameExpression nex) {
                 var iterable = await Eval.GetValueFromExpressionAsync(node.List, cancellationToken);
-                var value = (iterable as IPythonIterable)?.GetIterator()?.Next ?? Eval.UnknownType;
+                var value = (iterable as IPythonCollection)?.GetIterator()?.Next ?? Eval.UnknownType;
                 Eval.DeclareVariable(nex.Name, value, Eval.GetLoc(node.Left));
             }
             if (node.Body != null) {

@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     case BuiltinTypeId.Bytes: {
                             var id = !isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Bytes;
                             biType.TrySetTypeId(id);
-                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(this, id), true);
+                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(Interpreter, id), true);
                             break;
                         }
                     case BuiltinTypeId.BytesIterator: {
@@ -83,7 +83,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     case BuiltinTypeId.Unicode: {
                             var id = isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Unicode;
                             biType.TrySetTypeId(id);
-                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(this, id), true);
+                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(Interpreter, id), true);
                             break;
                         }
                     case BuiltinTypeId.UnicodeIterator: {
@@ -91,7 +91,7 @@ namespace Microsoft.Python.Analysis.Modules {
                             break;
                         }
                     case BuiltinTypeId.Str: {
-                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(this, typeId), true);
+                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(Interpreter, typeId), true);
                         }
                         break;
                     default:
