@@ -15,11 +15,22 @@
 
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
-    internal class TypingTuple : PythonSequence {
-        public TypingTuple(TypingTupleType tupleType, LocationInfo location = null)
-            : base(tupleType, location) { }
+    internal class TypingTuple : PythonCollection {
+        private readonly TypingListType _collectionType;
+
+        public TypingTuple(TypingListType collectionType, LocationInfo location = null)
+            : base(collectionType, location ?? LocationInfo.Empty, collectionType.ContentTypes) {
+            _collectionType = collectionType;
+        }
+
+        public override IPythonIterator GetIterator() {
+            var iteratorTypeId = _collectionType.TypeId.GetIteratorTypeId();
+            var iteratorType = new TypingIteratorType(_collectionType.DeclaringModule, _collectionType.ContentTypes[0], iteratorTypeId);
+            return new TypingIterator(iteratorType, _seqType.ContentType);
+        }
     }
 }

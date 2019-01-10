@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
     /// <summary>
     /// Default mutable list with mixed content.
     /// </summary>
-    internal class PythonDictionary : PythonSequence, IPythonDictionary {
+    internal class PythonDictionary : PythonCollection, IPythonDictionary {
         private readonly Dictionary<IMember, IMember> _contents = new Dictionary<IMember, IMember>(new KeyComparer());
         private readonly IPythonInterpreter _interpreter;
 
@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         }
 
         public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IMember contents) :
-            base(SequenceTypeCache.GetType<PythonDictionaryType>(interpreter), location, Array.Empty<IMember>()) {
+            base(CollectionTypesCache.GetType<PythonDictionaryType>(interpreter), location, Array.Empty<IMember>()) {
             if (contents is IPythonDictionary dict) {
                 foreach (var key in dict.Keys) {
                     _contents[key] = dict[key];
@@ -48,15 +48,15 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         }
 
         public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyDictionary<IMember, IMember> contents) :
-            this(SequenceTypeCache.GetType<PythonDictionaryType>(interpreter), location, contents) {
+            this(CollectionTypesCache.GetType<PythonDictionaryType>(interpreter), location, contents) {
             _interpreter = interpreter;
         }
 
         public IEnumerable<IMember> Keys => _contents.Keys.ToArray();
         public IEnumerable<IMember> Values => _contents.Values.ToArray();
 
-        public IReadOnlyList<IPythonSequence> Items
-            => _contents.Select(kvp => new PythonTuple(_interpreter, Location, new[] { kvp.Key, kvp.Value })).ToArray();
+        public IReadOnlyList<IPythonCollection> Items
+            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule, Location, new[] { kvp.Key, kvp.Value })).ToArray();
 
         public IMember this[IMember key] =>
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
@@ -71,17 +71,17 @@ namespace Microsoft.Python.Analysis.Values.Collections {
                 case @"get":
                     return args.Count > 0 ? Index(args[0]) : _interpreter.UnknownType;
                 case @"items":
-                    return new PythonList(_interpreter, LocationInfo.Empty, Items, false);
+                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Items, false);
                 case @"keys":
-                    return new PythonList(_interpreter, LocationInfo.Empty, Keys);
+                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Keys.ToArray());
                 case @"values":
-                    return new PythonList(_interpreter, LocationInfo.Empty, Values);
+                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Values.ToArray());
                 case @"iterkeys":
-                    return new PythonList(_interpreter, LocationInfo.Empty, Keys).GetIterator();
+                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Keys.ToArray()).GetIterator();
                 case @"itervalues":
-                    return new PythonList(_interpreter, LocationInfo.Empty, Values).GetIterator();
+                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Values.ToArray()).GetIterator();
                 case @"iteritems":
-                    return new PythonList(_interpreter, LocationInfo.Empty, Items, false).GetIterator();
+                    return PythonCollectionType.CreateList(Type.DeclaringModule, LocationInfo.Empty, Items, false).GetIterator();
                 case @"pop":
                     return Values.FirstOrDefault() ?? _interpreter.UnknownType;
                 case @"popitem":
@@ -98,7 +98,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
                 return x?.Equals(y) == true;
             }
 
-            public int GetHashCode(IMember obj) => 0;
+            public int GetHashCode(IMember obj) => 0; // Force call to Equals.
         }
 
         public IEnumerator<KeyValuePair<IMember, IMember>> GetEnumerator() => _contents.GetEnumerator();

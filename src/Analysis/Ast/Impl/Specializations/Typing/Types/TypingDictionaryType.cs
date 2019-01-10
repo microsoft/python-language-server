@@ -13,25 +13,27 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal class TypingDictionaryType : TypedMappingType {
-        public TypingDictionaryType(IPythonType keyType, IPythonType valueType)
-            : base("Dict", keyType, valueType, true) { }
-
-        public static IPythonType Create(IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
-            if (typeArguments.Count == 2) {
-                return new TypingDictionaryType(typeArguments[0], typeArguments[1]);
-            }
-            // TODO: report wrong number of arguments
-            return declaringModule.Interpreter.UnknownType;
+    internal class TypingDictionaryType : PythonDictionaryType, ITypingDictionaryType {
+        protected TypingDictionaryType(
+            string name,
+            IPythonType keyType,
+            IPythonType valueType,
+            bool isMutable
+            ) : base(keyType.DeclaringModule.Interpreter, isMutable) {
+            KeyType = keyType;
+            ValueType = valueType;
+            Name = $"{name}[{keyType.Name}, {valueType.Name}]";
         }
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
-            => new TypingDictionary(this, location);
-        public override bool IsAbstract => false;
+        public IPythonType KeyType { get; }
+        public IPythonType ValueType { get; }
+
+        public override string Name { get; }
+        public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ValueType);
     }
 }

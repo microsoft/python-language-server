@@ -17,12 +17,22 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents instance of a type that can be enumerated.
+    /// Represents instance of a collection.
     /// </summary>
-    public interface IPythonIterableType : IPythonType {
+    public interface IPythonCollectionType : IPythonType {
+        /// <summary>
+        /// Type of the collection iterator.
+        /// </summary>
+        IPythonIteratorType IteratorType { get; }
+
         /// <summary>
         /// Retrieves iterator from an instance.
         /// </summary>
         IPythonIterator GetIterator(IPythonInstance instance);
+
+        /// <summary>
+        /// Indicates if the collection is mutable (such as list) or not (such as tuple).
+        /// </summary>
+        bool IsMutable { get; }
     }
 }

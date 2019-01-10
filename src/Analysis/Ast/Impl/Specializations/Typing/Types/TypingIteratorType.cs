@@ -19,6 +19,9 @@ using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
+    /// <summary>
+    /// Implements typing.Iterator[T].
+    /// </summary>
     internal sealed class TypingIteratorType : PythonIteratorType {
         private readonly IPythonType _contentType;
 

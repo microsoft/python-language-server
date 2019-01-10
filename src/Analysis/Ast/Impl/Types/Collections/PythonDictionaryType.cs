@@ -13,16 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
-    internal class PythonDictionaryType : PythonSequenceType {
+    internal class PythonDictionaryType : PythonCollectionType {
         public PythonDictionaryType(IPythonInterpreter interpreter, bool isMutable = true)
-            : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, Array.Empty<IPythonType>(), isMutable) {
+            : base(null, BuiltinTypeId.Dict, interpreter.ModuleResolution.BuiltinsModule, isMutable) {
         }
 
         public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args) {

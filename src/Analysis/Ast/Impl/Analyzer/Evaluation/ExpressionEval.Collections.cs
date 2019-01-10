@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Parsing.Ast;
@@ -48,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
                 contents.Add(value);
             }
-            return new PythonList(Module.Interpreter, GetLoc(expression), contents);
+            return PythonCollectionType.CreateList(Module, GetLoc(expression), contents);
         }
 
         private async Task<IMember> GetValueFromDictionaryAsync(DictionaryExpression expression, CancellationToken cancellationToken = default) {
@@ -67,7 +68,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
                 contents.Add(value);
             }
-            return new PythonTuple(Module.Interpreter, GetLoc(expression), contents);
+
+            return PythonCollectionType.CreateTuple(Module, GetLoc(expression), contents);
         }
     }
 }

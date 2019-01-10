@@ -19,17 +19,14 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
-    internal class TypedSequence : PythonSequence {
-        private readonly TypedSequenceType _seqType;
+    /// <summary>
+    /// Implements typing.Iterator[T]
+    /// </summary>
+    internal sealed class TypingIterator : PythonIterator {
+        private readonly TypingIteratorType _iteratorType;
+        public TypingIterator(TypingIteratorType iteratorType, IPythonCollection collection) 
+            : base(iteratorType.TypeId, collection) { }
 
-        public TypedSequence(TypedSequenceType seqtType, LocationInfo location = null)
-            : base(seqtType, location ?? LocationInfo.Empty) {
-            _seqType = seqtType;
-        }
-
-        public override IPythonIterator GetIterator() {
-            var iteratorType = new TypingIteratorType(_seqType.DeclaringModule, _seqType.ContentType, _seqType.IteratorTypeId);
-            return new TypedIterator(iteratorType, _seqType.ContentType);
-        }
+        public override IMember Next => new PythonInstance(_iteratorType.);
     }
 }

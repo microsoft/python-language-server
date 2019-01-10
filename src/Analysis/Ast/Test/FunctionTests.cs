@@ -57,13 +57,13 @@ namespace Microsoft.Python.Analysis.Tests {
             c.GetMember("i").Should().BeAssignableTo<IPythonFunctionType>();
             c.GetMember("j").Should().BeAssignableTo<IPythonFunctionType>();
             c.GetMember("__class__").Should().BeAssignableTo<IPythonClassType>();
-            c.GetMember("__bases__").Should().BeAssignableTo<IPythonSequence>();
+            c.GetMember("__bases__").Should().BeAssignableTo<IPythonCollection>();
 
             var c2 = c.GetMember("C2").Should().BeAssignableTo<IPythonClassType>().Which;
             c2.GetMemberNames().Should().OnlyContain("k", "__class__", "__bases__");
             c2.GetMember("k").Should().BeAssignableTo<IPythonFunctionType>();
             c2.GetMember("__class__").Should().BeAssignableTo<IPythonClassType>();
-            c2.GetMember("__bases__").Should().BeAssignableTo<IPythonSequence>();
+            c2.GetMember("__bases__").Should().BeAssignableTo<IPythonCollection>();
         }
 
         [TestMethod, Priority(0)]

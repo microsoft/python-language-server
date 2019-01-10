@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -20,8 +21,10 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
+using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing {
@@ -58,17 +61,17 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 (typeArgs, module, location) => TypingIteratorType.Create(module, typeArgs));
 
             _members["Iterable"] = new GenericType("Iterable", this,
-                (typeArgs, module, location) => TypingIterableType.Create(module, typeArgs));
+                (typeArgs, module, location) => CreateList("Iterable", module, typeArgs, false));
             _members["Sequence"] = new GenericType("Sequence", this,
-                (typeArgs, module, location) => TypingSequenceType.Create(module, typeArgs));
-
+                (typeArgs, module, location) => CreateList("Sequence", module, typeArgs, false));
             _members["List"] = new GenericType("List", this,
-                (typeArgs, module, location) => TypingListType.Create(module, typeArgs));
+                (typeArgs, module, location) => CreateList("List", module, typeArgs, false));
+
             _members["Tuple"] = new GenericType("Tuple", this,
-                (typeArgs, module, location) => TypingTupleType.Create(module, typeArgs));
+                (typeArgs, module, location) => CreateCollectionType("Tuple", BuiltinTypeId.ListIterator, module, typeArgs.Count, typeArgs, false));
 
             _members["Mapping"] = new GenericType("Mapping", this,
-                (typeArgs, module, location) => TypingMappingType.Create(module, typeArgs));
+                (typeArgs, module, location) => new TypingDictionaryType("Mapping", ));
             _members["Dict"] = new GenericType("Dict", this,
                 (typeArgs, module, location) => TypingDictionaryType.Create(module, typeArgs));
         }
@@ -79,5 +82,19 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         private LocationInfo GetMemberLocation(string name)
             => (base.GetMember(name)?.GetPythonType() as ILocatedMember)?.Location ?? LocationInfo.Empty;
 
+        private IPythonType CreateList(string typeName,  IPythonModule module, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
+            if (typeArgs.Count == 1) {
+                return new TypingListType(typeName, BuiltinTypeId.ListIterator, module, typeArgs[0], isMutable);
+            }
+            // TODO: report wrong number of arguments
+            return module.Interpreter.UnknownType;
+        }
+        private IPythonType CreateTuple(string typeName, IPythonModule module, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
+            if (typeArgs.Count == 1) {
+                return new TypingTupleType(typeName, BuiltinTypeId.ListIterator, module, typeArgs[0], isMutable);
+            }
+            // TODO: report wrong number of arguments
+            return module.Interpreter.UnknownType;
+        }
     }
 }

@@ -18,33 +18,32 @@ using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Utilities;
-using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Analysis.Values.Collections;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    /// <summary>
-    /// Represents typing.Tuple[T1, T2, ...].
-    /// </summary>
-    /// <remarks>Maps to untyped Python sequence.</remarks>
-    internal class TypingTupleType : PythonSequenceType {
-        public TypingTupleType(IPythonModule declaringModule, IReadOnlyList<IPythonType> contentTypes)
-            : base("Tuple", BuiltinTypeId.Tuple, declaringModule, contentTypes, false) {
-            Name = CodeFormatter.FormatSequence("Tuple", '[', contentTypes);
+    internal class TypingTupleType : PythonCollectionType, ITypingTupleType {
+        /// <summary>
+        /// Creates type info for a list-type typed collection.
+        /// </summary>
+        /// <param name="typeName">Collection type name.</param>
+        /// <param name="sequenceTypeId">Iterable type id, such as <see cref="BuiltinTypeId.List"/>.</param>
+        /// <param name="declaringModule">Declaring module. Can be null of module is 'builtins'.</param>
+        /// <param name="itemTypes">Tuple item types.</param>
+        public TypingTupleType(
+            string typeName,
+            BuiltinTypeId sequenceTypeId,
+            IPythonModule declaringModule,
+            IReadOnlyList<IPythonType> itemTypes
+            ) : base(typeName, sequenceTypeId, declaringModule, false) {
+            Check.ArgumentNotNullOrEmpty(typeName, nameof(typeName));
+            ItemTypes = itemTypes;
+            Name = CodeFormatter.FormatSequence(typeName, '[', itemTypes);
         }
-
-        public static IPythonType Create(IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
-            if (typeArguments.Count > 0) {
-                return new TypingTupleType(declaringModule, typeArguments);
-            }
-            // TODO: report wrong number of arguments
-            return declaringModule.Interpreter.UnknownType;
-        }
-
-        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
-            // TODO: report mismatch between type arguments and initialization arguments
-            => new TypingTuple(this, location);
 
         public override string Name { get; }
         public override bool IsAbstract => false;
+        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
+            => new TypingTuple(this, location);
+        public IReadOnlyList<IPythonType> ItemTypes { get; }
     }
 }

@@ -18,12 +18,23 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values.Collections {
     /// <summary>
-    /// Base class for specialized iterators.
+    /// Collection iterator.
     /// </summary>
-    internal abstract class PythonIterator : PythonInstance, IPythonIterator {
-        protected PythonIterator(IPythonType iteratorType): base(iteratorType) { }
+    internal class PythonIterator : PythonInstance, IPythonIterator {
+        private int _index;
 
-        public abstract IMember Next { get; }
+        protected IPythonCollection Collection { get; }
+
+        public PythonIterator(BuiltinTypeId iteratorTypeId, IPythonCollection collection) 
+            : base(collection.Type.DeclaringModule.Interpreter.GetBuiltinType(iteratorTypeId)) {
+            Collection = collection;
+        }
+
+        public PythonIterator(IPythonType iteratorType, IPythonCollection collection) : base(iteratorType) {
+            Collection = collection;
+        }
+
+        public virtual IMember Next => Collection.Index(_index++) ?? UnknownType;
 
         public override IMember Call(string memberName, IReadOnlyList<object> args) {
             // Specializations

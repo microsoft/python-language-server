@@ -14,16 +14,19 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Analysis.Values.Collections;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
-    internal sealed class TypedIterator : PythonIterator {
-        private readonly IPythonType _contentType;
-        public TypedIterator(IPythonType iteratorType, IPythonType contentType) : base(iteratorType) {
-            _contentType = contentType;
-        }
-
-        public override IMember Next => new PythonInstance(_contentType);
+namespace Microsoft.Python.Analysis.Specializations.Typing {
+    /// <summary>
+    /// Represents typed dictionary, such as typing.Dict[KT, VT]
+    /// </summary>
+    public interface ITypingDictionaryType: IPythonCollectionType {
+        /// <summary>
+        /// Key type.
+        /// </summary>
+        IPythonType KeyType { get; }
+        /// <summary>
+        /// Key type.
+        /// </summary>
+        IPythonType ValueType { get; }
     }
 }

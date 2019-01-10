@@ -16,20 +16,19 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
+namespace Microsoft.Python.Analysis.Values {
     /// <summary>
-    /// Represents typing.Iterable[T]
+    /// Represents an instance of a sequence.
     /// </summary>
-    internal class TypingIterableType : TypedIterableType {
-        public TypingIterableType(string typeName, IPythonModule declaringModule, IPythonType contentType)
-            : base(typeName, BuiltinTypeId.List,  declaringModule, contentType) { }
+    public interface IPythonCollection : IPythonInstance {
+        /// <summary>
+        /// Collection contents
+        /// </summary>
+        IReadOnlyList<IMember> Contents { get; }
 
-        public static IPythonType Create(IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
-            if (typeArguments.Count == 1) {
-                return new TypingIterableType("Iterable", declaringModule, typeArguments[0]);
-            }
-            // TODO: report wrong number of arguments
-            return declaringModule.Interpreter.UnknownType;
-        }
+        /// <summary>
+        /// Retrieves iterator for the collection.
+        /// </summary>
+        IPythonIterator GetIterator();
     }
 }

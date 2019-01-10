@@ -81,7 +81,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     return await GetValueFromFunctionTypeAsync(fn, t.Self, expr, cancellationToken);
                 case IPythonPropertyType p:
                     return await GetValueFromPropertyAsync(p, t.Self, cancellationToken);
-                case IPythonIteratorType it when t.Self is IPythonSequence seq:
+                case IPythonIteratorType it when t.Self is IPythonCollection seq:
                     return seq.GetIterator();
             }
             return UnknownType;

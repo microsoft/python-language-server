@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
@@ -71,7 +72,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // Special case names that we want to add to our own Members dict
                 switch (name) {
                     case "__mro__":
-                        member = AddMember(name, new PythonList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro), true);
+                        member = AddMember(name, PythonCollectionType.CreateList(DeclaringModule, LocationInfo.Empty, Mro), true);
                         return member;
                 }
             }
@@ -109,11 +110,11 @@ namespace Microsoft.Python.Analysis.Types {
             // Specializations
             switch (typeName) {
                 case "list":
-                    return new PythonList(DeclaringModule.Interpreter, location, args.OfType<IMember>().ToArray());
+                    return PythonCollectionType.CreateList(DeclaringModule, location, args.OfType<IMember>().ToArray());
                 case "dict":
                     return new PythonDictionary(DeclaringModule.Interpreter, location, args.OfType<IMember>().FirstOrDefault());
                 case "tuple":
-                    return new PythonTuple(DeclaringModule.Interpreter, location, args.OfType<IMember>().ToArray());
+                    return PythonCollectionType.CreateTuple(DeclaringModule, location, args.OfType<IMember>().ToArray());
             }
             return new PythonInstance(this, location);
         }
@@ -175,7 +176,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                 var bases = (cls as PythonClassType)?.Bases;
                 if (bases == null) {
-                    var members = (cls.GetMember("__bases__") as IPythonSequence)?.Contents ?? Array.Empty<IMember>();
+                    var members = (cls.GetMember("__bases__") as IPythonCollection)?.Contents ?? Array.Empty<IMember>();
                     bases = members.Select(m => m.GetPythonType()).ToArray();
                 }
 

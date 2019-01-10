@@ -13,12 +13,25 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
-    internal class TypingList : TypedSequence {
-        public TypingList(TypingListType listType, LocationInfo location = null)
-            : base(listType, location ?? LocationInfo.Empty) { }
+    internal class TypingList : PythonCollection {
+        private readonly TypingListType _collectionType;
+
+        public TypingList(TypingListType collectionType, LocationInfo location = null)
+            : base(collectionType, location ?? LocationInfo.Empty, Array.Empty<IMember>()) {
+            _collectionType = collectionType;
+        }
+
+        public override IPythonIterator GetIterator() {
+            var iteratorTypeId = _collectionType.TypeId.GetIteratorTypeId();
+            var iteratorType = new TypingIteratorType(_collectionType.DeclaringModule, _collectionType.ItemType, iteratorTypeId);
+            return new TypingIterator(iteratorTypeId, this);
+        }
     }
 }

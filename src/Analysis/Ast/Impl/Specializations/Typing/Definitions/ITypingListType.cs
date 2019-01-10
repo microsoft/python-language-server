@@ -13,22 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal class TypingMappingType : TypedMappingType {
-        public TypingMappingType(IPythonType keyType, IPythonType valueType)
-            : base("Mapping", keyType, valueType, false) { }
-
-        public static IPythonType Create(IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
-            if (typeArguments.Count == 2) {
-                return new TypingMappingType(typeArguments[0], typeArguments[1]);
-            }
-            // TODO: report wrong number of arguments
-            return declaringModule.Interpreter.UnknownType;
-        }
-
-        public override bool IsAbstract => true;
+namespace Microsoft.Python.Analysis.Specializations.Typing {
+    public interface ITypingListType: IPythonCollectionType {
+        IPythonType ItemType { get; }
     }
 }

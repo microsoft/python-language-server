@@ -19,32 +19,27 @@ using System.Linq;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values.Collections {
-    internal abstract class PythonSequence : PythonInstance, IPythonSequence {
-        protected PythonSequence(
-            IPythonSequenceType sequenceType,
-            LocationInfo location
-        ) : this(sequenceType, location, null, false) { }
-
+    internal class PythonCollection : PythonInstance, IPythonCollection {
         /// <summary>
-        /// Creates sequence of the supplied type.
+        /// Creates collection of the supplied types.
         /// </summary>
-        /// <param name="sequenceType">Sequence type.</param>
-        /// <param name="contents">Contents of the sequence (typically elements from the initialization).</param>
+        /// <param name="collectionType">Collection type.</param>
+        /// <param name="contents">Contents of the collection (typically elements from the initialization).</param>
         /// <param name="location">Declaring location.</param>
         /// <param name="flatten">If true and contents is a single element
         /// and is a sequence, the sequence elements are copied rather than creating
         /// a sequence of sequences with a single element.</param>
-        protected PythonSequence(
-            IPythonSequenceType sequenceType,
+        public PythonCollection(
+            IPythonType collectionType,
             LocationInfo location,
-            IEnumerable<object> contents,
+            IReadOnlyList<IMember> contents,
             bool flatten = true
-        ) : base(sequenceType, location) {
-            var c = contents?.ToArray() ?? Array.Empty<IMember>();
-            if (flatten && c.Length == 1 && c[0] is IPythonSequence seq) {
+        ) : base(collectionType, location) {
+            var c = contents ?? Array.Empty<IMember>();
+            if (flatten && c.Count == 1 && c[0] is IPythonCollection seq) {
                 Contents = seq.Contents;
             } else {
-                Contents = c.OfType<IMember>().ToArray();
+                Contents = c;
             }
         }
 
@@ -63,8 +58,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         }
 
         public IReadOnlyList<IMember> Contents { get; protected set; }
-
-        public virtual IPythonIterator GetIterator() => new PythonSequenceIterator(this);
+        public virtual IPythonIterator GetIterator() => new PythonIterator(BuiltinTypeId.ListIterator, this);
 
         public static int GetIndex(object index) {
             switch (index) {

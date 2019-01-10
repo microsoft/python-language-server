@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 
@@ -30,7 +31,7 @@ namespace Microsoft.Python.Analysis.Specializations {
 
         public static IMember Iterator(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args) {
             if (args.Count > 0) {
-                if (args[0] is IPythonSequence seq) {
+                if (args[0] is IPythonCollection seq) {
                     return seq.GetIterator();
                 }
                 var t = args[0].GetPythonType();
@@ -42,7 +43,7 @@ namespace Microsoft.Python.Analysis.Specializations {
         }
 
         public static IMember List(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
-            => new PythonList(module.Interpreter, location, args);
+            => PythonCollectionType.CreateList(module, location, args);
 
         public static IMember ListOfStrings(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
             => new TypingList(new TypingListType(module, module.Interpreter.GetBuiltinType(BuiltinTypeId.Str)), location);

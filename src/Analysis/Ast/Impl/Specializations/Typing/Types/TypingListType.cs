@@ -16,25 +16,34 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Types.Collections;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal class TypingListType : TypingSequenceType {
-        public TypingListType(IPythonModule declaringModule, IPythonType contentType)
-            : base("List", declaringModule, contentType, true) { }
-
-        public new static IPythonType Create(IPythonModule declaringModule, IReadOnlyList<IPythonType> typeArguments) {
-            if (typeArguments.Count == 1) {
-                return new TypingListType(declaringModule, typeArguments[0]);
-            }
-            // TODO: report wrong number of arguments
-            return declaringModule.Interpreter.UnknownType;
+    internal class TypingListType : PythonCollectionType, ITypingListType {
+        /// <summary>
+        /// Creates type info for a list-type typed collection.
+        /// </summary>
+        /// <param name="typeName">Collection type name. </param>
+        /// <param name="sequenceTypeId">Collection type id, such as <see cref="BuiltinTypeId.List"/>.</param>
+        /// <param name="declaringModule">Declaring module. Can be null of module is 'builtins'.</param>
+        /// <param name="itemType">List item type.</param>
+        /// <param name="isMutable">Indicates if collection is mutable.</param>
+        public TypingListType(
+            string typeName,
+            BuiltinTypeId sequenceTypeId,
+            IPythonModule declaringModule,
+            IPythonType itemType,
+            bool isMutable
+            ) : base(typeName, sequenceTypeId, declaringModule, isMutable) {
+            Check.ArgumentNotNullOrEmpty(typeName, nameof(typeName));
+            ItemType = itemType;
+            Name = $"{typeName}[{itemType.Name}]";
         }
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
-            => new TypingList(this, location);
-
-        public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ContentTypes[0]);
+        public override string Name { get; }
         public override bool IsAbstract => false;
+        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args) => new TypingList(this, location);
+        public IPythonType ItemType { get; }
     }
 }

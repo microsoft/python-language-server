@@ -21,6 +21,6 @@ namespace Microsoft.Python.Analysis.Values {
     /// Represents instance of a dictionary.
     /// </summary>
     public interface IPythonDictionary: IPythonInstance, IReadOnlyDictionary<IMember, IMember> {
-        IReadOnlyList<IPythonSequence> Items { get; }
+        IReadOnlyList<IPythonCollection> Items { get; }
     }
 }
