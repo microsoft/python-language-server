@@ -76,6 +76,9 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         // Constructor call
         public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
             => CreateInstance(Name, instance?.Location ?? LocationInfo.Empty, args);
+
+        public override IMember Index(IPythonInstance instance, object index)
+            => (instance as IPythonCollection)?.Index(index) ?? UnknownType;
         #endregion
 
         public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) {

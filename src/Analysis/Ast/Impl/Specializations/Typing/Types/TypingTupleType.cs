@@ -18,6 +18,8 @@ using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Utilities;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingTupleType : PythonCollectionType, ITypingTupleType {
@@ -32,10 +34,17 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             Name = CodeFormatter.FormatSequence("Tuple" ,'[', itemTypes);
         }
 
+        public IReadOnlyList<IPythonType> ItemTypes { get; }
+
         public override string Name { get; }
         public override bool IsAbstract => false;
+
         public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
             => new TypingTuple(this, location);
-        public IReadOnlyList<IPythonType> ItemTypes { get; }
+
+        public override IMember Index(IPythonInstance instance, object index) {
+            var n = PythonCollection.GetIndex(index);
+            return n >= 0 && n < ItemTypes.Count ? ItemTypes[n] : UnknownType;
+        }
     }
 }

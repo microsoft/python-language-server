@@ -38,9 +38,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
 
             var type = target.GetPythonType();
-            return !type.IsUnknown()
-                ? type.Index(target is IPythonInstance pi ? pi : new PythonInstance(type), index)
-                : UnknownType;
+            return type.Index(target is IPythonInstance pi ? pi : new PythonInstance(type), index);
         }
 
         private async Task<IMember> GetValueFromListAsync(ListExpression expression, CancellationToken cancellationToken = default) {

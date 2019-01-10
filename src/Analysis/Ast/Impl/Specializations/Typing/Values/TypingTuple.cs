@@ -32,5 +32,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
             var iteratorType = new TypingIteratorType(_collectionType.ItemTypes, iteratorTypeId, _collectionType.DeclaringModule.Interpreter);
             return new TypingIterator(iteratorType, this);
         }
+
+        public override IMember Index(object index) => _collectionType.Index(this, index);
     }
 }

@@ -13,6 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
@@ -30,7 +32,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="valueType">Type of dictionary values.</param>
         /// <param name="interpreter">Python interpreter</param>
         /// <param name="isMutable">Tells if collection is mutable (Dict) or not (Mapping)</param>
-        public TypingDictionaryType(string name, IPythonType keyType, IPythonType valueType, IPythonInterpreter interpreter, bool isMutable) 
+        public TypingDictionaryType(string name, IPythonType keyType, IPythonType valueType, IPythonInterpreter interpreter, bool isMutable)
             : base(interpreter, isMutable) {
             KeyType = keyType;
             ValueType = valueType;
@@ -41,6 +43,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IPythonType ValueType { get; }
 
         public override string Name { get; }
+
+        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
+            => new TypingDictionary(this, location);
         public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ValueType);
     }
 }
