@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>python-language-server-ptvs$os$</id>
+    <id>Microsoft.VisualStudio.Python.LanguageServer</id>
     <version>$version$</version>
     <title>Python Language Server for PTVS</title>
     <authors>Microsoft</authors>
