@@ -13,11 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
+using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
@@ -72,6 +75,37 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
             return new AndWhichConstraint<PythonFunctionAssertions, IPythonFunctionOverload>(this, overloads[index]);
         }
+
+        public AndWhichConstraint<PythonFunctionOverloadAssertions, IParameterInfo> HaveParameterAt(int index, string because = "", params object[] reasonArgs) {
+            var overloads = Subject.Overloads.ToArray();
+            Execute.Assertion.ForCondition(overloads.Length == 1)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName()} to have a single overload {{reason}}, but it has {GetOverloadsString(overloads.Length)}.");
+
+            var o = overloads[0];
+            Execute.Assertion.ForCondition(o.Parameters.Count > index)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName()} to have parameter at index {index}{{reason}}, but it only has {GetOverloadsString(o.Parameters.Count)}.");
+
+            var oa = new PythonFunctionOverloadAssertions(o);
+            return new AndWhichConstraint<PythonFunctionOverloadAssertions, IParameterInfo>(oa, o.Parameters[index]);
+        }
+
+        public AndWhichConstraint<VariableAssertions, IVariable> HaveVariable(string name, string because = "", params object[] reasonArgs) {
+            var scope = Subject.GetScope();
+            Execute.Assertion.ForCondition(scope != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName()} to have associated scope {{reason}}, but it has none.");
+
+            var v = scope.Variables[name];
+            Execute.Assertion.ForCondition(v != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName()} to have variable {name} {{reason}}, but it has none.");
+
+            var va = new VariableAssertions(v);
+            return new AndWhichConstraint<VariableAssertions, IVariable>(va, v);
+        }
+
 
         private static string GetOverloadsString(int overloadsCount)
             => overloadsCount > 1

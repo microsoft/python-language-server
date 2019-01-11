@@ -35,6 +35,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         protected ConditionalHandler ConditionalHandler { get; }
         protected AssignmentHandler AssignmentHandler { get; }
         protected WithHandler WithHandler { get; }
+        protected TryExceptHandler TryExceptHandler { get; }
 
         public ExpressionEval Eval { get; }
         public IPythonModule Module => Eval.Module;
@@ -50,6 +51,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             LoopHandler = new LoopHandler(this);
             ConditionalHandler = new ConditionalHandler(this);
             WithHandler = new WithHandler(this);
+            TryExceptHandler = new TryExceptHandler(this);
         }
 
         protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
@@ -57,15 +59,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         #region AST walker overrides
-        public override Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default)
-            => ImportHandler.HandleImportAsync(node, cancellationToken);
-
-        public override Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
-            => FromImportHandler.HandleFromImportAsync(node, cancellationToken);
-
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
             await AssignmentHandler.HandleAssignmentAsync(node, cancellationToken);
             return await base.WalkAsync(node, cancellationToken);
+        }
+
+        public override async Task<bool> WalkAsync(ExpressionStatement node, CancellationToken cancellationToken = default) {
+            await AssignmentHandler.HandleAnnotatedExpressionAsync(node.Expression as ExpressionWithAnnotation, null, cancellationToken);
+            return false;
         }
 
         public override async Task<bool> WalkAsync(ForStatement node, CancellationToken cancellationToken = default) {
@@ -73,12 +74,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return await base.WalkAsync(node, cancellationToken);
         }
 
+        public override Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
+            => FromImportHandler.HandleFromImportAsync(node, cancellationToken);
+
         public override Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default)
             => ConditionalHandler.HandleIfAsync(node, cancellationToken);
 
-        public override async Task<bool> WalkAsync(ExpressionStatement node, CancellationToken cancellationToken = default) {
-            await AssignmentHandler.HandleAnnotatedExpressionAsync(node.Expression as ExpressionWithAnnotation, null, cancellationToken);
-            return false;
+        public override Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default)
+            => ImportHandler.HandleImportAsync(node, cancellationToken);
+
+        public override async Task<bool> WalkAsync(TryStatement node, CancellationToken cancellationToken = default) {
+            await TryExceptHandler.HandleTryExceptAsync(node, cancellationToken);
+            return await base.WalkAsync(node, cancellationToken);
+        }
+
+        public override async Task<bool> WalkAsync(WhileStatement node, CancellationToken cancellationToken = default) {
+            await LoopHandler.HandleWhileAsync(node, cancellationToken);
+            return await base.WalkAsync(node, cancellationToken);
         }
 
         public override async Task<bool> WalkAsync(WithStatement node, CancellationToken cancellationToken = default) {

@@ -13,7 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Extensions {
     public static class PythonFunctionExtensions {
@@ -26,5 +29,10 @@ namespace Microsoft.Python.Analysis.Extensions {
         public static bool HasClassFirstArgument(this IPythonClassMember m)
             => (m is IPythonFunctionType f && !f.IsStatic && (f.IsClassMethod || f.IsBound())) ||
                (m is IPythonPropertyType prop);
+
+        public static IScope GetScope(this IPythonFunctionType f) {
+            IScope gs = f.DeclaringModule.GlobalScope;
+            return gs?.TraverseBreadthFirst(s => s.Children).FirstOrDefault(s => s.Node == f.FunctionDefinition);
+        }
     }
 }

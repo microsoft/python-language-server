@@ -145,6 +145,50 @@ oar2 = fob2 + u'ef'";
         }
 
         [TestMethod, Priority(0)]
+        public async Task StringFormattingV2() {
+            const string code = @"
+x = u'abc %d'
+y = x % (42, )
+
+x1 = 'abc %d'
+y1 = x1 % (42, )
+
+fob = 'abc %d'.lower()
+oar = fob % (42, )
+
+fob2 = u'abc' + u'%d'
+oar2 = fob2 % (42, )
+";
+
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Unicode)
+                .And.HaveVariable("y1").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("oar").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("oar2").OfType(BuiltinTypeId.Unicode);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task StringFormattingV3() {
+            var code = @"
+y = f'abc {42}'
+ry = rf'abc {42}'
+yr = fr'abc {42}'
+fadd = f'abc{42}' + f'{42}'
+
+def f(val):
+    print(val)
+f'abc {f(42)}'
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("ry").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("yr").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable(@"fadd").OfType(BuiltinTypeId.Str);
+            // TODO: Enable analysis of f-strings
+            //    .And.HaveVariable("val",  BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
         [Ignore]
         public async Task RangeIteration() {
             const string code = @"
@@ -173,6 +217,54 @@ a = not C()
 
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Bool);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SequenceConcat() {
+            const string code = @"
+x1 = ()
+y1 = x1 + ()
+y1v = y1[0]
+
+x2 = (1,2,3)
+y2 = x2 + (4.0,5.0,6.0)
+y2v = y2[0]
+
+x3 = [1,2,3]
+y3 = x3 + [4.0,5.0,6.0]
+y3v = y3[0]
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x1").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("y1").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("y1v").WithNoTypes()
+                .And.HaveVariable("y2").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("y2v").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y3").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("y3v").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SequenceMultiply() {
+            var code = @"
+x = ()
+y = x * 100
+
+x1 = (1,2,3)
+y1 = x1 * 100
+
+fob = [1,2,3]
+oar = fob * 100
+
+fob2 = []
+oar2 = fob2 * 100";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("y").OfType("tuple")
+                .And.HaveVariable("y1").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("oar").OfType("list")
+                .And.HaveVariable("oar2").OfType(BuiltinTypeId.List);
         }
     }
 }

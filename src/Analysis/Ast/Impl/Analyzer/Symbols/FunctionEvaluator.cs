@@ -106,7 +106,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
-            var n = FunctionDefinition.Name == "lower";
             var value = await Eval.GetValueFromExpressionAsync(node.Expression, cancellationToken);
             if (value != null) {
                 _overload.AddReturnValue(value);

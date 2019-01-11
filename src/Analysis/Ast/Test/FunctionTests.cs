@@ -216,9 +216,9 @@ vv = x['a']
                 .And.HaveVariable("i").OfType("C")
                 .And.HaveVariable("x").OfType("List[str]")
                 .And.HaveVariable("v").OfType(BuiltinTypeId.Str);
-                //.And.HaveVariable("va").OfType(BuiltinTypeId.Dict)
-                //.And.HaveVariable("kv").OfType(BuiltinTypeId.Str)
-                //.And.HaveVariable("vv").OfType(BuiltinTypeId.Object);
+            //.And.HaveVariable("va").OfType(BuiltinTypeId.Dict)
+            //.And.HaveVariable("kv").OfType(BuiltinTypeId.Str)
+            //.And.HaveVariable("vv").OfType(BuiltinTypeId.Object);
             ;
         }
 
@@ -379,6 +379,113 @@ x = f()
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveReturnType("Union[int, str]");
             analysis.Should().HaveVariable("x").OfType("Union[int, str]");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SignatureDefaults() {
+            const string code = @"
+def f(x = None): pass
+def g(x = {}): pass
+def h(x = {2:3}): pass
+def i(x = []): pass
+def j(x = [None]): pass
+def k(x = ()): pass
+def l(x = (2, )): pass
+def m(x = math.atan2(1, 0)): pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            var tests = new[] {
+                    new { FuncName = "f", DefaultValue = "None" },
+                    new { FuncName = "g", DefaultValue = "{}" },
+                    new { FuncName = "h", DefaultValue = "{...}" },
+                    new { FuncName = "i", DefaultValue = "[]" },
+                    new { FuncName = "j", DefaultValue="[...]" },
+                    new { FuncName = "k", DefaultValue = "()" },
+                    new { FuncName = "l", DefaultValue = "(...)" },
+                    new { FuncName = "m", DefaultValue = "math.atan2(1, 0)" },
+                };
+
+            foreach (var test in tests) {
+                analysis.Should().HaveFunction(test.FuncName)
+                    .Which.Should().HaveSingleOverload()
+                    .Which.Should().HaveSingleParameter()
+                    .Which.Should().HaveName("x").And.HaveDefaultValue(test.DefaultValue);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SpecializedOverride() {
+            const string code = @"
+class simpledict(dict): pass
+
+class getdict(dict):
+    def __getitem__(self, index):
+        return 'abc'
+
+
+d1 = simpledict({2:3})
+x1 = d1[2]
+
+d2 = simpledict(x = 2)
+x2 = d2['x']
+
+d3 = simpledict(**{2:3})
+x3 = d3[2]
+
+d4 = getdict({2:3})
+x4 = d4[2]
+
+d5 = simpledict(**{2:'blah'})
+x5 = d5[2]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x1").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("x2").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("x3").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("x4").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("x5").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReturnArg() {
+            const string code = @"
+def g(a):
+    return a
+
+x = g(1)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReturnArg2() {
+            const string code = @"
+
+def f(a):
+    def g():
+        return a
+    return g
+
+x = f(2)()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
+
+        // Verifies that constructing lists / tuples from more lists/tuples doesn't cause an infinite analysis as we keep creating more lists/tuples.
+        [TestMethod, Priority(0)]
+        public async Task ListRecursion() {
+            const string code = @"
+def f(x):
+    print abc
+    return f(list(x))
+
+abc = f(())
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("abc");
         }
     }
 }

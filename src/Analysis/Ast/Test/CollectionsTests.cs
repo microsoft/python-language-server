@@ -443,5 +443,102 @@ d = a.next()
                 .And.HaveVariable("d").WithNoTypes()
                 .And.HaveFunction("f");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task SetLiteral() {
+            const string code = @"
+x = {2, 3, 4}
+for abc in x:
+    print(abc)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType("set")
+                    .And.HaveVariable("abc").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SetOperators() {
+            const string code = @"
+x = {1, 2, 3}
+y = {3.14, 2.718}
+
+x_or_y = x | y
+x_and_y = x & y
+x_sub_y = x - y
+x_xor_y = x ^ y
+
+y_or_x = y | x
+y_and_x = y & x
+y_sub_x = y - x
+y_xor_x = y ^ x
+
+x_or_y_0 = next(iter(x_or_y))
+x_and_y_0 = next(iter(x_and_y))
+x_sub_y_0 = next(iter(x_sub_y))
+x_xor_y_0 = next(iter(x_xor_y))
+
+y_or_x_0 = next(iter(y_or_x))
+y_and_x_0 = next(iter(y_and_x))
+y_sub_x_0 = next(iter(y_sub_x))
+y_xor_x_0 = next(iter(y_xor_x))
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("y").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("x_or_y").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("y_or_x").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("x_and_y").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("y_and_x").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("x_sub_y").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("y_sub_x").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("x_xor_y").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("y_xor_x").OfType(BuiltinTypeId.Set)
+                    .And.HaveVariable("x_or_y_0").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("y_or_x_0").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("x_and_y_0").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("y_and_x_0").OfType(BuiltinTypeId.Float)
+                    .And.HaveVariable("x_sub_y_0").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("y_sub_x_0").OfType(BuiltinTypeId.Float)
+                    .And.HaveVariable("x_xor_y_0").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("y_xor_x_0").OfType(BuiltinTypeId.Float);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DictionaryFunctionTable() {
+            const string code = @"
+def f(a, b):
+    return a
+    
+def g(a, b):
+    return a, b
+
+x = {'fob': f, 'oar' : g}
+y1 = x['fob'](42, [])
+y2 = x['oar'](42, [])
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("y1").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y2").OfType(BuiltinTypeId.Tuple);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DictionaryFunctionTableGet() {
+            const string code = @"
+def f(a, b):
+    print(a, b)
+    
+def g(a, b):
+    x, y = a, b
+
+x = {'fob': f, 'oar' : g}
+
+y1 = x.get('fob')(42, [])
+y2 = x.get('oar')(42, [])
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("y1").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y2").OfType(BuiltinTypeId.Tuple);
+        }
     }
 }

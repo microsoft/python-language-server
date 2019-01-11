@@ -64,7 +64,7 @@ namespace Microsoft.Python.Analysis.Tests {
             all.First(x => x.Name == "E").Value.Should().BeAssignableTo<IPythonClassType>();
 
             all.First(x => x.Name == "f").Value.Should().BeAssignableTo<IPythonFunctionType>();
- 
+
             var f1 = all.First(x => x.Name == "F1");
             var c = f1.Value.Should().BeAssignableTo<IPythonClassType>().Which;
 
@@ -198,6 +198,25 @@ a = y().StaticMethod(4.0)
         }
 
         [TestMethod, Priority(0)]
+        public async Task InheritedClassMethod() {
+            const string code = @"
+class x(object):
+    @classmethod
+    def ClassMethod(cls):
+        return cls
+
+class y(x):
+    pass
+
+a = y().ClassMethod()
+b = y.ClassMethod()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType("y")
+                .And.HaveVariable("b").OfType("y");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ClassMethod() {
             const string code = @"
 class x(object):
@@ -238,7 +257,7 @@ a = X(2)
                 .Which.Should().HaveParameterAt(0).Which.Should().HaveName("self").And.HaveType("X");
         }
 
-        //[TestMethod, Priority(0)]
+        [TestMethod, Priority(0)]
         public async Task ClassNew() {
             const string code = @"
 class X:
@@ -412,5 +431,46 @@ x = A().func()
                 .Which.Should().HaveType("A");
         }
 
+        [TestMethod, Priority(0)]
+        public async Task MutualRecursion() {
+            const string code = @"
+class C:
+    def f(self, other, depth):
+        if depth == 0:
+            return 'abc'
+        return other.g(self, depth - 1)
+
+class D:
+    def g(self, other, depth):
+        if depth == 0:
+            return ['d', 'e', 'f']
+        
+        return other.f(self, depth - 1)
+
+x = D().g(C(), 42)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.List);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task LazyMemberOnParameter() {
+            const string code = @"
+class C:
+    x = 123
+class D:
+    x = 3.14
+
+def f(v):
+    return v.x
+
+c = f(C())
+d = f(D())";
+
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("c").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("d").OfType(BuiltinTypeId.Float);
+        }
     }
 }

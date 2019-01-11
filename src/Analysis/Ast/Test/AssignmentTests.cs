@@ -230,5 +230,47 @@ y = x(42)
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task MemberAssign1() {
+            const string code = @"
+class C:
+    def func(self):
+        self.abc = 42
+
+a = C()
+a.func()
+fob = a.abc
+";
+            var analysis = await GetAnalysisAsync(code);
+            var intMemberNames = analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.Int).GetMemberNames();
+
+            analysis.Should().HaveVariable("fob").OfType(BuiltinTypeId.Int)
+                .Which.Should().HaveMembers(intMemberNames);
+            analysis.Should().HaveVariable("a")
+                .Which.Should().HaveMembers("abc", "func", "__doc__", "__class__");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MemberAssign2() {
+            const string code = @"
+class D:
+    def func2(self):
+        a = C()
+        a.func()
+        return a.abc
+
+class C:
+    def func(self):
+        self.abc = [2,3,4]
+
+fob = D().func2()
+";
+            var analysis = await GetAnalysisAsync(code);
+            var listMemberNames = analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.List).GetMemberNames();
+
+            analysis.Should().HaveVariable("fob").OfType(BuiltinTypeId.List)
+                .Which.Should().HaveMembers(listMemberNames);
+        }
     }
 }

@@ -13,10 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
@@ -37,6 +37,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Module stub, if any.
         /// </summary>
         IPythonModule Stub { get; }
+
+        /// <summary>
+        /// Global cope of the module.
+        /// </summary>
+        IGlobalScope GlobalScope { get; }
 
         /// <summary>
         /// Ensures that module content is loaded and analysis has completed.

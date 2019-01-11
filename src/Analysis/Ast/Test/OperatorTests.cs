@@ -17,6 +17,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -31,6 +33,27 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
+
+
+        [TestMethod, Priority(0)]
+        public async Task NotOperator() {
+            const string code = @"
+
+class C(object):
+    def __nonzero__(self):
+        pass
+
+    def __bool__(self):
+        pass
+
+a = not C()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Bool);
+
+            analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Bool);
+        }
 
         [TestMethod, Priority(0)]
         public async Task UnaryOperatorPlus() {
@@ -84,6 +107,25 @@ b = ~~C()
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType("Result")
                 .And.HaveVariable("b").OfType("Result");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TrueDividePython3X() {
+            var code = @"
+class C:
+    def __truediv__(self, other):
+        return 42
+    def __rtruediv__(self, other):
+        return 3.0
+
+a = C()
+b = a / 'abc'
+c = 'abc' / a
+";
+
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Float);
         }
     }
 }

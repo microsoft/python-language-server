@@ -34,5 +34,9 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             constraint.Which.Should().HaveNoDefaultValue(because, reasonArgs);
             return constraint;
         }
+        public static AndWhichConstraint<TAssertions, IParameterInfo> WithDefaultValue<TAssertions>(this AndWhichConstraint<TAssertions, IParameterInfo> constraint, string value, string because = "", params object[] reasonArgs) {
+            constraint.Which.Should().HaveDefaultValue(value, because, reasonArgs);
+            return constraint;
+        }
     }
 }

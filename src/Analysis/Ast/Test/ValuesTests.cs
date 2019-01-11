@@ -159,5 +159,80 @@ with X():
                     .And.HaveVariable("x")
                     .Which.Should().HaveMember("x_method");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task Global() {
+            const string code = @"
+x = None
+y = None
+def f():
+    def g():
+        global x, y
+        x = 123
+        y = 123
+    return x, y
+
+a, b = f()
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Nonlocal() {
+            const string code = @"
+def f():
+    x = None
+    y = None
+    def g():
+        nonlocal x, y
+        x = 123
+        y = 234
+    return x, y
+
+a, b = f()
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int);
+
+            //.And.HaveFunction("f")
+            //.Which.Should().HaveVariable("x").OfTypes(BuiltinTypeId.NoneType, BuiltinTypeId.Int)
+            //.And.HaveVariable("y").OfTypes(BuiltinTypeId.NoneType, BuiltinTypeId.Int)
+
+            //.And.HaveFunction("g")
+            //.Which.Should().HaveVariable("x").OfTypes(BuiltinTypeId.NoneType, BuiltinTypeId.Int)
+            //.And.HaveVariable("y").OfTypes(BuiltinTypeId.NoneType, BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TryExcept() {
+            const string code = @"
+class MyException(Exception): pass
+
+def f():
+    try:
+        pass
+    except TypeError, e1:
+        pass
+
+def g():
+    try:
+        pass
+    except MyException, e2:
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("f")
+                .Which.Should().HaveVariable("e1").OfType("TypeError");
+
+            analysis.Should().HaveFunction("g")
+                .Which.Should().HaveVariable("e2").OfType("MyException");
+        }
     }
 }

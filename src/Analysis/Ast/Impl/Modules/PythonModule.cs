@@ -151,6 +151,11 @@ namespace Microsoft.Python.Analysis.Modules {
         public IPythonModule Stub { get; }
 
         /// <summary>
+        /// Global cope of the module.
+        /// </summary>
+        public IGlobalScope GlobalScope { get; private set; }
+
+        /// <summary>
         /// Ensures that module content is loaded and analysis has started.
         /// Typically module content is loaded at the creation time, but delay
         /// loaded (lazy) modules may choose to defer content retrieval and
@@ -386,6 +391,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     _analysisTcs.TrySetResult(analysis);
                     _analysisTcs = null;
 
+                    GlobalScope = analysis.GlobalScope;
                     NewAnalysis?.Invoke(this, EventArgs.Empty);
                     return true;
                 }

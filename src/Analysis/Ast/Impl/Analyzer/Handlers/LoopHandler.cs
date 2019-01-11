@@ -33,5 +33,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 await node.Body.WalkAsync(Walker, cancellationToken);
             }
         }
+
+        public async Task HandleWhileAsync(WhileStatement node, CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (node.Body != null) {
+                await node.Body.WalkAsync(Walker, cancellationToken);
+            }
+            if (node.ElseStatement != null) {
+                await node.ElseStatement.WalkAsync(Walker, cancellationToken);
+            }
+        }
     }
 }

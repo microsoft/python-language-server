@@ -47,5 +47,10 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             Subject.DefaultValueString.Should().BeNull(because, reasonArgs);
             return new AndWhichConstraint<ParameterAssertions, IParameterInfo>(this, Subject);
         }
+        public AndWhichConstraint<ParameterAssertions, IParameterInfo> HaveDefaultValue(string value, string because = "", params object[] reasonArgs) {
+            Subject.DefaultValueString.Should().Be(value, because, reasonArgs);
+            return new AndWhichConstraint<ParameterAssertions, IParameterInfo>(this, Subject);
+        }
+
     }
 }
