@@ -132,7 +132,6 @@ class CInheritedInit(CNewStyleInit):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("not yet")]
         public async Task WithStatement() {
             const string code = @"
 class X(object):

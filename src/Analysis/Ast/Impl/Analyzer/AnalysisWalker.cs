@@ -34,6 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         protected LoopHandler LoopHandler { get; }
         protected ConditionalHandler ConditionalHandler { get; }
         protected AssignmentHandler AssignmentHandler { get; }
+        protected WithHandler WithHandler { get; }
 
         public ExpressionEval Eval { get; }
         public IPythonModule Module => Eval.Module;
@@ -48,6 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             AssignmentHandler = new AssignmentHandler(this);
             LoopHandler = new LoopHandler(this);
             ConditionalHandler = new ConditionalHandler(this);
+            WithHandler = new WithHandler(this);
         }
 
         protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
@@ -77,6 +79,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override async Task<bool> WalkAsync(ExpressionStatement node, CancellationToken cancellationToken = default) {
             await AssignmentHandler.HandleAnnotatedExpressionAsync(node.Expression as ExpressionWithAnnotation, null, cancellationToken);
             return false;
+        }
+
+        public override async Task<bool> WalkAsync(WithStatement node, CancellationToken cancellationToken = default) {
+            await WithHandler.HandleWithAsync(node, cancellationToken);
+            return await base.WalkAsync(node, cancellationToken);
         }
         #endregion
 

@@ -26,7 +26,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        private async Task<IMember> GetValueFromCallableAsync(CallExpression expr, CancellationToken cancellationToken = default) {
+        public async Task<IMember> GetValueFromCallableAsync(CallExpression expr, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             if (expr?.Target == null) {
                 return null;
@@ -64,7 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return value;
         }
 
-        private async Task<IMember> GetValueFromClassCtorAsync(IPythonClassType cls, CallExpression expr, CancellationToken cancellationToken = default) {
+        public async Task<IMember> GetValueFromClassCtorAsync(IPythonClassType cls, CallExpression expr, CancellationToken cancellationToken = default) {
             await SymbolTable.EvaluateAsync(cls.ClassDefinition, cancellationToken);
             // Determine argument types
             var args = new List<IMember>();
@@ -75,7 +75,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return cls.CreateInstance(cls.Name, GetLoc(expr), args);
         }
 
-        private async Task<IMember> GetValueFromBoundAsync(IPythonBoundType t, CallExpression expr, CancellationToken cancellationToken = default) {
+        public async Task<IMember> GetValueFromBoundAsync(IPythonBoundType t, CallExpression expr, CancellationToken cancellationToken = default) {
             switch(t.Type) {
                 case IPythonFunctionType fn:
                     return await GetValueFromFunctionTypeAsync(fn, t.Self, expr, cancellationToken);
@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        private async Task<IMember> GetValueFromInstanceCall(IPythonInstance pi, CallExpression expr, CancellationToken cancellationToken = default) {
+        public async Task<IMember> GetValueFromInstanceCall(IPythonInstance pi, CallExpression expr, CancellationToken cancellationToken = default) {
             // Call on an instance such as 'a = 1; a()'
             // If instance is a function (such as an unbound method), then invoke it.
             var type = pi.GetPythonType();
@@ -104,7 +104,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return null;
         }
 
-        private async Task<IMember> GetValueFromFunctionTypeAsync(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr, CancellationToken cancellationToken = default) {
+        public async Task<IMember> GetValueFromFunctionTypeAsync(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr, CancellationToken cancellationToken = default) {
             // Determine argument types
             var args = new List<IMember>();
             // For static and regular methods add 'self' or 'cls'
@@ -112,9 +112,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 args.Add(fn.IsClassMethod ? fn.DeclaringType : ((IMember)instance ?? Interpreter.UnknownType));
             }
 
-            foreach (var a in expr.Args.MaybeEnumerate()) {
-                var type = await GetValueFromExpressionAsync(a.Expression, cancellationToken);
-                args.Add(type ?? UnknownType);
+            if (expr != null) {
+                foreach (var a in expr.Args.MaybeEnumerate()) {
+                    var type = await GetValueFromExpressionAsync(a.Expression, cancellationToken);
+                    args.Add(type ?? UnknownType);
+                }
             }
 
             // If order to be able to find matching overload, we need to know
@@ -127,7 +129,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
         }
 
-        private async Task<IMember> GetValueFromPropertyAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
+        public async Task<IMember> GetValueFromPropertyAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
             // Function may not have been walked yet. Do it now.
             await SymbolTable.EvaluateAsync(p.FunctionDefinition, cancellationToken);
             return instance.Call(p.Name, Array.Empty<IMember>());

@@ -24,7 +24,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        private async Task<IMember> GetValueFromIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
+        public async Task<IMember> GetValueFromIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
             if (expr?.Target == null) {
                 return null;
             }
@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return type?.Index(target is IPythonInstance pi ? pi : new PythonInstance(type), index) ?? UnknownType;
         }
 
-        private async Task<IMember> GetValueFromListAsync(ListExpression expression, CancellationToken cancellationToken = default) {
+        public async Task<IMember> GetValueFromListAsync(ListExpression expression, CancellationToken cancellationToken = default) {
             var contents = new List<IMember>();
             foreach (var item in expression.Items) {
                 var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return PythonCollectionType.CreateList(Module.Interpreter, GetLoc(expression), contents);
         }
 
-        private async Task<IMember> GetValueFromDictionaryAsync(DictionaryExpression expression, CancellationToken cancellationToken = default) {
+        public async Task<IMember> GetValueFromDictionaryAsync(DictionaryExpression expression, CancellationToken cancellationToken = default) {
             var contents = new Dictionary<IMember, IMember>();
             foreach (var item in expression.Items) {
                 var key = await GetValueFromExpressionAsync(item.SliceStart, cancellationToken) ?? UnknownType;
