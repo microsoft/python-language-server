@@ -14,39 +14,37 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
-using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing {
     internal static class TypingTypeFactory {
-        public static IPythonType CreateListType(IPythonInterpreter interpreter, string typeName, BuiltinTypeId typeId, IPythonType itemType, bool isMutable)
+        public static ITypingListType CreateListType(IPythonInterpreter interpreter, string typeName, BuiltinTypeId typeId, IPythonType itemType, bool isMutable)
             => new TypingListType(typeName, typeId, itemType, interpreter, isMutable);
 
-        public static IPythonType CreateTupleType(IPythonInterpreter interpreter, IReadOnlyList<IPythonType> types)
+        public static ITypingTupleType CreateTupleType(IPythonInterpreter interpreter, IReadOnlyList<IPythonType> types)
             => new TypingTupleType(types, interpreter);
 
-        public static IPythonType CreateIteratorType(IPythonInterpreter interpreter, IPythonType itemType)
+        public static ITypingIteratorType CreateIteratorType(IPythonInterpreter interpreter, IPythonType itemType)
             => new TypingIteratorType(itemType, BuiltinTypeId.ListIterator, interpreter);
 
-        public static IPythonType CreateDictionary(IPythonInterpreter interpreter, string typeName, IPythonType keyType, IPythonType valueType, bool isMutable)
+        public static ITypingDictionaryType CreateDictionary(IPythonInterpreter interpreter, string typeName, IPythonType keyType, IPythonType valueType, bool isMutable)
             => new TypingDictionaryType(typeName, keyType, valueType, interpreter, isMutable);
 
-        public static IPythonType CreateKeysViewType(IPythonInterpreter interpreter, IPythonType keyType)
+        public static ITypingListType CreateKeysViewType(IPythonInterpreter interpreter, IPythonType keyType)
             => new TypingListType("KeysView", BuiltinTypeId.DictKeys, keyType, interpreter, false);
 
-        public static IPythonType CreateValuesViewType(IPythonInterpreter interpreter, IPythonType valueType)
+        public static ITypingListType CreateValuesViewType(IPythonInterpreter interpreter, IPythonType valueType)
             => new TypingListType("ValuesView", BuiltinTypeId.DictKeys, valueType, interpreter, false);
 
-        public static IPythonType CreateItemsViewType(IPythonInterpreter interpreter, ITypingDictionaryType dict) {
+        public static ITypingListType CreateItemsViewType(IPythonInterpreter interpreter, ITypingDictionaryType dict) {
             var typeName = CodeFormatter.FormatSequence("ItemsView", '[', new[] { dict.KeyType, dict.ValueType });
             return new TypingListType(typeName, BuiltinTypeId.DictItems, dict.ItemType, interpreter, false, false);
         }
 
-        public static IPythonType CreateItemsViewType(IPythonInterpreter interpreter, IPythonType keyType, IPythonType valueType) {
+        public static ITypingListType CreateItemsViewType(IPythonInterpreter interpreter, IPythonType keyType, IPythonType valueType) {
             var types = new[] {keyType, valueType};
             var typeName = CodeFormatter.FormatSequence("ItemsView", '[', types);
             var itemType = CreateTupleType(interpreter, types);

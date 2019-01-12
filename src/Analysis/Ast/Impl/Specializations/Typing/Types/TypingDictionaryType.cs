@@ -52,7 +52,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ValueType);
 
         private TypingTupleType CreateItemType() {
-            var iteratorTypeId = TypeId.GetIteratorTypeId();
             var itemType = new TypingTupleType(new[] { KeyType, ValueType }, DeclaringModule.Interpreter);
             return itemType;
         }

@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     /// </summary>
     internal class TypingDictionary : PythonDictionary {
         private readonly TypingDictionaryType _dictType;
-
+        
         public TypingDictionary(TypingDictionaryType dictType, LocationInfo location = null)
             : base(dictType, location ?? LocationInfo.Empty, EmptyDictionary<IMember, IMember>.Instance) {
             _dictType = dictType;
@@ -47,17 +47,17 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
                 case @"get":
                     return new PythonInstance(_dictType.ValueType);
                 case @"items":
-                    return new PythonInstance(TypingTypeFactory.CreateItemsViewType(interpreter, _dictType));
+                    return GetItems();
                 case @"keys":
-                    return new PythonInstance(TypingTypeFactory.CreateKeysViewType(interpreter, _dictType.KeyType));
+                    return GetKeys();
                 case @"values":
-                    return new PythonInstance(TypingTypeFactory.CreateValuesViewType(interpreter, _dictType.ValueType));
+                    return GetValues();
                 case @"iterkeys":
-                    return new PythonInstance(TypingTypeFactory.CreateIteratorType(interpreter, _dictType.KeyType));
+                    return GetKeys().GetIterator();
                 case @"itervalues":
-                    return new PythonInstance(TypingTypeFactory.CreateIteratorType(interpreter, _dictType.ValueType));
+                    return GetValues().GetIterator();
                 case @"iteritems":
-                    return new PythonInstance(TypingTypeFactory.CreateIteratorType(interpreter, _dictType.ItemType));
+                    return GetItems().GetIterator();
                 case @"pop":
                     return new PythonInstance(_dictType.ValueType);
                 case @"popitem":
@@ -66,9 +66,16 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
             return base.Call(memberName, args);
         }
 
-        private IPythonCollection CreateList(IPythonType itemType, BuiltinTypeId typeId) {
-            var listType = new TypingListType("List", BuiltinTypeId.List, itemType, _dictType.DeclaringModule.Interpreter, false);
-            return new TypingList(listType);
-        }
+        private TypingList _keys;
+        private TypingList GetKeys()
+            => _keys ?? (_keys = new TypingList(TypingTypeFactory.CreateKeysViewType(_dictType.DeclaringModule.Interpreter, _dictType.KeyType)));
+
+        private TypingList _values;
+        private TypingList GetValues()
+            => _values ?? (_values = new TypingList(TypingTypeFactory.CreateValuesViewType(_dictType.DeclaringModule.Interpreter, _dictType.ValueType)));
+
+        private TypingList _items;
+        private TypingList GetItems()
+            =>_items ?? (_items = new TypingList(TypingTypeFactory.CreateItemsViewType(_dictType.DeclaringModule.Interpreter, _dictType)));
     }
 }

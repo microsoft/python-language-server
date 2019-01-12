@@ -21,9 +21,9 @@ using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingList : PythonCollection {
-        private readonly TypingListType _collectionType;
+        private readonly ITypingListType _collectionType;
 
-        public TypingList(TypingListType collectionType, LocationInfo location = null)
+        public TypingList(ITypingListType collectionType, LocationInfo location = null)
             : base(collectionType, location ?? LocationInfo.Empty, Array.Empty<IMember>()) {
             _collectionType = collectionType;
         }

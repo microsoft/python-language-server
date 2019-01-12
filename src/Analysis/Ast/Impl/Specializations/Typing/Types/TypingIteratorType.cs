@@ -17,14 +17,13 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Utilities;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
     /// Describes iterator for a typed collection.
     /// </summary>
-    internal sealed class TypingIteratorType : PythonIteratorType {
+    internal sealed class TypingIteratorType : PythonIteratorType, ITypingIteratorType {
         /// <summary>
         /// Implements iteration over list-like typed collection such as List[T]
         /// or Sequence[T]. Similar to the Iterator[T]. The iterator does not

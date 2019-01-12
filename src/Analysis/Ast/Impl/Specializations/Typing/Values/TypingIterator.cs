@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -33,11 +34,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
 
         public override IMember Next {
             get {
+                IPythonType itemType = null;
                 if (_iteratorType.Repeat) {
-                    return new PythonInstance(_iteratorType.ItemTypes[0]);
+                    itemType = _iteratorType.ItemTypes[0];
+                } else if (_index < _iteratorType.ItemTypes.Count) {
+                    itemType = _iteratorType.ItemTypes[_index++];
                 }
-                return _index < _iteratorType.ItemTypes.Count ? new PythonInstance(_iteratorType.ItemTypes[_index++]) : UnknownType;
+                return itemType?.CreateInstance(itemType.Name, LocationInfo.Empty, Array.Empty<IMember>()) ?? UnknownType;
             }
         }
-}
+    }
 }
