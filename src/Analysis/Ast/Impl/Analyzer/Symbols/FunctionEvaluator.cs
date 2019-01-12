@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             cancellationToken.ThrowIfCancellationRequested();
             // Process annotations.
-            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+            var annotationType = await Eval.GetTypeFromAnnotationAsync(FunctionDefinition.ReturnAnnotation, cancellationToken);
             if (!annotationType.IsUnknown()) {
                 _overload.SetReturnValue(annotationType, true);
             }
@@ -150,7 +150,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
                     IPythonType paramType = null;
                     if (p.DefaultValue != null) {
-                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, LookupOptions.Local | LookupOptions.Builtins);
+                        paramType = await Eval.GetTypeFromAnnotationAsync(p.Annotation, cancellationToken, LookupOptions.Local | LookupOptions.Builtins);
                         if (paramType == null) {
                             var defaultValue = await Eval.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken);
                             if (!defaultValue.IsUnknown()) {
@@ -159,7 +159,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         }
                     }
                     // If all else fails, look up globally.
-                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation);
+                    paramType = paramType ?? await Eval.GetTypeFromAnnotationAsync(p.Annotation, cancellationToken);
 
                     var pi = new ParameterInfo(Ast, p, paramType);
                     await DeclareParameterAsync(p, i, pi, cancellationToken);

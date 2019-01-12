@@ -53,5 +53,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         public static IPythonType CreateUnion(IPythonInterpreter interpreter, IReadOnlyList<IMember> types)
             => new PythonUnionType(types.Select(a => a.GetPythonType()));
+
+        public static ITypingNamedTupleType CreateNamedTuple(IPythonInterpreter interpreter, string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes)
+            => new NamedTupleType(tupleName, itemNames, itemTypes, interpreter);
     }
 }

@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return;
             }
 
-            var variableType = Eval.GetTypeFromAnnotation(expr.Annotation);
+            var variableType = await Eval.GetTypeFromAnnotationAsync(expr.Annotation, cancellationToken);
             // If value is null, then this is a pure declaration like 
             //   x: List[str]
             // without a value. If value is provided, then this is

@@ -16,6 +16,8 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -88,9 +90,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return value;
         }
 
-        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
+        public async Task<IPythonType> GetTypeFromAnnotationAsync(Expression expr, CancellationToken cancellationToken = default, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
             if (expr == null) {
                 return null;
+            }
+
+            if (expr is CallExpression callExpr) {
+                // x: NamedTuple(...)
+                return (await GetValueFromCallableAsync(callExpr, cancellationToken))?.GetPythonType() ?? UnknownType;
             }
             // Look at specialization and typing first
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);

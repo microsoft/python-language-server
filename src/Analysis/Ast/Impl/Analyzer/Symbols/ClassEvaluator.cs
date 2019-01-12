@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,10 +53,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 _class = classInfo;
                 // Set bases to the class.
-                var bases = _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))
+                var bases = new List<IPythonType>();
+                foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
                     // We cheat slightly and treat base classes as annotations.
-                    .Select(a => Eval.GetTypeFromAnnotation(a.Expression))
-                    .ToArray();
+                    var b = await Eval.GetTypeFromAnnotationAsync(a.Expression, cancellationToken);
+                    if (b != null) {
+                        bases.Add(b.GetPythonType());
+                    }
+                }
                 _class.SetBases(Interpreter, bases);
 
                 // Declare __class__ variable in the scope.

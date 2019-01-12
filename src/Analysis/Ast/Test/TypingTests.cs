@@ -553,12 +553,11 @@ t_0 = t[0]
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task NamedTuple() {
             const string code = @"
 from typing import *
 
-n1 : NamedTuple('n1', [('x', int), ['y', float]]) = ...
+n1 : NamedTuple('n1', [('x', int), ('y', float)]) = ...
 
 n1_x = n1.x
 n1_y = n1.y
@@ -586,7 +585,11 @@ n1_i = n1[i]
                 .And.HaveVariable("n1_m2").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("n1_m1").OfType(BuiltinTypeId.Float)
 
-                .And.HaveVariable("n1_i").OfType(BuiltinTypeId.Int);
+                .And.HaveVariable("n1_i").OfType(BuiltinTypeId.Float);
+
+            var n1 = analysis.Should().HaveVariable("n1").Which;
+            n1.Should().HaveMember("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            n1.Should().HaveMember("y").Which.Should().HaveType(BuiltinTypeId.Float);
         }
 
         [TestMethod, Priority(0)]

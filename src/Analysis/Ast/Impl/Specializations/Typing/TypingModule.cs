@@ -123,6 +123,12 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["SupportsComplex"] = Interpreter.GetBuiltinType(BuiltinTypeId.Complex);
             _members["SupportsBytes"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             _members["ByteString"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
+
+            fn = new PythonFunctionType("NamedTuple", this, null, GetMemberDocumentation, GetMemberLocation);
+            o = new PythonFunctionOverload(fn.Name, this, _ => fn.Location);
+            o.SetReturnValueProvider((interpreter, overload, location, args) => CreateNamedTuple(args));
+            fn.AddOverload(o);
+            _members["NamedTuple"] = fn;
         }
 
 
@@ -139,7 +145,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType CreateTupleType(IReadOnlyList<IPythonType> typeArgs) 
+        private IPythonType CreateTupleType(IReadOnlyList<IPythonType> typeArgs)
             => TypingTypeFactory.CreateTupleType(Interpreter, typeArgs);
 
         private IPythonType CreateIteratorType(IReadOnlyList<IPythonType> typeArgs) {
@@ -200,6 +206,45 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs) {
+            if (typeArgs.Count != 2) {
+                // TODO: report wrong number of arguments
+                return Interpreter.UnknownType;
+            }
+
+            ;
+            if (!typeArgs[0].TryGetConstant<string>(out var tupleName) || string.IsNullOrEmpty(tupleName)) {
+                // TODO: report name is incorrect.
+                return Interpreter.UnknownType;
+            }
+
+            var argList = (typeArgs[1] as IPythonCollection)?.Contents;
+            if (argList == null) {
+                // TODO: report type spec is not a list.
+                return Interpreter.UnknownType;
+            }
+
+            var itemNames = new List<string>();
+            var itemTypes = new List<IPythonType>();
+            foreach (var pair in argList) {
+                if (!(pair is IPythonCollection c) || c.Type.TypeId != BuiltinTypeId.Tuple) {
+                    // TODO: report that item is not a tuple.
+                    continue;
+                }
+                if (c.Contents.Count != 2) {
+                    // TODO: report extra items in the element spec.
+                    continue;
+                }
+                if (!c.Contents[0].TryGetConstant<string>(out var itemName)) {
+                    // TODO: report item name is not a string.
+                    continue;
+                }
+                itemNames.Add(itemName);
+                itemTypes.Add(c.Contents[1].GetPythonType());
+            }
+            return TypingTypeFactory.CreateNamedTuple(Interpreter, tupleName, itemNames, itemTypes);
         }
     }
 }

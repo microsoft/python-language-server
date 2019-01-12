@@ -14,10 +14,13 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing {
-    public interface ITypingTupleType : IPythonCollectionType {
-        IReadOnlyList<IPythonType> ItemTypes { get; }
+    /// <summary>
+    /// Represents typing.NamedTuple.
+    /// </summary>
+    public interface ITypingNamedTupleType : ITypingTupleType {
+        string TupleName { get; }
+        IReadOnlyList<string> ItemNames { get; }
     }
 }
