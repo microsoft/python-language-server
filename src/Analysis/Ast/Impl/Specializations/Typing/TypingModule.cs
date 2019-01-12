@@ -13,17 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
-using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
@@ -56,6 +51,15 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             fn.AddOverload(o);
             _members["TypeVar"] = fn;
+
+            // NewType
+            fn = new PythonFunctionType("NewType", this, null, GetMemberDocumentation, GetMemberLocation);
+            o = new PythonFunctionOverload(fn.Name, this, _ => fn.Location);
+            // When called, create generic parameter type. For documentation
+            // use original TypeVar declaration so it appear as a tooltip.
+            o.SetReturnValueProvider((interpreter, overload, location, args) => CreateTypeAlias(args));
+            fn.AddOverload(o);
+            _members["NewType"] = fn;
 
             _members["Iterator"] = new GenericType("Iterator", this,
                 (typeArgs, module, location) => CreateIterator(typeArgs));
@@ -133,5 +137,19 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
         }
+
+        private IPythonType CreateTypeAlias(IReadOnlyList<IMember> typeArgs) {
+            if (typeArgs.Count == 2) {
+                var typeName = (typeArgs[0] as IPythonConstant)?.Value as string;
+                if (!string.IsNullOrEmpty(typeName)) {
+                    return new TypeAlias(typeName, typeArgs[1].GetPythonType() ?? Interpreter.UnknownType);
+                } else {
+                    // TODO: report incorrect first argument to NewVar
+                }
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
     }
 }

@@ -127,10 +127,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (_self != null && _function.HasClassFirstArgument()) {
                 var p0 = FunctionDefinition.Parameters.FirstOrDefault();
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
-                    // TODO: set instance vs class type info for regular methods.
-                    var pi = new ParameterInfo(Ast, p0, Eval.GetTypeFromAnnotation(p0.Annotation, LookupOptions.Local));
-                    Eval.DeclareVariable(p0.Name, new PythonInstance(_self, Eval.GetLoc(p0.NameExpression)), p0.NameExpression);
-                    pi.SetType(_self);
+                    // Actual parameter type will be determined when method is invoked.
+                    // The reason is that if method might be called on a derived class.
+                    var selfType = new FunctionArgumentType(0, _self);
+                    // Declare self or cls in this scope.
+                    Eval.DeclareVariable(p0.Name, selfType, p0.NameExpression);
+                    // Set parameter info.
+                    var pi = new ParameterInfo(Ast, p0, selfType);
+                    pi.SetType(selfType);
                     parameters.Add(pi);
                     skip++;
                 }

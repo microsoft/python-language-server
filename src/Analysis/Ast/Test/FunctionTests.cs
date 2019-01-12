@@ -487,5 +487,25 @@ abc = f(())
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("abc");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ReturnExpressionOnArg() {
+            const string code = @"
+class C:
+    x = 123
+class D:
+    x = 3.14
+
+def f(v):
+    return v.x
+
+c = f(C())
+d = f(D())";
+
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("c").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("d").OfType(BuiltinTypeId.Float);
+        }
     }
 }

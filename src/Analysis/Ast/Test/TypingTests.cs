@@ -463,7 +463,6 @@ ia = iter(a);
 x = next(ia);
 ";
             var analysis = await GetAnalysisAsync(code);
-
             analysis.Should().HaveVariable("a").OfType("List[str]")
                 .And.HaveVariable("ia").OfType(BuiltinTypeId.ListIterator)
                 .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
@@ -477,10 +476,10 @@ from typing import NewType
 Foo = NewType('Foo', dict)
 foo: Foo = Foo({ })
 ";
-
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("Foo").OfType("Foo")
                 .And.HaveVariable("foo").OfType("Foo");
+            analysis.Should().HaveVariable("Foo").Which.Should().HaveMembers("keys", "values");
         }
 
         [TestMethod, Priority(0)]
@@ -536,6 +535,7 @@ dctv_s_i_item_1, dctv_s_i_item_2 = next(iter(dctv_s_i_items))
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task NamedTypeAlias() {
             const string code = @"
 from typing import *
@@ -560,6 +560,7 @@ n1 : MyNamedTuple = ...
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task NamedTuple() {
             var code = @"
 from typing import *

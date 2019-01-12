@@ -44,8 +44,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonInstance pi:
                     value = await GetValueFromInstanceCall(pi, expr, cancellationToken);
                     break;
-                case IPythonFunctionType ft: // Standalone function
-                    value = await GetValueFromFunctionTypeAsync(ft, null, expr, cancellationToken);
+                case IPythonFunctionType ft: // Standalone function or a class method call.
+                    var instance = ft.DeclaringType != null ? new PythonInstance(ft.DeclaringType) : null;
+                    value = await GetValueFromFunctionTypeAsync(ft, instance, expr, cancellationToken);
                     break;
                 case IPythonClassType cls:
                     value = await GetValueFromClassCtorAsync(cls, expr, cancellationToken);
@@ -109,7 +110,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var args = new List<IMember>();
             // For static and regular methods add 'self' or 'cls'
             if (fn.HasClassFirstArgument()) {
-                args.Add(fn.IsClassMethod ? fn.DeclaringType : ((IMember)instance ?? Interpreter.UnknownType));
+                args.Add((IMember)instance ?? fn.DeclaringType ?? Interpreter.UnknownType);
             }
 
             if (expr != null) {
