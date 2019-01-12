@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
@@ -29,16 +30,27 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            if (expr.Index is SliceExpression || expr.Index is TupleExpression) {
-                // When slicing, assume result is the same type
-                return await GetValueFromExpressionAsync(expr.Target, cancellationToken);
+            var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
+            // If target is a generic type, create specific class
+            if (target is IGenericType gen) {
+                return await CreateSpecificFromGenericAsync(gen, expr, cancellationToken);
             }
 
-            var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
+            if (expr.Index is SliceExpression || expr.Index is TupleExpression) {
+                // When slicing, assume result is the same type
+                return target;
+            }
 
             var type = target.GetPythonType();
-            return type?.Index(target is IPythonInstance pi ? pi : new PythonInstance(type), index) ?? UnknownType;
+            if (type != null) {
+                if (!(target is IPythonInstance instance)) {
+                    instance = new PythonInstance(type);
+                }
+                var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
+                return type.Index(instance, index);
+            }
+
+            return UnknownType;
         }
 
         public async Task<IMember> GetValueFromListAsync(ListExpression expression, CancellationToken cancellationToken = default) {
@@ -67,6 +79,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 contents.Add(value);
             }
             return PythonCollectionType.CreateTuple(Module.Interpreter, GetLoc(expression), contents);
+        }
+
+        private async Task<IMember> CreateSpecificFromGenericAsync(IGenericType gen, IndexExpression expr, CancellationToken cancellationToken = default) {
+            var args = new List<IPythonType>();
+            if (expr.Index is TupleExpression tex) {
+                foreach (var item in tex.Items) {
+                    var e = await GetValueFromExpressionAsync(item, cancellationToken);
+                    args.Add(e?.GetPythonType() ?? UnknownType);
+                }
+            } else {
+                var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
+                args.Add(index?.GetPythonType() ?? UnknownType);
+            }
+            return gen.CreateSpecificType(args, Module, GetLoc(expr));
         }
     }
 }

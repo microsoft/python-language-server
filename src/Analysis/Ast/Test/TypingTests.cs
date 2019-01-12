@@ -531,28 +531,25 @@ dctv_s_i_item_1, dctv_s_i_item_2 = next(iter(dctv_s_i_items))
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task NamedTypeAlias() {
             const string code = @"
 from typing import *
 
-MyInt = int
-MyStrList = List[str]
-MyNamedTuple = NamedTuple('MyNamedTuple', [('x', MyInt)])
+MyList = List[str]
+MyTuple = Tuple[int, str]
 
-i : MyInt = ...
-sl : MyStrList = ...
+sl : MyList = ...
 sl_0 = sl[0]
-n1 : MyNamedTuple = ...
+
+t : MyTuple = ...
+t_0 = t[0]
+
 ";
             var analysis = await GetAnalysisAsync(code);
-
-            analysis.Should().HaveVariable("i").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("sl").OfType(BuiltinTypeId.List)
+            analysis.Should().HaveVariable("sl").OfType("List[str]")
                 .And.HaveVariable("sl_0").OfType(BuiltinTypeId.Str)
-                .And.HaveVariable("n1").OfType("MyNamedTuple(x: int)")
-                .Which.Should().HaveMember("x")
-                .Which.Should().HaveType(BuiltinTypeId.Int);
+                .And.HaveVariable("t").OfType("Tuple[int, str]")
+                .And.HaveVariable("t_0").OfType(BuiltinTypeId.Int);
         }
 
         [TestMethod, Priority(0)]
@@ -561,53 +558,35 @@ n1 : MyNamedTuple = ...
             const string code = @"
 from typing import *
 
-n : NamedTuple = ...
 n1 : NamedTuple('n1', [('x', int), ['y', float]]) = ...
-n2 : ""NamedTuple('n2', [('x', int), ['y', float]])"" = ...
 
 n1_x = n1.x
 n1_y = n1.y
-n2_x = n2.x
-n2_y = n2.y
 
 n1_0 = n1[0]
 n1_1 = n1[1]
-n2_0 = n2[0]
-n2_1 = n2[1]
 
 n1_m2 = n1[-2]
 n1_m1 = n1[-1]
-n2_m2 = n2[-2]
-n2_m1 = n2[-1]
 
 i = 0
 i = 1
 n1_i = n1[i]
-n2_i = n2[i]
 ";
 
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("n").OfType("tuple")
-                .And.HaveVariable("n1").OfType("n1(x: int, y: float)")
-                .And.HaveVariable("n2").OfType("n2(x: int, y: float)")
+            analysis.Should().HaveVariable("n1").OfType("n1(x: int, y: float)")
 
                 .And.HaveVariable("n1_x").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("n1_y").OfType(BuiltinTypeId.Float)
-                .And.HaveVariable("n2_x").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("n2_y").OfType(BuiltinTypeId.Float)
 
                 .And.HaveVariable("n1_0").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("n1_1").OfType(BuiltinTypeId.Float)
-                .And.HaveVariable("n2_0").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("n2_1").OfType(BuiltinTypeId.Float)
 
                 .And.HaveVariable("n1_m2").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("n1_m1").OfType(BuiltinTypeId.Float)
-                .And.HaveVariable("n2_m2").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("n2_m1").OfType(BuiltinTypeId.Float)
 
-                .And.HaveVariable("n1_i").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("n2_i").OfType(BuiltinTypeId.Int);
+                .And.HaveVariable("n1_i").OfType(BuiltinTypeId.Int);
         }
 
         [TestMethod, Priority(0)]
