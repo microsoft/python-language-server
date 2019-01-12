@@ -21,6 +21,6 @@ namespace Microsoft.Python.Analysis.Values {
     /// </summary>
     public interface IVariable: ILocatedMember {
         string Name { get; }
-        IMember Value { get; }
+        IMember Value { get; set; }
     }
 }

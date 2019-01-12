@@ -36,6 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         protected AssignmentHandler AssignmentHandler { get; }
         protected WithHandler WithHandler { get; }
         protected TryExceptHandler TryExceptHandler { get; }
+        protected NonLocalHandler NonLocalHandler { get; }
 
         public ExpressionEval Eval { get; }
         public IPythonModule Module => Eval.Module;
@@ -52,6 +53,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             ConditionalHandler = new ConditionalHandler(this);
             WithHandler = new WithHandler(this);
             TryExceptHandler = new TryExceptHandler(this);
+            NonLocalHandler = new NonLocalHandler(this);
         }
 
         protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
@@ -77,11 +79,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
             => FromImportHandler.HandleFromImportAsync(node, cancellationToken);
 
+        public override Task<bool> WalkAsync(GlobalStatement node, CancellationToken cancellationToken = default)
+            => NonLocalHandler.HandleGlobalAsync(node, cancellationToken);
+
         public override Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default)
             => ConditionalHandler.HandleIfAsync(node, cancellationToken);
 
         public override Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default)
             => ImportHandler.HandleImportAsync(node, cancellationToken);
+
+        public override Task<bool> WalkAsync(NonlocalStatement node, CancellationToken cancellationToken = default)
+            => NonLocalHandler.HandleNonLocalAsync(node, cancellationToken);
 
         public override async Task<bool> WalkAsync(TryStatement node, CancellationToken cancellationToken = default) {
             await TryExceptHandler.HandleTryExceptAsync(node, cancellationToken);

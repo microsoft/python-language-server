@@ -26,6 +26,8 @@ namespace Microsoft.Python.Analysis.Values {
     /// </summary>
     internal class Scope : IScope {
         private VariableCollection _variables;
+        private VariableCollection _nonLocals;
+        private VariableCollection _globals;
         private List<Scope> _childScopes;
 
         public Scope(ScopeStatement node, IScope outerScope, bool visibleToChildren = true) {
@@ -42,6 +44,8 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IReadOnlyList<IScope> Children => _childScopes ?? Array.Empty<IScope>() as IReadOnlyList<IScope>;
         public IVariableCollection Variables => _variables ?? VariableCollection.Empty;
+        public IVariableCollection NonLocals => _nonLocals ?? VariableCollection.Empty;
+        public IVariableCollection Globals => _globals ?? VariableCollection.Empty;
 
         public IGlobalScope GlobalScope {
             get {
@@ -65,6 +69,10 @@ namespace Microsoft.Python.Analysis.Values {
         public IEnumerable<IScope> EnumerateFromGlobal => EnumerateTowardsGlobal.Reverse();
         public void DeclareVariable(string name, IMember value, LocationInfo location)
             => (_variables ?? (_variables = new VariableCollection())).DeclareVariable(name, value, location);
+        public void DeclareNonLocal(string name, LocationInfo location)
+            => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, location);
+        public void DeclareGlobal(string name, LocationInfo location)
+            => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, location);
         #endregion
 
         public void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
@@ -86,6 +94,9 @@ namespace Microsoft.Python.Analysis.Values {
         public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Repeat(this, 1);
         public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Repeat(this, 1);
         public IVariableCollection Variables => VariableCollection.Empty;
+        public IVariableCollection NonLocals => VariableCollection.Empty;
+        public  IVariableCollection Globals => VariableCollection.Empty;
+
         public void DeclareVariable(string name, IMember value, LocationInfo location) { }
 
     }

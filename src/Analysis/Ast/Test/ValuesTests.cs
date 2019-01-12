@@ -197,17 +197,8 @@ def f():
 a, b = f()
 ";
             var analysis = await GetAnalysisAsync(code);
-
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("b").OfType(BuiltinTypeId.Int);
-
-            //.And.HaveFunction("f")
-            //.Which.Should().HaveVariable("x").OfTypes(BuiltinTypeId.NoneType, BuiltinTypeId.Int)
-            //.And.HaveVariable("y").OfTypes(BuiltinTypeId.NoneType, BuiltinTypeId.Int)
-
-            //.And.HaveFunction("g")
-            //.Which.Should().HaveVariable("x").OfTypes(BuiltinTypeId.NoneType, BuiltinTypeId.Int)
-            //.And.HaveVariable("y").OfTypes(BuiltinTypeId.NoneType, BuiltinTypeId.Int);
         }
 
         [TestMethod, Priority(0)]

@@ -31,6 +31,8 @@ namespace Microsoft.Python.Analysis.Values {
         IEnumerable<IScope> EnumerateTowardsGlobal { get; }
         IEnumerable<IScope> EnumerateFromGlobal { get; }
         IVariableCollection Variables { get; }
+        IVariableCollection NonLocals { get; }
+        IVariableCollection Globals { get; }
         void DeclareVariable(string name, IMember value, LocationInfo location);
     }
 }

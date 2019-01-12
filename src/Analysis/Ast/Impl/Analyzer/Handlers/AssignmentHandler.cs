@@ -18,11 +18,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
-    internal sealed class AssignmentHandler: StatementHandler {
+    internal sealed class AssignmentHandler : StatementHandler {
         public AssignmentHandler(AnalysisWalker walker) : base(walker) { }
 
         public async Task HandleAssignmentAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
@@ -41,14 +42,35 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // Tuple = Tuple. Transfer values.
                 var texHandler = new TupleExpressionHandler(Walker);
                 await texHandler.HandleTupleAssignmentAsync(lhs, node.Right, value, cancellationToken);
-            } else {
-                foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
-                    // x: List[str] = [...]
-                    await HandleAnnotatedExpressionAsync(expr, value, cancellationToken);
+                return;
+            }
+            foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
+                // x: List[str] = [...]
+                await HandleAnnotatedExpressionAsync(expr, value, cancellationToken);
+            }
+
+            foreach (var ne in node.Left.OfType<NameExpression>()) {
+                if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
+                    Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Nonlocal);
+                    if (scope != null) {
+                        scope.Variables[ne.Name].Value = value;
+                    } else {
+                        // TODO: report variable is not declared in outer scopes.
+                    }
+                    continue;
                 }
-                foreach (var ne in node.Left.OfType<NameExpression>()) {
-                    Eval.DeclareVariable(ne.Name, value, Eval.GetLoc(ne));
+
+                if (Eval.CurrentScope.Globals[ne.Name] != null) {
+                    Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Global);
+                    if (scope != null) {
+                        scope.Variables[ne.Name].Value = value;
+                    } else {
+                        // TODO: report variable is not declared in global scope.
+                    }
+                    continue;
                 }
+
+                Eval.DeclareVariable(ne.Name, value, Eval.GetLoc(ne));
             }
         }
 

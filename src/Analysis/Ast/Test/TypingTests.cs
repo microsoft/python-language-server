@@ -146,6 +146,7 @@ T = TypeVar('T', str, bytes)
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task TypeVarFunc() {
             const string code = @"
 from typing import Sequence, TypeVar

@@ -75,7 +75,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             using (Eval.OpenScope(FunctionDefinition, out _)) {
                 await DeclareParametersAsync(cancellationToken);
                 //  Evaluate inner functions after we declared parameters.
-                await EvaluateInnerFunctionsAsync(FunctionDefinition, cancellationToken);
+                //await EvaluateInnerFunctionsAsync(FunctionDefinition, cancellationToken);
 
                 if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries
@@ -115,7 +115,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         // Classes and functions are walked by their respective evaluators
         public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
-        public override Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
+            await SymbolTable.EvaluateAsync(node, cancellationToken);
+            return false;
+        }
 
         private async Task DeclareParametersAsync(CancellationToken cancellationToken = default) {
             // For class method no need to add extra parameters, but first parameter type should be the class.

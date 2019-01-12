@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Values {
         }
 
         public string Name { get; }
-        public IMember Value { get; }
+        public IMember Value { get; set; }
         public LocationInfo Location { get; }
         public PythonMemberType MemberType => PythonMemberType.Variable;
 
