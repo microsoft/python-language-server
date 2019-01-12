@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
@@ -50,7 +49,7 @@ class x(object):
             var xType = cls.Should().HaveMethod("f")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveParameterAt(0)
-                .Which.Should().HaveName("self").And.HaveType("x").Which;
+                .Which.Should().HaveName("self").And.HaveType("function argument").Which;
 
             xType.Should().HaveMember<IPythonInstance>("x")
                 .Which.Should().HaveType(BuiltinTypeId.Str);
@@ -248,7 +247,7 @@ fob = a.abc
             analysis.Should().HaveVariable("fob").OfType(BuiltinTypeId.Int)
                 .Which.Should().HaveMembers(intMemberNames);
             analysis.Should().HaveVariable("a")
-                .Which.Should().HaveMembers("abc", "func", "__doc__", "__class__");
+                .Which.Should().HaveMembers("abc", "func", "__class__");
         }
 
         [TestMethod, Priority(0)]

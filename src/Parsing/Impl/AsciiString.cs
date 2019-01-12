@@ -30,8 +30,7 @@ namespace Microsoft.Python.Parsing {
         public override string ToString() => String;
 
         public override bool Equals(object obj) {
-            var other = obj as AsciiString;
-            if (other != null) {
+            if (obj is AsciiString other) {
                 return String == other.String;
             }
             return false;

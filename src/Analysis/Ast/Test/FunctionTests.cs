@@ -382,7 +382,7 @@ x = f()
         }
 
         [TestMethod, Priority(0)]
-        public async Task SignatureDefaults() {
+        public async Task ParameterDefaults() {
             const string code = @"
 def f(x = None): pass
 def g(x = {}): pass
@@ -395,15 +395,15 @@ def m(x = math.atan2(1, 0)): pass
 ";
             var analysis = await GetAnalysisAsync(code);
             var tests = new[] {
-                    new { FuncName = "f", DefaultValue = "None" },
-                    new { FuncName = "g", DefaultValue = "{}" },
-                    new { FuncName = "h", DefaultValue = "{...}" },
-                    new { FuncName = "i", DefaultValue = "[]" },
-                    new { FuncName = "j", DefaultValue="[...]" },
-                    new { FuncName = "k", DefaultValue = "()" },
-                    new { FuncName = "l", DefaultValue = "(...)" },
-                    new { FuncName = "m", DefaultValue = "math.atan2(1, 0)" },
-                };
+                new { FuncName = "f", DefaultValue = "None" },
+                new { FuncName = "g", DefaultValue = "{}" },
+                new { FuncName = "h", DefaultValue = "{2:3}" },
+                new { FuncName = "i", DefaultValue = "[]" },
+                new { FuncName = "j", DefaultValue="[None]" },
+                new { FuncName = "k", DefaultValue = "()" },
+                new { FuncName = "l", DefaultValue = "(2)" },
+                new { FuncName = "m", DefaultValue = "math.atan2(1, 0)" },
+            };
 
             foreach (var test in tests) {
                 analysis.Should().HaveFunction(test.FuncName)

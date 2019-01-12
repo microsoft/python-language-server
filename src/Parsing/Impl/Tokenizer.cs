@@ -2323,8 +2323,7 @@ namespace Microsoft.Python.Parsing {
             }
 
             public override bool Equals(object obj) {
-                if (obj is State) {
-                    var other = (State)obj;
+                if (obj is State other) {
                     return other == this;
                 }
                 return false;

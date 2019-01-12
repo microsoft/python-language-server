@@ -474,8 +474,7 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 var start = s.StartIndex;
-                var l = new List<Statement>();
-                l.Add(s);
+                var l = new List<Statement> { s };
                 while (true) {
                     if (MaybeEatNewLine(out newline) || MaybeEatEof()) {
                         break;
@@ -797,8 +796,7 @@ namespace Microsoft.Python.Parsing {
                         ReportSyntaxError(GetStart(), GetEnd(), "invalid syntax");
                     }
                     if (left == null) {
-                        left = new List<Expression>();
-                        left.Add(singleLeft);
+                        left = new List<Expression> { singleLeft };
                     }
                     left.Add(right);
                 }
@@ -1871,8 +1869,7 @@ namespace Microsoft.Python.Parsing {
             FunctionDefinition ret;
             if (parameters == null) {
                 // error in parameters
-                ret = new FunctionDefinition(nameExpr, new Parameter[0]);
-                ret.IsCoroutine = isCoroutine;
+                ret = new FunctionDefinition(nameExpr, new Parameter[0]) { IsCoroutine = isCoroutine };
                 if (_verbatim) {
                     AddVerbatimName(name, ret);
                     AddPreceedingWhiteSpace(ret, preWhitespace);
@@ -2187,8 +2184,7 @@ namespace Microsoft.Python.Parsing {
             var parameters = ParseVarArgsList(TokenKind.Colon, false, out commaWhiteSpace, out ateTerminator);
             var mid = GetEnd();
 
-            var func = new FunctionDefinition(null, parameters.MaybeEnumerate().ToArray());
-            func.HeaderIndex = mid;
+            var func = new FunctionDefinition(null, parameters.MaybeEnumerate().ToArray()) { HeaderIndex = mid };
             func.DefIndex = func.StartIndex = start;
 
             // Push the lambda function on the stack so that it's available for any yield expressions to mark it as a generator.
@@ -2272,12 +2268,9 @@ namespace Microsoft.Python.Parsing {
             var withWhiteSpace = _tokenWhiteSpace;
             var itemWhiteSpace = MakeWhiteSpaceList();
 
-            var items = new List<WithItem>();
-            items.Add(ParseWithItem(itemWhiteSpace));
+            var items = new List<WithItem> { ParseWithItem(itemWhiteSpace) };
             while (MaybeEat(TokenKind.Comma)) {
-                if (itemWhiteSpace != null) {
-                    itemWhiteSpace.Add(_tokenWhiteSpace);
-                }
+                itemWhiteSpace?.Add(_tokenWhiteSpace);
                 items.Add(ParseWithItem(itemWhiteSpace));
             }
 
@@ -2285,8 +2278,7 @@ namespace Microsoft.Python.Parsing {
             var header = PeekToken(TokenKind.Colon) ? GetEnd() : -1;
             var body = ParseSuite();
 
-            var ret = new WithStatement(items.ToArray(), body, isAsync);
-            ret.HeaderIndex = header;
+            var ret = new WithStatement(items.ToArray(), body, isAsync) { HeaderIndex = header };
             if (_verbatim) {
                 AddPreceedingWhiteSpace(ret, isAsync ? asyncWhiteSpace : withWhiteSpace);
                 AddSecondPreceedingWhiteSpace(ret, isAsync ? withWhiteSpace : null);
@@ -2607,9 +2599,7 @@ namespace Microsoft.Python.Parsing {
             }
             var mid = _lookahead.Span.End;
             var body = ParseSuite();
-            var ret = new TryStatementHandler(test1, test2, body);
-            ret.HeaderIndex = mid;
-            ret.KeywordEndIndex = keywordEnd;
+            var ret = new TryStatementHandler(test1, test2, body) { HeaderIndex = mid, KeywordEndIndex = keywordEnd };
             ret.SetLoc(start, body.EndIndex);
 
             if (_verbatim) {
@@ -4378,8 +4368,7 @@ namespace Microsoft.Python.Parsing {
             var expr = ParseOldExpression();
             var end = GetEnd();
 
-            var ret = new ComprehensionIf(expr);
-            ret.HeaderIndex = end;
+            var ret = new ComprehensionIf(expr) { HeaderIndex = end };
             if (_verbatim) {
                 AddPreceedingWhiteSpace(ret, ifWhiteSpace);
             }
@@ -5219,7 +5208,7 @@ namespace Microsoft.Python.Parsing {
                 _preamble = preamble;
             }
 
-            public virtual Encoding GetEncoding() 
+            public virtual Encoding GetEncoding()
                 => _encoding ?? (_encoding = _preamble == null
                              ? _info.GetEncoding()
                              : new EncodingWrapper(_info.GetEncoding(), _preamble));

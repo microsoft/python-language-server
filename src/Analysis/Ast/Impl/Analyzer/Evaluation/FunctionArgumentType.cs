@@ -31,6 +31,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public int ParameterIndex { get; }
 
+        /// <summary>
+        /// Parameter type, if known.
+        /// </summary>
+        public IPythonType ParameterType => InnerType;
+
         public override string Name => "function argument";
         public override BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public override PythonMemberType MemberType => PythonMemberType.Variable;

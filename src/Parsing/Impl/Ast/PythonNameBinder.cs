@@ -77,12 +77,11 @@ namespace Microsoft.Python.Parsing.Ast {
 
         private void WalkTuple(TupleExpression tuple) {
             foreach (var innerNode in tuple.Items) {
-                var name = innerNode as NameExpression;
-                if (name != null) {
+                if (innerNode is NameExpression name) {
                     _binder.DefineName(name.Name);
                     name.AddVariableReference(_binder.GlobalScope, _binder.BindReferences, _binder.Reference(name.Name));
-                } else if (innerNode is TupleExpression) {
-                    WalkTuple((TupleExpression)innerNode);
+                } else if (innerNode is TupleExpression expression) {
+                    WalkTuple(expression);
                 }
             }
         }
@@ -454,10 +453,9 @@ namespace Microsoft.Python.Parsing.Ast {
                     continue;
                 }
 
-                PythonVariable conflict;
                 // Check current scope for conflicting variable
                 var assignedLocal = false;
-                if (_currentScope.TryGetVariable(n, out conflict)) {
+                if (_currentScope.TryGetVariable(n, out var conflict)) {
                     // conflict?
                     switch (conflict.Kind) {
                         case VariableKind.Global:

@@ -15,7 +15,7 @@
 
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Describes function argument which type is not known from
     /// the function signature and is only known at the call time.
@@ -27,5 +27,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Index of the input argument which type should be used as return type.
         /// </summary>
         int ParameterIndex { get; }
+
+        /// <summary>
+        /// Parameter type, if known.
+        /// </summary>
+        IPythonType ParameterType { get; }
     }
 }

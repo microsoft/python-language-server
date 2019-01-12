@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -101,7 +100,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 res,
                 format.SpaceBeforeCallParen,
                 " ",
-                "",
+                string.Empty,
                 this.GetPreceedingWhiteSpaceDefaultNull(ast)
             );
 
@@ -127,7 +126,7 @@ namespace Microsoft.Python.Parsing.Ast {
                         continue;
                     }
 
-                    _args[i].AppendCodeString(res, ast, format, spaceAfterComma);
+                    _args[i].AppendCodeString(res, ast, format, i > 0 ? spaceAfterComma : string.Empty);
                 }
 
                 if (listWhiteSpace != null && listWhiteSpace.Length == _args.Length) {
@@ -140,12 +139,12 @@ namespace Microsoft.Python.Parsing.Ast {
             if (!this.IsMissingCloseGrouping(ast)) {
                 if (Args.Count != 0 ||
                     format.SpaceWithinEmptyCallArgumentList == null ||
-                    !String.IsNullOrWhiteSpace(this.GetSecondWhiteSpaceDefaultNull(ast))) {
+                    !string.IsNullOrWhiteSpace(this.GetSecondWhiteSpaceDefaultNull(ast))) {
                     format.Append(
                         res,
                         format.SpaceWithinCallParens,
                         " ",
-                        "",
+                        string.Empty,
                         this.GetSecondWhiteSpaceDefaultNull(ast)
                     );
                 }

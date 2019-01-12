@@ -85,9 +85,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (expr.Expression is MemberExpression m) {
                 // self.x : int = 42
                 var self = Eval.LookupNameInScopes("self", out var scope);
-                if (self.GetPythonType() is PythonClassType cls && scope != null) {
-                    var selfCandidate = await Eval.GetValueFromExpressionAsync(m.Target, cancellationToken);
-                    if (cls.Equals(selfCandidate.GetPythonType())) {
+                var argType = self.GetPythonType<IFunctionArgumentType>();
+                if (argType.ParameterType is PythonClassType cls && scope != null) {
+                    var selfCandidateType = (await Eval.GetValueFromExpressionAsync(m.Target, cancellationToken))?.GetPythonType();
+                    if (selfCandidateType is IFunctionArgumentType fa && cls.Equals(fa.ParameterType)) {
                         cls.AddMember(m.Name, instance, true);
                     }
                 }
