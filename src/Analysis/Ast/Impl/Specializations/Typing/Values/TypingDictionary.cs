@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -33,11 +34,41 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
 
         public override IPythonIterator GetIterator() {
             var iteratorTypeId = _dictType.TypeId.GetIteratorTypeId();
-            var itemType = new TypingTupleType(new[] {_dictType.KeyType, _dictType.ValueType}, Type.DeclaringModule.Interpreter);
-            var iteratorType = new TypingIteratorType(itemType, iteratorTypeId, Type.DeclaringModule.Interpreter);
+            var iteratorType = new TypingIteratorType(_dictType.ItemType, iteratorTypeId, Type.DeclaringModule.Interpreter);
             return new TypingIterator(iteratorType, this);
         }
 
-        public override IMember Index(object key) => _dictType.ValueType;
+        public override IMember Index(object key) => new PythonInstance(_dictType.ValueType);
+
+        public override IMember Call(string memberName, IReadOnlyList<object> args) {
+            var interpreter = _dictType.DeclaringModule.Interpreter;
+            // Specializations
+            switch (memberName) {
+                case @"get":
+                    return new PythonInstance(_dictType.ValueType);
+                case @"items":
+                    return new PythonInstance(TypingTypeFactory.CreateItemsViewType(interpreter, _dictType));
+                case @"keys":
+                    return new PythonInstance(TypingTypeFactory.CreateKeysViewType(interpreter, _dictType.KeyType));
+                case @"values":
+                    return new PythonInstance(TypingTypeFactory.CreateValuesViewType(interpreter, _dictType.ValueType));
+                case @"iterkeys":
+                    return new PythonInstance(TypingTypeFactory.CreateIteratorType(interpreter, _dictType.KeyType));
+                case @"itervalues":
+                    return new PythonInstance(TypingTypeFactory.CreateIteratorType(interpreter, _dictType.ValueType));
+                case @"iteritems":
+                    return new PythonInstance(TypingTypeFactory.CreateIteratorType(interpreter, _dictType.ItemType));
+                case @"pop":
+                    return new PythonInstance(_dictType.ValueType);
+                case @"popitem":
+                    return new PythonInstance(_dictType.ItemType);
+            }
+            return base.Call(memberName, args);
+        }
+
+        private IPythonCollection CreateList(IPythonType itemType, BuiltinTypeId typeId) {
+            var listType = new TypingListType("List", BuiltinTypeId.List, itemType, _dictType.DeclaringModule.Interpreter, false);
+            return new TypingList(listType);
+        }
     }
 }

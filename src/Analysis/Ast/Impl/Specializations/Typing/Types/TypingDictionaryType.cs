@@ -24,6 +24,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// Represents type info of typing.Dict[TK, TV]
     /// </summary>
     internal class TypingDictionaryType : PythonDictionaryType, ITypingDictionaryType {
+        private IPythonType _itemType;
+
         /// <summary>
         /// Creates type info of typing.Dict[TK, TV]
         /// </summary>
@@ -41,11 +43,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public IPythonType KeyType { get; }
         public IPythonType ValueType { get; }
+        public IPythonType ItemType => _itemType ?? (_itemType = CreateItemType());
 
         public override string Name { get; }
 
         public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
             => new TypingDictionary(this, location);
         public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ValueType);
+
+        private TypingTupleType CreateItemType() {
+            var iteratorTypeId = TypeId.GetIteratorTypeId();
+            var itemType = new TypingTupleType(new[] { KeyType, ValueType }, DeclaringModule.Interpreter);
+            return itemType;
+        }
     }
 }

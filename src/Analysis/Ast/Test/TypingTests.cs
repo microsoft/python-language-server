@@ -488,10 +488,11 @@ foo: Foo = Foo({ })
 from typing import *
 
 i : SupportsInt = ...
-lst : List = ...
 lst_i : List[int] = ...
 lst_i_0 = lst_i[0]
-dct : Union[Mapping, MappingView, MutableMapping] = ...
+
+u : Union[Mapping[int, str], MappingView[str, float], MutableMapping[int, List[str]]] = ...
+
 dct_s_i : Mapping[str, int] = ...
 dct_s_i_a = dct_s_i['a']
 dct_s_i_keys = dct_s_i.keys()
@@ -512,24 +513,23 @@ dctv_s_i_item_1, dctv_s_i_item_2 = next(iter(dctv_s_i_items))
             var analysis = await GetAnalysisAsync(code);
 
             analysis.Should().HaveVariable("i").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("lst").OfType(BuiltinTypeId.List)
-                .And.HaveVariable("lst_i").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("lst_i").OfType("List[int]")
                 .And.HaveVariable("lst_i_0").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("dct").OfType("Union[Mapping, MappingView, MutableMapping]")
+                .And.HaveVariable("u").OfType("Union[Mapping[int, str], MappingView[str, float], MutableMapping[int, List[str]]]")
                 .And.HaveVariable("dct_s_i").OfType("Mapping[str, int]")
                 .And.HaveVariable("dct_s_i_a").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("dct_s_i_keys").OfType("dict_keys[str]")
+                .And.HaveVariable("dct_s_i_keys").OfType("KeysView[str]")
                 .And.HaveVariable("dct_s_i_key").OfType(BuiltinTypeId.Str)
-                .And.HaveVariable("dct_s_i_values").OfType("dict_values[int]")
+                .And.HaveVariable("dct_s_i_values").OfType("ValuesView[int]")
                 .And.HaveVariable("dct_s_i_value").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("dct_s_i_items").OfType("dict_items[tuple[str, int]]")
+                .And.HaveVariable("dct_s_i_items").OfType("ItemsView[str, int]")
                 .And.HaveVariable("dct_s_i_item_1").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("dct_s_i_item_2").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("dctv_s_i_keys").OfType(BuiltinTypeId.DictKeys)
+                .And.HaveVariable("dctv_s_i_keys").OfType("KeysView[str]")
                 .And.HaveVariable("dctv_s_i_key").OfType(BuiltinTypeId.Str)
-                .And.HaveVariable("dctv_s_i_values").OfType(BuiltinTypeId.DictValues)
+                .And.HaveVariable("dctv_s_i_values").OfType("ValuesView[int]")
                 .And.HaveVariable("dctv_s_i_value").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("dctv_s_i_items").OfType(BuiltinTypeId.DictItems)
+                .And.HaveVariable("dctv_s_i_items").OfType("ItemsView[str, int]")
                 .And.HaveVariable("dctv_s_i_item_1").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("dctv_s_i_item_2").OfType(BuiltinTypeId.Int);
         }
@@ -562,7 +562,7 @@ n1 : MyNamedTuple = ...
         [TestMethod, Priority(0)]
         [Ignore]
         public async Task NamedTuple() {
-            var code = @"
+            const string code = @"
 from typing import *
 
 n : NamedTuple = ...

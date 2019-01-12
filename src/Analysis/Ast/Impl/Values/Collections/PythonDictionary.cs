@@ -71,17 +71,17 @@ namespace Microsoft.Python.Analysis.Values.Collections {
                 case @"get":
                     return args.Count > 0 ? Index(args[0]) : _interpreter.UnknownType;
                 case @"items":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Items, false);
+                    return CreateList(Items);
                 case @"keys":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Keys.ToArray());
+                    return CreateList(Keys.ToArray());
                 case @"values":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Values.ToArray());
+                    return CreateList(Values.ToArray());
                 case @"iterkeys":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Keys.ToArray()).GetIterator();
+                    return CreateList(Keys.ToArray()).GetIterator();
                 case @"itervalues":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Values.ToArray()).GetIterator();
+                    return CreateList(Values.ToArray()).GetIterator();
                 case @"iteritems":
-                    return PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, Items, false).GetIterator();
+                    return CreateList(Items).GetIterator();
                 case @"pop":
                     return Values.FirstOrDefault() ?? _interpreter.UnknownType;
                 case @"popitem":
@@ -89,6 +89,9 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             }
             return base.Call(memberName, args);
         }
+
+        private IPythonCollection CreateList(IReadOnlyList<IMember> items)
+            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, items, false);
 
         private sealed class KeyComparer : IEqualityComparer<IMember> {
             public bool Equals(IMember x, IMember y) {

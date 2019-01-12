@@ -26,6 +26,10 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly HashSet<IPythonType> _types = new HashSet<IPythonType>(PythonTypeComparer.Instance);
         private readonly object _lock = new object();
 
+        public PythonUnionType(IEnumerable<IPythonType> types) {
+            _types.UnionWith(types);
+        }
+
         private PythonUnionType(IPythonType x, IPythonType y) {
             Check.Argument(nameof(x), () => !(x is IPythonUnionType));
             Check.Argument(nameof(y), () => !(y is IPythonUnionType));
@@ -54,9 +58,9 @@ namespace Microsoft.Python.Analysis.Types {
         public IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
             => new PythonUnion(this, location);
 
-        public IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
+        public IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
             => DeclaringModule?.Interpreter.UnknownType ?? this;
-        public IMember Index(IPythonInstance instance, object index) 
+        public IMember Index(IPythonInstance instance, object index)
             => DeclaringModule?.Interpreter.UnknownType ?? this;
         #endregion
 

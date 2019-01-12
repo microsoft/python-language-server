@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Modules;
@@ -61,36 +62,45 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             fn.AddOverload(o);
             _members["NewType"] = fn;
 
+            // NewType
+            fn = new PythonFunctionType("Type", this, null, GetMemberDocumentation, GetMemberLocation);
+            o = new PythonFunctionOverload(fn.Name, this, _ => fn.Location);
+            // When called, create generic parameter type. For documentation
+            // use original TypeVar declaration so it appear as a tooltip.
+            o.SetReturnValueProvider((interpreter, overload, location, args) => args.Count == 1 ? args[0].GetPythonType() : Interpreter.UnknownType);
+            fn.AddOverload(o);
+            _members["Type"] = fn;
+
             _members["Iterator"] = new GenericType("Iterator", this,
-                (typeArgs, module, location) => CreateIterator(typeArgs));
+                (typeArgs, module, location) => CreateIteratorType(typeArgs));
 
             _members["Iterable"] = new GenericType("Iterable", this,
-                (typeArgs, module, location) => CreateList("Iterable", BuiltinTypeId.List, typeArgs, false));
+                (typeArgs, module, location) => CreateListType("Iterable", BuiltinTypeId.List, typeArgs, false));
             _members["Sequence"] = new GenericType("Sequence", this,
-                (typeArgs, module, location) => CreateList("Sequence", BuiltinTypeId.List, typeArgs, false));
+                (typeArgs, module, location) => CreateListType("Sequence", BuiltinTypeId.List, typeArgs, false));
             _members["MutableSequence"] = new GenericType("MutableSequence", this,
-                (typeArgs, module, location) => CreateList("MutableSequence", BuiltinTypeId.List, typeArgs, true));
+                (typeArgs, module, location) => CreateListType("MutableSequence", BuiltinTypeId.List, typeArgs, true));
             _members["List"] = new GenericType("List", this,
-                (typeArgs, module, location) => CreateList("List", BuiltinTypeId.List, typeArgs, true));
+                (typeArgs, module, location) => CreateListType("List", BuiltinTypeId.List, typeArgs, true));
 
             _members["MappingView"] = new GenericType("MappingView", this,
-                (typeArgs, module, location) => CreateList("MappingView", BuiltinTypeId.List, typeArgs, false));
+                (typeArgs, module, location) => CreateDictionary("MappingView", typeArgs, false));
             _members["KeysView"] = new GenericType("KeysView", this,
-                (typeArgs, module, location) => CreateList("KeysView", BuiltinTypeId.List, typeArgs, false));
+                (typeArgs, module, location) => CreateKeysViewType(typeArgs));
             _members["ValuesView"] = new GenericType("ValuesView", this,
-                (typeArgs, module, location) => CreateList("ValuesView", BuiltinTypeId.List, typeArgs, false));
+                (typeArgs, module, location) => CreateValuesViewType(typeArgs));
             _members["ItemsView"] = new GenericType("ItemsView", this,
-                (typeArgs, module, location) => CreateList("ItemsView", BuiltinTypeId.List, typeArgs, false));
+                (typeArgs, module, location) => CreateItemsViewType(typeArgs));
 
             _members["Set"] = new GenericType("Set", this,
-                (typeArgs, module, location) => CreateList("Set", BuiltinTypeId.Set, typeArgs, true));
+                (typeArgs, module, location) => CreateListType("Set", BuiltinTypeId.Set, typeArgs, true));
             _members["MutableSet"] = new GenericType("MutableSet", this,
-                (typeArgs, module, location) => CreateList("MutableSet", BuiltinTypeId.Set, typeArgs, true));
+                (typeArgs, module, location) => CreateListType("MutableSet", BuiltinTypeId.Set, typeArgs, true));
             _members["FrozenSet"] = new GenericType("FrozenSet", this,
-                (typeArgs, module, location) => CreateList("FrozenSet", BuiltinTypeId.Set, typeArgs, false));
+                (typeArgs, module, location) => CreateListType("FrozenSet", BuiltinTypeId.Set, typeArgs, false));
 
             _members["Tuple"] = new GenericType("Tuple", this,
-                (typeArgs, module, location) => CreateTuple(typeArgs));
+                (typeArgs, module, location) => CreateTupleType(typeArgs));
 
             _members["Mapping"] = new GenericType("Mapping", this,
                 (typeArgs, module, location) => CreateDictionary("Mapping", typeArgs, false));
@@ -103,7 +113,16 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["DefaultDict"] = new GenericType("DefaultDict", this,
                 (typeArgs, module, location) => CreateDictionary("DefaultDict", typeArgs, true));
 
+            _members["Union"] = new GenericType("Union", this,
+                (typeArgs, module, location) => CreateUnion(typeArgs));
+
             _members["Counter"] = Specialized.Function("Counter", this, null, "Counter", new PythonInstance(Interpreter.GetBuiltinType(BuiltinTypeId.Int)));
+
+            _members["SupportsInt"] = Interpreter.GetBuiltinType(BuiltinTypeId.Int);
+            _members["SupportsFloat"] = Interpreter.GetBuiltinType(BuiltinTypeId.Float);
+            _members["SupportsComplex"] = Interpreter.GetBuiltinType(BuiltinTypeId.Complex);
+            _members["SupportsBytes"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
+            _members["ByteString"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
         }
 
 
@@ -112,19 +131,20 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         private LocationInfo GetMemberLocation(string name)
             => (base.GetMember(name)?.GetPythonType() as ILocatedMember)?.Location ?? LocationInfo.Empty;
 
-        private IPythonType CreateList(string typeName, BuiltinTypeId typeId, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
+        private IPythonType CreateListType(string typeName, BuiltinTypeId typeId, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
             if (typeArgs.Count == 1) {
-                return new TypingListType(typeName, typeId, typeArgs[0], Interpreter, isMutable);
+                return TypingTypeFactory.CreateListType(Interpreter, typeName, typeId, typeArgs[0], isMutable);
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
         }
 
-        private IPythonType CreateTuple(IReadOnlyList<IPythonType> typeArgs) => new TypingTupleType(typeArgs, Interpreter);
+        private IPythonType CreateTupleType(IReadOnlyList<IPythonType> typeArgs) 
+            => TypingTypeFactory.CreateTupleType(Interpreter, typeArgs);
 
-        private IPythonType CreateIterator(IReadOnlyList<IPythonType> typeArgs) {
+        private IPythonType CreateIteratorType(IReadOnlyList<IPythonType> typeArgs) {
             if (typeArgs.Count == 1) {
-                return new TypingIteratorType(typeArgs[0], BuiltinTypeId.ListIterator, Interpreter);
+                return TypingTypeFactory.CreateIteratorType(Interpreter, typeArgs[0]);
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
@@ -132,7 +152,31 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private IPythonType CreateDictionary(string typeName, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
             if (typeArgs.Count == 2) {
-                return new TypingDictionaryType(typeName, typeArgs[0], typeArgs[1], Interpreter, isMutable);
+                return TypingTypeFactory.CreateDictionary(Interpreter, typeName, typeArgs[0], typeArgs[1], isMutable);
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateKeysViewType(IReadOnlyList<IPythonType> typeArgs) {
+            if (typeArgs.Count == 1) {
+                return TypingTypeFactory.CreateKeysViewType(Interpreter, typeArgs[0]);
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateValuesViewType(IReadOnlyList<IPythonType> typeArgs) {
+            if (typeArgs.Count == 1) {
+                return TypingTypeFactory.CreateValuesViewType(Interpreter, typeArgs[0]);
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateItemsViewType(IReadOnlyList<IPythonType> typeArgs) {
+            if (typeArgs.Count == 2) {
+                return TypingTypeFactory.CreateItemsViewType(Interpreter, typeArgs[0], typeArgs[1]);
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
@@ -143,13 +187,19 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 var typeName = (typeArgs[0] as IPythonConstant)?.Value as string;
                 if (!string.IsNullOrEmpty(typeName)) {
                     return new TypeAlias(typeName, typeArgs[1].GetPythonType() ?? Interpreter.UnknownType);
-                } else {
-                    // TODO: report incorrect first argument to NewVar
                 }
+                // TODO: report incorrect first argument to NewVar
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
         }
 
+        private IPythonType CreateUnion(IReadOnlyList<IMember> typeArgs) {
+            if (typeArgs.Count > 0) {
+                return TypingTypeFactory.CreateUnion(Interpreter, typeArgs.Select(a => a.GetPythonType()).ToArray());
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
     }
 }

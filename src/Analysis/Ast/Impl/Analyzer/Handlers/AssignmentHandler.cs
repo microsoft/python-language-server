@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             IMember instance = null;
             if (value != null) {
                 var valueType = value.GetPythonType();
-                if (!valueType.IsUnknown() && !variableType.IsUnknown() && !valueType.Equals(variableType)) {
+                if (!variableType.IsUnknown() && !valueType.Equals(variableType)) {
                     // TODO: warn incompatible value type.
                     // TODO: verify values. Value may be list() while variable type is List[str].
                     // Leave it as variable type.

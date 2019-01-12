@@ -28,5 +28,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         /// Key type.
         /// </summary>
         IPythonType ValueType { get; }
+
+        /// <summary>
+        /// Item type, normally Tuple[TK, TV].
+        /// </summary>
+        IPythonType ItemType { get; }
     }
 }

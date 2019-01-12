@@ -18,7 +18,6 @@ using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingListType : PythonCollectionType, ITypingListType {
@@ -29,8 +28,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="itemType">List item type.</param>
         /// <param name="interpreter">Python interpreter</param>
         /// <param name="isMutable">Tells of list represents a mutable collection.</param>
-        public TypingListType(string typeName, IPythonType itemType, IPythonInterpreter interpreter, bool isMutable) 
-            : this(typeName, BuiltinTypeId.List, itemType, interpreter, isMutable) { }
+        /// <param name="formatName">If true, type will append item type names to the base type name.</param>
+        public TypingListType(string typeName, IPythonType itemType, IPythonInterpreter interpreter, bool isMutable, bool formatName = true) 
+            : this(typeName, BuiltinTypeId.List, itemType, interpreter, isMutable, formatName) { }
 
         /// <summary>
         /// Creates type info for a list-like strongly typed collection, such as List[T].
@@ -40,10 +40,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="itemType">List item type.</param>
         /// <param name="interpreter">Python interpreter</param>
         /// <param name="isMutable">Tells of list represents a mutable collection.</param>
-        public TypingListType(string typeName, BuiltinTypeId typeId, IPythonType itemType, IPythonInterpreter interpreter, bool isMutable)
+        /// <param name="formatName">If true, type will append item type names to the base type name.</param>
+        public TypingListType(string typeName, BuiltinTypeId typeId, IPythonType itemType, IPythonInterpreter interpreter, bool isMutable, bool formatName = true)
             : base(null, BuiltinTypeId.List, interpreter, isMutable) {
             ItemType = itemType;
-            Name = $"{typeName}[{itemType.Name}]";
+            Name = formatName ? $"{typeName}[{itemType.Name}]" : typeName;
         }
 
         public override string Name { get; }
