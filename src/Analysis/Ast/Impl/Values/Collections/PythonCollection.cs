@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         }
 
         public IReadOnlyList<IMember> Contents { get; protected set; }
-        public virtual IPythonIterator GetIterator() => new PythonIterator(BuiltinTypeId.ListIterator, this);
+        public override IPythonIterator GetIterator() => new PythonIterator(BuiltinTypeId.ListIterator, this);
 
         public static int GetIndex(object index) {
             switch (index) {

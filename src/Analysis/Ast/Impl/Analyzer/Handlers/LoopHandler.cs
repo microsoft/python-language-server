@@ -13,8 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
@@ -24,11 +27,34 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         public async Task HandleForAsync(ForStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            if (node.Left is NameExpression nex) {
-                var iterable = await Eval.GetValueFromExpressionAsync(node.List, cancellationToken);
-                var value = (iterable as IPythonCollection)?.GetIterator()?.Next ?? Eval.UnknownType;
-                Eval.DeclareVariable(nex.Name, value, Eval.GetLoc(node.Left));
+
+            var iterable = await Eval.GetValueFromExpressionAsync(node.List, cancellationToken);
+            var iterator = (iterable as IPythonIterable)?.GetIterator();
+            if (iterator == null) {
+                // TODO: report that expression does not evaluate to iterable.
             }
+            var value = iterator?.Next ?? Eval.UnknownType;
+
+            switch (node.Left) {
+                case NameExpression nex:
+                    // for x in y:
+                    Eval.DeclareVariable(nex.Name, value, Eval.GetLoc(node.Left));
+                    break;
+                case TupleExpression tex:
+                    // x = [('abc', 42, True), ('abc', 23, False)]
+                    // for some_str, some_int, some_bool in x:
+                    var names = tex.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
+                    if (value is IPythonIterable valueIterable) {
+                        var valueIterator = valueIterable.GetIterator();
+                        foreach (var n in names) {
+                            Eval.DeclareVariable(n, valueIterator?.Next ?? Eval.UnknownType, Eval.GetLoc(node.Left));
+                        }
+                    } else {
+                        // TODO: report that expression yields value that does not evaluate to iterable.
+                    }
+                    break;
+            }
+
             if (node.Body != null) {
                 await node.Body.WalkAsync(Walker, cancellationToken);
             }

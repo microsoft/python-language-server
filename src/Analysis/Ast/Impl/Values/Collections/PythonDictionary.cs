@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             // Specializations
             switch (memberName) {
                 case @"get":
-                    return args.Count > 0 ? Index(args[0]) : _interpreter.UnknownType;
+                    return args.Count > 1 ? Index(args[1]) : _interpreter.UnknownType;
                 case @"items":
                     return CreateList(Items);
                 case @"keys":

@@ -16,7 +16,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
@@ -53,5 +55,12 @@ namespace Microsoft.Python.Analysis.Values {
         public virtual IMember Index(object index) => this; // Helps with str slicing
 
         protected IMember UnknownType => Type.DeclaringModule.Interpreter.UnknownType;
+
+        public virtual IPythonIterator GetIterator() {
+            var iteratorFunc = Type.GetMember(@"__iter__") as IPythonFunctionType;
+            var o = iteratorFunc?.Overloads.FirstOrDefault();
+            var instance = o?.GetReturnValue(LocationInfo.Empty);
+            return instance != null ? new PythonInstanceIterator(instance, Type.DeclaringModule.Interpreter) : null;
+        }
     }
 }

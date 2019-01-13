@@ -286,7 +286,6 @@ s = x['oar']
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task ForIterator() {
             const string code = @"
 class X(object):
@@ -304,10 +303,9 @@ for i in Y():
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task ForSequence() {
             const string code = @"
-x = [('abc', 42, True), ('abc', 23, False),]
+x = [('abc', 42, True), ('abc', 23, False)]
 for some_str, some_int, some_bool in x:
     print some_str
     print some_int
@@ -457,6 +455,7 @@ for abc in x:
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task SetOperators() {
             const string code = @"
 x = {1, 2, 3}
@@ -526,10 +525,10 @@ y2 = x['oar'](42, [])
         public async Task DictionaryFunctionTableGet() {
             const string code = @"
 def f(a, b):
-    print(a, b)
+    return a
     
 def g(a, b):
-    x, y = a, b
+    return a, b
 
 x = {'fob': f, 'oar' : g}
 

@@ -90,5 +90,9 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, interpreter, false);
             return new PythonCollection(collectionType, location, contents);
         }
+        public static IPythonCollection CreateSet(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) {
+            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Set, interpreter, true);
+            return new PythonCollection(collectionType, location, contents, flatten);
+        }
     }
 }

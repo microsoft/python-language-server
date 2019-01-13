@@ -81,6 +81,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return PythonCollectionType.CreateTuple(Module.Interpreter, GetLoc(expression), contents);
         }
 
+        public async Task<IMember> GetValueFromSetAsync(SetExpression expression, CancellationToken cancellationToken = default) {
+            var contents = new List<IMember>();
+            foreach (var item in expression.Items) {
+                var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
+                contents.Add(value);
+            }
+            return PythonCollectionType.CreateSet(Interpreter, GetLoc(expression), contents);
+        }
+
         private async Task<IMember> CreateSpecificFromGenericAsync(IGenericType gen, IndexExpression expr, CancellationToken cancellationToken = default) {
             var args = new List<IPythonType>();
             if (expr.Index is TupleExpression tex) {

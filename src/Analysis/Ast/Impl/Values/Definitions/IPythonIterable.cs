@@ -13,17 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
-
 namespace Microsoft.Python.Analysis.Values {
-    /// <summary>
-    /// Represents an instance of a sequence.
-    /// </summary>
-    public interface IPythonCollection : IPythonInstance {
+    public interface IPythonIterable {
         /// <summary>
-        /// Collection contents
+        /// Retrieves iterator for the collection.
         /// </summary>
-        IReadOnlyList<IMember> Contents { get; }
+        IPythonIterator GetIterator();
     }
 }
