@@ -133,6 +133,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             _members["Any"] = new TypingAnyType(this);
 
+            // AnyStr
             var str = Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var bytes = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             var unicode = Interpreter.GetBuiltinType(BuiltinTypeId.Unicode);
@@ -142,6 +143,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 ? new IMember[] { anyStrName, str, bytes }
                 : new IMember[] { anyStrName, str, unicode };
             _members["AnyStr"] = GenericTypeParameter.FromTypeVar(anyStrArgs, this, LocationInfo.Empty);
+
+            var noneType = Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
+            _members["Optional"] = new GenericType("Optional", this,
+                (typeArgs, module, location) => CreateUnion(new [] { noneType }.Concat(typeArgs).ToArray()));
         }
 
 
