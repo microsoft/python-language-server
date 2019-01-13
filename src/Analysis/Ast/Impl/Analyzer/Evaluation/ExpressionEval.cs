@@ -115,6 +115,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case TupleExpression tex:
                     m = await GetValueFromTupleAsync(tex, cancellationToken);
                     break;
+                case YieldExpression yex:
+                    m = await GetValueFromExpressionAsync(yex.Expression, cancellationToken);
+                    break;
                 default:
                     m = await GetValueFromBinaryOpAsync(expr, cancellationToken) ?? GetConstantFromLiteral(expr, options);
                     break;

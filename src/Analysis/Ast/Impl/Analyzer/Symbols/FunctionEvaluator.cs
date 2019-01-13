@@ -24,6 +24,7 @@ using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -61,6 +62,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var annotationType = await Eval.GetTypeFromAnnotationAsync(FunctionDefinition.ReturnAnnotation, cancellationToken);
             if (!annotationType.IsUnknown()) {
                 _overload.SetReturnValue(annotationType, true);
+            } else {
+                // Check if function is a generator
+                var suite = FunctionDefinition.Body as SuiteStatement;
+                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
+                if (yieldExpr != null) {
+                    // Function return is an iterator
+                    var yieldValue = await Eval.GetValueFromExpressionAsync(yieldExpr.Expression, cancellationToken) ?? Eval.UnknownType;
+                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
+                    _overload.SetReturnValue(returnValue, true);
+                }
             }
 
             // Fetch documentation

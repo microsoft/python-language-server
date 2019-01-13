@@ -318,9 +318,8 @@ for some_str, some_int, some_bool in x:
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task Generator2X() {
-            var code = @"
+            const string code = @"
 def f():
     yield 1
     yield 2
@@ -334,13 +333,17 @@ for c in f():
 d = a.__next__()
 ";
 
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Generator)
                 .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("d").WithNoTypes();
+        }
 
-            code = @"
+        [TestMethod, Priority(0)]
+        [Ignore]
+        public async Task GeneratorArgument2X() {
+            var code = @"
 def f(x):
     yield x
 
@@ -353,16 +356,18 @@ for c in f():
     print c
 d = a1.__next__()
 ";
-
-            analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             analysis.Should().HaveVariable("a1").OfType(BuiltinTypeId.Generator)
                 .And.HaveVariable("b1").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("a2").OfType(BuiltinTypeId.Generator)
                 .And.HaveVariable("b2").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("c").WithNoTypes()
                 .And.HaveVariable("d").WithNoTypes();
+        }
 
-            code = @"
+        [TestMethod, Priority(0)]
+        public async Task GeneratorSend2X() {
+            const string code = @"
 def f():
     yield 1
     x = yield 2
@@ -372,7 +377,7 @@ b = a.next()
 c = a.send('abc')
 d = a.__next__()
 ";
-            analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Generator)
                 .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
@@ -380,9 +385,8 @@ d = a.__next__()
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task Generator3X() {
-            var code = @"
+            const string code = @"
 def f():
     yield 1
     yield 2
@@ -398,11 +402,15 @@ d = a.next()
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Generator)
-                    .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
-                    .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
-                    .And.HaveVariable("d").WithNoTypes();
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("d").WithNoTypes();
+        }
 
-            code = @"
+        [TestMethod, Priority(0)]
+        [Ignore]
+        public async Task GeneratorArgument3X() {
+            var code = @"
 def f(x):
     yield x
 
@@ -415,16 +423,18 @@ for c in f(42):
     print(c)
 d = a1.next()
 ";
-
-            analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a1").OfType(BuiltinTypeId.Generator)
                 .And.HaveVariable("b1").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("a2").OfType(BuiltinTypeId.Generator)
                 .And.HaveVariable("b2").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("d").WithNoTypes();
+        }
 
-            code = @"
+        [TestMethod, Priority(0)]
+        public async Task GeneratorSend3X() {
+            const string code = @"
 def f():
     yield 1
     x = yield 2
@@ -434,7 +444,7 @@ b = a.__next__()
 c = a.send('abc')
 d = a.next()
 ";
-            analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Generator)
                 .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
