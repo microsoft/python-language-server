@@ -67,15 +67,21 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/microsoft/python-language-server/issues/406")]
         public async Task NamedTupleReturnAnnotation() {
             const string code = @"
-from ReturnAnnotation import *
-nt = namedtuple('Point', ['x', 'y'])
-pt = nt(1, 2)
+from typing import NamedTuple
+
+Point = NamedTuple('Point', ['x', 'y'])
+
+def f(a, b):
+    return Point(a, b)
+
+pt = f(1, 2)
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Should().HaveVariable("pt").OfType(BuiltinTypeId.Tuple);
+            var pt = analysis.Should().HaveVariable("pt").Which;
+            pt.Should().HaveType("Point").And.HaveMember("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            pt.Should().HaveType("Point").And.HaveMember("y").Which.Should().HaveType(BuiltinTypeId.Int);
         }
 
         [TestMethod, Priority(0)]

@@ -271,5 +271,15 @@ fob = D().func2()
             analysis.Should().HaveVariable("fob").OfType(BuiltinTypeId.List)
                 .Which.Should().HaveMembers(listMemberNames);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task StrIndex() {
+            const string code = @"
+a = 'abc'
+x = a[0]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
     }
 }

@@ -20,7 +20,6 @@ using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
@@ -33,7 +32,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             TupleName = tupleName ?? throw new ArgumentNullException(nameof(tupleName));
             ItemNames = itemNames;
 
-            var pairs = itemNames.Zip(itemTypes.Select(t => t.Name), (name, typeName) => $"{name}: {typeName}");
+            var typeNames = itemTypes.Select(t => t.IsUnknown() ? string.Empty : t.Name);
+            var pairs = itemNames.Zip(typeNames, (name, typeName) => string.IsNullOrEmpty(typeName) ? name : $"{name}: {typeName}");
             Name = CodeFormatter.FormatSequence(tupleName, '(', pairs);
         }
 

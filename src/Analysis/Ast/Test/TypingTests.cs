@@ -594,6 +594,23 @@ n1_i = n1[i]
         }
 
         [TestMethod, Priority(0)]
+        public async Task AnyStr() {
+            const string code = @"
+from typing import AnyStr
+
+n1 : AnyStr = 'abc'
+x = n1[0]
+
+n2 : AnyStr = b'abc'
+y = n2[0]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("n1").OfType("AnyStr")
+                .And.HaveVariable("x").OfType("AnyStr")
+                .And.HaveVariable("y").OfType("AnyStr");
+        }
+
+        [TestMethod, Priority(0)]
         public void AnnotationParsing() {
             AssertTransform("List", "NameOp:List");
             AssertTransform("List[Int]", "NameOp:List", "NameOp:Int", "MakeGenericOp");
