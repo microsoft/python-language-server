@@ -20,7 +20,7 @@ using System.Linq;
 
 namespace Microsoft.PythonTools.Analysis.Indexing {
     internal static class SymbolExtensions {
-        public static IEnumerable<FlatSymbol> Flatten(this IEnumerable<HierarchicalSymbol> docSyms, Uri uri, string parent = null) {
+        public static IEnumerable<FlatSymbol> Flatten(this IEnumerable<HierarchicalSymbol> docSyms, Uri uri, string parent = null, int? depthLimit = null) {
             foreach (var sym in docSyms ?? Enumerable.Empty<HierarchicalSymbol>()) {
                 yield return new FlatSymbol {
                     Name = sym.Name,
@@ -30,7 +30,14 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
                     ContainerName = parent,
                 };
 
-                foreach (var si in sym.Children.Flatten(uri, sym.Name)) {
+                if (depthLimit != null) {
+                    if (depthLimit < 1) {
+                        yield break;
+                    }
+                    depthLimit--;
+                }
+
+                foreach (var si in sym.Children.Flatten(uri, sym.Name, depthLimit)) {
                     yield return si;
                 }
             }

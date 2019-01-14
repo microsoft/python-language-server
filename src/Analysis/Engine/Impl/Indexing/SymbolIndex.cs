@@ -25,7 +25,7 @@ using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Indexing {
     internal class SymbolIndex : ISymbolIndex {
-        private readonly ConcurrentDictionary<Uri, List<HierarchicalSymbol>> _index = new ConcurrentDictionary<Uri, List<HierarchicalSymbol>>();
+        private readonly ConcurrentDictionary<Uri, IReadOnlyList<HierarchicalSymbol>> _index = new ConcurrentDictionary<Uri, IReadOnlyList<HierarchicalSymbol>>();
 
         public SymbolIndex() { }
 
@@ -72,7 +72,7 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
         }
 
         public void UpdateParseTree(Uri uri, PythonAst ast) {
-            var walker = new IndexerWalker(ast);
+            var walker = new SymbolIndexWalker(ast);
             ast.Walk(walker);
             _index[uri] = walker.Symbols;
         }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.PythonTools.Analysis.Indexing {
     // From LSP.
@@ -34,6 +33,15 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
         TypeParameter = 26
     }
 
+    internal class FunctionKind {
+        public const string None = "";
+        public const string Function = "function";
+        public const string Property = "property";
+        public const string StaticMethod = "staticmethod";
+        public const string ClassMethod = "classmethod";
+        public const string Class = "class";
+    }
+
     // Analagous to LSP's DocumentSymbol.
     internal class HierarchicalSymbol {
         public string Name;
@@ -42,7 +50,25 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
         public bool? Deprecated;
         public SourceSpan Range;
         public SourceSpan SelectionRange;
-        public List<HierarchicalSymbol> Children;
+        public IList<HierarchicalSymbol> Children;
+
+        public string _functionKind;
+
+        public HierarchicalSymbol(
+            string name,
+            SymbolKind kind,
+            SourceSpan range,
+            SourceSpan? selectionRange = null,
+            IList<HierarchicalSymbol> children = null,
+            string functionKind = FunctionKind.None
+        ) {
+            Name = name;
+            Kind = kind;
+            Range = range;
+            SelectionRange = selectionRange ?? range;
+            Children = children;
+            _functionKind = functionKind;
+        }
     }
 
     // Analagous to LSP's SymbolInformation.
