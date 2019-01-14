@@ -30,7 +30,7 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
         public SymbolIndex() { }
 
         public async Task<IEnumerable<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(Uri uri, CancellationToken token = default) {
-            return _index.TryGetValue(uri, out var list) ? list : null;
+            return _index.TryGetValue(uri, out var list) ? list : Enumerable.Empty<HierarchicalSymbol>();
         }
 
         public Task<IEnumerable<FlatSymbol>> WorkspaceSymbolsAsync(string query, CancellationToken token = default) {
@@ -56,13 +56,7 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
                 ll.RemoveFirst();
 
                 if (sym.Name.Contains(query)) {
-                    yield return new FlatSymbol {
-                        Name = sym.Name,
-                        Kind = sym.Kind,
-                        DocumentUri = uri,
-                        Range = sym.SelectionRange,
-                        ContainerName = parent,
-                    };
+                    yield return new FlatSymbol(sym.Name, sym.Kind, uri, sym.SelectionRange, parent);
                 }
 
                 foreach (var child in sym.Children.MaybeEnumerate()) {

@@ -79,5 +79,19 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
         public Uri DocumentUri;
         public SourceSpan Range;
         public string ContainerName;
+
+        public FlatSymbol(
+            string name,
+            SymbolKind kind,
+            Uri documentUri,
+            SourceSpan range,
+            string containerName = null
+        ) {
+            Name = name;
+            Kind = kind;
+            DocumentUri = documentUri;
+            Range = range;
+            ContainerName = containerName;
+        }
     }
 }

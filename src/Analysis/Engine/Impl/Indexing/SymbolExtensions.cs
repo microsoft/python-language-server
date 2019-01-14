@@ -22,13 +22,7 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
     internal static class SymbolExtensions {
         public static IEnumerable<FlatSymbol> Flatten(this IEnumerable<HierarchicalSymbol> docSyms, Uri uri, string parent = null, int? depthLimit = null) {
             foreach (var sym in docSyms ?? Enumerable.Empty<HierarchicalSymbol>()) {
-                yield return new FlatSymbol {
-                    Name = sym.Name,
-                    Kind = sym.Kind,
-                    DocumentUri = uri,
-                    Range = sym.SelectionRange,
-                    ContainerName = parent,
-                };
+                yield return new FlatSymbol(sym.Name, sym.Kind, uri, sym.SelectionRange, parent);
 
                 if (depthLimit != null) {
                     if (depthLimit < 1) {
