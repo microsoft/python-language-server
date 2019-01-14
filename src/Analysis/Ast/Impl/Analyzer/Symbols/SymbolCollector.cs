@@ -76,8 +76,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private PythonClassType CreateClass(ClassDefinition node) {
-            var cls = new PythonClassType(node, _eval.Module, GetDoc(node.Body as SuiteStatement),
-                GetLoc(node), _eval.Interpreter,
+            var cls = new PythonClassType(node, _eval.Module, GetLoc(node), 
                 _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
             _typeMap[node] = cls;
             return cls;
@@ -107,8 +106,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!_table.ReplacedByStubs.Contains(node)) {
                 var stubOverload = GetOverloadFromStub(node);
                 if (stubOverload != null) {
-                    if (!string.IsNullOrEmpty(node.Documentation)) {
-                        stubOverload.SetDocumentationProvider(_ => node.Documentation);
+                    if (!string.IsNullOrEmpty(node.GetDocumentation())) {
+                        stubOverload.SetDocumentationProvider(_ => node.GetDocumentation());
                     }
 
                     addOverload(stubOverload);
@@ -172,12 +171,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var start = node.NameExpression?.GetStart(_eval.Ast) ?? node.GetStart(_eval.Ast);
             var end = node.GetEnd(_eval.Ast);
             return new LocationInfo(_eval.Module.FilePath, _eval.Module.Uri, start.Line, start.Column, end.Line, end.Column);
-        }
-
-        private static string GetDoc(SuiteStatement node) {
-            var docExpr = node?.Statements?.FirstOrDefault() as ExpressionStatement;
-            var ce = docExpr?.Expression as ConstantExpression;
-            return ce?.Value as string;
         }
 
         private LocationInfo GetLoc(Node node) => _eval.GetLoc(node);

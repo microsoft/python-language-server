@@ -37,10 +37,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public async Task Random() {
             var analysis = await GetAnalysisAsync("from random import *");
 
-            foreach (var fnName in new[] { "seed", "randrange", "gauss" }) {
-                analysis.Should().HaveVariable(fnName)
-                    .OfType(BuiltinTypeId.Method)
-                    .Which.Should().HaveOverloadWithParametersAt(0);
+            foreach (var fnName in new[] { @"seed", @"randrange", @"gauss" }) {
+                var v = analysis.Should().HaveVariable(fnName).Which;
+                v.Should().HaveType(BuiltinTypeId.Function);
+                v.Value.GetPythonType().Documentation.Should().NotBeNullOrEmpty();
             }
         }
 

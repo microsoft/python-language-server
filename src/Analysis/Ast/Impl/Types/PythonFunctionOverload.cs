@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
@@ -70,12 +71,8 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal void SetParameters(IReadOnlyList<IParameterInfo> parameters) => Parameters = parameters;
 
-        internal void SetDocumentationProvider(Func<string, string> documentationProvider) {
-            if (_documentationProvider != null) {
-                throw new InvalidOperationException("cannot set documentation provider twice");
-            }
-            _documentationProvider = documentationProvider;
-        }
+        internal void SetDocumentationProvider(Func<string, string> documentationProvider) 
+            => _documentationProvider = _documentationProvider ?? documentationProvider;
 
         internal void AddReturnValue(IMember value) {
             if (value.IsUnknown()) {
@@ -106,7 +103,17 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonFunctionOverload
         public FunctionDefinition FunctionDefinition { get; }
         public string Name { get; }
-        public string Documentation => _documentationProvider?.Invoke(Name) ?? string.Empty;
+
+        public string Documentation {
+            get {
+                var s = _documentationProvider?.Invoke(Name);
+                if (string.IsNullOrEmpty(s)) {
+                    s = FunctionDefinition.GetDocumentation();
+                }
+                return s ?? string.Empty;
+            }
+        }
+
         public string ReturnDocumentation { get; }
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
         public LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
@@ -117,7 +124,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // First try supplied specialization callback.
                 var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args);
                 if (!rt.IsUnknown()) {
-                    return rt is IPythonType pt ? new PythonInstance(pt) : rt;
+                    return rt;
                 }
             }
 

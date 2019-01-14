@@ -45,6 +45,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
             => new TypingTuple(this, location);
 
+        // NamedTuple does not create instances, it defines a type.
+        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) => this;
+
         public override IEnumerable<string> GetMemberNames() => ItemNames.Concat(base.GetMemberNames());
 
         public override IMember GetMember(string name) {

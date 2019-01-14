@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
@@ -117,8 +118,7 @@ namespace Microsoft.Python.Analysis.Types {
             return true;
         }
 
-        internal void SetDocumentationProvider(Func<string, string> provider) => _documentationProvider = provider;
-        internal void SetLocationProvider(Func<string, LocationInfo> provider) => _locationProvider = provider;
+        internal virtual void SetDocumentationProvider(Func<string, string> provider) => _documentationProvider = provider;
 
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
             lock (_lock) {
@@ -157,6 +157,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         protected bool ContainsMember(string name) => Members.ContainsKey(name);
         protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;
+
         public bool Equals(IPythonType other) => PythonTypeComparer.Instance.Equals(this, other);
     }
 }

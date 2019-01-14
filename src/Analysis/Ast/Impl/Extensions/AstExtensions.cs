@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
@@ -21,7 +22,14 @@ namespace Microsoft.Python.Analysis {
     public static class AstExtensions {
         public static Expression FindExpression(this PythonAst ast, int index, FindExpressionOptions options) 
             => new ExpressionFinder(ast, options).GetExpression(index) as Expression;
+
         public static Expression FindExpression(this PythonAst ast, SourceLocation location, FindExpressionOptions options) 
             => new ExpressionFinder(ast, options).GetExpression(location) as Expression;
+
+        public static string GetDocumentation(this ScopeStatement node) {
+            var docExpr = (node?.Body as SuiteStatement)?.Statements?.FirstOrDefault() as ExpressionStatement;
+            var ce = docExpr?.Expression as ConstantExpression;
+            return ce?.Value as string;
+        }
     }
 }

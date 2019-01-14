@@ -26,7 +26,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// </summary>
     internal class GenericType : IGenericType {
         private readonly Func<IReadOnlyList<IPythonType>, IPythonModule, LocationInfo, IPythonType> _typeConstructor;
-        protected IPythonModule TypingModule { get; }
 
         public GenericType(string name, IPythonModule declaringModule, 
             Func<IReadOnlyList<IPythonType>, IPythonModule, LocationInfo, IPythonType> typeConstructor) {
@@ -34,9 +33,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             DeclaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
             _typeConstructor = typeConstructor ?? throw new ArgumentNullException(nameof(typeConstructor));
-
-            TypingModule = DeclaringModule.Interpreter.ModuleResolution.GetSpecializedModule("typing");
-            Debug.Assert(TypingModule != null, "Typing must be specialized for generic types to work.");
         }
 
         public IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null)
@@ -49,7 +45,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
         public BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
-        public virtual string Documentation => (TypingModule?.GetMember(Name) as IPythonType)?.Documentation;
+        public virtual string Documentation => Name;
         public bool IsBuiltin => false;
         public bool IsAbstract => true;
 

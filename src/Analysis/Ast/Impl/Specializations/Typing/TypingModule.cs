@@ -219,7 +219,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private IPythonType CreateUnion(IReadOnlyList<IMember> typeArgs) {
             if (typeArgs.Count > 0) {
-                return TypingTypeFactory.CreateUnion(Interpreter, typeArgs.Select(a => a.GetPythonType()).ToArray());
+                return TypingTypeFactory.CreateUnionType(Interpreter, typeArgs.Select(a => a.GetPythonType()).ToArray());
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
@@ -270,12 +270,12 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 itemNames.Add(itemName2);
                 itemTypes.Add(c.Contents[1].GetPythonType());
             }
-            return TypingTypeFactory.CreateNamedTuple(Interpreter, tupleName, itemNames, itemTypes);
+            return TypingTypeFactory.CreateNamedTupleType(Interpreter, tupleName, itemNames, itemTypes);
         }
 
         private IPythonType CreateOptional(IReadOnlyList<IPythonType> typeArgs) {
             if (typeArgs.Count == 1) {
-                return TypingTypeFactory.CreateOptional(this, typeArgs[0]);
+                return TypingTypeFactory.CreateOptionalType(this, typeArgs[0]);
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;

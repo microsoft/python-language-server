@@ -101,6 +101,14 @@ namespace Microsoft.Python.Analysis.Types {
             var overload = FindOverload(parameters);
             return overload?.GetReturnValue(instance?.Location ?? LocationInfo.Empty, parameters) ?? DeclaringModule.Interpreter.UnknownType;
         }
+
+        internal override void SetDocumentationProvider(Func<string, string> provider) {
+            foreach (var o in Overloads) {
+                (o as PythonFunctionOverload)?.SetDocumentationProvider(provider);
+            }
+            base.SetDocumentationProvider(provider);
+        }
+
         #endregion
 
         #region IPythonFunction

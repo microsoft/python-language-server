@@ -50,25 +50,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         // Classes and functions are walked by their respective evaluators
         public override async Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
-            // Don't evaluate if there is a stub definition available
-            if (_stubAnalysis == null) {
-                await SymbolTable.EvaluateAsync(node, cancellationToken);
-            }
+            await SymbolTable.EvaluateAsync(node, cancellationToken);
             return false;
         }
 
         public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
-            if (_stubAnalysis == null) {
-                await SymbolTable.EvaluateAsync(node, cancellationToken);
-            }
+            await SymbolTable.EvaluateAsync(node, cancellationToken);
             return false;
         }
 
         public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
-            if (_stubAnalysis == null) {
-                await SymbolTable.EvaluateAllAsync(cancellationToken);
-                SymbolTable.ReplacedByStubs.Clear();
-            }
+            await SymbolTable.EvaluateAllAsync(cancellationToken);
+            SymbolTable.ReplacedByStubs.Clear();
             MergeStub();
             return Eval.GlobalScope;
         }
@@ -116,20 +109,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                         // Get documentation from the current type, if any, since stubs
                         // typically do not contain documentation while scraped code does.
-                        if (member != null) {
-                            var documentation = member.GetPythonType()?.Documentation;
-                            if (!string.IsNullOrEmpty(documentation)) {
-                                stubMember.GetPythonType<PythonType>()?.SetDocumentationProvider(_ => documentation);
-                            }
-                        }
+                        member?.GetPythonType()?.TransferDocumentation(stubMember.GetPythonType());
                         cls.AddMember(name, stubMember, overwrite: true);
                     }
                 } else {
                     // Re-declare variable with the data from the stub.
                     if (!stubType.IsUnknown()) {
-                        if (srcType != null) {
-                            (stubType as PythonType)?.TrySetTypeId(srcType.TypeId);
-                        }
+                        srcType.TransferDocumentation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         Eval.DeclareVariable(v.Name, v.Value, LocationInfo.Empty, overwrite: true);
                     }

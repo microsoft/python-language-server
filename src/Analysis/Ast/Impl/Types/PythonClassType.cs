@@ -40,11 +40,9 @@ namespace Microsoft.Python.Analysis.Types {
         public PythonClassType(
             ClassDefinition classDefinition,
             IPythonModule declaringModule,
-            string documentation,
-            LocationInfo loc,
-            IPythonInterpreter interpreter,
+            LocationInfo location,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, declaringModule, documentation, loc, builtinTypeId) {
+        ) : base(classDefinition.Name, declaringModule, classDefinition.GetDocumentation(), location, builtinTypeId) {
             ClassDefinition = classDefinition;
         }
 

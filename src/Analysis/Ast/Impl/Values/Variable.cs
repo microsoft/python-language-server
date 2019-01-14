@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Values {
                     case IPythonType pt:
                         return $"{Name} : typeInfo of {pt.Name}";
                     default:
-                        return $"{Name} : member {Value.MemberType}";
+                        return $"{Name} : member {Value?.MemberType}";
                 }
             }
         }
