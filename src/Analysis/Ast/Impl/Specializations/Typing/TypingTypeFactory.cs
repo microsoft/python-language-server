@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
+using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 
@@ -56,5 +57,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         public static ITypingNamedTupleType CreateNamedTuple(IPythonInterpreter interpreter, string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes)
             => new NamedTupleType(tupleName, itemNames, itemTypes, interpreter);
+
+        public static IPythonType CreateOptional(IPythonModule declaringModule, IPythonType type)
+            => new OptionalType(declaringModule, type);
+
+        public static IPythonType CreateType(IPythonModule declaringModule, IPythonType type)
+            => new TypingType(declaringModule, type);
     }
 }

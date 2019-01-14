@@ -49,9 +49,12 @@ namespace Microsoft.Python.Analysis.Specializations {
             var type = new TypingListType("List", module.Interpreter.GetBuiltinType(BuiltinTypeId.Str), module.Interpreter, false);
             return new TypingList(type, location);
         }
-
-        //public static IMember Dict(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args)
-        //    => new PythonDictionary(module.Interpreter, location, args);
+        public static IMember DictStringToObject(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args) {
+            var str = module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
+            var obj = module.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+            var type = new TypingDictionaryType("Dict", str, obj, module.Interpreter, false);
+            return new TypingDictionary(type, location);
+        }
 
         public static ReturnValueProvider Next
                 => (module, overload, location, args) => args.Count > 0 && args[0] is IPythonIterator it ? it.Next : null;

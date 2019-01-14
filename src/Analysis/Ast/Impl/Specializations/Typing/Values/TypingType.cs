@@ -18,12 +18,20 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal sealed class TypingAnyType : IPythonType {
-        public TypingAnyType(IPythonModule declaringModule) {
+namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
+    /// <summary>
+    /// Holds type info of the generic parameter.
+    /// </summary>
+    internal sealed class TypingType : IPythonType {
+        private readonly IPythonType _type;
+
+        public TypingType(IPythonModule declaringModule, IPythonType type) {
+            _type = type ?? throw  new ArgumentNullException(nameof(type));
             DeclaringModule = declaringModule;
+            Name = $"Type[{_type.Name}]";
         }
-        public string Name => "Any";
+
+        public string Name { get; }
         public IPythonModule DeclaringModule { get; }
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public string Documentation => Name;
@@ -31,14 +39,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public bool IsAbstract => false;
         public PythonMemberType MemberType => PythonMemberType.Class;
         public IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
-            => DeclaringModule.Interpreter.UnknownType;
-        public IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args) 
-            => new PythonInstance(this, location);
-
-        public IMember GetMember(string name) => null;
-        public IEnumerable<string> GetMemberNames() => Array.Empty<string>();
-
-        public IMember Index(IPythonInstance instance, object index)
-            => DeclaringModule.Interpreter.UnknownType;
+            => _type.Call(instance, memberName, args);
+        public IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args) => _type;
+        public IMember GetMember(string name) => _type.GetMember(name);
+        public IEnumerable<string> GetMemberNames() => _type.GetMemberNames();
+        public IMember Index(IPythonInstance instance, object index) => _type.Index(instance, index);
     }
 }

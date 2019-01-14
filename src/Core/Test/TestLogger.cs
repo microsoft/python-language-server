@@ -14,21 +14,31 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Core.Logging;
 using TestUtilities;
 
 namespace Microsoft.Python.Core.Tests {
     public sealed class TestLogger : ILogger, IDisposable {
+        private readonly ConcurrentQueue<Tuple<TraceEventType, string>> _messages = new ConcurrentQueue<Tuple<TraceEventType, string>>();
+        private readonly ManualResetEventSlim _itemsAvailable = new ManualResetEventSlim(false);
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private readonly object _lock = new object();
         private readonly FileStream _file = null;
+
         public TestLogger() {
             //var path = Path.Combine(Path.GetTempPath(), "python_analysis.log");
             //_file = File.OpenWrite(path);
+            Task.Run(() => Worker()).DoNotWait();
         }
 
         public void Dispose() {
+            _cts.Cancel();
             _file?.Close();
             _file?.Dispose();
         }
@@ -38,22 +48,10 @@ namespace Microsoft.Python.Core.Tests {
         public void Log(TraceEventType eventType, string message) {
 
             var m = $"[{TestEnvironmentImpl.Elapsed()}]: {message}";
-            switch (eventType) {
-                case TraceEventType.Error:
-                case TraceEventType.Critical:
-                    Trace.TraceError(m);
-                    break;
-                case TraceEventType.Warning:
-                    Trace.TraceWarning(m);
-                    break;
-                case TraceEventType.Information:
-                    Trace.TraceInformation(m);
-                    break;
-                case TraceEventType.Verbose:
-                    Trace.TraceInformation($"LOG: {m}");
-                    break;
+            lock (_lock) {
+                _messages.Enqueue(new Tuple<TraceEventType, string>(eventType, m));
+                _itemsAvailable.Set();
             }
-            WriteToFile(m);
         }
 
         private void WriteToFile(string s) {
@@ -71,6 +69,44 @@ namespace Microsoft.Python.Core.Tests {
                 sb.Append("} ");
             }
             Log(eventType, sb.ToString().FormatUI(parameters));
+        }
+
+        private void Worker() {
+            while (!_cts.IsCancellationRequested) {
+                Tuple<TraceEventType, string> t;
+                lock (_lock) {
+                    if (!_messages.TryDequeue(out t)) {
+                        _itemsAvailable.Reset();
+                    }
+                }
+
+                if (t == null) {
+                    try {
+                        _itemsAvailable.Wait(_cts.Token);
+                    } catch (OperationCanceledException) {
+                        break;
+                    }
+                    continue;
+                }
+
+                var m = t.Item2;
+                switch (t.Item1) {
+                    case TraceEventType.Error:
+                    case TraceEventType.Critical:
+                        Trace.TraceError(m);
+                        break;
+                    case TraceEventType.Warning:
+                        Trace.TraceWarning(m);
+                        break;
+                    case TraceEventType.Information:
+                        Trace.TraceInformation(m);
+                        break;
+                    case TraceEventType.Verbose:
+                        Trace.TraceInformation($"LOG: {m}");
+                        break;
+                }
+                WriteToFile(m);
+            }
         }
     }
 }

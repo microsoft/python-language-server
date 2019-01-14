@@ -131,7 +131,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             fn.AddOverload(o);
             _members["NamedTuple"] = fn;
 
-            _members["Any"] = new TypingAnyType(this);
+            _members["Any"] = new AnyType(this);
 
             // AnyStr
             var str = Interpreter.GetBuiltinType(BuiltinTypeId.Str);
@@ -144,134 +144,149 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 : new IMember[] { anyStrName, str, unicode };
             _members["AnyStr"] = GenericTypeParameter.FromTypeVar(anyStrArgs, this, LocationInfo.Empty);
 
-            var noneType = Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
-            _members["Optional"] = new GenericType("Optional", this,
-                (typeArgs, module, location) => CreateUnion(new [] { noneType }.Concat(typeArgs).ToArray()));
+            _members["Optional"] = new GenericType("Optional", this, (typeArgs, module, location) => CreateOptional(typeArgs));
+            _members["Type"] = new GenericType("Type", this, (typeArgs, module, location) => CreateType(typeArgs));
         }
 
 
-    private string GetMemberDocumentation(string name)
+        private string GetMemberDocumentation(string name)
         => base.GetMember(name)?.GetPythonType()?.Documentation;
-    private LocationInfo GetMemberLocation(string name)
-        => (base.GetMember(name)?.GetPythonType() as ILocatedMember)?.Location ?? LocationInfo.Empty;
+        private LocationInfo GetMemberLocation(string name)
+            => (base.GetMember(name)?.GetPythonType() as ILocatedMember)?.Location ?? LocationInfo.Empty;
 
-    private IPythonType CreateListType(string typeName, BuiltinTypeId typeId, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
-        if (typeArgs.Count == 1) {
-            return TypingTypeFactory.CreateListType(Interpreter, typeName, typeId, typeArgs[0], isMutable);
-        }
-        // TODO: report wrong number of arguments
-        return Interpreter.UnknownType;
-    }
-
-    private IPythonType CreateTupleType(IReadOnlyList<IPythonType> typeArgs)
-        => TypingTypeFactory.CreateTupleType(Interpreter, typeArgs);
-
-    private IPythonType CreateIteratorType(IReadOnlyList<IPythonType> typeArgs) {
-        if (typeArgs.Count == 1) {
-            return TypingTypeFactory.CreateIteratorType(Interpreter, typeArgs[0]);
-        }
-        // TODO: report wrong number of arguments
-        return Interpreter.UnknownType;
-    }
-
-    private IPythonType CreateDictionary(string typeName, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
-        if (typeArgs.Count == 2) {
-            return TypingTypeFactory.CreateDictionary(Interpreter, typeName, typeArgs[0], typeArgs[1], isMutable);
-        }
-        // TODO: report wrong number of arguments
-        return Interpreter.UnknownType;
-    }
-
-    private IPythonType CreateKeysViewType(IReadOnlyList<IPythonType> typeArgs) {
-        if (typeArgs.Count == 1) {
-            return TypingTypeFactory.CreateKeysViewType(Interpreter, typeArgs[0]);
-        }
-        // TODO: report wrong number of arguments
-        return Interpreter.UnknownType;
-    }
-
-    private IPythonType CreateValuesViewType(IReadOnlyList<IPythonType> typeArgs) {
-        if (typeArgs.Count == 1) {
-            return TypingTypeFactory.CreateValuesViewType(Interpreter, typeArgs[0]);
-        }
-        // TODO: report wrong number of arguments
-        return Interpreter.UnknownType;
-    }
-
-    private IPythonType CreateItemsViewType(IReadOnlyList<IPythonType> typeArgs) {
-        if (typeArgs.Count == 2) {
-            return TypingTypeFactory.CreateItemsViewType(Interpreter, typeArgs[0], typeArgs[1]);
-        }
-        // TODO: report wrong number of arguments
-        return Interpreter.UnknownType;
-    }
-
-    private IPythonType CreateTypeAlias(IReadOnlyList<IMember> typeArgs) {
-        if (typeArgs.Count == 2) {
-            var typeName = (typeArgs[0] as IPythonConstant)?.Value as string;
-            if (!string.IsNullOrEmpty(typeName)) {
-                return new TypeAlias(typeName, typeArgs[1].GetPythonType() ?? Interpreter.UnknownType);
+        private IPythonType CreateListType(string typeName, BuiltinTypeId typeId, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
+            if (typeArgs.Count == 1) {
+                return TypingTypeFactory.CreateListType(Interpreter, typeName, typeId, typeArgs[0], isMutable);
             }
-            // TODO: report incorrect first argument to NewVar
-        }
-        // TODO: report wrong number of arguments
-        return Interpreter.UnknownType;
-    }
-
-    private IPythonType CreateUnion(IReadOnlyList<IMember> typeArgs) {
-        if (typeArgs.Count > 0) {
-            return TypingTypeFactory.CreateUnion(Interpreter, typeArgs.Select(a => a.GetPythonType()).ToArray());
-        }
-        // TODO: report wrong number of arguments
-        return Interpreter.UnknownType;
-    }
-
-    private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs) {
-        if (typeArgs.Count != 2) {
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
         }
 
-        ;
-        if (!typeArgs[0].TryGetConstant<string>(out var tupleName) || string.IsNullOrEmpty(tupleName)) {
-            // TODO: report name is incorrect.
+        private IPythonType CreateTupleType(IReadOnlyList<IPythonType> typeArgs)
+            => TypingTypeFactory.CreateTupleType(Interpreter, typeArgs);
+
+        private IPythonType CreateIteratorType(IReadOnlyList<IPythonType> typeArgs) {
+            if (typeArgs.Count == 1) {
+                return TypingTypeFactory.CreateIteratorType(Interpreter, typeArgs[0]);
+            }
+            // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
         }
 
-        var argList = (typeArgs[1] as IPythonCollection)?.Contents;
-        if (argList == null) {
-            // TODO: report type spec is not a list.
+        private IPythonType CreateDictionary(string typeName, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
+            if (typeArgs.Count == 2) {
+                return TypingTypeFactory.CreateDictionary(Interpreter, typeName, typeArgs[0], typeArgs[1], isMutable);
+            }
+            // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
         }
 
-        var itemNames = new List<string>();
-        var itemTypes = new List<IPythonType>();
-        foreach (var a in argList) {
-            if (a.TryGetConstant(out string itemName1)) {
-                // Not annotated
-                itemNames.Add(itemName1);
-                itemTypes.Add(Interpreter.UnknownType);
-                continue;
+        private IPythonType CreateKeysViewType(IReadOnlyList<IPythonType> typeArgs) {
+            if (typeArgs.Count == 1) {
+                return TypingTypeFactory.CreateKeysViewType(Interpreter, typeArgs[0]);
             }
-
-            // Now assume annotated pair that comes as a tuple.
-            if (!(a is IPythonCollection c) || c.Type.TypeId != BuiltinTypeId.Tuple) {
-                // TODO: report that item is not a tuple.
-                continue;
-            }
-            if (c.Contents.Count != 2) {
-                // TODO: report extra items in the element spec.
-                continue;
-            }
-            if (!c.Contents[0].TryGetConstant<string>(out var itemName2)) {
-                // TODO: report item name is not a string.
-                continue;
-            }
-
-            itemNames.Add(itemName2);
-            itemTypes.Add(c.Contents[1].GetPythonType());
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
         }
-        return TypingTypeFactory.CreateNamedTuple(Interpreter, tupleName, itemNames, itemTypes);
+
+        private IPythonType CreateValuesViewType(IReadOnlyList<IPythonType> typeArgs) {
+            if (typeArgs.Count == 1) {
+                return TypingTypeFactory.CreateValuesViewType(Interpreter, typeArgs[0]);
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateItemsViewType(IReadOnlyList<IPythonType> typeArgs) {
+            if (typeArgs.Count == 2) {
+                return TypingTypeFactory.CreateItemsViewType(Interpreter, typeArgs[0], typeArgs[1]);
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateTypeAlias(IReadOnlyList<IMember> typeArgs) {
+            if (typeArgs.Count == 2) {
+                var typeName = (typeArgs[0] as IPythonConstant)?.Value as string;
+                if (!string.IsNullOrEmpty(typeName)) {
+                    return new TypeAlias(typeName, typeArgs[1].GetPythonType() ?? Interpreter.UnknownType);
+                }
+                // TODO: report incorrect first argument to NewVar
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateUnion(IReadOnlyList<IMember> typeArgs) {
+            if (typeArgs.Count > 0) {
+                return TypingTypeFactory.CreateUnion(Interpreter, typeArgs.Select(a => a.GetPythonType()).ToArray());
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs) {
+            if (typeArgs.Count != 2) {
+                // TODO: report wrong number of arguments
+                return Interpreter.UnknownType;
+            }
+
+            ;
+            if (!typeArgs[0].TryGetConstant<string>(out var tupleName) || string.IsNullOrEmpty(tupleName)) {
+                // TODO: report name is incorrect.
+                return Interpreter.UnknownType;
+            }
+
+            var argList = (typeArgs[1] as IPythonCollection)?.Contents;
+            if (argList == null) {
+                // TODO: report type spec is not a list.
+                return Interpreter.UnknownType;
+            }
+
+            var itemNames = new List<string>();
+            var itemTypes = new List<IPythonType>();
+            foreach (var a in argList) {
+                if (a.TryGetConstant(out string itemName1)) {
+                    // Not annotated
+                    itemNames.Add(itemName1);
+                    itemTypes.Add(Interpreter.UnknownType);
+                    continue;
+                }
+
+                // Now assume annotated pair that comes as a tuple.
+                if (!(a is IPythonCollection c) || c.Type.TypeId != BuiltinTypeId.Tuple) {
+                    // TODO: report that item is not a tuple.
+                    continue;
+                }
+                if (c.Contents.Count != 2) {
+                    // TODO: report extra items in the element spec.
+                    continue;
+                }
+                if (!c.Contents[0].TryGetConstant<string>(out var itemName2)) {
+                    // TODO: report item name is not a string.
+                    continue;
+                }
+
+                itemNames.Add(itemName2);
+                itemTypes.Add(c.Contents[1].GetPythonType());
+            }
+            return TypingTypeFactory.CreateNamedTuple(Interpreter, tupleName, itemNames, itemTypes);
+        }
+
+        private IPythonType CreateOptional(IReadOnlyList<IPythonType> typeArgs) {
+            if (typeArgs.Count == 1) {
+                return TypingTypeFactory.CreateOptional(this, typeArgs[0]);
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateType(IReadOnlyList<IPythonType> typeArgs) {
+            if (typeArgs.Count == 1) {
+                return TypingTypeFactory.CreateType(this, typeArgs[0]);
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
     }
-}
 }

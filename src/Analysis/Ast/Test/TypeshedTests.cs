@@ -39,24 +39,23 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/microsoft/python-language-server/issues/406")]
         public async Task TypeShedSysExcInfo() {
-            var code = @"
+            const string code = @"
 import sys
 e1, e2, e3 = sys.exc_info()
 ";
             var analysis = await GetAnalysisAsync(code);
-
             // sys.exc_info() -> (exception_type, exception_value, traceback)
             var f = analysis.Should()
                 .HaveVariable("e1").OfType(BuiltinTypeId.Type)
                 .And.HaveVariable("e2").OfType("BaseException")
-                .And.HaveVariable("e3").OfType(BuiltinTypeId.Unknown)
+                .And.HaveVariable("e3").OfType("TracebackType")
                 .And.HaveVariable("sys").OfType(BuiltinTypeId.Module)
                 .Which.Should().HaveMember<IPythonFunctionType>("exc_info").Which;
 
             f.Overloads.Should().HaveCount(1);
-            f.Overloads[0].Documentation.Should().Be("tuple[type, BaseException, Unknown]");
+            f.Overloads[0].ReturnDocumentation
+                .Should().Be(@"Tuple[Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]]");
         }
 
         [TestMethod, Priority(0)]

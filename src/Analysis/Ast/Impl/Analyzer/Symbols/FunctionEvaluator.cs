@@ -61,7 +61,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Process annotations.
             var annotationType = await Eval.GetTypeFromAnnotationAsync(FunctionDefinition.ReturnAnnotation, cancellationToken);
             if (!annotationType.IsUnknown()) {
-                _overload.SetReturnValue(annotationType, true);
+                // Annotations are typically types while actually functions return
+                // instances unless specifically annotated to a type such as Type[T].
+                var instance = annotationType.CreateInstance(annotationType.Name, Eval.GetLoc(FunctionDefinition), Array.Empty<object>());
+                _overload.SetReturnValue(instance, true);
             } else {
                 // Check if function is a generator
                 var suite = FunctionDefinition.Body as SuiteStatement;

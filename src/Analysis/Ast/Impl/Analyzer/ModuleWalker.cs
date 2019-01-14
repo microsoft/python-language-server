@@ -27,8 +27,12 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Module.Name} : {Module.ModuleType}")]
     internal class ModuleWalker : AnalysisWalker {
+        private readonly IDocumentAnalysis _stubAnalysis;
+
         public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
-            : base(services, module, ast) { }
+            : base(services, module, ast) {
+            _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
+        }
 
         public override async Task<bool> WalkAsync(PythonAst node, CancellationToken cancellationToken = default) {
             Check.InvalidOperation(() => Ast == node, "walking wrong AST");
@@ -38,23 +42,33 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // types yet since at this time imports or generic definitions
             // have not been processed.
             await SymbolTable.BuildAsync(Eval, cancellationToken);
+            if (_stubAnalysis != null) {
+                Eval.Log?.Log(TraceEventType.Information, $"'{Module.Name}' evaluation skipped, stub is available.");
+            }
             return await base.WalkAsync(node, cancellationToken);
         }
 
         // Classes and functions are walked by their respective evaluators
         public override async Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
-            await SymbolTable.EvaluateAsync(node, cancellationToken);
+            // Don't evaluate if there is a stub definition available
+            if (_stubAnalysis == null) {
+                await SymbolTable.EvaluateAsync(node, cancellationToken);
+            }
             return false;
         }
 
         public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
-            await SymbolTable.EvaluateAsync(node, cancellationToken);
+            if (_stubAnalysis == null) {
+                await SymbolTable.EvaluateAsync(node, cancellationToken);
+            }
             return false;
         }
 
         public async Task<IGlobalScope> CompleteAsync(CancellationToken cancellationToken = default) {
-            await SymbolTable.EvaluateAllAsync(cancellationToken);
-            SymbolTable.ReplacedByStubs.Clear();
+            if (_stubAnalysis == null) {
+                await SymbolTable.EvaluateAllAsync(cancellationToken);
+                SymbolTable.ReplacedByStubs.Clear();
+            }
             MergeStub();
             return Eval.GlobalScope;
         }
@@ -69,39 +83,35 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// of the definitions. Stub may contains those so we need to merge it in.
         /// </remarks>
         private void MergeStub() {
-            // We replace classes only in compiled (scraped) modules.
-            // Stubs do not apply to user code and library modules that come in source
-            // should be providing sufficient information on their classes from the code.
-            if (Module.ModuleType != ModuleType.Compiled) {
+            if (Module.ModuleType == ModuleType.User) {
                 return;
             }
-
             // No stub, no merge.
-            IDocumentAnalysis stubAnalysis = null;
-            if (Module.Stub is IDocument doc) {
-                stubAnalysis = doc.GetAnyAnalysis();
-            }
-            if (stubAnalysis == null) {
+            if (_stubAnalysis == null) {
                 return;
             }
 
             // Note that scrape can pick up more functions than the stub contains
             // Or the stub can have definitions that scraping had missed. Therefore
-            // merge is the combination of the two with documentation coming from scrape.
-            foreach (var v in stubAnalysis.TopLevelVariables) {
-                var currentVar = Eval.GlobalScope.Variables[v.Name];
-
-                var stub = v.Value.GetPythonType<PythonClassType>();
-                if (stub == null) {
+            // merge is the combination of the two with the documentation coming
+            // from the library source of from the scraped module.
+            foreach (var v in _stubAnalysis.TopLevelVariables) {
+                var stubType = v.Value.GetPythonType();
+                if (stubType.IsUnknown()) {
                     continue;
                 }
 
-                var cls = currentVar.GetPythonType<PythonClassType>();
-                if (cls != null) {
+                var sourceVar = Eval.GlobalScope.Variables[v.Name];
+                var srcType = sourceVar?.Value.GetPythonType();
+
+                // If types are the classes, merge members.
+                // Otherwise, replace type from one from the stub.
+
+                if (srcType is PythonClassType cls) {
                     // If class exists, add or replace its members
                     // with ones from the stub, preserving documentation.
-                    foreach (var name in stub.GetMemberNames()) {
-                        var stubMember = stub.GetMember(name);
+                    foreach (var name in stubType.GetMemberNames()) {
+                        var stubMember = stubType.GetMember(name);
                         var member = cls.GetMember(name);
 
                         // Get documentation from the current type, if any, since stubs
@@ -112,12 +122,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                                 stubMember.GetPythonType<PythonType>()?.SetDocumentationProvider(_ => documentation);
                             }
                         }
-
                         cls.AddMember(name, stubMember, overwrite: true);
                     }
                 } else {
                     // Re-declare variable with the data from the stub.
-                    if (currentVar != null && currentVar.Value.IsUnknown() && !v.Value.IsUnknown()) {
+                    if (!stubType.IsUnknown()) {
+                        if (srcType != null) {
+                            (stubType as PythonType)?.TrySetTypeId(srcType.TypeId);
+                        }
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         Eval.DeclareVariable(v.Name, v.Value, LocationInfo.Empty, overwrite: true);
                     }

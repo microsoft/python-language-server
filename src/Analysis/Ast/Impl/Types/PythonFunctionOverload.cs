@@ -117,7 +117,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // First try supplied specialization callback.
                 var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args);
                 if (!rt.IsUnknown()) {
-                    return rt;
+                    return rt is IPythonType pt ? new PythonInstance(pt) : rt;
                 }
             }
 
