@@ -136,13 +136,7 @@ namespace Microsoft.Python.Analysis.Tests {
         public async Task BuiltinScrapeV36() => await BuiltinScrape(PythonVersions.Python36_x64 ?? PythonVersions.Python36);
 
         [TestMethod, Priority(0)]
-        public async Task BuiltinScrapeV35() => await BuiltinScrape(PythonVersions.Python35_x64 ?? PythonVersions.Python35);
-
-        [TestMethod, Priority(0)]
         public async Task BuiltinScrapeV27() => await BuiltinScrape(PythonVersions.Python27_x64 ?? PythonVersions.Python27);
-
-        [TestMethod, Priority(0)]
-        public async Task BuiltinScrapeIPy27() => await BuiltinScrape(PythonVersions.IronPython27_x64 ?? PythonVersions.IronPython27);
 
         private async Task BuiltinScrape(InterpreterConfiguration configuration) {
             configuration.AssertInstalled();
@@ -209,13 +203,6 @@ namespace Microsoft.Python.Analysis.Tests {
             await FullStdLibTest(v);
         }
 
-
-        [TestMethod, TestCategory("60s"), Priority(0)]
-        public async Task FullStdLibV35() {
-            var v = PythonVersions.Python35 ?? PythonVersions.Python35_x64;
-            await FullStdLibTest(v);
-        }
-
         [TestMethod, TestCategory("60s"), Priority(0)]
         public async Task FullStdLibV27() {
             var v = PythonVersions.Python27 ?? PythonVersions.Python27_x64;
@@ -243,12 +230,6 @@ namespace Microsoft.Python.Analysis.Tests {
                 "dde",
                 "win32ui"
             );
-        }
-
-        [TestMethod, TestCategory("60s"), Priority(0)]
-        public async Task FullStdLibIPy27() {
-            var v = PythonVersions.IronPython27 ?? PythonVersions.IronPython27_x64;
-            await FullStdLibTest(v);
         }
 
 

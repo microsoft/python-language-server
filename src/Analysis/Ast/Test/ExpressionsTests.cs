@@ -189,17 +189,25 @@ f'abc {f(42)}'
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task RangeIteration() {
             const string code = @"
 for i in range(5):
     pass
 ";
-
             var analysis = await GetAnalysisAsync(code);
-            // TODO: fix to actual type
             analysis.Should().HaveVariable("i")
-                .Which.Should().HaveMemberType(PythonMemberType.Instance);
+                .Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        [Ignore]
+        public async Task Sum() {
+            const string code = @"
+s = sum(i for i in [0,1])
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("s")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
         }
 
         [TestMethod, Priority(0)]

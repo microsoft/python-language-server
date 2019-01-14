@@ -66,5 +66,13 @@ namespace Microsoft.Python.Analysis.Specializations {
             fn.AddOverload(o);
             return fn;
         }
+
+        public static IMember Range(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args) {
+            if (args.Count > 0) {
+                var type = new PythonCollectionType(null, BuiltinTypeId.List, module.Interpreter, false);
+                return new PythonCollection(type, location, new [] {args[0]});
+            }
+            return null;
+        }
     }
 }

@@ -144,12 +144,12 @@ namespace Microsoft.Python.Analysis.Modules {
             //SpecializeFunction(_builtinName, "open", SpecialOpen);
             SpecializeFunction("ord", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
             SpecializeFunction("pow", BuiltinsSpecializations.Identity);
-            SpecializeFunction("range", BuiltinsSpecializations.Identity);
+            SpecializeFunction("range", BuiltinsSpecializations.Range);
             SpecializeFunction("type", BuiltinsSpecializations.TypeInfo);
 
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);
-            //SpecializeFunction(_builtinName, "sum", ReturnUnionOfInputs);
+            SpecializeFunction("sum", BuiltinsSpecializations.Identity);
             //SpecializeFunction(_builtinName, "super", SpecialSuper);
             SpecializeFunction("vars", BuiltinsSpecializations.DictStringToObject);
         }
