@@ -27,9 +27,8 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
 
         public SymbolIndex() { }
 
-        public IEnumerable<HierarchicalSymbol> HierarchicalDocumentSymbols(Uri uri) {
-            return _index.TryGetValue(uri, out var list) ? list : Enumerable.Empty<HierarchicalSymbol>();
-        }
+        public IEnumerable<HierarchicalSymbol> HierarchicalDocumentSymbols(Uri uri)
+            => _index.TryGetValue(uri, out var list) ? list : Enumerable.Empty<HierarchicalSymbol>();
 
         public IEnumerable<FlatSymbol> WorkspaceSymbols(string query) {
             foreach (var kvp in _index) {
@@ -41,18 +40,17 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
 
         private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string query, Uri uri, IEnumerable<HierarchicalSymbol> symbols) {
             // Some semblance of a BFS.
-            var ll = new LinkedList<(HierarchicalSymbol, string)>(symbols.Select(s => (s, (string)null)));
+            var queue = new Queue<(HierarchicalSymbol, string)>(symbols.Select(s => (s, (string)null)));
 
-            while (ll.First != null) {
-                var (sym, parent) = ll.First.Value;
-                ll.RemoveFirst();
+            while (queue.Count > 0) {
+                var (sym, parent) = queue.Dequeue();
 
                 if (sym.Name.ContainsOrdinal(query, ignoreCase: true)) {
                     yield return new FlatSymbol(sym.Name, sym.Kind, uri, sym.SelectionRange, parent);
                 }
 
                 foreach (var child in sym.Children.MaybeEnumerate()) {
-                    ll.AddLast((child, sym.Name));
+                    queue.Enqueue((child, sym.Name));
                 }
             }
         }

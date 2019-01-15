@@ -102,13 +102,13 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
         }
 
         public override bool Walk(ImportStatement node) {
-            foreach (var imp in node.Names.Zip(node.AsNames, (name, asName) => (name, asName))) {
-                if (imp.asName == null) {
-                    var span = imp.name.GetSpan(_ast);
-                    _stack.AddSymbol(new HierarchicalSymbol(imp.name.MakeString(), SymbolKind.Module, span));
+            foreach (var (name, asName) in node.Names.Zip(node.AsNames, (a, b) => (a, b))) {
+                if (asName == null) {
+                    var span = name.GetSpan(_ast);
+                    _stack.AddSymbol(new HierarchicalSymbol(name.MakeString(), SymbolKind.Module, span));
                 } else {
-                    var span = imp.asName.GetSpan(_ast);
-                    _stack.AddSymbol(new HierarchicalSymbol(imp.asName.Name, SymbolKind.Module, span));
+                    var span = asName.GetSpan(_ast);
+                    _stack.AddSymbol(new HierarchicalSymbol(asName.Name, SymbolKind.Module, span));
                 }
             }
 
@@ -116,28 +116,24 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
         }
 
         public override bool Walk(FromImportStatement node) {
-            foreach (var imp in node.Names.Zip(node.AsNames, (name, asName) => (name, asName))) {
-                if (imp.asName == null) {
-                    var span = imp.name.GetSpan(_ast);
-                    _stack.AddSymbol(new HierarchicalSymbol(imp.name.Name, SymbolKind.Module, span));
-                } else {
-                    var span = imp.asName.GetSpan(_ast);
-                    _stack.AddSymbol(new HierarchicalSymbol(imp.asName.Name, SymbolKind.Module, span));
-                }
+            foreach (var name in node.Names.Zip(node.AsNames, (name, asName) => asName ?? name)) {
+                var span = name.GetSpan(_ast);
+                _stack.AddSymbol(new HierarchicalSymbol(name.Name, SymbolKind.Module, span));
             }
 
             return false;
         }
 
         public override bool Walk(AssignmentStatement node) {
+            node.Right?.Walk(this);
             foreach (var ne in node.Left.OfType<NameExpression>()) {
                 AddVarSymbol(ne);
             }
-            node.Right?.Walk(this);
             return false;
         }
 
         public override bool Walk(AugmentedAssignStatement node) {
+            node.Right?.Walk(this);
             AddVarSymbol(node.Left as NameExpression);
             return false;
         }

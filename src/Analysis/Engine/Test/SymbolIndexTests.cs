@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
+using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Indexing;
@@ -45,7 +46,7 @@ y = x
 z = y";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
                 new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(2, 1, 2, 2)),
                 new HierarchicalSymbol("z", SymbolKind.Variable, new SourceSpan(3, 1, 3, 2)),
@@ -57,7 +58,7 @@ z = y";
             var code = @"x = y = z = 1";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
                 new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 5, 1, 6)),
                 new HierarchicalSymbol("z", SymbolKind.Variable, new SourceSpan(1, 9, 1, 10)),
@@ -83,7 +84,7 @@ else:
 ";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(2, 5, 2, 6)),
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(4, 5, 4, 6)),
                 new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(6, 5, 6, 6)),
@@ -101,7 +102,7 @@ finally:
 ";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(2, 5, 2, 6)),
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(4, 5, 4, 6)),
                 new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(6, 5, 6, 6)),
@@ -114,7 +115,7 @@ finally:
 x = 2";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
         }
@@ -124,7 +125,7 @@ x = 2";
             var code = @"x += 1";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
         }
@@ -134,7 +135,7 @@ x = 2";
             var code = @"FOO_BAR_3 = 1234";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("FOO_BAR_3", SymbolKind.Constant, new SourceSpan(1, 1, 1, 10)),
             });
         }
@@ -146,7 +147,7 @@ x = 2";
     return z";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("func", SymbolKind.Function, new SourceSpan(1, 1, 3, 13), new SourceSpan(1, 5, 1, 9), new[] {
                     new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 10, 1, 11)),
                     new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 13, 1, 14)),
@@ -160,7 +161,7 @@ x = 2";
             var code = @"def func(*args, **kwargs): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("func", SymbolKind.Function, new SourceSpan(1, 1, 1, 31), new SourceSpan(1, 5, 1, 9), new[] {
                     new HierarchicalSymbol("args", SymbolKind.Variable, new SourceSpan(1, 11, 1, 15)),
                     new HierarchicalSymbol("kwargs", SymbolKind.Variable, new SourceSpan(1, 19, 1, 25)),
@@ -173,7 +174,7 @@ x = 2";
             var code = @"def func(_): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("func", SymbolKind.Function, new SourceSpan(1, 1, 1, 17), new SourceSpan(1, 5, 1, 9), new List<HierarchicalSymbol>(), FunctionKind.Function),
             });
         }
@@ -187,7 +188,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
 ";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("sys", SymbolKind.Module, new SourceSpan(1, 8, 1, 11)),
                 new HierarchicalSymbol("np", SymbolKind.Module, new SourceSpan(2, 17, 2, 19)),
                 new HierarchicalSymbol("osjoin", SymbolKind.Module, new SourceSpan(3, 29, 3, 35)),
@@ -203,7 +204,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
     ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 2, 8), new SourceSpan(1, 7, 1, 10), new List<HierarchicalSymbol>(), FunctionKind.Class),
             });
         }
@@ -214,7 +215,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
     CONSTANT = 1234";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 2, 20), new SourceSpan(1, 7, 1, 10), new[] {
                     new HierarchicalSymbol("CONSTANT", SymbolKind.Constant, new SourceSpan(2, 5, 2, 13)),
                 }, FunctionKind.Class),
@@ -227,7 +228,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
     def __init__(self, x): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 2, 31), new SourceSpan(1, 7, 1, 10), new[] {
                     new HierarchicalSymbol("__init__", SymbolKind.Constructor, new SourceSpan(2, 5, 2, 31), new SourceSpan(2, 9, 2, 17), new[] {
                         new HierarchicalSymbol("self", SymbolKind.Variable, new SourceSpan(2, 18, 2, 22)),
@@ -243,7 +244,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
     def foo(self, x): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 2, 26), new SourceSpan(1, 7, 1, 10), new[] {
                     new HierarchicalSymbol("foo", SymbolKind.Method, new SourceSpan(2, 5, 2, 26), new SourceSpan(2, 9, 2, 12), new[] {
                         new HierarchicalSymbol("self", SymbolKind.Variable, new SourceSpan(2, 13, 2, 17)),
@@ -259,7 +260,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
     def __lt__(self, x): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 2, 29), new SourceSpan(1, 7, 1, 10), new[] {
                     new HierarchicalSymbol("__lt__", SymbolKind.Operator, new SourceSpan(2, 5, 2, 29), new SourceSpan(2, 9, 2, 15), new[] {
                         new HierarchicalSymbol("self", SymbolKind.Variable, new SourceSpan(2, 16, 2, 20)),
@@ -285,7 +286,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
     def func4(self): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 12, 25), new SourceSpan(1, 7, 1, 10), new[] {
                     new HierarchicalSymbol("func1", SymbolKind.Property, new SourceSpan(2, 5, 3, 25), new SourceSpan(3, 9, 3, 14), new[] {
                         new HierarchicalSymbol("self", SymbolKind.Variable, new SourceSpan(3, 15, 3, 19)),
@@ -313,7 +314,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
     def func2(self): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 6, 25), new SourceSpan(1, 7, 1, 10), new[] {
                     new HierarchicalSymbol("func1", SymbolKind.Property, new SourceSpan(2, 5, 3, 25), new SourceSpan(3, 9, 3, 14), new[] {
                         new HierarchicalSymbol("self", SymbolKind.Variable, new SourceSpan(3, 15, 3, 19)),
@@ -338,7 +339,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
     def func3(arg): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 9, 24), new SourceSpan(1, 7, 1, 10), new[] {
                     new HierarchicalSymbol("func1", SymbolKind.Method, new SourceSpan(2, 5, 3, 24), new SourceSpan(3, 9, 3, 14), new[] {
                         new HierarchicalSymbol("arg", SymbolKind.Variable, new SourceSpan(3, 15, 3, 18)),
@@ -366,7 +367,7 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
     def func3(cls): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 9, 24), new SourceSpan(1, 7, 1, 10), new[] {
                     new HierarchicalSymbol("func1", SymbolKind.Method, new SourceSpan(2, 5, 3, 24), new SourceSpan(3, 9, 3, 14), new[] {
                         new HierarchicalSymbol("cls", SymbolKind.Variable, new SourceSpan(3, 15, 3, 18)),
@@ -390,7 +391,7 @@ def func1(x, y): ...
 def func2(x, y): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("func1", SymbolKind.Function, new SourceSpan(1, 1, 2, 21), new SourceSpan(2, 5, 2, 10), new[] {
                     new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(2, 11, 2, 12)),
                     new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(2, 14, 2, 15)),
@@ -412,7 +413,7 @@ def func2(x, y): ...";
     def func2(self): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 6, 25), new SourceSpan(1, 7, 1, 10), new[] {
                     new HierarchicalSymbol("func1", SymbolKind.Method, new SourceSpan(2, 5, 3, 25), new SourceSpan(3, 9, 3, 14), new[] {
                         new HierarchicalSymbol("self", SymbolKind.Variable, new SourceSpan(3, 15, 3, 19)),
@@ -436,7 +437,7 @@ def func2(x, y): ...";
     def func2(self): ...";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 8, 25), new SourceSpan(1, 7, 1, 10), new[] {
                     new HierarchicalSymbol("func1", SymbolKind.Property, new SourceSpan(2, 5, 4, 25), new SourceSpan(4, 9, 4, 14), new[] {
                         new HierarchicalSymbol("self", SymbolKind.Variable, new SourceSpan(4, 15, 4, 19)),
@@ -453,12 +454,12 @@ def func2(x, y): ...";
             var code = @"f = lambda x, y: x + y";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
-                new HierarchicalSymbol("f", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("<lambda>", SymbolKind.Function, new SourceSpan(1, 5, 1, 23), new SourceSpan(1, 5, 1, 23), new[] {
                     new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 12, 1, 13)),
                     new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 15, 1, 16)),
                 }, FunctionKind.Function),
+                new HierarchicalSymbol("f", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
         }
 
@@ -467,7 +468,7 @@ def func2(x, y): ...";
             var code = @"def func(x, y):";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("func", SymbolKind.Function, new SourceSpan(1, 1, 1, 16), new SourceSpan(1, 5, 1, 9), new[] {
                     new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 10, 1, 11)),
                     new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 13, 1, 14)),
@@ -480,17 +481,31 @@ def func2(x, y): ...";
             var code = @"class Foo(object):";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("Foo", SymbolKind.Class, new SourceSpan(1, 1, 1, 19), new SourceSpan(1, 7, 1, 10), new List<HierarchicalSymbol>(), FunctionKind.Class),
             });
         }
 
         [TestMethod, Priority(0)]
-        public void WalkerIncompleteAssycn() {
+        public void WalkerIncompleteAssign() {
             var code = @"x =";
 
             var symbols = WalkSymbols(code);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void WalkerAugmentedAssignLambda() {
+            var code = @"x += lambda x, y: x + y";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("<lambda>", SymbolKind.Function, new SourceSpan(1, 6, 1, 24), new SourceSpan(1, 6, 1, 24), new[] {
+                    new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 13, 1, 14)),
+                    new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 16, 1, 17)),
+                }, FunctionKind.Function),
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
         }
@@ -503,7 +518,7 @@ def func2(x, y): ...";
             index.UpdateParseTree(uri, ast);
 
             var symbols = index.HierarchicalDocumentSymbols(uri);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
         }
@@ -516,7 +531,7 @@ def func2(x, y): ...";
             index.UpdateParseTree(uri, ast);
 
             var symbols = index.HierarchicalDocumentSymbols(uri);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
 
@@ -524,7 +539,7 @@ def func2(x, y): ...";
             index.UpdateParseTree(uri, ast);
 
             symbols = index.HierarchicalDocumentSymbols(uri);
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
         }
@@ -549,7 +564,7 @@ def func2(x, y): ...";
             index.UpdateParseTree(uri, ast);
 
             var symbols = index.WorkspaceSymbols("");
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new FlatSymbol("Foo", SymbolKind.Class, uri, new SourceSpan(1, 7, 1, 10)),
                 new FlatSymbol("foo", SymbolKind.Method, uri, new SourceSpan(2, 9, 2, 12), "Foo"),
                 new FlatSymbol("self", SymbolKind.Variable, uri, new SourceSpan(2, 13, 2, 17), "foo"),
@@ -568,7 +583,7 @@ def func2(x, y): ...";
             index.UpdateParseTree(uri, ast);
 
             var symbols = index.WorkspaceSymbols("x");
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new FlatSymbol("x", SymbolKind.Variable, uri, new SourceSpan(2, 19, 2, 20), "foo"),
             });
         }
@@ -593,7 +608,7 @@ def func2(x, y): ...";
             index.UpdateParseTree(uri, ast);
 
             var symbols = index.WorkspaceSymbols("foo");
-            symbols.Should().BeEquivalentTo(new[] {
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new FlatSymbol("Foo", SymbolKind.Class, uri, new SourceSpan(1, 7, 1, 10)),
                 new FlatSymbol("foo", SymbolKind.Method, uri, new SourceSpan(2, 9, 2, 12), "Foo"),
             });
