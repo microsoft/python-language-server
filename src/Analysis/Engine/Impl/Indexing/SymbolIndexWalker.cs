@@ -85,8 +85,8 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
                             foreach (var dec in node.Decorators.Decorators) {
                                 var maybeKind = DecoratorExpressionToKind(dec);
                                 if (maybeKind.HasValue) {
-                                    ds.Kind = maybeKind.Value.Item1;
-                                    ds._functionKind = maybeKind.Value.Item2;
+                                    ds.Kind = maybeKind.Value.kind;
+                                    ds._functionKind = maybeKind.Value.functionKind;
                                     break;
                                 }
                             }
@@ -102,14 +102,9 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
         }
 
         public override bool Walk(ImportStatement node) {
-            foreach (var (name, asName) in node.Names.Zip(node.AsNames, (a, b) => (a, b))) {
-                if (asName == null) {
-                    var span = name.GetSpan(_ast);
-                    _stack.AddSymbol(new HierarchicalSymbol(name.MakeString(), SymbolKind.Module, span));
-                } else {
-                    var span = asName.GetSpan(_ast);
-                    _stack.AddSymbol(new HierarchicalSymbol(asName.Name, SymbolKind.Module, span));
-                }
+            foreach (var (nameNode, nameString) in node.Names.Zip(node.AsNames, (name, asName) => asName != null ? (asName, asName.Name) : ((Node)name, name.MakeString()))) {
+                var span = nameNode.GetSpan(_ast);
+                _stack.AddSymbol(new HierarchicalSymbol(nameString, SymbolKind.Module, span));
             }
 
             return false;
@@ -175,7 +170,7 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
             _stack.AddSymbol(new HierarchicalSymbol(node.Name, kind, span));
         }
 
-        private (SymbolKind, string)? DecoratorExpressionToKind(Expression exp) {
+        private (SymbolKind kind, string functionKind)? DecoratorExpressionToKind(Expression exp) {
             switch (exp) {
                 case NameExpression ne when NameIsProperty(ne.Name):
                 case MemberExpression me when NameIsProperty(me.Name):
@@ -224,12 +219,12 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
         }
 
         private class SymbolStack {
-            private readonly Stack<(SymbolKind?, List<HierarchicalSymbol>)> _symbols;
+            private readonly Stack<(SymbolKind? kind, List<HierarchicalSymbol> symbols)> _symbols;
             private readonly Stack<HashSet<string>> _declared = new Stack<HashSet<string>>(new[] { new HashSet<string>() });
 
             public List<HierarchicalSymbol> Root { get; } = new List<HierarchicalSymbol>();
 
-            public SymbolKind? Parent => _symbols.Peek().Item1;
+            public SymbolKind? Parent => _symbols.Peek().kind;
 
             public SymbolStack() {
                 _symbols = new Stack<(SymbolKind?, List<HierarchicalSymbol>)>(new (SymbolKind?, List<HierarchicalSymbol>)[] { (null, Root) });
@@ -242,7 +237,7 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
 
             public List<HierarchicalSymbol> Exit() {
                 ExitDeclared();
-                return _symbols.Pop().Item2;
+                return _symbols.Pop().symbols;
             }
             public void EnterDeclared() => _declared.Push(new HashSet<string>());
 
@@ -255,7 +250,7 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
                     return;
                 }
 
-                _symbols.Peek().Item2.Add(sym);
+                _symbols.Peek().symbols.Add(sym);
                 _declared.Peek().Add(sym.Name);
             }
         }
