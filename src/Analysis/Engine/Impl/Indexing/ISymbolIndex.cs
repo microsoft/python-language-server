@@ -16,13 +16,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.PythonTools.Analysis.Indexing {
     internal interface ISymbolIndex {
-        Task<IEnumerable<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(Uri uri, CancellationToken token = default);
+        IEnumerable<HierarchicalSymbol> HierarchicalDocumentSymbols(Uri uri);
 
-        Task<IEnumerable<FlatSymbol>> WorkspaceSymbolsAsync(string query, CancellationToken token = default);
+        IEnumerable<FlatSymbol> WorkspaceSymbols(string query);
     }
 }

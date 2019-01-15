@@ -18,8 +18,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
@@ -29,33 +27,27 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
 
         public SymbolIndex() { }
 
-        public async Task<IEnumerable<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(Uri uri, CancellationToken token = default) {
+        public IEnumerable<HierarchicalSymbol> HierarchicalDocumentSymbols(Uri uri) {
             return _index.TryGetValue(uri, out var list) ? list : Enumerable.Empty<HierarchicalSymbol>();
         }
 
-        public Task<IEnumerable<FlatSymbol>> WorkspaceSymbolsAsync(string query, CancellationToken token = default) {
-            return Task.FromResult(WorkspaceSymbols(query));
-        }
-
-        private IEnumerable<FlatSymbol> WorkspaceSymbols(string query, CancellationToken token = default) {
+        public IEnumerable<FlatSymbol> WorkspaceSymbols(string query) {
             foreach (var kvp in _index) {
-                foreach (var found in WorkspaceSymbolsQuery(query, kvp.Key, kvp.Value, token: token)) {
+                foreach (var found in WorkspaceSymbolsQuery(query, kvp.Key, kvp.Value)) {
                     yield return found;
                 }
             }
         }
 
-        private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string query, Uri uri, IEnumerable<HierarchicalSymbol> symbols, CancellationToken token = default) {
+        private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string query, Uri uri, IEnumerable<HierarchicalSymbol> symbols) {
             // Some semblance of a BFS.
             var ll = new LinkedList<(HierarchicalSymbol, string)>(symbols.Select(s => (s, (string)null)));
-            
-            while (ll.First != null) {
-                token.ThrowIfCancellationRequested();
 
+            while (ll.First != null) {
                 var (sym, parent) = ll.First.Value;
                 ll.RemoveFirst();
 
-                if (sym.Name.Contains(query)) {
+                if (sym.Name.ContainsOrdinal(query, ignoreCase: true)) {
                     yield return new FlatSymbol(sym.Name, sym.Kind, uri, sym.SelectionRange, parent);
                 }
 

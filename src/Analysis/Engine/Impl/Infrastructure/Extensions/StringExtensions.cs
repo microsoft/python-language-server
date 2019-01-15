@@ -201,6 +201,9 @@ namespace Microsoft.PythonTools.Analysis.Infrastructure {
         public static bool EqualsOrdinal(this string s, int index, string other, int otherIndex, int length, bool ignoreCase = false)
             => string.Compare(s, index, other, otherIndex, length, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) == 0;
 
+        public static bool ContainsOrdinal(this string s, string value, bool ignoreCase = false)
+            => s.IndexOfOrdinal(value, ignoreCase: ignoreCase) != -1;
+
         public static string[] Split(this string s, char separator, int startIndex, int length) {
             var count = 0;
             var endIndex = startIndex + length;

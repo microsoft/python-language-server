@@ -12,15 +12,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using FluentAssertions;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Indexing;
 using Microsoft.PythonTools.Parsing;
+using Microsoft.PythonTools.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -496,14 +495,118 @@ def func2(x, y): ...";
             });
         }
 
+        [TestMethod, Priority(0)]
+        public void IndexHierarchicalDocument() {
+            var index = new SymbolIndex();
+            var uri = TestData.GetDefaultModuleUri();
+            var ast = GetParse("x = 1");
+            index.UpdateParseTree(uri, ast);
+
+            var symbols = index.HierarchicalDocumentSymbols(uri);
+            symbols.Should().BeEquivalentTo(new[] {
+                new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void IndexHierarchicalDocumentUpdate() {
+            var index = new SymbolIndex();
+            var uri = TestData.GetDefaultModuleUri();
+            var ast = GetParse("x = 1");
+            index.UpdateParseTree(uri, ast);
+
+            var symbols = index.HierarchicalDocumentSymbols(uri);
+            symbols.Should().BeEquivalentTo(new[] {
+                new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+            });
+
+            ast = GetParse("y = 1");
+            index.UpdateParseTree(uri, ast);
+
+            symbols = index.HierarchicalDocumentSymbols(uri);
+            symbols.Should().BeEquivalentTo(new[] {
+                new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void IndexHierarchicalDocumentNotFound() {
+            var index = new SymbolIndex();
+            var uri = TestData.GetDefaultModuleUri();
+
+            var symbols = index.HierarchicalDocumentSymbols(uri);
+            symbols.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public void IndexWorkspaceSymbolsFlatten() {
+            var code = @"class Foo(object):
+    def foo(self, x): ...";
+
+            var index = new SymbolIndex();
+            var uri = TestData.GetDefaultModuleUri();
+            var ast = GetParse(code);
+            index.UpdateParseTree(uri, ast);
+
+            var symbols = index.WorkspaceSymbols("");
+            symbols.Should().BeEquivalentTo(new[] {
+                new FlatSymbol("Foo", SymbolKind.Class, uri, new SourceSpan(1, 7, 1, 10)),
+                new FlatSymbol("foo", SymbolKind.Method, uri, new SourceSpan(2, 9, 2, 12), "Foo"),
+                new FlatSymbol("self", SymbolKind.Variable, uri, new SourceSpan(2, 13, 2, 17), "foo"),
+                new FlatSymbol("x", SymbolKind.Variable, uri, new SourceSpan(2, 19, 2, 20), "foo"),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void IndexWorkspaceSymbolsFiltered() {
+            var code = @"class Foo(object):
+    def foo(self, x): ...";
+
+            var index = new SymbolIndex();
+            var uri = TestData.GetDefaultModuleUri();
+            var ast = GetParse(code);
+            index.UpdateParseTree(uri, ast);
+
+            var symbols = index.WorkspaceSymbols("x");
+            symbols.Should().BeEquivalentTo(new[] {
+                new FlatSymbol("x", SymbolKind.Variable, uri, new SourceSpan(2, 19, 2, 20), "foo"),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void IndexWorkspaceSymbolsNotFound() {
+            var index = new SymbolIndex();
+            var uri = TestData.GetDefaultModuleUri();
+
+            var symbols = index.WorkspaceSymbols("");
+            symbols.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public void IndexWorkspaceSymbolsCaseInsensitive() {
+            var code = @"class Foo(object):
+    def foo(self, x): ...";
+
+            var index = new SymbolIndex();
+            var uri = TestData.GetDefaultModuleUri();
+            var ast = GetParse(code);
+            index.UpdateParseTree(uri, ast);
+
+            var symbols = index.WorkspaceSymbols("foo");
+            symbols.Should().BeEquivalentTo(new[] {
+                new FlatSymbol("Foo", SymbolKind.Class, uri, new SourceSpan(1, 7, 1, 10)),
+                new FlatSymbol("foo", SymbolKind.Method, uri, new SourceSpan(2, 9, 2, 12), "Foo"),
+            });
+        }
+
+        private PythonAst GetParse(string code, PythonLanguageVersion version = PythonLanguageVersion.V37)
+            => Parser.CreateParser(new StringReader(code), version).ParseFile();
+
         private IReadOnlyList<HierarchicalSymbol> WalkSymbols(string code, PythonLanguageVersion version = PythonLanguageVersion.V37) {
-            using (var reader = new StringReader(code)) {
-                var parser = Parser.CreateParser(reader, PythonLanguageVersion.V37);
-                var ast = parser.ParseFile();
-                var walker = new SymbolIndexWalker(ast);
-                ast.Walk(walker);
-                return walker.Symbols;
-            }
+            var ast = GetParse(code);
+            var walker = new SymbolIndexWalker(ast);
+            ast.Walk(walker);
+            return walker.Symbols;
         }
     }
 }

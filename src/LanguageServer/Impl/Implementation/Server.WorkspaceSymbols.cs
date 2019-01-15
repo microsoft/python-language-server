@@ -32,37 +32,50 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private static int _symbolHierarchyDepthLimit = 10;
         private static int _symbolHierarchyMaxSymbols = 1000;
 
-        public override async Task<SymbolInformation[]> WorkspaceSymbols(WorkspaceSymbolParams @params, CancellationToken cancellationToken) {
-            var symbols = await SymbolIndex.WorkspaceSymbolsAsync(@params.query, cancellationToken);
-            return symbols.Take(_symbolHierarchyMaxSymbols).Select(s => new SymbolInformation {
-                name = s.Name,
-                kind = (SymbolKind)s.Kind,
-                location = new Location {
-                    range = s.Range,
-                    uri = s.DocumentUri,
-                },
-                containerName = s.ContainerName,
+        public override Task<SymbolInformation[]> WorkspaceSymbols(WorkspaceSymbolParams @params, CancellationToken cancellationToken) {
+            var symbols = SymbolIndex.WorkspaceSymbols(@params.query);
+
+            var result = symbols.Take(_symbolHierarchyMaxSymbols).Select(s => {
+                cancellationToken.ThrowIfCancellationRequested();
+                return new SymbolInformation {
+                    name = s.Name,
+                    kind = (SymbolKind)s.Kind,
+                    location = new Location {
+                        range = s.Range,
+                        uri = s.DocumentUri,
+                    },
+                    containerName = s.ContainerName,
+                };
             }).ToArray();
+
+            return Task.FromResult(result);
         }
 
-        public override async Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
+        public override Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
-            var symbols = await SymbolIndex.HierarchicalDocumentSymbolsAsync(uri, cancellationToken);
-            return symbols.Flatten(uri, depthLimit: _symbolHierarchyDepthLimit).Take(_symbolHierarchyMaxSymbols).Select(s => new SymbolInformation {
-                name = s.Name,
-                kind = (SymbolKind)s.Kind,
-                location = new Location {
-                    range = s.Range,
-                    uri = s.DocumentUri,
-                },
-                containerName = s.ContainerName,
+            var symbols = SymbolIndex.HierarchicalDocumentSymbols(uri);
+
+            var result = symbols.Flatten(uri, depthLimit: _symbolHierarchyDepthLimit).Take(_symbolHierarchyMaxSymbols).Select(s => {
+                cancellationToken.ThrowIfCancellationRequested();
+                return new SymbolInformation {
+                    name = s.Name,
+                    kind = (SymbolKind)s.Kind,
+                    location = new Location {
+                        range = s.Range,
+                        uri = s.DocumentUri,
+                    },
+                    containerName = s.ContainerName,
+                };
             }).ToArray();
+
+            return Task.FromResult(result);
         }
 
-        public override async Task<DocumentSymbol[]> HierarchicalDocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
+        public override Task<DocumentSymbol[]> HierarchicalDocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
-            var symbols = await SymbolIndex.HierarchicalDocumentSymbolsAsync(uri, cancellationToken);
-            return ToDocumentSymbols(symbols);
+            var symbols = SymbolIndex.HierarchicalDocumentSymbols(uri);
+            var result = ToDocumentSymbols(symbols, cancellationToken);
+            return Task.FromResult(result);
         }
 
         private static async Task<List<IMemberResult>> GetModuleVariablesAsync(ProjectEntry entry, GetMemberOptions opts, string prefix, int timeout, CancellationToken token) {
@@ -88,7 +101,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return result;
         }
 
-        private DocumentSymbol[] ToDocumentSymbols(IEnumerable<HierarchicalSymbol> hSymbols) {
+        private DocumentSymbol[] ToDocumentSymbols(IEnumerable<HierarchicalSymbol> hSymbols, CancellationToken cancellationToken = default(CancellationToken)) {
             return hSymbols.MaybeEnumerate().Select(hSym => new DocumentSymbol {
                 name = hSym.Name,
                 detail = hSym.Detail,
@@ -99,10 +112,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 children = ToDocumentSymbols(hSym.Children),
                 _functionKind = hSym._functionKind,
             }).Select(v => {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 if (v.selectionRange.start < v.range.start || v.selectionRange.end > v.range.end) {
                     Debug.Fail($"selectionRange {v.selectionRange} not encompassed by range {v.range}");
                     v.selectionRange = v.range;
                 }
+
                 return v;
             }).ToArray();
         }
