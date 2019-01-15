@@ -86,13 +86,15 @@ namespace Microsoft.PythonTools.Analysis {
         public static IEqualityComparer<ILocationInfo> FullComparer { get; } = new FullLocationComparer();
 
         sealed class FullLocationComparer : IEqualityComparer<ILocationInfo>, IEqualityComparer<LocationInfo> {
-            public bool Equals(LocationInfo x, LocationInfo y) => Equals(x, y);
-            public bool Equals(ILocationInfo x, ILocationInfo y) {
+            public bool Equals(LocationInfo x, LocationInfo y) => EqualsImpl(x, y);
+            public bool Equals(ILocationInfo x, ILocationInfo y) => EqualsImpl(x, y);
+
+            private static bool EqualsImpl(ILocationInfo x, ILocationInfo y) {
                 return x.StartLine == y.StartLine &&
-                    x.StartColumn == y.StartColumn &&
-                    x.FilePath == y.FilePath &&
-                    x.EndLine == y.EndLine &&
-                    x.EndColumn == x.EndColumn;
+                       x.StartColumn == y.StartColumn &&
+                       x.FilePath == y.FilePath &&
+                       x.EndLine == y.EndLine &&
+                       x.EndColumn == x.EndColumn;
             }
 
             public int GetHashCode(LocationInfo obj) => GetHashCode(obj);
