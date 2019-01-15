@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
+#if 0
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed class FunctionCallEvaluator: AnalysisWalker {
         private readonly ExpressionEval _eval;
@@ -174,3 +175,4 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
     }
 }
+#endif
