@@ -18,14 +18,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
     internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName, IEquatable<IPythonType> {
         private readonly object _lock = new object();
+        private readonly Func<string, LocationInfo> _locationProvider;
         private Func<string, string> _documentationProvider;
-        private Func<string, LocationInfo> _locationProvider;
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
 

@@ -15,7 +15,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
@@ -47,8 +47,6 @@ namespace Microsoft.Python.Analysis.Types {
         // Return value can be an instance or a type info. Consider type(C()) returning
         // type info of C vs. return C() that returns an instance of C.
         private Func<string, string> _documentationProvider;
-
-        private IMember _returnValue;
         private bool _fromAnnotation;
 
         public PythonFunctionOverload(string name, IPythonModule declaringModule, LocationInfo location, string returnDocumentation = null)
@@ -78,27 +76,30 @@ namespace Microsoft.Python.Analysis.Types {
             if (value.IsUnknown()) {
                 return; // Don't add useless values.
             }
-            if (_returnValue.IsUnknown()) {
+            if (StaticReturnValue.IsUnknown()) {
                 SetReturnValue(value, false);
                 return;
             }
             // If return value is set from annotation, it should not be changing.
-            var currentType = _returnValue.GetPythonType();
+            var currentType = StaticReturnValue.GetPythonType();
             var valueType = value.GetPythonType();
             if (!_fromAnnotation && !currentType.Equals(valueType)) {
                 var type = PythonUnionType.Combine(currentType, valueType);
                 // Track instance vs type info.
-                _returnValue = value is IPythonInstance ? new PythonInstance(type) : (IMember)type;
+                StaticReturnValue = value is IPythonInstance ? new PythonInstance(type) : (IMember)type;
             }
         }
 
         internal void SetReturnValue(IMember value, bool fromAnnotation) {
-            _returnValue = value;
+            StaticReturnValue = value;
             _fromAnnotation = fromAnnotation;
         }
 
         internal void SetReturnValueProvider(ReturnValueProvider provider)
             => _returnValueProvider = provider;
+
+        internal IMember StaticReturnValue { get; private set; }
+
 
         #region IPythonFunctionOverload
         public FunctionDefinition FunctionDefinition { get; }
@@ -129,9 +130,9 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             // Then see if return value matches type of one of the input arguments.
-            var t = _returnValue.GetPythonType();
+            var t = StaticReturnValue.GetPythonType();
             if (!(t is IFunctionArgumentType) && !t.IsUnknown()) {
-                return _returnValue;
+                return StaticReturnValue;
             }
 
             if (t is IFunctionArgumentType cat && args != null) {
@@ -140,8 +141,22 @@ namespace Microsoft.Python.Analysis.Types {
                     return rt;
                 }
             }
-            return _returnValue;
+            return StaticReturnValue;
         }
         #endregion
+
+        private sealed class ReturnValueCache {
+            private const int MaxResults = 10;
+            private readonly Dictionary<ArgumentSet, IMember> _results = new Dictionary<ArgumentSet, IMember>(new ArgumentSetComparer());
+
+            public bool TryGetResult(IReadOnlyList<IMember> args, out IMember result) 
+                => _results.TryGetValue(new ArgumentSet(args), out result);
+
+            public void AddResult(IReadOnlyList<IMember> args, out IMember result) {
+                var key = new ArgumentSet(args);
+                Debug.Assert(!_results.ContainsKey(key));
+                _results[key] = result;
+            }
+        }
     }
 }

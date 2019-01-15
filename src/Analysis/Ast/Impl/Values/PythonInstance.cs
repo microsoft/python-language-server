@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Values {
     /// Type information is marked as the type it describes, such as <see cref="PythonMemberType.Class"/>.
     /// </summary>
     [DebuggerDisplay("Instance of {Type.Name}")]
-    internal class PythonInstance : IPythonInstance {
+    internal class PythonInstance : IPythonInstance, IEquatable<IPythonInstance> {
         public PythonInstance(IPythonType type, LocationInfo location = null) {
             Type = type ?? throw new ArgumentNullException(nameof(type));
             Location = location ?? LocationInfo.Empty;
@@ -62,5 +62,7 @@ namespace Microsoft.Python.Analysis.Values {
             var instance = o?.GetReturnValue(LocationInfo.Empty);
             return instance != null ? new PythonInstanceIterator(instance, Type.DeclaringModule.Interpreter) : null;
         }
+
+        public bool Equals(IPythonInstance other) => Type?.Equals(other?.Type) == true;
     }
 }

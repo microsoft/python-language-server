@@ -19,6 +19,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="System.Collections.Specialized" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="get_search_paths.py">

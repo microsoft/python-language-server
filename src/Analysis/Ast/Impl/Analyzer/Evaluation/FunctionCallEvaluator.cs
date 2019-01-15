@@ -15,80 +15,39 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Analyzer.Symbols {
-    [DebuggerDisplay("{FunctionDefinition.Name}")]
-    internal sealed class FunctionEvaluator : MemberEvaluator {
-        private readonly IPythonClassMember _function;
+namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
+    internal sealed class FunctionCallEvaluator: AnalysisWalker {
+        private readonly ExpressionEval _eval;
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonType _declaringType;
         private readonly IPythonClassType _self;
+        private IMember _result;
 
-        public FunctionEvaluator(
-            ExpressionEval eval,
-            FunctionDefinition targetFunction,
-            PythonFunctionOverload overload,
-            IPythonClassMember function,
-            IPythonType declaringType
-        ) : base(eval, targetFunction) {
-            FunctionDefinition = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
+        public FunctionCallEvaluator(ExpressionEval eval, PythonFunctionOverload overload, IPythonType declaringType) {
+            _eval = _eval ?? throw new ArgumentNullException(nameof(eval));
             _overload = overload ?? throw new ArgumentNullException(nameof(overload));
-            _function = function ?? throw new ArgumentNullException(nameof(function));
             _declaringType = declaringType;
             _self = _declaringType as PythonClassType;
         }
 
-        public FunctionDefinition FunctionDefinition { get; }
-
-        public override async Task EvaluateAsync(CancellationToken cancellationToken = default) {
-            if (SymbolTable.ReplacedByStubs.Contains(Target)) {
-                return;
-            }
-
+        public async Task<IMember> EvaluateCallAsync(IReadOnlyList<IMember> args, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            // Process annotations.
-            var annotationType = await Eval.GetTypeFromAnnotationAsync(FunctionDefinition.ReturnAnnotation, cancellationToken);
-            if (!annotationType.IsUnknown()) {
-                // Annotations are typically types while actually functions return
-                // instances unless specifically annotated to a type such as Type[T].
-                var instance = annotationType.CreateInstance(annotationType.Name, Eval.GetLoc(FunctionDefinition), Array.Empty<object>());
-                _overload.SetReturnValue(instance, true);
-            } else {
-                // Check if function is a generator
-                var suite = FunctionDefinition.Body as SuiteStatement;
-                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
-                if (yieldExpr != null) {
-                    // Function return is an iterator
-                    var yieldValue = await Eval.GetValueFromExpressionAsync(yieldExpr.Expression, cancellationToken) ?? Eval.UnknownType;
-                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
-                    _overload.SetReturnValue(returnValue, true);
-                }
-            }
 
-            using (Eval.OpenScope(FunctionDefinition, out _)) {
+            // Open scope and declare parameters
+            using (_eval.OpenScope(_overload.FunctionDefinition, out _)) {
                 await DeclareParametersAsync(cancellationToken);
-                //  Evaluate inner functions after we declared parameters.
-                //await EvaluateInnerFunctionsAsync(FunctionDefinition, cancellationToken);
-
-                if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
-                    // Return type from the annotation is sufficient for libraries
-                    // and stubs, no need to walk the body.
-                    if (FunctionDefinition.Body != null && Module.ModuleType != ModuleType.Specialized) {
-                        await FunctionDefinition.Body.WalkAsync(this, cancellationToken);
-                    }
-                }
+                await _overload.FunctionDefinition.Body.WalkAsync(this, cancellationToken);
             }
+            return _result;
         }
 
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
@@ -111,14 +70,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
             var value = await Eval.GetValueFromExpressionAsync(node.Expression, cancellationToken);
-            if (value != null) {
-                _overload.AddReturnValue(value);
+            if (!value.IsUnknown()) {
+                _result = value;
+                return false;
             }
-            return true; // We want to evaluate all code so all private variables in __new__ get defined
+            return true;
         }
 
         // Classes and functions are walked by their respective evaluators
-        public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public override async Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
+            await SymbolTable.EvaluateAsync(node, cancellationToken);
+            return false;
+        }
+
         public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
             await SymbolTable.EvaluateAsync(node, cancellationToken);
             return false;

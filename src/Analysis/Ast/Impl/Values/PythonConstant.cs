@@ -13,10 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
-    internal class PythonConstant : PythonInstance, IPythonConstant {
+    internal class PythonConstant : PythonInstance, IPythonConstant, IEquatable<IPythonConstant> {
         public PythonConstant(object value, IPythonType type, LocationInfo location)
             : base(type, location) {
             Value = value;
@@ -30,6 +31,13 @@ namespace Microsoft.Python.Analysis.Values {
             }
             value = default;
             return false;
+        }
+
+        public bool Equals(IPythonConstant other) {
+            if(!base.Equals(other)) {
+                return false;
+            }
+            return Value?.Equals(other?.Value) == true;
         }
     }
 }

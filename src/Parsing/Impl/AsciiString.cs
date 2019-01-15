@@ -14,10 +14,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Python.Parsing {
-    public sealed class AsciiString {
+    public sealed class AsciiString: IEquatable<AsciiString> {
         public AsciiString(byte[] bytes, string str) {
             Bytes = bytes;
             String = str;
@@ -30,12 +32,25 @@ namespace Microsoft.Python.Parsing {
         public override string ToString() => String;
 
         public override bool Equals(object obj) {
-            if (obj is AsciiString other) {
-                return String == other.String;
+            if (ReferenceEquals(null, obj)) {
+                return false;
             }
-            return false;
+            if (ReferenceEquals(this, obj)) {
+                return true;
+            }
+            return obj is AsciiString other && Equals(other);
         }
 
-        public override int GetHashCode() => String.GetHashCode();
+        public override int GetHashCode() {
+            unchecked {
+                return ((Bytes != null ? Bytes.GetHashCode() : 0) * 397) ^ (String != null ? String.GetHashCode() : 0);
+            }
+        }
+
+        public bool Equals(AsciiString other) {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Bytes.SequenceEqual(other.Bytes) && string.Equals(String, other.String);
+        }
     }
 }
