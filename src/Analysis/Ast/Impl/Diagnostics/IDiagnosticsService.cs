@@ -13,11 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Diagnostics {
-    public interface IDiagnosticsSink {
+    public interface IDiagnosticsService {
+        IReadOnlyList<DiagnosticsEntry> Diagnostics { get; }
         void Add(DiagnosticsEntry entry);
         void Add(string message, SourceSpan span, string errorCode, Severity severity);
     }

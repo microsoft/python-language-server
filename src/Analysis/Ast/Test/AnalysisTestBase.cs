@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -26,7 +25,6 @@ using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
@@ -65,6 +63,8 @@ namespace Microsoft.Python.Analysis.Tests {
             configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
 
             var sm = CreateServiceManager();
+
+            sm.AddService(new DiagnosticsService());
 
             TestLogger.Log(TraceEventType.Information, "Create TestDependencyResolver");
             var dependencyResolver = new TestDependencyResolver();
@@ -144,10 +144,12 @@ namespace Microsoft.Python.Analysis.Tests {
                 => Task.FromResult<IDependencyChainNode>(new DependencyChainNode(document));
         }
 
-        protected sealed class DiagSink : IDiagnosticsSink {
-            public List<DiagnosticsEntry> Diagnostics { get; }= new List<DiagnosticsEntry>();
+        protected sealed class DiagnosticsService : IDiagnosticsService {
+            private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
 
-            public void Add(DiagnosticsEntry entry) => Diagnostics.Add(entry);
+            public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
+
+            public void Add(DiagnosticsEntry entry) => _diagnostics.Add(entry);
 
             public void Add(string message, SourceSpan span, string errorCode, Severity severity) 
                 => Add(new DiagnosticsEntry(message, span, errorCode, severity));

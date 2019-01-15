@@ -34,8 +34,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionEval : IDiagnosticsSink {
+    internal sealed partial class ExpressionEval : IDiagnosticsService {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
+        private readonly List<DiagnosticsEntry> diagnostics = new List<DiagnosticsEntry>();
 
         public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
@@ -63,10 +64,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IServiceContainer Services { get; }
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
         public IPythonType UnknownType { get; }
-        public List<DiagnosticsEntry> Diagnostics { get; } = new List<DiagnosticsEntry>();
 
         public LocationInfo GetLoc(Node node) => node.GetLocation(Module, Ast);
         public LocationInfo GetLocOfName(Node node, NameExpression header) => node.GetLocationOfName(header, Module, Ast);
+
+        #region IDiagnosticsService
+        public IReadOnlyList<DiagnosticsEntry> Diagnostics => diagnostics;
+        public void Add(DiagnosticsEntry entry) => diagnostics.Add(entry);
+
+        public void Add(string message, SourceSpan span, string errorCode, Severity severity)
+            => Add(new DiagnosticsEntry(message, span, errorCode, severity));
+        #endregion
 
         public Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default)
             => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
@@ -188,12 +196,5 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             return trueValue ?? falseValue;
         }
-
-        #region IDiagnosticsSink
-        public void Add(DiagnosticsEntry entry) => Diagnostics.Add(entry);
-
-        public void Add(string message, SourceSpan span, string errorCode, Severity severity)
-            => Add(new DiagnosticsEntry(message, span, errorCode, severity));
-        #endregion
     }
 }
