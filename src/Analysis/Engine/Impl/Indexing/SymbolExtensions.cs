@@ -16,12 +16,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Microsoft.PythonTools.Analysis.Indexing {
     internal static class SymbolExtensions {
         public static IEnumerable<FlatSymbol> Flatten(this IEnumerable<HierarchicalSymbol> docSyms, Uri uri, string parent = null, int? depthLimit = null) {
-            foreach (var sym in docSyms ?? Enumerable.Empty<HierarchicalSymbol>()) {
+            foreach (var sym in docSyms) {
                 yield return new FlatSymbol(sym.Name, sym.Kind, uri, sym.SelectionRange, parent);
 
                 if (depthLimit != null) {
