@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -67,7 +68,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="instance">Instance of the type.</param>
         /// <param name="memberName">Method name.</param>
         /// <param name="args">Call arguments.</param>
-        IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args);
+        IMember CallAsync(IPythonInstance instance, ArgumentSet argSet, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Invokes indexer on the specified instance.

@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -166,7 +167,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         private IPythonFunctionOverload FindOverload(IReadOnlyList<IMember> args) {
             // Find best overload match. Of only one, use it.
-            // TODO: match better, see ArgumentSet class in DDG.
+            var argSet = ArgumentSet.FromArgs(FunctionDefinition, )
             if (Overloads.Count == 1) {
                 return Overloads[0];
             }

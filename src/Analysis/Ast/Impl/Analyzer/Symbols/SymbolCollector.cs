@@ -96,11 +96,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 existing = new PythonFunctionType(node, _eval.Module, declaringType, loc);
                 _eval.DeclareVariable(node.Name, existing, loc);
             }
-            AddOverload(node, existing, declaringType, o => existing.AddOverload(o));
+            AddOverload(node, existing, o => existing.AddOverload(o));
             return existing;
         }
 
-        private void AddOverload(FunctionDefinition node, IPythonClassMember function, IPythonType declaringType, Action<IPythonFunctionOverload> addOverload) {
+        private void AddOverload(FunctionDefinition node, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
             // Check if function exists in stubs. If so, take overload from stub
             // and the documentation from this actual module.
             if (!_table.ReplacedByStubs.Contains(node)) {
@@ -123,7 +123,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var returnDoc = node.ReturnAnnotation?.ToCodeString(_eval.Ast);
                 var overload = new PythonFunctionOverload(node, _eval.Module, location, returnDoc);
                 addOverload(overload);
-                _table.Add(new FunctionEvaluator(_eval, node, overload, function, declaringType));
+                _table.Add(new FunctionEvaluator(_eval, node, overload, function));
             }
         }
 
@@ -159,7 +159,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 existing = new PythonPropertyType(node, declaringModule, declaringType, isAbstract, loc);
                 _eval.DeclareVariable(node.Name, existing, loc);
             }
-            AddOverload(node, existing, declaringType, o => existing.AddOverload(o));
+            AddOverload(node, existing, o => existing.AddOverload(o));
             return existing;
         }
 

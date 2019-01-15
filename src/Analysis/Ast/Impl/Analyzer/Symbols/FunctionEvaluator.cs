@@ -32,21 +32,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     internal sealed class FunctionEvaluator : MemberEvaluator {
         private readonly IPythonClassMember _function;
         private readonly PythonFunctionOverload _overload;
-        private readonly IPythonType _declaringType;
         private readonly IPythonClassType _self;
 
         public FunctionEvaluator(
             ExpressionEval eval,
             FunctionDefinition targetFunction,
             PythonFunctionOverload overload,
-            IPythonClassMember function,
-            IPythonType declaringType
+            IPythonClassMember function
         ) : base(eval, targetFunction) {
             FunctionDefinition = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
             _overload = overload ?? throw new ArgumentNullException(nameof(overload));
             _function = function ?? throw new ArgumentNullException(nameof(function));
-            _declaringType = declaringType;
-            _self = _declaringType as PythonClassType;
+            _self = function.DeclaringType as PythonClassType;
         }
 
         public FunctionDefinition FunctionDefinition { get; }
@@ -78,9 +75,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             using (Eval.OpenScope(FunctionDefinition, out _)) {
                 await DeclareParametersAsync(cancellationToken);
-                //  Evaluate inner functions after we declared parameters.
-                //await EvaluateInnerFunctionsAsync(FunctionDefinition, cancellationToken);
-
                 if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries
                     // and stubs, no need to walk the body.
@@ -95,15 +89,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
 
             foreach (var lhs in node.Left) {
-                if (lhs is MemberExpression memberExp && memberExp.Target is NameExpression nameExp1) {
-                    if (_declaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
-                        t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, true);
+                switch (lhs) {
+                    case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1: {
+                        if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
+                            t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, true);
+                        }
+                        continue;
                     }
-                    continue;
-                }
-
-                if (lhs is NameExpression nameExp2 && nameExp2.Name == "self") {
-                    return true; // Don't assign to 'self'
+                    case NameExpression nameExp2 when nameExp2.Name == "self":
+                        return true; // Don't assign to 'self'
                 }
             }
             return await base.WalkAsync(node, cancellationToken);
