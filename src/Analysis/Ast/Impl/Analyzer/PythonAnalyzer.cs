@@ -120,10 +120,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             // Note that we do not set the new analysis here and rather let
             // Python analyzer to call NotifyAnalysisComplete.
-            var gs = await walker.CompleteAsync(cancellationToken);
+            await walker.CompleteAsync(cancellationToken);
             _log?.Log(TraceEventType.Verbose, $"Analysis of {node.Document.Name}({node.Document.ModuleType}) complete in {(DateTime.Now - _startTime).TotalMilliseconds} ms.");
-            return new DocumentAnalysis(node.Document, analysisVersion, gs);
+            return new DocumentAnalysis(node.Document, analysisVersion, walker.GlobalScope, walker.Diagnostics, walker.Ast);
         }
-
     }
 }

@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <summary>
         /// Provides collection of parsing errors, if any.
         /// </summary>
-        IEnumerable<DiagnosticsEntry> GetDiagnostics();
+        IEnumerable<DiagnosticsEntry> GetParseErrors();
 
         /// <summary>
         /// Fires when new AST is ready (typically as a result of the document change)

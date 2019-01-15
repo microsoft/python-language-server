@@ -145,18 +145,18 @@ namespace Microsoft.Python.Analysis.Types {
         }
         #endregion
 
-        private sealed class ReturnValueCache {
-            private const int MaxResults = 10;
-            private readonly Dictionary<ArgumentSet, IMember> _results = new Dictionary<ArgumentSet, IMember>(new ArgumentSetComparer());
+        //private sealed class ReturnValueCache {
+        //    private const int MaxResults = 10;
+        //    private readonly Dictionary<ArgumentSet, IMember> _results = new Dictionary<ArgumentSet, IMember>(new ArgumentSetComparer());
 
-            public bool TryGetResult(IReadOnlyList<IMember> args, out IMember result) 
-                => _results.TryGetValue(new ArgumentSet(args), out result);
+        //    public bool TryGetResult(IReadOnlyList<IMember> args, out IMember result) 
+        //        => _results.TryGetValue(new ArgumentSet(args), out result);
 
-            public void AddResult(IReadOnlyList<IMember> args, out IMember result) {
-                var key = new ArgumentSet(args);
-                Debug.Assert(!_results.ContainsKey(key));
-                _results[key] = result;
-            }
-        }
+        //    public void AddResult(IReadOnlyList<IMember> args, out IMember result) {
+        //        var key = new ArgumentSet(args);
+        //        Debug.Assert(!_results.ContainsKey(key));
+        //        _results[key] = result;
+        //    }
+        //}
     }
 }

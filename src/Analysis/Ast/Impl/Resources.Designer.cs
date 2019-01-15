@@ -61,6 +61,60 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Parameter {0} already specified..
+        /// </summary>
+        internal static string Analysis_ParameterAlreadySpecified {
+            get {
+                return ResourceManager.GetString("Analysis_ParameterAlreadySpecified", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameter {0} is missing..
+        /// </summary>
+        internal static string Analysis_ParameterMissing {
+            get {
+                return ResourceManager.GetString("Analysis_ParameterMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Positional arguments are not allowed after keyword argument..
+        /// </summary>
+        internal static string Analysis_PositionalArgumentAfterKeyword {
+            get {
+                return ResourceManager.GetString("Analysis_PositionalArgumentAfterKeyword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Too many function arguments..
+        /// </summary>
+        internal static string Analysis_TooManyFunctionArguments {
+            get {
+                return ResourceManager.GetString("Analysis_TooManyFunctionArguments", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Too many positional arguments before &apos;*&apos; argument..
+        /// </summary>
+        internal static string Analysis_TooManyPositionalArgumentBeforeStar {
+            get {
+                return ResourceManager.GetString("Analysis_TooManyPositionalArgumentBeforeStar", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unknown parameter name..
+        /// </summary>
+        internal static string Analysis_UnknownParameterName {
+            get {
+                return ResourceManager.GetString("Analysis_UnknownParameterName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to If checked, statements separated by semicolons are moved onto individual lines. If unchecked, lines with multiple statements are not modified..
         /// </summary>
         internal static string BreakMultipleStatementsPerLineLong {

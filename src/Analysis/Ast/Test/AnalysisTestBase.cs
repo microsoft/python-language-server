@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -22,6 +23,7 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Dependencies;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -31,6 +33,8 @@ using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Tests;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using TestUtilities;
 
@@ -138,6 +142,15 @@ namespace Microsoft.Python.Analysis.Tests {
         private sealed class TestDependencyResolver : IDependencyResolver {
             public Task<IDependencyChainNode> GetDependencyChainAsync(IDocument document, CancellationToken cancellationToken)
                 => Task.FromResult<IDependencyChainNode>(new DependencyChainNode(document));
+        }
+
+        protected sealed class DiagSink : IDiagnosticsSink {
+            public List<DiagnosticsEntry> Diagnostics { get; }= new List<DiagnosticsEntry>();
+
+            public void Add(DiagnosticsEntry entry) => Diagnostics.Add(entry);
+
+            public void Add(string message, SourceSpan span, string errorCode, Severity severity) 
+                => Add(new DiagnosticsEntry(message, span, errorCode, severity));
         }
     }
 }

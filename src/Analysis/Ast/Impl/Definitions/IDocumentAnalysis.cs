@@ -14,10 +14,12 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     /// <summary>
@@ -35,6 +37,11 @@ namespace Microsoft.Python.Analysis {
         /// updated since.
         /// </summary>
         int Version { get; }
+
+        /// <summary>
+        /// AST that was used in the analysis.
+        /// </summary>
+        PythonAst Ast { get; }
 
         /// <summary>
         /// Document/module global scope.
@@ -82,5 +89,11 @@ namespace Microsoft.Python.Analysis {
         /// The location in the file where the available members should be looked up.
         /// </param>
         IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location);
+
+        /// <summary>
+        /// Provides analysis diagnostics (does not include parsing errors).
+        /// For parse errors <see cref="IDocument.GetParseErrors"/>
+        /// </summary>
+        IEnumerable<DiagnosticsEntry> Diagnostics { get; }
     }
 }

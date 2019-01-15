@@ -18,16 +18,31 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Diagnostics {
     public sealed class DiagnosticsEntry {
-        public DiagnosticsEntry(string message, SourceSpan span, int errorCode, Severity severity) {
+        public DiagnosticsEntry(string message, SourceSpan span, string errorCode, Severity severity) {
             Message = message;
             SourceSpan = span;
             ErrorCode = errorCode;
             Severity = severity;
         }
 
+        /// <summary>
+        /// Human-readable, localizable message.
+        /// </summary>
         public string Message { get; }
+
+        /// <summary>
+        /// Location of the diagnostics.
+        /// </summary>
         public SourceSpan SourceSpan { get; }
-        public int ErrorCode { get; }
+
+        /// <summary>
+        /// Error code: non-localizable, unique identifier for the problem.
+        /// </summary>
+        public string ErrorCode { get; }
+
+        /// <summary>
+        /// Issue severity.
+        /// </summary>
         public Severity Severity { get; }
     }
 }

@@ -321,4 +321,22 @@
   <data name="PropertyOfUnknownType" xml:space="preserve">
     <value>property of unknown type</value>
   </data>
+  <data name="Analysis_ParameterAlreadySpecified" xml:space="preserve">
+    <value>Parameter {0} already specified.</value>
+  </data>
+  <data name="Analysis_ParameterMissing" xml:space="preserve">
+    <value>Parameter {0} is missing.</value>
+  </data>
+  <data name="Analysis_PositionalArgumentAfterKeyword" xml:space="preserve">
+    <value>Positional arguments are not allowed after keyword argument.</value>
+  </data>
+  <data name="Analysis_TooManyFunctionArguments" xml:space="preserve">
+    <value>Too many function arguments.</value>
+  </data>
+  <data name="Analysis_TooManyPositionalArgumentBeforeStar" xml:space="preserve">
+    <value>Too many positional arguments before '*' argument.</value>
+  </data>
+  <data name="Analysis_UnknownParameterName" xml:space="preserve">
+    <value>Unknown parameter name.</value>
+  </data>
 </root>

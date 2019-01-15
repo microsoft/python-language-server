@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Modules {
     public class PythonModule : IDocument, IAnalyzable, IDisposable, IEquatable<IPythonModule> {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
-        private IReadOnlyList<DiagnosticsEntry> _diagnostics = Array.Empty<DiagnosticsEntry>();
+        private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
 
         private ModuleLoadOptions _options;
         private string _documentation = string.Empty;
@@ -267,7 +267,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Provides collection of parsing errors, if any.
         /// </summary>
-        public IEnumerable<DiagnosticsEntry> GetDiagnostics() => _diagnostics.ToArray();
+        public IEnumerable<DiagnosticsEntry> GetParseErrors() => _parseErrors.ToArray();
 
         public void Update(IEnumerable<DocumentChangeSet> changes) {
             lock (AnalysisLock) {
@@ -320,7 +320,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     throw new OperationCanceledException();
                 }
                 _ast = ast;
-                _diagnostics = sink.Diagnostics;
+                _parseErrors = sink.Diagnostics;
                 _parsingTask = null;
             }
 
@@ -346,7 +346,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
             public override void Add(string message, SourceSpan span, int errorCode, Severity severity)
-                => _diagnostics.Add(new DiagnosticsEntry(message, span, errorCode, severity));
+                => _diagnostics.Add(new DiagnosticsEntry(message, span, $"parser-{errorCode}", severity));
         }
         #endregion
 

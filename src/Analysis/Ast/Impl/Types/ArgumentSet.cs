@@ -16,51 +16,80 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Types {
 
-    class NameValuePair {
+    internal sealed class Argument {
         public string Name;
         public Expression Value;
     }
 
+    internal sealed class SequenceArgument {
+        public string Name;
+        public List<Expression> Values;
+    }
+
+    internal sealed class DictArgument {
+        public string Name;
+        public Dictionary<string, Expression> Arguments;
+    }
+
     internal class ArgumentSet {
-        private OrderedDictionary _arguments;
-        private List<Expression> _sequenceArgs;
-        private Dictionary<string, Expression> _dictArgs;
+        public IReadOnlyList<Argument> Arguments { get; }
+        public SequenceArgument SequenceArgument { get; }
+        public DictArgument DictArgument { get; }
 
-        private OrderedDictionary Args => _arguments ?? (_arguments = new OrderedDictionary());
-        private List<Expression> SeqArgs => _sequenceArgs ?? (_sequenceArgs = new List<Expression>());
-        private Dictionary<string, Expression> DictArgs => _dictArgs ?? (_dictArgs = new Dictionary<string, Expression>());
+        private ArgumentSet(IReadOnlyList<Argument> args, SequenceArgument seqArg, DictArgument dictArg) {
+            Arguments = args ?? Array.Empty<Argument>();
+            SequenceArgument = seqArg;
+            DictArgument = dictArg;
+        }
 
-
-        public IReadOnlyDictionary<string, Expression> Arguments => Args;
-        public IReadOnlyList<Expression> SequenceArguments => SeqArgs?.ToArray() ?? Array.Empty<Expression>();
-        public IReadOnlyDictionary<string, Expression> DictArguments => DictArgs ?? EmptyDictionary<string, Expression>.Instance;
-
-
-        public static bool FromArgs(FunctionDefinition fd, CallExpression callExpr, out ArgumentSet argSet) {
+        public static bool FromArgs(FunctionDefinition fd, CallExpression callExpr, IPythonModule module, IDiagnosticsSink diagSink, out ArgumentSet argSet) {
             argSet = null;
+
+            var callLocation = callExpr.GetLocation(module);
 
             // https://www.python.org/dev/peps/pep-3102/#id5
             // For each formal parameter, there is a slot which will be used to contain
             // the value of the argument assigned to that parameter. Slots which have
             // had values assigned to them are marked as 'filled'.Slots which have
             // no value assigned to them yet are considered 'empty'.
-            var slots = fd.Parameters.Select(p => new NameValuePair { Name = p.Name }).ToArray();
+
+            var slots = fd.Parameters.Select(p => new Argument { Name = p.Name }).ToArray();
             if (slots.Any(s => string.IsNullOrEmpty(s.Name))) {
-                // TODO: report missing formal parameter name.
+                // Error should have been reported at the function definition location by the parser.
                 return false;
             }
 
             // Locate sequence argument, if any
-            var sequenceArg = slots.FirstOrDefault(s => s.Name.Length > 1 && s.Name[0] == '*' && s.Name[1] != '*');
-            var dictionaryArg = slots.FirstOrDefault(s => s.Name.StartsWithOrdinal("**"));
+            var sa = slots.Where(s => s.Name.Length > 1 && s.Name[0] == '*' && s.Name[1] != '*').ToArray();
+            if (sa.Length > 1) {
+                // Error should have been reported at the function definition location by the parser.
+                return false;
+            }
 
+            var da = slots.Where(s => s.Name.StartsWithOrdinal("**")).ToArray();
+            if (da.Length > 1) {
+                // Error should have been reported at the function definition location by the parser.
+                return false;
+            }
+
+            if (sa.Length == 1 && da.Length == 1) {
+                // Error should have been reported at the function definition location by the parser.
+                return false;
+            }
+
+            var sequenceArg = sa.Length == 1 ? new SequenceArgument { Name = sa[0].Name.Substring(1), Values = new List<Expression>() } : null;
+            var dictArg = da.Length == 1 ? new DictArgument { Name = da[0].Name.Substring(2), Arguments = new Dictionary<string, Expression>() } : null;
+
+            // Positional arguments
             var callParamIndex = 0;
             for (; callParamIndex < callExpr.Args.Count; callParamIndex++) {
                 var arg = callExpr.Args[callParamIndex];
@@ -73,7 +102,8 @@ namespace Microsoft.Python.Analysis.Types {
                 if (callParamIndex >= fd.Parameters.Length) {
                     // We ran out of formal parameters and yet haven't seen
                     // any sequence or dictionary ones. This looks like an error.
-                    // TODO: report too many arguments
+                    diagSink.Add(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(module).Span,
+                        ErrorCodes.TooManyFunctionArguments, Severity.Warning);
                     return false;
                 }
 
@@ -81,8 +111,25 @@ namespace Microsoft.Python.Analysis.Types {
                 if (formalParam.Name[0] == '*') {
                     if (formalParam.Name.Length == 1) {
                         // If the next unfilled slot is a vararg slot, and it does not have a name, then it is an error.
-                        // TODO: report that '*' argument was found and yet we still have positional arguments.
+                        diagSink.Add(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
+                            ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning);
                         return false;
+                    }
+                    // If the next unfilled slot is a vararg slot then all remaining
+                    // non-keyword arguments are placed into the vararg slot.
+                    if (sequenceArg == null) {
+                        diagSink.Add(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(module).Span,
+                            ErrorCodes.TooManyFunctionArguments, Severity.Warning);
+                        return false;
+                    }
+
+                    for (; callParamIndex < callExpr.Args.Count; callParamIndex++) {
+                        arg = callExpr.Args[callParamIndex];
+                        if (!string.IsNullOrEmpty(arg.Name)) {
+                            // Keyword argument. Done here.
+                            break;
+                        }
+                        sequenceArg.Values.Add(arg.Expression);
                     }
                     break; // Sequence or dictionary parameter found. Done here.
                 }
@@ -91,43 +138,42 @@ namespace Microsoft.Python.Analysis.Types {
                 slots[callParamIndex].Value = arg.Expression;
             }
 
-            // Now keyword parameters
-            for (; callParamIndex < callExpr.Args.Count; callParamIndex++) {
+            // Keyword arguments
+            for (callParamIndex = 0; callParamIndex < callExpr.Args.Count; callParamIndex++) {
                 var arg = callExpr.Args[callParamIndex];
 
                 if (string.IsNullOrEmpty(arg.Name)) {
-                    // TODO: report that positional parameter appears after the keyword parameter.
+                    diagSink.Add(Resources.Analysis_PositionalArgumentAfterKeyword, arg.GetLocation(module).Span, 
+                        ErrorCodes.PositionalArgumentAfterKeyword, Severity.Warning);
                     return false;
                 }
 
                 var nvp = slots.FirstOrDefault(s => s.Name.EqualsOrdinal(arg.Name));
-                if(nvp == null) {
+                if (nvp == null) {
                     // 'def f(a, b)' and then 'f(0, c=1)'. Per spec:
                     // if there is a 'keyword dictionary' argument, the argument is added
                     // to the dictionary using the keyword name as the dictionary key,
                     // unless there is already an entry with that key, in which case it is an error.
-                    if (dictionaryArg == null) {
-                        // TODO: report that parameter name is unknown.
+                    if (dictArg == null) {
+                        diagSink.Add(Resources.Analysis_UnknownParameterName, arg.GetLocation(module).Span,
+                            ErrorCodes.UnknownParameterName, Severity.Warning);
                         return false;
                     }
+
+                    if (dictArg.Arguments.ContainsKey(arg.Name)) {
+                        diagSink.Add(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(module).Span,
+                            ErrorCodes.ParameterAlreadySpecified, Severity.Warning);
+                        return false;
+                    }
+                    dictArg.Arguments[arg.Name] = arg.Expression;
+                    continue;
                 }
 
                 if (nvp.Value != null) {
                     // Slot is already filled.
-                    // TODO: duplicate parameter, such as 'def f(a, b)' and then 'f(0, a=1)'.
+                    diagSink.Add(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(module).Span,
+                        ErrorCodes.ParameterAlreadySpecified, Severity.Warning);
                     return false;
-                }
-
-                if (callParamIndex >= fd.Parameters.Length) {
-                    // We ran out of formal parameters and yet haven't seen
-                    // any sequence or dictionary ones. This looks like an error.
-                    // TODO: report too many arguments
-                    return false;
-                }
-
-                var formalParam = fd.Parameters[callParamIndex];
-                if (formalParam.Name[0] == '*') {
-                    break; // Sequence or dictionary parameter found. Done here.
                 }
 
                 // OK keyword parameter
@@ -135,46 +181,27 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             // We went through all positionals and keywords.
-            // Now sequence or dictionary parameters
-            var fp = fd.Parameters[callParamIndex];
-            if (fp.Name[0] != '*') {
-                return false;
+            // For each remaining empty slot: if there is a default value for that slot,
+            // then fill the slot with the default value. If there is no default value,
+            // then it is an error.
+            foreach (var slot in slots) {
+                if (slot.Name.StartsWith("*")) {
+                    continue;
+                }
+
+                if (slot.Value == null) {
+                    var parameter = fd.Parameters.First(p => p.Name == slot.Name);
+                    if (parameter.DefaultValue == null) {
+                        // TODO: parameter is not assigned and has no default value.
+                        diagSink.Add(Resources.Analysis_ParameterMissing.FormatUI(slot.Name), callLocation.Span,
+                            ErrorCodes.ParameterAlreadySpecified, Severity.Warning);
+                        return false;
+                    }
+                    slot.Value = parameter.DefaultValue;
+                }
             }
 
-            for (; callParamIndex < callExpr.Args.Count; callParamIndex++) {
-                var arg = callExpr.Args[callParamIndex];
-
-                if (string.IsNullOrEmpty(arg.Name)) {
-                    // TODO: report that positional parameter appears after the keyword parameter.
-                    return false;
-                }
-
-                var nvp = slots.FirstOrDefault(s => s.Name.EqualsOrdinal(arg.Name));
-                if (nvp == null) {
-                    // TODO: report no such named parameter'. As in 'def f(a, b)' and then 'f(0, c=1)'
-                    return false;
-                }
-                if (nvp.Value != null) {
-                    // Slot is already filled.
-                    // TODO: duplicate parameter, such as 'def f(a, b)' and then 'f(0, a=1)'.
-                    return false;
-                }
-
-                if (callParamIndex >= fd.Parameters.Length) {
-                    // We ran out of formal parameters and yet haven't seen
-                    // any sequence or dictionary ones. This looks like an error.
-                    // TODO: report too many arguments
-                    return false;
-                }
-
-                var formalParam = fd.Parameters[callParamIndex];
-                if (formalParam.Name[0] == '*') {
-                    break; // Sequence or dictionary parameter found. Done here.
-                }
-
-                // OK keyword parameter
-                nvp.Value = arg.Expression;
-            }
+            argSet = new ArgumentSet(slots.Where(s => !s.Name.StartsWithOrdinal("*")).ToList(), sequenceArg, dictArg);
             return true;
         }
     }

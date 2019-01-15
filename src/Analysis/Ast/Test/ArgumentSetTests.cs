@@ -13,20 +13,23 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Tests;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class ParserTests : AnalysisTestBase {
+    public class ArgumentSetTests: AnalysisTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -37,44 +40,24 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task RedeclareGlobal() {
+        public async Task EmptyArgSet() {
             const string code = @"
-def testGlobal(self):
-    # 'global' NAME (',' NAME)*
-    global a
-    global a, b
+def f(): ...
+f()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var diag = analysis.Document.GetParseErrors().ToArray();
-            diag.Should().BeEmpty();
+            var f = analysis.Should().HaveFunction("f").Which;
+            var call = GetCall(analysis.Ast);
+            var result = ArgumentSet.FromArgs(f.FunctionDefinition, call, analysis.Document, new DiagSink(), out var argSet);
+            result.Should().BeTrue();
+            argSet.Arguments.Count.Should().Be(0);
+            argSet.SequenceArgument.Should().BeNull();
+            argSet.DictArgument.Should().BeNull();
         }
 
-        [TestMethod, Priority(0)]
-        public async Task RedeclareNonlocal() {
-            const string code = @"
-def test_nonlocal(self):
-    x = 0
-    y = 0
-    def f():
-        nonlocal x
-        nonlocal x, y
-";
-            var analysis = await GetAnalysisAsync(code);
-            var diag = analysis.Document.GetParseErrors().ToArray();
-            diag.Should().BeEmpty();
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task DeclareNonlocalBeforeUse() {
-            const string code = @"
-class TestSuper(unittest.TestCase):
-    def tearDown(self):
-        nonlocal __class__
-        __class__ = TestSuper
-";
-            var analysis = await GetAnalysisAsync(code);
-            var diag = analysis.Document.GetParseErrors().ToArray();
-            diag.Should().BeEmpty();
+        private CallExpression GetCall(PythonAst ast) {
+            var statements = (ast.Body as SuiteStatement)?.Statements;
+            return statements?.OfType<ExpressionStatement>().FirstOrDefault(e => e.Expression is CallExpression)?.Expression as CallExpression;
         }
     }
 }

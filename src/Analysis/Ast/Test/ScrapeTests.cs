@@ -105,7 +105,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 var doc = (IDocument)mod;
                 var ast = await doc.GetAstAsync();
 
-                var errors = doc.GetDiagnostics();
+                var errors = doc.GetParseErrors().ToArray();
                 foreach (var err in errors) {
                     Console.WriteLine(err);
                 }
@@ -151,7 +151,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var modPath = interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath);
 
             var doc = mod as IDocument;
-            var errors = doc.GetDiagnostics();
+            var errors = doc.GetParseErrors().ToArray();
             foreach (var err in errors) {
                 Console.WriteLine(err);
             }
@@ -284,7 +284,7 @@ namespace Microsoft.Python.Analysis.Tests {
                         Trace.TraceWarning("failed to import {0} from {1}", modName.ModuleName, modName.SourceFile);
                         break;
                     case CompiledPythonModule _: {
-                            var errors = ((IDocument)mod).GetDiagnostics().ToArray();
+                            var errors = ((IDocument)mod).GetParseErrors().ToArray();
                             if (errors.Any()) {
                                 anyParseError = true;
                                 Trace.TraceError("Parse errors in {0}", modName.SourceFile);
@@ -299,7 +299,7 @@ namespace Microsoft.Python.Analysis.Tests {
                             break;
                         }
                     case IPythonModule _: {
-                            var filteredErrors = ((IDocument)mod).GetDiagnostics().Where(e => !e.Message.Contains("encoding problem")).ToArray();
+                            var filteredErrors = ((IDocument)mod).GetParseErrors().Where(e => !e.Message.Contains("encoding problem")).ToArray();
                             if (filteredErrors.Any()) {
                                 // Do not fail due to errors in installed packages
                                 if (!mod.FilePath.Contains("site-packages")) {
