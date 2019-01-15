@@ -97,9 +97,13 @@ namespace Microsoft.PythonTools.Analysis {
                        x.EndColumn == x.EndColumn;
             }
 
-            public int GetHashCode(LocationInfo obj) => GetHashCode(obj);
+            public int GetHashCode(LocationInfo obj)
+                => GetHashCodeImpl(obj);
 
             public int GetHashCode(ILocationInfo obj)
+                => GetHashCodeImpl(obj);
+
+            private static int GetHashCodeImpl(ILocationInfo obj)
                 => obj.StartLine.GetHashCode() ^ obj.StartColumn.GetHashCode() ^ (obj.FilePath?.GetHashCode() ?? 0);
         }
 
