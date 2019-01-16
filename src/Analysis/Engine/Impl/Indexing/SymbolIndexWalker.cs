@@ -165,7 +165,7 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
 
         public override bool Walk(ComprehensionFor node) {
             AddVarSymbolRecursive(node.Left);
-            return false;
+            return base.Walk(node);
         }
 
         public override bool Walk(ListComprehension node) {

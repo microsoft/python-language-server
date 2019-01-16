@@ -455,10 +455,10 @@ def func2(x, y): ...";
 
             var symbols = WalkSymbols(code);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new HierarchicalSymbol("<lambda>", SymbolKind.Function, new SourceSpan(1, 5, 1, 23), new SourceSpan(1, 5, 1, 23), new[] {
+                new HierarchicalSymbol("<lambda>", SymbolKind.Function, new SourceSpan(1, 5, 1, 23), children: new[] {
                     new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 12, 1, 13)),
                     new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 15, 1, 16)),
-                }, FunctionKind.Function),
+                }, functionKind: FunctionKind.Function),
                 new HierarchicalSymbol("f", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
         }
@@ -489,7 +489,7 @@ else:
 
             var symbols = WalkSymbols(code);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new HierarchicalSymbol("<list comprehension>", SymbolKind.None, new SourceSpan(1, 13, 1, 56), new SourceSpan(1, 13, 1, 56), new[] {
+                new HierarchicalSymbol("<list comprehension>", SymbolKind.None, new SourceSpan(1, 13, 1, 56), children: new[] {
                     new HierarchicalSymbol("sublist", SymbolKind.Variable, new SourceSpan(1, 23, 1, 30)),
                     new HierarchicalSymbol("item", SymbolKind.Variable, new SourceSpan(1, 40, 1, 44)),
                 }),
@@ -503,7 +503,7 @@ else:
 
             var symbols = WalkSymbols(code);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new HierarchicalSymbol("<dict comprehension>", SymbolKind.None, new SourceSpan(1, 5, 1, 51), new SourceSpan(1, 5, 1, 51), new[] {
+                new HierarchicalSymbol("<dict comprehension>", SymbolKind.None, new SourceSpan(1, 5, 1, 51), children: new[] {
                     new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 16, 1, 17)),
                     new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 19, 1, 20)),
                 }),
@@ -517,7 +517,7 @@ else:
 
             var symbols = WalkSymbols(code);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new HierarchicalSymbol("<set comprehension>", SymbolKind.None, new SourceSpan(1, 5, 1, 29), new SourceSpan(1, 5, 1, 29), new[] {
+                new HierarchicalSymbol("<set comprehension>", SymbolKind.None, new SourceSpan(1, 5, 1, 29), children: new[] {
                     new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 13, 1, 14)),
                 }),
                 new HierarchicalSymbol("s", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
@@ -530,11 +530,31 @@ else:
 
             var symbols = WalkSymbols(code);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new HierarchicalSymbol("<generator>", SymbolKind.None, new SourceSpan(1, 5, 1, 50), new SourceSpan(1, 5, 1, 50), new[] {
+                new HierarchicalSymbol("<generator>", SymbolKind.None, new SourceSpan(1, 5, 1, 50), children: new[] {
                     new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 16, 1, 17)),
                     new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 19, 1, 20)),
                 }),
                 new HierarchicalSymbol("g", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void WalkerNestedListComprehension() {
+            var code = @"l = [
+    x for x in [
+        y for y in range(10)
+    ]
+]";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("<list comprehension>", SymbolKind.None, new SourceSpan(1, 5, 5, 2), children: new[] {
+                    new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(2, 11, 2, 12)),
+                    new HierarchicalSymbol("<list comprehension>", SymbolKind.None, new SourceSpan(2, 16, 4, 6), children: new[] {
+                        new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(3, 15, 3, 16)),
+                    }),
+                }),
+                new HierarchicalSymbol("l", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
         }
 
@@ -577,10 +597,10 @@ else:
 
             var symbols = WalkSymbols(code);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new HierarchicalSymbol("<lambda>", SymbolKind.Function, new SourceSpan(1, 6, 1, 24), new SourceSpan(1, 6, 1, 24), new[] {
+                new HierarchicalSymbol("<lambda>", SymbolKind.Function, new SourceSpan(1, 6, 1, 24), children: new[] {
                     new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 13, 1, 14)),
                     new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 16, 1, 17)),
-                }, FunctionKind.Function),
+                }, functionKind: FunctionKind.Function),
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
         }
