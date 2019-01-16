@@ -199,6 +199,14 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
         }
 
         [TestMethod, Priority(0)]
+        public void WalkerImportFromFuture() {
+            var code = @"from __future__ import print_function";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public void WalkerClass() {
             var code = @"class Foo(object):
     ...";

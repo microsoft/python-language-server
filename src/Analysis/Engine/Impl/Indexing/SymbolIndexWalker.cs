@@ -111,6 +111,10 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
         }
 
         public override bool Walk(FromImportStatement node) {
+            if (node.IsFromFuture) {
+                return false;
+            }
+
             foreach (var name in node.Names.Zip(node.AsNames, (name, asName) => asName ?? name)) {
                 var span = name.GetSpan(_ast);
                 _stack.AddSymbol(new HierarchicalSymbol(name.Name, SymbolKind.Module, span));
