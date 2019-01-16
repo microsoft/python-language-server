@@ -63,9 +63,9 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual  PythonMemberType MemberType => InnerType.MemberType;
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;
         public virtual bool IsAbstract => InnerType.IsAbstract;
-        public virtual IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
+        public virtual IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
             => IsAbstract ? null : InnerType.CreateInstance(typeName, location, args);
-        public virtual IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
+        public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
             => InnerType.Call(instance, memberName, args);
         public virtual IMember Index(IPythonInstance instance, object index) 
             => InnerType.Index(instance, index);

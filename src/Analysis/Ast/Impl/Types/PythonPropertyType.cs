@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -44,11 +43,11 @@ namespace Microsoft.Python.Analysis.Types {
         public IPythonType DeclaringType { get; }
         public string Description 
             => Type == null ? Resources.PropertyOfUnknownType : Resources.PropertyOfType.FormatUI(Type.Name);
-        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
-            => _getter.GetReturnValue(instance?.Location ?? LocationInfo.Empty);
+        public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
+            => _getter.GetReturnValue(instance?.Location ?? LocationInfo.Empty, args);
         #endregion
 
         internal void AddOverload(IPythonFunctionOverload overload) => _getter = _getter ?? overload;
-        private IPythonType Type => _getter?.GetReturnValue(null)?.GetPythonType();
+        private IPythonType Type => _getter?.GetReturnValue(null, ArgumentSet.Empty)?.GetPythonType();
     }
 }

@@ -28,13 +28,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class DocumentAnalysis : IDocumentAnalysis {
         public static readonly IDocumentAnalysis Empty = new EmptyAnalysis();
 
-        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, IEnumerable<DiagnosticsEntry> diagnostics, PythonAst ast) {
+        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, PythonAst ast) {
             Check.ArgumentNotNull(nameof(document), document);
             Check.ArgumentNotNull(nameof(globalScope), globalScope);
             Document = document;
             Version = version;
             GlobalScope = globalScope;
-            Diagnostics = diagnostics;
             Ast = ast;
         }
 
@@ -76,7 +75,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
         public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
         public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
-        public IEnumerable<DiagnosticsEntry> Diagnostics { get; }
         #endregion
 
         private sealed class EmptyAnalysis : IDocumentAnalysis {

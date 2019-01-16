@@ -42,10 +42,9 @@ def f(): ...
 f()
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(0);
-            argSet.SequenceArgument.Should().BeNull();
-            argSet.DictArgument.Should().BeNull();
+            argSet.ListArgument.Should().BeNull();
+            argSet.DictionaryArgument.Should().BeNull();
         }
 
         [TestMethod, Priority(0)]
@@ -55,14 +54,13 @@ def f(a, b): ...
 f(b=1, a=2)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(2);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
-            argSet.SequenceArgument.Should().BeNull();
-            argSet.DictArgument.Should().BeNull();
+            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.ListArgument.Should().BeNull();
+            argSet.DictionaryArgument.Should().BeNull();
         }
 
         [TestMethod, Priority(0)]
@@ -72,16 +70,15 @@ def f(a, b, c='str'): ...
 f(b=1, a=2)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(3);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[2].Name.Should().Be("c");
-            argSet.Arguments[2].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("str");
-            argSet.SequenceArgument.Should().BeNull();
-            argSet.DictArgument.Should().BeNull();
+            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("str");
+            argSet.ListArgument.Should().BeNull();
+            argSet.DictionaryArgument.Should().BeNull();
         }
 
         [TestMethod, Priority(0)]
@@ -91,18 +88,17 @@ def f(a, b, *, c='str', d=True): ...
 f(1, 2, d=False)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(4);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[2].Name.Should().Be("c");
-            argSet.Arguments[2].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("str");
+            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("str");
             argSet.Arguments[3].Name.Should().Be("d");
-            argSet.Arguments[3].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(false);
-            argSet.SequenceArgument.Should().BeNull();
-            argSet.DictArgument.Should().BeNull();
+            argSet.Arguments[3].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(false);
+            argSet.ListArgument.Should().BeNull();
+            argSet.DictionaryArgument.Should().BeNull();
         }
 
         [TestMethod, Priority(0)]
@@ -112,7 +108,6 @@ def f(a, b, *, c='str'): ...
 f(1, 2, 3, 4, c=6)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(0);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.TooManyPositionalArgumentsBeforeStar);
@@ -125,7 +120,6 @@ def f(a, b, *, *, c='str'): ...
 f(1, 2, 3, 4, 5, c=6)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(0);
         }
 
@@ -136,20 +130,19 @@ def f(a, b, *list, c='str', d=True): ...
 f(1, 2, 3, 4, 5, c='a')
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(4);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[2].Name.Should().Be("c");
-            argSet.Arguments[2].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("a");
+            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("a");
             argSet.Arguments[3].Name.Should().Be("d");
-            argSet.Arguments[3].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(true);
-            argSet.SequenceArgument.Should().NotBeNull();
-            argSet.SequenceArgument.Name.Should().Be("list");
-            argSet.SequenceArgument.Values.OfType<ConstantExpression>().Select(c => c.Value).Should().ContainInOrder(3, 4, 5);
-            argSet.DictArgument.Should().BeNull();
+            argSet.Arguments[3].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(true);
+            argSet.ListArgument.Should().NotBeNull();
+            argSet.ListArgument.Name.Should().Be("list");
+            argSet.ListArgument.Expressions.OfType<ConstantExpression>().Select(c => c.Value).Should().ContainInOrder(3, 4, 5);
+            argSet.DictionaryArgument.Should().BeNull();
         }
 
         [TestMethod, Priority(0)]
@@ -159,18 +152,17 @@ def f(a, b, **dict): ...
 f(b=1, a=2, c=3, d=4, e='str')
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(2);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Value.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
-            argSet.SequenceArgument.Should().BeNull();
-            argSet.DictArgument.Should().NotBeNull();
-            argSet.DictArgument.Name.Should().Be("dict");
-            argSet.DictArgument.Arguments["c"].Should().BeAssignableTo<ConstantExpression>().Which.Value.Should().Be(3);
-            argSet.DictArgument.Arguments["d"].Should().BeAssignableTo<ConstantExpression>().Which.Value.Should().Be(4);
-            argSet.DictArgument.Arguments["e"].Should().BeAssignableTo<ConstantExpression>().Which.Value.Should().Be("str");
+            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.ListArgument.Should().BeNull();
+            argSet.DictionaryArgument.Should().NotBeNull();
+            argSet.DictionaryArgument.Name.Should().Be("dict");
+            argSet.DictionaryArgument.Expressions["c"].Should().BeAssignableTo<ConstantExpression>().Which.Value.Should().Be(3);
+            argSet.DictionaryArgument.Expressions["d"].Should().BeAssignableTo<ConstantExpression>().Which.Value.Should().Be(4);
+            argSet.DictionaryArgument.Expressions["e"].Should().BeAssignableTo<ConstantExpression>().Which.Value.Should().Be("str");
         }
 
         [TestMethod, Priority(0)]
@@ -180,7 +172,6 @@ def f(a, b, **dict): ...
 f(1, 2, 3, 4, 5, c='a')
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(0);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.TooManyPositionalArgumentsBeforeStar);
@@ -193,7 +184,6 @@ def f(a, b): ...
 f(a=1, a=2)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(0);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.ParameterAlreadySpecified);
@@ -206,7 +196,6 @@ def f(a, b): ...
 f(a=1, c=2)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(0);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.UnknownParameterName);
@@ -219,7 +208,6 @@ def f(a, b): ...
 f(a=1, b=2, a=1)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(0);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.ParameterAlreadySpecified);
@@ -232,7 +220,6 @@ def f(a, b): ...
 f(1, 2, 1)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(0);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.TooManyFunctionArguments);
@@ -245,18 +232,113 @@ def f(a, b): ...
 f(1)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Should().NotBeNull();
             argSet.Arguments.Count.Should().Be(0);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.ParameterMissing);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Method() {
+            const string code = @"
+class A:
+    def f(self, a, b): ...
+
+a = A()
+a.f(1, 2)
+";
+            var argSet = await GetClassArgSetAsync(code);
+            argSet.Arguments.Count.Should().Be(3);
+            argSet.Errors.Count.Should().Be(0);
+            argSet.Arguments[0].Name.Should().Be("self");
+            argSet.Arguments[0].Expression.Should().BeNull();
+            argSet.Arguments[0].Value.Should().BeAssignableTo<IPythonClassType>();
+            argSet.Arguments[1].Name.Should().Be("a");
+            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[2].Name.Should().Be("b");
+            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task StaticMethod() {
+            const string code = @"
+class A:
+    @staticmethod
+    def f(a, b): ...
+
+A.f(1, 2)
+";
+            var argSet = await GetClassArgSetAsync(code);
+            argSet.Arguments.Count.Should().Be(2);
+            argSet.Errors.Count.Should().Be(0);
+            argSet.Arguments[0].Name.Should().Be("a");
+            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[1].Name.Should().Be("b");
+            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassMethod() {
+            const string code = @"
+class A:
+    @classmethod
+    def f(cls, a, b): ...
+
+a = A()
+a.f(b=1, a=2)
+";
+            var argSet = await GetClassArgSetAsync(code);
+            argSet.Arguments.Count.Should().Be(3);
+            argSet.Errors.Count.Should().Be(0);
+            argSet.Arguments[0].Name.Should().Be("cls");
+            argSet.Arguments[0].Expression.Should().BeNull();
+            argSet.Arguments[0].Value.Should().BeAssignableTo<IPythonClassType>();
+            argSet.Arguments[1].Name.Should().Be("a");
+            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[2].Name.Should().Be("b");
+            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnboundMethod() {
+            const string code = @"
+class A:
+    def f(self, a, b): ...
+
+a = A()
+f = A.f
+f(a, 1, 2)
+";
+            var argSet = await GetUnboundArgSetAsync(code);
+            argSet.Arguments.Count.Should().Be(3);
+            argSet.Errors.Count.Should().Be(0);
+            argSet.Arguments[0].Name.Should().Be("self");
+            argSet.Arguments[0].Expression.Should().BeOfType<NameExpression>().Which.Name.Should().Be("a");
+            argSet.Arguments[1].Name.Should().Be("a");
+            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[2].Name.Should().Be("b");
+            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
         }
 
         private async Task<ArgumentSet> GetArgSetAsync(string code, string funcName = "f") {
             var analysis = await GetAnalysisAsync(code);
             var f = analysis.Should().HaveFunction(funcName).Which;
             var call = GetCall(analysis.Ast);
-            ArgumentSet.FromArgs(f.FunctionDefinition, call, analysis.Document, out var argSet);
-            return argSet;
+            return new ArgumentSet(f, call, analysis.Document, null);
+        }
+
+        private async Task<ArgumentSet> GetUnboundArgSetAsync(string code, string funcName = "f") {
+            var analysis = await GetAnalysisAsync(code);
+            var f = analysis.Should().HaveVariable(funcName).Which;
+            var call = GetCall(analysis.Ast);
+            return new ArgumentSet(f.Value.GetPythonType<IPythonFunctionType>(), call, analysis.Document, null);
+        }
+
+        private async Task<ArgumentSet> GetClassArgSetAsync(string code, string className = "A", string funcName = "f") {
+            var analysis = await GetAnalysisAsync(code);
+            var cls = analysis.Should().HaveClass(className).Which;
+            var f = cls.Should().HaveMethod(funcName).Which;
+            var call = GetCall(analysis.Ast);
+            return new ArgumentSet(f, call, analysis.Document, null);
         }
 
         private CallExpression GetCall(PythonAst ast) {

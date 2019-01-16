@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IPythonUnionType Add(IPythonType t) => this;
         public IPythonUnionType Add(IPythonUnionType types) => this;
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
+        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
             => InnerType.CreateInstance(typeName, location, args);
     }
 }

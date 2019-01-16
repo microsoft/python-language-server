@@ -61,15 +61,15 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         public IMember this[IMember key] =>
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
 
-        public override IPythonIterator GetIterator() => Call(@"iterkeys", Array.Empty<object>()) as IPythonIterator;
+        public override IPythonIterator GetIterator() => Call(@"iterkeys", ArgumentSet.Empty) as IPythonIterator;
 
         public override IMember Index(object key) => key is IMember m ? this[m] : UnknownType;
 
-        public override IMember Call(string memberName, IReadOnlyList<object> args) {
+        public override IMember Call(string memberName, IArgumentSet args) {
             // Specializations
             switch (memberName) {
                 case @"get":
-                    return args.Count > 1 ? Index(args[1]) : _interpreter.UnknownType;
+                    return args.Arguments.Count > 1 ? Index(args.Arguments[1].Value) : _interpreter.UnknownType;
                 case @"items":
                     return CreateList(Items);
                 case @"keys":

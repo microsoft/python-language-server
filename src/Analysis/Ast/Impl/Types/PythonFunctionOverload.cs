@@ -120,10 +120,10 @@ namespace Microsoft.Python.Analysis.Types {
         public LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
         public PythonMemberType MemberType => PythonMemberType.Function;
 
-        public IMember GetReturnValue(LocationInfo callLocation, IReadOnlyList<IMember> args) {
+        public IMember GetReturnValue(LocationInfo callLocation, IArgumentSet args) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
-                var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args);
+                var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args.Values<IMember>());
                 if (!rt.IsUnknown()) {
                     return rt;
                 }
@@ -136,7 +136,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             if (t is IFunctionArgumentType cat && args != null) {
-                var rt = cat.ParameterIndex < args.Count ? args[cat.ParameterIndex] : null;
+                var rt = cat.ParameterIndex < args.Arguments.Count ? args.Arguments[cat.ParameterIndex].Value as IMember : null;
                 if (!rt.IsUnknown()) {
                     return rt;
                 }

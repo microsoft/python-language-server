@@ -34,9 +34,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionEval : IDiagnosticsService {
+    internal sealed partial class ExpressionEval {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
-        private readonly List<DiagnosticsEntry> diagnostics = new List<DiagnosticsEntry>();
+        private readonly IDiagnosticsService _diagnostics;
 
         public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
@@ -45,9 +45,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             GlobalScope = new GlobalScope(module);
             CurrentScope = GlobalScope;
+            DefaultLookupOptions = LookupOptions.Normal;
 
             //Log = services.GetService<ILogger>();
-            DefaultLookupOptions = LookupOptions.Normal;
+            _diagnostics = services.GetService<IDiagnosticsService>();
 
             UnknownType = Interpreter.UnknownType ??
                 new FallbackBuiltinPythonType(new FallbackBuiltinsModule(Ast.LanguageVersion), BuiltinTypeId.Unknown);
@@ -67,14 +68,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public LocationInfo GetLoc(Node node) => node.GetLocation(Module, Ast);
         public LocationInfo GetLocOfName(Node node, NameExpression header) => node.GetLocationOfName(header, Module, Ast);
-
-        #region IDiagnosticsService
-        public IReadOnlyList<DiagnosticsEntry> Diagnostics => diagnostics;
-        public void Add(DiagnosticsEntry entry) => diagnostics.Add(entry);
-
-        public void Add(string message, SourceSpan span, string errorCode, Severity severity)
-            => Add(new DiagnosticsEntry(message, span, errorCode, severity));
-        #endregion
 
         public Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default)
             => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
@@ -175,7 +168,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonClassType _:
                     return value;
                 case IPythonPropertyType prop:
-                    return prop.Call(instance, prop.Name, Array.Empty<IMember>());
+                    return prop.Call(instance, prop.Name, ArgumentSet.Empty);
                 case IPythonType p:
                     return new PythonBoundType(p, instance, GetLoc(expr));
                 case null:
@@ -195,6 +188,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var falseValue = await GetValueFromExpressionAsync(expr.FalseExpression, cancellationToken);
 
             return trueValue ?? falseValue;
+        }
+
+        private void AddDiagnostics(IEnumerable<DiagnosticsEntry> entries) {
+            foreach (var e in entries) {
+                _diagnostics?.Add(e);
+            }
         }
     }
 }

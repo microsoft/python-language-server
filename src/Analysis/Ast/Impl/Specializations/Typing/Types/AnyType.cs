@@ -30,9 +30,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public bool IsBuiltin => false;
         public bool IsAbstract => false;
         public PythonMemberType MemberType => PythonMemberType.Class;
-        public IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
+        public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
             => DeclaringModule.Interpreter.UnknownType;
-        public IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args) 
+        public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) 
             => new PythonInstance(this, location);
 
         public IMember GetMember(string name) => null;

@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -96,11 +95,10 @@ namespace Microsoft.Python.Analysis.Types {
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
 
-        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) {
+        public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
             // Now we can go and find overload with matching arguments.
-            var parameters = args.OfType<IMember>().ToArray();
-            var overload = FindOverload(parameters);
-            return overload?.GetReturnValue(instance?.Location ?? LocationInfo.Empty, parameters) ?? DeclaringModule.Interpreter.UnknownType;
+            var overload = FindOverload(args);
+            return overload?.GetReturnValue(instance?.Location ?? LocationInfo.Empty, args) ?? DeclaringModule.Interpreter.UnknownType;
         }
 
         internal override void SetDocumentationProvider(Func<string, string> provider) {
@@ -165,34 +163,38 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        private IPythonFunctionOverload FindOverload(IReadOnlyList<IMember> args) {
+        private IPythonFunctionOverload FindOverload(IArgumentSet args) {
             // Find best overload match. Of only one, use it.
-            var argSet = ArgumentSet.FromArgs(FunctionDefinition, )
             if (Overloads.Count == 1) {
                 return Overloads[0];
             }
-
-            // Try match number of parameters
-            var matching = Overloads.Where(o => o.Parameters.Count == args.Count);
-            var argTypes = args.Select(a => a.GetPythonType());
-            var overload = matching.FirstOrDefault(o => {
-                var paramTypes = o.Parameters.Select(p => p.Type);
-                return paramTypes.SequenceEqual(argTypes);
-            });
-
-            if (overload != null) {
-                return overload;
-            }
-
-            return Overloads
-                .Where(o => o.Parameters.Count >= args.Count)
-                .FirstOrDefault(o => {
-                    // Match so overall param count is bigger, but required params
-                    // count is less or equal to the passed arguments.
-                    var requiredParams = o.Parameters.Where(p => string.IsNullOrEmpty(p.DefaultValueString)).ToArray();
-                    return requiredParams.Length <= args.Count;
-                });
+            // Try matching parameters
+            return Overloads.FirstOrDefault(o => IsMatch(args, o.Parameters));
         }
+
+        public static bool IsMatch(IArgumentSet args, IReadOnlyList<IParameterInfo> parameters) {
+            // Arguments passed to function are created off the function definition
+            // and hence match by default. However, if multiple overloads are specified,
+            // we need to figure out if annotated types match. 
+            // https://docs.python.org/3/library/typing.html#typing.overload
+            //
+            //  @overload
+            //  def process(response: None) -> None:
+            //  @overload
+            //  def process(response: int) -> Tuple[int, str]:
+            //
+            // Note that in overloads there are no * or ** parameters.
+            // We match loosely by type.
+
+            var d = parameters.ToDictionary(p => p.Name, p => p.Type);
+            foreach (var a in args.Arguments<IMember>()) {
+                if(!d.TryGetValue(a.Key, out var t) || !t.Equals(a.Value.GetPythonType())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
 
         /// <summary>
         /// Represents unbound method, such in C.f where C is class rather than the instance.

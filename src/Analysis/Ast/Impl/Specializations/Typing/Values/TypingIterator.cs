@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
                 } else if (_index < _iteratorType.ItemTypes.Count) {
                     itemType = _iteratorType.ItemTypes[_index++];
                 }
-                return itemType?.CreateInstance(itemType.Name, LocationInfo.Empty, Array.Empty<IMember>()) ?? UnknownType;
+                return itemType?.CreateInstance(itemType.Name, LocationInfo.Empty, ArgumentSet.Empty) ?? UnknownType;
             }
         }
     }

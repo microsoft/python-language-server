@@ -13,11 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -68,7 +66,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public IGlobalScope GlobalScope => Eval.GlobalScope;
-        public IEnumerable<DiagnosticsEntry> Diagnostics => Eval.Diagnostics;
 
         /// <summary>
         /// Merges data from stub with the data from the module.

@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!annotationType.IsUnknown()) {
                 // Annotations are typically types while actually functions return
                 // instances unless specifically annotated to a type such as Type[T].
-                var instance = annotationType.CreateInstance(annotationType.Name, Eval.GetLoc(FunctionDefinition), Array.Empty<object>());
+                var instance = annotationType.CreateInstance(annotationType.Name, Eval.GetLoc(FunctionDefinition), ArgumentSet.Empty);
                 _overload.SetReturnValue(instance, true);
             } else {
                 // Check if function is a generator

@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values.Collections {
@@ -36,7 +35,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
 
         public virtual IMember Next => Collection.Index(_index++) ?? UnknownType;
 
-        public override IMember Call(string memberName, IReadOnlyList<object> args) {
+        public override IMember Call(string memberName, IArgumentSet args) {
             // Specializations
             switch (memberName) {
                 case @"__next__":

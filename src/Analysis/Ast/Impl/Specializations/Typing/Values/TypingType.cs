@@ -38,9 +38,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
         public bool IsBuiltin => false;
         public bool IsAbstract => false;
         public PythonMemberType MemberType => PythonMemberType.Class;
-        public IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
-            => _type.Call(instance, memberName, args);
-        public IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args) => _type;
+        public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => _type.Call(instance, memberName, args);
+        public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args ) => _type;
         public IMember GetMember(string name) => _type.GetMember(name);
         public IEnumerable<string> GetMemberNames() => _type.GetMemberNames();
         public IMember Index(IPythonInstance instance, object index) => _type.Index(instance, index);

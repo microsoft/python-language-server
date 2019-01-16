@@ -104,15 +104,15 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         // Constructor call
-        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args) {
+        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) {
             // Specializations
             switch (typeName) {
                 case "list":
-                    return PythonCollectionType.CreateList(DeclaringModule.Interpreter, location, args.OfType<IMember>().ToArray());
+                    return PythonCollectionType.CreateList(DeclaringModule.Interpreter, location, args.Values<IMember>().ToArray());
                 case "dict":
-                    return new PythonDictionary(DeclaringModule.Interpreter, location, args.OfType<IMember>().FirstOrDefault());
+                    return new PythonDictionary(DeclaringModule.Interpreter, location, args.Values<IMember>().FirstOrDefault());
                 case "tuple":
-                    return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, location, args.OfType<IMember>().ToArray());
+                    return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, location, args.Values<IMember>().ToArray());
             }
             return new PythonInstance(this, location);
         }

@@ -13,8 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 
@@ -31,9 +29,9 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             __next__ = instance.GetPythonType().GetMember(@"__next__") as IPythonFunctionType;
         }
 
-        public IMember Next => __next__?.Call(null, @"__next__", Array.Empty<IMember>()) ?? UnknownType;
+        public IMember Next => __next__?.Call(null, @"__next__", ArgumentSet.Empty) ?? UnknownType;
 
-        public override IMember Call(string memberName, IReadOnlyList<object> args) {
+        public override IMember Call(string memberName, IArgumentSet args) {
             // Specializations
             switch (memberName) {
                 case @"__next__":

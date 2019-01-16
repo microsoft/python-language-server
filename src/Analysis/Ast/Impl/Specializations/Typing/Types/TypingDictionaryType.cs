@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public override string Name { get; }
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
+        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
             => new TypingDictionary(this, location);
         public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ValueType);
 

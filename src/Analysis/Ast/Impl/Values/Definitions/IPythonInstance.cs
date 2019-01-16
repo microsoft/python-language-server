@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Values {
         /// </summary>
         /// <param name="memberName">Method name.</param>
         /// <param name="args">Call arguments.</param>
-        IMember Call(string memberName, IReadOnlyList<object> args);
+        IMember Call(string memberName, IArgumentSet args);
 
         /// <summary>
         /// Invokes indexer the instance.

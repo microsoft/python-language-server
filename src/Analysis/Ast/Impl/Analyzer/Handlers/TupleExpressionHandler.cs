@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var names = expressions.Select(x => x.Name).ToArray();
                 for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {
                     if (names[i] != null && types[i] != null) {
-                        var instance = types[i].CreateInstance(null, Eval.GetLoc(expressions[i]), Array.Empty<object>());
+                        var instance = types[i].CreateInstance(null, Eval.GetLoc(expressions[i]), ArgumentSet.Empty);
                         Eval.DeclareVariable(names[i], instance, expressions[i]);
                     }
                 }

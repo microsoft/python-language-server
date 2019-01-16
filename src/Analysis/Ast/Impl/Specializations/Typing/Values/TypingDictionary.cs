@@ -40,8 +40,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
 
         public override IMember Index(object key) => new PythonInstance(_dictType.ValueType);
 
-        public override IMember Call(string memberName, IReadOnlyList<object> args) {
-            var interpreter = _dictType.DeclaringModule.Interpreter;
+        public override IMember Call(string memberName, IArgumentSet args) {
             // Specializations
             switch (memberName) {
                 case @"get":

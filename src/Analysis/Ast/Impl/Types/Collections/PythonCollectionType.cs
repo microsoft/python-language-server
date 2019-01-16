@@ -70,11 +70,11 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override IMember GetMember(string name) => name == @"__iter__" ? IteratorType : base.GetMember(name);
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
-            => new PythonCollection(this, location, args.OfType<IMember>().ToArray());
+        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
+            => new PythonCollection(this, location, args.Arguments.Select(a => a.Value).OfType<IMember>().ToArray());
 
         // Constructor call
-        public override IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args)
+        public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
             => CreateInstance(Name, instance?.Location ?? LocationInfo.Empty, args);
 
         public override IMember Index(IPythonInstance instance, object index)

@@ -92,49 +92,49 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // For regular bound methods add first parameter and set it to the class.
 
             var parameters = new List<ParameterInfo>();
-            var skip = 0;
-            if (_self != null && _function.HasClassFirstArgument()) {
-                var p0 = FunctionDefinition.Parameters.FirstOrDefault();
-                if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
-                    // Actual parameter type will be determined when method is invoked.
-                    // The reason is that if method might be called on a derived class.
-                    var selfType = new FunctionArgumentType(0, _self);
-                    // Declare self or cls in this scope.
-                    Eval.DeclareVariable(p0.Name, selfType, p0.NameExpression);
-                    // Set parameter info.
-                    var pi = new ParameterInfo(Ast, p0, selfType);
-                    pi.SetType(selfType);
-                    parameters.Add(pi);
-                    skip++;
-                }
-            }
+            //var skip = 0;
+            //if (_self != null && _function.HasClassFirstArgument()) {
+            //    var p0 = FunctionDefinition.Parameters.FirstOrDefault();
+            //    if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
+            //        // Actual parameter type will be determined when method is invoked.
+            //        // The reason is that if method might be called on a derived class.
+            //        var selfType = new FunctionArgumentType(0, _self);
+            //        // Declare self or cls in this scope.
+            //        Eval.DeclareVariable(p0.Name, selfType, p0.NameExpression);
+            //        // Set parameter info.
+            //        var pi = new ParameterInfo(Ast, p0, selfType);
+            //        pi.SetType(selfType);
+            //        parameters.Add(pi);
+            //        skip++;
+            //    }
+            //}
 
-            //// Declare parameters in scope
-            for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
-                cancellationToken.ThrowIfCancellationRequested();
+            ////// Declare parameters in scope
+            //for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
+            //    cancellationToken.ThrowIfCancellationRequested();
 
-                var p = FunctionDefinition.Parameters[i];
-                if (!string.IsNullOrEmpty(p.Name)) {
-                    // If parameter has default value, look for the annotation locally first
-                    // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
-                    IPythonType paramType = null;
-                    if (p.DefaultValue != null) {
-                        paramType = await Eval.GetTypeFromAnnotationAsync(p.Annotation, cancellationToken, LookupOptions.Local | LookupOptions.Builtins);
-                        if (paramType == null) {
-                            var defaultValue = await Eval.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken);
-                            if (!defaultValue.IsUnknown()) {
-                                paramType = defaultValue.GetPythonType();
-                            }
-                        }
-                    }
-                    // If all else fails, look up globally.
-                    paramType = paramType ?? await Eval.GetTypeFromAnnotationAsync(p.Annotation, cancellationToken);
+            //    var p = FunctionDefinition.Parameters[i];
+            //    if (!string.IsNullOrEmpty(p.Name)) {
+            //        // If parameter has default value, look for the annotation locally first
+            //        // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
+            //        IPythonType paramType = null;
+            //        if (p.DefaultValue != null) {
+            //            paramType = await Eval.GetTypeFromAnnotationAsync(p.Annotation, cancellationToken, LookupOptions.Local | LookupOptions.Builtins);
+            //            if (paramType == null) {
+            //                var defaultValue = await Eval.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken);
+            //                if (!defaultValue.IsUnknown()) {
+            //                    paramType = defaultValue.GetPythonType();
+            //                }
+            //            }
+            //        }
+            //        // If all else fails, look up globally.
+            //        paramType = paramType ?? await Eval.GetTypeFromAnnotationAsync(p.Annotation, cancellationToken);
 
-                    var pi = new ParameterInfo(Ast, p, paramType);
-                    await DeclareParameterAsync(p, i, pi, cancellationToken);
-                    parameters.Add(pi);
-                }
-            }
+            //        var pi = new ParameterInfo(Ast, p, paramType);
+            //        await DeclareParameterAsync(p, i, pi, cancellationToken);
+            //        parameters.Add(pi);
+            //    }
+            //}
             _overload.SetParameters(parameters);
         }
 

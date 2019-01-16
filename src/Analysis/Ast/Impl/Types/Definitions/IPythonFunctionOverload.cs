@@ -45,7 +45,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Determines return value type given arguments for the particular call.
         /// For annotated or stubbed functions the annotation type is always returned.
         /// </summary>
-        IMember GetReturnValue(LocationInfo callLocation, IReadOnlyList<IMember> args = null);
+        IMember GetReturnValue(LocationInfo callLocation, IArgumentSet args);
 
         /// <summary>
         /// Return value documentation.

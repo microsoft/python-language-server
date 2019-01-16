@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Threading;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -60,15 +59,15 @@ namespace Microsoft.Python.Analysis.Types {
         /// where constructor may want to create specialized type.</param>
         /// <param name="location">Instance location</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
-        IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args);
+        IMember CreateInstance(string typeName = null, LocationInfo location = null, IArgumentSet args = null);
 
         /// <summary>
         /// Invokes method or property on the specified instance.
         /// </summary>
         /// <param name="instance">Instance of the type.</param>
-        /// <param name="memberName">Method name.</param>
-        /// <param name="args">Call arguments.</param>
-        IMember CallAsync(IPythonInstance instance, ArgumentSet argSet, CancellationToken cancellationToken = default);
+        /// <param name="memberName">Member name to call, if applicable.</param>
+        /// <param name="argSet">Call arguments.</param>
+        IMember Call(IPythonInstance instance, string memberName, IArgumentSet argSet);
 
         /// <summary>
         /// Invokes indexer on the specified instance.

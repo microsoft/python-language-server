@@ -74,17 +74,17 @@ namespace Microsoft.Python.Analysis.Types {
         /// where constructor may want to create specialized type.</param>
         /// <param name="location">Instance location</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
-        public virtual IMember CreateInstance(string typeName, LocationInfo location, IReadOnlyList<object> args)
+        public virtual IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
             => new PythonInstance(this, location);
 
         /// <summary>
         /// Invokes method or property on the specified instance.
         /// </summary>
         /// <param name="instance">Instance of the type.</param>
-        /// <param name="memberName">Method name.</param>
-        /// <param name="args">Call arguments.</param>
-        public virtual IMember Call(IPythonInstance instance, string memberName, IReadOnlyList<object> args) 
-            => instance?.Call(memberName, args) ?? UnknownType;
+        /// <param name="memberName">Member name to call, if applicable.</param>
+        /// <param name="argSet">Call arguments.</param>
+        public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet argSet) 
+            => instance?.Call(memberName, argSet) ?? UnknownType;
 
         /// <summary>
         /// Invokes indexer on the specified instance.

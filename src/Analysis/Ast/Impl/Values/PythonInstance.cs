@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Values {
         public LocationInfo Location { get; }
         public virtual PythonMemberType MemberType => PythonMemberType.Instance;
 
-        public virtual IMember Call(string memberName, IReadOnlyList<object> args) {
+        public virtual IMember Call(string memberName, IArgumentSet args) {
             var t = Type.GetMember(memberName).GetPythonType();
             switch (t) {
                 case IPythonFunctionType fn:
@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Values {
         public virtual IPythonIterator GetIterator() {
             var iteratorFunc = Type.GetMember(@"__iter__") as IPythonFunctionType;
             var o = iteratorFunc?.Overloads.FirstOrDefault();
-            var instance = o?.GetReturnValue(LocationInfo.Empty);
+            var instance = o?.GetReturnValue(LocationInfo.Empty, ArgumentSet.Empty);
             return instance != null ? new PythonInstanceIterator(instance, Type.DeclaringModule.Interpreter) : null;
         }
 
