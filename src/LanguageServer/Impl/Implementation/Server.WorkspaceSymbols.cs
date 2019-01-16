@@ -16,11 +16,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
+using Microsoft.PythonTools.Analysis.Indexing;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
@@ -30,42 +32,50 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private static int _symbolHierarchyDepthLimit = 10;
         private static int _symbolHierarchyMaxSymbols = 1000;
 
-        public override async Task<SymbolInformation[]> WorkspaceSymbols(WorkspaceSymbolParams @params, CancellationToken cancellationToken) {
-            await WaitForCompleteAnalysisAsync(cancellationToken);
+        public override Task<SymbolInformation[]> WorkspaceSymbols(WorkspaceSymbolParams @params, CancellationToken cancellationToken) {
+            var symbols = SymbolIndex.WorkspaceSymbols(@params.query);
 
-            var members = Enumerable.Empty<IMemberResult>();
-            var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
+            var result = symbols.Take(_symbolHierarchyMaxSymbols).Select(s => {
+                cancellationToken.ThrowIfCancellationRequested();
+                return new SymbolInformation {
+                    name = s.Name,
+                    kind = (SymbolKind)s.Kind,
+                    location = new Location {
+                        range = s.Range,
+                        uri = s.DocumentUri,
+                    },
+                    containerName = s.ContainerName,
+                };
+            }).ToArray();
 
-            foreach (var entry in ProjectFiles) {
-                members = members.Concat(
-                    await GetModuleVariablesAsync(entry as ProjectEntry, opts, @params.query, 50, cancellationToken)
-                );
-            }
-
-            members = members.GroupBy(mr => mr.Name).Select(g => g.First());
-            return members.Select(ToSymbolInformation).ToArray();
+            return Task.FromResult(result);
         }
 
-        public override async Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
-            await WaitForCompleteAnalysisAsync(cancellationToken);
-            var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
-            var entry = ProjectFiles.GetEntry(@params.textDocument.uri);
+        public override Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            var symbols = SymbolIndex.HierarchicalDocumentSymbols(uri);
 
-            var members = await GetModuleVariablesAsync(entry as ProjectEntry, opts, string.Empty, 50, cancellationToken);
-            return members
-                .GroupBy(mr => mr.Name)
-                .Select(g => g.First())
-                .Select(ToSymbolInformation)
-                .ToArray();
+            var result = symbols.Flatten(uri, depthLimit: _symbolHierarchyDepthLimit).Take(_symbolHierarchyMaxSymbols).Select(s => {
+                cancellationToken.ThrowIfCancellationRequested();
+                return new SymbolInformation {
+                    name = s.Name,
+                    kind = (SymbolKind)s.Kind,
+                    location = new Location {
+                        range = s.Range,
+                        uri = s.DocumentUri,
+                    },
+                    containerName = s.ContainerName,
+                };
+            }).ToArray();
+
+            return Task.FromResult(result);
         }
 
-        public override async Task<DocumentSymbol[]> HierarchicalDocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
-            await WaitForCompleteAnalysisAsync(cancellationToken);
-            var opts = GetMemberOptions.ExcludeBuiltins | GetMemberOptions.DeclaredOnly;
-            var entry = ProjectFiles.GetEntry(@params.textDocument.uri);
-
-            var members = await GetModuleVariablesAsync(entry as ProjectEntry, opts, string.Empty, 50, cancellationToken);
-            return ToDocumentSymbols(members);
+        public override Task<DocumentSymbol[]> HierarchicalDocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            var symbols = SymbolIndex.HierarchicalDocumentSymbols(uri);
+            var result = ToDocumentSymbols(symbols, cancellationToken);
+            return Task.FromResult(result);
         }
 
         private static async Task<List<IMemberResult>> GetModuleVariablesAsync(ProjectEntry entry, GetMemberOptions opts, string prefix, int timeout, CancellationToken token) {
@@ -78,7 +88,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var all = breadthFirst.SelectMany(c => analysis.GetAllAvailableMembersFromScope(c, opts));
             var result = all
                 .Where(m => {
-                    if (m.Values.Any(v => v.DeclaringModule == entry || 
+                    if (m.Values.Any(v => v.DeclaringModule == entry ||
                         v.Locations
                             .MaybeEnumerate()
                             .ExcludeDefault()
@@ -89,6 +99,28 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 })
                 .Take(_symbolHierarchyMaxSymbols);
             return result;
+        }
+
+        private DocumentSymbol[] ToDocumentSymbols(IEnumerable<HierarchicalSymbol> hSymbols, CancellationToken cancellationToken = default(CancellationToken)) {
+            return hSymbols.MaybeEnumerate().Select(hSym => new DocumentSymbol {
+                name = hSym.Name,
+                detail = hSym.Detail,
+                kind = (SymbolKind)hSym.Kind,
+                deprecated = hSym.Deprecated ?? false,
+                range = hSym.Range,
+                selectionRange = hSym.SelectionRange,
+                children = ToDocumentSymbols(hSym.Children),
+                _functionKind = hSym._functionKind,
+            }).Select(v => {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (v.selectionRange.start < v.range.start || v.selectionRange.end > v.range.end) {
+                    Debug.Fail($"selectionRange {v.selectionRange} not encompassed by range {v.range}");
+                    v.selectionRange = v.range;
+                }
+
+                return v;
+            }).ToArray();
         }
 
         private SymbolInformation ToSymbolInformation(IMemberResult m) {

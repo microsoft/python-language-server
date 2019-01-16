@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Extensions;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Documentation;
+using Microsoft.PythonTools.Analysis.Indexing;
 using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Intellisense;
 using Microsoft.PythonTools.Interpreter;
@@ -97,6 +98,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             ParseQueue = new ParseQueue();
             _editorFiles = new EditorFiles(this);
 
+            SymbolIndex = new SymbolIndex();
+            OnParseComplete += UpdateSymbolIndex;
+
             _disposableBag
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
@@ -106,6 +110,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         (ext as IDisposable)?.Dispose();
                     }
                 })
+                .Add(() => OnParseComplete -= UpdateSymbolIndex)
                 .Add(ProjectFiles)
                 .Add(() => Analyzer?.Dispose())
                 .Add(AnalysisQueue)
@@ -120,6 +125,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         internal AnalysisQueue AnalysisQueue { get; }
         internal ParseQueue ParseQueue { get; }
+        internal SymbolIndex SymbolIndex { get; }
 
         internal PythonAnalyzer Analyzer { get; private set; }
         internal ServerSettings Settings { get; private set; } = new ServerSettings();
@@ -708,6 +714,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 await GetAnalysisAsync(pf.DocumentUri, cancellationToken);
             }
             TraceMessage($"Analysis complete.");
+        }
+
+        private void UpdateSymbolIndex(object sender, ParseCompleteEventArgs args) {
+            ProjectFiles.GetEntry(args.uri, args.version, out var entry, out var tree);
+            var ast = entry.GetCurrentParse()?.Tree;
+            if (ast != null) {
+                SymbolIndex.UpdateParseTree(args.uri, ast);
+            }
         }
     }
 }
