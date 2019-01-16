@@ -149,6 +149,66 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
             return false;
         }
 
+        public override bool Walk(ForStatement node) {
+            _stack.EnterDeclared();
+            AddVarSymbolRecursive(node.Left);
+            node.List?.Walk(this);
+            node.Body?.Walk(this);
+            _stack.ExitDeclaredAndMerge();
+
+            _stack.EnterDeclared();
+            node.Else?.Walk(this);
+            _stack.ExitDeclaredAndMerge();
+
+            return false;
+        }
+
+        public override bool Walk(ComprehensionFor node) {
+            AddVarSymbolRecursive(node.Left);
+            return false;
+        }
+
+        public override bool Walk(ListComprehension node) {
+            _stack.Enter(SymbolKind.None);
+            return base.Walk(node);
+        }
+
+        public override void PostWalk(ListComprehension node) => ExitComprehension(node);
+
+        public override bool Walk(DictionaryComprehension node) {
+            _stack.Enter(SymbolKind.None);
+            return base.Walk(node);
+        }
+
+        public override void PostWalk(DictionaryComprehension node) => ExitComprehension(node);
+
+        public override bool Walk(SetComprehension node) {
+            _stack.Enter(SymbolKind.None);
+            return base.Walk(node);
+        }
+
+        public override void PostWalk(SetComprehension node) => ExitComprehension(node);
+
+        public override bool Walk(GeneratorExpression node) {
+            _stack.Enter(SymbolKind.None);
+            return base.Walk(node);
+        }
+
+        public override void PostWalk(GeneratorExpression node) => ExitComprehension(node);
+
+        private void ExitComprehension(Comprehension node) {
+            var children = _stack.Exit();
+            var span = node.GetSpan(_ast);
+
+            _stack.AddSymbol(new HierarchicalSymbol(
+                $"<{node.NodeName}>",
+                SymbolKind.None,
+                span,
+                children: children
+            ));
+        }
+
+
         private void AddVarSymbol(NameExpression node) {
             if (node == null) {
                 return;
@@ -168,6 +228,24 @@ namespace Microsoft.PythonTools.Analysis.Indexing {
             var span = node.GetSpan(_ast);
 
             _stack.AddSymbol(new HierarchicalSymbol(node.Name, kind, span));
+        }
+
+        private void AddVarSymbolRecursive(Expression node) {
+            if (node == null) {
+                return;
+            }
+
+            switch (node) {
+                case NameExpression ne:
+                    AddVarSymbol(ne);
+                    return;
+
+                case SequenceExpression se:
+                    foreach (var item in se.Items.MaybeEnumerate()) {
+                        AddVarSymbolRecursive(item);
+                    }
+                    return;
+            }
         }
 
         private (SymbolKind kind, string functionKind)? DecoratorExpressionToKind(Expression exp) {

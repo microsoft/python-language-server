@@ -464,6 +464,81 @@ def func2(x, y): ...";
         }
 
         [TestMethod, Priority(0)]
+        public void WalkerForLoop() {
+            var code = @"z = False
+for [x, y, (p, q)] in [[1, 2, [3, 4]]]:
+    z += x
+else:
+    z = None";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("z", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+                new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(2, 6, 2, 7)),
+                new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(2, 9, 2, 10)),
+                new HierarchicalSymbol("p", SymbolKind.Variable, new SourceSpan(2, 13, 2, 14)),
+                new HierarchicalSymbol("q", SymbolKind.Variable, new SourceSpan(2, 16, 2, 17)),
+                new HierarchicalSymbol("z", SymbolKind.Variable, new SourceSpan(3, 5, 3, 6)),
+                new HierarchicalSymbol("z", SymbolKind.Variable, new SourceSpan(5, 5, 5, 6)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void WalkerListComprehension() {
+            var code = @"flat_list = [item for sublist in l for item in sublist]";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("<list comprehension>", SymbolKind.None, new SourceSpan(1, 13, 1, 56), new SourceSpan(1, 13, 1, 56), new[] {
+                    new HierarchicalSymbol("sublist", SymbolKind.Variable, new SourceSpan(1, 23, 1, 30)),
+                    new HierarchicalSymbol("item", SymbolKind.Variable, new SourceSpan(1, 40, 1, 44)),
+                }),
+                new HierarchicalSymbol("flat_list", SymbolKind.Variable, new SourceSpan(1, 1, 1, 10)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void WalkerDictionaryComprehension() {
+            var code = @"d = { x: y for x, y in zip(range(10), range(10)) }";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("<dict comprehension>", SymbolKind.None, new SourceSpan(1, 5, 1, 51), new SourceSpan(1, 5, 1, 51), new[] {
+                    new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 16, 1, 17)),
+                    new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 19, 1, 20)),
+                }),
+                new HierarchicalSymbol("d", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void WalkerSetComprehension() {
+            var code = @"s = { x for x in range(10) }";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("<set comprehension>", SymbolKind.None, new SourceSpan(1, 5, 1, 29), new SourceSpan(1, 5, 1, 29), new[] {
+                    new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 13, 1, 14)),
+                }),
+                new HierarchicalSymbol("s", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void WalkerGenerator() {
+            var code = @"g = (x + y for x, y in zip(range(10), range(10)))";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("<generator>", SymbolKind.None, new SourceSpan(1, 5, 1, 50), new SourceSpan(1, 5, 1, 50), new[] {
+                    new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 16, 1, 17)),
+                    new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 19, 1, 20)),
+                }),
+                new HierarchicalSymbol("g", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
         public void WalkerIncompleteFunction() {
             var code = @"def func(x, y):";
 
