@@ -126,7 +126,7 @@ namespace Microsoft.Python.Parsing.Ast {
                         continue;
                     }
 
-                    _args[i].AppendCodeString(res, ast, format, i > 0 ? spaceAfterComma : string.Empty);
+                    _args[i].AppendCodeString(res, ast, format, spaceAfterComma);
                 }
 
                 if (listWhiteSpace != null && listWhiteSpace.Length == _args.Length) {

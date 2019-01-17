@@ -392,7 +392,7 @@ def i(x = []): pass
 def j(x = [None]): pass
 def k(x = ()): pass
 def l(x = (2, )): pass
-def m(x = math.atan2(1, 0)): pass
+def m(x = math.atan2(1,0)): pass
 ";
             var analysis = await GetAnalysisAsync(code);
             var tests = new[] {
@@ -403,7 +403,7 @@ def m(x = math.atan2(1, 0)): pass
                 new { FuncName = "j", DefaultValue="[None]" },
                 new { FuncName = "k", DefaultValue = "()" },
                 new { FuncName = "l", DefaultValue = "(2)" },
-                new { FuncName = "m", DefaultValue = "math.atan2(1, 0)" },
+                new { FuncName = "m", DefaultValue = "math.atan2(1,0)" },
             };
 
             foreach (var test in tests) {

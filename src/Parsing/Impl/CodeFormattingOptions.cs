@@ -159,7 +159,7 @@ namespace Microsoft.Python.Parsing {
         public bool? SpaceWithinIndexBrackets { get; set; }
 
         public bool? SpaceBeforeComma { get; set; }
-        public bool? SpaceAfterComma { get; set; } = true;
+        public bool? SpaceAfterComma { get; set; }
 
         public bool? SpaceBeforeDot { get; set; }
         public bool? SpaceAfterDot { get; set; }
