@@ -30,6 +30,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public override BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public override PythonMemberType MemberType => PythonMemberType.Generic;
+        public override bool IsSpecialized => true;
+
 
         public static IPythonType FromTypeVar(IReadOnlyList<IMember> args, IPythonModule declaringModule, LocationInfo location) {
             if (args.Count == 0) {

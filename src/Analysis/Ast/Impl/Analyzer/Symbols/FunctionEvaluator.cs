@@ -130,12 +130,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
                     // Actual parameter type will be determined when method is invoked.
                     // The reason is that if method might be called on a derived class.
-                    var selfType = new FunctionArgumentType(0, _self);
                     // Declare self or cls in this scope.
-                    Eval.DeclareVariable(p0.Name, selfType, p0.NameExpression);
+                    Eval.DeclareVariable(p0.Name, _self, p0.NameExpression);
                     // Set parameter info.
-                    var pi = new ParameterInfo(Ast, p0, selfType);
-                    pi.SetType(selfType);
+                    var pi = new ParameterInfo(Ast, p0, _self);
+                    pi.SetType(_self);
                     parameters.Add(pi);
                     skip++;
                 }
@@ -178,13 +177,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // TODO: technically generics may have constraints. Should we consider them?
                 paramType = pi.Type;
             } else {
-                // Declare as an argument which type is only known at the invocation time.
                 var defaultValue = await Eval.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? Eval.UnknownType;
-                var defaultValueType = defaultValue.GetPythonType();
 
-                paramType = new FunctionArgumentType(index, defaultValueType);
-                if (!defaultValueType.IsUnknown()) {
-                    pi?.SetDefaultValueType(defaultValueType);
+                paramType = defaultValue.GetPythonType();
+                if (!paramType.IsUnknown()) {
+                    pi?.SetDefaultValueType(paramType);
                 }
             }
 

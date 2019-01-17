@@ -21,7 +21,9 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Extensions;
+using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -68,8 +70,17 @@ namespace Microsoft.Python.Analysis.Types {
             var fd = fn.FunctionDefinition;
             if (fd == null || fn.IsSpecialized) {
                 // Typically specialized function, like TypeVar() that does not actually have AST definition.
-                // Just make the arguments from the call expression and be done.
-                _arguments = callExpr.Args.Select(x => new Argument(x.Name, ParameterKind.Normal) { Expression = x.Expression }).ToList();
+                // Make the arguments from the call expression. If argument does not have name, 
+                // try using name from the function definition based on the argument position.
+                _arguments = new List<Argument>();
+                for (var i = 0; i < callExpr.Args.Count; i++) {
+                    var name = callExpr.Args[i].Name;
+                    if (string.IsNullOrEmpty(name)) {
+                        name = fd != null && i < fd.Parameters.Length ? fd.Parameters[i].Name : null;
+                    }
+                    name = name ?? $"arg{i}";
+                    _arguments.Add(new Argument(name, ParameterKind.Normal) { Expression = callExpr.Args[i].Expression });
+                }
                 return;
             }
 
@@ -111,150 +122,157 @@ namespace Microsoft.Python.Analysis.Types {
                 formalParamIndex++;
             }
 
-            // Positional arguments
-            var callParamIndex = 0;
-            for (; callParamIndex < callExpr.Args.Count; callParamIndex++, formalParamIndex++) {
-                var arg = callExpr.Args[callParamIndex];
+            try {
+                // Positional arguments
+                var callParamIndex = 0;
+                for (; callParamIndex < callExpr.Args.Count; callParamIndex++, formalParamIndex++) {
+                    var arg = callExpr.Args[callParamIndex];
 
-                if (!string.IsNullOrEmpty(arg.Name) && !arg.Name.StartsWithOrdinal("**")) {
-                    // Keyword argument. Done with positionals.
-                    break;
-                }
-
-                if (formalParamIndex >= fd.Parameters.Length) {
-                    // We ran out of formal parameters and yet haven't seen
-                    // any sequence or dictionary ones. This looks like an error.
-                    _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(module).Span,
-                        ErrorCodes.TooManyFunctionArguments, Severity.Warning));
-                    return;
-                }
-
-                var formalParam = fd.Parameters[formalParamIndex];
-                if (formalParam.IsList) {
-                    if (string.IsNullOrEmpty(formalParam.Name)) {
-                        // If the next unfilled slot is a vararg slot, and it does not have a name, then it is an error.
-                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
-                            ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning));
-                        return;
+                    if (!string.IsNullOrEmpty(arg.Name) && !arg.Name.StartsWithOrdinal("**")) {
+                        // Keyword argument. Done with positionals.
+                        break;
                     }
-                    // If the next unfilled slot is a vararg slot then all remaining
-                    // non-keyword arguments are placed into the vararg slot.
-                    if (_listArgument == null) {
+
+                    if (formalParamIndex >= fd.Parameters.Length) {
+                        // We ran out of formal parameters and yet haven't seen
+                        // any sequence or dictionary ones. This looks like an error.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(module).Span,
                             ErrorCodes.TooManyFunctionArguments, Severity.Warning));
                         return;
                     }
 
-                    for (; callParamIndex < callExpr.Args.Count; callParamIndex++) {
-                        arg = callExpr.Args[callParamIndex];
-                        if (!string.IsNullOrEmpty(arg.Name)) {
-                            // Keyword argument. Done here.
-                            break;
+                    var formalParam = fd.Parameters[formalParamIndex];
+                    if (formalParam.IsList) {
+                        if (string.IsNullOrEmpty(formalParam.Name)) {
+                            // If the next unfilled slot is a vararg slot, and it does not have a name, then it is an error.
+                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
+                                ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning));
+                            return;
                         }
-                        _listArgument._Expressions.Add(arg.Expression);
+
+                        // If the next unfilled slot is a vararg slot then all remaining
+                        // non-keyword arguments are placed into the vararg slot.
+                        if (_listArgument == null) {
+                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(module).Span,
+                                ErrorCodes.TooManyFunctionArguments, Severity.Warning));
+                            return;
+                        }
+
+                        for (; callParamIndex < callExpr.Args.Count; callParamIndex++) {
+                            arg = callExpr.Args[callParamIndex];
+                            if (!string.IsNullOrEmpty(arg.Name)) {
+                                // Keyword argument. Done here.
+                                break;
+                            }
+
+                            _listArgument._Expressions.Add(arg.Expression);
+                        }
+
+                        break; // Sequence or dictionary parameter found. Done here.
                     }
-                    break; // Sequence or dictionary parameter found. Done here.
-                }
 
-                if (formalParam.IsDictionary) {
-                    // Next slot is a dictionary slot, but we have positional arguments still.
-                    _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
-                        ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning));
-                    return;
-                }
-
-                // Regular parameter
-                slots[formalParamIndex].Expression = arg.Expression;
-            }
-
-            // Keyword arguments
-            for (; callParamIndex < callExpr.Args.Count; callParamIndex++) {
-                var arg = callExpr.Args[callParamIndex];
-
-                if (string.IsNullOrEmpty(arg.Name)) {
-                    _errors.Add(new DiagnosticsEntry(Resources.Analysis_PositionalArgumentAfterKeyword, arg.GetLocation(module).Span,
-                        ErrorCodes.PositionalArgumentAfterKeyword, Severity.Warning));
-                    return;
-                }
-
-                var nvp = slots.FirstOrDefault(s => s.Name.EqualsOrdinal(arg.Name));
-                if (nvp == null) {
-                    // 'def f(a, b)' and then 'f(0, c=1)'. Per spec:
-                    // if there is a 'keyword dictionary' argument, the argument is added
-                    // to the dictionary using the keyword name as the dictionary key,
-                    // unless there is already an entry with that key, in which case it is an error.
-                    if (_dictArgument == null) {
-                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_UnknownParameterName, arg.GetLocation(module).Span,
-                            ErrorCodes.UnknownParameterName, Severity.Warning));
+                    if (formalParam.IsDictionary) {
+                        // Next slot is a dictionary slot, but we have positional arguments still.
+                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
+                            ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning));
                         return;
                     }
 
-                    if (_dictArgument.Arguments.ContainsKey(arg.Name)) {
+                    // Regular parameter
+                    slots[formalParamIndex].Expression = arg.Expression;
+                }
+
+                // Keyword arguments
+                for (; callParamIndex < callExpr.Args.Count; callParamIndex++) {
+                    var arg = callExpr.Args[callParamIndex];
+
+                    if (string.IsNullOrEmpty(arg.Name)) {
+                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_PositionalArgumentAfterKeyword, arg.GetLocation(module).Span,
+                            ErrorCodes.PositionalArgumentAfterKeyword, Severity.Warning));
+                        return;
+                    }
+
+                    var nvp = slots.FirstOrDefault(s => s.Name.EqualsOrdinal(arg.Name));
+                    if (nvp == null) {
+                        // 'def f(a, b)' and then 'f(0, c=1)'. Per spec:
+                        // if there is a 'keyword dictionary' argument, the argument is added
+                        // to the dictionary using the keyword name as the dictionary key,
+                        // unless there is already an entry with that key, in which case it is an error.
+                        if (_dictArgument == null) {
+                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_UnknownParameterName, arg.GetLocation(module).Span,
+                                ErrorCodes.UnknownParameterName, Severity.Warning));
+                            return;
+                        }
+
+                        if (_dictArgument.Arguments.ContainsKey(arg.Name)) {
+                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(module).Span,
+                                ErrorCodes.ParameterAlreadySpecified, Severity.Warning));
+                            return;
+                        }
+
+                        _dictArgument._Expressions[arg.Name] = arg.Expression;
+                        continue;
+                    }
+
+                    if (nvp.Expression != null || nvp.Value != null) {
+                        // Slot is already filled.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(module).Span,
                             ErrorCodes.ParameterAlreadySpecified, Severity.Warning));
                         return;
                     }
-                    _dictArgument._Expressions[arg.Name] = arg.Expression;
-                    continue;
+
+                    // OK keyword parameter
+                    nvp.Expression = arg.Expression;
                 }
 
-                if (nvp.Expression != null || nvp.Value != null) {
-                    // Slot is already filled.
-                    _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(module).Span,
-                        ErrorCodes.ParameterAlreadySpecified, Severity.Warning));
-                    return;
-                }
+                // We went through all positionals and keywords.
+                // For each remaining empty slot: if there is a default value for that slot,
+                // then fill the slot with the default value. If there is no default value,
+                // then it is an error.
+                foreach (var slot in slots.Where(s => s.Kind != ParameterKind.List && s.Kind != ParameterKind.Dictionary && s.Value == null)) {
+                    if (slot.Expression == null) {
+                        var parameter = fd.Parameters.First(p => p.Name == slot.Name);
+                        if (parameter.DefaultValue == null) {
+                            // TODO: parameter is not assigned and has no default value.
+                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterMissing.FormatUI(slot.Name), callLocation.Span,
+                                ErrorCodes.ParameterMissing, Severity.Warning));
+                        }
 
-                // OK keyword parameter
-                nvp.Expression = arg.Expression;
-            }
-
-            // We went through all positionals and keywords.
-            // For each remaining empty slot: if there is a default value for that slot,
-            // then fill the slot with the default value. If there is no default value,
-            // then it is an error.
-            foreach (var slot in slots.Where(s => s.Kind != ParameterKind.List && s.Kind != ParameterKind.Dictionary && s.Value == null)) {
-                if (slot.Expression == null) {
-                    var parameter = fd.Parameters.First(p => p.Name == slot.Name);
-                    if (parameter.DefaultValue == null) {
-                        // TODO: parameter is not assigned and has no default value.
-                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterMissing.FormatUI(slot.Name), callLocation.Span,
-                            ErrorCodes.ParameterMissing, Severity.Warning));
+                        slot.Expression = parameter.DefaultValue;
                     }
-                    slot.Expression = parameter.DefaultValue;
                 }
+            } finally {
+                // Optimistically return what we gathered, even if there are errors.
+                _arguments = slots.Where(s => s.Kind != ParameterKind.List && s.Kind != ParameterKind.Dictionary).ToList();
             }
-
-            // Optimistically return what we gathered, even if there are errors.
-            _arguments = slots.Where(s => s.Kind != ParameterKind.List && s.Kind != ParameterKind.Dictionary).ToList();
         }
 
         public async Task<ArgumentSet> EvaluateAsync(CancellationToken cancellationToken = default) {
-            if (_evaluated || _eval == null) {
+                if (_evaluated || _eval == null) {
+                    return this;
+                }
+
+                foreach (var a in _arguments.Where(x => x.Value == null)) {
+                    a.Value = await _eval.GetValueFromExpressionAsync(a.Expression, cancellationToken);
+                }
+
+                if (_listArgument != null) {
+                    foreach (var e in _listArgument.Expressions) {
+                        var value = await _eval.GetValueFromExpressionAsync(e, cancellationToken);
+                        _listArgument._Values.Add(value);
+                    }
+                }
+
+                if (_dictArgument != null) {
+                    foreach (var e in _dictArgument.Expressions) {
+                        var value = await _eval.GetValueFromExpressionAsync(e.Value, cancellationToken);
+                        _dictArgument._Args[e.Key] = value;
+                    }
+                }
+
+                _evaluated = true;
                 return this;
             }
-
-            foreach (var a in _arguments.Where(x => x.Value == null)) {
-                a.Value = await _eval.GetValueFromExpressionAsync(a.Expression, cancellationToken);
-            }
-
-            if (_listArgument != null) {
-                foreach (var e in _listArgument.Expressions) {
-                    var value = await _eval.GetValueFromExpressionAsync(e, cancellationToken);
-                    _listArgument._Values.Add(value);
-                }
-            }
-
-            if (_dictArgument != null) {
-                foreach (var e in _dictArgument.Expressions) {
-                    var value = await _eval.GetValueFromExpressionAsync(e.Value, cancellationToken);
-                    _dictArgument._Args[e.Key] = value;
-                }
-            }
-
-            _evaluated = true;
-            return this;
-        }
 
         private sealed class Argument : IArgument {
             public string Name { get; }

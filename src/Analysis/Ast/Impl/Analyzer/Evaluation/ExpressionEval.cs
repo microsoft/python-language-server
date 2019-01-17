@@ -66,8 +66,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
         public IPythonType UnknownType { get; }
 
-        public LocationInfo GetLoc(Node node) => node.GetLocation(Module, Ast);
-        public LocationInfo GetLocOfName(Node node, NameExpression header) => node.GetLocationOfName(header, Module, Ast);
+        public LocationInfo GetLoc(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
+        public LocationInfo GetLocOfName(Node node, NameExpression header) => node?.GetLocationOfName(header, Module, Ast) ?? LocationInfo.Empty;
 
         public Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default)
             => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
@@ -116,6 +116,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
                 case YieldExpression yex:
                     m = await GetValueFromExpressionAsync(yex.Expression, cancellationToken);
+                    break;
+                case GeneratorExpression genex:
+                    m = await GetValueFromGeneratorAsync(genex, cancellationToken);
                     break;
                 default:
                     m = await GetValueFromBinaryOpAsync(expr, cancellationToken) ?? GetConstantFromLiteral(expr, options);

@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -126,19 +127,6 @@ namespace Microsoft.Python.Analysis.Types {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
                 var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args.Values<IMember>());
-                if (!rt.IsUnknown()) {
-                    return rt;
-                }
-            }
-
-            // Then see if return value matches type of one of the input arguments.
-            var t = StaticReturnValue.GetPythonType();
-            if (!(t is IFunctionArgumentType) && !t.IsUnknown()) {
-                return StaticReturnValue;
-            }
-
-            if (t is IFunctionArgumentType cat && args != null) {
-                var rt = cat.ParameterIndex < args.Arguments.Count ? args.Arguments[cat.ParameterIndex].Value as IMember : null;
                 if (!rt.IsUnknown()) {
                     return rt;
                 }

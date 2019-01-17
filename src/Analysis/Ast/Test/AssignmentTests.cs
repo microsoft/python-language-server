@@ -49,7 +49,7 @@ class x(object):
             var xType = cls.Should().HaveMethod("f")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveParameterAt(0)
-                .Which.Should().HaveName("self").And.HaveType("function argument").Which;
+                .Which.Should().HaveName("self").And.HaveType("x").Which;
 
             xType.Should().HaveMember<IPythonInstance>("x")
                 .Which.Should().HaveType(BuiltinTypeId.Str);
@@ -75,7 +75,6 @@ t.x, t. =
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task BadKeywordArguments() {
             const string code = @"
 def f(a, b):

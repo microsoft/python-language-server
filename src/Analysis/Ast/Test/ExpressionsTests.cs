@@ -200,7 +200,6 @@ for i in range(5):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task Sum() {
             const string code = @"
 s = sum(i for i in [0,1])

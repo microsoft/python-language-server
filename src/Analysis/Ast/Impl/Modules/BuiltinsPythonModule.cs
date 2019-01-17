@@ -149,7 +149,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);
-            SpecializeFunction("sum", BuiltinsSpecializations.Identity);
+            SpecializeFunction("sum", BuiltinsSpecializations.CollectionItem);
             //SpecializeFunction(_builtinName, "super", SpecialSuper);
             SpecializeFunction("vars", BuiltinsSpecializations.DictStringToObject);
         }

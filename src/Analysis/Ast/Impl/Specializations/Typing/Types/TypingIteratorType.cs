@@ -51,6 +51,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IReadOnlyList<IPythonType> ItemTypes { get; }
         public bool Repeat { get; }
         public override string Name { get; }
+        public override bool IsSpecialized => true;
+
 
         public override bool Equals(object obj) {
             if (!(obj is IPythonType other)) {

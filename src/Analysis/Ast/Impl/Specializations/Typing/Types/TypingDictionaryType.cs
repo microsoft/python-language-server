@@ -49,6 +49,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
             => new TypingDictionary(this, location);
         public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ValueType);
+        public override bool IsSpecialized => true;
 
         private TypingTupleType CreateItemType() {
             var itemType = new TypingTupleType(new[] { KeyType, ValueType }, DeclaringModule.Interpreter);

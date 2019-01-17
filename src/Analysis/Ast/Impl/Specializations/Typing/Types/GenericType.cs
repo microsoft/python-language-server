@@ -48,6 +48,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public virtual string Documentation => Name;
         public bool IsBuiltin => false;
         public bool IsAbstract => true;
+        public bool IsSpecialized => true;
 
         public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) {
             var types = args.Values<IPythonType>();

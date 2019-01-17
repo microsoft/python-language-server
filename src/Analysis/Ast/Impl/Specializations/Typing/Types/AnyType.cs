@@ -29,6 +29,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public string Documentation => Name;
         public bool IsBuiltin => false;
         public bool IsAbstract => false;
+        public bool IsSpecialized => true;
+
         public PythonMemberType MemberType => PythonMemberType.Class;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
             => DeclaringModule.Interpreter.UnknownType;

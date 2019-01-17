@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
@@ -74,5 +75,8 @@ namespace Microsoft.Python.Analysis.Specializations {
             }
             return null;
         }
+
+        public static ReturnValueProvider CollectionItem
+            => (module, overload, location, args) => args.Count > 0 && args[0] is PythonCollection c ? c.Contents.FirstOrDefault() : null;
     }
 }

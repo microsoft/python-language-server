@@ -41,6 +41,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IReadOnlyList<string> ItemNames { get; }
 
         public override string Name { get; }
+        public override bool IsSpecialized => true;
+
 
         public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
             => new TypingTuple(this, location);

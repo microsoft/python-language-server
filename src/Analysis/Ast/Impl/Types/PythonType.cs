@@ -66,6 +66,7 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
         public virtual bool IsAbstract => false;
+        public virtual bool IsSpecialized => false;
 
         /// <summary>
         /// Create instance of the type, if any.
@@ -158,5 +159,9 @@ namespace Microsoft.Python.Analysis.Types {
         protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;
 
         public bool Equals(IPythonType other) => PythonTypeComparer.Instance.Equals(this, other);
+
+        public override bool Equals(object obj)
+            => obj is IPythonType pt && PythonTypeComparer.Instance.Equals(this, pt);
+        public override int GetHashCode() => 0;
     }
 }

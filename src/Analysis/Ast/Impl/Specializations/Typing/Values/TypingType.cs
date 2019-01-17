@@ -37,6 +37,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
         public string Documentation => Name;
         public bool IsBuiltin => false;
         public bool IsAbstract => false;
+        public bool IsSpecialized => true;
+
         public PythonMemberType MemberType => PythonMemberType.Class;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => _type.Call(instance, memberName, args);
         public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args ) => _type;

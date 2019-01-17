@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -29,16 +28,18 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly string _doc;
         private readonly object _lock = new object();
         private bool _isAbstract;
+        private bool _isSpecialized;
 
         /// <summary>
         /// Creates function for specializations
         /// </summary>
         public static PythonFunctionType ForSpecialization(string name, IPythonModule declaringModule)
-            => new PythonFunctionType(name, declaringModule) { IsSpecialized = true };
+            => new PythonFunctionType(name, declaringModule, true);
 
-        private PythonFunctionType(string name, IPythonModule declaringModule) :
+        private PythonFunctionType(string name, IPythonModule declaringModule, bool isSpecialized = false) :
             base(name, declaringModule, null, LocationInfo.Empty, BuiltinTypeId.Function) {
             DeclaringType = declaringModule;
+            _isSpecialized = isSpecialized;
         }
 
         /// <summary>
@@ -118,7 +119,8 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;
-        public bool IsSpecialized { get; private set; }
+        public override bool IsSpecialized => _isSpecialized;
+
         public bool IsOverload { get; private set; }
         public bool IsStub { get; internal set; }
 
@@ -131,6 +133,8 @@ namespace Microsoft.Python.Analysis.Types {
             new KeyValuePair<string, string>((DeclaringType as IHasQualifiedName)?.FullyQualifiedName ?? DeclaringType?.Name ?? DeclaringModule?.Name, Name);
         #endregion
 
+        internal void Specialize() => _isSpecialized = true;
+
         internal void AddOverload(IPythonFunctionOverload overload) {
             lock (_lock) {
                 _overloads.Add(overload);
@@ -138,7 +142,6 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);
-        internal void Specialize() => IsSpecialized = true;
 
         private void ProcessDecorators(FunctionDefinition fd) {
             foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
@@ -228,7 +231,6 @@ namespace Microsoft.Python.Analysis.Types {
             public IPythonType DeclaringType => _pf.DeclaringType;
             public bool IsStatic => _pf.IsStatic;
             public bool IsClassMethod => _pf.IsClassMethod;
-            public bool IsSpecialized => _pf.IsSpecialized;
             public bool IsOverload => _pf.IsOverload;
             public bool IsStub => _pf.IsStub;
 

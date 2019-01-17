@@ -16,7 +16,11 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
+using Microsoft.Python.Analysis.Values.Collections;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public static class ArgumentSetExtensions {
@@ -28,5 +32,33 @@ namespace Microsoft.Python.Analysis {
 
         public static T Argument<T>(this IArgumentSet args, int index) where T : class
             => args.Arguments[index].Value as T;
+
+        internal static void DeclareParametersInScope(this IArgumentSet args, ExpressionEval eval) {
+            if (eval == null) {
+                return;
+            }
+
+            // For class method no need to add extra parameters, but first parameter type should be the class.
+            // For static and unbound methods do not add or set anything.
+            // For regular bound methods add first parameter and set it to the class.
+
+            foreach (var a in args.Arguments) {
+                if (a.Value is IMember m) {
+                    eval.DeclareVariable(a.Name, m, LocationInfo.Empty, true);
+                }
+            }
+
+            if (args.ListArgument != null && !string.IsNullOrEmpty(args.ListArgument.Name)) {
+                var type = new PythonCollectionType(null, BuiltinTypeId.List, eval.Interpreter, false);
+                var list = new PythonCollection(type, LocationInfo.Empty, args.ListArgument.Values);
+                eval.DeclareVariable(args.ListArgument.Name, list, LocationInfo.Empty, true);
+            }
+
+            if (args.DictionaryArgument != null) {
+                foreach (var kvp in args.DictionaryArgument.Arguments) {
+                    eval.DeclareVariable(kvp.Key, kvp.Value, LocationInfo.Empty, true);
+                }
+            }
+        }
     }
 }

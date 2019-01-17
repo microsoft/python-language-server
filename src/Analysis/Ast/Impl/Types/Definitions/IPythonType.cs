@@ -53,6 +53,11 @@ namespace Microsoft.Python.Analysis.Types {
         bool IsAbstract { get; }
 
         /// <summary>
+        /// Indicates if type is specialized in code.
+        /// </summary>
+        bool IsSpecialized { get; }
+
+        /// <summary>
         /// Create instance of the type, if any.
         /// </summary>
         /// <param name="typeName">Name of the type. Used in specialization scenarios

@@ -94,5 +94,9 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.Set, interpreter, true);
             return new PythonCollection(collectionType, location, contents, flatten);
         }
+
+        public override bool Equals(object obj) 
+            => obj is IPythonType pt && (PythonTypeComparer.Instance.Equals(pt, this) || PythonTypeComparer.Instance.Equals(pt, this.InnerType));
+        public override int GetHashCode() => PythonTypeComparer.Instance.GetHashCode(this);
     }
 }

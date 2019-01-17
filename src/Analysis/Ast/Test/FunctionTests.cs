@@ -139,10 +139,6 @@ x = f('x', 'y')
 y = f(1, 2)
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveFunction("f")
-                .Which.Should().HaveSingleOverload()
-                .Which.Should().HaveReturnType(BuiltinTypeId.Type);
-
             analysis.Should()
                 .HaveVariable("x").OfType(BuiltinTypeId.Str).And
                 .HaveVariable("y").OfType(BuiltinTypeId.Int);
@@ -465,8 +461,7 @@ x = g(1)
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
-        public async Task ReturnArg2() {
+        public async Task ReturnArgNestedFunction() {
             const string code = @"
 
 def f(a):
@@ -496,7 +491,6 @@ abc = f(())
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task ReturnExpressionOnArg() {
             const string code = @"
 class C:

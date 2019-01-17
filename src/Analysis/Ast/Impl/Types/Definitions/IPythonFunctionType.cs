@@ -37,11 +37,6 @@ namespace Microsoft.Python.Analysis.Types {
         bool IsStatic { get; }
 
         /// <summary>
-        /// Function is specialized in code and does not have definition in the AST.
-        /// </summary>
-        bool IsSpecialized { get; }
-
-        /// <summary>
         /// Function is @overload.
         /// </summary>
         bool IsOverload { get; }

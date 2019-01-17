@@ -42,13 +42,15 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="isMutable">Tells of list represents a mutable collection.</param>
         /// <param name="formatName">If true, type will append item type names to the base type name.</param>
         public TypingListType(string typeName, BuiltinTypeId typeId, IPythonType itemType, IPythonInterpreter interpreter, bool isMutable, bool formatName = true)
-            : base(null, BuiltinTypeId.List, interpreter, isMutable) {
+            : base(null, typeId, interpreter, isMutable) {
             ItemType = itemType;
             Name = formatName ? $"{typeName}[{itemType.Name}]" : typeName;
         }
 
         public override string Name { get; }
         public override bool IsAbstract => false;
+        public override bool IsSpecialized => true;
+
         public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) 
             => new TypingList(this, location);
         public IPythonType ItemType { get; }

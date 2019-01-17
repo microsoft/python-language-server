@@ -25,6 +25,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         }
         public override string Name { get; }
         public override PythonMemberType MemberType => PythonMemberType.Union;
+        public override bool IsSpecialized => true;
 
         public IEnumerator<IPythonType> GetEnumerator()
             => Enumerable.Repeat(DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), 1)

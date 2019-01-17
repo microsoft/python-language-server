@@ -13,19 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
+        private readonly Stack<FunctionDefinition> _callEvalStack = new Stack<FunctionDefinition>();
+
         public async Task<IMember> GetValueFromCallableAsync(CallExpression expr, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             if (expr?.Target == null) {
@@ -122,13 +121,57 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             foreach (var o in fn.Overloads) {
                 await SymbolTable.EvaluateAsync(o.FunctionDefinition, cancellationToken);
             }
-            return instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
+
+            // Re-declare parameters in the function scope since originally
+            // their types might not have been known and now argument set
+            // may contain concrete values.
+            if (fn.FunctionDefinition != null) {
+                using (OpenScope(fn.FunctionDefinition, out _)) {
+                    args.DeclareParametersInScope(this);
+                }
+            }
+
+            // If instance is not the same as the declaring type, then call
+            // most probably comes from the derived class which means that
+            // the original 'self' and 'cls' variables are no longer valid
+            // and function has to be re-evaluated with new arguments.
+            var instanceType = instance?.GetPythonType();
+            if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized || 
+                instanceType.IsSpecialized || fn.DeclaringType.IsSpecialized ||
+                instanceType.Equals(fn.DeclaringType)) {
+
+                var t = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
+                if (!t.IsUnknown()) {
+                    return t;
+                }
+            }
+
+            // Try and evaluate with specific arguments but prevent recursion.
+            return await TryEvaluateVithArgumentsAsync(fn.FunctionDefinition, args, cancellationToken);
         }
 
         public async Task<IMember> GetValueFromPropertyAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
             // Function may not have been walked yet. Do it now.
             await SymbolTable.EvaluateAsync(p.FunctionDefinition, cancellationToken);
             return instance.Call(p.Name, ArgumentSet.Empty);
+        }
+
+        private async Task<IMember> TryEvaluateVithArgumentsAsync(FunctionDefinition fd, IArgumentSet args, CancellationToken cancellationToken = default) {
+            // Attempt to evaluate with specific arguments but prevent recursion.
+            IMember result = UnknownType;
+            if (fd != null && !_callEvalStack.Contains(fd)) {
+                using (OpenScope(fd.Parent, out _)) {
+                    _callEvalStack.Push(fd);
+                    try {
+                        // TODO: cache results per function + argument set?
+                        var eval = new FunctionCallEvaluator(fd, this, Interpreter);
+                        result = await eval.EvaluateCallAsync(args, cancellationToken);
+                    } finally {
+                        _callEvalStack.Pop();
+                    }
+                }
+            }
+            return result;
         }
     }
 }

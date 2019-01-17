@@ -63,6 +63,8 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual  PythonMemberType MemberType => InnerType.MemberType;
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;
         public virtual bool IsAbstract => InnerType.IsAbstract;
+        public virtual bool IsSpecialized => InnerType.IsSpecialized;
+
         public virtual IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
             => IsAbstract ? null : InnerType.CreateInstance(typeName, location, args);
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
@@ -86,5 +88,9 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;
+
+        public override bool Equals(object obj)
+            => obj is IPythonType pt && (PythonTypeComparer.Instance.Equals(pt, this) || PythonTypeComparer.Instance.Equals(pt, InnerType));
+        public override int GetHashCode() => PythonTypeComparer.Instance.GetHashCode(this);
     }
 }

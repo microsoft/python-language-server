@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -90,6 +91,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return PythonCollectionType.CreateSet(Interpreter, GetLoc(expression), contents);
         }
 
+        public async Task<IMember> GetValueFromGeneratorAsync(GeneratorExpression expression, CancellationToken cancellationToken = default) {
+            var iter = expression.Iterators.OfType<ComprehensionFor>().FirstOrDefault();
+            if(iter != null) { 
+                return await GetValueFromExpressionAsync(iter.List, cancellationToken) ?? UnknownType;
+            }
+            return UnknownType;
+        }
+
+
         private async Task<IMember> CreateSpecificFromGenericAsync(IGenericType gen, IndexExpression expr, CancellationToken cancellationToken = default) {
             var args = new List<IPythonType>();
             if (expr.Index is TupleExpression tex) {
@@ -103,5 +113,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
             return gen.CreateSpecificType(args, Module, GetLoc(expr));
         }
+
     }
 }
