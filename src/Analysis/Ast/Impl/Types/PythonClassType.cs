@@ -108,19 +108,18 @@ namespace Microsoft.Python.Analysis.Types {
             // Specializations
             switch (typeName) {
                 case "list": {
-                    // Unpack arguments. Contents come as *arg.
-                    var contents = args.ListArgument != null ? args.ListArgument.Values : Array.Empty<IMember>();
-                    return PythonCollectionType.CreateList(DeclaringModule.Interpreter, location, contents);
-                }
+                        // Unpack arguments. Contents come as *arg.
+                        return PythonCollectionType.CreateList(DeclaringModule.Interpreter, location, args);
+                    }
                 case "dict": {
-                    // self, then contents
-                    var contents = args.Values<IMember>().Skip(1).FirstOrDefault();
-                    return new PythonDictionary(DeclaringModule.Interpreter, location, contents);
-                }
+                        // self, then contents
+                        var contents = args.Values<IMember>().Skip(1).FirstOrDefault();
+                        return new PythonDictionary(DeclaringModule.Interpreter, location, contents);
+                    }
                 case "tuple": {
-                    var contents = args.Values<IMember>();
-                    return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, location, contents);
-                }
+                        var contents = args.Values<IMember>();
+                        return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, location, contents);
+                    }
             }
             return new PythonInstance(this, location);
         }
@@ -224,7 +223,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         private bool Push() => !_isProcessing.Value && (_isProcessing.Value = true);
         private void Pop() => _isProcessing.Value = false;
-        public bool Equals(IPythonClassType other) 
+        public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
     }
 }

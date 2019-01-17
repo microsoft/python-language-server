@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
@@ -80,6 +81,15 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public override IMember Index(IPythonInstance instance, object index)
             => (instance as IPythonCollection)?.Index(index) ?? UnknownType;
         #endregion
+
+        public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IArgumentSet args) {
+            IReadOnlyList<IMember> contents = null;
+            if (args.Arguments.Count == 2) {
+                // self and list like in list.__init__ and 'list([1, 'str', 3.0])'
+                contents = (args.Arguments[1].Value as PythonCollection)?.Contents;
+            }
+            return CreateList(interpreter, location, contents ?? Array.Empty<IMember>());
+        }
 
         public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, interpreter, true);
