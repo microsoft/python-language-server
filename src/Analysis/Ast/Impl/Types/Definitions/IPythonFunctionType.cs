@@ -26,8 +26,30 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         FunctionDefinition FunctionDefinition { get; }
 
+        /// <summary>
+        /// Function is a @classmethod.
+        /// </summary>
         bool IsClassMethod { get; }
+
+        /// <summary>
+        /// Function is @staticmethod.
+        /// </summary>
         bool IsStatic { get; }
+
+        /// <summary>
+        /// Function is specialized in code and does not have definition in the AST.
+        /// </summary>
+        bool IsSpecialized { get; }
+
+        /// <summary>
+        /// Function is @overload.
+        /// </summary>
+        bool IsOverload { get; }
+
+        /// <summary>
+        /// Function is a stub definition.
+        /// </summary>
+        bool IsStub { get; }
 
         /// <summary>
         /// List of function overloads

@@ -51,5 +51,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// Return value documentation.
         /// </summary>
         string ReturnDocumentation { get; }
+
+        /// <summary>
+        /// Function definition is decorated with @overload.
+        /// </summary>
+        bool IsOverload { get; }
     }
 }

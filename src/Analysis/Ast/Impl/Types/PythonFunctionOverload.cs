@@ -15,8 +15,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -116,6 +117,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public string ReturnDocumentation { get; }
+        public bool IsOverload { get; private set; }
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
         public LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
         public PythonMemberType MemberType => PythonMemberType.Function;
@@ -144,6 +146,17 @@ namespace Microsoft.Python.Analysis.Types {
             return StaticReturnValue;
         }
         #endregion
+
+        private void ProcessDecorators(FunctionDefinition fd) {
+            foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
+                // TODO: warn about incompatible combinations.
+                switch (dec.Name) {
+                    case @"overload":
+                        IsOverload = true;
+                        break;
+                }
+            }
+        }
 
         //private sealed class ReturnValueCache {
         //    private const int MaxResults = 10;

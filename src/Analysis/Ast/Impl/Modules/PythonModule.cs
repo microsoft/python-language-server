@@ -482,6 +482,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 foreach (var o in f.Overloads.OfType<PythonFunctionOverload>()) {
                     o.SetReturnValueProvider(returnTypeCallback);
                 }
+                f.Specialize();
             }
         }
 

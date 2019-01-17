@@ -13,7 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using System;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -54,5 +54,19 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IPythonType ItemType { get; }
 
         public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ItemType);
+
+        public override bool Equals(object obj) {
+            if (!(obj is TypingListType other)) {
+                return false;
+            }
+
+            if (ItemType.IsGenericParameter() || other.ItemType.IsGenericParameter()) {
+                // Generic match - i.e. Sequence[T] matches List[str].
+                return true;
+            }
+            return PythonTypeComparer.Instance.Equals(ItemType, other.ItemType);
+        }
+
+        public override int GetHashCode() => ItemType.GetHashCode() ^ Name.GetHashCode();
     }
 }

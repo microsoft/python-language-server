@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -55,5 +54,21 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var itemType = new TypingTupleType(new[] { KeyType, ValueType }, DeclaringModule.Interpreter);
             return itemType;
         }
+
+        public override bool Equals(object obj) {
+            if (!(obj is TypingDictionaryType other)) {
+                return false;
+            }
+
+            if ((KeyType.IsGenericParameter() && ValueType.IsGenericParameter()) || 
+                (other.KeyType.IsGenericParameter() && other.ValueType.IsGenericParameter())) {
+                // Generic match - i.e. Mapping[K, V] matches Dict[int, str].
+                return true;
+            }
+            return PythonTypeComparer.Instance.Equals(KeyType, other.KeyType) && 
+                   PythonTypeComparer.Instance.Equals(ValueType, other.ValueType);
+        }
+
+        public override int GetHashCode() => KeyType.GetHashCode() ^ ValueType.GetHashCode() ^ Name.GetHashCode();
     }
 }

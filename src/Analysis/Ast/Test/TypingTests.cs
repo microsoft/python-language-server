@@ -264,8 +264,11 @@ from typing import Iterator, List, TypeVar
 
 T = TypeVar('T')
 
+@overload
 def f(a: Iterator[T]) -> str: ...
+@overload
 def f(a: int) -> float: ...
+def f(a): ...
 
 a: List[str] = ['a', 'b', 'c']
 x = f(iter(a))
@@ -295,14 +298,16 @@ from typing import Iterable, List, Tuple, TypeVar
 
 T = TypeVar('T')
 
+@overload
 def f(a: Iterable[T]) -> str: ...
+@overload
 def f(a: int) -> float: ...
+def f(a): ...
 
 a: List[str] = ['a', 'b', 'c']
-b: Tuple[str, int, float]
 
 x = f(a)
-y = f(b)
+y = f(1)
 ";
             var analysis = await GetAnalysisAsync(code);
             var f = analysis.Should().HaveFunction("f").Which;
@@ -318,9 +323,8 @@ y = f(b)
                 .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.Int);
 
             analysis.Should().HaveVariable("a").OfType("List[str]")
-                .And.HaveVariable("b").OfType("Tuple[str, int, float]")
                 .And.HaveVariable("x").OfType(BuiltinTypeId.Str)
-                .And.HaveVariable("y").OfType(BuiltinTypeId.Str);
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Float);
         }
 
         [TestMethod, Priority(0)]
@@ -330,8 +334,11 @@ from typing import List, Sequence, TypeVar
 
 T = TypeVar('T')
 
+@overload
 def f(a: Sequence[T]) -> str: ...
+@overload
 def f(a: int) -> float: ...
+def f(a): pass
 
 a: List[str] = ['a', 'b', 'c']
 x = f(a)
@@ -361,8 +368,11 @@ from typing import Dict, Mapping, TypeVar
 KT = TypeVar('KT')
 KV = TypeVar('KV')
 
+@overload
 def f(a: Mapping[KT, KV]) -> str: ...
+@overload
 def f(a: int) -> float: ...
+def f(a): ...
 
 a: Dict[str, int]
 x = f(a)

@@ -75,6 +75,7 @@ t.x, t. =
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task BadKeywordArguments() {
             const string code = @"
 def f(a, b):

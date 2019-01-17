@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -33,7 +34,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates function for specializations
         /// </summary>
         public static PythonFunctionType ForSpecialization(string name, IPythonModule declaringModule)
-            => new PythonFunctionType(name, declaringModule);
+            => new PythonFunctionType(name, declaringModule) { IsSpecialized = true };
 
         private PythonFunctionType(string name, IPythonModule declaringModule) :
             base(name, declaringModule, null, LocationInfo.Empty, BuiltinTypeId.Function) {
@@ -117,6 +118,10 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;
+        public bool IsSpecialized { get; private set; }
+        public bool IsOverload { get; private set; }
+        public bool IsStub { get; internal set; }
+
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
         #endregion
 
@@ -133,6 +138,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);
+        internal void Specialize() => IsSpecialized = true;
 
         private void ProcessDecorators(FunctionDefinition fd) {
             foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
@@ -154,6 +160,9 @@ namespace Microsoft.Python.Analysis.Types {
                     case @"abstractclassmethod":
                         IsClassMethod = true;
                         _isAbstract = true;
+                        break;
+                    case @"overload":
+                        IsOverload = true;
                         break;
                     case @"property":
                     case @"abstractproperty":
@@ -188,7 +197,16 @@ namespace Microsoft.Python.Analysis.Types {
 
             var d = parameters.ToDictionary(p => p.Name, p => p.Type);
             foreach (var a in args.Arguments<IMember>()) {
-                if(!d.TryGetValue(a.Key, out var t) || !t.Equals(a.Value.GetPythonType())) {
+                if (!d.TryGetValue(a.Key, out var t)) {
+                    return false;
+                }
+
+                var at = a.Value?.GetPythonType();
+                if (t == null && at == null) {
+                    continue;
+                }
+
+                if (t != null && at != null && !t.Equals(at)) {
                     return false;
                 }
             }
@@ -210,6 +228,9 @@ namespace Microsoft.Python.Analysis.Types {
             public IPythonType DeclaringType => _pf.DeclaringType;
             public bool IsStatic => _pf.IsStatic;
             public bool IsClassMethod => _pf.IsClassMethod;
+            public bool IsSpecialized => _pf.IsSpecialized;
+            public bool IsOverload => _pf.IsOverload;
+            public bool IsStub => _pf.IsStub;
 
             public IReadOnlyList<IPythonFunctionOverload> Overloads => _pf.Overloads;
             public override BuiltinTypeId TypeId => BuiltinTypeId.Function;

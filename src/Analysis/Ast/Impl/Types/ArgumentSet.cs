@@ -21,13 +21,16 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Extensions;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Types {
-
+    /// <summary>
+    /// Set of arguments for a function call.
+    /// </summary>
     internal sealed class ArgumentSet : IArgumentSet {
         private readonly List<Argument> _arguments = new List<Argument>();
         private readonly List<DiagnosticsEntry> _errors = new List<DiagnosticsEntry>();
@@ -45,13 +48,38 @@ namespace Microsoft.Python.Analysis.Types {
 
         private ArgumentSet() { }
 
-        public ArgumentSet(IPythonFunctionType fn, CallExpression callExpr, ExpressionEval eval) :
-            this(fn, callExpr, eval.Module, eval) { }
+        public ArgumentSet(IPythonFunctionType fn, IPythonInstance instance, CallExpression callExpr, ExpressionEval eval) :
+            this(fn, instance, callExpr, eval.Module, eval) { }
 
-        public ArgumentSet(IPythonFunctionType fn, CallExpression callExpr, IPythonModule module, ExpressionEval eval) {
-            var fd = fn.FunctionDefinition;
-            var callLocation = callExpr.GetLocation(module);
+        /// <summary>
+        /// Creates set of arguments for a function call based on the call expression
+        /// and the function signature. The result contains expressions
+        /// for arguments, but not actual values. <see cref="EvaluateAsync"/> on how to
+        /// get values for actual parameters.
+        /// </summary>
+        /// <param name="fn">Function to call.</param>
+        /// <param name="instance">Type instance the function is bound to. For derived classes it is different from the declared type.</param>
+        /// <param name="callExpr">Call expression that invokes the function.</param>
+        /// <param name="module">Module that contains the call expression.</param>
+        /// <param name="eval">Evaluator that can calculate values of arguments from their respective expressions.</param>
+        public ArgumentSet(IPythonFunctionType fn, IPythonInstance instance, CallExpression callExpr, IPythonModule module, ExpressionEval eval) {
             _eval = eval;
+
+            var fd = fn.FunctionDefinition;
+            if (fd == null || fn.IsSpecialized) {
+                // Typically specialized function, like TypeVar() that does not actually have AST definition.
+                // Just make the arguments from the call expression and be done.
+                _arguments = callExpr.Args.Select(x => new Argument(x.Name, ParameterKind.Normal) { Expression = x.Expression }).ToList();
+                return;
+            }
+
+            if (callExpr == null) {
+                // Typically invoked by specialization code without call expression in the code.
+                // Caller usually does not care about arguments.
+                _evaluated = true;
+                return;
+            }
+            var callLocation = callExpr.GetLocation(module);
 
             // https://www.python.org/dev/peps/pep-3102/#id5
             // For each formal parameter, there is a slot which will be used to contain
@@ -78,8 +106,8 @@ namespace Microsoft.Python.Analysis.Types {
 
             // Class methods
             var formalParamIndex = 0;
-            if (fn.DeclaringType != null && fn.HasClassFirstArgument()) {
-                slots[0].Value = fn.DeclaringType;
+            if (fn.DeclaringType != null && fn.HasClassFirstArgument() && slots.Length > 0) {
+                slots[0].Value = instance != null ? instance.GetPythonType() : fn.DeclaringType;
                 formalParamIndex++;
             }
 
@@ -88,7 +116,7 @@ namespace Microsoft.Python.Analysis.Types {
             for (; callParamIndex < callExpr.Args.Count; callParamIndex++, formalParamIndex++) {
                 var arg = callExpr.Args[callParamIndex];
 
-                if (!string.IsNullOrEmpty(arg.Name)) {
+                if (!string.IsNullOrEmpty(arg.Name) && !arg.Name.StartsWithOrdinal("**")) {
                     // Keyword argument. Done with positionals.
                     break;
                 }
@@ -197,9 +225,8 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
 
-            if (_errors.Count == 0) {
-                _arguments = slots.Where(s => s.Kind != ParameterKind.List && s.Kind != ParameterKind.Dictionary).ToList();
-            }
+            // Optimistically return what we gathered, even if there are errors.
+            _arguments = slots.Where(s => s.Kind != ParameterKind.List && s.Kind != ParameterKind.Dictionary).ToList();
         }
 
         public async Task<ArgumentSet> EvaluateAsync(CancellationToken cancellationToken = default) {

@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -28,10 +29,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// </summary>
         /// <param name="itemTypes">Tuple item types.</param>
         /// <param name="interpreter">Python interpreter.</param>
-        public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter) 
+        public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter)
             : base(null, BuiltinTypeId.Tuple, interpreter, false) {
             ItemTypes = itemTypes;
-            Name = CodeFormatter.FormatSequence("Tuple" ,'[', itemTypes);
+            Name = CodeFormatter.FormatSequence("Tuple", '[', itemTypes);
         }
 
         public IReadOnlyList<IPythonType> ItemTypes { get; }
@@ -52,5 +53,26 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             }
             return UnknownType;
         }
+
+        public override bool Equals(object obj) {
+            if (!(obj is TypingTupleType other)) {
+                return false;
+            }
+            if (ItemTypes.Count != other.ItemTypes.Count) {
+                return false;
+            }
+            for (var i = 0; i < ItemTypes.Count; i++) {
+                if (ItemTypes[i].IsGenericParameter() || other.ItemTypes[i].IsGenericParameter()) {
+                    continue;
+                }
+                if (!PythonTypeComparer.Instance.Equals(ItemTypes[i], other.ItemTypes[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public override int GetHashCode() 
+            => ItemTypes.Aggregate(0, (current, item) => current ^ item.GetHashCode()) ^ Name.GetHashCode();
     }
 }

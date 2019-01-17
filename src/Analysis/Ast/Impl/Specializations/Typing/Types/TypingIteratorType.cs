@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Utilities;
@@ -50,5 +51,30 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IReadOnlyList<IPythonType> ItemTypes { get; }
         public bool Repeat { get; }
         public override string Name { get; }
+
+        public override bool Equals(object obj) {
+            if (!(obj is IPythonType other)) {
+                return false;
+            }
+
+            if (obj is TypingIteratorType iterator) {
+                // Compare item types
+                if (ItemTypes.Count != iterator.ItemTypes.Count) {
+                    return false;
+                }
+                for (var i = 0; i < ItemTypes.Count; i++) {
+                    if (ItemTypes[i].IsGenericParameter() || iterator.ItemTypes[i].IsGenericParameter()) {
+                        continue;
+                    }
+                    if (!PythonTypeComparer.Instance.Equals(ItemTypes[i], iterator.ItemTypes[i])) {
+                        return false;
+                    }
+                }
+            }
+            return other.TypeId == TypeId || PythonTypeComparer.Instance.Equals(this, other);
+        }
+
+        public override int GetHashCode()
+            => ItemTypes.Aggregate(0, (current, item) => current ^ item.GetHashCode()) ^ Name.GetHashCode();
     }
 }

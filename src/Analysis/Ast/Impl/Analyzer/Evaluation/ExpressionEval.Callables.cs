@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var args = ArgumentSet.Empty;
             var init = cls.GetMember<IPythonFunctionType>(@"__init__");
             if (init != null) {
-                var a = new ArgumentSet(init, expr, Module, this);
+                var a = new ArgumentSet(init, new PythonInstance(cls), expr, Module, this);
                 if (a.Errors.Count > 0) {
                     AddDiagnostics(a.Errors);
                 } else {
@@ -112,7 +112,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public async Task<IMember> GetValueFromFunctionTypeAsync(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr, CancellationToken cancellationToken = default) {
             // Determine argument types
-            var args = new ArgumentSet(fn, expr, this);
+            var args = new ArgumentSet(fn, instance, expr, this);
             args = await args.EvaluateAsync(cancellationToken);
 
             // If order to be able to find matching overload, we need to know

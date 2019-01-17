@@ -207,8 +207,8 @@ x = dir()
 v = x[0]
 
 va = vars()
-kv = x.keys()[0]
-vv = x['a']
+kv = va.keys()[0]
+vv = va['a']
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
@@ -221,11 +221,10 @@ vv = x['a']
                 .And.HaveVariable("h").OfType(BuiltinTypeId.Type)
                 .And.HaveVariable("i").OfType("C")
                 .And.HaveVariable("x").OfType("List[str]")
-                .And.HaveVariable("v").OfType(BuiltinTypeId.Str);
-            //.And.HaveVariable("va").OfType(BuiltinTypeId.Dict)
-            //.And.HaveVariable("kv").OfType(BuiltinTypeId.Str)
-            //.And.HaveVariable("vv").OfType(BuiltinTypeId.Object);
-            ;
+                .And.HaveVariable("v").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("va").OfType("Dict[str, object]")
+                .And.HaveVariable("kv").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("vv").OfType(BuiltinTypeId.Object);
         }
 
         [TestMethod, Priority(0)]

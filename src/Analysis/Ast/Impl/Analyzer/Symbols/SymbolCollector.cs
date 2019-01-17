@@ -109,7 +109,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     if (!string.IsNullOrEmpty(node.GetDocumentation())) {
                         stubOverload.SetDocumentationProvider(_ => node.GetDocumentation());
                     }
-
                     addOverload(stubOverload);
                     _table.ReplacedByStubs.Add(node);
                     return;
