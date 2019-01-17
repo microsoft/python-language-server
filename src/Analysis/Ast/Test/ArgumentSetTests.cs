@@ -109,7 +109,7 @@ def f(a, b, *, c='str'): ...
 f(1, 2, 3, 4, c=6)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Arguments.Count.Should().Be(0);
+            argSet.Arguments.Count.Should().Be(3);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.TooManyPositionalArgumentsBeforeStar);
         }
@@ -173,7 +173,7 @@ def f(a, b, **dict): ...
 f(1, 2, 3, 4, 5, c='a')
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Arguments.Count.Should().Be(0);
+            argSet.Arguments.Count.Should().Be(2);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.TooManyPositionalArgumentsBeforeStar);
         }
@@ -185,7 +185,7 @@ def f(a, b): ...
 f(a=1, a=2)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Arguments.Count.Should().Be(0);
+            argSet.Arguments.Count.Should().Be(2);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.ParameterAlreadySpecified);
         }
@@ -197,7 +197,7 @@ def f(a, b): ...
 f(a=1, c=2)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Arguments.Count.Should().Be(0);
+            argSet.Arguments.Count.Should().Be(2);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.UnknownParameterName);
         }
@@ -209,7 +209,7 @@ def f(a, b): ...
 f(a=1, b=2, a=1)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Arguments.Count.Should().Be(0);
+            argSet.Arguments.Count.Should().Be(2);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.ParameterAlreadySpecified);
         }
@@ -221,7 +221,7 @@ def f(a, b): ...
 f(1, 2, 1)
 ";
             var argSet = await GetArgSetAsync(code);
-            argSet.Arguments.Count.Should().Be(0);
+            argSet.Arguments.Count.Should().Be(2);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.TooManyFunctionArguments);
         }
