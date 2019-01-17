@@ -210,7 +210,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                     || ex is UnauthorizedAccessException
                 ) {
                     _log?.Log(TraceLevel.Error, "ImportException", name, "ImportFromSearchPaths", ex.GetType().Name, ex.Message);
-                    return TryImportModuleResult.ModuleNotFound;
+                    return TryImportModuleResult.NeedRetry;
                 }
             }
 
