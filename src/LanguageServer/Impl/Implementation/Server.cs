@@ -99,7 +99,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _editorFiles = new EditorFiles(this);
 
             SymbolIndex = new SymbolIndex();
-            OnParseComplete += UpdateSymbolIndex;
 
             _disposableBag
                 .Add(() => {
@@ -110,7 +109,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         (ext as IDisposable)?.Dispose();
                     }
                 })
-                .Add(() => OnParseComplete -= UpdateSymbolIndex)
                 .Add(ProjectFiles)
                 .Add(() => Analyzer?.Dispose())
                 .Add(AnalysisQueue)
@@ -374,7 +372,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private async Task DoInitializeAsync(InitializeParams @params, CancellationToken token) {
             _disposableBag.ThrowIfDisposed();
 
+            if (@params.rootUri != null) {
+                _rootDir = @params.rootUri.ToAbsolutePath();
+            } else if (!string.IsNullOrEmpty(@params.rootPath)) {
+                _rootDir = PathUtils.NormalizePath(@params.rootPath);
+            }
+
             Analyzer = await AnalysisQueue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
+
+            IndexPopulator indexPopulator = new IndexPopulator(SymbolIndex, _rootDir, @params.initializationOptions.includeFiles, @params.initializationOptions.excludeFiles, Analyzer.LanguageVersion);
+            indexPopulator.Populate();
 
             _disposableBag.ThrowIfDisposed();
             _clientCaps = @params.capabilities;
@@ -390,12 +397,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _displayTextBuilder = DocumentationBuilder.Create(DisplayOptions);
 
             DisplayStartupInfo();
-
-            if (@params.rootUri != null) {
-                _rootDir = @params.rootUri.ToAbsolutePath();
-            } else if (!string.IsNullOrEmpty(@params.rootPath)) {
-                _rootDir = PathUtils.NormalizePath(@params.rootPath);
-            }
 
             Analyzer.SetRoot(_rootDir);
             Analyzer.SetSearchPaths(@params.initializationOptions.searchPaths.MaybeEnumerate());
@@ -714,14 +715,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 await GetAnalysisAsync(pf.DocumentUri, cancellationToken);
             }
             TraceMessage($"Analysis complete.");
-        }
-
-        private void UpdateSymbolIndex(object sender, ParseCompleteEventArgs args) {
-            ProjectFiles.GetEntry(args.uri, args.version, out var entry, out var tree);
-            var ast = entry.GetCurrentParse()?.Tree;
-            if (ast != null) {
-                SymbolIndex.UpdateParseTree(args.uri, ast);
-            }
         }
     }
 }
