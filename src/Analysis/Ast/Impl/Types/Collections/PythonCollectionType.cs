@@ -84,9 +84,12 @@ namespace Microsoft.Python.Analysis.Types.Collections {
 
         public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IArgumentSet args) {
             IReadOnlyList<IMember> contents = null;
-            if (args.Arguments.Count == 2) {
+            if (args.Arguments.Count > 1) {
                 // self and list like in list.__init__ and 'list([1, 'str', 3.0])'
                 contents = (args.Arguments[1].Value as PythonCollection)?.Contents;
+            } else {
+                // Try list argument as n '__init__(self, *args, **kwargs)'
+                contents = args.ListArgument?.Values;
             }
             return CreateList(interpreter, location, contents ?? Array.Empty<IMember>());
         }

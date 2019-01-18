@@ -107,10 +107,8 @@ namespace Microsoft.Python.Analysis.Types {
         public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) {
             // Specializations
             switch (typeName) {
-                case "list": {
-                        // Unpack arguments. Contents come as *arg.
+                case "list":
                         return PythonCollectionType.CreateList(DeclaringModule.Interpreter, location, args);
-                    }
                 case "dict": {
                         // self, then contents
                         var contents = args.Values<IMember>().Skip(1).FirstOrDefault();
