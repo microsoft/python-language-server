@@ -16,10 +16,9 @@
 
 namespace Microsoft.Python.Parsing {
     public enum Severity {
-        Ignore,
-        Warning,
         Error,
-        FatalError,
-        Information
+        Warning,
+        Information,
+        Hint
     }
 }

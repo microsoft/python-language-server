@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Reflection;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Shell;
+using Microsoft.Python.LanguageServer.Protocol;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Implementation {

@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Documents {
     /// <summary>
     /// Represent document (file) loaded for the analysis.
     /// </summary>
-    public interface IDocument: IPythonModule {
+    public interface IDocument: IPythonModule, IDisposable {
         /// <summary>
         /// Module content version (increments after every change).
         /// </summary>
@@ -65,7 +65,12 @@ namespace Microsoft.Python.Analysis.Documents {
         /// Updates document content with the list of changes.
         /// </summary>
         /// <param name="changes"></param>
-        void Update(IEnumerable<DocumentChangeSet> changes);
+        void Update(IEnumerable<DocumentChange> changes);
+
+        /// <summary>
+        /// Resets document buffer to the provided content.
+        /// </summary>
+        void Reset(string content);
 
         /// <summary>
         /// Provides collection of parsing errors, if any.

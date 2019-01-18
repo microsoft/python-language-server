@@ -19,6 +19,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.LanguageServer.Protocol;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Services {
@@ -54,12 +55,6 @@ namespace Microsoft.Python.LanguageServer.Services {
                 message = message
             };
             return _rpc.NotifyWithParameterObjectAsync("window/logMessage", parameters);
-        }
-
-        [Serializable]
-        private class LogMessageParams {
-            public MessageType type;
-            public string message;
         }
     }
 }

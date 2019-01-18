@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,19 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Linq;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
-        public override async Task<CompletionList> Completion(CompletionParams @params, CancellationToken cancellationToken) {
+        public async Task<CompletionList> Completion(CompletionParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
-            TraceMessage($"Completions in {uri} at {@params.position}");
+            _log?.Log(TraceEventType.Verbose, $"Completions in {uri} at {@params.position}");
 
             var res = new CompletionList();
             //await InvokeExtensionsAsync((ext, token)
@@ -67,7 +63,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         //    return null;
         //}
 
-        public override Task<CompletionItem> CompletionItemResolve(CompletionItem item, CancellationToken token) {
+        public Task<CompletionItem> CompletionItemResolve(CompletionItem item, CancellationToken token) {
             // TODO: Fill out missing values in item
             return Task.FromResult(item);
         }

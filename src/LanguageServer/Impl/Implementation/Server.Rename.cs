@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -16,10 +15,11 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
-        public override async Task<WorkspaceEdit> Rename(RenameParams @params, CancellationToken cancellationToken) {
+        public async Task<WorkspaceEdit> Rename(RenameParams @params, CancellationToken cancellationToken) {
             return new WorkspaceEdit();
         }
     }

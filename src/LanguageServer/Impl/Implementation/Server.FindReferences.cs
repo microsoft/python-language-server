@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -23,7 +24,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
 
             var uri = @params.textDocument.uri;
-            TraceMessage($"References in {uri} at {@params.position}");
+            _log?.Log(TraceEventType.Verbose, $"References in {uri} at {@params.position}");
 
             return Array.Empty<Reference>();
         }

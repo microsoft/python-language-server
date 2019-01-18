@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (init != null) {
                 var a = new ArgumentSet(init, new PythonInstance(cls), expr, Module, this);
                 if (a.Errors.Count > 0) {
-                    AddDiagnostics(a.Errors);
+                    AddDiagnostics(Module.Uri, a.Errors);
                 } else {
                     args = await a.EvaluateAsync(cancellationToken);
                 }

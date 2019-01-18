@@ -193,9 +193,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return trueValue ?? falseValue;
         }
 
-        private void AddDiagnostics(IEnumerable<DiagnosticsEntry> entries) {
+        private void AddDiagnostics(Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
             foreach (var e in entries) {
-                _diagnostics?.Add(e);
+                _diagnostics?.Add(documentUri, e);
             }
         }
     }

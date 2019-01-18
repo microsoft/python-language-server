@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -16,14 +15,24 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Core;
 
-namespace Microsoft.Python.LanguageServer.Extensions {
-    public interface ILanguageServerExtension: IDisposable {
-        string Name { get; }
-        Task Initialize(IServiceContainer services, CancellationToken token);
-        Task<IReadOnlyDictionary<string, object>> ExecuteCommand(string command, IReadOnlyDictionary<string, object> properties, CancellationToken token);
+namespace Microsoft.Python.LanguageServer.Extensibility {
+    [Serializable]
+    public class PythonAnalysisExtensionParams {
+        public string assembly;
+        public string typeName;
+        public Dictionary<string, object> properties;
+    }
+
+    [Serializable]
+    public class ExtensionCommandParams {
+        public string extensionName;
+        public string command;
+        public Dictionary<string, object> properties;
+    }
+
+    [Serializable]
+    public class ExtensionCommandResult {
+        public IReadOnlyDictionary<string, object> properties;
     }
 }

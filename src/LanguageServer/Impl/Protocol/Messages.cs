@@ -14,40 +14,19 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.LanguageServer.Protocol {
     [Serializable]
-    public struct InitializeParams {
+    public sealed class InitializeParams {
         public int? processId;
         public string rootPath;
         public Uri rootUri;
         public PythonInitializationOptions initializationOptions;
         public ClientCapabilities capabilities;
         public TraceLevel trace;
-    }
-
-    [Serializable]
-    public class LanguageServerException : Exception {
-        public const int UnknownDocument = 1;
-        public const int UnsupportedDocumentType = 2;
-        public const int MismatchedVersion = 3;
-        public const int UnknownExtension = 4;
-
-        public int Code => (int)Data["Code"];
-
-        public sealed override System.Collections.IDictionary Data => base.Data;
-
-        public LanguageServerException(int code, string message) : base(message) {
-            Data["Code"] = code;
-        }
-
-        public LanguageServerException(int code, string message, Exception innerException) : base(message, innerException) {
-            Data["Code"] = code;
-        }
     }
 
     [Serializable]
@@ -168,16 +147,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         public TextDocumentIdentifier textDocument;
     }
 
-    public sealed class class PublishDiagnosticsEventArgs : EventArgs {
-        public Uri uri { get; set; }
-        public IReadOnlyList<Diagnostic> diagnostics { get; set; }
-
-        /// <summary>
-        /// The version the ranges in the diagnostics apply to.
-        /// </summary>
-        public int? _version { get; set; }
-    }
-
     [Serializable]
     public sealed class TextDocumentPositionParams {
         public TextDocumentIdentifier textDocument;
@@ -265,21 +234,8 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     }
 
     [Serializable]
-    public class PythonAnalysisExtensionParams {
-        public string assembly;
-        public string typeName;
-        public Dictionary<string, object> properties;
-    }
-
-    [Serializable]
-    public class ExtensionCommandParams {
-        public string extensionName;
-        public string command;
-        public Dictionary<string, object> properties;
-    }
-
-    [Serializable]
-    public class ExtensionCommandResult {
-        public IReadOnlyDictionary<string, object> properties;
+    public sealed class LogMessageParams {
+        public MessageType type;
+        public string message;
     }
 }

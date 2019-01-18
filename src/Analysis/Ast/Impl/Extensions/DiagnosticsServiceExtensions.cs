@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -15,14 +14,13 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing.Ast;
-using Microsoft.PythonTools.Analysis;
+using Microsoft.Python.Parsing;
 
-namespace Microsoft.Python.LanguageServer.Extensions {
-    public interface ICompletionExtension {
-        Task HandleCompletionAsync(Uri documentUri, IModuleAnalysis analysis, PythonAst tree, SourceLocation location, CompletionList completions, CancellationToken token);
+namespace Microsoft.Python.Analysis {
+    public static class DiagnosticsServiceExtensions {
+        public static void Add(this IDiagnosticsService ds, Uri documentUri, string message, SourceSpan span, string errorCode, Severity severity)
+            => ds.Add(documentUri, new DiagnosticsEntry(message, span, errorCode, severity));
     }
 }

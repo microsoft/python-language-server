@@ -25,7 +25,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
 
-namespace Microsoft.Python.LanguageServer.Implementation {
+namespace Microsoft.Python.LanguageServer.Formatting {
     /// <summary>
     /// LineFormatter formats lines of code to generally conform with PEP8.
     /// </summary>

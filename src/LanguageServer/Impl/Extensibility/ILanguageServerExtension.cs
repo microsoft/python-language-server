@@ -13,19 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Documents {
-    public sealed class DocumentChangeSet {
-        public DocumentChangeSet(int fromVersion, int toVersion, IEnumerable<DocumentChange> changes) {
-            FromVersion = fromVersion;
-            ToVersion = toVersion;
-            Changes = changes.ToArray();
-        }
-
-        public int FromVersion { get; }
-        public int ToVersion { get; }
-        public IReadOnlyCollection<DocumentChange> Changes { get; }
+namespace Microsoft.Python.LanguageServer.Extensibility {
+    public interface ILanguageServerExtension: IDisposable {
+        string Name { get; }
+        Task Initialize(IServiceContainer services, CancellationToken token);
+        Task<IReadOnlyDictionary<string, object>> ExecuteCommand(string command, IReadOnlyDictionary<string, object> properties, CancellationToken token);
     }
 }

@@ -15,29 +15,33 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Shell;
+using Microsoft.Python.LanguageServer.Extensibility;
 using Microsoft.Python.LanguageServer.Extensions;
+using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     partial class Server {
+        private readonly ConcurrentDictionary<string, ILanguageServerExtension> _extensions = new ConcurrentDictionary<string, ILanguageServerExtension>();
         public async Task LoadExtensionAsync(PythonAnalysisExtensionParams extension, IServiceContainer services, CancellationToken cancellationToken) {
             try {
                 var provider = ActivateObject<ILanguageServerExtensionProvider>(extension.assembly, extension.typeName, null);
                 if (provider == null) {
-                    LogMessage(MessageType.Error, $"Extension provider {extension.assembly} {extension.typeName} failed to load");
+                    _log?.Log(TraceEventType.Error, $"Extension provider {extension.assembly} {extension.typeName} failed to load");
                     return;
                 }
 
-                var ext = await provider.CreateAsync(this, extension.properties ?? new Dictionary<string, object>(), cancellationToken);
+                var ext = await provider.CreateAsync(_services, extension.properties ?? new Dictionary<string, object>(), cancellationToken);
                 if (ext == null) {
-                    LogMessage(MessageType.Error, $"Extension provider {extension.assembly} {extension.typeName} returned null");
+                    _log?.Log(TraceEventType.Error, $"Extension provider {extension.assembly} {extension.typeName} returned null");
                     return;
                 }
 
@@ -56,11 +60,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     });
                 }
             } catch (Exception ex) {
-                LogMessage(MessageType.Error, $"Error loading extension {extension.typeName} from'{extension.assembly}': {ex}");
+                _log?.Log(TraceEventType.Error, $"Error loading extension {extension.typeName} from'{extension.assembly}': {ex}");
             }
         }
 
-        public async Task<ExtensionCommandResult> ExtensionCommand(ExtensionCommandParams @params, CancellationToken token) {
+        public async Task<ExtensionCommandResult> ExtensionCommandAsync(ExtensionCommandParams @params, CancellationToken token) {
             if (string.IsNullOrEmpty(@params.extensionName)) {
                 throw new ArgumentNullException(nameof(@params.extensionName));
             }
@@ -85,7 +89,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     }
                     await action(ext.Value, cancellationToken);
                 } catch (Exception ex) when (!ex.IsCriticalException() && !(ex is OperationCanceledException)) {
-                    LogMessage(MessageType.Error, $"Error invoking extension '{ext.Key}': {ex}");
+                    _log?.Log(TraceEventType.Error, $"Error invoking extension '{ext.Key}': {ex}");
                 }
             }
         }
@@ -109,10 +113,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     CultureInfo.CurrentCulture
                 );
             } catch (Exception ex) {
-                LogMessage(MessageType.Warning, ex.ToString());
+                _log?.Log(TraceEventType.Warning, ex.ToString());
             }
 
-            return default(T);
+            return default;
         }
     }
 }

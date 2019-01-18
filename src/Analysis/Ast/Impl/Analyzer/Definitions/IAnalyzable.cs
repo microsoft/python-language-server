@@ -40,7 +40,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Notifies document that its analysis is now complete.
         /// </summary>
         /// <param name="analysis">Document analysis</param>
-        /// (version of the snapshot in the beginning of analysis).</param>
         /// <returns>True if analysis was accepted, false if is is out of date.</returns>
         bool NotifyAnalysisComplete(IDocumentAnalysis analysis);
     }

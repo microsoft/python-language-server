@@ -32,24 +32,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<InitializeResult> Initialize(JToken token, CancellationToken cancellationToken) {
             _initParams = token.ToObject<InitializeParams>();
             MonitorParentProcess(_initParams);
-            var priorityToken = await _prioritizer.InitializePriorityAsync(cancellationToken);
-            if (_initParams.initializationOptions.asyncStartup) {
-                _server.Initialize(_initParams, cancellationToken)
-                    .ContinueWith(DisposeStateContinuation, priorityToken, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default)
-                    .DoNotWait();
-                return _server.GetInitializeResult();
-            }
-
-            try {
-                return await _server.Initialize(_initParams, cancellationToken);
-            } finally {
-                priorityToken.Dispose();
+            using (await _prioritizer.InitializePriorityAsync(cancellationToken)) {
+                return await _server.InitializeAsync(_initParams, cancellationToken);
             }
         }
 
         [JsonRpcMethod("initialized")]
         public async Task Initialized(JToken token, CancellationToken cancellationToken) {
-            await _server.Initialized(ToObject<InitializedParams>(token), cancellationToken);
+            //await _server.Initialized(ToObject<InitializedParams>(token), cancellationToken);
             _rpc.NotifyAsync("python/languageServerStarted").DoNotWait();
         }
 
@@ -62,8 +52,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         [JsonRpcMethod("exit")]
-        public async Task Exit() {
-            await _server.Exit();
+        public void Exit() {
+            _server.Dispose();
             _sessionTokenSource.Cancel();
             // Per https://microsoft.github.io/language-server-protocol/specification#exit
             Environment.Exit(_shutdown ? 0 : 1);
@@ -92,12 +82,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         }
                     }
                 }).DoNotWait();
-            }
-        }
-
-        private async Task IfTestWaitForAnalysisCompleteAsync() {
-            if (_initParams.initializationOptions.testEnvironment) {
-                await _server.WaitForCompleteAnalysisAsync(_shutdownCts.Token);
             }
         }
     }

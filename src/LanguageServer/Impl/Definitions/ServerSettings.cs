@@ -15,13 +15,13 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer {
     public class ServerSettings {
         public class PythonAnalysisOptions {
             private Dictionary<string, DiagnosticSeverity> _map = new Dictionary<string, DiagnosticSeverity>();
 
-            public bool openFilesOnly;
             public int symbolsHierarchyDepthLimit = 10;
             public int symbolsHierarchyMaxSymbols = 1000;
 

@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Describes Python interpreter associated with the analysis.
     /// </summary>
-    internal sealed class PythonInterpreter : IPythonInterpreter {
+    public sealed class PythonInterpreter : IPythonInterpreter {
         private ModuleResolution _moduleResolution;
         private readonly object _lock = new object();
 

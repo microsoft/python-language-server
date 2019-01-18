@@ -17,6 +17,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core;
+using Microsoft.Python.LanguageServer.Extensibility;
 
 namespace Microsoft.Python.LanguageServer.Extensions {
     /// <summary>
@@ -27,7 +29,7 @@ namespace Microsoft.Python.LanguageServer.Extensions {
         /// <summary>
         /// Called when the extension is loaded for a language server.
         /// </summary>
-        Task<ILanguageServerExtension> CreateAsync(IPythonLanguageServer server, 
+        Task<ILanguageServerExtension> CreateAsync(IServiceContainer services, 
             IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken = default);
     }
 }

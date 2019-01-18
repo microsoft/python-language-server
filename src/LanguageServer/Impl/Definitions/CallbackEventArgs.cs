@@ -15,6 +15,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer {
     public abstract class CallbackEventArgs<T> : EventArgs where T : class {

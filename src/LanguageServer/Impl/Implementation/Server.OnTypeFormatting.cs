@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -15,13 +14,17 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.LanguageServer.Formatting;
+using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
-        public override async Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params, CancellationToken cancellationToken) {
+        public async Task<TextEdit[]> DocumentOnTypeFormatting(DocumentOnTypeFormattingParams @params, CancellationToken cancellationToken) {
             int targetLine;
 
             switch (@params.ch) {
@@ -37,24 +40,23 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             var uri = @params.textDocument.uri;
-
-            if (!(ProjectFiles.GetEntry(uri) is IDocument doc)) {
+            var doc = _rdt.GetDocument(uri);
+            if (doc == null) {
                 return Array.Empty<TextEdit>();
             }
-            var part = ProjectFiles.GetPart(uri);
 
-            using (var reader = doc.ReadDocument(part, out _)) {
+            using (var reader = new StringReader(doc.Content)) {
                 if (@params.ch == ":") {
                     return await BlockFormatter.ProvideEdits(reader, @params.position, @params.options);
                 }
 
-                var lineFormatter = new LineFormatter(reader, Analyzer.LanguageVersion);
+                var lineFormatter = new LineFormatter(reader, doc.Interpreter.LanguageVersion);
                 var edits = lineFormatter.FormatLine(targetLine);
                 var unmatchedToken = lineFormatter.UnmatchedToken(targetLine);
 
                 if (unmatchedToken != null) {
                     var message = Resources.LineFormatter_UnmatchedToken.FormatInvariant(unmatchedToken.Value.token, unmatchedToken.Value.line + 1);
-                    LogMessage(MessageType.Warning, message);
+                    _log?.Log(TraceEventType.Warning, message);
                 }
 
                 return edits;

@@ -13,9 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -71,7 +73,7 @@ namespace Microsoft.Python.Analysis.Tests {
             sm.AddService(dependencyResolver);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonAnalyzer");
-            var analyzer = new PythonAnalyzer(sm);
+            var analyzer = new PythonAnalyzer(sm, root);
             sm.AddService(analyzer);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonInterpreter");
@@ -113,7 +115,7 @@ namespace Microsoft.Python.Analysis.Tests {
             IDocument doc;
             var rdt = services.GetService<IRunningDocumentTable>();
             if (rdt != null) {
-                doc = rdt.AddDocument(moduleUri, code, modulePath);
+                doc = rdt.OpenDocument(moduleUri, code, modulePath);
             } else {
                 var mco = new ModuleCreationOptions {
                     ModuleName = moduleName,
@@ -145,14 +147,27 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         protected sealed class DiagnosticsService : IDiagnosticsService {
-            private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+            private readonly Dictionary<Uri, List<DiagnosticsEntry>> _diagnostics = new Dictionary<Uri, List<DiagnosticsEntry>>();
+            private readonly object _lock = new object();
 
-            public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
+            public IReadOnlyList<DiagnosticsEntry> Diagnostics {
+                get {
+                    lock (_lock) {
+                        return _diagnostics.Values.SelectMany().ToArray();
+                    }
+                }
+            }
 
-            public void Add(DiagnosticsEntry entry) => _diagnostics.Add(entry);
+            public void Add(Uri documentUri, DiagnosticsEntry entry) {
+                lock(_lock) {
+                    if (!_diagnostics.TryGetValue(documentUri, out var list)) {
+                        _diagnostics[documentUri] = list = new List<DiagnosticsEntry>();
+                    }
+                    list.Add(entry);
+                }
+            }
 
-            public void Add(string message, SourceSpan span, string errorCode, Severity severity) 
-                => Add(new DiagnosticsEntry(message, span, errorCode, severity));
+            public int PublishingDelay { get; set; }
         }
     }
 }

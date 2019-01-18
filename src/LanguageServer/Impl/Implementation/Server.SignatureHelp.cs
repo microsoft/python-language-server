@@ -13,15 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
-        public override async Task<SignatureHelp> SignatureHelp(TextDocumentPositionParams @params, CancellationToken token) {
+        public async Task<SignatureHelp> SignatureHelp(TextDocumentPositionParams @params, CancellationToken token) {
             var uri = @params.textDocument.uri;
-            TraceMessage($"Signatures in {uri} at {@params.position}");
+            _log?.Log(TraceEventType.Verbose, $"Signatures in {uri} at {@params.position}");
             return null;
             //return new SignatureHelp {
             //    signatures = sigs,

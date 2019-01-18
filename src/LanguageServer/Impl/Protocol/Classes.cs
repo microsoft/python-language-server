@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Core.Text;
+using Newtonsoft.Json;
 
 namespace Microsoft.Python.LanguageServer.Protocol {
     [Serializable]
@@ -288,7 +289,7 @@ namespace Microsoft.Python.LanguageServer.Protocol {
             /// </summary>
             public string[] contentFormat;
         }
-        public HoverCapabilities? hover;
+        public HoverCapabilities hover;
 
         [Serializable]
         public sealed class SignatureHelpCapabilities {
@@ -757,5 +758,13 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         public DocumentFilter documentSelector;
         public string firstTriggerCharacter;
         public string[] moreTriggerCharacters;
+    }
+
+    [JsonObject]
+    public sealed class PublishDiagnosticsParams {
+        [JsonProperty]
+        public Uri uri;
+        [JsonProperty]
+        public Diagnostic[] diagnostics;
     }
 }

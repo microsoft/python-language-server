@@ -22,18 +22,29 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Shell;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer, IDisposable {
-        private readonly IServiceContainer _services;
+        private readonly IServiceManager _services;
         private readonly IDependencyResolver _dependencyResolver;
         private readonly CancellationTokenSource _globalCts = new CancellationTokenSource();
         private readonly ILogger _log;
 
-        public PythonAnalyzer(IServiceContainer services) {
+        public PythonAnalyzer(IServiceManager services, string root) {
             _services = services;
             _log = services.GetService<ILogger>();
+
             _dependencyResolver = services.GetService<IDependencyResolver>();
+            if (_dependencyResolver == null) {
+                _dependencyResolver = new DependencyResolver(_services);
+                _services.AddService(_dependencyResolver);
+            }
+
+            var rdt = services.GetService<IRunningDocumentTable>();
+            if (rdt == null) {
+                services.AddService(new RunningDocumentTable(root, services));
+            }
         }
 
         public void Dispose() => _globalCts.Cancel();

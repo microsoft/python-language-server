@@ -25,7 +25,7 @@ using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 
-namespace Microsoft.Python.LanguageServer.Implementation {
+namespace Microsoft.Python.LanguageServer.Formatting {
     /// <summary>
     /// Port of BlockFormatProviders in vscode-python.
     /// </summary>

@@ -151,7 +151,7 @@ namespace Microsoft.Python.Parsing {
             get => _indentationInconsistencySeverity;
             set {
                 _indentationInconsistencySeverity = value;
-                if (value != Severity.Ignore && _state.IndentFormat == null) {
+                if (_state.IndentFormat == null) {
                     _state.IndentFormat = new string[MaxIndent];
                 }
             }
@@ -2047,15 +2047,13 @@ namespace Microsoft.Python.Parsing {
                         MarkTokenEnd();
 
                         if (_tokenEndIndex != _tokenStartIndex) {
-                            // We've captured a line of significant identation
+                            // We've captured a line of significant indentation
                             // (i.e. not pure whitespace or comment). Check that
                             // any of this indentation that's in common with the
                             // current indent level is constructed in exactly
                             // the same way (i.e. has the same mix of spaces and
                             // tabs etc.).
-                            if (IndentationInconsistencySeverity != Severity.Ignore) {
-                                CheckIndent(sb, noAllocWhiteSpace, _tokenStartIndex + startingKind.GetSize());
-                            }
+                            CheckIndent(sb, noAllocWhiteSpace, _tokenStartIndex + startingKind.GetSize());
                         }
 
                         // if there's a blank line then we don't want to mess w/ the
@@ -2205,7 +2203,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private void ReportSyntaxError(IndexSpan span, string message, int errorCode)
-            => _errors.Add(message, _newLineLocations.ToArray(), span.Start, span.End, errorCode, Severity.FatalError);
+            => _errors.Add(message, _newLineLocations.ToArray(), span.Start, span.End, errorCode, Severity.Error);
 
         [Conditional("DUMP_TOKENS")]
         private static void DumpToken(Token token)

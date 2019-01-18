@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,13 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.LanguageServer {
-    public interface IPythonLanguageServer {
-        IServiceContainer Services { get; }
-        IDocument GetDocument(Uri documentUri);
+namespace Microsoft.Python.LanguageServer.Extensibility {
+    public interface ICompletionExtension {
+        Task HandleCompletionAsync(IDocument document, IDocumentAnalysis analysis, PythonAst tree, SourceLocation location, CompletionList completions, CancellationToken token);
     }
 }

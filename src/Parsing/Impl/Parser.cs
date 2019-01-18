@@ -303,7 +303,7 @@ namespace Microsoft.Python.Parsing {
                 _tokenizer.GetLineLocations(),
                 start, end,
                 errorCode,
-                Severity.FatalError);
+                Severity.Error);
         }
 
         #endregion
@@ -4859,7 +4859,7 @@ namespace Microsoft.Python.Parsing {
             }
 
             public override void Add(string message, SourceSpan span, int errorCode, Severity severity) {
-                if (_parser._errorCode == 0 && (severity == Severity.Error || severity == Severity.FatalError)) {
+                if (_parser._errorCode == 0 && severity == Severity.Error) {
                     _parser._errorCode = errorCode;
                 }
 
@@ -4972,7 +4972,7 @@ namespace Microsoft.Python.Parsing {
                         encodingIndex,
                         encodingIndex + encodingName.Length,
                         ErrorCodes.SyntaxError,
-                        Severity.FatalError
+                        Severity.Error
                     );
                     encoding = Encoding.UTF8;
                 } else if (isUtf8) {
@@ -5001,7 +5001,7 @@ namespace Microsoft.Python.Parsing {
                     ex.Index,
                     ex.Index + 1,
                     ErrorCodes.SyntaxError,
-                    Severity.FatalError
+                    Severity.Error
                 );
                 return new StreamReader(new PartiallyReadStream(readBytes, stream), encoding);
             }

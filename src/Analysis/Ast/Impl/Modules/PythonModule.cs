@@ -271,7 +271,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         public IEnumerable<DiagnosticsEntry> GetParseErrors() => _parseErrors.ToArray();
 
-        public void Update(IEnumerable<DocumentChangeSet> changes) {
+        public void Update(IEnumerable<DocumentChange> changes) {
             lock (AnalysisLock) {
                 ExpectedAnalysisVersion++;
 
@@ -288,6 +288,8 @@ namespace Microsoft.Python.Analysis.Modules {
                 Parse();
             }
         }
+
+        public void Reset(string content) => InitializeContent(content, ModuleLoadOptions.Open);
 
         private void Parse() {
             _parseCts?.Cancel();
