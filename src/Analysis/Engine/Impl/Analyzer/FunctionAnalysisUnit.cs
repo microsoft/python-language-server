@@ -17,10 +17,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
     class FunctionAnalysisUnit : AnalysisUnit {

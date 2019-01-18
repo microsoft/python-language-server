@@ -9,16 +9,17 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
 using System.IO;
 using System.Linq;
-using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis {
     sealed class ExpressionFinder {
@@ -92,13 +93,9 @@ namespace Microsoft.PythonTools.Analysis {
             return GetExpression(startIndex, endIndex);
         }
 
-        public SourceSpan? GetExpressionSpan(int startIndex, int endIndex) {
-            return GetExpression(startIndex, endIndex)?.GetSpan(Ast);
-        }
+        public SourceSpan? GetExpressionSpan(int startIndex, int endIndex) => GetExpression(startIndex, endIndex)?.GetSpan(Ast);
 
-        public SourceSpan? GetExpressionSpan(SourceSpan range) {
-            return GetExpression(range)?.GetSpan(Ast);
-        }
+        public SourceSpan? GetExpressionSpan(SourceSpan range) => GetExpression(range)?.GetSpan(Ast);
 
         private abstract class ExpressionWalker : PythonWalkerWithLocation {
             public ExpressionWalker(int location) : base(location) { }

@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.Python.Core.Text;
 using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.Python.LanguageServer {
@@ -70,15 +70,6 @@ namespace Microsoft.Python.LanguageServer {
         public MessageType type;
         public string message;
         public MessageActionItem[] actions;
-    }
-
-    public sealed class LogMessageEventArgs : EventArgs {
-        public MessageType type { get; set; }
-        public string message { get; set; }
-    }
-
-    public sealed class TelemetryEventArgs : EventArgs {
-        public object value { get; set; }
     }
 
     public sealed class CommandEventArgs: EventArgs {

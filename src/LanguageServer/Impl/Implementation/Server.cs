@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -9,7 +8,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -24,18 +23,21 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Disposables;
+using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Shell;
 using Microsoft.Python.LanguageServer.Extensions;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Documentation;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Intellisense;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
-    public sealed partial class Server : ServerBase, ILogger, IPythonLanguageServer, IDisposable {
+    public sealed partial class Server : ServerBase, IPythonLanguageServer, IDisposable {
         /// <summary>
         /// Implements ability to execute module reload on the analyzer thread
         /// </summary>
@@ -90,7 +92,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             maxDocumentationLines = 100
         };
 
-        public Server() {
+        public Server(IServiceContainer services = null): base(services) {
+
             AnalysisQueue = new AnalysisQueue();
             AnalysisQueue.UnhandledException += Analysis_UnhandledException;
 
@@ -100,10 +103,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposableBag
                 .Add(() => {
                     foreach (var ext in _extensions.Values) {
-                        ext?.Dispose();
-                    }
-                    foreach (var ext in _oldExtensions.Values) {
-                        (ext as IDisposable)?.Dispose();
+                        ext.Dispose();
                     }
                 })
                 .Add(ProjectFiles)
@@ -336,8 +336,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #endregion
 
         #region IPythonLanguageServer
-        public ILogger Logger => this;
-
         public PythonAst GetCurrentAst(Uri documentUri) {
             ProjectFiles.GetEntry(documentUri, null, out var entry, out var tree);
             return entry.GetCurrentParse()?.Tree;

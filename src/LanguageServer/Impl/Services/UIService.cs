@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -9,63 +8,44 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Python.Core.Shell;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Services {
-    public sealed class UIService : IUIService, ILogger {
+    public sealed class UIService : IUIService {
         private readonly JsonRpc _rpc;
-        private MessageType _logLevel = MessageType.Error;
 
         public UIService(JsonRpc rpc) {
             _rpc = rpc;
         }
-        public Task ShowMessage(string message, MessageType messageType) {
+
+        public Task ShowMessageAsync(string message, TraceEventType eventType) {
             var parameters = new ShowMessageRequestParams {
-                type = messageType,
+                type = eventType.ToMessageType(),
                 message = message
             };
             return _rpc.NotifyWithParameterObjectAsync("window/showMessage", parameters);
         }
 
-        public Task<MessageActionItem?> ShowMessage(string message, MessageActionItem[] actions, MessageType messageType) {
+        public async Task<string> ShowMessageAsync(string message, string[] actions, TraceEventType eventType) {
             var parameters = new ShowMessageRequestParams {
-                type = messageType,
+                type = eventType.ToMessageType(),
                 message = message,
-                actions = actions
+                actions = actions.Select(a => new MessageActionItem { title = a }).ToArray()
             };
-            return _rpc.InvokeWithParameterObjectAsync<MessageActionItem?>("window/showMessageRequest", parameters);
+            var result = await _rpc.InvokeWithParameterObjectAsync<MessageActionItem?>("window/showMessageRequest", parameters);
+            return result?.title;
         }
 
-        [Serializable]
-        class LogMessageParams {
-            public MessageType type;
-            public string message;
-        }
-
-        public Task LogMessage(string message, MessageType messageType) {
-            if(messageType > _logLevel) {
-                return Task.CompletedTask;
-            }
-            var parameters = new LogMessageParams {
-                type = messageType,
-                message = message
-            };
-            return _rpc.NotifyWithParameterObjectAsync("window/logMessage", parameters);
-        }
-
-        public Task SetStatusBarMessage(string message) 
+        public Task SetStatusBarMessageAsync(string message)
             => _rpc.NotifyWithParameterObjectAsync("window/setStatusBarMessage", message);
-
-        public void TraceMessage(string message) => LogMessage(message.ToString(), MessageType.Info);
-        public void TraceMessage(IFormattable message) => TraceMessage(message.ToString());
-
-        public void SetLogLevel(MessageType logLevel) => _logLevel = logLevel;
     }
 }

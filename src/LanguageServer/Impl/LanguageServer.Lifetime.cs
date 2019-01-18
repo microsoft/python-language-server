@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -22,8 +22,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
-using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
@@ -64,14 +65,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             // https://microsoft.github.io/language-server-protocol/specification#shutdown
             await _server.Shutdown();
             _shutdown = true;
-            _idleTimeTracker.Dispose();
         }
 
         [JsonRpcMethod("exit")]
         public async Task Exit() {
             await _server.Exit();
             _sessionTokenSource.Cancel();
-            _idleTimeTracker.Dispose();
             // Per https://microsoft.github.io/language-server-protocol/specification#exit
             Environment.Exit(_shutdown ? 0 : 1);
         }

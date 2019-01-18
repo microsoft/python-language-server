@@ -16,9 +16,9 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     class AstPythonFunction : AstPythonType, IPythonFunction {
@@ -41,7 +41,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
                 _doc = declaringType?.Documentation;
             }
 
-            foreach (var dec in (FunctionDefinition.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault().OfType<NameExpression>()) {
+            foreach (var dec in (FunctionDefinition.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
                 if (dec.Name == "classmethod") {
                     IsClassMethod = true;
                 } else if (dec.Name == "staticmethod") {

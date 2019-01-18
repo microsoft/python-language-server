@@ -20,11 +20,12 @@ using System.Linq;
 using System.Text;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 using Microsoft.PythonTools.Analysis.Analyzer;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
 
 namespace Microsoft.PythonTools.Analysis.FluentAssertions {
     internal static class AssertionsUtilities {

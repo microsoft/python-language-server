@@ -9,15 +9,13 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.PythonTools;
-using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer {
     public interface IDocumentReader {
@@ -26,11 +24,11 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     public static class DocumentReaderExtensions {
-        public static string ReadLinearSpan(this IDocumentReader reader, LinearSpan span)
+        public static string ReadLinearSpan(this IDocumentReader reader, IndexSpan span)
             => reader.Read(span.Start, span.Length);
         public static string ReadRange(this IDocumentReader reader, Range range, PythonAst ast)
-            => reader.ReadLinearSpan(range.ToLinearSpan(ast));
+            => reader.ReadLinearSpan(range.ToIndexSpan(ast));
         public static string ReadSourceSpan(this IDocumentReader reader, SourceSpan span, PythonAst ast)
-            => reader.ReadLinearSpan(span.ToLinearSpan(ast));
+            => reader.ReadLinearSpan(span.ToIndexSpan(ast));
     }
 }

@@ -9,14 +9,13 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -28,7 +27,7 @@ namespace TestUtilities {
         private static readonly AsyncLocal<TestRunScope> TestRunScopeAsyncLocal = new AsyncLocal<TestRunScope>();
 
         private static string GetRootDir() {
-            var dir = PathUtils.GetParent((typeof(TestData)).Assembly.Location);
+            var dir = PathUtils.GetParent(typeof(TestData).Assembly.Location);
             while (!string.IsNullOrEmpty(dir) &&
                 Directory.Exists(dir) &&
                 !File.Exists(PathUtils.GetAbsoluteFilePath(dir, "build.root"))) {

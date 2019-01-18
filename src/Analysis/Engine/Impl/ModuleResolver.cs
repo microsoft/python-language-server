@@ -16,8 +16,8 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Core;
 
 namespace Microsoft.PythonTools.Analysis {
     internal class ModuleResolver {

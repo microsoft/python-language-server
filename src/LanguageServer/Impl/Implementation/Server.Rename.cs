@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -20,8 +20,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
@@ -46,7 +47,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 throw new EditorOperationException(Resources.RenameVariable_CannotRename);
             }
 
-            var definitionSpan = definition.range.ToLinearSpan(tree);
+            var definitionSpan = definition.range.ToIndexSpan(tree);
             var reader = new DocumentReader(entry as IDocument, ProjectFiles.GetPart(definition.uri));
             var originalName = reader.Read(definitionSpan.Start, definitionSpan.Length);
             if (originalName == null) {

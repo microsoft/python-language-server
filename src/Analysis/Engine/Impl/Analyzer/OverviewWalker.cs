@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -19,8 +19,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.PythonTools.Analysis.Values;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
     /// <summary>
@@ -453,8 +453,8 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
 
         public override bool Walk(IfStatement node) {
             UpdateChildRanges(node);
-            if (node.TestsInternal != null) {
-                foreach (var test in node.TestsInternal) {
+            if (node.Tests != null) {
+                foreach (var test in node.Tests) {
                     var isInstanceNames = GetIsInstanceNamesAndExpressions(test.Test);
                     if (isInstanceNames != null) {
                         if (test.Test != null) {
@@ -558,11 +558,13 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 var lineNo = _tree.IndexToLocation(node.EndIndex).Line;
 
                 int offset;
-                if (_tree._lineLocations.Length == 0) {
+                if (_tree.NewLineLocations.Length == 0) {
                     // single line input
                     offset = 0;
                 } else {
-                    offset = lineNo < _tree._lineLocations.Length ? _tree._lineLocations[lineNo].EndIndex : _tree._lineLocations[_tree._lineLocations.Length - 1].EndIndex;
+                    offset = lineNo < _tree.NewLineLocations.Length 
+                        ? _tree.NewLineLocations[lineNo].EndIndex 
+                        : _tree.NewLineLocations[_tree.NewLineLocations.Length - 1].EndIndex;
                 }
                 var closingScope = new StatementScope(offset, _scope);
                 _scope.Children.Add(closingScope);

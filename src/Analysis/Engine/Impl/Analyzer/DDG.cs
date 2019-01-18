@@ -19,10 +19,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using Microsoft.PythonTools.Analysis.DependencyResolution;
-using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis.Values;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Analyzer {
     internal class DDG : PythonWalker {
@@ -422,7 +422,7 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         }
 
         public override bool Walk(IfStatement node) {
-            foreach (var test in node.TestsInternal) {
+            foreach (var test in node.Tests) {
                 _eval.Evaluate(test.Test);
 
                 var prevScope = Scope;

@@ -20,8 +20,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Core.Services;
+using Microsoft.Python.Core.Tests;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
 using TestUtilities;
@@ -31,13 +36,16 @@ namespace Microsoft.PythonTools.Analysis {
         public static async Task<Server> InitializeAsync(this Server server, InterpreterConfiguration configuration, Uri rootUri = null, IEnumerable<string> searchPaths = null) {
             configuration.AssertInstalled();
 
-            server.OnLogMessage += Server_OnLogMessage;
             var properties = new InterpreterFactoryCreationOptions {
                 TraceLevel = System.Diagnostics.TraceLevel.Verbose,
                 DatabasePath = TestData.GetAstAnalysisCachePath(configuration.Version)
             }.ToDictionary();
 
             configuration.WriteToDictionary(properties);
+
+            var sm = new ServiceManager();
+            sm.AddService(new TestLogger());
+            server.SetServices(sm);
 
             await server.Initialize(new InitializeParams {
                 rootUri = rootUri,
@@ -254,15 +262,6 @@ namespace Microsoft.PythonTools.Analysis {
 
         public static string[] GetBuiltinTypeMemberNames(this Server server, BuiltinTypeId typeId) 
             => server.Analyzer.Types[typeId].GetMemberNames((IModuleContext)server.Analyzer.Interpreter).ToArray();
-
-        private static void Server_OnLogMessage(object sender, LogMessageEventArgs e) {
-            switch (e.type) {
-                case MessageType.Error: Trace.TraceError($"[{TestEnvironmentImpl.Elapsed()}]: {e.message}"); break;
-                case MessageType.Warning: Trace.TraceWarning($"[{TestEnvironmentImpl.Elapsed()}]: {e.message}"); break;
-                case MessageType.Info: Trace.TraceInformation($"[{TestEnvironmentImpl.Elapsed()}]: {e.message}"); break;
-                case MessageType.Log: Trace.TraceInformation($"[{TestEnvironmentImpl.Elapsed()}] LOG: {e.message}"); break;
-            }
-        }
 
         private static CancellationToken GetCancellationToken(int failAfter = 30000) 
             => Debugger.IsAttached ? CancellationToken.None : new CancellationTokenSource(failAfter).Token;

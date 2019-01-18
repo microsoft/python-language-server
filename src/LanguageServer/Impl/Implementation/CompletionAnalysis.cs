@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -9,7 +8,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -20,15 +19,17 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Microsoft.PythonTools;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.DependencyResolution;
 using Microsoft.PythonTools.Analysis.Documentation;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     class CompletionAnalysis {
@@ -151,7 +152,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var reader = _openDocument?.Invoke();
             if (reader == null) {
-                _log.TraceMessage($"Cannot get completions at error node without sources");
+                _log.Log(TraceEventType.Verbose, "Cannot get completions at error node without sources");
                 _tokens = Array.Empty<KeyValuePair<IndexSpan, Token>>();
                 _tokenNewlines = Array.Empty<NewLineLocation>();
                 return;
@@ -176,7 +177,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public IEnumerable<CompletionItem> GetCompletionsFromString(string expr) {
             Check.ArgumentNotNullOrEmpty(nameof(expr), expr);
-            _log.TraceMessage($"Completing expression '{expr}'");
+            _log.Log(TraceEventType.Verbose, $"Completing expression '{expr}'");
             return Analysis.GetMembers(expr, Position, Options).Select(ToCompletionItem);
         }
 
@@ -247,7 +248,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private IEnumerable<CompletionItem> GetCompletionsFromMembers(MemberExpression me) {
-            _log.TraceMessage(
+            _log.Log(TraceEventType.Verbose,
                 $"Completing expression {me.Target.ToCodeString(Tree, CodeFormattingOptions.Traditional)}");
             ParentExpression = me.Target;
             if (!string.IsNullOrEmpty(me.Name)) {
@@ -618,7 +619,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private bool IsInsideComment() {
-            var match = Array.BinarySearch(Tree._commentLocations, Position);
+            var match = Array.BinarySearch(Tree.CommentLocations, Position);
             // If our index = -1, it means we're before the first comment
             if (match == -1) {
                 return false;
@@ -630,16 +631,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 match = ~match - 1;
             }
 
-            if (match >= Tree._commentLocations.Length) {
+            if (match >= Tree.CommentLocations.Length) {
                 Debug.Fail("Failed to find nearest preceding comment in AST");
                 return false;
             }
 
-            if (Tree._commentLocations[match].Line != Position.Line) {
+            if (Tree.CommentLocations[match].Line != Position.Line) {
                 return false;
             }
 
-            if (Tree._commentLocations[match].Column >= Position.Column) {
+            if (Tree.CommentLocations[match].Column >= Position.Column) {
                 return false;
             }
 
@@ -712,7 +713,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             ShouldAllowSnippets = options.HasFlag(GetMemberOptions.IncludeExpressionKeywords);
 
-            _log.TraceMessage($"Completing all names");
+            _log.Log(TraceEventType.Verbose, "Completing all names");
             var members = Analysis.GetAllMembers(Position, options);
 
             var finder = new ExpressionFinder(Tree, new GetExpressionOptions { Calls = true });
@@ -725,7 +726,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     .Select(n => new MemberResult($"{n}=", PythonMemberType.NamedArgument) as IMemberResult)
                     .ToArray();
 
-                _log.TraceMessage($"Including {argNames.Length} named arguments");
+                _log.Log(TraceEventType.Verbose, $"Including {argNames.Length} named arguments");
                 members = members.Concat(argNames);
             }
 
