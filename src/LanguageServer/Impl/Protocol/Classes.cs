@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -17,29 +16,22 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Core.Text;
-using Microsoft.PythonTools.Analysis.Documentation;
 
-namespace Microsoft.Python.LanguageServer {
+namespace Microsoft.Python.LanguageServer.Protocol {
     [Serializable]
-    public struct ResponseError {
+    public sealed class ResponseError {
         public int code;
         public string message;
     }
 
-    public struct ResponseError<T> {
-        public int code;
-        public string message;
-        public T data;
-    }
-
     [Serializable]
-    public struct Location {
+    public sealed class Location {
         public Uri uri;
         public Range range;
     }
 
     [Serializable]
-    public struct Command {
+    public sealed class Command {
         /// <summary>
         /// Title of the command, like `save`.
         /// </summary>
@@ -57,7 +49,7 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct TextEdit {
+    public sealed class TextEdit {
         /// <summary>
         /// The range of the text document to be manipulated. To insert
         /// text into a document create a range where start === end.
@@ -79,26 +71,26 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct TextDocumentEdit {
+    public sealed class TextDocumentEdit {
         public VersionedTextDocumentIdentifier textDocument;
         public TextEdit[] edits;
     }
 
     [Serializable]
-    public struct WorkspaceEdit {
+    public sealed class WorkspaceEdit {
         public Dictionary<Uri, TextEdit[]> changes;
         public TextDocumentEdit[] documentChanges;
     }
 
     [Serializable]
-    public struct TextDocumentIdentifier {
+    public sealed class TextDocumentIdentifier {
         public Uri uri;
 
         public static implicit operator TextDocumentIdentifier(Uri uri) => new TextDocumentIdentifier { uri = uri };
     }
 
     [Serializable]
-    public struct TextDocumentItem {
+    public sealed class TextDocumentItem {
         public Uri uri;
         public string languageId;
         public int version;
@@ -106,14 +98,13 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct VersionedTextDocumentIdentifier {
+    public sealed class VersionedTextDocumentIdentifier {
         public Uri uri;
         public int? version;
-        public int? _fromVersion;
     }
 
     [Serializable]
-    public struct DocumentFilter {
+    public sealed class DocumentFilter {
         /// <summary>
         /// A language id, like `typescript`.
         /// </summary>
@@ -134,7 +125,7 @@ namespace Microsoft.Python.LanguageServer {
     /// Required layout for the initializationOptions member of initializeParams
     /// </summary>
     [Serializable]
-    public class PythonInitializationOptions {
+    public sealed class PythonInitializationOptions {
         [Serializable]
         public struct Interpreter {
             /// <summary>
@@ -158,19 +149,9 @@ namespace Microsoft.Python.LanguageServer {
         public string[] searchPaths = Array.Empty<string>();
 
         /// <summary>
-        /// Secondary paths to search when resolving modules. Not supported by all
-        /// factories. In generaly, only source files will be discovered, and their
-        /// contents will be merged with the initial module.
+        /// Paths to search for module stubs.
         /// </summary>
         public string[] typeStubSearchPaths = Array.Empty<string>();
-
-        /// <summary>
-        /// Indicates that analysis engine is running in a test environment.
-        /// Causes initialization and analysis sequences to fully
-        /// complete before information requests such as hover or
-        /// completion can be processed.
-        /// </summary>
-        public bool testEnvironment;
 
         /// <summary>
         /// Controls tooltip display appearance. Different between VS and VS Code.
@@ -190,25 +171,14 @@ namespace Microsoft.Python.LanguageServer {
         public string[] includeFiles = Array.Empty<string>();
 
         /// <summary>
-        /// Client expects analysis progress updates, including notifications
-        /// when analysis is complete for a particular document version.
-        /// </summary>
-        public bool analysisUpdates;
-
-        /// <summary>
         /// Enables an even higher level of logging via the logMessage event.
         /// This will likely have a performance impact.
         /// </summary>
         public bool traceLogging;
-
-        /// <summary> 
-        /// If true, analyzer will be created asynchronously. Used in VS Code. 
-        /// </summary> 
-        public bool asyncStartup;
     }
 
     [Serializable]
-    public class WorkspaceClientCapabilities {
+    public sealed class WorkspaceClientCapabilities {
         public bool applyEdit;
 
         public struct WorkspaceEditCapabilities { public bool documentChanges; }
@@ -264,11 +234,11 @@ namespace Microsoft.Python.LanguageServer {
         public SynchronizationCapabilities? synchronization;
 
         [Serializable]
-        public struct CompletionCapabilities {
+        public sealed class CompletionCapabilities {
             public bool dynamicRegistration;
 
             [Serializable]
-            public struct CompletionItemCapabilities {
+            public sealed class CompletionItemCapabilities {
                 /// <summary>
                 /// Client supports snippets as insert text.
                 /// 
@@ -283,10 +253,10 @@ namespace Microsoft.Python.LanguageServer {
 
                 public string[] documentationFormat;
             }
-            public CompletionItemCapabilities? completionItem;
+            public CompletionItemCapabilities completionItem;
 
             [Serializable]
-            public struct CompletionItemKindCapabilities {
+            public sealed class CompletionItemKindCapabilities {
                 /// <summary>
                 /// The completion item kind values the client supports. When this
                 /// property exists the client also guarantees that it will
@@ -299,7 +269,7 @@ namespace Microsoft.Python.LanguageServer {
                 /// </summary>
                 public SymbolKind[] valueSet;
             }
-            public CompletionItemKindCapabilities? completionItemKind;
+            public CompletionItemKindCapabilities completionItemKind;
 
             /// <summary>
             /// The client supports to send additional context information for a
@@ -307,10 +277,10 @@ namespace Microsoft.Python.LanguageServer {
             /// </summary>
             public bool contextSupport;
         }
-        public CompletionCapabilities? completion;
+        public CompletionCapabilities completion;
 
         [Serializable]
-        public struct HoverCapabilities {
+        public sealed class HoverCapabilities {
             public bool dynamicRegistration;
             /// <summary>
             /// Client supports the follow content formats for the content
@@ -321,7 +291,7 @@ namespace Microsoft.Python.LanguageServer {
         public HoverCapabilities? hover;
 
         [Serializable]
-        public struct SignatureHelpCapabilities {
+        public sealed class SignatureHelpCapabilities {
             public bool dynamicRegistration;
 
             public struct SignatureInformationCapabilities {
@@ -340,20 +310,20 @@ namespace Microsoft.Python.LanguageServer {
             }
             public SignatureInformationCapabilities? signatureInformation;
         }
-        public SignatureHelpCapabilities? signatureHelp;
+        public SignatureHelpCapabilities signatureHelp;
 
         [Serializable]
-        public struct ReferencesCapabilities { public bool dynamicRegistration; }
-        public ReferencesCapabilities? references;
+        public sealed class ReferencesCapabilities { public bool dynamicRegistration; }
+        public ReferencesCapabilities references;
 
         [Serializable]
-        public struct DocumentHighlightCapabilities { public bool dynamicRegistration; }
-        public DocumentHighlightCapabilities? documentHighlight;
+        public sealed class DocumentHighlightCapabilities { public bool dynamicRegistration; }
+        public DocumentHighlightCapabilities documentHighlight;
 
         [Serializable]
-        public struct DocumentSymbolCapabilities {
+        public sealed class DocumentSymbolCapabilities {
             public bool dynamicRegistration;
-            public struct SymbolKindCapabilities {
+            public sealed class SymbolKindCapabilities {
                 /// <summary>
                 /// The symbol kind values the client supports. When this
                 /// property exists the client also guarantees that it will
@@ -366,74 +336,55 @@ namespace Microsoft.Python.LanguageServer {
                 /// </summary>
                 public SymbolKind[] valueSet;
             }
-            public SymbolKindCapabilities? symbolKind;
+            public SymbolKindCapabilities symbolKind;
 
             /// <summary>
             /// The client support hierarchical document symbols.
             /// </summary>
             public bool? hierarchicalDocumentSymbolSupport;
         }
-        public DocumentSymbolCapabilities? documentSymbol;
+        public DocumentSymbolCapabilities documentSymbol;
 
         [Serializable]
-        public struct FormattingCapabilities { public bool dynamicRegistration; }
-        public FormattingCapabilities? formatting;
+        public sealed class FormattingCapabilities { public bool dynamicRegistration; }
+        public FormattingCapabilities formatting;
 
         [Serializable]
-        public struct RangeFormattingCapabilities { public bool dynamicRegistration; }
-        public RangeFormattingCapabilities? rangeFormatting;
+        public sealed class RangeFormattingCapabilities { public bool dynamicRegistration; }
+        public RangeFormattingCapabilities rangeFormatting;
 
         [Serializable]
-        public struct OnTypeFormattingCapabilities { public bool dynamicRegistration; }
-        public OnTypeFormattingCapabilities? onTypeFormatting;
+        public sealed class OnTypeFormattingCapabilities { public bool dynamicRegistration; }
+        public OnTypeFormattingCapabilities onTypeFormatting;
 
-        public struct DefinitionCapabilities { public bool dynamicRegistration; }
-        public DefinitionCapabilities? definition;
-
-        [Serializable]
-        public struct CodeActionCapabilities { public bool dynamicRegistration; }
-        public CodeActionCapabilities? codeAction;
+        public sealed class DefinitionCapabilities { public bool dynamicRegistration; }
+        public DefinitionCapabilities definition;
 
         [Serializable]
-        public struct CodeLensCapabilities { public bool dynamicRegistration; }
-        public CodeLensCapabilities? codeLens;
+        public sealed class CodeActionCapabilities { public bool dynamicRegistration; }
+        public CodeActionCapabilities codeAction;
 
         [Serializable]
-        public struct DocumentLinkCapabilities { public bool dynamicRegistration; }
-        public DocumentLinkCapabilities? documentLink;
+        public sealed class CodeLensCapabilities { public bool dynamicRegistration; }
+        public CodeLensCapabilities codeLens;
 
         [Serializable]
-        public struct RenameCapabilities { public bool dynamicRegistration; }
-        public RenameCapabilities? rename;
-    }
+        public sealed class DocumentLinkCapabilities { public bool dynamicRegistration; }
+        public DocumentLinkCapabilities documentLink;
 
-    /// <summary>
-    /// This struct is for Python-specific extensions. It is included with
-    /// client capabilities following the specification for extra settings.
-    /// </summary>
-    [Serializable]
-    public class PythonClientCapabilities {
-        /// <summary>
-        /// Disables automatic analysis of all files under the root URI.
-        /// </summary>
-        public bool? manualFileLoad;
-
-        /// <summary>
-        /// Enables rich diagnostics from code analysis.
-        /// </summary>
-        public bool? liveLinting;
+        [Serializable]
+        public sealed class RenameCapabilities { public bool dynamicRegistration; }
+        public RenameCapabilities rename;
     }
 
     [Serializable]
-    public class ClientCapabilities {
+    public sealed class ClientCapabilities {
         public WorkspaceClientCapabilities workspace;
         public TextDocumentClientCapabilities textDocument;
-        public object experimental;
-        public PythonClientCapabilities python;
     }
 
     [Serializable]
-    public struct CompletionOptions {
+    public sealed class CompletionOptions {
         /// <summary>
         /// The server provides support to resolve additional
         /// information for a completion item.
@@ -446,7 +397,7 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct SignatureHelpOptions {
+    public sealed class SignatureHelpOptions {
         /// <summary>
         /// The characters that trigger signature help
         /// automatically.
@@ -455,33 +406,33 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct CodeLensOptions {
+    public sealed class CodeLensOptions {
         public bool resolveProvider;
     }
 
     [Serializable]
-    public struct DocumentOnTypeFormattingOptions {
+    public sealed class DocumentOnTypeFormattingOptions {
         public string firstTriggerCharacter;
         public string[] moreTriggerCharacter;
     }
 
     [Serializable]
-    public struct DocumentLinkOptions {
+    public sealed class DocumentLinkOptions {
         public bool resolveProvider;
     }
 
     [Serializable]
-    public struct ExecuteCommandOptions {
+    public sealed class ExecuteCommandOptions {
         public string[] commands;
     }
 
     [Serializable]
-    public class SaveOptions {
+    public sealed class SaveOptions {
         public bool includeText;
     }
 
     [Serializable]
-    public class TextDocumentSyncOptions {
+    public sealed class TextDocumentSyncOptions {
         /// <summary>
         /// Open and close notifications are sent to the server.
         /// </summary>
@@ -493,34 +444,34 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct ServerCapabilities {
+    public sealed class ServerCapabilities {
         public TextDocumentSyncOptions textDocumentSync;
         public bool hoverProvider;
-        public CompletionOptions? completionProvider;
-        public SignatureHelpOptions? signatureHelpProvider;
+        public CompletionOptions completionProvider;
+        public SignatureHelpOptions signatureHelpProvider;
         public bool definitionProvider;
         public bool referencesProvider;
         public bool documentHighlightProvider;
         public bool documentSymbolProvider;
         public bool workspaceSymbolProvider;
         public bool codeActionProvider;
-        public CodeLensOptions? codeLensProvider;
+        public CodeLensOptions codeLensProvider;
         public bool documentFormattingProvider;
         public bool documentRangeFormattingProvider;
-        public DocumentOnTypeFormattingOptions? documentOnTypeFormattingProvider;
+        public DocumentOnTypeFormattingOptions documentOnTypeFormattingProvider;
         public bool renameProvider;
-        public DocumentLinkOptions? documentLinkProvider;
-        public ExecuteCommandOptions? executeCommandProvider;
+        public DocumentLinkOptions documentLinkProvider;
+        public ExecuteCommandOptions executeCommandProvider;
         public object experimental;
     }
 
     [Serializable]
-    public struct MessageActionItem {
+    public sealed class MessageActionItem {
         public string title;
     }
 
     [Serializable]
-    public struct Registration {
+    public sealed class Registration {
         public string id;
         public string method;
         public IRegistrationOptions registerOptions;
@@ -529,8 +480,8 @@ namespace Microsoft.Python.LanguageServer {
     public interface IRegistrationOptions { }
 
     [Serializable]
-    public struct TextDocumentRegistrationOptions : IRegistrationOptions {
-        public DocumentFilter? documentSelector;
+    public sealed class TextDocumentRegistrationOptions : IRegistrationOptions {
+        public DocumentFilter documentSelector;
     }
 
     [Serializable]
@@ -540,42 +491,42 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct FileEvent {
+    public sealed class FileEvent {
         public Uri uri;
         public FileChangeType type;
     }
 
     [Serializable]
-    public struct DidChangeWatchedFilesRegistrationOptions : IRegistrationOptions {
+    public sealed class DidChangeWatchedFilesRegistrationOptions : IRegistrationOptions {
         public FileSystemWatcher[] watchers;
     }
 
     [Serializable]
-    public struct FileSystemWatcher {
+    public sealed class FileSystemWatcher {
         public string globPattern;
         public WatchKind? type;
     }
 
     [Serializable]
-    public struct ExecuteCommandRegistrationOptions : IRegistrationOptions {
+    public sealed class ExecuteCommandRegistrationOptions : IRegistrationOptions {
         public string[] commands;
     }
 
     [Serializable]
-    public struct TextDocumentContentChangedEvent {
+    public sealed class TextDocumentContentChangedEvent {
         public Range? range;
         public int? rangeLength;
         public string text;
     }
 
-    public struct TextDocumentChangeRegistrationOptions : IRegistrationOptions {
-        public DocumentFilter? documentSelector;
+    public sealed class TextDocumentChangeRegistrationOptions : IRegistrationOptions {
+        public DocumentFilter documentSelector;
         public TextDocumentSyncKind syncKind;
     }
 
     [Serializable]
     public struct TextDocumentSaveRegistrationOptions : IRegistrationOptions {
-        public DocumentFilter? documentSelector;
+        public DocumentFilter documentSelector;
         public bool includeText;
     }
 
@@ -619,10 +570,10 @@ namespace Microsoft.Python.LanguageServer {
         public bool? preselect; // VS Code 1.25+
         public string insertText;
         public InsertTextFormat insertTextFormat;
-        public TextEdit? textEdit;
+        public TextEdit textEdit;
         public TextEdit[] additionalTextEdits;
         public string[] commitCharacters;
-        public Command? command;
+        public Command command;
         public object data;
 
         public string _kind;
@@ -638,14 +589,14 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct CompletionRegistrationOptions : IRegistrationOptions {
-        public DocumentFilter? documentSelector;
+    public sealed class CompletionRegistrationOptions : IRegistrationOptions {
+        public DocumentFilter documentSelector;
         public string[] triggerCharacters;
         public bool resolveProvider;
     }
 
     [Serializable]
-    public class Hover {
+    public sealed class Hover {
         public MarkupContent contents;
         public Range? range;
 
@@ -660,14 +611,14 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public class SignatureHelp {
+    public sealed class SignatureHelp {
         public SignatureInformation[] signatures;
         public int activeSignature;
         public int activeParameter;
     }
 
     [Serializable]
-    public class SignatureInformation {
+    public sealed class SignatureInformation {
         public string label;
         public MarkupContent documentation;
         public ParameterInformation[] parameters;
@@ -676,7 +627,7 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public class ParameterInformation {
+    public sealed class ParameterInformation {
         public string label;
         public MarkupContent documentation;
 
@@ -693,7 +644,7 @@ namespace Microsoft.Python.LanguageServer {
     /// the kind.
     /// </summary>
     [Serializable]
-    public class Reference {
+    public sealed class Reference {
         public Uri uri;
         public Range range;
 
@@ -709,7 +660,7 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct DocumentHighlight {
+    public sealed class DocumentHighlight {
         public Range range;
         public DocumentHighlightKind kind;
 
@@ -720,7 +671,7 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct DocumentSymbol {
+    public sealed class DocumentSymbol {
         /// <summary>
         /// The name of this symbol.
         /// </summary>
@@ -759,16 +710,10 @@ namespace Microsoft.Python.LanguageServer {
         /// Children of this symbol, e.g. properties of a class.
         /// </summary>
         public DocumentSymbol[] children;
-
-        /// <summary>
-        /// Custom field provides more information on the function or method such as 
-        /// 'classmethod' or 'property' that are not part of the <see cref="SymbolKind"/>.
-        /// </summary>
-        public string _functionKind;
     }
 
     [Serializable]
-    public struct SymbolInformation {
+    public sealed class SymbolInformation {
         public string name;
         public SymbolKind kind;
         public Location location;
@@ -779,53 +724,37 @@ namespace Microsoft.Python.LanguageServer {
         /// symbols.
         /// </summary>
         public string containerName;
-
-        /// <summary>
-        /// The document version that location applies to
-        /// </summary>
-        public int? _version;
-        public string _kind;
     }
 
     [Serializable]
-    public struct CodeLens {
+    public sealed class CodeLens {
         public Range range;
-        public Command? command;
+        public Command command;
         public object data;
-
-        /// <summary>
-        /// The document version that range applies to
-        /// </summary>
-        public int? _version;
     }
 
     [Serializable]
-    public struct DocumentLink {
+    public sealed class DocumentLink {
         public Range range;
         public Uri target;
-
-        /// <summary>
-        /// The document version tha range applies to
-        /// </summary>
-        public int? _version;
     }
 
     [Serializable]
     public struct DocumentLinkRegistrationOptions : IRegistrationOptions {
-        public DocumentFilter? documentSelector;
+        public DocumentFilter documentSelector;
         public bool resolveProvider;
     }
 
     [Serializable]
-    public struct FormattingOptions {
+    public sealed class FormattingOptions {
         public int tabSize;
         public bool insertSpaces;
 
     }
 
     [Serializable]
-    public struct DocumentOnTypeFormattingRegistrationOptions : IRegistrationOptions {
-        public DocumentFilter? documentSelector;
+    public sealed class DocumentOnTypeFormattingRegistrationOptions : IRegistrationOptions {
+        public DocumentFilter documentSelector;
         public string firstTriggerCharacter;
         public string[] moreTriggerCharacters;
     }

@@ -16,6 +16,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
@@ -48,7 +51,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 if (!string.IsNullOrEmpty(n)) {
                     _extensions.AddOrUpdate(n, ext, (_, previous) => {
-                        (previous as IDisposable)?.Dispose();
+                        previous?.Dispose();
                         return ext;
                     });
                 }
@@ -66,9 +69,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 throw new LanguageServerException(LanguageServerException.UnknownExtension, "No extension loaded with name: " + @params.extensionName);
             }
 
-            return new ExtensionCommandResult {
-                properties = await ext?.ExecuteCommand(@params.command, @params.properties, token)
-            };
+            if (ext != null) {
+                return new ExtensionCommandResult {
+                    properties = await ext.ExecuteCommand(@params.command, @params.properties, token)
+                }; 
+            }
+            return new ExtensionCommandResult();
         }
 
         private async Task InvokeExtensionsAsync(Func<ILanguageServerExtension, CancellationToken, Task> action, CancellationToken cancellationToken) {
@@ -82,6 +88,31 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     LogMessage(MessageType.Error, $"Error invoking extension '{ext.Key}': {ex}");
                 }
             }
+        }
+
+        private T ActivateObject<T>(string assemblyName, string typeName, Dictionary<string, object> properties) {
+            if (string.IsNullOrEmpty(assemblyName) || string.IsNullOrEmpty(typeName)) {
+                return default(T);
+            }
+            try {
+                var assembly = File.Exists(assemblyName)
+                    ? Assembly.LoadFrom(assemblyName)
+                    : Assembly.Load(new AssemblyName(assemblyName));
+
+                var type = assembly.GetType(typeName, true);
+
+                return (T)Activator.CreateInstance(
+                    type,
+                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance,
+                    null,
+                    properties == null ? Array.Empty<object>() : new object[] { properties },
+                    CultureInfo.CurrentCulture
+                );
+            } catch (Exception ex) {
+                LogMessage(MessageType.Warning, ex.ToString());
+            }
+
+            return default(T);
         }
     }
 }

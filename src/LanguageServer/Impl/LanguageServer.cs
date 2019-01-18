@@ -27,6 +27,7 @@ using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Core.Threading;
 using Microsoft.Python.LanguageServer.Diagnostics;
+using Microsoft.Python.LanguageServer.Protocol;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
@@ -75,13 +76,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _server.OnApplyWorkspaceEdit += OnApplyWorkspaceEdit;
             _server.OnRegisterCapability += OnRegisterCapability;
             _server.OnUnregisterCapability += OnUnregisterCapability;
-            _server.AnalysisQueue.UnhandledException += OnAnalysisQueueUnhandledException;
 
             _disposables
                 .Add(() => _server.OnApplyWorkspaceEdit -= OnApplyWorkspaceEdit)
                 .Add(() => _server.OnRegisterCapability -= OnRegisterCapability)
                 .Add(() => _server.OnUnregisterCapability -= OnUnregisterCapability)
-                .Add(() => _server.AnalysisQueue.UnhandledException -= OnAnalysisQueueUnhandledException)
                 .Add(() => _shutdownCts.Cancel())
                 .Add(_prioritizer)
                 .Add(() => _pathsWatcher?.Dispose())

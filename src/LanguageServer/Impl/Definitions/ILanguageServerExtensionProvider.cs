@@ -27,10 +27,7 @@ namespace Microsoft.Python.LanguageServer.Extensions {
         /// <summary>
         /// Called when the extension is loaded for a language server.
         /// </summary>
-        Task<ILanguageServerExtension> CreateAsync(
-            IPythonLanguageServer server,
-            IReadOnlyDictionary<string, object> properties,
-            CancellationToken cancellationToken
-        );
+        Task<ILanguageServerExtension> CreateAsync(IPythonLanguageServer server, 
+            IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken = default);
     }
 }

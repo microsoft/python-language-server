@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -17,7 +16,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Microsoft.Python.LanguageServer {
+namespace Microsoft.Python.LanguageServer.Protocol {
     public sealed class SerializeAsAttribute : Attribute {
         public object Value { get; }
 
@@ -65,13 +64,13 @@ namespace Microsoft.Python.LanguageServer {
         TypeParameter = 26
     }
 
-    public enum TextDocumentSyncKind : int {
+    public enum TextDocumentSyncKind {
         None = 0,
         Full = 1,
         Incremental = 2
     }
 
-    public enum MessageType : int {
+    public enum MessageType {
         /// <summary>
         /// General language server output relevant to the user
         /// such as information on Python interpreter type.
@@ -118,35 +117,35 @@ namespace Microsoft.Python.LanguageServer {
         }
     }
 
-    public enum FileChangeType : int {
+    public enum FileChangeType {
         Created = 1,
         Changed = 2,
         Deleted = 3
     }
 
-    public enum WatchKind : int {
+    public enum WatchKind {
         Create = 1,
         Change = 2,
         Delete = 4
     }
 
-    public enum TextDocumentSaveReason : int {
+    public enum TextDocumentSaveReason {
         Manual = 1,
         AfterDelay = 2,
         FocusOut = 3
     }
 
-    public enum CompletionTriggerKind : int {
+    public enum CompletionTriggerKind {
         Invoked = 1,
         TriggerCharacter = 2
     }
 
-    public enum InsertTextFormat : int {
+    public enum InsertTextFormat {
         PlainText = 1,
         Snippet = 2
     }
 
-    public enum CompletionItemKind : int {
+    public enum CompletionItemKind {
         None = 0,
         Text = 1,
         Method = 2,
@@ -175,14 +174,14 @@ namespace Microsoft.Python.LanguageServer {
         TypeParameter = 25
     }
 
-    public enum DocumentHighlightKind : int {
+    public enum DocumentHighlightKind {
         Text = 1,
         Read = 2,
         Write = 3
     }
 
     // Not in the LSP spec.
-    public enum ReferenceKind : int {
+    public enum ReferenceKind {
         Definition = 1,
         Reference = 2,
         Value = 3

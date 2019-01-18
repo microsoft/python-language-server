@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -15,12 +14,13 @@
 // permissions and limitations under the License.
 
 using System;
-using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Core;
 
-namespace Microsoft.Python.LanguageServer {
-    public interface IPythonLanguageServer {
-        IServiceContainer Services { get; }
-        IDocument GetDocument(Uri documentUri);
+namespace Microsoft.Python.LanguageServer.Protocol {
+    [Serializable]
+    public sealed class MarkupContent {
+        public string kind;
+        public string value;
+
+        public static implicit operator MarkupContent(string text) => new MarkupContent { kind = MarkupKind.PlainText, value = text };
     }
 }

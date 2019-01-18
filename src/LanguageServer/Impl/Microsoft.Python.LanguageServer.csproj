@@ -10,7 +10,9 @@
         <OutputType>Exe</OutputType>
         <DebugType>portable</DebugType>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    </PropertyGroup>
+        <NoWarn>1701;1702;$(NoWarn)</NoWarn>
+        <LangVersion>7.2</LangVersion>
+      </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
       <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>

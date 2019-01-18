@@ -22,6 +22,7 @@ using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Implementation {

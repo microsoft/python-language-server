@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -19,9 +18,8 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Text;
-using Microsoft.PythonTools.Analysis;
 
-namespace Microsoft.Python.LanguageServer {
+namespace Microsoft.Python.LanguageServer.Protocol {
     [Serializable]
     public struct InitializeParams {
         public int? processId;
@@ -54,7 +52,7 @@ namespace Microsoft.Python.LanguageServer {
 
     [Serializable]
     public struct InitializeResult {
-        public ServerCapabilities? capabilities;
+        public ServerCapabilities capabilities;
     }
 
     [Serializable]
@@ -72,13 +70,13 @@ namespace Microsoft.Python.LanguageServer {
         public MessageActionItem[] actions;
     }
 
-    public sealed class CommandEventArgs: EventArgs {
+    public sealed class CommandEventArgs : EventArgs {
         public string command;
         public object[] arguments;
     }
 
     [Serializable]
-    public struct RegistrationParams {
+    public sealed class RegistrationParams {
         public Registration[] registrations;
     }
 
@@ -88,7 +86,7 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct UnregistrationParams {
+    public sealed class UnregistrationParams {
         public Unregistration[] unregistrations;
     }
 
@@ -98,28 +96,28 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct DidChangeConfigurationParams {
+    public sealed class DidChangeConfigurationParams {
         public object settings;
     }
 
     [Serializable]
-    public struct DidChangeWatchedFilesParams {
+    public sealed class DidChangeWatchedFilesParams {
         public FileEvent[] changes;
     }
 
     [Serializable]
-    public struct WorkspaceSymbolParams {
+    public sealed class WorkspaceSymbolParams {
         public string query;
     }
 
     [Serializable]
-    public struct ExecuteCommandParams {
+    public sealed class ExecuteCommandParams {
         public string command;
         public object[] arguments;
     }
 
     [Serializable]
-    public class ApplyWorkspaceEditParams {
+    public sealed class ApplyWorkspaceEditParams {
         /// <summary>
         /// An optional label of the workspace edit.This label is
         /// presented in the user interface for example on an undo
@@ -130,7 +128,7 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public class ApplyWorkspaceEditResponse {
+    public sealed class ApplyWorkspaceEditResponse {
         public bool applied;
     }
 
@@ -140,12 +138,12 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct DidOpenTextDocumentParams {
+    public sealed class DidOpenTextDocumentParams {
         public TextDocumentItem textDocument;
     }
 
     [Serializable]
-    public struct DidChangeTextDocumentParams {
+    public sealed class DidChangeTextDocumentParams {
         public VersionedTextDocumentIdentifier textDocument;
         public TextDocumentContentChangedEvent[] contentChanges;
 
@@ -154,23 +152,23 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct WillSaveTextDocumentParams {
+    public sealed class WillSaveTextDocumentParams {
         public TextDocumentIdentifier textDocument;
         public TextDocumentSaveReason reason;
     }
 
     [Serializable]
-    public struct DidSaveTextDocumentParams {
+    public sealed class DidSaveTextDocumentParams {
         public TextDocumentIdentifier textDocument;
         public string content;
     }
 
     [Serializable]
-    public struct DidCloseTextDocumentParams {
+    public sealed class DidCloseTextDocumentParams {
         public TextDocumentIdentifier textDocument;
     }
 
-    public sealed class PublishDiagnosticsEventArgs : EventArgs {
+    public sealed class class PublishDiagnosticsEventArgs : EventArgs {
         public Uri uri { get; set; }
         public IReadOnlyList<Diagnostic> diagnostics { get; set; }
 
@@ -181,80 +179,37 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct TextDocumentPositionParams {
+    public sealed class TextDocumentPositionParams {
         public TextDocumentIdentifier textDocument;
         public Position position;
-
-        /// <summary>
-        /// The intended version that position applies to. The request may fail if
-        /// the server cannot map correctly.
-        /// </summary>
-        public int? _version;
-        /// <summary>
-        /// Override the expression to evaluate. If omitted, uses the context at the
-        /// specified position.
-        /// </summary>
-        public string _expr;
     }
 
     [Serializable]
-    public struct CompletionParams {
+    public sealed class CompletionParams {
         public TextDocumentIdentifier textDocument;
         public Position position;
-        public CompletionContext? context;
-
-        /// <summary>
-        /// The intended version that position applies to. The request may fail if
-        /// the server cannot map correctly.
-        /// </summary>
-        public int? _version;
-        /// <summary>
-        /// Override the expression to evaluate. If omitted, uses the context at the
-        /// specified position.
-        /// </summary>
-        public string _expr;
+        public CompletionContext context;
     }
 
     [Serializable]
-    public struct CompletionContext {
+    public sealed class CompletionContext {
         public CompletionTriggerKind triggerKind;
         public string triggerCharacter;
-
-        public bool _intersection;
-        //public bool? _statementKeywords;
-        //public bool? _expressionKeywords;
-        //public bool? _includeAllModules;
-        //public bool? _includeArgumentNames;
-        public CompletionItemKind? _filterKind;
     }
 
     [Serializable]
-    public struct ReferencesParams {
+    public sealed class ReferencesParams {
         public TextDocumentIdentifier textDocument;
         public Position position;
-        public ReferenceContext? context;
-
-        /// <summary>
-        /// The intended version that range applies to. The request may fail if
-        /// the server cannot map correctly.
-        /// </summary>
-        public int? _version;
-
-        /// <summary>
-        /// Override the expression to evaluate. If omitted, uses the context at the
-        /// specified position.
-        /// </summary>
-        public string _expr;
+        public ReferenceContext context;
     }
 
-    public struct ReferenceContext {
+    public sealed class ReferenceContext {
         public bool includeDeclaration;
-
-        public bool _includeValues;
     }
 
     [Serializable]
-    public struct DocumentSymbolParams {
+    public sealed class DocumentSymbolParams {
         public TextDocumentIdentifier textDocument;
     }
 
@@ -262,17 +217,11 @@ namespace Microsoft.Python.LanguageServer {
     public struct CodeActionParams {
         public TextDocumentIdentifier textDocument;
         public Range range;
-        public CodeActionContext? context;
-
-        /// <summary>
-        /// The intended version that range applies to. The request may fail if
-        /// the server cannot map correctly.
-        /// </summary>
-        public int? _version;
+        public CodeActionContext context;
     }
 
     [Serializable]
-    public struct CodeActionContext {
+    public sealed class CodeActionContext {
         public Diagnostic[] diagnostics;
 
         /// <summary>
@@ -283,54 +232,36 @@ namespace Microsoft.Python.LanguageServer {
     }
 
     [Serializable]
-    public struct DocumentLinkParams {
+    public sealed class DocumentLinkParams {
         public TextDocumentIdentifier textDocument;
     }
 
     [Serializable]
-    public struct DocumentFormattingParams {
+    public sealed class DocumentFormattingParams {
         public TextDocumentIdentifier textDocument;
         public FormattingOptions options;
     }
 
     [Serializable]
-    public struct DocumentRangeFormattingParams {
+    public sealed class DocumentRangeFormattingParams {
         public TextDocumentIdentifier textDocument;
         public Range range;
         public FormattingOptions options;
-
-        /// <summary>
-        /// The intended version that range applies to. The request may fail if
-        /// the server cannot map correctly.
-        /// </summary>
-        public int? _version;
     }
 
     [Serializable]
-    public struct DocumentOnTypeFormattingParams {
+    public sealed class DocumentOnTypeFormattingParams {
         public TextDocumentIdentifier textDocument;
         public Position position;
         public string ch;
         public FormattingOptions options;
-
-        /// <summary>
-        /// The intended version that range applies to. The request may fail if
-        /// the server cannot map correctly.
-        /// </summary>
-        public int? _version;
     }
 
     [Serializable]
-    public struct RenameParams {
+    public sealed class RenameParams {
         public TextDocumentIdentifier textDocument;
         public Position position;
         public string newName;
-
-        /// <summary>
-        /// The intended version that position applies to. The request may fail if
-        /// the server cannot map correctly.
-        /// </summary>
-        public int? _version;
     }
 
     [Serializable]
@@ -350,23 +281,5 @@ namespace Microsoft.Python.LanguageServer {
     [Serializable]
     public class ExtensionCommandResult {
         public IReadOnlyDictionary<string, object> properties;
-    }
-
-    public sealed class FileFoundEventArgs : EventArgs {
-        public Uri uri { get; set; }
-    }
-
-    public sealed class ParseCompleteEventArgs : EventArgs {
-        public Uri uri { get; set; }
-        public int version { get; set; }
-    }
-
-    public sealed class AnalysisQueuedEventArgs : EventArgs {
-        public Uri uri { get; set; }
-    }
-
-    public sealed class AnalysisCompleteEventArgs : EventArgs {
-        public Uri uri { get; set; }
-        public int version { get; set; }
     }
 }
