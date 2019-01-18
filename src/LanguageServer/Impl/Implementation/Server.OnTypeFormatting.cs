@@ -18,7 +18,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
-using Microsoft.PythonTools.Analysis;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {

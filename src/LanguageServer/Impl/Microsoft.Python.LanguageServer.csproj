@@ -31,9 +31,6 @@
         <PackageReference Include="NewtonSoft.Json" Version="11.0.2" />
         <PackageReference Include="StreamJsonRpc" Version="2.0.102-beta" />
     </ItemGroup>
-    <ItemGroup Condition="$(AnalysisReference) == ''">
-        <ProjectReference Include="../../Analysis/Engine/Impl/Microsoft.Python.Analysis.Engine.csproj" />
-    </ItemGroup>
     <ItemGroup Condition="$(AnalysisReference) != ''">
         <Reference Include="Microsoft.Python.Analysis.Engine">
             <HintPath>$(AnalysisReference)/Microsoft.Python.Analysis.Engine.dll</HintPath>
@@ -43,6 +40,7 @@
         </Content>
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\..\Analysis\Ast\Impl\Microsoft.Python.Analysis.csproj" />
       <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Core.csproj" />
       <ProjectReference Include="..\..\Parsing\Impl\Microsoft.Python.Parsing.csproj" />
     </ItemGroup>

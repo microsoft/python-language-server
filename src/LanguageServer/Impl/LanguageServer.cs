@@ -51,7 +51,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private JsonRpc _rpc;
         private JsonSerializer _jsonSerializer;
-        private bool _filesLoaded;
         private PathsWatcher _pathsWatcher;
         private IIdleTimeTracker _idleTimeTracker;
         private DiagnosticsPublisher _diagnosticsPublisher;
@@ -140,11 +139,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 settings.analysis.SetErrorSeverityOptions(errors, warnings, information, disabled);
 
                 await _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
-
-                if (!_filesLoaded) {
-                    await LoadDirectoryFiles();
-                }
-                _filesLoaded = true;
             }
         }
 
