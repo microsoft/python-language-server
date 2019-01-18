@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
@@ -46,7 +45,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        public void Populate() {
+        public void AsyncPopulate() {
+            new Task(() => {
+                synchronouslyPopulate();
+            }).Start();
+        }
+
+        private void synchronouslyPopulate() {
             foreach (var path in DirectoryFilePaths()) {
                 using (var stream = new StreamReader(path)) {
                     var parser = Parser.CreateParser(stream, _languageVersion);
@@ -55,6 +60,5 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
         }
-        
     }
 }

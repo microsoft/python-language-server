@@ -185,6 +185,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 if (@params.textDocument.text != null) {
                     doc.ResetDocument(@params.textDocument.version, @params.textDocument.text);
                 }
+                UpdateSymbolIndexFromDoc(@params.textDocument.uri, doc);
                 await EnqueueItemAsync(doc);
             } else if (entry == null) {
                 IAnalysisCookie cookie = null;
@@ -381,7 +382,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             Analyzer = await AnalysisQueue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
 
             IndexPopulator indexPopulator = new IndexPopulator(SymbolIndex, _rootDir, @params.initializationOptions.includeFiles, @params.initializationOptions.excludeFiles, Analyzer.LanguageVersion);
-            indexPopulator.Populate();
+            indexPopulator.AsyncPopulate();
 
             _disposableBag.ThrowIfDisposed();
             _clientCaps = @params.capabilities;
@@ -519,6 +520,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             pyItem.NewAnalysis += OnProjectEntryNewAnalysis;
 
             if (item is IDocument doc) {
+                UpdateSymbolIndexFromDoc(documentUri, doc);
                 await EnqueueItemAsync(doc);
             }
 
@@ -715,6 +717,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 await GetAnalysisAsync(pf.DocumentUri, cancellationToken);
             }
             TraceMessage($"Analysis complete.");
+        }
+
+        public void UpdateSymbolIndexFromDoc(Uri uri, IDocument doc) {
+            new Task(() => {
+                var parser = Parser.CreateParser(doc.ReadDocument(0, out var version), Analyzer.LanguageVersion);
+                SymbolIndex.UpdateParseTree(uri, parser.ParseFile());
+            }).Start();
         }
     }
 }
