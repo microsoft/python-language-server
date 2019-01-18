@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Documents;
@@ -71,7 +72,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IEnumerable<IVariable> AllVariables
             => (GlobalScope as IScope).TraverseBreadthFirst(s => s.Children).SelectMany(s => s.Variables);
 
-        public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
+        public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) {
+            var finder = new ExpressionFinder(Ast, FindExpressionOptions.Complete);
+            finder.
+            AllVariables.FirstOrDefault(v => v.Location == location)
+        }
+
         public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
         public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
         public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
