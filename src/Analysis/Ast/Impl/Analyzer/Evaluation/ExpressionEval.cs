@@ -52,23 +52,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 new FallbackBuiltinPythonType(new FallbackBuiltinsModule(Ast.LanguageVersion), BuiltinTypeId.Unknown);
         }
 
-        public PythonAst Ast { get; }
-        public IPythonModule Module { get; }
         public LookupOptions DefaultLookupOptions { get; set; }
         public GlobalScope GlobalScope { get; }
         public Scope CurrentScope { get; private set; }
-        public IPythonInterpreter Interpreter => Module.Interpreter;
         public bool SuppressBuiltinLookup => Module.ModuleType == ModuleType.Builtins;
         public ILogger Log { get; }
-        public IServiceContainer Services { get; }
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
         public IPythonType UnknownType { get; }
 
         public LocationInfo GetLoc(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
         public LocationInfo GetLocOfName(Node node, NameExpression header) => node?.GetLocationOfName(header, Module, Ast) ?? LocationInfo.Empty;
 
+        #region IExpressionEvaluator
+        public PythonAst Ast { get; }
+        public IPythonModule Module { get; }
+        public IPythonInterpreter Interpreter => Module.Interpreter;
+        public IServiceContainer Services { get; }
+        public IDisposable OpenScope(ScopeStatement node) => OpenScope(node, out _);
+        IScope IExpressionEvaluator.CurrentScope => CurrentScope;
+        IGlobalScope IExpressionEvaluator.GlobalScope => GlobalScope;
+        public LocationInfo GetLocation(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
+
         public Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default)
             => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
+        #endregion
 
         public async Task<IMember> GetValueFromExpressionAsync(Expression expr, LookupOptions options, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();

@@ -120,7 +120,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // collection types cannot be determined as imports haven't been processed.
                 var location = _eval.GetLocOfName(node, node.NameExpression);
                 var returnDoc = node.ReturnAnnotation?.ToCodeString(_eval.Ast);
-                var overload = new PythonFunctionOverload(node, _eval.Module, location, returnDoc);
+                var overload = new PythonFunctionOverload(node, function, _eval.Module, location, returnDoc);
                 addOverload(overload);
                 _table.Add(new FunctionEvaluator(_eval, node, overload, function));
             }

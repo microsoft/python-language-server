@@ -17,14 +17,122 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class FunctionDefinitionCompletion {
-        public static bool NoCompletions(FunctionDefinition fd, int position) {
+        public static CompletionResult GetCompletionsForOverride(FunctionDefinition function, CompletionContext context) {
+            if (NoCompletions(function, context.Position)) {
+                return CompletionResult.Empty;
+            }
+
+            if (function.Parent is ClassDefinition cd && string.IsNullOrEmpty(function.Name) &&
+                function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
+
+                var loc = function.GetStart(context.Ast);
+                var overrideable = GetOverrideable(context).Select(o => ToOverrideCompletionItem(o, cd, context, new string(' ', loc.Column - 1)));
+
+                return new CompletionResult(overrideable);
+            }
+
+            return CompletionResult.Empty;
+        }
+
+        private static CompletionItem ToOverrideCompletionItem(IPythonFunctionOverload o, ClassDefinition cd, CompletionContext context, string indent) {
+            return new CompletionItem {
+                label = o.Name,
+                insertText = MakeOverrideCompletionString(indent, o, cd.Name, context),
+                insertTextFormat = InsertTextFormat.PlainText,
+                kind = CompletionItemKind.Method
+            };
+        }
+
+        private static string MakeOverrideDefParameter(IParameterInfo paramInfo)
+            => !string.IsNullOrEmpty(paramInfo.DefaultValueString) ? $"{paramInfo.Name}={paramInfo.DefaultValueString}" : paramInfo.Name;
+
+        private static string MakeOverrideCallParameter(IParameterInfo paramInfo) {
+            if (paramInfo.Name.StartsWithOrdinal("*")) {
+                return paramInfo.Name;
+            }
+            return MakeOverrideDefParameter(paramInfo);
+        }
+
+        private static string MakeOverrideCompletionString(string indentation, IPythonFunctionOverload overload, string className, CompletionContext context) {
+            var sb = new StringBuilder();
+
+            var first = overload.Parameters.FirstOrDefault();
+            var fn = overload.ClassMember as IPythonFunctionType;
+            var skipFirstParameters = fn?.IsStatic == true ? overload.Parameters : overload.Parameters.Skip(1);
+
+            sb.AppendLine(overload.Name + "(" + string.Join(", ", overload.Parameters.Select(MakeOverrideDefParameter)) + "):");
+            sb.Append(indentation);
+
+            if (overload.Parameters.Count > 0) {
+                var parameterString = string.Join(", ", skipFirstParameters.Select(MakeOverrideCallParameter));
+
+                if (context.Ast.LanguageVersion.Is3x()) {
+                    sb.AppendFormat("return super().{0}({1})",
+                        overload.Name,
+                        parameterString);
+                } else if (!string.IsNullOrEmpty(className)) {
+                    sb.AppendFormat("return super({0}, {1}).{2}({3})",
+                        className,
+                        first?.Name ?? string.Empty,
+                        overload.Name,
+                        parameterString);
+                } else {
+                    sb.Append("pass");
+                }
+            } else {
+                sb.Append("pass");
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Gets information about methods defined on base classes but not directly on the current class.
+        /// </summary>
+        private static IEnumerable<IPythonFunctionOverload> GetOverrideable(CompletionContext context) {
+            var result = new List<IPythonFunctionOverload>();
+
+            var scope = context.Analysis.FindScope(context.Location);
+            if (!(scope?.Node is ClassDefinition cls)) {
+                return result;
+            }
+            var handled = new HashSet<string>(scope.Children.Select(child => child.Name));
+
+            var classType = scope.OuterScope.Variables[cls.Name]?.GetPythonType<IPythonClassType>();
+            if (classType?.Mro == null) {
+                return result;
+            }
+
+            foreach (var baseClassType in classType.Mro.Skip(1).OfType<IPythonClassType>()) {
+
+                var functions = baseClassType.GetMemberNames().Select(n => baseClassType.GetMember(n)).OfType<IPythonFunctionType>();
+                foreach (var f in functions.Where(f => f.Overloads.Count > 0)) {
+                    var overload = f.Overloads.Aggregate(
+                        (best, o) => o.Parameters.Count > best.Parameters.Count ? o : best
+                    );
+
+                    if (handled.Contains(overload.Name)) {
+                        continue;
+                    }
+
+                    handled.Add(overload.Name);
+                    result.Add(overload);
+                }
+            }
+
+            return result;
+        }
+
+        private static bool NoCompletions(FunctionDefinition fd, int position) {
             // Here we work backwards through the various parts of the definitions.
             // When we find that Index is within a part, we return either the available
             // completions 
@@ -53,69 +161,6 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
 
             return position > fd.KeywordEndIndex;
-        }
-
-        public static bool TryGetCompletionsForOverride(FunctionDefinition function, CompletionContext context, out CompletionResult result) {
-            if (function.Parent is ClassDefinition cd && string.IsNullOrEmpty(function.Name) && function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
-                var loc = function.GetStart(context.Ast);
-                result = Analysis.GetOverrideable(loc).Select(o => ToOverrideCompletionItem(o, cd, new string(' ', loc.Column - 1)));
-                return true;
-            }
-
-            result = null;
-            return false;
-        }
-
-        private CompletionItem ToOverrideCompletionItem(IOverloadResult o, ClassDefinition cd, string indent) {
-            return new CompletionItem {
-                label = o.Name,
-                insertText = MakeOverrideCompletionString(indent, o, cd.Name),
-                insertTextFormat = InsertTextFormat.PlainText,
-                kind = CompletionItemKind.Method
-            };
-        }
-
-        private static string MakeOverrideDefParameter(IParameterInfo paramInfo) 
-            => !string.IsNullOrEmpty(paramInfo.DefaultValueString) ? $"{paramInfo.Name}={paramInfo.DefaultValueString}" : paramInfo.Name;
-
-        private static string MakeOverrideCallParameter(IParameterInfo paramInfo) {
-            if (paramInfo.Name.StartsWithOrdinal("*")) {
-                return paramInfo.Name;
-            }
-            return MakeOverrideDefParameter(paramInfo);
-        }
-
-        private string MakeOverrideCompletionString(string indentation, IPythonFunctionOverload overload, string className) {
-            var sb = new StringBuilder();
-
-            IParameterInfo first;
-            IParameterInfo[] skipFirstParameters;
-            IParameterInfo[] allParameters;
-
-            sb.AppendLine(overload.Name + "(" + string.Join(", ", overload.Parameters.Select(MakeOverrideDefParameter)) + "):");
-            sb.Append(indentation);
-
-            if (overload.Parameters.Count > 0) {
-                var parameterString = string.Join(", ", skipFirstParameters.Select(MakeOverrideCallParameter));
-
-                if (context.Ast.LanguageVersion.Is3x()) {
-                    sb.AppendFormat("return super().{0}({1})",
-                        result.Name,
-                        parameterString);
-                } else if (!string.IsNullOrEmpty(className)) {
-                    sb.AppendFormat("return super({0}, {1}).{2}({3})",
-                        className,
-                        first?.Name ?? string.Empty,
-                        result.Name,
-                        parameterString);
-                } else {
-                    sb.Append("pass");
-                }
-            } else {
-                sb.Append("pass");
-            }
-
-            return sb.ToString();
         }
     }
 }

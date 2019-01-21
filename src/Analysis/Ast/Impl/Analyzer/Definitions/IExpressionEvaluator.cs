@@ -13,15 +13,42 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public interface IExpressionEvaluator {
+        /// <summary>
+        /// Locates and opens existing scope for a node. The scope is pushed
+        /// on the stack and will be removed when returned disposable is disposed.
+        /// </summary>
+        IDisposable OpenScope(ScopeStatement node);
+
+        /// <summary>
+        /// Currently opened (deepmost) scope.
+        /// </summary>
+        IScope CurrentScope { get; }
+
+        /// <summary>
+        /// Module global scope.
+        /// </summary>
+        IGlobalScope GlobalScope { get; }
+
+        /// <summary>
+        /// Determines node location in the module source code.
+        /// </summary>
+        LocationInfo GetLocation(Node node);
+
+        /// <summary>
+        /// Evaluates expression in the currently open scope.
+        /// </summary>
         Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default);
+
         PythonAst Ast { get; }
         IPythonModule Module { get; }
         IPythonInterpreter Interpreter { get; }

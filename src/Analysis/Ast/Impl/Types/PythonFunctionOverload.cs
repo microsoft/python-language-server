@@ -56,9 +56,10 @@ namespace Microsoft.Python.Analysis.Types {
             _declaringModule = declaringModule;
         }
 
-        public PythonFunctionOverload(FunctionDefinition fd, IPythonModule declaringModule, LocationInfo location, string returnDocumentation = null)
+        public PythonFunctionOverload(FunctionDefinition fd, IPythonClassMember classMember, IPythonModule declaringModule, LocationInfo location, string returnDocumentation = null)
             : this(fd.Name, declaringModule, _ => location, returnDocumentation) {
             FunctionDefinition = fd;
+            ClassMember = classMember;
         }
 
         public PythonFunctionOverload(string name, IPythonModule declaringModule,
@@ -105,6 +106,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonFunctionOverload
         public FunctionDefinition FunctionDefinition { get; }
+        public IPythonClassMember ClassMember { get; }
         public string Name { get; }
 
         public string Documentation {

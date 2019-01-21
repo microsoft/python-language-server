@@ -27,6 +27,11 @@ namespace Microsoft.Python.Analysis.Types {
         FunctionDefinition FunctionDefinition { get; }
 
         /// <summary>
+        /// he corresponding function or property.
+        /// </summary>
+        IPythonClassMember ClassMember { get; }
+
+        /// <summary>
         /// Function name.
         /// </summary>
         string Name { get; }

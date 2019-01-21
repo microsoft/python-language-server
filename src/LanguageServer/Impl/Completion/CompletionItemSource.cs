@@ -13,11 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Completion {
-    internal static class CompletionItemSource {
+    internal class CompletionItemSource {
         public static readonly CompletionItem FromKeyword = CreateCompletionItem("from", CompletionItemKind.Keyword);
         public static readonly CompletionItem ImportKeyword = CreateCompletionItem("import", CompletionItemKind.Keyword);
         public static readonly CompletionItem MetadataArg = CreateCompletionItem(@"metaclass=", CompletionItemKind.TypeParameter);
@@ -26,53 +28,42 @@ namespace Microsoft.Python.LanguageServer.Completion {
         public static readonly CompletionItem WithKeyword = CreateCompletionItem("with", CompletionItemKind.Keyword);
         public static readonly CompletionItem Star = CreateCompletionItem("*", CompletionItemKind.Keyword);
 
-        public static CompletionItem CreateCompletionItem(string text, PythonMemberType memberType, string label = null)
-            => CreateCompletionItem(text, ToCompletionItemKind(memberType), label);
+        private readonly IDocumentationSource _docSource;
+        private readonly ServerSettings.PythonCompletionOptions _options;
 
-        public static CompletionItem CreateCompletionItem(string text, CompletionItemKind kind, string label = null) {
+        public CompletionItemSource(IDocumentationSource docSource, ServerSettings.PythonCompletionOptions options) {
+            _docSource = docSource;
+            _options = options;
+        }
+
+        public CompletionItem CreateCompletionItem(string text, IMember member, string label = null)
+            => CreateCompletionItem(text, ToCompletionItemKind(member.MemberType), member, label);
+
+        public CompletionItem CreateCompletionItem(string text, CompletionItemKind kind, IMember member, string label = null) {
+            var t = member.GetPythonType();
+            var docFormat = _docSource.DocumentationFormat;
+
+            if (_options.addBrackets && (kind == CompletionItemKind.Constructor || kind == CompletionItemKind.Function || kind == CompletionItemKind.Method)) {
+                text += "($0)";
+                docFormat = InsertTextFormat.Snippet;
+            }
+
             return new CompletionItem {
                 label = label ?? text,
                 insertText = text,
-                insertTextFormat = InsertTextFormat.PlainText,
+                insertTextFormat = docFormat,
                 // Place regular items first, advanced entries last
                 sortText = char.IsLetter(text, 0) ? "1" : "2",
                 kind = kind,
+                documentation = t != null ? _docSource.GetDocumentation(t) : null
             };
         }
 
-        private CompletionItem CreateCompletionItem(IMemberResult m) {
-            var completion = m.Completion;
-            if (string.IsNullOrEmpty(completion)) {
-                completion = m.Name;
-            }
-
-            if (string.IsNullOrEmpty(completion)) {
-                return default;
-            }
-
-            var doc = _textBuilder.GetDocumentation(m.Values, string.Empty);
-            var kind = ToCompletionItemKind(m.MemberType);
-
-            var res = new CompletionItem {
-                label = m.Name,
-                insertText = completion,
-                insertTextFormat = InsertTextFormat.PlainText,
-                documentation = string.IsNullOrWhiteSpace(doc) ? null : new MarkupContent {
-                    kind = _textBuilder.DisplayOptions.preferredFormat,
-                    value = doc
-                },
-                // Place regular items first, advanced entries last
-                sortText = char.IsLetter(completion, 0) ? "1" : "2",
-                kind = ToCompletionItemKind(m.MemberType),
+        public static CompletionItem CreateCompletionItem(string text, CompletionItemKind kind)
+            => new CompletionItem {
+                label = text, insertText = text, insertTextFormat = InsertTextFormat.PlainText,
+                sortText = char.IsLetter(text, 0) ? "1" : "2", kind = kind
             };
-
-            if (_addBrackets && (kind == CompletionItemKind.Constructor || kind == CompletionItemKind.Function || kind == CompletionItemKind.Method)) {
-                res.insertText += "($0)";
-                res.insertTextFormat = InsertTextFormat.Snippet;
-            }
-
-            return res;
-        }
 
         private static CompletionItemKind ToCompletionItemKind(PythonMemberType memberType) {
             switch (memberType) {

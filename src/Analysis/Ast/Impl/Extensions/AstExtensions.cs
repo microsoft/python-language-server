@@ -63,5 +63,17 @@ namespace Microsoft.Python.Analysis {
             // We are inside a comment
             return true;
         }
+
+        public static bool IsInParameter(this FunctionDefinition fd, PythonAst tree, SourceLocation location) {
+            var index = tree.LocationToIndex(location);
+            if (index < fd.StartIndex || index >= fd.Body.StartIndex) {
+                // Not within the def line
+                return false;
+            }
+            return fd.Parameters.Any(p => {
+                var paramName = p.GetVerbatimImage(tree) ?? p.Name;
+                return index >= p.StartIndex && index <= p.StartIndex + paramName.Length;
+            });
+        }
     }
 }

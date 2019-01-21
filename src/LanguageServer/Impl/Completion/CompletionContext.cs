@@ -27,12 +27,14 @@ namespace Microsoft.Python.LanguageServer.Completion {
         public SourceLocation Location { get; }
         public int Position { get; }
         public TokenSource TokenSource => _ts ?? (_ts = new TokenSource(Analysis.Document, Position));
+        public CompletionItemSource ItemSource { get; }
 
-        public CompletionContext(IDocumentAnalysis analysis, PythonAst ast, SourceLocation location) {
+        public CompletionContext(IDocumentAnalysis analysis, PythonAst ast, SourceLocation location, CompletionItemSource itemSource) {
             Location = location;
             Analysis = analysis;
             Ast = ast;
             Position = ast.LocationToIndex(location);
+            ItemSource = itemSource;
         }
 
         public SourceLocation IndexToLocation(int index) => Ast.IndexToLocation(index);

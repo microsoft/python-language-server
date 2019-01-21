@@ -13,23 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Python.Core.Text;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.LanguageServer.Protocol;
 
-namespace Microsoft.Python.LanguageServer.Completion {
-    internal sealed class CompletionResult {
-        public static readonly CompletionResult Empty = new CompletionResult(Enumerable.Empty<CompletionItem>());
-
-        public IEnumerable<CompletionItem> Completions { get; }
-        public SourceSpan? ApplicableSpan { get; }
-
-        public CompletionResult(IEnumerable<CompletionItem> completions, SourceSpan? applicableSpan) : this(completions) {
-            ApplicableSpan = applicableSpan;
-        }
-        public CompletionResult(IEnumerable<CompletionItem> completions) {
-            Completions = completions;
-        }
+namespace Microsoft.Python.LanguageServer.Documentation {
+    public interface IDocumentationSource {
+        InsertTextFormat DocumentationFormat { get; }
+        MarkupContent GetDocumentation(IPythonType type);
     }
 }

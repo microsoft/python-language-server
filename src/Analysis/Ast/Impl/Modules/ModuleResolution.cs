@@ -263,6 +263,9 @@ namespace Microsoft.Python.Analysis.Modules {
             return null;
         }
 
+        public IPythonModule GetImportedModule(string name) 
+            => _modules.TryGetValue(name, out var module) ? module : null;
+
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
             ModuleCache = new ModuleCache(_interpreter, _services);
 
@@ -468,7 +471,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         // For tests
-        internal void AddUnimportableModule(string moduleName) 
+        internal void AddUnimportableModule(string moduleName)
             => _modules[moduleName] = new SentinelModule(moduleName, _services);
     }
 }

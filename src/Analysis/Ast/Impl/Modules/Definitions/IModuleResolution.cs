@@ -69,6 +69,12 @@ namespace Microsoft.Python.Analysis.Modules {
         Task<IPythonModule> ImportModuleAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Returns an IPythonModule for a given module name. Returns null if
+        /// the module has not been imported.
+        /// </summary>
+        IPythonModule GetImportedModule(string name);
+
+        /// <summary>
         /// Builtins module.
         /// </summary>
         IBuiltinsPythonModule BuiltinsModule { get; }
