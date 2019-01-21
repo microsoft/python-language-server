@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Or the stub can have definitions that scraping had missed. Therefore
             // merge is the combination of the two with the documentation coming
             // from the library source of from the scraped module.
-            foreach (var v in _stubAnalysis.TopLevelVariables) {
+            foreach (var v in _stubAnalysis.GlobalScope.Variables) {
                 var stubType = v.Value.GetPythonType();
                 if (stubType.IsUnknown()) {
                     continue;

@@ -13,6 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
@@ -30,6 +32,36 @@ namespace Microsoft.Python.Analysis {
             var docExpr = (node?.Body as SuiteStatement)?.Statements?.FirstOrDefault() as ExpressionStatement;
             var ce = docExpr?.Expression as ConstantExpression;
             return ce?.Value as string;
+        }
+
+        public static bool IsInsideComment(this PythonAst ast, SourceLocation location) {
+            var match = Array.BinarySearch(ast.CommentLocations, location);
+            // If our index = -1, it means we're before the first comment
+            if (match == -1) {
+                return false;
+            }
+
+            if (match < 0) {
+                // If we couldn't find an exact match for this position, get the nearest
+                // matching comment before this point
+                match = ~match - 1;
+            }
+
+            if (match >= ast.CommentLocations.Length) {
+                Debug.Fail("Failed to find nearest preceding comment in AST");
+                return false;
+            }
+
+            if (ast.CommentLocations[match].Line != location.Line) {
+                return false;
+            }
+
+            if (ast.CommentLocations[match].Column >= location.Column) {
+                return false;
+            }
+
+            // We are inside a comment
+            return true;
         }
     }
 }

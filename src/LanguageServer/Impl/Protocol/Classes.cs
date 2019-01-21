@@ -553,11 +553,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         /// The expression that members are being displayed for.
         /// </summary>
         public string _expr;
-        /// <summary>
-        /// When true, completions should commit by default. When false, completions
-        /// should not commit. If unspecified the client may decide.
-        /// </summary>
-        public bool? _commitByDefault;
     }
 
     [Serializable]
@@ -576,9 +571,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         public string[] commitCharacters;
         public Command command;
         public object data;
-
-        public string _kind;
-        public CompletionItemValue[] _values;
     }
 
     // Not in LSP spec

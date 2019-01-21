@@ -15,10 +15,21 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.LanguageServer.Protocol;
 
-namespace Microsoft.Python.Analysis.Types {
-    public static class MemberContainerExtensions {
-        public static T GetMember<T>(this IMemberContainer mc, string name) where T: class, IPythonType => mc.GetMember(name) as T;
-        public  static IEnumerable<IMember> GetMembers(this IMemberContainer mc) => mc.GetMemberNames().Select(mc.GetMember);
+namespace Microsoft.Python.LanguageServer.Completion {
+    internal sealed class CompletionResult {
+        public static readonly CompletionResult Empty = new CompletionResult(Enumerable.Empty<CompletionItem>());
+
+        public IEnumerable<CompletionItem> Completions { get; }
+        public SourceSpan ApplicableSpan { get; }
+
+        public CompletionResult(IEnumerable<CompletionItem> completions, SourceSpan applicableSpan) : this(completions) {
+            ApplicableSpan = applicableSpan;
+        }
+        public CompletionResult(IEnumerable<CompletionItem> completions) {
+            Completions = completions;
+        }
     }
 }

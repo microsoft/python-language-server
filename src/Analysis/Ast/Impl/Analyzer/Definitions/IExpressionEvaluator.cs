@@ -13,12 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Types {
-    public static class MemberContainerExtensions {
-        public static T GetMember<T>(this IMemberContainer mc, string name) where T: class, IPythonType => mc.GetMember(name) as T;
-        public  static IEnumerable<IMember> GetMembers(this IMemberContainer mc) => mc.GetMemberNames().Select(mc.GetMember);
+namespace Microsoft.Python.Analysis.Analyzer {
+    public interface IExpressionEvaluator {
+        Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default);
+        PythonAst Ast { get; }
+        IPythonModule Module { get; }
+        IPythonInterpreter Interpreter { get; }
+        IServiceContainer Services { get; }
     }
 }

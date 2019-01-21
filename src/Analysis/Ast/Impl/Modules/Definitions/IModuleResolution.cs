@@ -22,12 +22,34 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Modules {
+    /// <summary>
+    /// Represents module resolution and search subsystem.
+    /// </summary>
     public interface IModuleResolution {
         string BuiltinModuleName { get; }
+
+        /// <summary>
+        /// Returns current search paths.
+        /// </summary>
         Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Returns importable modules.
+        /// </summary>
         Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Returns importable modules given search paths.
+        /// </summary>
         Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Locates module by path.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         ModulePath FindModule(string filePath);
+
         IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken = default);
 
         /// <summary>
