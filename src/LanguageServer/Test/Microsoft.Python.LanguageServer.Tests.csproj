@@ -1,8 +1,8 @@
 ﻿<Project>
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RootNamespace>Microsoft.Python.Analysis.Tests</RootNamespace>
-    <AssemblyName>Microsoft.Python.Analysis.Tests</AssemblyName>
+    <RootNamespace>Microsoft.Python.LanguageServer.Tests</RootNamespace>
+    <AssemblyName>Microsoft.Python.LanguageServer.Tests</AssemblyName>
   </PropertyGroup>
   <PropertyGroup>
     <!-- 
@@ -17,7 +17,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <CodeAnalysisRuleSet>..\..\..\PLS.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <Import Project="..\..\..\..\build\NetStandard.settings" />
+  <Import Project="..\..\..\build\NetStandard.settings" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
     <None Remove="app.config" />
@@ -33,14 +33,14 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Core\Impl\Microsoft.Python.Core.csproj" />
-    <ProjectReference Include="..\..\..\Core\Test\Microsoft.Python.Core.Tests.csproj" />
-    <ProjectReference Include="..\..\..\Parsing\Impl\Microsoft.Python.Parsing.csproj" />
-    <ProjectReference Include="..\..\..\Parsing\Test\Microsoft.Python.Parsing.Tests.csproj" />
-    <ProjectReference Include="..\..\..\UnitTests\Core\Impl\UnitTests.Core.csproj" />
-    <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
-    <ProjectReference Include="..\Impl\Microsoft.Python.Analysis.csproj" />
+    <ProjectReference Include="..\..\Analysis\Ast\Impl\Microsoft.Python.Analysis.csproj" />
+    <ProjectReference Include="..\..\Analysis\Ast\Test\Microsoft.Python.Analysis.Tests.csproj" />
+    <ProjectReference Include="..\..\Analysis\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
+    <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Core.csproj" />
+    <ProjectReference Include="..\..\Parsing\Impl\Microsoft.Python.Parsing.csproj" />
+    <ProjectReference Include="..\..\UnitTests\Core\Impl\UnitTests.Core.csproj" />
+    <ProjectReference Include="..\Impl\Microsoft.Python.LanguageServer.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-  <Import Project="..\..\..\..\build\NetStandard.targets" />
+  <Import Project="..\..\..\build\NetStandard.targets" />
 </Project>

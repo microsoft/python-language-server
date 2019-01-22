@@ -38,8 +38,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
 
             var eval = context.Analysis.ExpressionEvaluator;
-            var variables = eval.CurrentScope.EnumerateTowardsGlobal.SelectMany(s => s.Variables);
-            var items = variables.Select(v => CompletionItemSource.CreateCompletionItem(v.Name, ))
+            var variables = eval.CurrentScope.EnumerateTowardsGlobal.SelectMany(s => s.Variables).ToArray();
+            var items = variables.Select(v => context.ItemSource.CreateCompletionItem(v.Name, v));
             
             var finder = new ExpressionFinder(context.Ast, new FindExpressionOptions { Calls = true });
             if (finder.GetExpression(context.Position) is CallExpression callExpr && callExpr.GetArgumentAtIndex(context.Ast, context.Position, out _)) {
@@ -52,13 +52,18 @@ namespace Microsoft.Python.LanguageServer.Completion {
                         .Select(n => CompletionItemSource.CreateCompletionItem($"{n}=", CompletionItemKind.Variable))
                         .ToArray();
 
-                    variables = variables.Concat(arguments);
+                    items = items.Concat(arguments).ToArray();
                 }
             }
 
-            return members
-                .Where(m => !string.IsNullOrEmpty(m.Completion) || !string.IsNullOrEmpty(m.Name))
-                .Select(ToCompletionItem);
+            if ((options & CompletionListOptions.ExpressionKeywords) == CompletionListOptions.ExpressionKeywords) {
+                items = items.Concat(PythonKeywords.Expression().Select(k => CompletionItemSource.CreateCompletionItem(k, CompletionItemKind.Keyword)));
+            }
+            if ((options & CompletionListOptions.StatementKeywords) == CompletionListOptions.StatementKeywords) {
+                items = items.Concat(PythonKeywords.Statement().Select(k => CompletionItemSource.CreateCompletionItem(k, CompletionItemKind.Keyword)));
+            }
+
+            return new CompletionResult(items, applicableSpan);
         }
 
         [Flags]

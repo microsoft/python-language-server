@@ -13,52 +13,46 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Documentation;
-using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal sealed class CompletionSource {
         private readonly CompletionContext _context;
-        private readonly Expression _expression;
-        private readonly CompletionItemSource _itemSource;
+        private readonly ScopeStatement _scope;
+        private readonly Node _statement;
+        private readonly Node _expression;
 
         public CompletionSource(
             IDocumentAnalysis analysis,
-            PythonAst ast,
             SourceLocation location,
             IDocumentationSource docSource,
             ServerSettings.PythonCompletionOptions completionSettings
         ) {
-            _itemSource = new CompletionItemSource(docSource, completionSettings);
-            _context = new CompletionContext(analysis, ast, location, _itemSource);
+            var itemSource = new CompletionItemSource(docSource, completionSettings);
+            _context = new CompletionContext(analysis, location, itemSource);
 
-            ExpressionLocator.FindExpression(ast, location, out var expression, out var statement, out var scope);
-            Scope = scope;
-            Statement = statement;
-            Expression = expression;
+            ExpressionLocator.FindExpression(analysis.Ast, location, out var expression, out var statement, out var scope);
+            _scope = scope;
+            _statement = statement;
+            _expression = expression;
         }
 
-        public ScopeStatement Scope { get; }
-        public Node Statement { get; }
-        public Node Expression { get; }
-
         public async Task<CompletionResult> GetCompletionsAsync(CancellationToken cancellationToken = default) {
-            switch (Expression) {
+            switch (_expression) {
                 case MemberExpression me when me.Target != null && me.DotIndex > me.StartIndex && _context.Position > me.DotIndex:
-                    return new CompletionResult(await GetCompletionsFromMembersAsync(me, cancellationToken));
+                    return new CompletionResult(await ExpressionCompletion.GetCompletionsFromMembersAsync(me.Target, _scope, _context, cancellationToken));
                 case ConstantExpression ce when ce.Value != null:
                 case null when _context.Ast.IsInsideComment(_context.Location):
                     return CompletionResult.Empty;
             }
 
-            switch (Statement) {
+            switch (_statement) {
                 case ImportStatement import:
                     return await ImportCompletion.GetCompletionsInImportAsync(import, _context, cancellationToken);
                 case FromImportStatement fromImport:
@@ -67,7 +61,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     return FunctionDefinitionCompletion.GetCompletionsForOverride(fd, _context);
                 case ClassDefinition cd:
                     if (!ClassDefinitionCompletion.NoCompletions(cd, _context, out var addMetadataArg)) {
-                        var result = await TopLevelCompletion.GetCompletionsAsync(Statement, _context, cancellationToken);
+                        var result = await TopLevelCompletion.GetCompletionsAsync(_statement, _context, cancellationToken);
                         return addMetadataArg
                             ? new CompletionResult(result.Completions.Append(CompletionItemSource.MetadataArg), result.ApplicableSpan)
                             : result;
@@ -81,23 +75,13 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     return result;
                 case TryStatementHandler tryStatement when ExceptCompletion.TryGetCompletions(tryStatement, _context, out var result):
                     return result;
-                default:
-                    PartialExpressionCompletion.
-                    return GetCompletionsFromError() ?? GetCompletionsFromTopLevel();
+                default: {
+                        var result = await PartialExpressionCompletion.GetCompletionsAsync(_scope, _statement, _expression, _context, cancellationToken);
+                        return result == CompletionResult.Empty
+                            ? await TopLevelCompletion.GetCompletionsAsync(_statement, _context, cancellationToken)
+                            : result;
+                    }
             }
-        }
-
-        private async Task<IEnumerable<CompletionItem>> GetCompletionsFromMembersAsync(MemberExpression me, CancellationToken cancellationToken = default) {
-            using (_context.Analysis.ExpressionEvaluator.OpenScope(Scope)) {
-                var value = await _context.Analysis.ExpressionEvaluator.GetValueFromExpressionAsync(me.Target, cancellationToken);
-                if (!value.IsUnknown()) {
-                    var type = value.GetPythonType();
-                    var names = type.GetMemberNames().ToArray();
-                    var types = names.Select(n => type.GetMember(n)).ToArray();
-                    return names.Zip(types, (n, t) => _itemSource.CreateCompletionItem(n, t));
-                }
-            }
-            return Enumerable.Empty<CompletionItem>();
         }
     }
 }

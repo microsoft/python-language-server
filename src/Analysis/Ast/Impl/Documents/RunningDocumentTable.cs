@@ -33,9 +33,11 @@ namespace Microsoft.Python.Analysis.Documents {
         private readonly Dictionary<Uri, DocumentEntry> _documentsByUri = new Dictionary<Uri, DocumentEntry>();
         private readonly Dictionary<string, DocumentEntry> _documentsByName = new Dictionary<string, DocumentEntry>();
         private readonly IServiceContainer _services;
-        private readonly IModuleResolution _moduleResolution;
         private readonly object _lock = new object();
         private readonly string _workspaceRoot;
+
+        private IModuleResolution _moduleResolution;
+        private IModuleResolution ModuleResolution => _moduleResolution ?? (_moduleResolution = _services.GetService<IPythonInterpreter>().ModuleResolution);
 
         private class DocumentEntry {
             public IDocument Document;
@@ -45,7 +47,6 @@ namespace Microsoft.Python.Analysis.Documents {
         public RunningDocumentTable(string workspaceRoot, IServiceContainer services) {
             _workspaceRoot = workspaceRoot;
             _services = services;
-            _moduleResolution = services.GetService<IPythonInterpreter>().ModuleResolution;
         }
 
         public event EventHandler<DocumentEventArgs> Opened;
@@ -186,7 +187,7 @@ namespace Microsoft.Python.Analysis.Documents {
             _documentsByUri[document.Uri] = entry;
             _documentsByName[mco.ModuleName] = entry;
 
-            _moduleResolution.AddModulePath(document.FilePath);
+            ModuleResolution.AddModulePath(document.FilePath);
             return entry;
         }
 

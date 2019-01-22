@@ -24,6 +24,7 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing.Ast;
 
@@ -68,13 +69,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IPythonModule Module { get; }
         public IPythonInterpreter Interpreter => Module.Interpreter;
         public IServiceContainer Services { get; }
-        public IDisposable OpenScope(ScopeStatement node) => OpenScope(node, out _);
         IScope IExpressionEvaluator.CurrentScope => CurrentScope;
         IGlobalScope IExpressionEvaluator.GlobalScope => GlobalScope;
         public LocationInfo GetLocation(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
 
         public Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default)
             => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
+
+        public IDisposable OpenScope(IScope scope) {
+            if (!(scope is Scope s)) {
+                return Disposable.Empty;
+            }
+            _openScopes.Push(s);
+            CurrentScope = s;
+            return new ScopeTracker(this);
+        }
+
+        public IDisposable OpenScope(ScopeStatement scope) => OpenScope(scope, out _);
         #endregion
 
         public async Task<IMember> GetValueFromExpressionAsync(Expression expr, LookupOptions options, CancellationToken cancellationToken = default) {

@@ -20,13 +20,14 @@ using System.Text;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class FunctionDefinitionCompletion {
-        public static CompletionResult GetCompletionsForOverride(FunctionDefinition function, CompletionContext context) {
+        public static CompletionResult GetCompletionsForOverride(FunctionDefinition function, CompletionContext context, SourceLocation? location = null) {
             if (NoCompletions(function, context.Position)) {
                 return CompletionResult.Empty;
             }
@@ -35,7 +36,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
 
                 var loc = function.GetStart(context.Ast);
-                var overrideable = GetOverrideable(context).Select(o => ToOverrideCompletionItem(o, cd, context, new string(' ', loc.Column - 1)));
+                var overrideable = GetOverrideable(context, location).Select(o => ToOverrideCompletionItem(o, cd, context, new string(' ', loc.Column - 1)));
 
                 return new CompletionResult(overrideable);
             }
@@ -98,10 +99,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
         /// <summary>
         /// Gets information about methods defined on base classes but not directly on the current class.
         /// </summary>
-        private static IEnumerable<IPythonFunctionOverload> GetOverrideable(CompletionContext context) {
+        private static IEnumerable<IPythonFunctionOverload> GetOverrideable(CompletionContext context, SourceLocation? location = null) {
             var result = new List<IPythonFunctionOverload>();
 
-            var scope = context.Analysis.FindScope(context.Location);
+            var scope = context.Analysis.FindScope(location ?? context.Location);
             if (!(scope?.Node is ClassDefinition cls)) {
                 return result;
             }

@@ -20,7 +20,7 @@ using Microsoft.Python.LanguageServer.Protocol;
 namespace Microsoft.Python.LanguageServer {
     public class ServerSettings {
         public class PythonAnalysisOptions {
-            private Dictionary<string, DiagnosticSeverity> _map = new Dictionary<string, DiagnosticSeverity>();
+            private readonly Dictionary<string, DiagnosticSeverity> _map = new Dictionary<string, DiagnosticSeverity>();
 
             public int symbolsHierarchyDepthLimit = 10;
             public int symbolsHierarchyMaxSymbols = 1000;

@@ -33,8 +33,6 @@ using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Tests;
-using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using TestUtilities;
 
@@ -56,7 +54,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
 
-        internal async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration = null) {
+        protected async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.ModuleCachePath);
@@ -87,7 +85,7 @@ namespace Microsoft.Python.Analysis.Tests {
             return sm;
         }
 
-        internal async Task<IDocumentAnalysis> GetAnalysisAsync(
+        protected async Task<IDocumentAnalysis> GetAnalysisAsync(
             string code,
             InterpreterConfiguration configuration = null,
             string moduleName = null,
@@ -102,7 +100,7 @@ namespace Microsoft.Python.Analysis.Tests {
             return await GetAnalysisAsync(code, services, moduleName, modulePath);
         }
 
-        internal async Task<IDocumentAnalysis> GetAnalysisAsync(
+        protected async Task<IDocumentAnalysis> GetAnalysisAsync(
             string code,
             IServiceContainer services,
             string moduleName = null,

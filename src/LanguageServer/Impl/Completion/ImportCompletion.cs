@@ -42,13 +42,23 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     if (context.Position > name.EndIndex && name.EndIndex > name.StartIndex) {
                         var applicableSpan = context.GetApplicableSpanFromLastToken(import);
                         return new CompletionResult(Enumerable.Repeat(CompletionItemSource.AsKeyword, 1), applicableSpan);
-                    } else {
-                        Node = name.Names.LastOrDefault(n => n.StartIndex <= context.Position && context.Position <= n.EndIndex);
-                        return await GetModulesFromNodeAsync(name, cancellationToken);
+                    }
+                    var nex = name.Names.LastOrDefault(n => n.StartIndex <= context.Position && context.Position <= n.EndIndex);
+                    if (nex != null) {
+                        var mres = context.Analysis.Document.Interpreter.ModuleResolution;
+                        var imp = mres.CurrentPathResolver.GetModuleImportFromModuleName(nex.Name);
+                        if (imp != null) {
+                            var mod = mres.GetImportedModule(imp.FullName);
+                            if (mod != null) {
+                                var items = mod.GetMemberNames()
+                                    .Select(n => context.ItemSource.CreateCompletionItem(n, mod.GetMember(n)));
+                                return new CompletionResult(items);
+                            }
+                        }
                     }
                 }
             }
-            return null;
+            return CompletionResult.Empty;
         }
 
         public static async Task<CompletionResult> GetCompletionsInFromImportAsync(FromImportStatement fromImport, CompletionContext context, CancellationToken cancellationToken = default) {
@@ -56,6 +66,9 @@ namespace Microsoft.Python.LanguageServer.Completion {
             if (fromImport.Names != null && fromImport.Names.Any(n => n?.Name == "*" && context.Position > n.EndIndex)) {
                 return CompletionResult.Empty;
             }
+
+            var document = context.Analysis.Document;
+            var mres = document.Interpreter.ModuleResolution;
 
             foreach (var (name, asName) in ZipLongest(fromImport.Names, fromImport.AsNames).Reverse()) {
                 if (asName != null && context.Position >= asName.StartIndex) {
@@ -70,15 +83,12 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
                     if (context.Position >= name.StartIndex) {
                         var applicableSpan = name.GetSpan(context.Ast);
-                        var mods = (await GetModulesFromDottedNameAsync(fromImport.Root, context, cancellationToken)).ToArray();
-                        var items = mods.Any() && fromImport.Names?.Count == 1 ? Enumerable.Repeat(CompletionItemSource.Star, 1).Concat(mods) : mods;
+                        var importSearchResult = mres.CurrentPathResolver.FindImports(name.Name, fromImport);
+                        var items = GetResultFromSearch(importSearchResult, context).Completions;
                         return new CompletionResult(items, applicableSpan);
                     }
                 }
             }
-
-            var document = context.Analysis.Document;
-            var mres = document.Interpreter.ModuleResolution;
 
             if (fromImport.ImportIndex > fromImport.StartIndex && context.Position > fromImport.ImportIndex + 6) {
                 var importSearchResult = mres.CurrentPathResolver.FindImports(document.FilePath, fromImport);
@@ -115,13 +125,14 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 return GetResultFromSearch(importSearchResult, context);
             }
 
-            return context.Position > fromImport.KeywordEndIndex 
-                ? new CompletionResult(await GetModulesAsync(context, cancellationToken)) 
+            return context.Position > fromImport.KeywordEndIndex
+                ? new CompletionResult(await GetModulesAsync(context, cancellationToken))
                 : CompletionResult.Empty;
         }
 
         private static async Task<IEnumerable<CompletionItem>> GetModulesAsync(CompletionContext context, CancellationToken cancellationToken = default) {
-            var modules = await context.Analysis.Document.Interpreter.ModuleResolution.GetImportableModulesAsync(cancellationToken);
+            var mres = context.Analysis.Document.Interpreter.ModuleResolution;
+            var modules = await mres.GetImportableModulesAsync(cancellationToken);
             return modules.Select(kvp => CompletionItemSource.CreateCompletionItem(kvp.Key, CompletionItemKind.Module));
         }
 

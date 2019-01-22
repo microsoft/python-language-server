@@ -24,13 +24,21 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     public interface IExpressionEvaluator {
         /// <summary>
-        /// Locates and opens existing scope for a node. The scope is pushed
-        /// on the stack and will be removed when returned disposable is disposed.
+        /// Opens existing scope for a node. The scope is pushed
+        /// on the stack and will be removed when the returned
+        /// disposable is disposed.
         /// </summary>
-        IDisposable OpenScope(ScopeStatement node);
+        IDisposable OpenScope(IScope scope);
 
         /// <summary>
-        /// Currently opened (deepmost) scope.
+        /// Opens existing scope for a node. The scope is pushed
+        /// on the stack and will be removed when the returned
+        /// disposable is disposed.
+        /// </summary>
+        IDisposable OpenScope(ScopeStatement scope);
+
+        /// <summary>
+        /// Currently opened (deep-most) scope.
         /// </summary>
         IScope CurrentScope { get; }
 

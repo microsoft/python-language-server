@@ -41,10 +41,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _services.AddService(_dependencyResolver);
             }
 
-            var rdt = services.GetService<IRunningDocumentTable>();
-            if (rdt == null) {
-                services.AddService(new RunningDocumentTable(root, services));
-            }
+            //var rdt = services.GetService<IRunningDocumentTable>();
+            //if (rdt == null) {
+            //    services.AddService(new RunningDocumentTable(root, services));
+            //}
         }
 
         public void Dispose() => _globalCts.Cancel();

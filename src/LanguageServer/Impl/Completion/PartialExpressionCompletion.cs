@@ -16,7 +16,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
@@ -24,68 +29,72 @@ using Microsoft.Python.Parsing.Ast;
 using Nerdbank.Streams;
 
 namespace Microsoft.Python.LanguageServer.Completion {
-    internal sealed class PartialExpressionCompletion {
-        private readonly Node _node;
-        private readonly TokenSource _ts;
-
-        public PartialExpressionCompletion(Node node, TokenSource ts) {
-            _node = node;
-            _ts = ts;
-        }
-
-        public SourceSpan ApplicableSpan { get; private set; }
-
-        public IEnumerable<CompletionItem> GetCompletions(SourceLocation position) {
-            if (!(_node is ErrorExpression)) {
-                return null;
+    internal static class PartialExpressionCompletion {
+        public static async Task<CompletionResult> GetCompletionsAsync(ScopeStatement scope, Node statement, Node expression, CompletionContext context, CancellationToken cancellationToken = default) {
+            if (!(expression is ErrorExpression)) {
+                return CompletionResult.Empty;
             }
 
-            if (Statement is AssignmentStatement assign && _node == assign.Right) {
-                return null;
+            if (statement is AssignmentStatement assign && expression == assign.Right) {
+                return CompletionResult.Empty;
             }
 
-            bool ScopeIsClassDefinition(out ClassDefinition classDefinition) {
-                classDefinition = Scope as ClassDefinition ?? (Scope as FunctionDefinition)?.Parent as ClassDefinition;
-                return classDefinition != null;
-            }
+            var tokens = context.TokenSource.Tokens.Reverse().ToArray();
+            var es = new ExpressionSource(context.TokenSource);
 
-            var tokens = _ts.Tokens.Reverse().ToArray();
-            var es = new ExpressionSource(_ts);
+            string code;
+            SourceLocation location;
+            IEnumerable<CompletionItem> items;
+            SourceSpan? applicableSpan;
+            Expression e;
 
-            string exprString;
-            SourceLocation loc;
             var lastToken = tokens.FirstOrDefault();
             var nextLast = tokens.ElementAtOrDefault(1).Value?.Kind ?? TokenKind.EndOfFile;
             switch (lastToken.Value.Kind) {
                 case TokenKind.Dot:
-                    exprString = es.ReadExpression(tokens.Skip(1));
-                    ApplicableSpan = new SourceSpan(position, position);
-                    return Analysis.GetMembers(exprString, position, MultiplexingStream.Options).Select(ToCompletionItem);
+                    code = es.ReadExpression(tokens.Skip(1));
+                    applicableSpan = new SourceSpan(context.Location, context.Location);
+                    e = GetExpressionFromText(code, context, out var s1, out _);
+                    items = await ExpressionCompletion.GetCompletionsFromMembersAsync(e, s1, context, cancellationToken);
+                    break;
 
-                case TokenKind.KeywordDef when lastToken.Key.End < Index && ScopeIsClassDefinition(out var cd):
-                    ApplicableSpan = new SourceSpan(position, position);
-                    loc = _ts.GetTokenSpan(lastToken.Key).Start;
-                    ShouldCommitByDefault = false;
-                    return Analysis.GetOverrideable(loc).Select(o => ToOverrideCompletionItem(o, cd, new string(' ', loc.Column - 1)));
+                case TokenKind.KeywordDef when lastToken.Key.End < context.Position && scope is FunctionDefinition fd:
+                    applicableSpan = new SourceSpan(context.Location, context.Location);
+                    location = context.TokenSource.GetTokenSpan(lastToken.Key).Start;
+                    items = FunctionDefinitionCompletion.GetCompletionsForOverride(fd, context, location).Completions;
+                    break;
 
                 case TokenKind.Name when nextLast == TokenKind.Dot:
-                    exprString = es.ReadExpression(tokens.Skip(2));
-                    ApplicableSpan = new SourceSpan(_ts.GetTokenSpan(lastToken.Key).Start, Position);
-                    return Analysis.GetMembers(exprString, position, MultiplexingStream.Options).Select(ToCompletionItem);
+                    code = es.ReadExpression(tokens.Skip(2));
+                    applicableSpan = new SourceSpan(context.TokenSource.GetTokenSpan(lastToken.Key).Start, context.Location);
+                    e = GetExpressionFromText(code, context, out var s2, out _);
+                    items = await ExpressionCompletion.GetCompletionsFromMembersAsync(e, s2, context, cancellationToken);
+                    break;
 
-                case TokenKind.Name when nextLast == TokenKind.KeywordDef && ScopeIsClassDefinition(out var cd):
-                    ApplicableSpan = new SourceSpan(_ts.GetTokenSpan(lastToken.Key).Start, position);
-                    loc = _ts.GetTokenSpan(tokens.ElementAt(1).Key).Start;
-                    ShouldCommitByDefault = false;
-                    return Analysis.GetOverrideable(loc).Select(o => ToOverrideCompletionItem(o, cd, new string(' ', loc.Column - 1)));
+                case TokenKind.Name when nextLast == TokenKind.KeywordDef && scope is FunctionDefinition fd:
+                    applicableSpan = new SourceSpan(context.TokenSource.GetTokenSpan(lastToken.Key).Start, context.Location);
+                    location = context.TokenSource.GetTokenSpan(tokens.ElementAt(1).Key).Start;
+                    items = FunctionDefinitionCompletion.GetCompletionsForOverride(fd, context, location).Completions;
+                    break;
 
                 case TokenKind.KeywordFor:
                 case TokenKind.KeywordAs:
-                    return lastToken.Key.Start <= Index && Index <= lastToken.Key.End ? null : Empty;
+                    return lastToken.Key.Start <= context.Position && context.Position <= lastToken.Key.End ? null : CompletionResult.Empty;
 
                 default:
                     Debug.WriteLine($"Unhandled completions from error.\nTokens were: ({lastToken.Value.Image}:{lastToken.Value.Kind}), {string.Join(", ", tokens.AsEnumerable().Take(10).Select(t => $"({t.Value.Image}:{t.Value.Kind})"))}");
-                    return null;
+                    return CompletionResult.Empty;
+            }
+
+            return new CompletionResult(items, applicableSpan);
+        }
+
+        private static Expression GetExpressionFromText(string text, CompletionContext context, out IScope scope, out PythonAst expressionAst) {
+            scope = context.Analysis.FindScope(context.Location);
+            using (var reader = new StringReader(text)) {
+                var parser = Parser.CreateParser(reader, context.Ast.LanguageVersion, new ParserOptions());
+                expressionAst = parser.ParseTopExpression();
+                return Statement.GetExpression(expressionAst.Body);
             }
         }
     }
