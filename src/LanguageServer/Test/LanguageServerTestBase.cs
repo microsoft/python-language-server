@@ -13,7 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Tests;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
@@ -26,11 +27,11 @@ namespace Microsoft.Python.LanguageServer.Tests {
         protected static readonly IDocumentationSource TestDocumentationSource = new TestDocSource();
         protected static readonly ServerSettings ServerSettings = new ServerSettings();
 
-        internal CompletionSource CreateCompletionSource(IDocumentAnalysis analysis, int position)
-            => new CompletionSource(analysis, analysis.Ast.IndexToLocation(position), TestDocumentationSource, ServerSettings.completion);
-
-        internal CompletionSource CreateCompletionSource(IDocumentAnalysis analysis, int line, int column)
-            => new CompletionSource(analysis, new SourceLocation(line, column), TestDocumentationSource, ServerSettings.completion);
+        internal async Task<CompletionItem[]> GetCompletionsAsync(string code, int line, int column) {
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(TestDocumentationSource, ServerSettings.completion);
+            return (await cs.GetCompletionsAsync(analysis, new SourceLocation(line, column))).Completions.ToArray();
+        }
 
         protected sealed class TestDocSource : IDocumentationSource {
             public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;

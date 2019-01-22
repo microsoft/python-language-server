@@ -17,7 +17,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
@@ -31,8 +30,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if (document != null) {
                 document.GetAnalysisAsync(cancellationToken).Wait(200);
                 var analysis = document.GetAnyAnalysis();
-                var cs = new CompletionSource(analysis, @params.position, new PlainTextDocSource(), Settings.completion);
-                var result = await cs.GetCompletionsAsync(cancellationToken);
+                var result = await _completionSource.GetCompletionsAsync(analysis, @params.position, cancellationToken);
                 res.items = result.Completions.ToArray();
             } else {
                 _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");

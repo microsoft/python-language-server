@@ -23,62 +23,55 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal sealed class CompletionSource {
-        private readonly CompletionContext _context;
-        private readonly ScopeStatement _scope;
-        private readonly Node _statement;
-        private readonly Node _expression;
+        private readonly CompletionItemSource _itemSource;
 
         public CompletionSource(
-            IDocumentAnalysis analysis,
-            SourceLocation location,
             IDocumentationSource docSource,
             ServerSettings.PythonCompletionOptions completionSettings
         ) {
-            var itemSource = new CompletionItemSource(docSource, completionSettings);
-            _context = new CompletionContext(analysis, location, itemSource);
-
-            ExpressionLocator.FindExpression(analysis.Ast, location, out var expression, out var statement, out var scope);
-            _scope = scope;
-            _statement = statement;
-            _expression = expression;
+            _itemSource = new CompletionItemSource(docSource, completionSettings);
         }
 
-        public async Task<CompletionResult> GetCompletionsAsync(CancellationToken cancellationToken = default) {
-            switch (_expression) {
-                case MemberExpression me when me.Target != null && me.DotIndex > me.StartIndex && _context.Position > me.DotIndex:
-                    return new CompletionResult(await ExpressionCompletion.GetCompletionsFromMembersAsync(me.Target, _scope, _context, cancellationToken));
+        public async Task<CompletionResult> GetCompletionsAsync(IDocumentAnalysis analysis, SourceLocation location, CancellationToken cancellationToken = default) {
+            var context = new CompletionContext(analysis, location, _itemSource);
+
+            ExpressionLocator.FindExpression(analysis.Ast, location, out var expression, out var statement, out var scope);
+
+            switch (expression) {
+                case MemberExpression me when me.Target != null && me.DotIndex > me.StartIndex && context.Position > me.DotIndex:
+                    return new CompletionResult(await ExpressionCompletion.GetCompletionsFromMembersAsync(me.Target, scope, context, cancellationToken));
                 case ConstantExpression ce when ce.Value != null:
-                case null when _context.Ast.IsInsideComment(_context.Location):
+                case null when context.Ast.IsInsideComment(context.Location):
                     return CompletionResult.Empty;
             }
 
-            switch (_statement) {
+            switch (statement) {
                 case ImportStatement import:
-                    return await ImportCompletion.GetCompletionsInImportAsync(import, _context, cancellationToken);
+                    return await ImportCompletion.GetCompletionsInImportAsync(import, context, cancellationToken);
                 case FromImportStatement fromImport:
-                    return await ImportCompletion.GetCompletionsInFromImportAsync(fromImport, _context, cancellationToken);
+                    return await ImportCompletion.GetCompletionsInFromImportAsync(fromImport, context, cancellationToken);
                 case FunctionDefinition fd:
-                    return FunctionDefinitionCompletion.GetCompletionsForOverride(fd, _context);
+                    return FunctionDefinitionCompletion.GetCompletionsForOverride(fd, context);
                 case ClassDefinition cd:
-                    if (!ClassDefinitionCompletion.NoCompletions(cd, _context, out var addMetadataArg)) {
-                        var result = await TopLevelCompletion.GetCompletionsAsync(_statement, _context, cancellationToken);
+                    if (!ClassDefinitionCompletion.NoCompletions(cd, context, out var addMetadataArg)) {
+                        var result = await TopLevelCompletion.GetCompletionsAsync(statement, context, cancellationToken);
                         return addMetadataArg
                             ? new CompletionResult(result.Completions.Append(CompletionItemSource.MetadataArg), result.ApplicableSpan)
                             : result;
                     }
                     return null;
-                case ForStatement forStatement when ForCompletion.TryGetCompletions(forStatement, _context, out var result):
+                case ForStatement forStatement when ForCompletion.TryGetCompletions(forStatement, context, out var result):
                     return result;
-                case WithStatement withStatement when WithCompletion.TryGetCompletions(withStatement, _context, out var result):
+                case WithStatement withStatement when WithCompletion.TryGetCompletions(withStatement, context, out var result):
                     return result;
-                case RaiseStatement raiseStatement when RaiseCompletion.TryGetCompletions(raiseStatement, _context, out var result):
+                case RaiseStatement raiseStatement when RaiseCompletion.TryGetCompletions(raiseStatement, context, out var result):
                     return result;
-                case TryStatementHandler tryStatement when ExceptCompletion.TryGetCompletions(tryStatement, _context, out var result):
+                case TryStatementHandler tryStatement when ExceptCompletion.TryGetCompletions(tryStatement, context, out var result):
                     return result;
                 default: {
-                        var result = await PartialExpressionCompletion.GetCompletionsAsync(_scope, _statement, _expression, _context, cancellationToken);
+                        var result = await PartialExpressionCompletion.GetCompletionsAsync(scope, statement, expression, context, cancellationToken);
                         return result == CompletionResult.Empty
-                            ? await TopLevelCompletion.GetCompletionsAsync(_statement, _context, cancellationToken)
+                            ? await TopLevelCompletion.GetCompletionsAsync(statement, context, cancellationToken)
                             : result;
                     }
             }

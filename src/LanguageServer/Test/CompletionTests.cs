@@ -42,10 +42,7 @@ class C:
         return 1.0
 
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var cs = CreateCompletionSource(analysis, 8, 1);
-            var comps = (await cs.GetCompletionsAsync()).Completions.ToArray();
-            comps.Length.Should().Be(45);
+            var comps = await GetCompletionsAsync(code, 8, 1);
             comps.Select(c => c.label).Should().Contain("C", "x", "y", "while", "for", "yield");
         }
 
@@ -55,10 +52,7 @@ class C:
 x = 'str'
 x.
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var cs = CreateCompletionSource(analysis, 3, 3);
-            var comps = (await cs.GetCompletionsAsync()).Completions.ToArray();
-            comps.Length.Should().Be(77);
+            var comps = await GetCompletionsAsync(code, 3, 3);
             comps.Select(c => c.label).Should().Contain(@"isupper", @"capitalize", @"split");
         }
 
@@ -68,9 +62,7 @@ x.
 import datetime
 datetime.datetime.
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var cs = CreateCompletionSource(analysis, 3, 19);
-            var comps = (await cs.GetCompletionsAsync()).Completions.ToArray();
+            var comps = await GetCompletionsAsync(code, 3, 19);
             comps.Select(c => c.label).Should().Contain("now", @"tzinfo", @"ctime");
         }
 
@@ -83,13 +75,10 @@ class ABCDE:
 ABC
 ABCDE.me
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var cs = CreateCompletionSource(analysis, 5, 4);
-            var comps = (await cs.GetCompletionsAsync()).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("ABCDE");
+            var comps = await GetCompletionsAsync(code, 5, 4);
+            comps.Select(c => c.label).Should().Contain(@"ABCDE");
 
-            cs = CreateCompletionSource(analysis, 6, 9);
-            comps = (await cs.GetCompletionsAsync()).Completions.ToArray();
+            comps = await GetCompletionsAsync(code, 6, 9);
             comps.Select(c => c.label).Should().Contain("method1");
         }
     }

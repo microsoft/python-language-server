@@ -29,6 +29,7 @@ using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Shell;
+using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Diagnostics;
 using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -41,6 +42,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private IPythonInterpreter _interpreter;
         private IRunningDocumentTable _rdt;
+        private CompletionSource _completionSource;
         private ClientCapabilities _clientCaps;
         private bool _traceLogging;
         private ILogger _log;
@@ -123,6 +125,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(_interpreter);
 
             DisplayStartupInfo();
+
+            _completionSource = new CompletionSource(new PlainTextDocSource(), Settings.completion);
+
             return GetInitializeResult();
         }
 
