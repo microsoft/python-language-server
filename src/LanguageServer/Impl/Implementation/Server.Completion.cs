@@ -14,8 +14,10 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
@@ -25,43 +27,21 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Completions in {uri} at {@params.position}");
 
             var res = new CompletionList();
+            var document = _rdt.GetDocument(uri);
+            if (document != null) {
+                document.GetAnalysisAsync(cancellationToken).Wait(200);
+                var analysis = document.GetAnyAnalysis();
+                var cs = new CompletionSource(analysis, @params.position, new PlainTextDocSource(), Settings.completion);
+                var result = await cs.GetCompletionsAsync(cancellationToken);
+                res.items = result.Completions.ToArray();
+            } else {
+                _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
+            }
+
             //await InvokeExtensionsAsync((ext, token)
             //    => (ext as ICompletionExtension)?.HandleCompletionAsync(uri, analysis, tree, @params.position, res, cancellationToken), cancellationToken);
             return res;
         }
-
-        //private SourceSpan? GetApplicableSpan(CompletionAnalysis ca, CompletionParams @params, PythonAst tree) {
-        //    if (ca.ApplicableSpan.HasValue) {
-        //        return ca.ApplicableSpan;
-        //    }
-
-        //    SourceLocation trigger = @params.position;
-        //    if (ca.Node != null) {
-        //        var span = ca.Node.GetSpan(tree);
-        //        if (@params.context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
-        //            if (span.End > trigger) {
-        //                // Span start may be after the trigger if there is bunch of whitespace
-        //                // between dot and next token such as in 'sys  .  version'
-        //                span = new SourceSpan(new SourceLocation(span.Start.Line, Math.Min(span.Start.Column, trigger.Column)), span.End);
-        //            }
-        //        }
-        //        if (span.End != span.Start) {
-        //            return span;
-        //        }
-        //    }
-
-        //    if (@params.context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
-        //        var ch = @params.context?.triggerCharacter.FirstOrDefault() ?? '\0';
-        //        return new SourceSpan(
-        //            trigger.Line,
-        //            Tokenizer.IsIdentifierStartChar(ch) ? Math.Max(1, trigger.Column - 1) : trigger.Column,
-        //            trigger.Line,
-        //            trigger.Column
-        //        );
-        //    }
-
-        //    return null;
-        //}
 
         public Task<CompletionItem> CompletionItemResolve(CompletionItem item, CancellationToken token) {
             // TODO: Fill out missing values in item

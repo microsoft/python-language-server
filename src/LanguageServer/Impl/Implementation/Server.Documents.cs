@@ -39,10 +39,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     Debug.Assert(c.range.HasValue);
                     var change = new DocumentChange {
                         InsertedText = c.text,
-                        ReplacedSpan = new SourceSpan(
-                            new SourceLocation(c.range.Value.start.line, c.range.Value.start.character),
-                            new SourceLocation(c.range.Value.end.line, c.range.Value.end.character)
-                        )
+                        ReplacedSpan = c.range.Value
                     };
                     changes.Add(change);
                 }

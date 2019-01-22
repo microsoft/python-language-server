@@ -15,6 +15,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,16 +23,18 @@ using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.LanguageServer.Diagnostics;
+using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
-    public sealed partial class Server: IDisposable {
+    public sealed partial class Server : IDisposable {
         private readonly DisposableBag _disposableBag = DisposableBag.Create<Server>();
         private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
         private readonly IServiceManager _services;
@@ -98,25 +101,29 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _traceLogging = @params.initializationOptions.traceLogging;
             _log = _services.GetService<ILogger>();
 
-            DisplayStartupInfo();
-            _services.AddService(new DiagnosticsService(_services));
-
-            // TODO: multi-root workspaces.
-            var rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : PathUtils.NormalizePath(@params.rootPath);
-            var configuration = InterpreterConfiguration.FromDictionary(@params.initializationOptions.interpreter.properties);
-            _interpreter = await PythonInterpreter.CreateAsync(configuration, rootDir, _services, cancellationToken);
-            _services.AddService(_interpreter);
-
-            var analyzer = new PythonAnalyzer(_services, @params.rootPath);
-            _services.AddService(analyzer);
-
-            _rdt = _services.GetService<IRunningDocumentTable>();
-
             if (@params.initializationOptions.displayOptions != null) {
                 DisplayOptions = @params.initializationOptions.displayOptions;
             }
 
-           return GetInitializeResult();
+            _services.AddService(new DiagnosticsService(_services));
+
+            var analyzer = new PythonAnalyzer(_services, @params.rootPath);
+            _services.AddService(analyzer);
+
+            _services.AddService(new RunningDocumentTable(@params.rootPath, _services));
+            _rdt = _services.GetService<IRunningDocumentTable>();
+
+            // TODO: multi-root workspaces.
+            var rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : PathUtils.NormalizePath(@params.rootPath);
+            var configuration = InterpreterConfiguration.FromDictionary(@params.initializationOptions.interpreter.properties);
+            configuration.SearchPaths = @params.initializationOptions.searchPaths;
+            configuration.TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault();
+
+            _interpreter = await PythonInterpreter.CreateAsync(configuration, rootDir, _services, cancellationToken);
+            _services.AddService(_interpreter);
+
+            DisplayStartupInfo();
+            return GetInitializeResult();
         }
 
         public Task Shutdown() {
@@ -169,5 +176,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return false;
         }
         #endregion
+
+        private sealed class PlainTextDocSource : IDocumentationSource {
+            public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
+            public MarkupContent GetDocumentation(IPythonType type)
+                => new MarkupContent { kind = MarkupKind.PlainText, value = type.Documentation ?? type.Name };
+        }
     }
 }

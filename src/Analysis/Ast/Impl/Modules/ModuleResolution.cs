@@ -169,7 +169,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     //   a. Recursion on the same analysis chain (A -> B -> A)
                     //   b. Call from another chain (A -> B -> C and D -> B -> E).
                     // TODO: Both should be resolved at the dependency chain level.
-                    _log?.Log(TraceEventType.Warning, $"Recursive import: {name}");
+                    //_log?.Log(TraceEventType.Warning, $"Recursive import: {name}");
                 }
                 return new TryImportModuleResult(module);
             }

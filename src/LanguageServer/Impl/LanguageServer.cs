@@ -28,7 +28,6 @@ using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Core.Threading;
-using Microsoft.Python.LanguageServer.Diagnostics;
 using Microsoft.Python.LanguageServer.Extensibility;
 using Microsoft.Python.LanguageServer.Protocol;
 using Newtonsoft.Json;
@@ -44,7 +43,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class LanguageServer : IDisposable {
         private readonly DisposableBag _disposables = new DisposableBag(nameof(LanguageServer));
         private readonly CancellationTokenSource _sessionTokenSource = new CancellationTokenSource();
-        private readonly object _lock = new object();
         private readonly Prioritizer _prioritizer = new Prioritizer();
         private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
 

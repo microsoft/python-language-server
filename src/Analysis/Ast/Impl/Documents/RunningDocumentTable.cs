@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Documents {
     /// the running document table in Visual Studio, see
     /// "https://docs.microsoft.com/en-us/visualstudio/extensibility/internals/running-document-table"/>
     /// </summary>
-    internal sealed class RunningDocumentTable : IRunningDocumentTable, IDisposable {
+    public sealed class RunningDocumentTable : IRunningDocumentTable, IDisposable {
         private readonly Dictionary<Uri, DocumentEntry> _documentsByUri = new Dictionary<Uri, DocumentEntry>();
         private readonly Dictionary<string, DocumentEntry> _documentsByName = new Dictionary<string, DocumentEntry>();
         private readonly IServiceContainer _services;

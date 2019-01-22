@@ -38,9 +38,6 @@ namespace Microsoft.Python.Analysis.Documents {
         }
 
         public void Update(IEnumerable<DocumentChange> changes) {
-            Check.InvalidOperation(() => _ownerThreadId == Thread.CurrentThread.ManagedThreadId,
-                "Document buffer update must be done from the thread that created it");
-
             var lastStart = int.MaxValue;
             var lineLoc = SplitLines(_sb).ToArray();
 

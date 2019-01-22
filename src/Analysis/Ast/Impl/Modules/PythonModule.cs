@@ -304,7 +304,7 @@ namespace Microsoft.Python.Analysis.Modules {
             int version;
             Parser parser;
 
-            Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
+            //Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
 
             lock (AnalysisLock) {
                 version = _buffer.Version;
@@ -316,7 +316,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             var ast = parser.ParseFile();
 
-            Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
+            //Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
 
             lock (AnalysisLock) {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -385,7 +385,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public virtual bool NotifyAnalysisComplete(IDocumentAnalysis analysis) {
             lock (AnalysisLock) {
-                Log?.Log(TraceEventType.Verbose, $"Analysis complete: {Name}, Version: {analysis.Version}, Expected: {ExpectedAnalysisVersion}");
+                // Log?.Log(TraceEventType.Verbose, $"Analysis complete: {Name}, Version: {analysis.Version}, Expected: {ExpectedAnalysisVersion}");
                 if (analysis.Version == ExpectedAnalysisVersion) {
                     Analysis = analysis;
                     // Derived classes can override OnAnalysisComplete if they want

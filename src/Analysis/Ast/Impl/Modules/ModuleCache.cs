@@ -34,15 +34,15 @@ namespace Microsoft.Python.Analysis.Modules {
         private readonly bool _skipCache;
         private bool _loggedBadDbPath;
 
-        private string ModuleCachePath => _interpreter.Configuration.ModuleCachePath;
+        private string ModuleCachePath => _interpreter.Configuration.DatabasePath;
 
         public ModuleCache(IPythonInterpreter interpreter, IServiceContainer services) {
             _interpreter = interpreter;
             _services = services;
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
-            _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.ModuleCachePath);
-            SearchPathCachePath = Path.Combine(_interpreter.Configuration.ModuleCachePath, "database.path");
+            _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.DatabasePath);
+            SearchPathCachePath = Path.Combine(_interpreter.Configuration.DatabasePath, "database.path");
         }
 
         public string SearchPathCachePath { get; }
