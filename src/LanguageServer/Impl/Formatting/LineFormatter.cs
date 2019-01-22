@@ -579,7 +579,7 @@ namespace Microsoft.Python.LanguageServer.Formatting {
 
                 var tokenExt = new TokenExt(
                     token,
-                    _tokenizer.PreceedingWhiteSpace,
+                    _tokenizer.PrecedingWhiteSpace,
                     tokenSpan,
                     line,
                     isMultiLine,

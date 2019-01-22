@@ -33,13 +33,11 @@ namespace Microsoft.Python.Parsing {
     /// IronPython tokenizer
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Tokenizer")]
-    public sealed partial class Tokenizer {
-        private readonly PythonLanguageVersion _langVersion;
+    public sealed class Tokenizer {
+        private readonly bool _disableLineFeedLineSeparator = false;
+        private readonly SourceCodeKind _kind = SourceCodeKind.AutoDetect;
         private State _state;
-        private bool _disableLineFeedLineSeparator = false;
-        private SourceCodeKind _kind = SourceCodeKind.AutoDetect;
         private ErrorSink _errors;
-        private Severity _indentationInconsistencySeverity;
         private List<NewLineLocation> _newLineLocations;
         private List<SourceLocation> _commentLocations;
         private SourceLocation _initialLocation;
@@ -56,7 +54,7 @@ namespace Microsoft.Python.Parsing {
         public const int DefaultBufferCapacity = 1024;
 
         private readonly Dictionary<object, NameToken> _names;
-        private static object _nameFromBuffer = new object();
+        private static readonly object _nameFromBuffer = new object();
 
         // pre-calculated strings for space indentation strings so we usually don't allocate.
         private static readonly string[] SpaceIndentation, TabIndentation;
@@ -68,20 +66,20 @@ namespace Microsoft.Python.Parsing {
         public Tokenizer(PythonLanguageVersion version, ErrorSink errorSink, TokenizerOptions options, Action<SourceSpan, string> commentProcessor) {
             _errors = errorSink ?? ErrorSink.Null;
             _commentProcessor = commentProcessor;
-            _state = new State(options);
+            _state = new State(options, MaxIndent);
             PrintFunction = false;
             UnicodeLiterals = false;
             _names = new Dictionary<object, NameToken>(new TokenEqualityComparer(this));
-            _langVersion = version;
+            LanguageVersion = version;
             _options = options;
         }
 
         static Tokenizer() {
-            SpaceIndentation = new String[80];
+            SpaceIndentation = new string[80];
             for (var i = 0; i < 80; i++) {
                 SpaceIndentation[i] = new string(' ', i + 1);
             }
-            TabIndentation = new String[10];
+            TabIndentation = new string[10];
             for (var i = 0; i < 10; i++) {
                 TabIndentation[i] = new string('\t', i + 1);
             }
@@ -89,7 +87,7 @@ namespace Microsoft.Python.Parsing {
 
         public bool Verbatim => (_options & TokenizerOptions.Verbatim) != 0;
 
-        public PythonLanguageVersion LanguageVersion => _langVersion;
+        public PythonLanguageVersion LanguageVersion { get; }
 
         private bool StubFile => _options.HasFlag(TokenizerOptions.StubFile);
 
@@ -120,7 +118,6 @@ namespace Microsoft.Python.Parsing {
             return tokens;
         }
 
-        public object CurrentState => _state;
         public int CurrentLine => _newLineLocations.Count;
         public SourceLocation CurrentPosition => IndexToLocation(CurrentIndex);
 
@@ -147,15 +144,7 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        internal Severity IndentationInconsistencySeverity {
-            get => _indentationInconsistencySeverity;
-            set {
-                _indentationInconsistencySeverity = value;
-                if (_state.IndentFormat == null) {
-                    _state.IndentFormat = new string[MaxIndent];
-                }
-            }
-        }
+        internal Severity IndentationInconsistencySeverity { get; set; } = Severity.Warning;
 
         public bool IsEndOfFile => Peek() == EOF;
 
@@ -177,9 +166,9 @@ namespace Microsoft.Python.Parsing {
                     throw new ArgumentException("bad state provided");
                 }
 
-                _state = new State((State)state, Verbatim);
+                _state = new State((State)state, Verbatim, MaxIndent);
             } else {
-                _state = new State(_options);
+                _state = new State(_options, MaxIndent);
             }
 
             Debug.Assert(_reader == null, "Must uninitialize tokenizer before reinitializing");
@@ -371,17 +360,11 @@ namespace Microsoft.Python.Parsing {
         internal bool UnicodeLiterals { get; set; }
 
         /// <summary>
-        /// Return the white space proceeding the last fetched token. Returns an empty string if
-        /// the tokenizer was not created in verbatim mode.
+        /// Return the white space preceding the last fetched token.
+        /// Returns an empty string if the tokenizer was not created
+        /// in verbatim mode.
         /// </summary>
-        public string PreceedingWhiteSpace {
-            get {
-                if (!Verbatim) {
-                    return "";
-                }
-                return _state.CurWhiteSpace.ToString();
-            }
-        }
+        public string PrecedingWhiteSpace => !Verbatim ? string.Empty : _state.CurWhiteSpace.ToString();
 
         public Token GetNextToken() {
             if (Verbatim) {
@@ -503,7 +486,7 @@ namespace Microsoft.Python.Parsing {
                     case 'U':
                         _state.LastNewLine = false;
                         // The u prefix was reintroduced to Python 3.3 in PEP 414
-                        if (_langVersion.Is2x() || _langVersion >= PythonLanguageVersion.V33) {
+                        if (LanguageVersion.Is2x() || LanguageVersion >= PythonLanguageVersion.V33) {
                             return ReadNameOrUnicodeString();
                         }
                         return ReadName();
@@ -514,14 +497,14 @@ namespace Microsoft.Python.Parsing {
                     case 'b':
                     case 'B':
                         _state.LastNewLine = false;
-                        if (_langVersion >= PythonLanguageVersion.V26) {
+                        if (LanguageVersion >= PythonLanguageVersion.V26) {
                             return ReadNameOrBytes();
                         }
                         return ReadName();
                     case 'f':
                     case 'F':
                         _state.LastNewLine = false;
-                        if (_langVersion >= PythonLanguageVersion.V36) {
+                        if (LanguageVersion >= PythonLanguageVersion.V36) {
                             return ReadNameOrFormattedString();
                         }
                         return ReadName();
@@ -534,7 +517,7 @@ namespace Microsoft.Python.Parsing {
                         ch = Peek();
                         if (ch >= '0' && ch <= '9') {
                             return ReadFraction();
-                        } else if (ch == '.' && (StubFile || _langVersion.Is3x())) {
+                        } else if (ch == '.' && (StubFile || LanguageVersion.Is3x())) {
                             NextChar();
                             if (Peek() == '.') {
                                 NextChar();
@@ -701,10 +684,10 @@ namespace Microsoft.Python.Parsing {
 
         private Token ReadNameOrRawString() {
             bool isBytes = false, isFormatted = false;
-            if (_langVersion >= PythonLanguageVersion.V33) {
+            if (LanguageVersion >= PythonLanguageVersion.V33) {
                 isBytes = NextChar('b') || NextChar('B');
             }
-            if (_langVersion >= PythonLanguageVersion.V36 && !isBytes) {
+            if (LanguageVersion >= PythonLanguageVersion.V36 && !isBytes) {
                 isFormatted = NextChar('f') || NextChar('F');
             }
             if (NextChar('\"')) {
@@ -1018,7 +1001,7 @@ namespace Microsoft.Python.Parsing {
             } else if (isBytes) {
                 makeUnicode = false;
             } else {
-                makeUnicode = _langVersion.Is3x() || UnicodeLiterals || StubFile;
+                makeUnicode = LanguageVersion.Is3x() || UnicodeLiterals || StubFile;
             }
 
             if (makeUnicode) {
@@ -1067,7 +1050,7 @@ namespace Microsoft.Python.Parsing {
             if (start == '0') {
                 if (NextChar('x') || NextChar('X')) {
                     return ReadHexNumber();
-                } else if (_langVersion >= PythonLanguageVersion.V26) {
+                } else if (LanguageVersion >= PythonLanguageVersion.V26) {
                     if ((NextChar('b') || NextChar('B'))) {
                         return ReadBinaryNumber();
                     } else if (NextChar('o') || NextChar('O')) {
@@ -1116,7 +1099,7 @@ namespace Microsoft.Python.Parsing {
                         }
 
                     case '_':
-                        if (_langVersion < PythonLanguageVersion.V36) {
+                        if (LanguageVersion < PythonLanguageVersion.V36) {
                             goto default;
                         }
                         break;
@@ -1139,7 +1122,7 @@ namespace Microsoft.Python.Parsing {
 
                         var image = GetTokenString();
                         var val = ParseInteger(GetTokenString(), b);
-                        if (b == 8 && _langVersion.Is3x() && (!(val is int) || !((int)val == 0))) {
+                        if (b == 8 && LanguageVersion.Is3x() && (!(val is int) || !((int)val == 0))) {
                             ReportSyntaxError(BufferTokenSpan, "invalid token", ErrorCodes.SyntaxError);
                         }
 
@@ -1183,7 +1166,7 @@ namespace Microsoft.Python.Parsing {
                     case 'L':
                         MarkTokenEnd();
 
-                        if (_langVersion.Is3x()) {
+                        if (LanguageVersion.Is3x()) {
                             ReportSyntaxError(new IndexSpan(_tokenEndIndex - 1, 1), "invalid token", ErrorCodes.SyntaxError);
                         }
 
@@ -1193,7 +1176,7 @@ namespace Microsoft.Python.Parsing {
                         return new ConstantValueToken(useBigInt ? bigInt : (BigInteger)iVal);
 
                     case '_':
-                        if (_langVersion < PythonLanguageVersion.V36) {
+                        if (LanguageVersion < PythonLanguageVersion.V36) {
                             goto default;
                         }
                         break;
@@ -1235,7 +1218,7 @@ namespace Microsoft.Python.Parsing {
                         return new ConstantValueToken(ParseBigInteger(GetTokenSubstring(2), 8));
 
                     case '_':
-                        if (_langVersion < PythonLanguageVersion.V36) {
+                        if (LanguageVersion < PythonLanguageVersion.V36) {
                             goto default;
                         }
                         break;
@@ -1293,7 +1276,7 @@ namespace Microsoft.Python.Parsing {
                         return new ConstantValueToken(ParseBigInteger(tokenStr.Substring(2), 16));
 
                     case '_':
-                        if (_langVersion < PythonLanguageVersion.V36) {
+                        if (LanguageVersion < PythonLanguageVersion.V36) {
                             goto default;
                         }
                         break;
@@ -1396,7 +1379,7 @@ namespace Microsoft.Python.Parsing {
                         return new ConstantValueToken(ParseComplex(tokenStr));
 
                     case '_':
-                        if (_langVersion < PythonLanguageVersion.V36) {
+                        if (LanguageVersion < PythonLanguageVersion.V36) {
                             goto default;
                         }
                         ch = NextChar();
@@ -1435,7 +1418,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private bool ReportInvalidNumericLiteral(string tokenStr, bool eIsForExponent = false, bool allowLeadingUnderscore = false) {
-            if (_langVersion >= PythonLanguageVersion.V36 && tokenStr.Contains("_")) {
+            if (LanguageVersion >= PythonLanguageVersion.V36 && tokenStr.Contains("_")) {
                 if (tokenStr.Contains("__") || (!allowLeadingUnderscore && tokenStr.StartsWithOrdinal("_")) || tokenStr.EndsWithOrdinal("_") ||
                     tokenStr.Contains("._") || tokenStr.Contains("_.")) {
                     ReportSyntaxError(TokenSpan, "invalid token", ErrorCodes.SyntaxError);
@@ -1447,7 +1430,7 @@ namespace Microsoft.Python.Parsing {
                     return true;
                 }
             }
-            if (_langVersion.Is3x() && tokenStr.EndsWithOrdinal("l", ignoreCase: true)) {
+            if (LanguageVersion.Is3x() && tokenStr.EndsWithOrdinal("l", ignoreCase: true)) {
                 ReportSyntaxError(new IndexSpan(_tokenEndIndex - 1, 1), "invalid token", ErrorCodes.SyntaxError);
                 return true;
             }
@@ -1489,7 +1472,7 @@ namespace Microsoft.Python.Parsing {
             } else if (ch == 'w') {
                 ch = NextChar();
                 if (ch == 'i') {
-                    if ((_langVersion >= PythonLanguageVersion.V26 || WithStatement) && NextChar() == 't' && NextChar() == 'h' && !IsNamePart(Peek())) {
+                    if ((LanguageVersion >= PythonLanguageVersion.V26 || WithStatement) && NextChar() == 't' && NextChar() == 'h' && !IsNamePart(Peek())) {
                         // with is a keyword in 2.6 and up
                         return TransformStatementToken(Tokens.KeywordWithToken);
                     }
@@ -1521,7 +1504,7 @@ namespace Microsoft.Python.Parsing {
                     }
                 } else if (ch == 'r') {
                     if (NextChar() == 'i' && NextChar() == 'n' && NextChar() == 't' && !IsNamePart(Peek())) {
-                        if (!PrintFunction && !_langVersion.Is3x() && !StubFile) {
+                        if (!PrintFunction && !LanguageVersion.Is3x() && !StubFile) {
                             return TransformStatementToken(Tokens.KeywordPrintToken);
                         }
                     }
@@ -1553,7 +1536,7 @@ namespace Microsoft.Python.Parsing {
                     ch = NextChar();
                     if (ch == 'e') {
                         if (NextChar() == 'c' && !IsNamePart(Peek())) {
-                            if (_langVersion.Is2x()) {
+                            if (LanguageVersion.Is2x()) {
                                 return TransformStatementToken(Tokens.KeywordExecToken);
                             }
                         }
@@ -1612,7 +1595,7 @@ namespace Microsoft.Python.Parsing {
                         return Tokens.KeywordAndToken;
                     }
                 } else if (ch == 's') {
-                    if ((_langVersion >= PythonLanguageVersion.V26 || WithStatement) && !IsNamePart(Peek())) {
+                    if ((LanguageVersion >= PythonLanguageVersion.V26 || WithStatement) && !IsNamePart(Peek())) {
                         // as is a keyword in 2.6 and up or when from __future__ import with_statement is used
                         MarkTokenEnd();
                         return Tokens.KeywordAsToken;
@@ -1623,13 +1606,13 @@ namespace Microsoft.Python.Parsing {
                             return TransformStatementToken(Tokens.KeywordAssertToken);
                         }
                     } else if (ch == 'y') {
-                        if (_langVersion >= PythonLanguageVersion.V35 && NextChar() == 'n' && NextChar() == 'c' && !IsNamePart(Peek())) {
+                        if (LanguageVersion >= PythonLanguageVersion.V35 && NextChar() == 'n' && NextChar() == 'c' && !IsNamePart(Peek())) {
                             MarkTokenEnd();
                             return Tokens.KeywordAsyncToken;
                         }
                     }
                 } else if (ch == 'w') {
-                    if (_langVersion >= PythonLanguageVersion.V35 && NextChar() == 'a' && NextChar() == 'i' && NextChar() == 't' && !IsNamePart(Peek())) {
+                    if (LanguageVersion >= PythonLanguageVersion.V35 && NextChar() == 'a' && NextChar() == 'i' && NextChar() == 't' && !IsNamePart(Peek())) {
                         MarkTokenEnd();
                         return Tokens.KeywordAwaitToken;
                     }
@@ -1650,7 +1633,7 @@ namespace Microsoft.Python.Parsing {
                     if (ch == 't' && !IsNamePart(Peek())) {
                         MarkTokenEnd();
                         return Tokens.KeywordNotToken;
-                    } else if (_langVersion.Is3x() && ch == 'n' && NextChar() == 'l' && NextChar() == 'o' && NextChar() == 'c' && NextChar() == 'a' && NextChar() == 'l' && !IsNamePart(Peek())) {
+                    } else if (LanguageVersion.Is3x() && ch == 'n' && NextChar() == 'l' && NextChar() == 'o' && NextChar() == 'c' && NextChar() == 'a' && NextChar() == 'l' && !IsNamePart(Peek())) {
                         return TransformStatementToken(Tokens.KeywordNonlocalToken);
                     }
                 }
@@ -1664,12 +1647,12 @@ namespace Microsoft.Python.Parsing {
                     MarkTokenEnd();
                     return Tokens.KeywordLambdaToken;
                 }
-            } else if ((_langVersion.Is3x() || StubFile) && ch == 'T') {
+            } else if ((LanguageVersion.Is3x() || StubFile) && ch == 'T') {
                 if (NextChar() == 'r' && NextChar() == 'u' && NextChar() == 'e' && !IsNamePart(Peek())) {
                     MarkTokenEnd();
                     return Tokens.KeywordTrueToken;
                 }
-            } else if ((_langVersion.Is3x() || StubFile) && ch == 'F') {
+            } else if ((LanguageVersion.Is3x() || StubFile) && ch == 'F') {
                 if (NextChar() == 'a' && NextChar() == 'l' && NextChar() == 's' && NextChar() == 'e' && !IsNamePart(Peek())) {
                     MarkTokenEnd();
                     return Tokens.KeywordFalseToken;
@@ -1744,7 +1727,7 @@ namespace Microsoft.Python.Parsing {
                     }
                     return Tokens.ModToken;
                 case '<':
-                    if (_langVersion.Is2x() && NextChar('>')) {
+                    if (LanguageVersion.Is2x() && NextChar('>')) {
                         return Tokens.LessThanGreaterThanToken;
                     }
                     if (NextChar('=')) {
@@ -1822,7 +1805,7 @@ namespace Microsoft.Python.Parsing {
                 case ':':
                     return Tokens.ColonToken;
                 case '`':
-                    if (_langVersion.Is2x()) {
+                    if (LanguageVersion.Is2x()) {
                         return Tokens.BackQuoteToken;
                     }
                     break;
@@ -2107,7 +2090,7 @@ namespace Microsoft.Python.Parsing {
                             _newLineLocations.ToArray(),
                             indentStart,
                             _tokenEndIndex,
-                            ErrorCodes.TabError, _indentationInconsistencySeverity
+                            ErrorCodes.TabError, IndentationInconsistencySeverity
                         );
                         break;
                     }
@@ -2119,7 +2102,9 @@ namespace Microsoft.Python.Parsing {
             var current = _state.Indent[_state.IndentLevel];
             if (spaces == current) {
                 return;
-            } else if (spaces > current) {
+            }
+
+            if (spaces > current) {
                 _state.Indent[++_state.IndentLevel] = spaces;
                 if (_state.IndentFormat != null) {
                     if (chars != null) {
@@ -2130,14 +2115,14 @@ namespace Microsoft.Python.Parsing {
                 }
                 _state.PendingDedents = -1;
                 return;
-            } else {
-                current = DoDedent(spaces, current);
+            }
 
-                if (spaces != current && indentStart != -1) {
-                    ReportSyntaxError(
-                        new IndexSpan(indentStart, spaces),
-                        "unindent does not match any outer indentation level", ErrorCodes.IndentationError);
-                }
+            current = DoDedent(spaces, current);
+
+            if (spaces != current && indentStart != -1) {
+                ReportSyntaxError(
+                    new IndexSpan(indentStart, spaces),
+                    "unindent does not match any outer indentation level", ErrorCodes.IndentationError);
             }
         }
 
@@ -2237,8 +2222,8 @@ namespace Microsoft.Python.Parsing {
                     (IsFormatted ? 0x10 : 0);
 
             public static bool operator ==(IncompleteString left, IncompleteString right) {
-                if ((object)left == null) {
-                    return (object)right == null;
+                if (left is null) {
+                    return right is null;
                 }
                 return left.Equals(right);
             }
@@ -2284,7 +2269,7 @@ namespace Microsoft.Python.Parsing {
             public StringBuilder NextWhiteSpace;
             public GroupingRecovery GroupingRecovery;
 
-            public State(State state, bool verbatim) {
+            public State(State state, bool verbatim, int maxIndent) {
                 Indent = (int[])state.Indent.Clone();
                 LastNewLine = state.LastNewLine;
                 BracketLevel = state.BraceLevel;
@@ -2292,7 +2277,7 @@ namespace Microsoft.Python.Parsing {
                 BraceLevel = state.BraceLevel;
                 PendingDedents = state.PendingDedents;
                 IndentLevel = state.IndentLevel;
-                IndentFormat = (state.IndentFormat != null) ? (string[])state.IndentFormat.Clone() : null;
+                IndentFormat = (string[])state.IndentFormat?.Clone();
                 IncompleteString = state.IncompleteString;
                 if (verbatim) {
                     CurWhiteSpace = new StringBuilder(state.CurWhiteSpace.ToString());
@@ -2302,9 +2287,10 @@ namespace Microsoft.Python.Parsing {
                     NextWhiteSpace = null;
                 }
                 GroupingRecovery = null;
+                IndentFormat = new string[maxIndent];
             }
 
-            public State(TokenizerOptions options) {
+            public State(TokenizerOptions options, int maxIndent) {
                 Indent = new int[MaxIndent]; // TODO
                 LastNewLine = true;
                 BracketLevel = ParenLevel = BraceLevel = PendingDedents = IndentLevel = 0;
@@ -2318,6 +2304,7 @@ namespace Microsoft.Python.Parsing {
                     NextWhiteSpace = null;
                 }
                 GroupingRecovery = null;
+                IndentFormat = new string[maxIndent];
             }
 
             public override bool Equals(object obj) {

@@ -4790,7 +4790,7 @@ namespace Microsoft.Python.Parsing {
         private Token PeekToken2() {
             if (_lookahead2.Token == null) {
                 _lookahead2 = new TokenWithSpan(_tokenizer.GetNextToken(), _tokenizer.TokenSpan);
-                _lookahead2WhiteSpace = _tokenizer.PreceedingWhiteSpace;
+                _lookahead2WhiteSpace = _tokenizer.PrecedingWhiteSpace;
             }
             return _lookahead2.Token;
         }
@@ -4803,7 +4803,7 @@ namespace Microsoft.Python.Parsing {
                 _lookahead2WhiteSpace = null;
             } else {
                 _lookahead = new TokenWithSpan(_tokenizer.GetNextToken(), _tokenizer.TokenSpan);
-                _lookaheadWhiteSpace = _tokenizer.PreceedingWhiteSpace;
+                _lookaheadWhiteSpace = _tokenizer.PrecedingWhiteSpace;
             }
         }
 
