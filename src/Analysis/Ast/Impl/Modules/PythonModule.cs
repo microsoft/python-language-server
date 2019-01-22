@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// to AST and the module analysis.
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
-    public class PythonModule : IDocument, IAnalyzable, IDisposable, IEquatable<IPythonModule> {
+    public class PythonModule : IDocument, IAnalyzable, IEquatable<IPythonModule> {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
@@ -97,6 +97,11 @@ namespace Microsoft.Python.Analysis.Modules {
             FilePath = creationOptions.FilePath ?? uri?.LocalPath;
             Stub = creationOptions.Stub;
 
+            // Content is not loaded or analyzed until members are requested 
+            // from the module. If 'from A import B' is used, then B is not fetched
+            // until requested by the code analysis. This significantly improves
+            // the analysis performance since often analysis never needs imported
+            // modules or members as it can derive types from annotations or stubs.
             InitializeContent(creationOptions.Content, creationOptions.LoadOptions);
         }
 
