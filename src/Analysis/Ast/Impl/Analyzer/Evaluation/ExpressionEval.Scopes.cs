@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -111,6 +112,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// </summary>
         public IDisposable OpenScope(ScopeStatement node, out Scope fromScope) {
             fromScope = null;
+            if (node == null) {
+                return Disposable.Empty;
+            }
+
             if (node.Parent != null) {
                 fromScope = (GlobalScope as Scope)
                     .TraverseBreadthFirst(s => s.Children.OfType<Scope>())

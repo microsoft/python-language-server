@@ -32,7 +32,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task SimpeVariables() {
+        public async Task SimpleTopLevelVariables() {
             const string code = @"
 x = 'str'
 y = 1
@@ -47,6 +47,50 @@ class C:
             var comps = (await cs.GetCompletionsAsync()).Completions.ToArray();
             comps.Length.Should().Be(45);
             comps.Select(c => c.label).Should().Contain("C", "x", "y", "while", "for", "yield");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SimpleStringMembers() {
+            const string code = @"
+x = 'str'
+x.
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = CreateCompletionSource(analysis, 3, 3);
+            var comps = (await cs.GetCompletionsAsync()).Completions.ToArray();
+            comps.Length.Should().Be(77);
+            comps.Select(c => c.label).Should().Contain(@"isupper", @"capitalize", @"split");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ModuleMembers() {
+            const string code = @"
+import datetime
+datetime.datetime.
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = CreateCompletionSource(analysis, 3, 19);
+            var comps = (await cs.GetCompletionsAsync()).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain("now", @"tzinfo", @"ctime");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MembersIncomplete() {
+            const string code = @"
+class ABCDE:
+    def method1(self): pass
+
+ABC
+ABCDE.me
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = CreateCompletionSource(analysis, 5, 4);
+            var comps = (await cs.GetCompletionsAsync()).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain("ABCDE");
+
+            cs = CreateCompletionSource(analysis, 6, 9);
+            comps = (await cs.GetCompletionsAsync()).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain("method1");
         }
     }
 }
