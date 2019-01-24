@@ -47,6 +47,11 @@ namespace Microsoft.Python.Analysis.Types {
         bool IsStub { get; }
 
         /// <summary>
+        /// Function an unbound class method.
+        /// </summary>
+        bool IsUnbound { get; }
+
+        /// <summary>
         /// List of function overloads
         /// </summary>
         IReadOnlyList<IPythonFunctionOverload> Overloads { get; }

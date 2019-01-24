@@ -38,9 +38,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         [JsonRpcMethod("initialized")]
-        public async Task Initialized(JToken token, CancellationToken cancellationToken) {
+        public Task Initialized(JToken token, CancellationToken cancellationToken) {
             //await _server.Initialized(ToObject<InitializedParams>(token), cancellationToken);
             _rpc.NotifyAsync("python/languageServerStarted").DoNotWait();
+            return Task.CompletedTask;
         }
 
         [JsonRpcMethod("shutdown")]

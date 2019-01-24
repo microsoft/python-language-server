@@ -23,13 +23,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     internal sealed class PlainTextDocSource : IDocumentationSource {
         public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
 
-        public MarkupContent GetDocumentation(string name, IPythonType type) {
+        public MarkupContent GetTypeDocumentation(string name, IPythonType type) {
             string text;
             switch (type) {
                 case IPythonFunctionType ft: {
                         var o = ft.Overloads.First();
                         var declType = ft.DeclaringType != null ? $"{ft.DeclaringType.Name}." : string.Empty;
-                        var skip = string.IsNullOrEmpty(declType) ? 0 : 1;
+                        var skip = ft.IsStatic || ft.IsUnbound ? 0 : 1;
                         var parms = o.Parameters.Skip(skip).Select(p => string.IsNullOrEmpty(p.DefaultValueString) ? p.Name : $"{p.Name}={p.DefaultValueString}");
                         var parmString = string.Join(", ", parms);
                         var annString = string.IsNullOrEmpty(o.ReturnDocumentation) ? string.Empty : $" -> {o.ReturnDocumentation}";
@@ -49,6 +49,28 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     }
 
             }
+            return new MarkupContent { kind = MarkupKind.PlainText, value = text };
+        }
+
+        public MarkupContent FormatDocumentation(string documentation) {
+            return new MarkupContent { kind = MarkupKind.PlainText, value = documentation };
+        }
+
+        public string GetSignatureString(IPythonFunctionType ft, int overloadIndex = 0) {
+            var o = ft.Overloads[overloadIndex];
+            var skip = ft.IsStatic || ft.IsUnbound ? 0 : 1;
+            var parms = o.Parameters.Skip(skip).Select(p => string.IsNullOrEmpty(p.DefaultValueString) ? p.Name : $"{p.Name}={p.DefaultValueString}");
+            var parmString = string.Join(", ", parms);
+            var annString = string.IsNullOrEmpty(o.ReturnDocumentation) ? string.Empty : $" -> {o.ReturnDocumentation}";
+            return $"{ft.Name}({parmString}){annString}";
+        }
+
+        public MarkupContent FormatParameterDocumentation(IParameterInfo parameter) {
+            if (!string.IsNullOrEmpty(parameter.Documentation)) {
+                return FormatDocumentation(parameter.Documentation);
+            }
+            // TODO: show fully qualified type?
+            var text = parameter.Type.IsUnknown() ? parameter.Name : $"{parameter.Name}: {parameter.Type.Name}";
             return new MarkupContent { kind = MarkupKind.PlainText, value = text };
         }
     }

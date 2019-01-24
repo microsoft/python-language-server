@@ -401,7 +401,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 // and then here. This is normal.
                 ExpectedAnalysisVersion++;
                 _analysisTcs = _analysisTcs ?? new TaskCompletionSource<IDocumentAnalysis>();
-                Log?.Log(TraceEventType.Verbose, $"Analysis pending: {Name}");
+                //Log?.Log(TraceEventType.Verbose, $"Analysis pending: {Name}");
             }
         }
 

@@ -23,7 +23,6 @@ using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.IO;
@@ -31,8 +30,8 @@ using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Diagnostics;
-using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.LanguageServer.Signatures;
 using Microsoft.Python.LanguageServer.Tooltips;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
@@ -43,10 +42,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private IPythonInterpreter _interpreter;
         private IRunningDocumentTable _rdt;
-        private CompletionSource _completionSource;
-        private HoverSource _hoverSource;
         private ClientCapabilities _clientCaps;
-        private bool _traceLogging;
         private ILogger _log;
 
         public static InformationDisplayOptions DisplayOptions { get; private set; } = new InformationDisplayOptions {
@@ -102,7 +98,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<InitializeResult> InitializeAsync(InitializeParams @params, CancellationToken cancellationToken) {
             _disposableBag.ThrowIfDisposed();
             _clientCaps = @params.capabilities;
-            _traceLogging = @params.initializationOptions.traceLogging;
             _log = _services.GetService<ILogger>();
 
             if (@params.initializationOptions.displayOptions != null) {
@@ -131,6 +126,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var ds = new PlainTextDocSource();
             _completionSource = new CompletionSource(ds, Settings.completion);
             _hoverSource = new HoverSource(ds);
+            _signatureSource = new SignatureSource(ds);
 
             return GetInitializeResult();
         }

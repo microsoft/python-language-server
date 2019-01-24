@@ -623,13 +623,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     public sealed class ParameterInformation {
         public string label;
         public MarkupContent documentation;
-
-        [NonSerialized]
-        public string _type;
-        [NonSerialized]
-        public string _defaultValue;
-        [NonSerialized]
-        public bool? _isOptional;
     }
 
     /// <summary>

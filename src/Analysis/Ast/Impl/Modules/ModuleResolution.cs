@@ -113,8 +113,14 @@ namespace Microsoft.Python.Analysis.Modules {
 
             _searchPaths = await GetInterpreterSearchPathsAsync(cancellationToken).ConfigureAwait(false);
             Debug.Assert(_searchPaths != null, "Should have search paths");
-            _searchPaths = _searchPaths.Concat(Configuration.SearchPaths ?? Array.Empty<string>()).ToArray();
-            _log?.Log(TraceEventType.Information, "SearchPaths", _searchPaths.Cast<object>().ToArray());
+            _searchPaths = _searchPaths != null 
+                            ? _searchPaths.Concat(Configuration.SearchPaths ?? Array.Empty<string>()).ToArray() 
+                            : Array.Empty<string>();
+
+            _log?.Log(TraceEventType.Information, "SearchPaths:");
+            foreach(var s in _searchPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
+            }
             return _searchPaths;
         }
 

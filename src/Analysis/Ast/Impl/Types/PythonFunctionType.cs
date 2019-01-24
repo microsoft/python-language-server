@@ -123,6 +123,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public bool IsOverload { get; private set; }
         public bool IsStub { get; internal set; }
+        public bool IsUnbound => DeclaringType == null;
 
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
         #endregion
@@ -233,6 +234,7 @@ namespace Microsoft.Python.Analysis.Types {
             public bool IsClassMethod => _pf.IsClassMethod;
             public bool IsOverload => _pf.IsOverload;
             public bool IsStub => _pf.IsStub;
+            public bool IsUnbound => true;
 
             public IReadOnlyList<IPythonFunctionOverload> Overloads => _pf.Overloads;
             public override BuiltinTypeId TypeId => BuiltinTypeId.Function;

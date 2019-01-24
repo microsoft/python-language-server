@@ -17,10 +17,17 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.LanguageServer.Signatures;
+using Microsoft.Python.LanguageServer.Tooltips;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
+        private CompletionSource _completionSource;
+        private HoverSource _hoverSource;
+        private SignatureSource _signatureSource;
+
         public async Task<CompletionList> Completion(CompletionParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Completions in {uri} at {@params.position}");
@@ -40,6 +47,28 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public Task<CompletionItem> CompletionItemResolve(CompletionItem item, CancellationToken token) {
             // TODO: Fill out missing values in item
             return Task.FromResult(item);
+        }
+
+        public async Task<Hover> Hover(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Hover in {uri} at {@params.position}");
+
+            var analysis = GetAnalysis(uri, cancellationToken);
+            if (analysis != null) {
+                return await _hoverSource.GetHoverAsync(analysis, @params.position, cancellationToken);
+            }
+            return null;
+        }
+
+        public async Task<SignatureHelp> SignatureHelp(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Signatures in {uri} at {@params.position}");
+
+            var analysis = GetAnalysis(uri, cancellationToken);
+            if (analysis != null) {
+                return await _signatureSource.GetSignatureAsync(analysis, @params.position, cancellationToken);
+            }
+            return null;
         }
     }
 }

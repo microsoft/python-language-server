@@ -46,7 +46,7 @@ namespace Microsoft.Python.LanguageServer.Tooltips {
                         };
                         var name = statement is ClassDefinition || statement is FunctionDefinition ? null : (node as NameExpression)?.Name;
                         return new Hover {
-                            contents = _docSource.GetDocumentation(name, type),
+                            contents = _docSource.GetTypeDocumentation(name, type),
                             range = range
                         };
                     }
