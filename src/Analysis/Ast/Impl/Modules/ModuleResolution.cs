@@ -358,8 +358,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     ModuleName = moduleImport.FullName,
                     ModuleType = ModuleType.Library,
                     FilePath = moduleImport.ModulePath,
-                    Stub = stub,
-                    LoadOptions = ModuleLoadOptions.Analyze
+                    Stub = stub
                 };
                 module = rdt.AddModule(mco);
             }

@@ -82,16 +82,12 @@ def g(y):
             });
 
             Assert.AreEqual("text", doc.Text);
-
-            try {
-                doc.Update(new[] {
-                DocumentChange.Delete(SourceLocation.MinValue, SourceLocation.MinValue.AddColumns(4))
-                });
-                Assert.Fail("expected InvalidOperationException");
-            } catch (InvalidOperationException) {
-            }
-            Assert.AreEqual("text", doc.Text);
             Assert.AreEqual(1, doc.Version);
+
+            doc.Reset(0, @"abcdef");
+
+            Assert.AreEqual(@"abcdef", doc.Text);
+            Assert.AreEqual(0, doc.Version);
         }
     }
 }

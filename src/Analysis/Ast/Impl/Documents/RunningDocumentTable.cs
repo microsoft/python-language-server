@@ -69,12 +69,11 @@ namespace Microsoft.Python.Analysis.Documents {
                         Content = content,
                         FilePath = filePath,
                         Uri = uri,
-                        ModuleType = ModuleType.User,
-                        LoadOptions = ModuleLoadOptions.Open
+                        ModuleType = ModuleType.User
                     };
                     entry = CreateDocument(mco);
                 }
-                justOpened = TryOpenDocument(entry, content, ModuleLoadOptions.Open);
+                justOpened = TryOpenDocument(entry, content);
             }
             if (justOpened) {
                 Opened?.Invoke(this, new DocumentEventArgs(entry.Document));
@@ -191,8 +190,8 @@ namespace Microsoft.Python.Analysis.Documents {
             return entry;
         }
 
-        private bool TryOpenDocument(DocumentEntry entry, string content, ModuleLoadOptions options) {
-            if (!entry.Document.IsOpen && (options & ModuleLoadOptions.Open) == ModuleLoadOptions.Open) {
+        private bool TryOpenDocument(DocumentEntry entry, string content) {
+            if (!entry.Document.IsOpen) {
                 entry.Document.Reset(content);
                 entry.Document.IsOpen = true;
                 entry.LockCount++;

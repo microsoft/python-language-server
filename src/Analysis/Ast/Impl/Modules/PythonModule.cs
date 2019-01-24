@@ -42,26 +42,34 @@ namespace Microsoft.Python.Analysis.Modules {
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
     public class PythonModule : IDocument, IAnalyzable, IEquatable<IPythonModule> {
+        protected enum State {
+            None,
+            Loading,
+            Loaded,
+            Parsing,
+            Parsed,
+            Analyzing,
+            Analyzed
+        }
+
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
 
-        private ModuleLoadOptions _options;
         private string _documentation = string.Empty;
-
         private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
         private CancellationTokenSource _linkedAnalysisCts; // cancellation token combined with the 'dispose' cts
         private CancellationTokenSource _parseCts;
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
         private Task _parsingTask;
         private PythonAst _ast;
-        private bool _loaded;
 
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
         protected IServiceContainer Services { get; }
         protected IDocumentAnalysis Analysis { get; private set; } = DocumentAnalysis.Empty;
         protected object AnalysisLock { get; } = new object();
+        protected State ContentState { get; set; } = State.None;
 
         protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) {
             Check.ArgumentNotNull(nameof(name), name);
@@ -73,13 +81,12 @@ namespace Microsoft.Python.Analysis.Modules {
             Interpreter = services?.GetService<IPythonInterpreter>();
         }
 
-        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, ModuleLoadOptions loadOptions, IPythonModule stub, IServiceContainer services) :
+        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, IServiceContainer services) :
             this(new ModuleCreationOptions {
                 ModuleName = moduleName,
                 FilePath = filePath,
                 ModuleType = moduleType,
-                Stub = stub,
-                LoadOptions = loadOptions
+                Stub = stub
             }, services) { }
 
         internal PythonModule(ModuleCreationOptions creationOptions, IServiceContainer services)
@@ -97,12 +104,10 @@ namespace Microsoft.Python.Analysis.Modules {
             FilePath = creationOptions.FilePath ?? uri?.LocalPath;
             Stub = creationOptions.Stub;
 
-            // Content is not loaded or analyzed until members are requested 
-            // from the module. If 'from A import B' is used, then B is not fetched
-            // until requested by the code analysis. This significantly improves
-            // the analysis performance since often analysis never needs imported
-            // modules or members as it can derive types from annotations or stubs.
-            InitializeContent(creationOptions.Content, creationOptions.LoadOptions);
+            if (ModuleType == ModuleType.Specialized || ModuleType == ModuleType.Unresolved) {
+                ContentState = State.Analyzed;
+            }
+            InitializeContent(creationOptions.Content);
         }
 
         #region IPythonType
@@ -169,36 +174,27 @@ namespace Microsoft.Python.Analysis.Modules {
         /// analysis until later time, when module members are actually needed.
         /// </summary>
         public virtual Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) {
-            InitializeContent(null, ModuleLoadOptions.Analyze);
+            InitializeContent(null);
             return GetAnalysisAsync(cancellationToken);
         }
 
-        protected virtual string LoadContent(ModuleLoadOptions options) {
-            if (options.ShouldLoad() && ModuleType != ModuleType.Unresolved) {
-                return FileSystem.ReadAllText(FilePath);
+        protected virtual string LoadContent() {
+            if (ContentState < State.Loading) {
+                ContentState = State.Loading;
+                try {
+                    var code = FileSystem.ReadAllText(FilePath);
+                    ContentState = State.Loaded;
+                    return code;
+                } catch(IOException) { } catch(UnauthorizedAccessException) { }
             }
             return null; // Keep content as null so module can be loaded later.
         }
 
-        private void InitializeContent(string content, ModuleLoadOptions newOptions) {
+        private void InitializeContent(string content) {
             lock (AnalysisLock) {
-                if (!_loaded) {
-                    if (!newOptions.ShouldLoad()) {
-                        return;
-                    }
-                    content = content ?? LoadContent(newOptions);
-                    _buffer.Reset(0, content);
-                    _loaded = true;
-                }
-
-                IsOpen = (newOptions & ModuleLoadOptions.Open) == ModuleLoadOptions.Open;
-                newOptions = newOptions | (IsOpen ? ModuleLoadOptions.Analyze : 0);
-
-                var change = (_options ^ newOptions);
-                var startAnalysis = change.ShouldAnalyze() && _analysisTcs?.Task == null;
-                var startParse = change.ShouldParse() && _parsingTask == null;
-
-                _options = newOptions;
+                LoadContent(content);
+                var startParse = ContentState < State.Parsing && _parsingTask == null;
+                var startAnalysis = startParse | (ContentState < State.Analyzing && _analysisTcs?.Task == null);
 
                 if (startAnalysis) {
                     _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
@@ -207,6 +203,16 @@ namespace Microsoft.Python.Analysis.Modules {
                 if (startParse) {
                     Parse();
                 }
+            }
+        }
+
+        private void LoadContent(string content) {
+            if (ContentState < State.Loading) {
+                try {
+                    content = content ?? LoadContent();
+                    _buffer.Reset(0, content);
+                    ContentState = State.Loaded;
+                } catch(IOException) { } catch (UnauthorizedAccessException) { }
             }
         }
         #endregion
@@ -294,13 +300,22 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
-        public void Reset(string content) => InitializeContent(content, ModuleLoadOptions.Open);
+        public void Reset(string content) {
+            lock (AnalysisLock) {
+                if (content != Content) {
+                    InitializeContent(content);
+                }
+            }
+        }
 
         private void Parse() {
             _parseCts?.Cancel();
             _parseCts = new CancellationTokenSource();
+
             _linkedParseCts?.Dispose();
             _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, _parseCts.Token);
+
+            ContentState = State.Parsing;
             _parsingTask = Task.Run(() => Parse(_linkedParseCts.Token), _linkedParseCts.Token);
         }
 
@@ -331,12 +346,14 @@ namespace Microsoft.Python.Analysis.Modules {
                 _ast = ast;
                 _parseErrors = sink.Diagnostics;
                 _parsingTask = null;
+                ContentState = State.Parsed;
             }
 
             NewAst?.Invoke(this, EventArgs.Empty);
 
-            if ((_options & ModuleLoadOptions.Analyze) == ModuleLoadOptions.Analyze) {
+            if (ContentState < State.Analyzing) {
                 Log?.Log(TraceEventType.Verbose, $"Analysis queued: {Name}");
+                ContentState = State.Analyzing;
 
                 _linkedAnalysisCts?.Dispose();
                 _linkedAnalysisCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
@@ -393,14 +410,17 @@ namespace Microsoft.Python.Analysis.Modules {
                 // Log?.Log(TraceEventType.Verbose, $"Analysis complete: {Name}, Version: {analysis.Version}, Expected: {ExpectedAnalysisVersion}");
                 if (analysis.Version == ExpectedAnalysisVersion) {
                     Analysis = analysis;
+                    GlobalScope = analysis.GlobalScope;
+
                     // Derived classes can override OnAnalysisComplete if they want
                     // to perform additional actions on the completed analysis such
                     // as declare additional variables, etc.
                     OnAnalysisComplete();
+
                     _analysisTcs.TrySetResult(analysis);
                     _analysisTcs = null;
+                    ContentState = State.Analyzed;
 
-                    GlobalScope = analysis.GlobalScope;
                     NewAnalysis?.Invoke(this, EventArgs.Empty);
                     return true;
                 }
@@ -417,10 +437,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
             lock (AnalysisLock) {
-                if ((_options & ModuleLoadOptions.Analyze) != ModuleLoadOptions.Analyze) {
-                    return Task.FromResult(DocumentAnalysis.Empty);
-                }
-                return Analysis.Version == ExpectedAnalysisVersion ? Task.FromResult(Analysis) : _analysisTcs.Task;
+                return _analysisTcs?.Task ?? Task.FromResult(Analysis);
             }
         }
         #endregion

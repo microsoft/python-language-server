@@ -120,8 +120,7 @@ namespace Microsoft.Python.Analysis.Tests {
                     Content = code,
                     FilePath = modulePath,
                     Uri = moduleUri,
-                    ModuleType = ModuleType.User,
-                    LoadOptions = ModuleLoadOptions.Analyze
+                    ModuleType = ModuleType.User
                 };
                 doc = new PythonModule(mco, services);
             }

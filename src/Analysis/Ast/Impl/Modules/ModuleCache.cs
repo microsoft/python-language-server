@@ -67,8 +67,7 @@ namespace Microsoft.Python.Analysis.Modules {
             var mco = new ModuleCreationOptions {
                 ModuleName =  name,
                 ModuleType = ModuleType.Stub,
-                FilePath =  cache,
-                LoadOptions = ModuleLoadOptions.Analyze
+                FilePath =  cache
             };
             var module = rdt.AddModule(mco);
 

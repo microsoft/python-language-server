@@ -13,8 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -25,9 +27,8 @@ namespace Microsoft.Python.Analysis.Modules {
     internal class CompiledPythonModule : PythonModule {
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
 
-        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub,
-            IServiceContainer services, ModuleLoadOptions options = ModuleLoadOptions.Analyze)
-            : base(moduleName, filePath, moduleType, options, stub, services) { }
+        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, IServiceContainer services)
+            : base(moduleName, filePath, moduleType, stub, services) { }
 
         public override string Documentation
             => GetMember("__doc__").TryGetConstant<string>(out var s) ? s : string.Empty;
@@ -52,18 +53,16 @@ namespace Microsoft.Python.Analysis.Modules {
             return args;
         }
 
-        protected override string LoadContent(ModuleLoadOptions options) {
-            var code = string.Empty;
-            if ((options & ModuleLoadOptions.Load) == ModuleLoadOptions.Load) {
-                code = ModuleCache.ReadCachedModule(FilePath);
-                if (string.IsNullOrEmpty(code)) {
-                    if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {
-                        return string.Empty;
-                    }
-
-                    code = ScrapeModule();
-                    SaveCachedCode(code);
+        protected override string LoadContent() {
+            // Exceptions are handled in the base
+            var code = ModuleCache.ReadCachedModule(FilePath);
+            if (string.IsNullOrEmpty(code)) {
+                if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {
+                    return string.Empty;
                 }
+
+                code = ScrapeModule();
+                SaveCachedCode(code);
             }
             return code;
         }
