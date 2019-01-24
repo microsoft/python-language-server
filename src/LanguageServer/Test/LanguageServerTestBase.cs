@@ -29,12 +29,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
         protected static readonly IDocumentationSource TestDocumentationSource = new TestDocSource();
         protected static readonly ServerSettings ServerSettings = new ServerSettings();
 
-        internal async Task<CompletionItem[]> GetCompletionsAsync(string code, int line, int column) {
-            var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(TestDocumentationSource, ServerSettings.completion);
-            return (await cs.GetCompletionsAsync(analysis, new SourceLocation(line, column))).Completions.ToArray();
-        }
-
         protected sealed class TestDocSource : IDocumentationSource {
             public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
             public MarkupContent GetDocumentation(string name, IPythonType type)

@@ -16,6 +16,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -32,7 +34,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task SimpleTopLevelVariables() {
+        public async Task TopLevelVariables() {
             const string code = @"
 x = 'str'
 y = 1
@@ -42,18 +44,22 @@ class C:
         return 1.0
 
 ";
-            var comps = await GetCompletionsAsync(code, 8, 1);
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(TestDocumentationSource, ServerSettings.completion);
+            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 1))).Completions.ToArray();
             comps.Select(c => c.label).Should().Contain("C", "x", "y", "while", "for", "yield");
         }
 
         [TestMethod, Priority(0)]
-        public async Task SimpleStringMembers() {
+        public async Task StringMembers() {
             const string code = @"
 x = 'str'
 x.
 ";
-            var comps = await GetCompletionsAsync(code, 3, 3);
-            comps.Select(c => c.label).Should().Contain(@"isupper", @"capitalize", @"split");
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(TestDocumentationSource, ServerSettings.completion);
+            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3))).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain(new[] { @"isupper", @"capitalize", @"split" });
         }
 
         [TestMethod, Priority(0)]
@@ -62,8 +68,10 @@ x.
 import datetime
 datetime.datetime.
 ";
-            var comps = await GetCompletionsAsync(code, 3, 19);
-            comps.Select(c => c.label).Should().Contain("now", @"tzinfo", @"ctime");
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(TestDocumentationSource, ServerSettings.completion);
+            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 19))).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain(new[] { "now", @"tzinfo", @"ctime" });
         }
 
         [TestMethod, Priority(0)]
@@ -75,10 +83,12 @@ class ABCDE:
 ABC
 ABCDE.me
 ";
-            var comps = await GetCompletionsAsync(code, 5, 4);
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(TestDocumentationSource, ServerSettings.completion);
+            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 4))).Completions.ToArray();
             comps.Select(c => c.label).Should().Contain(@"ABCDE");
 
-            comps = await GetCompletionsAsync(code, 6, 9);
+            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 9))).Completions.ToArray();
             comps.Select(c => c.label).Should().Contain("method1");
         }
     }
