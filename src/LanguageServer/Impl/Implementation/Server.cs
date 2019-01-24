@@ -124,7 +124,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         internal AnalysisQueue AnalysisQueue { get; }
         internal ParseQueue ParseQueue { get; }
         internal SymbolIndex SymbolIndex { get; }
-        internal IParseProvider ParseProvider { get; private set; }
 
         internal PythonAnalyzer Analyzer { get; private set; }
         internal ServerSettings Settings { get; private set; } = new ServerSettings();
@@ -344,6 +343,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #region IPythonLanguageServer
         public ILogger Logger => this;
 
+        internal WorkspaceManager WorkspaceManager { get; private set; }
+
         public PythonAst GetCurrentAst(Uri documentUri) {
             ProjectFiles.GetEntry(documentUri, null, out var entry, out var tree);
             return entry.GetCurrentParse()?.Tree;
@@ -382,11 +383,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             Analyzer = await AnalysisQueue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
             Version version = Version.Parse(@params.initializationOptions.interpreter.properties.TryGetValue("Version", out var o) ? o as string : null);
-            /*IndexPopulator indexPopulator = new IndexPopulator(SymbolIndex, _rootDir, @params.initializationOptions.includeFiles, @params.initializationOptions.excludeFiles, Analyzer.LanguageVersion);
-            indexPopulator.AsyncPopulate();*/
-            ParseProvider = new ParseProvider(version.ToLanguageVersion());
-            DirectoryParseSubscriber d = new DirectoryParseSubscriber(ParseProvider, _rootDir, @params.initializationOptions.includeFiles, @params.initializationOptions.excludeFiles, SymbolIndex);
-            d.AsyncDirectorySubscribe();
+            IndexingFileParser IndexingFileParser = new IndexingFileParser(SymbolIndex, version.ToLanguageVersion());
+            WorkspaceManager = new WorkspaceManager(_rootDir, @params.initializationOptions.includeFiles, @params.initializationOptions.excludeFiles, IndexingFileParser);
+            WorkspaceManager.StartParseRootDir();
+            RunningDocumentIndexer RunningDocumentIndexer = new RunningDocumentIndexer(SymbolIndex, version.ToLanguageVersion(), WorkspaceManager);
 
             _disposableBag.ThrowIfDisposed();
             _clientCaps = @params.capabilities;
@@ -724,7 +724,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public void UpdateSymbolIndexFromDoc(Uri uri, IDocument doc) {
-            ParseProvider.RefreshAstDoc(uri, doc);
+
         }
     }
 }
