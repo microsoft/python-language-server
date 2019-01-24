@@ -13,9 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
@@ -59,6 +63,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void DidCloseTextDocument(DidCloseTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
             _rdt.CloseDocument(@params.textDocument.uri);
+        }
+
+        private IDocumentAnalysis GetAnalysis(Uri uri, Position position, CancellationToken cancellationToken) {
+            var document = _rdt.GetDocument(uri);
+            if (document != null) {
+                document.GetAnalysisAsync(cancellationToken).Wait(200);
+                return document.GetAnyAnalysis();
+            }
+            _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
+            return null;
         }
     }
 }

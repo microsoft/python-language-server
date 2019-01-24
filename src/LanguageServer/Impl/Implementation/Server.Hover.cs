@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -20,6 +21,13 @@ using Microsoft.Python.LanguageServer.Protocol;
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
         public async Task<Hover> Hover(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Hover in {uri} at {@params.position}");
+
+            var analysis = GetAnalysis(uri, @params.position, cancellationToken);
+            if (analysis != null) {
+                return await _hoverSource.GetHoverAsync(analysis, @params.position, cancellationToken);
+            }
             return null;
         }
     }

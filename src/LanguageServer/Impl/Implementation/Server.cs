@@ -33,6 +33,7 @@ using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Diagnostics;
 using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.LanguageServer.Tooltips;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server : IDisposable {
@@ -43,6 +44,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IPythonInterpreter _interpreter;
         private IRunningDocumentTable _rdt;
         private CompletionSource _completionSource;
+        private HoverSource _hoverSource;
         private ClientCapabilities _clientCaps;
         private bool _traceLogging;
         private ILogger _log;
@@ -126,7 +128,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             DisplayStartupInfo();
 
-            _completionSource = new CompletionSource(new PlainTextDocSource(), Settings.completion);
+            var ds = new PlainTextDocSource();
+            _completionSource = new CompletionSource(ds, Settings.completion);
+            _hoverSource = new HoverSource(ds);
 
             return GetInitializeResult();
         }
@@ -184,8 +188,29 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private sealed class PlainTextDocSource : IDocumentationSource {
             public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
-            public MarkupContent GetDocumentation(IPythonType type)
-                => new MarkupContent { kind = MarkupKind.PlainText, value = type.Documentation ?? type.Name };
+
+            public MarkupContent GetDocumentation(IPythonType type) {
+                string text;
+                switch (type) {
+                    case IPythonFunctionType ft: {
+                            var o = ft.Overloads.First();
+                            var parms = o.Parameters.Select(p => string.IsNullOrEmpty(p.DefaultValueString) ? p.Name : $"{p.Name}={p.DefaultValueString}");
+                            var parmString = string.Join(", ", parms);
+                            var annString = string.IsNullOrEmpty(o.ReturnDocumentation) ? string.Empty : $" -> {o.ReturnDocumentation}";
+                            text = $"def {ft.Name}({parmString}){annString}";
+                        }
+                        break;
+                    case IPythonClassType cls: {
+                            text = $"class {cls.Name}";
+                        }
+                        break;
+                    default:
+                        text = type.Documentation ?? type.Name;
+                        break;
+
+                }
+                return new MarkupContent { kind = MarkupKind.PlainText, value = text };
+            }
         }
     }
 }

@@ -26,14 +26,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Completions in {uri} at {@params.position}");
 
             var res = new CompletionList();
-            var document = _rdt.GetDocument(uri);
-            if (document != null) {
-                document.GetAnalysisAsync(cancellationToken).Wait(200);
-                var analysis = document.GetAnyAnalysis();
+            var analysis = GetAnalysis(uri, @params.position, cancellationToken);
+            if(analysis != null) { 
                 var result = await _completionSource.GetCompletionsAsync(analysis, @params.position, cancellationToken);
                 res.items = result.Completions.ToArray();
-            } else {
-                _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
             }
 
             //await InvokeExtensionsAsync((ext, token)
