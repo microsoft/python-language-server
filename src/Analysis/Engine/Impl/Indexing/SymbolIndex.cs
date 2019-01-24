@@ -22,7 +22,7 @@ using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Indexing {
-    internal class SymbolIndex : ISymbolIndex {
+    internal class SymbolIndex : ISymbolIndex, IParseObserver {
         private readonly ConcurrentDictionary<Uri, IReadOnlyList<HierarchicalSymbol>> _index = new ConcurrentDictionary<Uri, IReadOnlyList<HierarchicalSymbol>>();
 
         public SymbolIndex() { }

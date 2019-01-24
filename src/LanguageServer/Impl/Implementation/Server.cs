@@ -124,6 +124,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         internal AnalysisQueue AnalysisQueue { get; }
         internal ParseQueue ParseQueue { get; }
         internal SymbolIndex SymbolIndex { get; }
+        internal IParseProvider ParseProvider { get; private set; }
 
         internal PythonAnalyzer Analyzer { get; private set; }
         internal ServerSettings Settings { get; private set; } = new ServerSettings();
@@ -380,9 +381,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             Analyzer = await AnalysisQueue.ExecuteInQueueAsync(ct => CreateAnalyzer(@params.initializationOptions.interpreter, token), AnalysisPriority.High);
-
-            IndexPopulator indexPopulator = new IndexPopulator(SymbolIndex, _rootDir, @params.initializationOptions.includeFiles, @params.initializationOptions.excludeFiles, Analyzer.LanguageVersion);
-            indexPopulator.AsyncPopulate();
+            Version version = Version.Parse(@params.initializationOptions.interpreter.properties.TryGetValue("Version", out var o) ? o as string : null);
+            /*IndexPopulator indexPopulator = new IndexPopulator(SymbolIndex, _rootDir, @params.initializationOptions.includeFiles, @params.initializationOptions.excludeFiles, Analyzer.LanguageVersion);
+            indexPopulator.AsyncPopulate();*/
+            ParseProvider = new ParseProvider(version.ToLanguageVersion());
+            DirectoryParseSubscriber d = new DirectoryParseSubscriber(ParseProvider, _rootDir, @params.initializationOptions.includeFiles, @params.initializationOptions.excludeFiles, SymbolIndex);
+            d.AsyncDirectorySubscribe();
 
             _disposableBag.ThrowIfDisposed();
             _clientCaps = @params.capabilities;
@@ -720,10 +724,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public void UpdateSymbolIndexFromDoc(Uri uri, IDocument doc) {
-            new Task(() => {
-                var parser = Parser.CreateParser(doc.ReadDocument(0, out var version), Analyzer.LanguageVersion);
-                SymbolIndex.UpdateParseTree(uri, parser.ParseFile());
-            }).Start();
+            ParseProvider.RefreshAstDoc(uri, doc);
         }
     }
 }
