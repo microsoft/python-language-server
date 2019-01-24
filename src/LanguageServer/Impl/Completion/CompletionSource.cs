@@ -17,6 +17,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.Parsing.Ast;
@@ -35,7 +36,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
         public async Task<CompletionResult> GetCompletionsAsync(IDocumentAnalysis analysis, SourceLocation location, CancellationToken cancellationToken = default) {
             var context = new CompletionContext(analysis, location, _itemSource);
 
-            ExpressionLocator.FindExpression(analysis.Ast, location, out var expression, out var statement, out var scope);
+            ExpressionLocator.FindExpression(analysis.Ast, location,
+                FindExpressionOptions.Complete, out var expression, out var statement, out var scope);
 
             switch (expression) {
                 case MemberExpression me when me.Target != null && me.DotIndex > me.StartIndex && context.Position > me.DotIndex:

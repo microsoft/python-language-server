@@ -24,7 +24,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Hover in {uri} at {@params.position}");
 
-            var analysis = GetAnalysis(uri, @params.position, cancellationToken);
+            var analysis = GetAnalysis(uri, cancellationToken);
             if (analysis != null) {
                 return await _hoverSource.GetHoverAsync(analysis, @params.position, cancellationToken);
             }

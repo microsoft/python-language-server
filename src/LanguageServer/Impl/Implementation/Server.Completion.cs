@@ -26,7 +26,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Completions in {uri} at {@params.position}");
 
             var res = new CompletionList();
-            var analysis = GetAnalysis(uri, @params.position, cancellationToken);
+            var analysis = GetAnalysis(uri, cancellationToken);
             if(analysis != null) { 
                 var result = await _completionSource.GetCompletionsAsync(analysis, @params.position, cancellationToken);
                 res.items = result.Completions.ToArray();

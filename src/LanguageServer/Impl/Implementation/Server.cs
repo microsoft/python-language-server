@@ -185,32 +185,5 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return false;
         }
         #endregion
-
-        private sealed class PlainTextDocSource : IDocumentationSource {
-            public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
-
-            public MarkupContent GetDocumentation(IPythonType type) {
-                string text;
-                switch (type) {
-                    case IPythonFunctionType ft: {
-                            var o = ft.Overloads.First();
-                            var parms = o.Parameters.Select(p => string.IsNullOrEmpty(p.DefaultValueString) ? p.Name : $"{p.Name}={p.DefaultValueString}");
-                            var parmString = string.Join(", ", parms);
-                            var annString = string.IsNullOrEmpty(o.ReturnDocumentation) ? string.Empty : $" -> {o.ReturnDocumentation}";
-                            text = $"def {ft.Name}({parmString}){annString}";
-                        }
-                        break;
-                    case IPythonClassType cls: {
-                            text = $"class {cls.Name}";
-                        }
-                        break;
-                    default:
-                        text = type.Documentation ?? type.Name;
-                        break;
-
-                }
-                return new MarkupContent { kind = MarkupKind.PlainText, value = text };
-            }
-        }
     }
 }

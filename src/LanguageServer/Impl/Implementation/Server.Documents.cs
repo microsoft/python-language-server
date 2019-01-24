@@ -65,7 +65,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _rdt.CloseDocument(@params.textDocument.uri);
         }
 
-        private IDocumentAnalysis GetAnalysis(Uri uri, Position position, CancellationToken cancellationToken) {
+        private IDocumentAnalysis GetAnalysis(Uri uri, CancellationToken cancellationToken) {
             var document = _rdt.GetDocument(uri);
             if (document != null) {
                 document.GetAnalysisAsync(cancellationToken).Wait(200);

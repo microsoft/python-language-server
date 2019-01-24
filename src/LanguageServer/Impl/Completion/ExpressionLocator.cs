@@ -19,16 +19,9 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ExpressionLocator {
-        public static void FindExpression(PythonAst ast, SourceLocation position, out Node expression, out Node statement, out ScopeStatement scope) {
-            var finder = new ExpressionFinder(ast, new FindExpressionOptions {
-                Names = true,
-                Members = true,
-                NamedArgumentNames = true,
-                ImportNames = true,
-                ImportAsNames = true,
-                Literals = true,
-                Errors = true
-            });
+
+        public static void FindExpression(PythonAst ast, SourceLocation position, FindExpressionOptions options, out Node expression, out Node statement, out ScopeStatement scope) {
+            var finder = new ExpressionFinder(ast, options);
 
             var index = ast.LocationToIndex(position);
             finder.Get(index, index, out expression, out statement, out scope);

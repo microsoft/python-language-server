@@ -16,6 +16,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Documentation;
@@ -31,7 +32,9 @@ namespace Microsoft.Python.LanguageServer.Tooltips {
         }
 
         public async Task<Hover> GetHoverAsync(IDocumentAnalysis analysis, SourceLocation location, CancellationToken cancellationToken = default) {
-            ExpressionLocator.FindExpression(analysis.Ast, location, out var node, out var statement, out var scope);
+            ExpressionLocator.FindExpression(analysis.Ast, location,
+                FindExpressionOptions.Hover, out var node, out var statement, out var scope);
+
             if (node is Expression expr) {
                 using (analysis.ExpressionEvaluator.OpenScope(scope)) {
                     var value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(expr, cancellationToken);
@@ -41,8 +44,9 @@ namespace Microsoft.Python.LanguageServer.Tooltips {
                             start = expr.GetStart(analysis.Ast),
                             end = expr.GetEnd(analysis.Ast),
                         };
+                        var name = statement is ClassDefinition || statement is FunctionDefinition ? null : (node as NameExpression)?.Name;
                         return new Hover {
-                            contents = _docSource.GetDocumentation(type),
+                            contents = _docSource.GetDocumentation(name, type),
                             range = range
                         };
                     }
