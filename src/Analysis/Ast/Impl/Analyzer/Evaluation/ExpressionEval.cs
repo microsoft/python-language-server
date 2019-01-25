@@ -216,8 +216,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         private void AddDiagnostics(Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
-            foreach (var e in entries) {
-                _diagnostics?.Add(documentUri, e);
+            // Do not add if module is library, etc. Only handle user code.
+            if (Module.ModuleType == ModuleType.User) {
+                foreach (var e in entries) {
+                    _diagnostics?.Add(documentUri, e);
+                }
             }
         }
     }

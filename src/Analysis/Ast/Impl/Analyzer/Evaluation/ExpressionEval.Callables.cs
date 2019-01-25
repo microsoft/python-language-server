@@ -72,16 +72,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (init != null) {
                 var a = new ArgumentSet(init, new PythonInstance(cls), expr, Module, this);
                 if (a.Errors.Count > 0) {
-                    AddDiagnostics(Module.Uri, a.Errors);
-                } else {
-                    args = await a.EvaluateAsync(cancellationToken);
+                    // AddDiagnostics(Module.Uri, a.Errors);
                 }
+                args = await a.EvaluateAsync(cancellationToken);
             }
             return cls.CreateInstance(cls.Name, GetLoc(expr), args);
         }
 
         public async Task<IMember> GetValueFromBoundAsync(IPythonBoundType t, CallExpression expr, CancellationToken cancellationToken = default) {
-            switch(t.Type) {
+            switch (t.Type) {
                 case IPythonFunctionType fn:
                     return await GetValueFromFunctionTypeAsync(fn, t.Self, expr, cancellationToken);
                 case IPythonPropertyType p:
@@ -136,7 +135,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // the original 'self' and 'cls' variables are no longer valid
             // and function has to be re-evaluated with new arguments.
             var instanceType = instance?.GetPythonType();
-            if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized || 
+            if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized ||
                 instanceType.IsSpecialized || fn.DeclaringType.IsSpecialized ||
                 instanceType.Equals(fn.DeclaringType)) {
 
