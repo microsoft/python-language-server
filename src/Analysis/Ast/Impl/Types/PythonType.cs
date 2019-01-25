@@ -47,14 +47,11 @@ namespace Microsoft.Python.Analysis.Types {
             Func<string, string> documentationProvider,
             Func<string, LocationInfo> locationProvider,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
-        ) : this(name, typeId) {
+        ) {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
             DeclaringModule = declaringModule;
             _documentationProvider = documentationProvider;
             _locationProvider = locationProvider;
-        }
-
-        public PythonType(string name, BuiltinTypeId typeId) {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId;
         }
 

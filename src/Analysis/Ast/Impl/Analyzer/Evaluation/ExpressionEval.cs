@@ -48,9 +48,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             //Log = services.GetService<ILogger>();
             _diagnostics = services.GetService<IDiagnosticsService>();
-
-            UnknownType = Interpreter.UnknownType ??
-                new FallbackBuiltinPythonType(new FallbackBuiltinsModule(Ast.LanguageVersion), BuiltinTypeId.Unknown);
         }
 
         public LookupOptions DefaultLookupOptions { get; set; }
@@ -59,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public bool SuppressBuiltinLookup => Module.ModuleType == ModuleType.Builtins;
         public ILogger Log { get; }
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
-        public IPythonType UnknownType { get; }
+        public IPythonType UnknownType => Interpreter.UnknownType;
 
         public LocationInfo GetLoc(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
         public LocationInfo GetLocOfName(Node node, NameExpression header) => node?.GetLocationOfName(header, Module, Ast) ?? LocationInfo.Empty;

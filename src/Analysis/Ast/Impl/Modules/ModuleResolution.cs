@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Modules {
             _typeStubPaths = GetTypeShedPaths(_interpreter.Configuration?.TypeshedPath).ToArray();
         }
 
-        internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
+        internal async Task<IPythonModule> CreateBuiltinModuleAsync(CancellationToken cancellationToken = default) {
             // Add names from search paths
             await ReloadAsync(cancellationToken);
 
@@ -69,7 +69,11 @@ namespace Microsoft.Python.Analysis.Modules {
 
             var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
             _modules[BuiltinModuleName] = BuiltinsModule = b;
-            await b.LoadAndAnalyzeAsync(cancellationToken);
+            return BuiltinsModule;
+        }
+
+        internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
+            await BuiltinsModule.LoadAndAnalyzeAsync(cancellationToken);
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
@@ -113,12 +117,12 @@ namespace Microsoft.Python.Analysis.Modules {
 
             _searchPaths = await GetInterpreterSearchPathsAsync(cancellationToken).ConfigureAwait(false);
             Debug.Assert(_searchPaths != null, "Should have search paths");
-            _searchPaths = _searchPaths != null 
-                            ? _searchPaths.Concat(Configuration.SearchPaths ?? Array.Empty<string>()).ToArray() 
+            _searchPaths = _searchPaths != null
+                            ? _searchPaths.Concat(Configuration.SearchPaths ?? Array.Empty<string>()).ToArray()
                             : Array.Empty<string>();
 
             _log?.Log(TraceEventType.Information, "SearchPaths:");
-            foreach(var s in _searchPaths) {
+            foreach (var s in _searchPaths) {
                 _log?.Log(TraceEventType.Information, $"    {s}");
             }
             return _searchPaths;
@@ -269,7 +273,7 @@ namespace Microsoft.Python.Analysis.Modules {
             return null;
         }
 
-        public IPythonModule GetImportedModule(string name) 
+        public IPythonModule GetImportedModule(string name)
             => _modules.TryGetValue(name, out var module) ? module : null;
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {

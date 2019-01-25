@@ -71,17 +71,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
     }
 
     public sealed class EmptyAnalysis : IDocumentAnalysis {
+        private static PythonAst _emptyAst;
+
         public EmptyAnalysis(IServiceContainer services, IDocument document) {
             Document = document ?? throw new ArgumentNullException(nameof(document));
             GlobalScope = new EmptyGlobalScope(document);
-            Ast = Parser.CreateParser(new StringReader(string.Empty), PythonLanguageVersion.None).ParseFile();
+
+            _emptyAst = _emptyAst ?? (_emptyAst = Parser.CreateParser(new StringReader(string.Empty), PythonLanguageVersion.None).ParseFile());
             ExpressionEvaluator = new ExpressionEval(services, document, Ast);
         }
 
         public IDocument Document { get; }
         public int Version { get; } = -1;
         public IGlobalScope GlobalScope { get; }
-        public PythonAst Ast { get; }
+        public PythonAst Ast => _emptyAst;
         public IExpressionEvaluator ExpressionEvaluator { get; }
         public IEnumerable<DiagnosticsEntry> Diagnostics => Enumerable.Empty<DiagnosticsEntry>();
     }

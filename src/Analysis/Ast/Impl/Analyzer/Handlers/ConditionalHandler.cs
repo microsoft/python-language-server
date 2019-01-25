@@ -80,7 +80,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (name != null && typeName != null) {
                     var typeId = typeName.GetTypeId();
                     if (typeId != BuiltinTypeId.Unknown) {
-                        Eval.DeclareVariable(name, new PythonType(typeName, typeId), nex);
+                        Eval.DeclareVariable(name, new PythonType(typeName, Module, string.Empty, LocationInfo.Empty, typeId), nex);
                     }
                 }
             }
