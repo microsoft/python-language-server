@@ -269,8 +269,7 @@ namespace Microsoft.PythonTools.Intellisense {
                     },
                     capabilities = new LS.ClientCapabilities {
                         python = new LS.PythonClientCapabilities {
-                            manualFileLoad = !request.analyzeAllFiles,
-                            liveLinting = request.liveLinting
+                            manualFileLoad = !request.analyzeAllFiles
                         },
                         textDocument = new LS.TextDocumentClientCapabilities {
                             completion = new LS.TextDocumentClientCapabilities.CompletionCapabilities {
@@ -1559,7 +1558,33 @@ namespace Microsoft.PythonTools.Intellisense {
             _server.ParseQueue.TaskCommentMap = Options.commentTokens;
             _server.Analyzer.SetTypeStubPaths(Options.typeStubPaths ?? Enumerable.Empty<string>());
 
+            SetErrorMessagesSeverity();
+
             return new Response();
+        }
+
+        private void SetErrorMessagesSeverity() {
+            var serverSettings = new LS.ServerSettings();
+            var warnings = new List<string>();
+            var disabled = new List<string>();
+
+            if (Options.enableUnresolvedImportWarning) {
+                warnings.Add(ErrorMessages.UnresolvedImportCode);
+            } else {
+                disabled.Add(ErrorMessages.UnresolvedImportCode);
+            }
+
+            if (Options.enableUseBeforeDefWarning) {
+                warnings.Add(ErrorMessages.UseBeforeDefCode);
+            } else {
+                disabled.Add(ErrorMessages.UseBeforeDefCode);
+            }
+
+            serverSettings.analysis.SetErrorSeverityOptions(Array.Empty<string>(), warnings.ToArray(), Array.Empty<string>(), disabled.ToArray());
+
+            _server.DidChangeConfiguration(new LS.DidChangeConfigurationParams {
+                settings = serverSettings
+            }, CancellationToken.None).DoNotWait();
         }
 
 
@@ -1570,7 +1595,7 @@ namespace Microsoft.PythonTools.Intellisense {
         }
 
         private void OnModulesChanged(object sender, EventArgs args) {
-            _server.DidChangeConfiguration(new LS.DidChangeConfigurationParams(), CancellationToken.None).DoNotWait();
+            _server.ReloadModulesAsync(CancellationToken.None).DoNotWait();
         }
 
         private void OnFileChanged(AP.FileChangedEvent e) {
@@ -1653,7 +1678,7 @@ namespace Microsoft.PythonTools.Intellisense {
                 new AP.DiagnosticsEvent {
                     documentUri = e.uri,
                     version = e._version ?? -1,
-                    diagnostics = e.diagnostics?.ToArray()
+                    diagnostics = e.diagnostics?.Where(d => d.severity != DiagnosticSeverity.Suppressed).ToArray()
                 }
             ).DoNotWait();
         }

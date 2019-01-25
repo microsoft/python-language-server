@@ -72,18 +72,18 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         internal static DiagnosticSeverity GetSeverity(Severity severity) {
             switch (severity) {
-                case Severity.Ignore: return DiagnosticSeverity.Unspecified;
+                case Severity.Ignore: return DiagnosticSeverity.Suppressed;
                 case Severity.Information: return DiagnosticSeverity.Information;
                 case Severity.Warning: return DiagnosticSeverity.Warning;
                 case Severity.Error: return DiagnosticSeverity.Error;
                 case Severity.FatalError: return DiagnosticSeverity.Error;
-                default: return DiagnosticSeverity.Unspecified;
+                default: return DiagnosticSeverity.Suppressed;
             }
         }
 
         internal static Severity GetSeverity(DiagnosticSeverity severity) {
             switch (severity) {
-                case DiagnosticSeverity.Unspecified: return Severity.Ignore;
+                case DiagnosticSeverity.Suppressed: return Severity.Ignore;
                 case DiagnosticSeverity.Information: return Severity.Information;
                 case DiagnosticSeverity.Warning: return Severity.Warning;
                 case DiagnosticSeverity.Error: return Severity.Error;

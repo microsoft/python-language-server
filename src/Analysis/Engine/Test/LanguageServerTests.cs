@@ -298,7 +298,7 @@ def f(a = 2, b): pass
                 DiagnosticSeverity.Error,
                 DiagnosticSeverity.Warning,
                 DiagnosticSeverity.Information,
-                DiagnosticSeverity.Unspecified
+                DiagnosticSeverity.Suppressed
             }) {
                 // For now, these options have to be configured directly
                 s.ParseQueue.InconsistentIndentation = tc;
@@ -317,7 +317,7 @@ def f(a = 2, b): pass
                 await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
 
                 var messages = GetDiagnostics(diags, mod).ToArray();
-                if (tc == DiagnosticSeverity.Unspecified) {
+                if (tc == DiagnosticSeverity.Suppressed) {
                     messages.Should().BeEmpty();
                 } else {
                     messages.Should().OnlyContain($"{tc};inconsistent whitespace;Python;2;0;1");
@@ -359,7 +359,7 @@ def f(a = 2, b): pass
                 await s.SendDidChangeConfiguration(newSettings);
 
                 await s.WaitForCompleteAnalysisAsync(CancellationToken.None);
-                GetDiagnostics(diags, u).Where(st => !st.StartsWith($"{DiagnosticSeverity.Unspecified}")).Should().BeEmpty();
+                GetDiagnostics(diags, u).Where(st => !st.StartsWith($"{DiagnosticSeverity.Suppressed}")).Should().BeEmpty();
             }
         }
 

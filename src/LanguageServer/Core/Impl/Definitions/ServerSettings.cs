@@ -48,7 +48,7 @@ namespace Microsoft.Python.LanguageServer {
                     _map[x] = DiagnosticSeverity.Error;
                 }
                 foreach (var x in disabled) {
-                    _map[x] = DiagnosticSeverity.Unspecified;
+                    _map[x] = DiagnosticSeverity.Suppressed;
                 }
 
                 this.errors = errors;
