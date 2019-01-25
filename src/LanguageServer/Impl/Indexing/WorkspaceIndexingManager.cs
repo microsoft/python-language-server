@@ -10,17 +10,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Python.LanguageServer.Implementation {
-    class WorkspaceManager {
+namespace Microsoft.Python.LanguageServer.Indexing {
+    class WorkspaceIndexingManager {
         private string _rootDir;
-        private string[] _incluideFiles;
+        private string[] _includeFiles;
         private string[] _excludeFiles;
         private IndexingFileParser _indexingFileParser;
         private Matcher _matcher;
 
-        public WorkspaceManager(string rootDir, string[] includeFiles, string[] excludeFiles, IndexingFileParser indexingFileParser) {
+        public WorkspaceIndexingManager(string rootDir, string[] includeFiles, string[] excludeFiles, IndexingFileParser indexingFileParser) {
             _rootDir = rootDir;
-            _incluideFiles = includeFiles;
+            _includeFiles = includeFiles;
             _excludeFiles = excludeFiles;
             _indexingFileParser = indexingFileParser;
             if (string.IsNullOrEmpty(_rootDir)) {
@@ -37,7 +37,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private void InitializeMatcher() {
             _matcher = new Matcher();
-            _matcher.AddIncludePatterns(_incluideFiles.IsNullOrEmpty() ? new[] { "**/*" } : _incluideFiles);
+            _matcher.AddIncludePatterns(_includeFiles.IsNullOrEmpty() ? new[] { "**/*" } : _includeFiles);
             _matcher.AddExcludePatterns(_excludeFiles ?? Enumerable.Empty<string>());
         }
 

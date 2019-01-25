@@ -143,7 +143,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             } finally {
                 if (enqueueForParsing) {
-                    _server.UpdateSymbolIndexFromDoc(uri, doc);
+                    _server.RunningDocumentIndexer.UpdateDocument(uri, doc);
                     _server.TraceMessage($"Applied changes to {uri}");
                     await _server.EnqueueItemAsync(doc, enqueueForAnalysis: @params._enqueueForAnalysis ?? true);
                 }

@@ -5,10 +5,10 @@ using System.Text;
 using Microsoft.PythonTools.Analysis.Indexing;
 using Microsoft.PythonTools.Parsing;
 
-namespace Microsoft.Python.LanguageServer.Implementation {
+namespace Microsoft.Python.LanguageServer.Indexing {
     class IndexingFileParser {
-        private SymbolIndex _index;
-        private PythonLanguageVersion _pythonLanguageVersion;
+        private readonly SymbolIndex _index;
+        private readonly PythonLanguageVersion _pythonLanguageVersion;
 
         public IndexingFileParser(SymbolIndex index, PythonLanguageVersion pythonLanguageVersion) {
             _index = index;
@@ -17,8 +17,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public void ParseForIndex(string path) {
             var uri = new Uri(path);
-            using (var stream = new StreamReader(uri.AbsolutePath)) {
-                var parser = Parser.CreateParser(stream, _pythonLanguageVersion);
+            using (var reader = new StringReader(uri.AbsolutePath)) {
+                var parser = Parser.CreateParser(reader, _pythonLanguageVersion);
                 var pythonAst = parser.ParseFile();
                 _index.UpdateParseTree(uri, pythonAst);
             }

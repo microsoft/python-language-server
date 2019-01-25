@@ -99,6 +99,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _editorFiles = new EditorFiles(this);
 
             SymbolIndex = new SymbolIndex();
+            RunningDocumentIndexer = new RunningDocumentIndexer(SymbolIndex, PythonLanguageVersion.V37);
 
             _disposableBag
                 .Add(() => {
@@ -185,7 +186,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 if (@params.textDocument.text != null) {
                     doc.ResetDocument(@params.textDocument.version, @params.textDocument.text);
                 }
-                UpdateSymbolIndexFromDoc(@params.textDocument.uri, doc);
+                RunningDocumentIndexer.UpdateDocument(@params.textDocument.uri, doc);
                 await EnqueueItemAsync(doc);
             } else if (entry == null) {
                 IAnalysisCookie cookie = null;
@@ -344,6 +345,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public ILogger Logger => this;
 
         internal WorkspaceManager WorkspaceManager { get; private set; }
+        internal RunningDocumentIndexer RunningDocumentIndexer { get; private set; }
 
         public PythonAst GetCurrentAst(Uri documentUri) {
             ProjectFiles.GetEntry(documentUri, null, out var entry, out var tree);
@@ -386,7 +388,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             IndexingFileParser IndexingFileParser = new IndexingFileParser(SymbolIndex, version.ToLanguageVersion());
             WorkspaceManager = new WorkspaceManager(_rootDir, @params.initializationOptions.includeFiles, @params.initializationOptions.excludeFiles, IndexingFileParser);
             WorkspaceManager.StartParseRootDir();
-            RunningDocumentIndexer RunningDocumentIndexer = new RunningDocumentIndexer(SymbolIndex, version.ToLanguageVersion(), WorkspaceManager);
 
             _disposableBag.ThrowIfDisposed();
             _clientCaps = @params.capabilities;
@@ -524,7 +525,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             pyItem.NewAnalysis += OnProjectEntryNewAnalysis;
 
             if (item is IDocument doc) {
-                UpdateSymbolIndexFromDoc(documentUri, doc);
                 await EnqueueItemAsync(doc);
             }
 
@@ -721,10 +721,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 await GetAnalysisAsync(pf.DocumentUri, cancellationToken);
             }
             TraceMessage($"Analysis complete.");
-        }
-
-        public void UpdateSymbolIndexFromDoc(Uri uri, IDocument doc) {
-
         }
     }
 }

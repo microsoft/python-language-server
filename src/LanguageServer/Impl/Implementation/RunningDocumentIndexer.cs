@@ -10,12 +10,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     class RunningDocumentIndexer {
         private SymbolIndex _index;
         private PythonLanguageVersion _pythonLanguageVersion;
-        private WorkspaceManager _workspaceManager;
+        //private WorkspaceManager _workspaceManager;
 
-        public RunningDocumentIndexer(SymbolIndex index, PythonLanguageVersion pythonLanguageVersion, WorkspaceManager workspaceManager) {
+        public RunningDocumentIndexer(SymbolIndex index, PythonLanguageVersion pythonLanguageVersion) {
             _index = index;
             _pythonLanguageVersion = pythonLanguageVersion;
-            _workspaceManager = workspaceManager;
+            //_workspaceManager = workspaceManager;
         }
 
         public void OpenDocument(Uri uri, IDocument doc) {
@@ -34,7 +34,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public void CloseDocument(Uri uri, IDocument doc) {
-            _workspaceManager.ReParseIfOnWorkspace(uri);
+            //_workspaceManager.ReParseIfOnWorkspace(uri);
         }
     }
 }
