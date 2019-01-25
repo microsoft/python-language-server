@@ -18,7 +18,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -39,6 +38,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             ExpressionLocator.FindExpression(analysis.Ast, location,
                 FindExpressionOptions.Hover, out var node, out var statement, out var scope);
+
+            if (node is ConstantExpression) {
+                return null; // No hover for literals.
+            }
 
             if (node is Expression expr) {
                 using (analysis.ExpressionEvaluator.OpenScope(scope)) {

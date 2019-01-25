@@ -72,8 +72,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
         private string GetFunctionHoverString(IPythonFunctionType ft, int overloadIndex = 0) {
             var sigString = GetSignatureString(ft, overloadIndex);
+            var decTypeString = ft.DeclaringType != null ? $"{ft.DeclaringType.Name}." : string.Empty;
             var funcDoc = !string.IsNullOrEmpty(ft.Documentation) ? $"\n\n{ft.Documentation}" : string.Empty;
-            return $"{sigString}{funcDoc}";
+            return $"{decTypeString}{sigString}{funcDoc}";
         }
 
         private IEnumerable<string> GetFunctionParameters(IPythonFunctionType ft, int overloadIndex = 0) {
