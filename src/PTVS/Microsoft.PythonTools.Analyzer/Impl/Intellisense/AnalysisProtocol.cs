@@ -59,8 +59,6 @@ namespace Microsoft.PythonTools.Intellisense {
             public bool analyzeAllFiles;
             [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
             public bool traceLogging;
-            [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-            public bool liveLinting;
         }
 
         public sealed class InterpreterInfo {
@@ -824,6 +822,8 @@ namespace Microsoft.PythonTools.Intellisense {
 
         public sealed class AnalysisOptions {
             public Severity indentationInconsistencySeverity;
+            public bool enableUnresolvedImportWarning;
+            public bool enableUseBeforeDefWarning;
             public Dictionary<string, DiagnosticSeverity> commentTokens;
             public Dictionary<string, int> analysisLimits;
             public LS.MessageType? traceLevel;

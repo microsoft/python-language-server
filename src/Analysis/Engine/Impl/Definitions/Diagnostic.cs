@@ -48,7 +48,7 @@ namespace Microsoft.PythonTools.Analysis {
     }
 
     public enum DiagnosticSeverity : int {
-        Unspecified = 0,
+        Suppressed = 0,
         Error = 1,
         Warning = 2,
         Information = 3,
