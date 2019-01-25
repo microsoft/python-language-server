@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -35,6 +36,17 @@ namespace Microsoft.Python.Analysis {
 
         public static T GetPythonType<T>(this IMember m) where T : class, IPythonType
             => m is IPythonType pt ? pt as T : (m as IPythonInstance)?.Type as T;
+
+        public static bool IsGeneric(this IMember m) {
+            var t = m.GetPythonType();
+            if(t is IGenericType || t is IGenericTypeParameter) {
+                return true;
+            }
+            if(m?.MemberType == PythonMemberType.Generic) {
+                return true;
+            }
+            return m is IVariable v && v.Value.MemberType == PythonMemberType.Generic;
+        }
 
         public static bool TryGetConstant<T>(this IMember m, out T value) {
             if (m is IPythonConstant c && c.TryGetValue<T>(out var v)) {

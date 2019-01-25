@@ -23,6 +23,7 @@ using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -113,6 +114,29 @@ class oar(list):
             result.Should().HaveItem("append")
                 .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super().append({parameterName})")
                 .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OverrideCompletionsNested() {
+            // Ensure that nested classes are correctly resolved.
+            const string code = @"
+class oar(int):
+    class fob(dict):
+        def 
+        pass
+    def 
+    pass
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var completionsOar = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 9));
+            completionsOar.Should().NotContainLabels("keys", "items")
+                .And.HaveItem("bit_length");
+
+            var completionsFob = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 13));
+            completionsFob.Should().NotContainLabels("bit_length")
+                .And.HaveLabels("keys", "items");
         }
     }
 }

@@ -17,6 +17,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Modules {
@@ -43,7 +44,7 @@ namespace Microsoft.Python.Analysis.Modules {
         protected override void OnAnalysisComplete() {
             foreach (var childModuleName in GetChildrenModuleNames()) {
                 var name = $"{Name}.{childModuleName}";
-                Analysis.GlobalScope.DeclareVariable(name, this, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable(name, this, VariableSource.Declaration, LocationInfo.Empty);
             }
             base.OnAnalysisComplete();
         }

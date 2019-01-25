@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -131,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // Actual parameter type will be determined when method is invoked.
                     // The reason is that if method might be called on a derived class.
                     // Declare self or cls in this scope.
-                    Eval.DeclareVariable(p0.Name, _self, p0.NameExpression);
+                    Eval.DeclareVariable(p0.Name, _self, VariableSource.Declaration, p0.NameExpression);
                     // Set parameter info.
                     var pi = new ParameterInfo(Ast, p0, _self);
                     pi.SetType(_self);
@@ -185,7 +186,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 }
             }
 
-            Eval.DeclareVariable(p.Name, paramType, p.NameExpression);
+            Eval.DeclareVariable(p.Name, paramType, VariableSource.Declaration, p.NameExpression);
         }
 
         private async Task EvaluateInnerFunctionsAsync(FunctionDefinition fd, CancellationToken cancellationToken = default) {

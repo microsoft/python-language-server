@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
@@ -69,7 +70,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     continue;
                 }
 
-                Eval.DeclareVariable(ne.Name, value, Eval.GetLoc(ne));
+                var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
+                Eval.DeclareVariable(ne.Name, value, source, Eval.GetLoc(ne));
             }
         }
 
@@ -99,7 +101,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             instance = instance ?? variableType?.CreateInstance(variableType.Name, Eval.GetLoc(expr.Expression), ArgumentSet.Empty) ?? Eval.UnknownType;
 
             if (expr.Expression is NameExpression ne) {
-                Eval.DeclareVariable(ne.Name, instance, expr.Expression);
+                Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, expr.Expression);
                 return;
             }
 

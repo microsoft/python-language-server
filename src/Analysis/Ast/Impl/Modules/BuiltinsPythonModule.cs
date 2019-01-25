@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
@@ -111,18 +112,21 @@ namespace Microsoft.Python.Analysis.Modules {
             _hiddenNames.Add("__builtin_module_names__");
 
             if (_boolType != null) {
-                Analysis.GlobalScope.DeclareVariable("True", _boolType, LocationInfo.Empty);
-                Analysis.GlobalScope.DeclareVariable("False", _boolType, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable("True", _boolType, VariableSource.Declaration, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable("False", _boolType, VariableSource.Declaration, LocationInfo.Empty);
             }
 
             if (noneType != null) {
-                Analysis.GlobalScope.DeclareVariable("None", noneType, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable("None", noneType, VariableSource.Declaration, LocationInfo.Empty);
             }
 
             foreach (var n in GetMemberNames()) {
                 var t = GetMember(n).GetPythonType();
                 if (t.TypeId == BuiltinTypeId.Unknown && t.MemberType != PythonMemberType.Unknown) {
-                    (t as PythonType)?.TrySetTypeId(BuiltinTypeId.Type);
+                    if (t is PythonType pt) {
+                        pt.TrySetTypeId(BuiltinTypeId.Type);
+                        pt.MakeReadOnly();
+                    }
                 }
             }
         }

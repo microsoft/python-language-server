@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public override Task<bool> WalkAsync(ClassDefinition cd, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             var classInfo = CreateClass(cd);
-            _eval.DeclareVariable(cd.Name, classInfo, GetLoc(cd));
+            _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, GetLoc(cd));
             _table.Add(new ClassEvaluator(_eval, cd));
             // Open class scope
             _scopes.Push(_eval.OpenScope(cd, out _));
@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private IMember AddFunction(FunctionDefinition node, IPythonType declaringType, LocationInfo loc) {
             if (!(_eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonFunctionType existing)) {
                 existing = new PythonFunctionType(node, _eval.Module, declaringType, loc);
-                _eval.DeclareVariable(node.Name, existing, loc);
+                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, loc);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
             return existing;
@@ -156,7 +156,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private PythonPropertyType AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo loc) {
             if (!(_eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonPropertyType existing)) {
                 existing = new PythonPropertyType(node, declaringModule, declaringType, isAbstract, loc);
-                _eval.DeclareVariable(node.Name, existing, loc);
+                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, loc);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
             return existing;

@@ -13,13 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
@@ -31,7 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var handler in node.Handlers.MaybeEnumerate()) {
                 if (handler.Test != null && handler.Target is NameExpression nex) {
                     var value = await Eval.GetValueFromExpressionAsync(handler.Test, cancellationToken);
-                    Eval.DeclareVariable(nex.Name, value, nex);
+                    Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, nex);
                 }
                 await handler.Body.WalkAsync(Walker, cancellationToken);
             }

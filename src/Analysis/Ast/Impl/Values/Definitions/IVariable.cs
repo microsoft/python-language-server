@@ -17,10 +17,46 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
+    /// Describes variable source. Used in filtering variables during completion
+    /// so the list does not show what the imported module has imported itself
+    /// or what generic variables it has declared for internal purposes.
+    /// </summary>
+    public enum VariableSource {
+        /// <summary>
+        /// Variable is user declaration.
+        /// </summary>
+        Declaration,
+        /// <summary>
+        /// Variable is import from another module.
+        /// </summary>
+        Import,
+        /// <summary>
+        /// Variable is a generic type definition.
+        /// </summary>
+        Generic,
+
+        /// <summary>
+        /// Variable is as reference to existing variable
+        /// declared as nonlocal or global.
+        /// </summary>
+        Locality
+    }
+
+    /// <summary>
     /// Represents a variable.
     /// </summary>
     public interface IVariable: ILocatedMember {
+        /// <summary>
+        /// Variable name.
+        /// </summary>
         string Name { get; }
+        /// <summary>
+        /// Variable source.
+        /// </summary>
+        VariableSource Source { get; }
+        /// <summary>
+        /// Variable value.
+        /// </summary>
         IMember Value { get; set; }
     }
 }

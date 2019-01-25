@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
@@ -27,6 +28,7 @@ namespace Microsoft.Python.Analysis.Types {
         private Func<string, string> _documentationProvider;
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
+        private bool _readonly;
 
         protected IReadOnlyDictionary<string, IMember> Members => WritableMembers;
 
@@ -118,6 +120,7 @@ namespace Microsoft.Python.Analysis.Types {
         internal virtual void SetDocumentationProvider(Func<string, string> provider) => _documentationProvider = provider;
 
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
+            Check.InvalidOperation(() => !variables.Any() || !_readonly, "Type is readonly and cannot accept new members");
             lock (_lock) {
                 foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
                     WritableMembers[v.Name] = v.Value.GetPythonType();
@@ -126,6 +129,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
+            Check.InvalidOperation(() => !members.Any() || !_readonly, "Type is readonly and cannot accept new members");
             lock (_lock) {
                 foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
                     WritableMembers[kv.Key] = kv.Value;
@@ -142,6 +146,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal IMember AddMember(string name, IMember member, bool overwrite) {
+            Check.InvalidOperation(() => !_readonly, "Type is readonly and cannot accept new members");
             lock (_lock) {
                 if (overwrite || !Members.ContainsKey(name)) {
                     WritableMembers[name] = member;
@@ -150,8 +155,9 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        internal bool IsHidden => ContainsMember("__hidden__");
+        internal void MakeReadOnly() => _readonly = true;
 
+        internal bool IsHidden => ContainsMember("__hidden__");
         protected bool ContainsMember(string name) => Members.ContainsKey(name);
         protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;
 

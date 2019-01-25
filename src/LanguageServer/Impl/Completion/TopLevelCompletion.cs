@@ -38,7 +38,9 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
 
             var eval = context.Analysis.ExpressionEvaluator;
-            var variables = eval.CurrentScope.EnumerateTowardsGlobal.SelectMany(s => s.Variables).ToArray();
+            var variables = eval.CurrentScope.EnumerateTowardsGlobal
+                .SelectMany(s => s.Variables.Where(v => v.Source == VariableSource.Declaration)).ToArray();
+
             var items = variables.Select(v => context.ItemSource.CreateCompletionItem(v.Name, v));
             
             var finder = new ExpressionFinder(context.Ast, new FindExpressionOptions { Calls = true });

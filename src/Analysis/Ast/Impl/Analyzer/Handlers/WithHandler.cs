@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (enter != null) {
                     var context = await Eval.GetValueFromFunctionTypeAsync(enter, null, null, cancellationToken);
                     if (item.Variable is NameExpression nex && !string.IsNullOrEmpty(nex.Name)) {
-                        Eval.DeclareVariable(nex.Name, context, Eval.GetLoc(item));
+                        Eval.DeclareVariable(nex.Name, context, VariableSource.Declaration, Eval.GetLoc(item));
                     }
                 }
             }

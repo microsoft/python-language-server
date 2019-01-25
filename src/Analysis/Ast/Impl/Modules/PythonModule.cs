@@ -146,7 +146,26 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IMemberContainer
         public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
-        public virtual IEnumerable<string> GetMemberNames() => Analysis.GlobalScope.Variables.Names;
+        public virtual IEnumerable<string> GetMemberNames() {
+            // Try __all__ since it contains exported members
+            var all = Analysis.GlobalScope.Variables["__all__"];
+            if (all?.Value is IPythonCollection collection) {
+                return collection.Contents
+                    .OfType<IPythonConstant>()
+                    .Select(c => c.Value)
+                    .OfType<string>()
+                    .Where(s => !string.IsNullOrEmpty(s));
+            }
+
+            // __all__ is not declared. Try filtering by origin:
+            // drop imported modules and generics.
+            return Analysis.GlobalScope.Variables
+                .Where(v => v.Source == VariableSource.Declaration
+                            && v.Value?.MemberType != PythonMemberType.Generic
+                            && !(v.Value.GetPythonType() is PythonModule)
+                            && !(!IsSpecialized && v.Value?.GetPythonType().IsSpecialized == true))
+                .Select(v => v.Name);
+        }
         #endregion
 
         #region IPythonFile
@@ -175,7 +194,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// analysis until later time, when module members are actually needed.
         /// </summary>
         public virtual Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) {
-            if(_awaiting.Value) {
+            if (_awaiting.Value) {
                 return Task.FromResult(Analysis);
             }
             _awaiting.Value = true;
@@ -190,7 +209,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     var code = FileSystem.ReadAllText(FilePath);
                     ContentState = State.Loaded;
                     return code;
-                } catch(IOException) { } catch(UnauthorizedAccessException) { }
+                } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
             return null; // Keep content as null so module can be loaded later.
         }
@@ -217,7 +236,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     content = content ?? LoadContent();
                     _buffer.Reset(0, content);
                     ContentState = State.Loaded;
-                } catch(IOException) { } catch (UnauthorizedAccessException) { }
+                } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }
         #endregion
@@ -526,7 +545,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (f == null) {
                 f = PythonFunctionType.ForSpecialization(name, this);
                 f.AddOverload(new PythonFunctionOverload(name, this, LocationInfo.Empty));
-                Analysis.GlobalScope.DeclareVariable(name, f, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable(name, f, VariableSource.Declaration, LocationInfo.Empty);
             }
             return f;
         }

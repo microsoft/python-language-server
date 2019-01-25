@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -64,7 +65,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 _class.SetBases(Interpreter, bases);
 
                 // Declare __class__ variable in the scope.
-                Eval.DeclareVariable("__class__", _class, _classDef);
+                Eval.DeclareVariable("__class__", _class, VariableSource.Declaration, _classDef);
 
                 await ProcessClassBody(cancellationToken);
             }
@@ -139,7 +140,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void UpdateClassMembers() {
             // Add members from this file
-            _class.AddMembers(Eval.CurrentScope.Variables, false);
+            var members = Eval.CurrentScope.Variables.Where(v => Eval.Module.Equals(v.Value?.GetPythonType().DeclaringModule));
+            _class.AddMembers(members, false);
             // Add members from stub
             var stubClass = Eval.Module.Stub?.GetMember<IPythonClassType>(_class.Name);
             _class.AddMembers(stubClass, false);

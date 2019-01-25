@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -85,7 +86,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var memberName = memberReference.Name;
 
                 var member = Module.GetMember(importName);
-                Eval.DeclareVariable(memberName, member ?? Eval.UnknownType, Eval.GetLoc(names[i]));
+                Eval.DeclareVariable(memberName, member ?? Eval.UnknownType, VariableSource.Declaration, Eval.GetLoc(names[i]));
             }
         }
 
@@ -109,7 +110,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var memberName = memberReference.Name;
 
                 var type = module?.GetMember(memberReference.Name);
-                Eval.DeclareVariable(memberName, type, names[i]);
+                Eval.DeclareVariable(memberName, type, VariableSource.Import, names[i]);
             }
         }
 
@@ -129,7 +130,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     await ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
                 }
 
-                Eval.DeclareVariable(memberName, member, module.Location);
+                Eval.DeclareVariable(memberName, member, VariableSource.Import, module.Location);
             }
         }
 
@@ -139,7 +140,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: Need tracking of previous imports to determine possible imports for namespace package. For now import nothing
-                Eval.DeclareVariable("*", Eval.UnknownType, Eval.GetLoc(names[0]));
+                Eval.DeclareVariable("*", Eval.UnknownType, VariableSource.Import, Eval.GetLoc(names[0]));
                 return;
             }
 
@@ -157,7 +158,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     member = Eval.UnknownType;
                 }
 
-                Eval.DeclareVariable(memberName, member, location);
+                Eval.DeclareVariable(memberName, member, VariableSource.Import, location);
             }
         }
     }

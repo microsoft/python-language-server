@@ -39,10 +39,17 @@ namespace Microsoft.Python.LanguageServer.Completion {
         private static async Task<IEnumerable<CompletionItem>> GetItemsFromExpressionAsync(Expression e, CompletionContext context, CancellationToken cancellationToken = default) {
             var value = await context.Analysis.ExpressionEvaluator.GetValueFromExpressionAsync(e, cancellationToken);
             if (!value.IsUnknown()) {
+                var items = new List<CompletionItem>();
                 var type = value.GetPythonType();
                 var names = type.GetMemberNames().ToArray();
-                var types = names.Select(n => type.GetMember(n)).ToArray();
-                return names.Zip(types, (n, t) => context.ItemSource.CreateCompletionItem(n, t));
+                foreach (var t in names) {
+                    var m = type.GetMember(t);
+                    if(m is IVariable v && v.Source != VariableSource.Declaration) {
+                        continue;
+                    }
+                    items.Add(context.ItemSource.CreateCompletionItem(t, m));
+                }
+                return items;
             }
             return Enumerable.Empty<CompletionItem>();
         }
