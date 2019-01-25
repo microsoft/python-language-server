@@ -14,20 +14,19 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
-using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.LanguageServer.Signatures {
+namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class SignatureSource {
         private readonly IDocumentationSource _docSource;
 
@@ -36,6 +35,10 @@ namespace Microsoft.Python.LanguageServer.Signatures {
         }
 
         public async Task<SignatureHelp> GetSignatureAsync(IDocumentAnalysis analysis, SourceLocation location, CancellationToken cancellationToken = default) {
+            if (analysis is EmptyAnalysis) {
+                return null;
+            }
+
             ExpressionLocator.FindExpression(analysis.Ast, location,
                 FindExpressionOptions.Hover, out var node, out var statement, out var scope);
 

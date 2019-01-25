@@ -13,12 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.LanguageServer.Implementation;
-using Microsoft.Python.LanguageServer.Tooltips;
+using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -52,7 +50,7 @@ def func(a, b):
 y = func(1, 2)
 ";
             var analysis = await GetAnalysisAsync(code);
-            var hs = new HoverSource(new PlainTextDocSource());
+            var hs = new HoverSource(new PlainTextDocumentationSource());
 
             var hover = await hs.GetHoverAsync(analysis, new SourceLocation(2, 2));
             hover.contents.value.Should().Be("x: str");

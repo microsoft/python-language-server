@@ -13,26 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Tests;
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core.Text;
-using Microsoft.Python.LanguageServer.Completion;
-using Microsoft.Python.LanguageServer.Documentation;
-using Microsoft.Python.LanguageServer.Implementation;
-using Microsoft.Python.LanguageServer.Protocol;
-using Microsoft.Python.LanguageServer.Tooltips;
 
 namespace Microsoft.Python.LanguageServer.Tests {
     public abstract class LanguageServerTestBase : AnalysisTestBase {
-        protected static readonly IDocumentationSource TestDocumentationSource = new TestDocSource();
         protected static readonly ServerSettings ServerSettings = new ServerSettings();
-
-        protected sealed class TestDocSource : IDocumentationSource {
-            public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
-            public MarkupContent GetDocumentation(string name, IPythonType type)
-                => new MarkupContent { kind = MarkupKind.PlainText, value = type.Documentation ?? type.Name };
-        }
     }
 }

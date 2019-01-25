@@ -16,10 +16,10 @@
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.LanguageServer.Protocol;
 
-namespace Microsoft.Python.LanguageServer.Documentation {
+namespace Microsoft.Python.LanguageServer {
     public interface IDocumentationSource {
         InsertTextFormat DocumentationFormat { get; }
-        MarkupContent GetTypeDocumentation(string name, IPythonType type);
+        MarkupContent GetTypeHover(string name, IPythonType type);
         string GetSignatureString(IPythonFunctionType ft, int overloadIndex = 0);
         MarkupContent FormatParameterDocumentation(IParameterInfo parameter);
         MarkupContent FormatDocumentation(string documentation);

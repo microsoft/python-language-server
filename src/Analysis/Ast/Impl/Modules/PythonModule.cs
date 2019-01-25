@@ -24,7 +24,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -52,6 +51,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Analyzed
         }
 
+        private readonly AsyncLocal<bool> _awaiting = new AsyncLocal<bool>();
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Modules {
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
         protected IServiceContainer Services { get; }
-        protected IDocumentAnalysis Analysis { get; private set; } = DocumentAnalysis.Empty;
+        protected IDocumentAnalysis Analysis { get; private set; }
         protected object AnalysisLock { get; } = new object();
         protected State ContentState { get; set; } = State.None;
 
@@ -79,6 +79,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             Log = services?.GetService<ILogger>();
             Interpreter = services?.GetService<IPythonInterpreter>();
+            Analysis = new EmptyAnalysis(services, this);
         }
 
         protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, IServiceContainer services) :
@@ -174,6 +175,10 @@ namespace Microsoft.Python.Analysis.Modules {
         /// analysis until later time, when module members are actually needed.
         /// </summary>
         public virtual Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) {
+            if(_awaiting.Value) {
+                return Task.FromResult(Analysis);
+            }
+            _awaiting.Value = true;
             InitializeContent(null);
             return GetAnalysisAsync(cancellationToken);
         }
@@ -309,6 +314,8 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private void Parse() {
+            _awaiting.Value = false;
+
             _parseCts?.Cancel();
             _parseCts = new CancellationTokenSource();
 

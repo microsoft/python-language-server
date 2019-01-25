@@ -15,7 +15,6 @@
 
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Completion {
@@ -55,7 +54,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 // Place regular items first, advanced entries last
                 sortText = char.IsLetter(text, 0) ? "1" : "2",
                 kind = kind,
-                documentation = t != null ? _docSource.GetTypeDocumentation(label ?? text, t) : null
+                documentation = t != null ? _docSource.GetTypeHover(label ?? text, t) : null
             };
         }
 

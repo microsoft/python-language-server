@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis {
             if (src != null && dst is PythonType pt) {
                 pt.TrySetTypeId(dst.TypeId);
                 var documentation = src.Documentation;
-                if (!string.IsNullOrEmpty(documentation)) {
+                if (string.IsNullOrEmpty(pt.Documentation) && !string.IsNullOrEmpty(documentation)) {
                     pt.SetDocumentationProvider(_ => documentation);
                 }
             }

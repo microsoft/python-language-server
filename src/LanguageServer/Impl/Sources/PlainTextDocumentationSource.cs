@@ -13,42 +13,37 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.LanguageServer.Protocol;
 
-namespace Microsoft.Python.LanguageServer.Implementation {
-    internal sealed class PlainTextDocSource : IDocumentationSource {
+namespace Microsoft.Python.LanguageServer.Sources {
+    internal sealed class PlainTextDocumentationSource : IDocumentationSource {
         public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
 
-        public MarkupContent GetTypeDocumentation(string name, IPythonType type) {
-            string text;
-            switch (type) {
-                case IPythonFunctionType ft: {
-                        var o = ft.Overloads.First();
-                        var declType = ft.DeclaringType != null ? $"{ft.DeclaringType.Name}." : string.Empty;
-                        var skip = ft.IsStatic || ft.IsUnbound ? 0 : 1;
-                        var parms = o.Parameters.Skip(skip).Select(p => string.IsNullOrEmpty(p.DefaultValueString) ? p.Name : $"{p.Name}={p.DefaultValueString}");
-                        var parmString = string.Join(", ", parms);
-                        var annString = string.IsNullOrEmpty(o.ReturnDocumentation) ? string.Empty : $" -> {o.ReturnDocumentation}";
-                        var funcDoc = !string.IsNullOrEmpty(ft.Documentation) ? $"\n\n{ft.Documentation}" : string.Empty;
-                        text = $"{declType}{ft.Name}({parmString}){annString}{funcDoc}";
-                    }
-                    break;
-                case IPythonClassType cls: {
+        public MarkupContent GetTypeHover(string name, IPythonType type) {
+            string text = name;
+            if (!type.IsUnknown()) {
+                switch (type) {
+                    case IPythonFunctionType ft:
+                        text = GetFunctionHoverString(ft);
+                        break;
+                    case IPythonClassType cls: {
                         var clsDoc = !string.IsNullOrEmpty(cls.Documentation) ? $"\n\n{cls.Documentation}" : string.Empty;
                         text = string.IsNullOrEmpty(name) ? $"class {cls.Name}{clsDoc}" : $"{name}: {cls.Name}";
                         break;
                     }
-                default: {
+                    default: {
                         var typeDoc = !string.IsNullOrEmpty(type.Documentation) ? $"\n\n{type.Documentation}" : string.Empty;
                         text = !string.IsNullOrEmpty(name) ? $"{name}: {type.Name}{typeDoc}" : $"{type.Name}{typeDoc}";
                         break;
                     }
 
+                }
             }
+
             return new MarkupContent { kind = MarkupKind.PlainText, value = text };
         }
 
@@ -58,10 +53,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public string GetSignatureString(IPythonFunctionType ft, int overloadIndex = 0) {
             var o = ft.Overloads[overloadIndex];
-            var skip = ft.IsStatic || ft.IsUnbound ? 0 : 1;
-            var parms = o.Parameters.Skip(skip).Select(p => string.IsNullOrEmpty(p.DefaultValueString) ? p.Name : $"{p.Name}={p.DefaultValueString}");
+
+            var parms = GetFunctionParameters(ft);
             var parmString = string.Join(", ", parms);
             var annString = string.IsNullOrEmpty(o.ReturnDocumentation) ? string.Empty : $" -> {o.ReturnDocumentation}";
+
             return $"{ft.Name}({parmString}){annString}";
         }
 
@@ -72,6 +68,23 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             // TODO: show fully qualified type?
             var text = parameter.Type.IsUnknown() ? parameter.Name : $"{parameter.Name}: {parameter.Type.Name}";
             return new MarkupContent { kind = MarkupKind.PlainText, value = text };
+        }
+
+        private string GetFunctionHoverString(IPythonFunctionType ft, int overloadIndex = 0) {
+            var sigString = GetSignatureString(ft, overloadIndex);
+            var funcDoc = !string.IsNullOrEmpty(ft.Documentation) ? $"\n\n{ft.Documentation}" : string.Empty;
+            return $"{sigString}{funcDoc}";
+        }
+
+        private IEnumerable<string> GetFunctionParameters(IPythonFunctionType ft, int overloadIndex = 0) {
+            var o = ft.Overloads[overloadIndex]; // TODO: display all?
+            var skip = ft.IsStatic || ft.IsUnbound ? 0 : 1;
+            return o.Parameters.Skip(skip).Select(p => {
+                if (!string.IsNullOrEmpty(p.DefaultValueString)) {
+                    return $"{p.Name}={p.DefaultValueString}";
+                }
+                return p.Type.IsUnknown() ? p.Name : $"{p.Name}: {p.Type.Name}";
+            });
         }
     }
 }

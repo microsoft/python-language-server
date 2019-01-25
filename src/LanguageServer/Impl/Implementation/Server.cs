@@ -31,8 +31,7 @@ using Microsoft.Python.Core.Shell;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Diagnostics;
 using Microsoft.Python.LanguageServer.Protocol;
-using Microsoft.Python.LanguageServer.Signatures;
-using Microsoft.Python.LanguageServer.Tooltips;
+using Microsoft.Python.LanguageServer.Sources;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server : IDisposable {
@@ -123,7 +122,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             DisplayStartupInfo();
 
-            var ds = new PlainTextDocSource();
+            var ds = new PlainTextDocumentationSource();
             _completionSource = new CompletionSource(ds, Settings.completion);
             _hoverSource = new HoverSource(ds);
             _signatureSource = new SignatureSource(ds);

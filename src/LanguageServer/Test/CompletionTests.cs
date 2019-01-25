@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
+using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -45,7 +46,7 @@ class C:
 
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(TestDocumentationSource, ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 1))).Completions.ToArray();
             comps.Select(c => c.label).Should().Contain("C", "x", "y", "while", "for", "yield");
         }
@@ -57,7 +58,7 @@ x = 'str'
 x.
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(TestDocumentationSource, ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3))).Completions.ToArray();
             comps.Select(c => c.label).Should().Contain(new[] { @"isupper", @"capitalize", @"split" });
         }
@@ -69,7 +70,7 @@ import datetime
 datetime.datetime.
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(TestDocumentationSource, ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 19))).Completions.ToArray();
             comps.Select(c => c.label).Should().Contain(new[] { "now", @"tzinfo", @"ctime" });
         }
@@ -84,7 +85,7 @@ ABC
 ABCDE.me
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(TestDocumentationSource, ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 4))).Completions.ToArray();
             comps.Select(c => c.label).Should().Contain(@"ABCDE");
 

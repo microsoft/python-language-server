@@ -32,6 +32,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (node.Root == null || node.Names == null || Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
+            // If stub is available, ignore imports
+            if (Module.ModuleType == ModuleType.Library && Module.Stub != null) {
+                return false;
+            }
 
             var rootNames = node.Root.Names;
             if (rootNames.Count == 1) {

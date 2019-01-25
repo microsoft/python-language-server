@@ -91,13 +91,15 @@ namespace Microsoft.Python.Analysis.Types {
 
         public override string Documentation {
             get {
+                // Try doc from the type (class definition AST node).
                 var doc = base.Documentation;
-                if (string.IsNullOrEmpty(doc) && Bases != null) {
-                    // Try bases
-                    doc = Bases.FirstOrDefault(b => !string.IsNullOrEmpty(b?.Documentation))?.Documentation;
-                }
+                // Try docs __init__.
                 if (string.IsNullOrEmpty(doc)) {
                     doc = GetMember("__init__")?.GetPythonType()?.Documentation;
+                }
+                // Try bases.
+                if (string.IsNullOrEmpty(doc) && Bases != null) {
+                    doc = Bases.FirstOrDefault(b => !string.IsNullOrEmpty(b?.Documentation))?.Documentation;
                 }
                 return doc;
             }

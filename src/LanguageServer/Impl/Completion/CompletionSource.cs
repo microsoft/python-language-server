@@ -19,7 +19,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
@@ -42,7 +41,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
             switch (expression) {
                 case MemberExpression me when me.Target != null && me.DotIndex > me.StartIndex && context.Position > me.DotIndex:
                     return new CompletionResult(await ExpressionCompletion.GetCompletionsFromMembersAsync(me.Target, scope, context, cancellationToken));
-                case ConstantExpression ce when ce.Value != null:
+                case ConstantExpression ce when ce.Value is int:
+                    // no completions on integer ., the user is typing a float
                 case null when context.Ast.IsInsideComment(context.Location):
                     return CompletionResult.Empty;
             }

@@ -183,6 +183,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             instance = instance ?? m as IPythonInstance;
             var type = m.GetPythonType(); // Try inner type
             var value = type?.GetMember(expr.Name);
+
+            // Class type GetMember returns a type. However, class members are
+            // mostly instances (consider self.x = 1, x is an instance of int).
+            // However, it is indeed possible to have them as types, like in
+            //  class X ...
+            //  class C: ...
+            //      self.x = X
+            // which is somewhat rare as compared to self.x = X() but does happen.
+
             switch (value) {
                 case IPythonClassType _:
                     return value;

@@ -31,6 +31,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (node.Names == null || Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
+            // If stub is available, ignore imports
+            if(Module.ModuleType == ModuleType.Library && Module.Stub != null) {
+                return false;
+            }
 
             var len = Math.Min(node.Names.Count, node.AsNames.Count);
             for (var i = 0; i < len; i++) {

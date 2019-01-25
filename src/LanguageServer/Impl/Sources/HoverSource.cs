@@ -16,14 +16,15 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
-using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.LanguageServer.Tooltips {
+namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class HoverSource {
         private readonly IDocumentationSource _docSource;
 
@@ -32,6 +33,10 @@ namespace Microsoft.Python.LanguageServer.Tooltips {
         }
 
         public async Task<Hover> GetHoverAsync(IDocumentAnalysis analysis, SourceLocation location, CancellationToken cancellationToken = default) {
+            if (analysis is EmptyAnalysis) {
+                return new Hover { contents = Resources.AnalysisIsInProgressHover };
+            }
+
             ExpressionLocator.FindExpression(analysis.Ast, location,
                 FindExpressionOptions.Hover, out var node, out var statement, out var scope);
 
@@ -44,9 +49,14 @@ namespace Microsoft.Python.LanguageServer.Tooltips {
                             start = expr.GetStart(analysis.Ast),
                             end = expr.GetEnd(analysis.Ast),
                         };
-                        var name = statement is ClassDefinition || statement is FunctionDefinition ? null : (node as NameExpression)?.Name;
+
+                        // Figure out name, if any
+                        var name = (expr as MemberExpression)?.Name;
+                        name = name ?? (node as NameExpression)?.Name;
+                        name = statement is ClassDefinition || statement is FunctionDefinition ? null : name;
+
                         return new Hover {
-                            contents = _docSource.GetTypeDocumentation(name, type),
+                            contents = _docSource.GetTypeHover(name, type),
                             range = range
                         };
                     }

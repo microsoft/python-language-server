@@ -13,8 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
@@ -23,12 +26,11 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class DocumentAnalysis : IDocumentAnalysis {
-        public static readonly IDocumentAnalysis Empty = new EmptyAnalysis();
-
         public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, IExpressionEvaluator eval) {
             Check.ArgumentNotNull(nameof(document), document);
             Check.ArgumentNotNull(nameof(globalScope), globalScope);
@@ -66,19 +68,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         public IExpressionEvaluator ExpressionEvaluator { get; }
         #endregion
-
-        private sealed class EmptyAnalysis : IDocumentAnalysis {
-            public EmptyAnalysis(IDocument document = null) {
-                Document = document;
-                GlobalScope = new EmptyGlobalScope(document);
-            }
-
-            public IDocument Document { get; }
-            public int Version { get; } = -1;
-            public IGlobalScope GlobalScope { get; }
-            public PythonAst Ast => null;
-            public IExpressionEvaluator ExpressionEvaluator => null;
-            public IEnumerable<DiagnosticsEntry> Diagnostics => Enumerable.Empty<DiagnosticsEntry>();
-        }
     }
+
+    public sealed class EmptyAnalysis : IDocumentAnalysis {
+        public EmptyAnalysis(IServiceContainer services, IDocument document) {
+            Document = document ?? throw new ArgumentNullException(nameof(document));
+            GlobalScope = new EmptyGlobalScope(document);
+            Ast = Parser.CreateParser(new StringReader(string.Empty), PythonLanguageVersion.None).ParseFile();
+            ExpressionEvaluator = new ExpressionEval(services, document, Ast);
+        }
+
+        public IDocument Document { get; }
+        public int Version { get; } = -1;
+        public IGlobalScope GlobalScope { get; }
+        public PythonAst Ast { get; }
+        public IExpressionEvaluator ExpressionEvaluator { get; }
+        public IEnumerable<DiagnosticsEntry> Diagnostics => Enumerable.Empty<DiagnosticsEntry>();
+    }
+
 }

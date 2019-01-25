@@ -83,21 +83,21 @@ namespace Microsoft.Python.Analysis.Modules {
             )) {
                 proc.StartInfo.StandardOutputEncoding = Encoding.UTF8;
                 proc.OnOutputLine = s => sb.AppendLine(s);
-                proc.OnErrorLine = s => Log?.Log(TraceEventType.Error, "Scrape", s);
+                proc.OnErrorLine = s => Log?.Log(TraceEventType.Warning, "Scrape", s);
 
-                Log?.Log(TraceEventType.Information, "Scrape", proc.FileName, proc.Arguments);
+                Log?.Log(TraceEventType.Verbose, "Scrape", proc.FileName, proc.Arguments);
 
                 proc.Start();
                 var exitCode = proc.Wait(60000);
 
                 if (exitCode == null) {
                     proc.Kill();
-                    Log?.Log(TraceEventType.Error, "ScrapeTimeout", proc.FileName, proc.Arguments);
+                    Log?.Log(TraceEventType.Warning, "ScrapeTimeout", proc.FileName, proc.Arguments);
                     return string.Empty;
                 }
 
                 if (exitCode != 0) {
-                    Log?.Log(TraceEventType.Error, "Scrape", "ExitCode", exitCode);
+                    Log?.Log(TraceEventType.Warning, "Scrape", "ExitCode", exitCode);
                     return string.Empty;
                 }
             }
