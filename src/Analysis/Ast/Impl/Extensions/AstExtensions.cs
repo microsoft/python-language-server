@@ -66,7 +66,9 @@ namespace Microsoft.Python.Analysis {
 
         public static bool IsInParameter(this FunctionDefinition fd, PythonAst tree, SourceLocation location) {
             var index = tree.LocationToIndex(location);
-            if (index < fd.StartIndex || index >= fd.Body.StartIndex) {
+            if (index < fd.StartIndex 
+                || (fd.Body != null && index >= fd.Body.StartIndex) 
+                || (fd.NameExpression != null && index > fd.NameExpression.EndIndex)) {
                 // Not within the def line
                 return false;
             }

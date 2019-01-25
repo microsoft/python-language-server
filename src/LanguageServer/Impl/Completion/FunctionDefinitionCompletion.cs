@@ -28,7 +28,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class FunctionDefinitionCompletion {
         public static CompletionResult GetCompletionsForOverride(FunctionDefinition function, CompletionContext context, SourceLocation? location = null) {
-            if (NoCompletions(function, context.Position)) {
+            if (NoCompletions(function, context.Position, context.Ast)) {
                 return CompletionResult.Empty;
             }
 
@@ -108,7 +108,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
             var handled = new HashSet<string>(scope.Children.Select(child => child.Name));
 
-            var classType = scope.OuterScope.Variables[cls.Name]?.GetPythonType<IPythonClassType>();
+            var classVar = scope.OuterScope.Variables[cls.Name];
+            var classType = classVar?.GetValue<IMember>()?.GetPythonType<IPythonClassType>();
             if (classType?.Mro == null) {
                 return result;
             }
@@ -133,7 +134,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             return result;
         }
 
-        private static bool NoCompletions(FunctionDefinition fd, int position) {
+        private static bool NoCompletions(FunctionDefinition fd, int position, PythonAst ast) {
             // Here we work backwards through the various parts of the definitions.
             // When we find that Index is within a part, we return either the available
             // completions 
@@ -157,8 +158,16 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 }
             }
 
-            if (fd.NameExpression != null && fd.NameExpression.StartIndex > fd.KeywordEndIndex && position >= fd.NameExpression.StartIndex) {
-                return true;
+            if (fd.NameExpression != null) {
+                if (fd.NameExpression.StartIndex > fd.KeywordEndIndex && position >= fd.NameExpression.StartIndex) {
+                    return true;
+                }
+
+                var defLine = ast.IndexToLocation(fd.KeywordEndIndex).Line;
+                var posLine = ast.IndexToLocation(position).Line;
+                if (fd.NameExpression.StartIndex == fd.NameExpression.EndIndex && defLine == posLine) {
+                    return false;
+                }
             }
 
             return position > fd.KeywordEndIndex;

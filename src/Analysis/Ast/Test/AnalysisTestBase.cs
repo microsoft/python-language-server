@@ -33,6 +33,7 @@ using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Tests;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using TestUtilities;
 
@@ -85,15 +86,17 @@ namespace Microsoft.Python.Analysis.Tests {
             return sm;
         }
 
+        protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, PythonLanguageVersion version, string modulePath = null)
+            => GetAnalysisAsync(code, PythonVersions.GetRequiredCPythonConfiguration(version), modulePath);
+
         protected async Task<IDocumentAnalysis> GetAnalysisAsync(
             string code,
             InterpreterConfiguration configuration = null,
-            string moduleName = null,
             string modulePath = null) {
 
             var moduleUri = TestData.GetDefaultModuleUri();
             modulePath = modulePath ?? TestData.GetDefaultModulePath();
-            moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
             var services = await CreateServicesAsync(moduleDirectory, configuration);
@@ -156,7 +159,7 @@ namespace Microsoft.Python.Analysis.Tests {
             }
 
             public void Add(Uri documentUri, DiagnosticsEntry entry) {
-                lock(_lock) {
+                lock (_lock) {
                     if (!_diagnostics.TryGetValue(documentUri, out var list)) {
                         _diagnostics[documentUri] = list = new List<DiagnosticsEntry>();
                     }

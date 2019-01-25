@@ -99,14 +99,14 @@ ABCDE.me
 
         [DataRow(PythonLanguageVersion.V36, "value")]
         [DataRow(PythonLanguageVersion.V37, "object")]
-        //[DataTestMethod]
+        [DataTestMethod]
         public async Task OverrideCompletions3X(PythonLanguageVersion version, string parameterName) {
             const string code = @"
 class oar(list):
     def 
     pass
 ";
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, version);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
 

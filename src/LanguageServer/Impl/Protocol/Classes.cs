@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Python.Core.Text;
 using Newtonsoft.Json;
 
@@ -556,6 +557,7 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     }
 
     [Serializable]
+    [DebuggerDisplay("{label}")]
     public class CompletionItem {
         public string label;
         public CompletionItemKind kind;

@@ -38,8 +38,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                foreach (var decorator in Decorators.MaybeEnumerate()) {
-                    await decorator?.WalkAsync(walker, cancellationToken);
+                foreach (var decorator in Decorators.MaybeEnumerate().ExcludeDefault()) {
+                    await decorator.WalkAsync(walker, cancellationToken);
                 }
             }
             await walker.PostWalkAsync(this, cancellationToken);
