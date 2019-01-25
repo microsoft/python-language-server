@@ -13,12 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
+using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.Sources;
+using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
+using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -60,7 +64,7 @@ x.
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(new[] { @"isupper", @"capitalize", @"split" });
+            comps.Select(c => c.label).Should().Contain(new[] {@"isupper", @"capitalize", @"split"});
         }
 
         [TestMethod, Priority(0)]
@@ -72,7 +76,7 @@ datetime.datetime.
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 19))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(new[] { "now", @"tzinfo", @"ctime" });
+            comps.Select(c => c.label).Should().Contain(new[] {"now", @"tzinfo", @"ctime"});
         }
 
         [TestMethod, Priority(0)]
@@ -91,6 +95,24 @@ ABCDE.me
 
             comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 9))).Completions.ToArray();
             comps.Select(c => c.label).Should().Contain("method1");
+        }
+
+        [DataRow(PythonLanguageVersion.V36, "value")]
+        [DataRow(PythonLanguageVersion.V37, "object")]
+        //[DataTestMethod]
+        public async Task OverrideCompletions3X(PythonLanguageVersion version, string parameterName) {
+            const string code = @"
+class oar(list):
+    def 
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
+
+            result.Should().HaveItem("append")
+                .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super().append({parameterName})")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
     }
 }

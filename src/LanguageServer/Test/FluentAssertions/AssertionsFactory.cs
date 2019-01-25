@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Tests.FluentAssertions {
@@ -22,5 +23,11 @@ namespace Microsoft.Python.LanguageServer.Tests.FluentAssertions {
     internal static class AssertionsFactory {
         public static TextEditCollectionAssertions Should(this IEnumerable<TextEdit> textEdits)
             => new TextEditCollectionAssertions(textEdits);
+
+        public static CompletionResultAssertions Should(this CompletionResult completionResult)
+            => new CompletionResultAssertions(completionResult);
+
+        public static CompletionItemAssertions Should(this CompletionItem completionItem)
+            => new CompletionItemAssertions(completionItem);
     }
 }

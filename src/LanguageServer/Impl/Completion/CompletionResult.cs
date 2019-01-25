@@ -22,14 +22,14 @@ namespace Microsoft.Python.LanguageServer.Completion {
     internal sealed class CompletionResult {
         public static readonly CompletionResult Empty = new CompletionResult(Enumerable.Empty<CompletionItem>());
 
-        public IEnumerable<CompletionItem> Completions { get; }
+        public IReadOnlyList<CompletionItem> Completions { get; }
         public SourceSpan? ApplicableSpan { get; }
 
         public CompletionResult(IEnumerable<CompletionItem> completions, SourceSpan? applicableSpan) : this(completions) {
             ApplicableSpan = applicableSpan;
         }
         public CompletionResult(IEnumerable<CompletionItem> completions) {
-            Completions = completions;
+            Completions = completions.ToArray();
         }
     }
 }
