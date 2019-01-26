@@ -117,26 +117,313 @@ class oar(list):
         }
 
         [TestMethod, Priority(0)]
-        public async Task OverrideCompletionsNested() {
-            // Ensure that nested classes are correctly resolved.
+        public async Task TypeAtEndOfMethod() {
             const string code = @"
-class oar(int):
-    class fob(dict):
-        def 
+class Fob(object):
+    def oar(self, a):
         pass
-    def 
-    pass
+
+
+    def fob(self):
+        pass
+
+x = Fob()
+x.oar(100)
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8));
+            result.Should().HaveItem("a");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeAtEndOfIncompleteMethod() {
+            var code = @"
+class Fob(object):
+    def oar(self, a):
+
+
+
+x = Fob()
+x.oar(100)
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8));
+            result.Should().HaveItem("a")
+                .Which.Should().HaveDocumentation("int");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeIntersectionUserDefinedTypes() {
+            const string code = @"
+class C1(object):
+    def fob(self): pass
+
+class C2(object):
+    def oar(self): pass
+
+c = C1()
+c.fob()
+c = C2()
+c.
+";
+
+
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(11, 3));
+            result.Should().NotContainLabels("fob");
+            result.Should().HaveLabels("oar");
+        }
+
+        [DataRow(false, "B, self")]
+        [DataRow(true, "")]
+        [DataTestMethod, Priority(0)]
+        public async Task ForOverrideArgs(bool is3x, string superArgs) {
+            const string code = @"
+class A(object):
+    def foo(self, a, b=None, *args, **kwargs):
+        pass
+
+class B(A):
+    def f";
+
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
+            result.Should().HaveNoCompletion();
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 10));
+            result.Should()
+                .HaveInsertTexts($"foo(self, a, b=None, *args, **kwargs):{Environment.NewLine}    return super({superArgs}).foo(a, b=b, *args, **kwargs)")
+                .And.NotContainInsertTexts($"foo(self, a, b = None, *args, **kwargs):{Environment.NewLine}    return super({superArgs}).foo(a, b = b, *args, **kwargs)");
+        }
+
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task InRaise(bool is3X) {
+            var version = is3X ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X;
+
+            var analysis = await GetAnalysisAsync("raise ", version);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 7));
+            result.Should().HaveInsertTexts("Exception", "ValueError").And.NotContainInsertTexts("def", "abs");
+
+            if (is3X) {
+                analysis = await GetAnalysisAsync("raise Exception from ", PythonVersions.LatestAvailable3X);
+                cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+                result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 7));
+                result.Should().HaveInsertTexts("Exception", "ValueError").And.NotContainInsertTexts("def", "abs");
+
+                result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 17));
+                result.Should().HaveInsertTexts("from").And.NotContainInsertTexts("Exception", "def", "abs");
+
+                result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 22));
+                result.Should().HaveAnyCompletions();
+
+                analysis = await GetAnalysisAsync("raise Exception fr ", PythonVersions.LatestAvailable3X);
+                result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 19));
+                result.Should().HaveInsertTexts("from")
+                    .And.NotContainInsertTexts("Exception", "def", "abs")
+                    .And.Subject.ApplicableSpan.Should().Be(0, 16, 0, 18);
+            }
+
+            analysis = await GetAnalysisAsync("raise Exception, x, y", version);
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 17));
+            result.Should().HaveAnyCompletions();
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 20));
+            result.Should().HaveAnyCompletions();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InExcept() {
+            var analysis = await GetAnalysisAsync("try:\n    pass\nexcept ");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 18));
+            result.Should().HaveInsertTexts("Exception", "ValueError").And.NotContainInsertTexts("def", "abs");
+
+            analysis = await GetAnalysisAsync("try:\n    pass\nexcept (");
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
+            result.Should().HaveInsertTexts("Exception", "ValueError").And.NotContainInsertTexts("def", "abs");
+
+            analysis = await GetAnalysisAsync("try:\n    pass\nexcept Exception  as ");
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 8));
+            result.Should().HaveInsertTexts("Exception", "ValueError").And.NotContainInsertTexts("def", "abs");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 18));
+            result.Should().HaveInsertTexts("as").And.NotContainInsertTexts("def", "abs");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 22));
+            result.Should().HaveNoCompletion();
+
+            analysis = await GetAnalysisAsync("try:\n    pass\nexc");
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 18));
+            result.Should().HaveInsertTexts("except", "def", "abs");
+
+            analysis = await GetAnalysisAsync("try:\n    pass\nexcept Exception a");
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 19));
+            result.Should().HaveInsertTexts("as")
+                .And.NotContainInsertTexts("Exception", "def", "abs")
+                .And.Subject.ApplicableSpan.Should().Be(2, 17, 2, 18);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AfterDot() {
+            var analysis = await GetAnalysisAsync("x = 1\nx. n\nx.(  )\nx(x.  )\nx.  \nx  ");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 3));
+            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 4));
+            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
+            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3));
+            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 5));
+            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 4));
+            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 2));
+            result.Should().HaveLabels("abs").And.NotContainLabels("real", "imag");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 3));
+            result.Should().HaveNoCompletion();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AfterAssign() {
+            var analysis = await GetAnalysisAsync("x = x\ny = ");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 5));
+            result.Should().HaveLabels("x", "abs");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
+            result.Should().HaveLabels("x", "abs");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MethodFromBaseClass2X() {
+            const string code = @"
+import unittest
+class Simple(unittest.TestCase):
+    def test_exception(self):
+        self.assertRaises().
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
-            var completionsOar = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 9));
-            completionsOar.Should().NotContainLabels("keys", "items")
-                .And.HaveItem("bit_length");
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 29));
+            result.Should().HaveInsertTexts("exception");
+        }
 
-            var completionsFob = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 13));
-            completionsFob.Should().NotContainLabels("bit_length")
-                .And.HaveLabels("keys", "items");
+        [TestMethod, Priority(0)]
+        public async Task MethodFromBaseClass3X() {
+            const string code = @"
+import unittest
+class Simple(unittest.TestCase):
+    def test_exception(self):
+        self.assertRaises().
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 29));
+            result.Should().HaveInsertTexts("exception");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithWhitespaceAroundDot() {
+            const string code = @"import sys
+sys  .  version
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 7));
+            result.Should().HaveLabels("argv");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MarkupKindValid() {
+            var analysis = await GetAnalysisAsync("import sys\nsys.\n");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
+            result.Completions?.Select(i => i.documentation.kind)
+                .Should().NotBeEmpty().And.BeSubsetOf(new[] { MarkupKind.PlainText, MarkupKind.Markdown });
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NewType() {
+            const string code = @"
+from typing import NewType
+
+Foo = NewType('Foo', dict)
+foo: Foo = Foo({ })
+foo.
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 5));
+            result.Should().HaveLabels("clear", "copy", "items", "keys", "update", "values");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericListBase() {
+            const string code = @"
+from typing import List
+
+def func(a: List[str]):
+    a.
+    a[0].
+    pass
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 7));
+            result.Should().HaveLabels("clear", "copy", "count", "index", "remove", "reverse");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 10));
+            result.Should().HaveLabels("capitalize");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericDictBase() {
+            const string code = @"
+from typing import Dict
+
+def func(a: Dict[int, str]):
+    a.
+    a[0].
+    pass
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 7));
+            result.Should().HaveLabels("keys", "values");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 10));
+            result.Should().HaveLabels("capitalize");
         }
     }
 }

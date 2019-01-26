@@ -2667,9 +2667,6 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 while (true) {
-                    var s = ParseStmt();
-
-                    l.Add(s);
                     if (MaybeEat(TokenKind.Dedent)) {
                         // dedent white space belongs to the statement which follows the suite
                         if (_verbatim) {
@@ -2677,6 +2674,10 @@ namespace Microsoft.Python.Parsing {
                         }
                         break;
                     }
+
+                    var s = ParseStmt();
+                    l.Add(s);
+
                     if (PeekToken().Kind == TokenKind.EndOfFile) {
                         ReportSyntaxError("unexpected end of file");
                         break; // error handling

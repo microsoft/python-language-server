@@ -15,19 +15,28 @@
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class AssertionsFactory {
-        public static TextEditCollectionAssertions Should(this IEnumerable<TextEdit> textEdits)
-            => new TextEditCollectionAssertions(textEdits);
+        public static CompletionItemAssertions Should(this CompletionItem completionItem)
+            => new CompletionItemAssertions(completionItem);
 
         public static CompletionResultAssertions Should(this CompletionResult completionResult)
             => new CompletionResultAssertions(completionResult);
 
-        public static CompletionItemAssertions Should(this CompletionItem completionItem)
-            => new CompletionItemAssertions(completionItem);
+        public static SignatureHelpAssertions Should(this SignatureHelp signatureHelp)
+            => new SignatureHelpAssertions(signatureHelp);
+
+        public static SignatureInformationAssertions Should(this SignatureInformation signatureInformation)
+            => new SignatureInformationAssertions(signatureInformation);
+
+        public static SourceSpanAssertions Should(this SourceSpan? span) => new SourceSpanAssertions(span);
+
+        public static TextEditCollectionAssertions Should(this IEnumerable<TextEdit> textEdits)
+            => new TextEditCollectionAssertions(textEdits);
     }
 }
