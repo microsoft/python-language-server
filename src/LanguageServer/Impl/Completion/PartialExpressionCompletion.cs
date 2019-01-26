@@ -73,7 +73,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 case TokenKind.Name when nextLast == TokenKind.KeywordDef && scope is FunctionDefinition fd:
                     applicableSpan = new SourceSpan(context.TokenSource.GetTokenSpan(lastToken.Key).Start, context.Location);
                     location = context.TokenSource.GetTokenSpan(tokens.ElementAt(1).Key).Start;
-                    items = FunctionDefinitionCompletion.GetCompletionsForOverride(fd, context, location).Completions;
+                    items = FunctionDefinitionCompletion.GetCompletionsForOverride(fd, context, location, false).Completions;
                     break;
 
                 case TokenKind.KeywordFor:

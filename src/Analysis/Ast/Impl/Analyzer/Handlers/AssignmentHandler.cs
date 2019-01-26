@@ -28,8 +28,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         public async Task HandleAssignmentAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
+            if (node.Right is ErrorExpression) {
+                return;
+            }
 
+            var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
             if (value.IsUnknown()) {
                 Log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(Ast).Trim()}");
             }

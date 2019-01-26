@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -163,7 +164,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 .Where(v => v.Source == VariableSource.Declaration
                             && v.Value?.MemberType != PythonMemberType.Generic
                             && !(v.Value.GetPythonType() is PythonModule)
-                            && !(!IsSpecialized && v.Value?.GetPythonType().IsSpecialized == true))
+                            && !(v.Value.GetPythonType().DeclaringModule is TypingModule && !(this is TypingModule)))
                 .Select(v => v.Name);
         }
         #endregion

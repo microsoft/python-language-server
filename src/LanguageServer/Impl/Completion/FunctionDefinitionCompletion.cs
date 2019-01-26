@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.Python.Analysis;
@@ -27,18 +28,19 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class FunctionDefinitionCompletion {
-        public static CompletionResult GetCompletionsForOverride(FunctionDefinition function, CompletionContext context, SourceLocation? location = null) {
-            if (NoCompletions(function, context.Position, context.Ast)) {
+        public static CompletionResult GetCompletionsForOverride(FunctionDefinition function, CompletionContext context, SourceLocation? location, bool locationCheck = true) {
+            if (locationCheck && NoCompletions(function, context.Position, context.Ast)) {
                 return CompletionResult.Empty;
             }
 
-            if (function.Parent is ClassDefinition cd && string.IsNullOrEmpty(function.Name) &&
-                function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
-
+            if (function.Parent is ClassDefinition cd && function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
                 var loc = function.GetStart(context.Ast);
-                var overrideable = GetOverrideable(context, location).Select(o => ToOverrideCompletionItem(o, cd, context, new string(' ', loc.Column - 1)));
-
-                return new CompletionResult(overrideable);
+                var overrideable = GetOverrideable(context, location).ToArray();
+                overrideable = !string.IsNullOrEmpty(function.Name)
+                        ? overrideable.Where(o => o.Name.StartsWithOrdinal(function.Name)).ToArray() 
+                        : overrideable;
+                var items = overrideable.Select(o => ToOverrideCompletionItem(o, cd, context, new string(' ', loc.Column - 1)));
+                return new CompletionResult(items);
             }
 
             return CompletionResult.Empty;
@@ -53,14 +55,14 @@ namespace Microsoft.Python.LanguageServer.Completion {
             };
         }
 
-        private static string MakeOverrideDefParameter(IParameterInfo paramInfo)
-            => !string.IsNullOrEmpty(paramInfo.DefaultValueString) ? $"{paramInfo.Name}={paramInfo.DefaultValueString}" : paramInfo.Name;
-
-        private static string MakeOverrideCallParameter(IParameterInfo paramInfo) {
-            if (paramInfo.Name.StartsWithOrdinal("*")) {
-                return paramInfo.Name;
+        private static string MakeOverrideParameter(IParameterInfo paramInfo, string defaultValue) {
+            if (paramInfo.IsParamArray) {
+                return $"*{paramInfo.Name}";
             }
-            return MakeOverrideDefParameter(paramInfo);
+            if (paramInfo.IsKeywordDict) {
+                return $"**{paramInfo.Name}";
+            }
+            return !string.IsNullOrEmpty(paramInfo.DefaultValueString) ? $"{paramInfo.Name}={defaultValue}" : paramInfo.Name;
         }
 
         private static string MakeOverrideCompletionString(string indentation, IPythonFunctionOverload overload, string className, CompletionContext context) {
@@ -70,11 +72,11 @@ namespace Microsoft.Python.LanguageServer.Completion {
             var fn = overload.ClassMember as IPythonFunctionType;
             var skipFirstParameters = fn?.IsStatic == true ? overload.Parameters : overload.Parameters.Skip(1);
 
-            sb.AppendLine(overload.Name + "(" + string.Join(", ", overload.Parameters.Select(MakeOverrideDefParameter)) + "):");
+            sb.AppendLine(overload.Name + "(" + string.Join(", ", overload.Parameters.Select(p => MakeOverrideParameter(p, p.DefaultValueString))) + "):");
             sb.Append(indentation);
 
             if (overload.Parameters.Count > 0) {
-                var parameterString = string.Join(", ", skipFirstParameters.Select(MakeOverrideCallParameter));
+                var parameterString = string.Join(", ", skipFirstParameters.Select(p => MakeOverrideParameter(p, p.Name)));
 
                 if (context.Ast.LanguageVersion.Is3x()) {
                     sb.AppendFormat("return super().{0}({1})",

@@ -142,7 +142,7 @@ x.oar(100)
             var code = @"
 class Fob(object):
     def oar(self, a):
-
+        
 
 
 x = Fob()
@@ -193,10 +193,8 @@ class B(A):
 
             var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
-            result.Should().HaveNoCompletion();
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 10));
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 10));
             result.Should()
                 .HaveInsertTexts($"foo(self, a, b=None, *args, **kwargs):{Environment.NewLine}    return super({superArgs}).foo(a, b=b, *args, **kwargs)")
                 .And.NotContainInsertTexts($"foo(self, a, b = None, *args, **kwargs):{Environment.NewLine}    return super({superArgs}).foo(a, b = b, *args, **kwargs)");
@@ -277,33 +275,37 @@ class B(A):
 
         [TestMethod, Priority(0)]
         public async Task AfterDot() {
-            var analysis = await GetAnalysisAsync("x = 1\nx. n\nx.(  )\nx(x.  )\nx.  \nx  ");
+            const string code = @"
+x = 1
+x. 
+x.(  )
+x(x.  )
+x.  
+x  
+";
+            var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
-            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 3));
-            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3));
+            result.Should().HaveLabels("real", @"imag").And.NotContainLabels("abs");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 4));
-            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 4));
+            result.Should().HaveLabels("real", @"imag").And.NotContainLabels("abs");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
-            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 5));
+            result.Should().HaveLabels("real", @"imag").And.NotContainLabels("abs");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3));
-            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 3));
+            result.Should().HaveLabels("real", @"imag").And.NotContainLabels("abs");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 5));
-            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 5));
+            result.Should().HaveLabels("real", @"imag").And.NotContainLabels("abs");
 
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 4));
+            result.Should().HaveLabels("real", @"imag").And.NotContainLabels("abs");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 4));
-            result.Should().HaveLabels("real", "imag").And.NotContainLabels("abs");
-
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 2));
-            result.Should().HaveLabels("abs").And.NotContainLabels("real", "imag");
-
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 3));
-            result.Should().HaveNoCompletion();
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 2));
+            result.Should().HaveLabels("abs").And.NotContainLabels("real", @"imag");
         }
 
         [TestMethod, Priority(0)]
@@ -311,7 +313,7 @@ class B(A):
             var analysis = await GetAnalysisAsync("x = x\ny = ");
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
-            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 5));
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 4));
             result.Should().HaveLabels("x", "abs");
 
             result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));

@@ -53,7 +53,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 case FromImportStatement fromImport:
                     return await ImportCompletion.GetCompletionsInFromImportAsync(fromImport, context, cancellationToken);
                 case FunctionDefinition fd:
-                    return FunctionDefinitionCompletion.GetCompletionsForOverride(fd, context);
+                    return FunctionDefinitionCompletion.GetCompletionsForOverride(fd, context, null);
                 case ClassDefinition cd:
                     if (!ClassDefinitionCompletion.NoCompletions(cd, context, out var addMetadataArg)) {
                         var result = await TopLevelCompletion.GetCompletionsAsync(statement, context, cancellationToken);

@@ -31,18 +31,24 @@ namespace Microsoft.Python.LanguageServer.Completion {
     internal static class TopLevelCompletion {
         public static async Task<CompletionResult> GetCompletionsAsync(Node statement, CompletionContext context, CancellationToken cancellationToken = default) {
             SourceSpan? applicableSpan = null;
+            var eval = context.Analysis.ExpressionEvaluator;
 
             var options = GetOptions(statement, context.Position, out var span);
             if (span.HasValue) {
                 applicableSpan = new SourceSpan(context.IndexToLocation(span.Value.Start), context.IndexToLocation(span.Value.End));
             }
 
-            var eval = context.Analysis.ExpressionEvaluator;
+            // Get variables declared in the module.
             var variables = eval.CurrentScope.EnumerateTowardsGlobal
                 .SelectMany(s => s.Variables.Where(v => v.Source == VariableSource.Declaration)).ToArray();
-
             var items = variables.Select(v => context.ItemSource.CreateCompletionItem(v.Name, v));
             
+            // Get builtins
+            var builtins = context.Analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
+            var builtinItems = builtins.GetMemberNames().Select(n => context.ItemSource.CreateCompletionItem(n, builtins.GetMember(n)));
+            items = items.Concat(builtinItems);
+
+            // Add possible function arguments.
             var finder = new ExpressionFinder(context.Ast, new FindExpressionOptions { Calls = true });
             if (finder.GetExpression(context.Position) is CallExpression callExpr && callExpr.GetArgumentAtIndex(context.Ast, context.Position, out _)) {
                 var value = await eval.GetValueFromExpressionAsync(callExpr.Target, cancellationToken);
