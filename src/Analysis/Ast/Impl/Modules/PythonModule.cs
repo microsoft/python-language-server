@@ -163,8 +163,8 @@ namespace Microsoft.Python.Analysis.Modules {
             return Analysis.GlobalScope.Variables
                 .Where(v => v.Source == VariableSource.Declaration
                             && v.Value?.MemberType != PythonMemberType.Generic
-                            && !(v.Value.GetPythonType() is PythonModule)
-                            && !(v.Value.GetPythonType().DeclaringModule is TypingModule && !(this is TypingModule)))
+                            && !(v.Value?.GetPythonType() is PythonModule)
+                            && !(v.Value?.GetPythonType().DeclaringModule is TypingModule && !(this is TypingModule)))
                 .Select(v => v.Name);
         }
         #endregion
