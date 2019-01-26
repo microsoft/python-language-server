@@ -19,7 +19,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ExceptCompletion {
         public static bool TryGetCompletions(TryStatementHandler tryStatement, CompletionContext context, out CompletionResult result) {
-            result = null;
+            result = CompletionResult.Empty;
 
             // except Test as Target
             if (tryStatement.Target != null && context.Position >= tryStatement.Target.StartIndex) {

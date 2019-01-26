@@ -28,7 +28,7 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
-    internal static class PartialExpressionCompletion {
+    internal static class ErrorExpressionCompletion {
         public static async Task<CompletionResult> GetCompletionsAsync(ScopeStatement scope, Node statement, Node expression, CompletionContext context, CancellationToken cancellationToken = default) {
             if (!(expression is ErrorExpression)) {
                 return CompletionResult.Empty;
@@ -43,7 +43,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
             string code;
             SourceLocation location;
-            IEnumerable<CompletionItem> items;
+            var items = Enumerable.Empty<CompletionItem>();
             SourceSpan? applicableSpan;
             Expression e;
 
@@ -57,11 +57,15 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     items = await ExpressionCompletion.GetCompletionsFromMembersAsync(e, s1, context, cancellationToken);
                     break;
 
-                case TokenKind.KeywordDef when lastToken.Key.End < context.Position && scope is FunctionDefinition fd:
-                    applicableSpan = new SourceSpan(context.Location, context.Location);
-                    location = context.TokenSource.GetTokenSpan(lastToken.Key).Start;
-                    items = FunctionDefinitionCompletion.GetCompletionsForOverride(fd, context, location).Completions;
-                    break;
+                case TokenKind.KeywordDef when lastToken.Key.End < context.Position && scope is FunctionDefinition fd: {
+                        applicableSpan = new SourceSpan(context.Location, context.Location);
+                        location = context.TokenSource.GetTokenSpan(lastToken.Key).Start;
+                        if (FunctionDefinitionCompletion.TryGetCompletionsForOverride(fd, context, location, out var result)) {
+                            items = result.Completions;
+                        }
+
+                        break;
+                    }
 
                 case TokenKind.Name when nextLast == TokenKind.Dot:
                     code = es.ReadExpression(tokens.Skip(2));
@@ -70,18 +74,20 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     items = await ExpressionCompletion.GetCompletionsFromMembersAsync(e, s2, context, cancellationToken);
                     break;
 
-                case TokenKind.Name when nextLast == TokenKind.KeywordDef && scope is FunctionDefinition fd:
-                    applicableSpan = new SourceSpan(context.TokenSource.GetTokenSpan(lastToken.Key).Start, context.Location);
-                    location = context.TokenSource.GetTokenSpan(tokens.ElementAt(1).Key).Start;
-                    items = FunctionDefinitionCompletion.GetCompletionsForOverride(fd, context, location, false).Completions;
-                    break;
+                case TokenKind.Name when nextLast == TokenKind.KeywordDef && scope is FunctionDefinition fd: {
+                        applicableSpan = new SourceSpan(context.TokenSource.GetTokenSpan(lastToken.Key).Start, context.Location);
+                        location = context.TokenSource.GetTokenSpan(tokens.ElementAt(1).Key).Start;
+                        if (FunctionDefinitionCompletion.TryGetCompletionsForOverride(fd, context, location, out var result)) {
+                            items = result.Completions;
+                        }
+                        break;
+                    }
 
                 case TokenKind.KeywordFor:
                 case TokenKind.KeywordAs:
                     return lastToken.Key.Start <= context.Position && context.Position <= lastToken.Key.End ? null : CompletionResult.Empty;
 
                 default:
-                    Debug.WriteLine($"Unhandled completions from error.\nTokens were: ({lastToken.Value.Image}:{lastToken.Value.Kind}), {string.Join(", ", tokens.AsEnumerable().Take(10).Select(t => $"({t.Value.Image}:{t.Value.Kind})"))}");
                     return CompletionResult.Empty;
             }
 

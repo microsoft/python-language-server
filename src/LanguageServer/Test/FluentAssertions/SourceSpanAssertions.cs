@@ -27,18 +27,11 @@ namespace Microsoft.Python.LanguageServer.Tests.FluentAssertions {
         }
 
         public AndConstraint<SourceSpanAssertions> Be(int startLine, int startCharacter, int endLine, int endCharacter, string because = "", params object[] becauseArgs) {
-            var range = new Range {
-                start = new Position {
-                    line = startLine,
-                    character = startCharacter
-                },
-                end = new Position {
-                    line = endLine,
-                    character = endCharacter
-                }
-            };
-
-            return Be(range, because, becauseArgs);
+            var span = new SourceSpan(
+                new SourceLocation(startLine, startCharacter),
+                new SourceLocation(endLine, endCharacter)
+            );
+            return Be(span, because, becauseArgs);
         }
 
         public AndConstraint<SourceSpanAssertions> Be(SourceSpan span, string because = "", params object[] becauseArgs) {

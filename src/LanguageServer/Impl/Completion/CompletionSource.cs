@@ -25,10 +25,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
     internal sealed class CompletionSource {
         private readonly CompletionItemSource _itemSource;
 
-        public CompletionSource(
-            IDocumentationSource docSource,
-            ServerSettings.PythonCompletionOptions completionSettings
-        ) {
+        public CompletionSource(IDocumentationSource docSource, ServerSettings.PythonCompletionOptions completionSettings) {
             _itemSource = new CompletionItemSource(docSource, completionSettings);
         }
 
@@ -52,16 +49,18 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     return await ImportCompletion.GetCompletionsInImportAsync(import, context, cancellationToken);
                 case FromImportStatement fromImport:
                     return await ImportCompletion.GetCompletionsInFromImportAsync(fromImport, context, cancellationToken);
-                case FunctionDefinition fd:
-                    return FunctionDefinitionCompletion.GetCompletionsForOverride(fd, context, null);
+                case FunctionDefinition fd when FunctionDefinitionCompletion.TryGetCompletionsForOverride(fd, context, null, out var result):
+                    return result;
+                case FunctionDefinition fd when FunctionDefinitionCompletion.NoCompletions(fd, context.Position, context.Ast):
+                    return CompletionResult.Empty;
                 case ClassDefinition cd:
                     if (!ClassDefinitionCompletion.NoCompletions(cd, context, out var addMetadataArg)) {
-                        var result = await TopLevelCompletion.GetCompletionsAsync(statement, context, cancellationToken);
+                        var result = await TopLevelCompletion.GetCompletionsAsync(statement, scope, context, cancellationToken);
                         return addMetadataArg
                             ? new CompletionResult(result.Completions.Append(CompletionItemSource.MetadataArg), result.ApplicableSpan)
                             : result;
                     }
-                    return null;
+                    return CompletionResult.Empty;
                 case ForStatement forStatement when ForCompletion.TryGetCompletions(forStatement, context, out var result):
                     return result;
                 case WithStatement withStatement when WithCompletion.TryGetCompletions(withStatement, context, out var result):
@@ -71,9 +70,9 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 case TryStatementHandler tryStatement when ExceptCompletion.TryGetCompletions(tryStatement, context, out var result):
                     return result;
                 default: {
-                        var result = await PartialExpressionCompletion.GetCompletionsAsync(scope, statement, expression, context, cancellationToken);
+                        var result = await ErrorExpressionCompletion.GetCompletionsAsync(scope, statement, expression, context, cancellationToken);
                         return result == CompletionResult.Empty
-                            ? await TopLevelCompletion.GetCompletionsAsync(statement, context, cancellationToken)
+                            ? await TopLevelCompletion.GetCompletionsAsync(statement, scope, context, cancellationToken)
                             : result;
                     }
             }

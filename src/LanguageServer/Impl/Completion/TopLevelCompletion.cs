@@ -29,7 +29,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class TopLevelCompletion {
-        public static async Task<CompletionResult> GetCompletionsAsync(Node statement, CompletionContext context, CancellationToken cancellationToken = default) {
+        public static async Task<CompletionResult> GetCompletionsAsync(Node statement, ScopeStatement scope, CompletionContext context, CancellationToken cancellationToken = default) {
             SourceSpan? applicableSpan = null;
             var eval = context.Analysis.ExpressionEvaluator;
 
@@ -42,10 +42,17 @@ namespace Microsoft.Python.LanguageServer.Completion {
             var variables = eval.CurrentScope.EnumerateTowardsGlobal
                 .SelectMany(s => s.Variables.Where(v => v.Source == VariableSource.Declaration)).ToArray();
             var items = variables.Select(v => context.ItemSource.CreateCompletionItem(v.Name, v));
-            
+
             // Get builtins
             var builtins = context.Analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
-            var builtinItems = builtins.GetMemberNames().Select(n => context.ItemSource.CreateCompletionItem(n, builtins.GetMember(n)));
+            var builtinItems = builtins.GetMemberNames()
+                .Select(n => {
+                    var m = builtins.GetMember(n);
+                    if ((options & CompletionListOptions.ExceptionsOnly) == CompletionListOptions.ExceptionsOnly && !IsExceptionType(m.GetPythonType())) {
+                        return null;
+                    }
+                    return context.ItemSource.CreateCompletionItem(n, m);
+                }).ExcludeDefault();
             items = items.Concat(builtinItems);
 
             // Add possible function arguments.
@@ -64,19 +71,15 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 }
             }
 
-            if ((options & CompletionListOptions.ExpressionKeywords) == CompletionListOptions.ExpressionKeywords) {
-                items = items.Concat(PythonKeywords.Expression().Select(k => CompletionItemSource.CreateCompletionItem(k, CompletionItemKind.Keyword)));
-            }
-            if ((options & CompletionListOptions.StatementKeywords) == CompletionListOptions.StatementKeywords) {
-                items = items.Concat(PythonKeywords.Statement().Select(k => CompletionItemSource.CreateCompletionItem(k, CompletionItemKind.Keyword)));
-            }
+            var keywords = GetKeywordItems(context, options, scope);
+            items = items.Concat(keywords);
 
             return new CompletionResult(items, applicableSpan);
         }
 
         [Flags]
         enum CompletionListOptions {
-            NoKeywords = 1 ,
+            NoKeywords = 1,
             ExceptionsOnly = 2,
             StatementKeywords = 4,
             ExpressionKeywords = 8,
@@ -144,7 +147,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     return CompletionListOptions.ExpressionKeywords;
             }
         }
-        private static IEnumerable<CompletionItem> GetKeywordItems(CompletionContext context, CompletionListOptions options, IScope scope) {
+        private static IEnumerable<CompletionItem> GetKeywordItems(CompletionContext context, CompletionListOptions options, ScopeStatement scope) {
             var keywords = Enumerable.Empty<string>();
 
             if ((options & CompletionListOptions.ExpressionKeywords) == CompletionListOptions.ExpressionKeywords) {
@@ -156,11 +159,24 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 keywords = keywords.Union(PythonKeywords.Statement(context.Ast.LanguageVersion));
             }
 
-            if (!(scope.Node is FunctionDefinition)) {
+            if (!(scope is FunctionDefinition)) {
                 keywords = keywords.Except(PythonKeywords.InvalidOutsideFunction(context.Ast.LanguageVersion));
             }
 
             return keywords.Select(kw => CompletionItemSource.CreateCompletionItem(kw, CompletionItemKind.Keyword));
+        }
+
+        private static bool IsExceptionType(IPythonType type) {
+            if (type.Name.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.Name.IndexOf("exception", StringComparison.OrdinalIgnoreCase) >= 0) {
+                return true;
+            }
+
+            if (type is IPythonClassType cls) {
+                var baseCls = type.DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule.GetMember("BaseException") as IPythonType;
+                return cls.Mro.Any(b => b is IPythonClassType c && c.Bases.Contains(baseCls));
+            }
+            return false;
         }
     }
 }

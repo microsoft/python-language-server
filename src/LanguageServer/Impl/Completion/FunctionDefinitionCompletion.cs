@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.Python.Analysis;
@@ -28,22 +27,20 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class FunctionDefinitionCompletion {
-        public static CompletionResult GetCompletionsForOverride(FunctionDefinition function, CompletionContext context, SourceLocation? location, bool locationCheck = true) {
-            if (locationCheck && NoCompletions(function, context.Position, context.Ast)) {
-                return CompletionResult.Empty;
-            }
-
+        public static bool TryGetCompletionsForOverride(FunctionDefinition function, CompletionContext context, SourceLocation? location, out CompletionResult result) {
             if (function.Parent is ClassDefinition cd && function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
                 var loc = function.GetStart(context.Ast);
                 var overrideable = GetOverrideable(context, location).ToArray();
                 overrideable = !string.IsNullOrEmpty(function.Name)
-                        ? overrideable.Where(o => o.Name.StartsWithOrdinal(function.Name)).ToArray() 
+                        ? overrideable.Where(o => o.Name.StartsWithOrdinal(function.Name)).ToArray()
                         : overrideable;
                 var items = overrideable.Select(o => ToOverrideCompletionItem(o, cd, context, new string(' ', loc.Column - 1)));
-                return new CompletionResult(items);
+                result = new CompletionResult(items);
+                return true;
             }
 
-            return CompletionResult.Empty;
+            result = CompletionResult.Empty;
+            return false;
         }
 
         private static CompletionItem ToOverrideCompletionItem(IPythonFunctionOverload o, ClassDefinition cd, CompletionContext context, string indent) {
@@ -136,7 +133,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             return result;
         }
 
-        private static bool NoCompletions(FunctionDefinition fd, int position, PythonAst ast) {
+        public static bool NoCompletions(FunctionDefinition fd, int position, PythonAst ast) {
             // Here we work backwards through the various parts of the definitions.
             // When we find that Index is within a part, we return either the available
             // completions 
