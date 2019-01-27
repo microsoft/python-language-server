@@ -320,6 +320,7 @@ x
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task MethodFromBaseClass2X() {
             const string code = @"
 import unittest
