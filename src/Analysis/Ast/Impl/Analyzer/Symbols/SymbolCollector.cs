@@ -49,29 +49,38 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         public override Task<bool> WalkAsync(ClassDefinition cd, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            var classInfo = CreateClass(cd);
-            _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, GetLoc(cd));
-            _table.Add(new ClassEvaluator(_eval, cd));
-            // Open class scope
-            _scopes.Push(_eval.OpenScope(cd, out _));
+            if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
+                var classInfo = CreateClass(cd);
+                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, GetLoc(cd));
+                _table.Add(new ClassEvaluator(_eval, cd));
+                // Open class scope
+                _scopes.Push(_eval.OpenScope(cd, out _));
+            }
             return Task.FromResult(true);
         }
 
         public override Task PostWalkAsync(ClassDefinition cd, CancellationToken cancellationToken = default) {
-            _scopes.Pop().Dispose();
+            if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
+                _scopes.Pop().Dispose();
+            }
             return base.PostWalkAsync(cd, cancellationToken);
         }
 
         public override Task<bool> WalkAsync(FunctionDefinition fd, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            AddFunctionOrProperty(fd);
-            // Open function scope
-            _scopes.Push(_eval.OpenScope(fd, out _));
+            if (!string.IsNullOrEmpty(fd.NameExpression?.Name)) {
+                AddFunctionOrProperty(fd);
+                // Open function scope
+                _scopes.Push(_eval.OpenScope(fd, out _));
+            }
+
             return Task.FromResult(true);
         }
 
         public override Task PostWalkAsync(FunctionDefinition fd, CancellationToken cancellationToken = default) {
-            _scopes.Pop().Dispose();
+            if (!string.IsNullOrEmpty(fd.NameExpression?.Name)) {
+                _scopes.Pop().Dispose();
+            }
             return base.PostWalkAsync(fd, cancellationToken);
         }
 

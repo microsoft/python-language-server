@@ -120,10 +120,11 @@ namespace Microsoft.Python.Analysis.Types {
         internal virtual void SetDocumentationProvider(Func<string, string> provider) => _documentationProvider = provider;
 
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
-            Check.InvalidOperation(() => !variables.Any() || !_readonly, "Type is readonly and cannot accept new members");
-            lock (_lock) {
-                foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
-                    WritableMembers[v.Name] = v.Value.GetPythonType();
+            if (!_readonly) {
+                lock (_lock) {
+                    foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
+                        WritableMembers[v.Name] = v.Value.GetPythonType();
+                    }
                 }
             }
         }

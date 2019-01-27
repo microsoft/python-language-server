@@ -42,7 +42,6 @@ namespace Microsoft.Python.Analysis.Modules {
         private readonly string _root;
 
         private PathResolver _pathResolver;
-        private IReadOnlyDictionary<string, string> _searchPathPackages;
         private IReadOnlyList<string> _searchPaths;
 
         private InterpreterConfiguration Configuration => _interpreter.Configuration;

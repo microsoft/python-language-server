@@ -161,8 +161,7 @@ namespace Microsoft.Python.Analysis.Modules {
             // __all__ is not declared. Try filtering by origin:
             // drop imported modules and generics.
             return Analysis.GlobalScope.Variables
-                .Where(v => v.Source == VariableSource.Declaration
-                            && v.Value?.MemberType != PythonMemberType.Generic
+                .Where(v => v.Value?.MemberType != PythonMemberType.Generic
                             && !(v.Value?.GetPythonType() is PythonModule)
                             && !(v.Value?.GetPythonType().DeclaringModule is TypingModule && !(this is TypingModule)))
                 .Select(v => v.Name);

@@ -59,7 +59,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         name = statement is ClassDefinition || statement is FunctionDefinition ? null : name;
 
                         return new Hover {
-                            contents = _docSource.GetTypeHover(name, type),
+                            contents = _docSource.GetHover(name, value),
                             range = range
                         };
                     }

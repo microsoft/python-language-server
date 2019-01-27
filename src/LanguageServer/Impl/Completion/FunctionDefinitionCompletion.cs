@@ -29,7 +29,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
     internal static class FunctionDefinitionCompletion {
         public static bool TryGetCompletionsForOverride(FunctionDefinition function, CompletionContext context, SourceLocation? location, out CompletionResult result) {
             result = CompletionResult.Empty;
-            if (context.Position > function.NameExpression.EndIndex) {
+            if (!string.IsNullOrEmpty(function.NameExpression?.Name) && context.Position > function.NameExpression.EndIndex) {
                 return false;
             }
 

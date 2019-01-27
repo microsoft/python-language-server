@@ -48,6 +48,7 @@ def func(a, b):
     return 1
 
 y = func(1, 2)
+string = str
 ";
             var analysis = await GetAnalysisAsync(code);
             var hs = new HoverSource(new PlainTextDocumentationSource());
@@ -56,7 +57,7 @@ y = func(1, 2)
             hover.contents.value.Should().Be("x: str");
 
             hover = await hs.GetHoverAsync(analysis, new SourceLocation(2, 7));
-            hover.contents.value.Should().StartWith("class str\n\nstr(object='') -> str");
+            hover.Should().BeNull();
 
             hover = await hs.GetHoverAsync(analysis, new SourceLocation(4, 7));
             hover.contents.value.Should().Be("class C\n\nClass C is awesome");
@@ -69,6 +70,9 @@ y = func(1, 2)
 
             hover = await hs.GetHoverAsync(analysis, new SourceLocation(14, 2));
             hover.contents.value.Should().Be("y: int");
+
+            hover = await hs.GetHoverAsync(analysis, new SourceLocation(15, 2));
+            hover.contents.value.Should().StartWith("class str\n\nstr(object='') -> str");
         }
     }
 }

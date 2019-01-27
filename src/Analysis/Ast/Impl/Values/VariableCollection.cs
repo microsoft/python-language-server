@@ -13,12 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("Count: {Count}")]
@@ -44,7 +46,9 @@ namespace Microsoft.Python.Analysis.Values {
         public IEnumerable<string> GetMemberNames() => _variables.Keys.ToArray();
         #endregion
 
-        internal void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location) 
-            => _variables[name] = new Variable(name, value, source, location);
+        internal void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location) {
+            name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
+            _variables[name] = new Variable(name, value, source, location);
+        }
     }
 }

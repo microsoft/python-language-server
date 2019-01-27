@@ -13,34 +13,40 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class PlainTextDocumentationSource : IDocumentationSource {
         public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
 
-        public MarkupContent GetTypeHover(string name, IPythonType type) {
-            string text = name;
+        public MarkupContent GetHover(string name, IMember member) {
+            var text = name;
+            // We need to tell between instance and type.
+            var type = member.GetPythonType();
             if (!type.IsUnknown()) {
-                switch (type) {
-                    case IPythonFunctionType ft:
-                        text = GetFunctionHoverString(ft);
-                        break;
-                    case IPythonClassType cls: {
-                        var clsDoc = !string.IsNullOrEmpty(cls.Documentation) ? $"\n\n{cls.Documentation}" : string.Empty;
-                        text = string.IsNullOrEmpty(name) ? $"class {cls.Name}{clsDoc}" : $"{name}: {cls.Name}";
-                        break;
+                if (member is IPythonInstance) {
+                    text = !string.IsNullOrEmpty(name) ? $"{name}: {type.Name}" : $"{type.Name}";
+                } else {
+                    var typeDoc = !string.IsNullOrEmpty(type.Documentation) ? $"\n\n{type.Documentation}" : string.Empty;
+                    switch (type) {
+                        case IPythonFunctionType ft:
+                            text = GetFunctionHoverString(ft);
+                            break;
+                        case IPythonClassType cls: {
+                                var clsDoc = !string.IsNullOrEmpty(cls.Documentation) ? $"\n\n{cls.Documentation}" : string.Empty;
+                                text = $"class {cls.Name}{clsDoc}";
+                                break;
+                            }
+                        default:
+                            text = !string.IsNullOrEmpty(name) ? $"Type {name}: {type.Name}{typeDoc}" : $"{type.Name}{typeDoc}";
+                            break;
                     }
-                    default: {
-                        var typeDoc = !string.IsNullOrEmpty(type.Documentation) ? $"\n\n{type.Documentation}" : string.Empty;
-                        text = !string.IsNullOrEmpty(name) ? $"{name}: {type.Name}{typeDoc}" : $"{type.Name}{typeDoc}";
-                        break;
-                    }
-
                 }
             }
 

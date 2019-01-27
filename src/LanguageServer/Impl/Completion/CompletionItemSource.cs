@@ -54,7 +54,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 // Place regular items first, advanced entries last
                 sortText = char.IsLetter(text, 0) ? "1" : "2",
                 kind = kind,
-                documentation = t != null ? _docSource.GetTypeHover(label ?? text, t) : null
+                documentation = !t.IsUnknown() ? _docSource.GetHover(label ?? text, member) : null
             };
         }
 
