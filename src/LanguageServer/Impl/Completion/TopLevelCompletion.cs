@@ -29,7 +29,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class TopLevelCompletion {
-        public static async Task<CompletionResult> GetCompletionsAsync(Node statement, ScopeStatement scope, CompletionContext context, CancellationToken cancellationToken = default) {
+        public static async Task<CompletionResult> GetCompletionsAsync(Node statement, ScopeStatement scopeStatement, CompletionContext context, CancellationToken cancellationToken = default) {
             SourceSpan? applicableSpan = null;
             var eval = context.Analysis.ExpressionEvaluator;
 
@@ -38,10 +38,14 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 applicableSpan = new SourceSpan(context.IndexToLocation(span.Value.Start), context.IndexToLocation(span.Value.End));
             }
 
-            // Get variables declared in the module.
-            var variables = eval.CurrentScope.EnumerateTowardsGlobal
-                .SelectMany(s => s.Variables.Where(v => v.Source == VariableSource.Declaration)).ToArray();
-            var items = variables.Select(v => context.ItemSource.CreateCompletionItem(v.Name, v));
+            var scope = context.Analysis.FindScope(context.Location);
+            IEnumerable<CompletionItem> items;
+            using (eval.OpenScope(scope)) {
+                // Get variables declared in the module.
+                var variables = eval.CurrentScope.EnumerateTowardsGlobal
+                    .SelectMany(s => s.Variables.Where(v => v.Source == VariableSource.Declaration)).ToArray();
+                items = variables.Select(v => context.ItemSource.CreateCompletionItem(v.Name, v));
+            }
 
             // Get builtins
             var builtins = context.Analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
@@ -71,7 +75,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 }
             }
 
-            var keywords = GetKeywordItems(context, options, scope);
+            var keywords = GetKeywordItems(context, options, scopeStatement);
             items = items.Concat(keywords);
 
             return new CompletionResult(items, applicableSpan);

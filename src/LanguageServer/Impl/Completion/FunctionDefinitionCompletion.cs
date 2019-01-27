@@ -28,6 +28,11 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class FunctionDefinitionCompletion {
         public static bool TryGetCompletionsForOverride(FunctionDefinition function, CompletionContext context, SourceLocation? location, out CompletionResult result) {
+            result = CompletionResult.Empty;
+            if (context.Position > function.NameExpression.EndIndex) {
+                return false;
+            }
+
             if (function.Parent is ClassDefinition cd && function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
                 var loc = function.GetStart(context.Ast);
                 var overrideable = GetOverrideable(context, location).ToArray();
@@ -39,7 +44,6 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 return true;
             }
 
-            result = CompletionResult.Empty;
             return false;
         }
 

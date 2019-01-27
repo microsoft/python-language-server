@@ -143,7 +143,6 @@ x.oar(100)
             var code = @"
 class Fob(object):
     def oar(self, a):
-        
 
 
 x = Fob()
@@ -153,8 +152,7 @@ x.oar(100)
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8));
-            result.Should().HaveItem("a")
-                .Which.Should().HaveDocumentation("int");
+            result.Should().HaveItem("a");
         }
 
         [TestMethod, Priority(0)]
