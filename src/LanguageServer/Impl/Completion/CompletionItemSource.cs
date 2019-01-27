@@ -36,10 +36,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
         }
 
         public CompletionItem CreateCompletionItem(string text, IMember member, string label = null)
-            => CreateCompletionItem(text, ToCompletionItemKind(member.MemberType), member, label);
+            => CreateCompletionItem(text, ToCompletionItemKind(member?.MemberType ?? PythonMemberType.Class), member, label);
 
         public CompletionItem CreateCompletionItem(string text, CompletionItemKind kind, IMember member, string label = null) {
-            var t = member.GetPythonType();
+            var t = member?.GetPythonType();
             var docFormat = _docSource.DocumentationFormat;
 
             if (_options.addBrackets && (kind == CompletionItemKind.Constructor || kind == CompletionItemKind.Function || kind == CompletionItemKind.Method)) {

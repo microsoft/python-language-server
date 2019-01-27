@@ -96,20 +96,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         public IBuiltinsPythonModule BuiltinsModule { get; private set; }
 
-        public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken) {
-            if (_searchPathPackages != null) {
-                return _searchPathPackages;
-            }
-
-            var packageDict = await GetImportableModulesAsync(Configuration.SearchPaths, cancellationToken).ConfigureAwait(false);
-            if (!packageDict.Any()) {
-                return _emptyModuleSet;
-            }
-
-            _searchPathPackages = packageDict;
-            return packageDict;
-        }
-
         public async Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default) {
             if (_searchPaths != null) {
                 return _searchPaths;
@@ -126,26 +112,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 _log?.Log(TraceEventType.Information, $"    {s}");
             }
             return _searchPaths;
-        }
-
-        public async Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken = default) {
-            var packageDict = new Dictionary<string, string>();
-
-            foreach (var searchPath in searchPaths.MaybeEnumerate()) {
-                IReadOnlyCollection<string> packages = null;
-                if (_fs.FileExists(searchPath)) {
-                    packages = GetPackagesFromZipFile(searchPath, cancellationToken);
-                } else if (_fs.DirectoryExists(searchPath)) {
-                    packages = await Task.Run(()
-                        => GetPackagesFromDirectory(searchPath, cancellationToken), cancellationToken).ConfigureAwait(false);
-                }
-                foreach (var package in packages.MaybeEnumerate()) {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    packageDict[package] = searchPath;
-                }
-            }
-
-            return packageDict;
         }
 
         private async Task<IReadOnlyList<string>> GetInterpreterSearchPathsAsync(CancellationToken cancellationToken = default) {

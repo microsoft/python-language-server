@@ -44,11 +44,20 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     return CompletionResult.Empty;
             }
 
+            if (statement is ImportStatement import) {
+                var result = ImportCompletion.TryGetCompletions(import, context);
+                if (result != null) {
+                    return result;
+                }
+            }
+            if (statement is FromImportStatement fromImport) {
+                var result = ImportCompletion.GetCompletionsInFromImport(fromImport, context);
+                if (result != null) {
+                    return result;
+                }
+            }
+
             switch (statement) {
-                case ImportStatement import:
-                    return await ImportCompletion.GetCompletionsInImportAsync(import, context, cancellationToken);
-                case FromImportStatement fromImport:
-                    return await ImportCompletion.GetCompletionsInFromImportAsync(fromImport, context, cancellationToken);
                 case FunctionDefinition fd when FunctionDefinitionCompletion.TryGetCompletionsForOverride(fd, context, null, out var result):
                     return result;
                 case FunctionDefinition fd when FunctionDefinitionCompletion.NoCompletions(fd, context.Position, context.Ast):

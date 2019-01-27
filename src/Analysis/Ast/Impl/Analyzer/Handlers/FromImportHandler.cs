@@ -109,7 +109,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var memberReference = asNames[i] ?? names[i];
                 var memberName = memberReference.Name;
 
-                var type = module?.GetMember(memberReference.Name);
+                var type = module?.GetMember(memberReference.Name) ?? Interpreter.UnknownType;
                 Eval.DeclareVariable(memberName, type, VariableSource.Import, names[i]);
             }
         }

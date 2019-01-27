@@ -29,33 +29,11 @@ namespace Microsoft.Python.Analysis.Modules {
         string BuiltinModuleName { get; }
 
         /// <summary>
-        /// Returns current search paths.
-        /// </summary>
-        Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns importable modules.
-        /// </summary>
-        Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns importable modules given search paths.
-        /// </summary>
-        Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken = default);
-        
-        /// <summary>
         /// Locates module by path.
         /// </summary>
         /// <param name="filePath"></param>
         /// <returns></returns>
         ModulePath FindModule(string filePath);
-
-        IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Determines if directory contains Python package.
-        /// </summary>
-        bool IsPackage(string directory);
 
         /// <summary>
         /// Path resolver providing file resolution in module imports.
@@ -73,6 +51,13 @@ namespace Microsoft.Python.Analysis.Modules {
         /// the module has not been imported.
         /// </summary>
         IPythonModule GetImportedModule(string name);
+
+        IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Determines if directory contains Python package.
+        /// </summary>
+        bool IsPackage(string directory);
 
         /// <summary>
         /// Builtins module.

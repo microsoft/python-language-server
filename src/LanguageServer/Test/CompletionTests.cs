@@ -660,77 +660,88 @@ x.abc()
 
         [TestMethod, Priority(0)]
         public async Task InImport() {
-            var analysis = await GetAnalysisAsync(@"import unittest.case as C, unittest
-from unittest.case import TestCase as TC, TestCase", PythonVersions.LatestAvailable3X);
+            var code = @"
+import unittest.case as C, unittest
+from unittest.case import TestCase as TC, TestCase
+";
+
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
-            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 7));
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 7));
             result.Should().HaveLabels("from", "import", "abs", "dir").And.NotContainLabels("abc");
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 8));
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 8));
             result.Should().HaveLabels("abc", @"unittest").And.NotContainLabels("abs", "dir");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 17));
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 17));
             result.Should().HaveLabels("case").And.NotContainLabels("abc", @"unittest", "abs", "dir");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 23));
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 23));
             result.Should().HaveLabels("as").And.NotContainLabels("abc", @"unittest", "abs", "dir");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 25));
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 25));
             result.Should().HaveNoCompletion();
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 28));
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 28));
             result.Should().HaveLabels("abc", @"unittest").And.NotContainLabels("abs", "dir");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 5));
             result.Should().HaveLabels("from", "import", "abs", "dir").And.NotContainLabels("abc");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 6));
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 6));
             result.Should().HaveLabels("abc", @"unittest").And.NotContainLabels("abs", "dir");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 15));
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 15));
             result.Should().HaveLabels("case").And.NotContainLabels("abc", @"unittest", "abs", "dir");
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 20));
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 20));
             result.Should().HaveLabels("import").And.NotContainLabels("abc", @"unittest", "abs", "dir");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 22));
+            result.Should().HaveLabels("import")
+                .And.NotContainLabels("abc", @"unittest", "abs", "dir")
+                .And.Subject.ApplicableSpan.Should().Be(3, 20, 3, 26);
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 27));
+            result.Should().HaveLabels("TestCase").And.NotContainLabels("abs", "dir", "case");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 36));
+            result.Should().HaveLabels("as").And.NotContainLabels("abc", @"unittest", "abs", "dir");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 39));
+            result.Should().HaveNoCompletion();
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 44));
+            result.Should().HaveLabels("TestCase").And.NotContainLabels("abs", "dir", "case");
+
+            code = @"
+from unittest.case imp
+pass
+";
+            analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
 
             result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 22));
             result.Should().HaveLabels("import")
                 .And.NotContainLabels("abc", @"unittest", "abs", "dir")
-                .And.Subject.ApplicableSpan.Should().Be(1, 19, 1, 25);
+                .And.Subject.ApplicableSpan.Should().Be(2, 20, 2, 23);
 
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 27));
-            result.Should().HaveLabels("TestCase").And.NotContainLabels("abs", "dir", "case");
-
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 36));
-            result.Should().HaveLabels("as").And.NotContainLabels("abc", @"unittest", "abs", "dir");
-
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 39));
-            result.Should().HaveNoCompletion();
-
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 44));
-            result.Should().HaveLabels("TestCase").And.NotContainLabels("abs", "dir", "case");
-
-            analysis = await GetAnalysisAsync(@"from unittest.case imp
-pass", PythonVersions.LatestAvailable3X);
-
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 22));
-            result.Should().HaveLabels("import")
-                .And.NotContainLabels("abc", @"unittest", "abs", "dir")
-                .And.Subject.ApplicableSpan.Should().Be(1, 20, 1, 23);
-
-            analysis = await GetAnalysisAsync(@"import unittest.case a
-pass");
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 23));
+            code = @"
+import unittest.case a
+pass";
+            analysis = await GetAnalysisAsync(code);
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 23));
             result.Should().HaveLabels("as")
                 .And.NotContainLabels("abc", @"unittest", "abs", "dir")
-                .And.Subject.ApplicableSpan.Should().Be(1, 22, 1, 23);
+                .And.Subject.ApplicableSpan.Should().Be(2, 22, 2, 23);
 
-            analysis = await GetAnalysisAsync(@"from unittest.case import TestCase a
-pass");
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 37));
+            code = @"
+from unittest.case import TestCase a
+pass";
+            analysis = await GetAnalysisAsync(code);
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 37));
             result.Should().HaveLabels("as")
                 .And.NotContainLabels("abc", @"unittest", "abs", "dir")
-                .And.Subject.ApplicableSpan.Should().Be(1, 36, 1, 37);
+                .And.Subject.ApplicableSpan.Should().Be(2, 36, 2, 37);
         }
 
         [TestMethod, Priority(0)]

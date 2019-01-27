@@ -74,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
-                Eval.DeclareVariable(ne.Name, value, source, Eval.GetLoc(ne));
+                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, Eval.GetLoc(ne));
             }
         }
 
