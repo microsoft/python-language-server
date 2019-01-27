@@ -94,13 +94,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (stubType.IsUnknown()) {
                     continue;
                 }
-                
-                // Make sure we do not replace variables that are actually imported
-                // from other modules or are builtins. The key is that variable type
-                // must be declared in this module to be considered for stubbing.
-                if(!Module.Equals(v.Value?.GetPythonType().DeclaringModule)) {
-                    continue;
-                }
 
                 var sourceVar = Eval.GlobalScope.Variables[v.Name];
                 var srcType = sourceVar?.Value.GetPythonType();

@@ -28,7 +28,9 @@ namespace Microsoft.Python.Analysis.Specializations {
             => (module, overload, location, args) => args.Count > 0 ? args[0] : null;
 
         public static ReturnValueProvider TypeInfo
-            => (module, overload, location, args) => args.Count > 0 ? args[0].GetPythonType() : null;
+            => (module, overload, location, args) => args.Count > 0 
+                    ? args[0].GetPythonType() 
+                    : module.Interpreter.GetBuiltinType(BuiltinTypeId.Type);
 
         public static IMember Iterator(IPythonModule module, IPythonFunctionOverload overload, LocationInfo location, IReadOnlyList<IMember> args) {
             if (args.Count > 0) {

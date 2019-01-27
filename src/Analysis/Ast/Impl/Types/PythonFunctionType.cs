@@ -100,7 +100,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
             // Now we can go and find overload with matching arguments.
             var overload = FindOverload(args);
-            return overload?.GetReturnValue(instance?.Location ?? LocationInfo.Empty, args) ?? DeclaringModule.Interpreter.UnknownType;
+            return overload?.GetReturnValue(instance?.Location ?? LocationInfo.Empty, args);
         }
 
         internal override void SetDocumentationProvider(Func<string, string> provider) {

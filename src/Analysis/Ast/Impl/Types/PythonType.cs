@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
@@ -83,7 +82,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="instance">Instance of the type.</param>
         /// <param name="memberName">Member name to call, if applicable.</param>
         /// <param name="argSet">Call arguments.</param>
-        public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet argSet) 
+        public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet argSet)
             => instance?.Call(memberName, argSet) ?? UnknownType;
 
         /// <summary>
@@ -120,8 +119,8 @@ namespace Microsoft.Python.Analysis.Types {
         internal virtual void SetDocumentationProvider(Func<string, string> provider) => _documentationProvider = provider;
 
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
-            if (!_readonly) {
-                lock (_lock) {
+            lock (_lock) {
+                if (!_readonly) {
                     foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
                         WritableMembers[v.Name] = v.Value.GetPythonType();
                     }
@@ -130,10 +129,11 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
-            Check.InvalidOperation(() => !members.Any() || !_readonly, "Type is readonly and cannot accept new members");
             lock (_lock) {
-                foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
-                    WritableMembers[kv.Key] = kv.Value;
+                if (!_readonly) {
+                    foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
+                        WritableMembers[kv.Key] = kv.Value;
+                    }
                 }
             }
         }
@@ -147,10 +147,11 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal IMember AddMember(string name, IMember member, bool overwrite) {
-            Check.InvalidOperation(() => !_readonly, "Type is readonly and cannot accept new members");
             lock (_lock) {
-                if (overwrite || !Members.ContainsKey(name)) {
-                    WritableMembers[name] = member;
+                if (!_readonly) {
+                    if (overwrite || !Members.ContainsKey(name)) {
+                        WritableMembers[name] = member;
+                    }
                 }
                 return member;
             }
