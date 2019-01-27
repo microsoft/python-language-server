@@ -21,7 +21,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class WithCompletion {
         public static bool TryGetCompletions(WithStatement withStatement, CompletionContext context, out CompletionResult result) {
-            result = null;
+            result = CompletionResult.Empty;
 
             if (context.Position > withStatement.HeaderIndex && withStatement.HeaderIndex > withStatement.StartIndex) {
                 return false;

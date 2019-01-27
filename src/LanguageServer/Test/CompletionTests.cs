@@ -631,8 +631,6 @@ x.abc()
             result.Should().HaveAnyCompletions();
             result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 17));
             result.Should().HaveInsertTexts("as").And.NotContainInsertTexts("abs", "dir");
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 18));
-            result.Should().HaveNoCompletion();
             result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 21));
             result.Should().HaveAnyCompletions();
 
