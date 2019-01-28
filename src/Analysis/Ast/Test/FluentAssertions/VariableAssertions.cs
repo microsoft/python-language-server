@@ -63,6 +63,13 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<VariableAssertions, IMember>(this, m);
         }
 
+        public AndWhichConstraint<VariableAssertions, IMember> NotHaveMember(string name, string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+            var m = Value.GetPythonType().GetMember(name);
+            m.GetPythonType().IsUnknown().Should().BeTrue();
+            return new AndWhichConstraint<VariableAssertions, IMember>(this, Subject);
+        }
+
         public AndWhichConstraint<VariableAssertions, IMember> HaveMembers(IEnumerable<string> names, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
             Value.Should().HaveMembers(names, because, reasonArgs);

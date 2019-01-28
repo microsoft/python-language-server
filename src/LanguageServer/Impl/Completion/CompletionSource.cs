@@ -38,8 +38,9 @@ namespace Microsoft.Python.LanguageServer.Completion {
             switch (expression) {
                 case MemberExpression me when me.Target != null && me.DotIndex > me.StartIndex && context.Position > me.DotIndex:
                     return new CompletionResult(await ExpressionCompletion.GetCompletionsFromMembersAsync(me.Target, scope, context, cancellationToken));
-                case ConstantExpression ce when ce.Value is int:
+                case ConstantExpression ce when (ce.Value is double || ce.Value is float):
                     // no completions on integer ., the user is typing a float
+                    return CompletionResult.Empty;
                 case null when context.Ast.IsInsideComment(context.Location):
                     return CompletionResult.Empty;
             }
