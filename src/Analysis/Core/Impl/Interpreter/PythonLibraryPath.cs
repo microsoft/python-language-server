@@ -110,7 +110,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 }
 
                 try {
-                    paths = await GetUncachedDatabaseSearchPathsAsync(config.InterpreterPath).ConfigureAwait(false);
+                    paths = await GetUncachedDatabaseSearchPathsAsync(config.InterpreterPath);
                     if (!string.IsNullOrEmpty(cachePath)) {
                         WriteDatabaseSearchPaths(cachePath, paths);
                     }
@@ -164,7 +164,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                     using (var cts = new CancellationTokenSource(30000)) {
                         int exitCode;
                         try {
-                            exitCode = await proc.WaitAsync(cts.Token).ConfigureAwait(false);
+                            exitCode = await proc.WaitAsync(cts.Token);
                         } catch (OperationCanceledException) {
                             proc.Kill();
                             exitCode = -1;

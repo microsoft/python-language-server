@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Modules {
             };
             var module = rdt.AddModule(mco);
 
-            await module.LoadAndAnalyzeAsync(cancellationToken).ConfigureAwait(false);
+            await module.LoadAndAnalyzeAsync(cancellationToken);
             return module;
         }
 
