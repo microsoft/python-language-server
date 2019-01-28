@@ -34,7 +34,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
             // If target is a generic type, create specific class
             if (target is IGenericType gen) {
-                return await CreateSpecificFromGenericAsync(gen, expr, cancellationToken);
+                var args = await GetTypeArgumentsAsync(expr, cancellationToken);
+                return gen.CreateSpecificType(args, Module, GetLoc(expr));
+            }
+            if (target is IPythonClassType cls && cls.Bases.Any(b => b is IGenericType)) {
+                var args = await GetTypeArgumentsAsync(expr, cancellationToken);
+                return cls.CreateInstance(cls.Name, GetLoc(expr), args);
             }
 
             if (expr.Index is SliceExpression || expr.Index is TupleExpression) {
@@ -99,10 +104,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-
-        private async Task<IMember> CreateSpecificFromGenericAsync(IGenericType gen, IndexExpression expr, CancellationToken cancellationToken = default) {
+        private async Task<IReadOnlyList<IPythonType>> GetTypeArgumentsAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
             var args = new List<IPythonType>();
             if (expr.Index is TupleExpression tex) {
+                cancellationToken.ThrowIfCancellationRequested();
                 foreach (var item in tex.Items) {
                     var e = await GetValueFromExpressionAsync(item, cancellationToken);
                     args.Add(e?.GetPythonType() ?? UnknownType);
@@ -111,8 +116,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
                 args.Add(index?.GetPythonType() ?? UnknownType);
             }
-            return gen.CreateSpecificType(args, Module, GetLoc(expr));
+            return args;
         }
-
     }
 }
