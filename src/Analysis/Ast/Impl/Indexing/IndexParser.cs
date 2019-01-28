@@ -17,7 +17,7 @@ namespace Microsoft.Python.Analysis.Indexing {
 
         public void ParseFile(Uri uri) {
             if (!_fileSystem.FileExists(uri.AbsolutePath)) {
-                throw new ArgumentException($"{uri.AbsolutePath} does not exist", nameof(uri));
+                throw new FileNotFoundException($"{uri.AbsolutePath} does not exist", uri.AbsolutePath);
             }
             using (var stream = _fileSystem.FileOpen(uri.AbsolutePath, FileMode.Open)) {
                 var parser = Parser.CreateParser(stream, _version);

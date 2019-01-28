@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Tests {
             Action parse = () => {
                 indexParser.ParseFile(new Uri(testFilePath));
             };
-            parse.Should().Throw<ArgumentException>();
+            parse.Should().Throw<FileNotFoundException>();
         }
 
         private Stream MakeStream(string str) {
