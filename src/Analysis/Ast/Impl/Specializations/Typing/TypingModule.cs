@@ -146,6 +146,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             _members["Optional"] = new GenericType("Optional", this, (typeArgs, module, location) => CreateOptional(typeArgs));
             _members["Type"] = new GenericType("Type", this, (typeArgs, module, location) => CreateType(typeArgs));
+            _members["Generic"] = new GenericType("Generic", this, (typeArgs, module, location) => CreateGeneric(typeArgs));
         }
 
 
@@ -288,5 +289,16 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
         }
+
+        private IPythonType CreateGeneric(IReadOnlyList<IPythonType> typeArgs) {
+            // Handle Generic[_T]
+            if (typeArgs.Count == 1 && typeArgs[0] is IGenericTypeParameter gp && gp.Constraints.Count > 0) {
+                // TODO: how to choose among multiple constraints? A Union[...] of all?
+               return gp.Constraints[0];
+            }
+            // TODO: report wrong number of arguments
+            return Interpreter.UnknownType;
+        }
+
     }
 }

@@ -119,11 +119,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             // Pick the best overload.
-            var args = await FindOverloadAsync(fn, instance, expr, cancellationToken);
-            if (args == null) {
-                return UnknownType;
+            FunctionDefinition fd;
+            ArgumentSet args;
+            if (fn.Overloads.Count == 1) {
+                fd = fn.Overloads[0].FunctionDefinition;
+                args = new ArgumentSet(fn, 0, instance, expr, this);
+                args = await args.EvaluateAsync(cancellationToken);
+            } else {
+                args = await FindOverloadAsync(fn, instance, expr, cancellationToken);
+                if (args == null) {
+                    return UnknownType;
+                }
+                fd = fn.Overloads.Count > 0 ? fn.Overloads[args.OverloadIndex].FunctionDefinition : null;
             }
-            var fd = fn.Overloads.Count > 0 ? fn.Overloads[args.OverloadIndex].FunctionDefinition : null;
 
             // Re-declare parameters in the function scope since originally
             // their types might not have been known and now argument set

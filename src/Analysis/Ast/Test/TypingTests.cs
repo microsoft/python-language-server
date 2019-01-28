@@ -414,7 +414,6 @@ x = ls()[0]
                 .Should().HaveType(BuiltinTypeId.Tuple);
         }
 
-
         [TestMethod, Priority(0)]
         public async Task DictContent() {
             const string code = @"
@@ -621,6 +620,27 @@ y = n2[0]
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
+        public async Task GenericClassBase() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_E = TypeVar('_E', bound=Exception)
+
+class A(Generic[_E]): ...
+
+class B(Generic[_E]):
+    def func(self) -> A[_E]: ...
+
+b = B(Exception)
+x = b.func()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").Which
+                .Should().HaveType("Exception");
+        }
+
+        [TestMethod, Priority(0)]
         public void AnnotationParsing() {
             AssertTransform("List", "NameOp:List");
             AssertTransform("List[Int]", "NameOp:List", "NameOp:Int", "MakeGenericOp");
@@ -657,7 +677,7 @@ y = n2[0]
 
         private static TypeAnnotation Parse(string expr, PythonLanguageVersion version = PythonLanguageVersion.V36) {
             var errors = new CollectingErrorSink();
-            var ops = new ParserOptions {ErrorSink = errors};
+            var ops = new ParserOptions { ErrorSink = errors };
             var p = Parser.CreateParser(new StringReader(expr), version, ops);
             var ast = p.ParseTopExpression();
             if (errors.Errors.Any()) {

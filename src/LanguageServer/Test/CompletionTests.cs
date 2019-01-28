@@ -335,6 +335,7 @@ class Simple(unittest.TestCase):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task MethodFromBaseClass3X() {
             const string code = @"
 import unittest
