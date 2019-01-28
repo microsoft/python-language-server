@@ -56,8 +56,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var node = new DependencyChainNode(document);
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
                 node.Analyzable.NotifyAnalysisPending();
-                var analysis = await AnalyzeAsync(node, cts.Token).ConfigureAwait(false);
-                node.Analyzable.NotifyAnalysisComplete(analysis);
+                try {
+                    var analysis = await AnalyzeAsync(node, cts.Token);
+                    node.Analyzable.NotifyAnalysisComplete(analysis);
+                } catch(OperationCanceledException) {
+                    node.Analyzable.NotifyAnalysisCanceled();
+                    throw;
+                } catch(Exception ex) when(!ex.IsCriticalException()) {
+                    node.Analyzable.NotifyAnalysisFailed(ex);
+                    throw;
+                }
             }
         }
 
@@ -68,12 +76,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Check.InvalidOperation(() => _dependencyResolver != null, "Dependency resolver must be provided for the group analysis.");
 
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
-                var dependencyRoot = await _dependencyResolver.GetDependencyChainAsync(document, cts.Token).ConfigureAwait(false);
+                var dependencyRoot = await _dependencyResolver.GetDependencyChainAsync(document, cts.Token);
                 // Notify each dependency that the analysis is now pending
                 NotifyAnalysisPending(dependencyRoot);
 
                 cts.Token.ThrowIfCancellationRequested();
-                await AnalyzeChainAsync(dependencyRoot, cts.Token).ConfigureAwait(false);
+                await AnalyzeChainAsync(dependencyRoot, cts.Token);
             }
         }
 
@@ -86,13 +94,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private async Task AnalyzeChainAsync(IDependencyChainNode node, CancellationToken cancellationToken) {
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
-                var analysis = await AnalyzeAsync(node, cts.Token).ConfigureAwait(false);
+                try {
+                    var analysis = await AnalyzeAsync(node, cts.Token);
+                    NotifyAnalysisComplete(node, analysis);
+                } catch (OperationCanceledException) {
+                    node.Analyzable.NotifyAnalysisCanceled();
+                    throw;
+                } catch (Exception ex) when (!ex.IsCriticalException()) {
+                    node.Analyzable.NotifyAnalysisFailed(ex);
+                    throw;
+                }
 
-                NotifyAnalysisComplete(node, analysis);
                 cts.Token.ThrowIfCancellationRequested();
 
                 foreach (var c in node.Children) {
-                    await AnalyzeChainAsync(c, cts.Token).ConfigureAwait(false);
+                    await AnalyzeChainAsync(c, cts.Token);
                 }
             }
         }

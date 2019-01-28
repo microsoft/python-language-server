@@ -455,6 +455,9 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
+        public void NotifyAnalysisCanceled() => _analysisTcs.TrySetCanceled();
+        public void NotifyAnalysisFailed(Exception ex) => _analysisTcs.TrySetException(ex);
+
         protected virtual void OnAnalysisComplete() { }
         #endregion
 

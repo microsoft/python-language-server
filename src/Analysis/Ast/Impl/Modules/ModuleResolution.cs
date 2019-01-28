@@ -100,7 +100,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 return _searchPaths;
             }
 
-            _searchPaths = await GetInterpreterSearchPathsAsync(cancellationToken).ConfigureAwait(false);
+            _searchPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
             Debug.Assert(_searchPaths != null, "Should have search paths");
             _searchPaths = _searchPaths != null
                             ? _searchPaths.Concat(Configuration.SearchPaths ?? Array.Empty<string>()).ToArray()
@@ -120,7 +120,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             _log?.Log(TraceEventType.Information, "GetCurrentSearchPaths", Configuration.InterpreterPath, ModuleCache.SearchPathCachePath);
             try {
-                var paths = await PythonLibraryPath.GetDatabaseSearchPathsAsync(Configuration, ModuleCache.SearchPathCachePath).ConfigureAwait(false);
+                var paths = await PythonLibraryPath.GetDatabaseSearchPathsAsync(Configuration, ModuleCache.SearchPathCachePath);
                 cancellationToken.ThrowIfCancellationRequested();
                 return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
             } catch (InvalidOperationException) {
@@ -164,7 +164,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             // Do normal searches
             try {
-                module = await ImportFromSearchPathsAsync(name, cancellationToken).ConfigureAwait(false);
+                module = await ImportFromSearchPathsAsync(name, cancellationToken);
             } catch (OperationCanceledException) {
                 _log?.Log(TraceEventType.Error, $"Import timeout {name}");
                 return TryImportModuleResult.Timeout;
@@ -338,7 +338,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 module = rdt.AddModule(mco);
             }
 
-            await module.LoadAndAnalyzeAsync(cancellationToken).ConfigureAwait(false);
+            await module.LoadAndAnalyzeAsync(cancellationToken);
             return module;
         }
 

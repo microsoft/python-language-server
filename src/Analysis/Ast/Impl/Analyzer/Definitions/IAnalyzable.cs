@@ -13,6 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents document that can be analyzed asynchronously.
@@ -42,5 +44,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <param name="analysis">Document analysis</param>
         /// <returns>True if analysis was accepted, false if is is out of date.</returns>
         bool NotifyAnalysisComplete(IDocumentAnalysis analysis);
+
+        /// <summary>
+        /// Notifies module that analysis has been canceled.
+        /// </summary>
+        void NotifyAnalysisCanceled();
+
+        /// <summary>
+        /// Notifies module that analysis has thrown an exception.
+        /// </summary>
+        void NotifyAnalysisFailed(Exception ex);
     }
 }
