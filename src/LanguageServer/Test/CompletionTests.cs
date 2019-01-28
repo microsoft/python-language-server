@@ -507,8 +507,6 @@ x.abc()
 
             result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 17));
             result.Should().HaveNoCompletion();
-            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 19));
-            result.Should().HaveNoCompletion();
 
             result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 29));
             result.Should().HaveLabels("float");

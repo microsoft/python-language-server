@@ -49,6 +49,9 @@ namespace Microsoft.Python.Analysis.Modules {
             lock (AnalysisLock) {
                 SpecializeTypes();
                 SpecializeFunctions();
+                foreach (var n in GetMemberNames()) {
+                    GetMember(n).GetPythonType<PythonType>()?.MakeReadOnly();
+                }
             }
         }
 
@@ -125,7 +128,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 if (t.TypeId == BuiltinTypeId.Unknown && t.MemberType != PythonMemberType.Unknown) {
                     if (t is PythonType pt) {
                         pt.TrySetTypeId(BuiltinTypeId.Type);
-                        pt.MakeReadOnly();
                     }
                 }
             }

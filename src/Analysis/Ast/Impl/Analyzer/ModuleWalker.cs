@@ -96,14 +96,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 var sourceVar = Eval.GlobalScope.Variables[v.Name];
-                var srcType = sourceVar?.Value.GetPythonType();
+                var sourceType = sourceVar?.Value.GetPythonType();
 
                 // If types are the classes, merge members.
                 // Otherwise, replace type from one from the stub.
-
-                if (srcType is PythonClassType cls) {
-                    // If class exists, add or replace its members
-                    // with ones from the stub, preserving documentation.
+                if (sourceType is PythonClassType cls && Module.Equals(cls.DeclaringModule)) {
+                    // If class exists and belongs to this module, add or replace
+                    // its members with ones from the stub, preserving documentation.
+                    // Don't augment types that do not come from this module.
                     foreach (var name in stubType.GetMemberNames()) {
                         var stubMember = stubType.GetMember(name);
                         var member = cls.GetMember(name);
@@ -116,7 +116,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 } else {
                     // Re-declare variable with the data from the stub.
                     if (!stubType.IsUnknown()) {
-                        srcType.TransferDocumentation(stubType);
+                        sourceType.TransferDocumentation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;
                         Eval.DeclareVariable(v.Name, v.Value, source, LocationInfo.Empty, overwrite: true);
