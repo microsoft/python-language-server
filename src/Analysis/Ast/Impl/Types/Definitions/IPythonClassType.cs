@@ -21,8 +21,19 @@ namespace Microsoft.Python.Analysis.Types {
     /// Represents Python class type definition.
     /// </summary>
     public interface IPythonClassType : IPythonType {
+        /// <summary>
+        /// Class definition node in the AST.
+        /// </summary>
         ClassDefinition ClassDefinition { get; }
+
+        /// <summary>
+        /// Python Method Resolution Order (MRO).
+        /// </summary>
         IReadOnlyList<IPythonType> Mro { get; }
+
+        /// <summary>
+        /// Base types.
+        /// </summary>
         IReadOnlyList<IPythonType> Bases { get; }
     }
 }

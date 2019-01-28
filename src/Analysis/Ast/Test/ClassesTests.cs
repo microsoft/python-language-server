@@ -92,12 +92,12 @@ namespace Microsoft.Python.Analysis.Tests {
                 var E = new PythonClassType("E", m);
                 var F = new PythonClassType("F", m);
 
-                F.SetBases(interpreter, new[] { O });
-                E.SetBases(interpreter, new[] { O });
-                D.SetBases(interpreter, new[] { O });
-                C.SetBases(interpreter, new[] { D, F });
-                B.SetBases(interpreter, new[] { D, E });
-                A.SetBases(interpreter, new[] { B, C });
+                F.SetBases(new[] { O });
+                E.SetBases(new[] { O });
+                D.SetBases(new[] { O });
+                C.SetBases(new[] { D, F });
+                B.SetBases(new[] { D, E });
+                A.SetBases(new[] { B, C });
 
                 PythonClassType.CalculateMro(A).Should().Equal(new[] { "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
                 PythonClassType.CalculateMro(B).Should().Equal(new[] { "B", "D", "E", "O" }, (p, n) => p.Name == n);

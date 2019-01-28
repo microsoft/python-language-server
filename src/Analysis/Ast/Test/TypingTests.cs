@@ -620,7 +620,22 @@ y = n2[0]
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
+        public async Task GenericTypeInstance() {
+            const string code = @"
+from typing import List
+
+l = List[str]()
+x = l[0]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("l").Which
+                .Should().HaveType("List[str]");
+            analysis.Should().HaveVariable("x").Which
+                .Should().HaveType(BuiltinTypeId.Str);
+        }
+
+
+        [TestMethod, Priority(0)]
         public async Task GenericClassBase() {
             const string code = @"
 from typing import TypeVar, Generic
@@ -632,12 +647,12 @@ class A(Generic[_E]): ...
 class B(Generic[_E]):
     def func(self) -> A[_E]: ...
 
-b = B(Exception)
+b = B[TypeError]()
 x = b.func()
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").Which
-                .Should().HaveType("Exception");
+                .Should().HaveType("TypeError");
         }
 
         [TestMethod, Priority(0)]

@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
@@ -27,7 +28,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
-    internal sealed class PythonClassType : PythonType, IPythonClassType, IEquatable<IPythonClassType> {
+    internal class PythonClassType : PythonType, IPythonClassType, IEquatable<IPythonClassType> {
         private readonly object _lock = new object();
 
         private IReadOnlyList<IPythonType> _mro;
@@ -110,7 +111,7 @@ namespace Microsoft.Python.Analysis.Types {
             // Specializations
             switch (typeName) {
                 case "list":
-                        return PythonCollectionType.CreateList(DeclaringModule.Interpreter, location, args);
+                    return PythonCollectionType.CreateList(DeclaringModule.Interpreter, location, args);
                 case "dict": {
                         // self, then contents
                         var contents = args.Values<IMember>().Skip(1).FirstOrDefault();
@@ -121,7 +122,10 @@ namespace Microsoft.Python.Analysis.Types {
                         return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, location, contents);
                     }
             }
-            return new PythonInstance(this, location);
+
+            return Bases.Any(b => b is IGenericTypeParameter)
+                ? CreateConcreteTypeInstance(args, location)
+                : new PythonInstance(this, location);
         }
         #endregion
 
@@ -147,7 +151,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
         #endregion
 
-        internal void SetBases(IPythonInterpreter interpreter, IEnumerable<IPythonType> bases) {
+        internal void SetBases(IEnumerable<IPythonType> bases) {
             lock (_lock) {
                 if (Bases != null) {
                     return; // Already set
@@ -225,5 +229,22 @@ namespace Microsoft.Python.Analysis.Types {
         private void Pop() => _isProcessing.Value = false;
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
+
+        private IPythonInstance CreateConcreteTypeInstance(IArgumentSet args, LocationInfo location) {
+            var genericBases = Bases.Where(b => b is IGenericTypeParameter).ToArray();
+            // TODO: handle optional generics as class A(Generic[_T1], Optional[Generic[_T2]])
+            if (genericBases.Length != args.Arguments.Count) {
+                // TODO: report parameters mismatch.
+            }
+
+            // Create concrete type
+            var specificName = $"Name_{Guid.NewGuid()}";
+            var classType = new PythonClassType(specificName, DeclaringModule);
+            // Optimistically use what is available even if there is an argument mismatch.
+            // TODO: report unresolved types?
+            var bases = args.Arguments.Select(a => a.Value).OfType<IPythonType>();
+            classType.SetBases(bases);
+            return new PythonInstance(classType, location);
+        }
     }
 }

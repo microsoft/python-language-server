@@ -23,8 +23,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// </summary>
     public interface IGenericType: IPythonType {
         /// <summary>
+        /// Type parameters such as in Tuple[T1, T2. ...] or
+        /// Generic[_T1, _T2, ...] as returned by TypeVar.
+        /// </summary>
+        IReadOnlyList<IGenericTypeParameter> Parameters { get; }
+
+        /// <summary>
         /// Creates instance of a type information with the specific
-        /// type arguments from the generic template.
+        /// type arguments from a generic template.
         /// </summary>
         IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null);
     }

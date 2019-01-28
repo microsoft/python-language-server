@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -27,14 +26,40 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class GenericType : IGenericType {
         private readonly Func<IReadOnlyList<IPythonType>, IPythonModule, LocationInfo, IPythonType> _typeConstructor;
 
-        public GenericType(string name, IPythonModule declaringModule, 
-            Func<IReadOnlyList<IPythonType>, IPythonModule, LocationInfo, IPythonType> typeConstructor) {
+        /// <summary>
+        /// Constructs generic type with generic parameters. Typically used
+        /// in generic classes such as when handling Generic[_T] base.
+        /// </summary>
+        public GenericType(string name, IPythonModule declaringModule, IReadOnlyList<IGenericTypeParameter> parameters)
+            : this(name, declaringModule) {
+            Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
+        }
 
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            DeclaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
+        /// <summary>
+        /// Constructs generic type with dynamic type constructor.
+        /// Typically used in type specialization scenarios.
+        /// </summary>
+        public GenericType(string name, IPythonModule declaringModule,
+            Func<IReadOnlyList<IPythonType>, IPythonModule, LocationInfo, IPythonType> typeConstructor)
+            : this(name, declaringModule) {
             _typeConstructor = typeConstructor ?? throw new ArgumentNullException(nameof(typeConstructor));
         }
 
+        private GenericType(string name, IPythonModule declaringModule) {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            DeclaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
+        }
+
+        /// <summary>
+        /// Type parameters such as in Tuple[T1, T2. ...] or
+        /// Generic[_T1, _T2, ...] as returned by TypeVar.
+        /// </summary>
+        public IReadOnlyList<IGenericTypeParameter> Parameters { get; } = Array.Empty<IGenericTypeParameter>();
+
+        /// <summary>
+        /// Creates instance of a type information with the specific
+        /// type arguments from a generic template.
+        /// </summary>
         public IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null)
             => _typeConstructor(typeArguments, declaringModule, location);
 
@@ -56,8 +81,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 throw new ArgumentException(@"Generic type instance construction arguments must be all of IPythonType", nameof(args));
             }
             var specific = CreateSpecificType(types, DeclaringModule, location);
-            return specific == null 
-                ? DeclaringModule.Interpreter.UnknownType 
+            return specific == null
+                ? DeclaringModule.Interpreter.UnknownType
                 : specific.CreateInstance(typeName, location, null);
         }
 
