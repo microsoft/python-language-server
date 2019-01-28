@@ -23,7 +23,7 @@
     <file src="Microsoft.PythonTools.Analyzer.exe" target="lib/vs16" />
     <file src="Microsoft.PythonTools.Analyzer.exe.config" target="lib/vs16" />
     <file src="Microsoft.PythonTools.Analyzer.pdb" target="lib/vs16" />
-    <file src="Typeshed/**" target="lib/vs16/Typeshed" />
+    <file src="Typeshed/**" target="lib/vs16" />
     <file src="PythonScraper.py" target="lib/vs16" />
     <file src="BuiltinScraper.py" target="lib/vs16" />
     <file src="ExtensionScraper.py" target="lib/vs16" />
