@@ -1,7 +1,6 @@
-﻿using Microsoft.Python.Core.Text;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Indexing {
     // From LSP.

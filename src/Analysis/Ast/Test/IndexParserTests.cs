@@ -1,15 +1,14 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.IO;
+using System.Linq;
 using System.Text;
-using TestUtilities;
+using FluentAssertions;
 using Microsoft.Python.Analysis.Indexing;
 using Microsoft.Python.Core.IO;
-using System.IO;
-using NSubstitute;
-using FluentAssertions;
 using Microsoft.Python.Parsing;
-using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NSubstitute;
+using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
 
@@ -69,9 +68,9 @@ namespace Microsoft.Python.Analysis.Tests {
             };
             parse.Should().Throw<ArgumentException>();
         }
-        
+
         private Stream MakeStream(string str) {
             return new MemoryStream(Encoding.UTF8.GetBytes(str));
         }
-    }   
+    }
 }

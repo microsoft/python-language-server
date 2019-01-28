@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -10,11 +9,11 @@ namespace Microsoft.Python.Analysis.Indexing {
     internal sealed class SymbolIndex : ISymbolIndex {
         private readonly ConcurrentDictionary<Uri, IReadOnlyList<HierarchicalSymbol>> _index = new ConcurrentDictionary<Uri, IReadOnlyList<HierarchicalSymbol>>();
         private bool _empty;
-        
+
         public SymbolIndex() {
             _empty = false;
         }
-        
+
         public bool isNotEmpty() {
             return _empty;
         }

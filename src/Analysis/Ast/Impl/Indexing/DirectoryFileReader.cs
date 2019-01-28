@@ -1,12 +1,10 @@
-﻿using Microsoft.Extensions.FileSystemGlobbing;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Microsoft.Python.Analysis.Indexing {
     internal class DirectoryFileReader {
@@ -18,7 +16,7 @@ namespace Microsoft.Python.Analysis.Indexing {
             _directoryPath = directoryPath;
             _includeFiles = includeFiles;
             _excludeFiles = excludeFiles;
-        } 
+        }
 
         private Matcher BuildMatcher() {
             Matcher matcher = new Matcher();

@@ -1,12 +1,10 @@
-﻿using Microsoft.Python.Core.IO;
-using Microsoft.Python.Parsing;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Text;
+using Microsoft.Python.Core.IO;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Indexing {
-    internal sealed class IndexParser: IIndexParser {
+    internal sealed class IndexParser : IIndexParser {
         private readonly ISymbolIndex _symbolIndex;
         private readonly IFileSystem _fileSystem;
         private readonly PythonLanguageVersion _version;

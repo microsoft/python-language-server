@@ -1,10 +1,8 @@
-﻿using Microsoft.Python.Core;
-using Microsoft.Python.Parsing.Ast;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Indexing {
     internal class SymbolIndexWalker : PythonWalker {

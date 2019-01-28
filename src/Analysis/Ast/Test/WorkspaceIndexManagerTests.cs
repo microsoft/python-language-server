@@ -1,14 +1,14 @@
-﻿using FluentAssertions;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using FluentAssertions;
 using Microsoft.Python.Analysis.Indexing;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             _fileSystem.DidNotReceive().FileExists(nonPythonTestFile);
         }
-        
+
         private void AddFileToTestFileSystem(string filePath) {
             _rootFileReader.DirectoryFilePaths().Returns(new List<string>() {
                 filePath

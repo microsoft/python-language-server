@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Python.Core.IO;
-using Microsoft.Extensions.FileSystemGlobbing;
-using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 using Microsoft.Python.Analysis.Core.Interpreter;
-using System.IO;
+using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Indexing {
