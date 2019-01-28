@@ -40,5 +40,6 @@ namespace Microsoft.Python.Analysis.Types {
         IReadOnlyList<IArgument> Arguments { get; }
         IListArgument ListArgument { get; }
         IDictionaryArgument DictionaryArgument { get; }
+        int OverloadIndex { get; }
     }
 }

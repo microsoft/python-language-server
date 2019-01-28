@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
@@ -70,7 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var args = ArgumentSet.Empty;
             var init = cls.GetMember<IPythonFunctionType>(@"__init__");
             if (init != null) {
-                var a = new ArgumentSet(init, new PythonInstance(cls), expr, Module, this);
+                var a = new ArgumentSet(init, 0, new PythonInstance(cls), expr, Module, this);
                 if (a.Errors.Count > 0) {
                     // AddDiagnostics(Module.Uri, a.Errors);
                 }
@@ -109,10 +110,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         public async Task<IMember> GetValueFromFunctionTypeAsync(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr, CancellationToken cancellationToken = default) {
-            // Determine argument types
-            var args = new ArgumentSet(fn, instance, expr, this);
-            args = await args.EvaluateAsync(cancellationToken);
-
             // If order to be able to find matching overload, we need to know
             // parameter types and count. This requires function to be analyzed.
             // Since we don't know which overload we will need, we have to 
@@ -121,10 +118,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 await SymbolTable.EvaluateAsync(o.FunctionDefinition, cancellationToken);
             }
 
+            // Pick the best overload.
+            var args = await FindOverloadAsync(fn, instance, expr, cancellationToken);
+            if (args == null) {
+                return UnknownType;
+            }
+            var fd = fn.Overloads.Count > 0 ? fn.Overloads[args.OverloadIndex].FunctionDefinition : null;
+
             // Re-declare parameters in the function scope since originally
             // their types might not have been known and now argument set
             // may contain concrete values.
-            if (fn.FunctionDefinition != null) {
+            if (fd != null) {
                 using (OpenScope(fn.FunctionDefinition, out _)) {
                     args.DeclareParametersInScope(this);
                 }
@@ -134,10 +138,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // most probably comes from the derived class which means that
             // the original 'self' and 'cls' variables are no longer valid
             // and function has to be re-evaluated with new arguments.
+            // Note that there is nothing to re-evaluate in stubs.
             var instanceType = instance?.GetPythonType();
             if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized ||
                 instanceType.IsSpecialized || fn.DeclaringType.IsSpecialized ||
-                instanceType.Equals(fn.DeclaringType)) {
+                instanceType.Equals(fn.DeclaringType) ||
+                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].ReturnDocumentation)) {
 
                 var t = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
                 if (!t.IsUnknown()) {
@@ -146,7 +152,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             // Try and evaluate with specific arguments but prevent recursion.
-            return await TryEvaluateVithArgumentsAsync(fn.FunctionDefinition, args, cancellationToken);
+            return await TryEvaluateWithArgumentsAsync(fd, args, cancellationToken);
         }
 
         public async Task<IMember> GetValueFromPropertyAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
@@ -155,7 +161,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return instance.Call(p.Name, ArgumentSet.Empty);
         }
 
-        private async Task<IMember> TryEvaluateVithArgumentsAsync(FunctionDefinition fd, IArgumentSet args, CancellationToken cancellationToken = default) {
+        private async Task<IMember> TryEvaluateWithArgumentsAsync(FunctionDefinition fd, IArgumentSet args, CancellationToken cancellationToken = default) {
             // Attempt to evaluate with specific arguments but prevent recursion.
             IMember result = UnknownType;
             if (fd != null && !_callEvalStack.Contains(fd)) {
@@ -172,5 +178,58 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
             return result;
         }
+
+        private async Task<ArgumentSet> FindOverloadAsync(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr, CancellationToken cancellationToken = default) {
+            if (fn.Overloads.Count == 1) {
+                return null;
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var sets = new List<ArgumentSet>();
+            for (var i = 0; i < fn.Overloads.Count; i++) {
+                var a = new ArgumentSet(fn, i, instance, expr, this);
+                var args = await a.EvaluateAsync(cancellationToken);
+                sets.Add(args);
+            }
+
+            var matches = sets.OrderBy(s => s.Errors.Count).TakeWhile(e => e.Errors.Count == 0).ToArray();
+            return !matches.Any() 
+                ? matches.FirstOrDefault() 
+                : matches.FirstOrDefault(args => IsMatch(args, fn.Overloads[args.OverloadIndex].Parameters));
+        }
+
+        private static bool IsMatch(IArgumentSet args, IReadOnlyList<IParameterInfo> parameters) {
+            // Arguments passed to function are created off the function definition
+            // and hence match by default. However, if multiple overloads are specified,
+            // we need to figure out if annotated types match. 
+            // https://docs.python.org/3/library/typing.html#typing.overload
+            //
+            //  @overload
+            //  def process(response: None) -> None:
+            //  @overload
+            //  def process(response: int) -> Tuple[int, str]:
+            //
+            // Note that in overloads there are no * or ** parameters.
+            // We match loosely by type.
+
+            var d = parameters.ToDictionary(p => p.Name, p => p.Type);
+            foreach (var a in args.Arguments<IMember>()) {
+                if (!d.TryGetValue(a.Key, out var t)) {
+                    return false;
+                }
+
+                var at = a.Value?.GetPythonType();
+                if (t == null && at == null) {
+                    continue;
+                }
+
+                if (t != null && at != null && !t.Equals(at)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+
     }
 }

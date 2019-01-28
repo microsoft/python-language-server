@@ -348,14 +348,14 @@ pow(1, 2)
             var analysis = await GetAnalysisAsync(code);
             var f = analysis.Should().HaveFunction(funcName).Which;
             var call = GetCall(analysis.Ast);
-            return new ArgumentSet(f, null, call, analysis.Document, null);
+            return new ArgumentSet(f, 0, null, call, analysis.Document, null);
         }
 
         private async Task<ArgumentSet> GetUnboundArgSetAsync(string code, string funcName = "f") {
             var analysis = await GetAnalysisAsync(code);
             var f = analysis.Should().HaveVariable(funcName).Which;
             var call = GetCall(analysis.Ast);
-            return new ArgumentSet(f.Value.GetPythonType<IPythonFunctionType>(), null, call, analysis.Document, null);
+            return new ArgumentSet(f.Value.GetPythonType<IPythonFunctionType>(), 0, null, call, analysis.Document, null);
         }
 
         private async Task<ArgumentSet> GetClassArgSetAsync(string code, string className = "A", string funcName = "f") {
@@ -363,7 +363,7 @@ pow(1, 2)
             var cls = analysis.Should().HaveClass(className).Which;
             var f = cls.Should().HaveMethod(funcName).Which;
             var call = GetCall(analysis.Ast);
-            return new ArgumentSet(f, new PythonInstance(cls), call, analysis.Document, null);
+            return new ArgumentSet(f, 0, new PythonInstance(cls), call, analysis.Document, null);
         }
 
         private CallExpression GetCall(PythonAst ast) {

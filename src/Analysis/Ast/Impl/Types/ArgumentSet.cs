@@ -47,11 +47,12 @@ namespace Microsoft.Python.Analysis.Types {
         public IListArgument ListArgument => _listArgument;
         public IDictionaryArgument DictionaryArgument => _dictArgument;
         public IReadOnlyList<DiagnosticsEntry> Errors => _errors;
+        public int OverloadIndex { get; }
 
         private ArgumentSet() { }
 
-        public ArgumentSet(IPythonFunctionType fn, IPythonInstance instance, CallExpression callExpr, ExpressionEval eval) :
-            this(fn, instance, callExpr, eval.Module, eval) { }
+        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, ExpressionEval eval) :
+            this(fn, overloadIndex, instance, callExpr, eval.Module, eval) { }
 
         /// <summary>
         /// Creates set of arguments for a function call based on the call expression
@@ -59,15 +60,19 @@ namespace Microsoft.Python.Analysis.Types {
         /// for arguments, but not actual values. <see cref="EvaluateAsync"/> on how to
         /// get values for actual parameters.
         /// </summary>
-        /// <param name="fn">Function to call.</param>
+        /// <param name="fn">Function type.</param>
+        /// <param name="overloadIndex">Function overload to call.</param>
         /// <param name="instance">Type instance the function is bound to. For derived classes it is different from the declared type.</param>
         /// <param name="callExpr">Call expression that invokes the function.</param>
         /// <param name="module">Module that contains the call expression.</param>
         /// <param name="eval">Evaluator that can calculate values of arguments from their respective expressions.</param>
-        public ArgumentSet(IPythonFunctionType fn, IPythonInstance instance, CallExpression callExpr, IPythonModule module, ExpressionEval eval) {
+        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IPythonModule module, ExpressionEval eval) {
             _eval = eval;
+            OverloadIndex = overloadIndex;
 
-            var fd = fn.FunctionDefinition;
+            var overload = fn.Overloads[overloadIndex];
+            var fd = overload.FunctionDefinition;
+
             if (fd == null || fn.IsSpecialized) {
                 // Typically specialized function, like TypeVar() that does not actually have AST definition.
                 // Make the arguments from the call expression. If argument does not have name, 
@@ -248,31 +253,31 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public async Task<ArgumentSet> EvaluateAsync(CancellationToken cancellationToken = default) {
-                if (_evaluated || _eval == null) {
-                    return this;
-                }
-
-                foreach (var a in _arguments.Where(x => x.Value == null)) {
-                    a.Value = await _eval.GetValueFromExpressionAsync(a.Expression, cancellationToken);
-                }
-
-                if (_listArgument != null) {
-                    foreach (var e in _listArgument.Expressions) {
-                        var value = await _eval.GetValueFromExpressionAsync(e, cancellationToken);
-                        _listArgument._Values.Add(value);
-                    }
-                }
-
-                if (_dictArgument != null) {
-                    foreach (var e in _dictArgument.Expressions) {
-                        var value = await _eval.GetValueFromExpressionAsync(e.Value, cancellationToken);
-                        _dictArgument._Args[e.Key] = value;
-                    }
-                }
-
-                _evaluated = true;
+            if (_evaluated || _eval == null) {
                 return this;
             }
+
+            foreach (var a in _arguments.Where(x => x.Value == null)) {
+                a.Value = await _eval.GetValueFromExpressionAsync(a.Expression, cancellationToken);
+            }
+
+            if (_listArgument != null) {
+                foreach (var e in _listArgument.Expressions) {
+                    var value = await _eval.GetValueFromExpressionAsync(e, cancellationToken);
+                    _listArgument._Values.Add(value);
+                }
+            }
+
+            if (_dictArgument != null) {
+                foreach (var e in _dictArgument.Expressions) {
+                    var value = await _eval.GetValueFromExpressionAsync(e.Value, cancellationToken);
+                    _dictArgument._Args[e.Key] = value;
+                }
+            }
+
+            _evaluated = true;
+            return this;
+        }
 
         private sealed class Argument : IArgument {
             public string Name { get; }
@@ -284,6 +289,18 @@ namespace Microsoft.Python.Analysis.Types {
             public Argument(string name, ParameterKind kind) {
                 Name = name;
                 Kind = kind;
+            }
+            public Argument(IParameterInfo info) {
+                Name = info.Name;
+                if (info.IsKeywordDict) {
+                    Kind = ParameterKind.Dictionary;
+                } else if (info.IsParamArray) {
+                    Kind = ParameterKind.List;
+                } else if (string.IsNullOrEmpty(info.DefaultValueString)) {
+                    Kind = ParameterKind.KeywordOnly;
+                } else {
+                    Kind = ParameterKind.Normal;
+                }
             }
         }
 

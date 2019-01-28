@@ -132,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // Actual parameter type will be determined when method is invoked.
                     // The reason is that if method might be called on a derived class.
                     // Declare self or cls in this scope.
-                    Eval.DeclareVariable(p0.Name, _self, VariableSource.Declaration, p0.NameExpression);
+                    Eval.DeclareVariable(p0.Name, new PythonInstance(_self), VariableSource.Declaration, p0.NameExpression);
                     // Set parameter info.
                     var pi = new ParameterInfo(Ast, p0, _self);
                     pi.SetType(_self);

@@ -325,12 +325,12 @@ x
 import unittest
 class Simple(unittest.TestCase):
     def test_exception(self):
-        self.assertRaises().
+        self.assertRaises(TypeError).
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
-            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 29));
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 38));
             result.Should().HaveInsertTexts("exception");
         }
 
@@ -340,12 +340,12 @@ class Simple(unittest.TestCase):
 import unittest
 class Simple(unittest.TestCase):
     def test_exception(self):
-        self.assertRaises().
+        self.assertRaises(TypeError).
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
-            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 29));
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 38));
             result.Should().HaveInsertTexts("exception");
         }
 

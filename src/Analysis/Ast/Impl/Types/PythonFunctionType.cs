@@ -99,7 +99,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
             // Now we can go and find overload with matching arguments.
-            var overload = FindOverload(args);
+            var overload = Overloads[args.OverloadIndex];
             return overload?.GetReturnValue(instance?.Location ?? LocationInfo.Empty, args);
         }
 
@@ -175,48 +175,6 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
         }
-
-        private IPythonFunctionOverload FindOverload(IArgumentSet args) {
-            // Find best overload match. Of only one, use it.
-            if (Overloads.Count == 1) {
-                return Overloads[0];
-            }
-            // Try matching parameters
-            return Overloads.FirstOrDefault(o => IsMatch(args, o.Parameters));
-        }
-
-        public static bool IsMatch(IArgumentSet args, IReadOnlyList<IParameterInfo> parameters) {
-            // Arguments passed to function are created off the function definition
-            // and hence match by default. However, if multiple overloads are specified,
-            // we need to figure out if annotated types match. 
-            // https://docs.python.org/3/library/typing.html#typing.overload
-            //
-            //  @overload
-            //  def process(response: None) -> None:
-            //  @overload
-            //  def process(response: int) -> Tuple[int, str]:
-            //
-            // Note that in overloads there are no * or ** parameters.
-            // We match loosely by type.
-
-            var d = parameters.ToDictionary(p => p.Name, p => p.Type);
-            foreach (var a in args.Arguments<IMember>()) {
-                if (!d.TryGetValue(a.Key, out var t)) {
-                    return false;
-                }
-
-                var at = a.Value?.GetPythonType();
-                if (t == null && at == null) {
-                    continue;
-                }
-
-                if (t != null && at != null && !t.Equals(at)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
 
         /// <summary>
         /// Represents unbound method, such in C.f where C is class rather than the instance.
