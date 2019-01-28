@@ -47,10 +47,10 @@ namespace Microsoft.Python.Core.IO {
             matcher.AddIncludePatterns(includeFiles.IsNullOrEmpty() ? new[] { "**/*" } : includeFiles);
             matcher.AddExcludePatterns(excludeFiles ?? Enumerable.Empty<string>());
             var matchResult = matcher.Execute(new DirectoryInfoWrapper(_directoryInfo));
-
-            foreach (var file in matchResult.Files) {
-                yield return CreateFileSystemInfoProxy(_directoryInfo.GetFileSystemInfos(file.Stem).First());
-            }
+            return matchResult.Files.Select((filePatternMatch) => {
+                FileSystemInfo fileSystemInfo = _directoryInfo.GetFileSystemInfos(filePatternMatch.Stem).First();
+                return CreateFileSystemInfoProxy(fileSystemInfo);
+            });
         }
 
         private static IFileSystemInfo CreateFileSystemInfoProxy(FileSystemInfo fileSystemInfo)
