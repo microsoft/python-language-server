@@ -42,5 +42,7 @@ namespace Microsoft.Python.Analysis.Indexing {
             ast.Walk(walker);
             _index[uri] = walker.Symbols;
         }
+
+        public void Delete(Uri uri) => _index.TryRemove(uri, out var _);
     }
 }
