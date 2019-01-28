@@ -16,6 +16,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 
 namespace Microsoft.Python.Core.IO {
     public sealed class DirectoryInfoProxy : IDirectoryInfo {
@@ -39,6 +41,17 @@ namespace Microsoft.Python.Core.IO {
         public IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos() => _directoryInfo
                 .EnumerateFileSystemInfos()
                 .Select(CreateFileSystemInfoProxy);
+
+        public IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includeFiles, string[] excludeFiles) {
+            Matcher matcher = new Matcher();
+            matcher.AddIncludePatterns(includeFiles.IsNullOrEmpty() ? new[] { "**/*" } : includeFiles);
+            matcher.AddExcludePatterns(excludeFiles ?? Enumerable.Empty<string>());
+            var matchResult = matcher.Execute(new DirectoryInfoWrapper(_directoryInfo));
+
+            foreach (var file in matchResult.Files) {
+                yield return CreateFileSystemInfoProxy(_directoryInfo.GetFileSystemInfos(file.Stem).First());
+            }
+        }
 
         private static IFileSystemInfo CreateFileSystemInfoProxy(FileSystemInfo fileSystemInfo)
             => fileSystemInfo is DirectoryInfo directoryInfo

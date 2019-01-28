@@ -19,5 +19,6 @@ namespace Microsoft.Python.Core.IO {
     public interface IDirectoryInfo : IFileSystemInfo {
         IDirectoryInfo Parent { get; }
         IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos();
+        IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includeFiles, string[] excludeFiles);
     }
 }
