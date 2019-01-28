@@ -21,6 +21,7 @@ using System.Threading;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types.Collections;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
@@ -122,10 +123,7 @@ namespace Microsoft.Python.Analysis.Types {
                         return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, location, contents);
                     }
             }
-
-            return Bases.Any(b => b is IGenericTypeParameter)
-                ? CreateConcreteTypeInstance(args, location)
-                : new PythonInstance(this, location);
+            return new PythonInstance(this, location);
         }
         #endregion
 
@@ -230,21 +228,32 @@ namespace Microsoft.Python.Analysis.Types {
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
 
-        private IPythonInstance CreateConcreteTypeInstance(IArgumentSet args, LocationInfo location) {
-            var genericBases = Bases.Where(b => b is IGenericTypeParameter).ToArray();
+        internal IPythonClassType CreateSpecificType(IArgumentSet args, IPythonModule declaringModule, LocationInfo location) {
+            var genericBases = Bases.Where(b => b is IGenericType).ToArray();
             // TODO: handle optional generics as class A(Generic[_T1], Optional[Generic[_T2]])
             if (genericBases.Length != args.Arguments.Count) {
                 // TODO: report parameters mismatch.
             }
 
             // Create concrete type
-            var specificName = $"Name_{Guid.NewGuid()}";
-            var classType = new PythonClassType(specificName, DeclaringModule);
+            var bases = args.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray();
+            var specificName = CodeFormatter.FormatSequence(Name, '[', bases);
+            var classType = new PythonClassType(specificName, declaringModule);
+            
             // Optimistically use what is available even if there is an argument mismatch.
             // TODO: report unresolved types?
-            var bases = args.Arguments.Select(a => a.Value).OfType<IPythonType>();
             classType.SetBases(bases);
-            return new PythonInstance(classType, location);
+            
+            // Add members from the template class (this one).
+            classType.AddMembers(this, true);
+            
+            // Resolve return types of methods, if any were annotated as generics
+            //foreach(var m in classType.GetMemberNames().Select(n => classType.GetMember(n))) {
+            //    switch(m.GetPythonType()) {
+
+            //    }
+            //}
+            return classType;
         }
     }
 }

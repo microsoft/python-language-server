@@ -37,9 +37,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var args = await GetTypeArgumentsAsync(expr, cancellationToken);
                 return gen.CreateSpecificType(args, Module, GetLoc(expr));
             }
-            if (target is IPythonClassType cls && cls.Bases.Any(b => b is IGenericType)) {
+
+            // This is a bit of a hack since there is no GenericClassType
+            // because PythonClassType is created before ClassDefinition is walked
+            // since we resolve classes on demand.
+            // TODO: figure out if we could make GenericClassType: PythonClassType, IGenericType instead.
+            if (target is PythonClassType cls && cls.IsGeneric()) {
                 var args = await GetTypeArgumentsAsync(expr, cancellationToken);
-                return cls.CreateInstance(cls.Name, GetLoc(expr), args);
+                return cls.CreateSpecificType(new ArgumentSet(args), Module, GetLoc(expr));
             }
 
             if (expr.Index is SliceExpression || expr.Index is TupleExpression) {

@@ -21,9 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Extensions;
-using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -50,6 +48,11 @@ namespace Microsoft.Python.Analysis.Types {
         public int OverloadIndex { get; }
 
         private ArgumentSet() { }
+
+        public ArgumentSet(IReadOnlyList<IPythonType> types) {
+            _arguments = types.Select(t => new Argument(t)).ToList();
+            _evaluated = true;
+        }
 
         public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, ExpressionEval eval) :
             this(fn, overloadIndex, instance, callExpr, eval.Module, eval) { }
@@ -301,6 +304,10 @@ namespace Microsoft.Python.Analysis.Types {
                 } else {
                     Kind = ParameterKind.Normal;
                 }
+            }
+
+            public Argument(IPythonType type) {
+                Value = type;
             }
         }
 

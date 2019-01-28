@@ -24,6 +24,7 @@ using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -645,14 +646,24 @@ _E = TypeVar('_E', bound=Exception)
 class A(Generic[_E]): ...
 
 class B(Generic[_E]):
+    a: A[_E]
     def func(self) -> A[_E]: ...
 
 b = B[TypeError]()
 x = b.func()
+y = b.a
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("x").Which
-                .Should().HaveType("TypeError");
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("b")
+                .Which.Should().HaveMembers("args", @"with_traceback");
+
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType("A[TypeError]")
+                .Which.Should().HaveMembers("args", @"with_traceback");
+
+            analysis.Should().HaveVariable("y")
+                .Which.Should().HaveType("A[TypeError]")
+                .Which.Should().HaveMembers("args", @"with_traceback");
         }
 
         [TestMethod, Priority(0)]
