@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Tests {
             _fileSystem.FileOpen(pythonTestFile, FileMode.Open).Returns(MakeStream("x = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
-            await indexManager.AddRootDirectory();
+            await indexManager.AddRootDirectoryAsync();
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Tests {
             AddFileToRootTestFileSystem(nonPythonTestFile);
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, this._rootPath, new string[] { }, new string[] { });
-            indexManager.AddRootDirectory();
+            indexManager.AddRootDirectoryAsync();
 
             _fileSystem.DidNotReceive().FileExists(nonPythonTestFile);
         }
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Tests {
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
-            indexManager.ProcessFile(new Uri(pythonTestFile), doc);
+            indexManager.ProcessNewFile(new Uri(pythonTestFile), doc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -100,8 +100,8 @@ namespace Microsoft.Python.Analysis.Tests {
             latestDoc.GetAnyAst().Returns(MakeAst("y = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
-            await indexManager.AddRootDirectory();
-            indexManager.ProcessFileIfIndexed(new Uri(pythonTestFile), latestDoc);
+            await indexManager.AddRootDirectoryAsync();
+            indexManager.ReIndexFile(new Uri(pythonTestFile), latestDoc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -117,8 +117,8 @@ namespace Microsoft.Python.Analysis.Tests {
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
-            indexManager.ProcessFile(new Uri(pythonTestFile), doc);
-            await indexManager.ProcessClosedFile(new Uri(pythonTestFile));
+            indexManager.ProcessNewFile(new Uri(pythonTestFile), doc);
+            await indexManager.ProcessClosedFileAsync(new Uri(pythonTestFile));
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
@@ -135,11 +135,11 @@ namespace Microsoft.Python.Analysis.Tests {
             latestDoc.GetAnyAst().Returns(MakeAst("y = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
-            await indexManager.AddRootDirectory();
-            indexManager.ProcessFile(new Uri(pythonTestFile), latestDoc);
+            await indexManager.AddRootDirectoryAsync();
+            indexManager.ProcessNewFile(new Uri(pythonTestFile), latestDoc);
             // It Needs to remake the stream for the file, previous one is closed
             _fileSystem.FileOpen(pythonTestFile, FileMode.Open).Returns(MakeStream("x = 1"));
-            await indexManager.ProcessClosedFile(new Uri(pythonTestFile));
+            await indexManager.ProcessClosedFileAsync(new Uri(pythonTestFile));
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -158,10 +158,10 @@ namespace Microsoft.Python.Analysis.Tests {
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
-            indexManager.ProcessFile(new Uri(pythonTestFile), doc);
-            await indexManager.ProcessClosedFile(new Uri(pythonTestFile));
+            indexManager.ProcessNewFile(new Uri(pythonTestFile), doc);
+            await indexManager.ProcessClosedFileAsync(new Uri(pythonTestFile));
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
-            indexManager.ProcessFileIfIndexed(new Uri(pythonTestFile), doc);
+            indexManager.ReIndexFile(new Uri(pythonTestFile), doc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +16,6 @@ namespace Microsoft.Python.Analysis.Indexing {
         private readonly string _workspaceRootPath;
         private readonly string[] _includeFiles;
         private readonly string[] _excludeFiles;
-        private readonly ConcurrentDictionary<Uri, bool> _indexedFiles = new ConcurrentDictionary<Uri, bool>();
         private readonly CancellationTokenSource _allIndexCts = new CancellationTokenSource();
 
         public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
@@ -35,16 +33,13 @@ namespace Microsoft.Python.Analysis.Indexing {
             _excludeFiles = excludeFiles;
         }
 
-        public Task AddRootDirectory(CancellationToken workspaceCancellationToken = default) {
+        public Task AddRootDirectoryAsync(CancellationToken workspaceCancellationToken = default) {
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(workspaceCancellationToken, _allIndexCts.Token);
             var parseTasks = new List<Task>();
             foreach (var fileInfo in WorkspaceFiles()) {
                 if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
                     Uri uri = new Uri(fileInfo.FullName);
-                    parseTasks.Add(_indexParser.ParseAsync(uri, linkedCts.Token).ContinueWith((task) => {
-                        linkedCts.Token.ThrowIfCancellationRequested();
-                        _indexedFiles[uri] = true;
-                    }));
+                    parseTasks.Add(_indexParser.ParseAsync(uri, linkedCts.Token));
                 }
             }
             return Task.WhenAll(parseTasks.ToArray());
@@ -54,12 +49,9 @@ namespace Microsoft.Python.Analysis.Indexing {
             return _fileSystem.GetDirectoryInfo(_workspaceRootPath).EnumerateFileSystemInfos(_includeFiles, _excludeFiles);
         }
 
-        private bool IsFileIndexed(Uri uri) {
-            _indexedFiles.TryGetValue(uri, out var val);
-            return val;
-        }
+        private bool IsFileIndexed(Uri uri) => _symbolIndex.IsIndexed(uri);
 
-        public Task ProcessClosedFile(Uri uri, CancellationToken fileCancellationToken = default) {
+        public Task ProcessClosedFileAsync(Uri uri, CancellationToken fileCancellationToken = default) {
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(fileCancellationToken, _allIndexCts.Token);
             // If path is on workspace
             if (IsFileOnWorkspace(uri)) {
@@ -67,7 +59,6 @@ namespace Microsoft.Python.Analysis.Indexing {
                 return _indexParser.ParseAsync(uri, linkedCts.Token);
             } else {
                 // remove file from index
-                _indexedFiles.TryRemove(uri, out _);
                 _symbolIndex.Delete(uri);
                 return Task.CompletedTask;
             }
@@ -77,14 +68,13 @@ namespace Microsoft.Python.Analysis.Indexing {
             return _fileSystem.IsPathUnderRoot(_workspaceRootPath, uri.AbsolutePath);
         }
 
-        public void ProcessFile(Uri uri, IDocument doc) {
-            _indexedFiles[uri] = true;
+        public void ProcessNewFile(Uri uri, IDocument doc) {
             _symbolIndex.UpdateIndex(uri, doc.GetAnyAst());
         }
 
-        public void ProcessFileIfIndexed(Uri uri, IDocument doc) {
+        public void ReIndexFile(Uri uri, IDocument doc) {
             if (IsFileIndexed(uri)) {
-                ProcessFile(uri, doc);
+                ProcessNewFile(uri, doc);
             }
         }
 

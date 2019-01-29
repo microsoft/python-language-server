@@ -44,5 +44,7 @@ namespace Microsoft.Python.Analysis.Indexing {
         }
 
         public void Delete(Uri uri) => _index.TryRemove(uri, out var _);
+
+        public bool IsIndexed(Uri uri) => _index.ContainsKey(uri);
     }
 }

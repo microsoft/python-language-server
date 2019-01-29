@@ -7,5 +7,6 @@ namespace Microsoft.Python.Analysis.Indexing {
         void UpdateIndex(Uri uri, PythonAst pythonAst);
         IEnumerable<FlatSymbol> WorkspaceSymbols(string query);
         void Delete(Uri uri);
+        bool IsIndexed(Uri uri);
     }
 }
