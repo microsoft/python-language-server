@@ -658,11 +658,41 @@ y = b.a
                 .Which.Should().HaveMembers("args", @"with_traceback");
 
             analysis.Should().HaveVariable("x")
-                .Which.Should().HaveType("A[TypeError]")
+                .Which.Should().HaveType("A[TypeError]") // TODO: should be A[TypeError]
                 .Which.Should().HaveMembers("args", @"with_traceback");
 
             analysis.Should().HaveVariable("y")
-                .Which.Should().HaveType("A[TypeError]")
+                .Which.Should().HaveType("A[TypeError]") // TODO: should be A[[TypeError]
+                .Which.Should().HaveMembers("args", @"with_traceback");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassBaseForwardRef() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_E = TypeVar('_E', bound=Exception)
+
+class B(Generic[_E]):
+    a: A[_E]
+    def func(self) -> A[_E]: ...
+
+class A(Generic[_E]): ...
+
+b = B[TypeError]()
+x = b.func()
+y = b.a
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("b")
+                .Which.Should().HaveMembers("args", @"with_traceback");
+
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType("A[TypeError]") // TODO: should be A[TypeError]
+                .Which.Should().HaveMembers("args", @"with_traceback");
+
+            analysis.Should().HaveVariable("y")
+                .Which.Should().HaveType("A[TypeError]") // TODO: should be A[[TypeError]
                 .Which.Should().HaveMembers("args", @"with_traceback");
         }
 

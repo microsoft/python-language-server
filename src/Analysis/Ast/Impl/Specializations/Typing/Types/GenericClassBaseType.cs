@@ -13,13 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Linq;
-using Microsoft.Python.Analysis.Specializations.Typing;
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis {
-    public static class PythonClassExtensions {
-        public static bool IsGeneric(this IPythonClassType cls) 
-            => cls.Bases != null && cls.Bases.Any(b => b is IGenericType);
+namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
+    internal sealed class GenericClassBaseType: PythonClassType, IGenericClassBaseType {
+        internal GenericClassBaseType(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule, LocationInfo location) 
+            : base("Generic", declaringModule, location) {
+            TypeArgs = typeArgs;
+        }
+
+        public IReadOnlyList<IGenericTypeParameter> TypeArgs { get; }
     }
 }

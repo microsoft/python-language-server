@@ -49,8 +49,8 @@ namespace Microsoft.Python.Analysis.Types {
 
         private ArgumentSet() { }
 
-        public ArgumentSet(IReadOnlyList<IPythonType> types) {
-            _arguments = types.Select(t => new Argument(t)).ToList();
+        public ArgumentSet(IReadOnlyList<IPythonType> typeArgs) {
+            _arguments = typeArgs.Select(t => new Argument(t)).ToList();
             _evaluated = true;
         }
 
@@ -306,7 +306,9 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
 
-            public Argument(IPythonType type) {
+            public Argument(IPythonType type) : this(type.Name, type) { }
+            public Argument(string name, IPythonType type) {
+                Name = name;
                 Value = type;
             }
         }

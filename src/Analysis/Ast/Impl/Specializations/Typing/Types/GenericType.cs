@@ -20,11 +20,16 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
+    internal delegate IPythonType SpecificTypeConstructor(
+        IReadOnlyList<IPythonType> typeArgs, 
+        IPythonModule declaringModule, 
+        LocationInfo location);
+
     /// <summary>
     /// Base class for generic types and type declarations.
     /// </summary>
     internal class GenericType : IGenericType {
-        private readonly Func<IReadOnlyList<IPythonType>, IPythonModule, LocationInfo, IPythonType> _typeConstructor;
+        private readonly SpecificTypeConstructor _specificTypeConstructor;
 
         /// <summary>
         /// Constructs generic type with generic parameters. Typically used
@@ -39,10 +44,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Constructs generic type with dynamic type constructor.
         /// Typically used in type specialization scenarios.
         /// </summary>
-        public GenericType(string name, IPythonModule declaringModule,
-            Func<IReadOnlyList<IPythonType>, IPythonModule, LocationInfo, IPythonType> typeConstructor)
+        public GenericType(string name, IPythonModule declaringModule, SpecificTypeConstructor specificTypeConstructor)
             : this(name, declaringModule) {
-            _typeConstructor = typeConstructor ?? throw new ArgumentNullException(nameof(typeConstructor));
+            _specificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
         }
 
         private GenericType(string name, IPythonModule declaringModule) {
@@ -61,7 +65,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// type arguments from a generic template.
         /// </summary>
         public IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null)
-            => _typeConstructor(typeArguments, declaringModule, location);
+            => _specificTypeConstructor(typeArguments, declaringModule, location);
 
         #region IPythonType
         public string Name { get; }

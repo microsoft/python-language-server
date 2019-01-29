@@ -17,7 +17,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
@@ -32,19 +31,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            // If target is a generic type, create specific class
-            if (target is IGenericType gen) {
-                var args = await GetTypeArgumentsAsync(expr, cancellationToken);
-                return gen.CreateSpecificType(args, Module, GetLoc(expr));
-            }
-
-            // This is a bit of a hack since there is no GenericClassType
-            // because PythonClassType is created before ClassDefinition is walked
-            // since we resolve classes on demand.
-            // TODO: figure out if we could make GenericClassType: PythonClassType, IGenericType instead.
-            if (target is PythonClassType cls && cls.IsGeneric()) {
-                var args = await GetTypeArgumentsAsync(expr, cancellationToken);
-                return cls.CreateSpecificType(new ArgumentSet(args), Module, GetLoc(expr));
+            // Try generics
+            var result = await GetValueFromGenericAsync(target, expr, cancellationToken);
+            if (result != null) {
+                return result;
             }
 
             if (expr.Index is SliceExpression || expr.Index is TupleExpression) {
@@ -107,21 +97,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return await GetValueFromExpressionAsync(iter.List, cancellationToken) ?? UnknownType;
             }
             return UnknownType;
-        }
-
-        private async Task<IReadOnlyList<IPythonType>> GetTypeArgumentsAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
-            var args = new List<IPythonType>();
-            if (expr.Index is TupleExpression tex) {
-                cancellationToken.ThrowIfCancellationRequested();
-                foreach (var item in tex.Items) {
-                    var e = await GetValueFromExpressionAsync(item, cancellationToken);
-                    args.Add(e?.GetPythonType() ?? UnknownType);
-                }
-            } else {
-                var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
-                args.Add(index?.GetPythonType() ?? UnknownType);
-            }
-            return args;
         }
     }
 }
