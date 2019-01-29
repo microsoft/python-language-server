@@ -100,6 +100,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // x: NamedTuple(...)
                 return (await GetValueFromCallableAsync(callExpr, cancellationToken))?.GetPythonType() ?? UnknownType;
             }
+
+            if (expr is IndexExpression indexExpr) {
+                // Try generics
+                var target = await GetValueFromExpressionAsync(indexExpr.Target, cancellationToken);
+                var result = await GetValueFromGenericAsync(target, indexExpr, cancellationToken);
+                if(result != null) {
+                    return result.GetPythonType();
+                }
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
             // Look at specialization and typing first
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             return ann.GetValue(new TypeAnnotationConverter(this, options));

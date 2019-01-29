@@ -47,6 +47,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var genericTypeArgs = indices.OfType<IGenericTypeParameter>().ToArray();
             var specificTypes = indices.Where(i => !(i is IGenericTypeParameter)).OfType<IPythonType>().ToArray();
 
+            if (specificTypes.Length == 0 && genericTypeArgs.Length > 0) {
+                // The expression is still generic. For example, generic return
+                // annotation of a class method, such as 'def func(self) -> A[_E]: ...'.
+                // Leave it alone, we don't want resolve generic with generic.
+                return null;
+            }
+
             if (genericTypeArgs.Length > 0 && genericTypeArgs.Length != indices.Count) {
                 // TODO: report that some type arguments are not declared with TypeVar.
             }
