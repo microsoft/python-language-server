@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.IO;
@@ -27,14 +28,18 @@ namespace Microsoft.Python.Analysis.Indexing {
 
 
         public void AddRootDirectory() {
-            var files = _fileSystem.GetDirectoryInfo(_workspaceRootPath).EnumerateFileSystemInfos(_includeFiles, _excludeFiles);
+            var files = WorkspaceFiles();
             foreach (var fileInfo in files) {
                 if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
                     Uri uri = new Uri(fileInfo.FullName);
-                    _indexParser.ParseFile(uri);
+                    _indexParser.ParseAsync(uri);
                     _indexedFiles[uri] = true;
                 }
             }
+        }
+
+        private IEnumerable<IFileSystemInfo> WorkspaceFiles() {
+            return _fileSystem.GetDirectoryInfo(_workspaceRootPath).EnumerateFileSystemInfos(_includeFiles, _excludeFiles);
         }
 
         private bool IsFileIndexed(Uri uri) {
@@ -46,7 +51,7 @@ namespace Microsoft.Python.Analysis.Indexing {
             // If path is on workspace
             if (IsFileOnWorkspace(uri)) {
                 // updates index and ignores previous AST
-                _indexParser.ParseFile(uri);
+                _indexParser.ParseAsync(uri);
             } else {
                 // remove file from index
                 _indexedFiles.TryRemove(uri, out _);

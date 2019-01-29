@@ -2,6 +2,8 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Indexing;
 using Microsoft.Python.Core.IO;
@@ -27,12 +29,6 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
-        [TestMethod, Priority(0)]
-        public void NoSymbols() {
-            ISymbolIndex symbolIndex = new SymbolIndex();
-            var symbols = symbolIndex.WorkspaceSymbols("");
-            symbols.Should().BeEmpty();
-        }
 
         [TestMethod, Priority(0)]
         public void NullIndexThrowsException() {
@@ -43,13 +39,13 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public void ParseVariableInFile() {
+        public async Task ParseVariableInFileAsync() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);
             _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, PythonLanguageVersion.V37);
-            indexParser.ParseFile(new Uri(testFilePath));
+            await indexParser.ParseAsync(new Uri(testFilePath));
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -63,10 +59,51 @@ namespace Microsoft.Python.Analysis.Tests {
             _fileSystem.FileExists(testFilePath).Returns(false);
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, PythonLanguageVersion.V37);
-            Action parse = () => {
-                indexParser.ParseFile(new Uri(testFilePath));
+            Func<Task> parse = async () => {
+                await indexParser.ParseAsync(new Uri(testFilePath));
             };
+
             parse.Should().Throw<FileNotFoundException>();
+            var symbols = _symbolIndex.WorkspaceSymbols("");
+            symbols.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public void CancellParsing() {
+            const string testFilePath = "C:/bla.py";
+            _fileSystem.FileExists(testFilePath).Returns(true);
+            _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
+
+            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, PythonLanguageVersion.V37);
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+            Func<Task> parse = async () => {
+                await indexParser.ParseAsync(new Uri(testFilePath), cancellationTokenSource.Token);
+            };
+
+            parse.Should().Throw<TaskCanceledException>();
+            var symbols = _symbolIndex.WorkspaceSymbols("");
+            symbols.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public void DisposeParserCancelesParsing() {
+            const string testFilePath = "C:/bla.py";
+            _fileSystem.FileExists(testFilePath).Returns(true);
+            MemoryStream stream = new MemoryStream();
+            // no writing to the stream, will block when read
+            _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(stream);
+
+            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, PythonLanguageVersion.V37);
+            Func<Task> parse = async () => {
+                Task t = indexParser.ParseAsync(new Uri(testFilePath));
+                indexParser.Dispose();
+                await t;
+            };
+
+            parse.Should().Throw<TaskCanceledException>();
+            var symbols = _symbolIndex.WorkspaceSymbols("");
+            symbols.Should().HaveCount(0);
         }
 
         private Stream MakeStream(string str) {
