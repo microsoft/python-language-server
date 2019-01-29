@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 
@@ -21,12 +22,17 @@ namespace Microsoft.Python.Analysis.Indexing {
 
         public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
             string[] excludeFiles) {
+            Check.ArgumentNotNull(nameof(fileSystem), fileSystem);
+            Check.ArgumentNotNull(nameof(rootPath), rootPath);
+            Check.ArgumentNotNull(nameof(includeFiles), includeFiles);
+            Check.ArgumentNotNull(nameof(excludeFiles), excludeFiles);
+
             _symbolIndex = symbolIndex;
-            _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+            _fileSystem = fileSystem;
             _indexParser = new IndexParser(symbolIndex, fileSystem, version);
-            _workspaceRootPath = rootPath ?? throw new ArgumentNullException(nameof(rootPath));
-            _includeFiles = includeFiles ?? throw new ArgumentNullException(nameof(rootPath));
-            _excludeFiles = excludeFiles ?? throw new ArgumentNullException(nameof(excludeFiles));
+            _workspaceRootPath = rootPath;
+            _includeFiles = includeFiles;
+            _excludeFiles = excludeFiles;
         }
 
         public Task AddRootDirectory(CancellationToken workspaceCancellationToken = default) {

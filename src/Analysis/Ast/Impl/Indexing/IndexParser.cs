@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 
@@ -13,8 +14,11 @@ namespace Microsoft.Python.Analysis.Indexing {
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
 
         public IndexParser(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version) {
-            _symbolIndex = symbolIndex ?? throw new ArgumentNullException(nameof(symbolIndex));
-            _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+            Check.ArgumentNotNull(nameof(symbolIndex), symbolIndex);
+            Check.ArgumentNotNull(nameof(fileSystem), fileSystem);
+
+            _symbolIndex = symbolIndex;
+            _fileSystem = fileSystem;
             _version = version;
         }
 
