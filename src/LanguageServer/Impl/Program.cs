@@ -28,7 +28,9 @@ using StreamJsonRpc.Protocol;
 namespace Microsoft.Python.LanguageServer.Server {
     internal static class Program {
         public static void Main(string[] args) {
+#if RELEASE
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal;
+#endif
 
             CheckDebugMode();
             using (CoreShell.Create()) {
