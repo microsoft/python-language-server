@@ -10,6 +10,7 @@ using Microsoft.Python.Analysis.Indexing;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 using TestUtilities;
@@ -21,6 +22,7 @@ namespace Microsoft.Python.Analysis.Tests {
         private ISymbolIndex _symbolIndex;
         private string _rootPath;
         private List<IFileSystemInfo> _rootFileList;
+        private PythonLanguageVersion _pythonLanguageVersion;
 
         public TestContext TestContext { get; set; }
 
@@ -30,6 +32,7 @@ namespace Microsoft.Python.Analysis.Tests {
             _fileSystem = Substitute.For<IFileSystem>();
             _symbolIndex = new SymbolIndex();
             _rootPath = "C:/root";
+            _pythonLanguageVersion = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
             _rootFileList = new List<IFileSystemInfo>();
             IDirectoryInfo directoryInfo = Substitute.For<IDirectoryInfo>();
             // Doesn't work without 'forAnyArgs'
@@ -46,7 +49,7 @@ namespace Microsoft.Python.Analysis.Tests {
             AddFileToRootTestFileSystem(pythonTestFile);
             _fileSystem.FileOpen(pythonTestFile, FileMode.Open).Returns(MakeStream("x = 1"));
 
-            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
             await indexManager.AddRootDirectoryAsync();
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
@@ -58,7 +61,7 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod, Priority(0)]
         public void NullDirectoryThrowsException() {
             Action construct = () => {
-                IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, null, new string[] { }, new string[] { });
+                IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), null, new string[] { }, new string[] { });
             };
             construct.Should().Throw<ArgumentNullException>();
         }
@@ -68,7 +71,7 @@ namespace Microsoft.Python.Analysis.Tests {
             string nonPythonTestFile = $"{_rootPath}/bla.txt";
             AddFileToRootTestFileSystem(nonPythonTestFile);
 
-            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, this._rootPath, new string[] { }, new string[] { });
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), this._rootPath, new string[] { }, new string[] { });
             indexManager.AddRootDirectoryAsync();
 
             _fileSystem.DidNotReceive().FileExists(nonPythonTestFile);
@@ -81,7 +84,7 @@ namespace Microsoft.Python.Analysis.Tests {
             IDocument doc = Substitute.For<IDocument>();
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
 
-            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), _rootPath, new string[] { }, new string[] { });
             indexManager.ProcessNewFile(new Uri(pythonTestFile), doc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
@@ -99,7 +102,7 @@ namespace Microsoft.Python.Analysis.Tests {
             IDocument latestDoc = Substitute.For<IDocument>();
             latestDoc.GetAnyAst().Returns(MakeAst("y = 1"));
 
-            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), _rootPath, new string[] { }, new string[] { });
             await indexManager.AddRootDirectoryAsync();
             indexManager.ReIndexFile(new Uri(pythonTestFile), latestDoc);
 
@@ -116,7 +119,7 @@ namespace Microsoft.Python.Analysis.Tests {
             IDocument doc = Substitute.For<IDocument>();
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
 
-            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), _rootPath, new string[] { }, new string[] { });
             indexManager.ProcessNewFile(new Uri(pythonTestFile), doc);
             await indexManager.ProcessClosedFileAsync(new Uri(pythonTestFile));
 
@@ -134,7 +137,7 @@ namespace Microsoft.Python.Analysis.Tests {
             IDocument latestDoc = Substitute.For<IDocument>();
             latestDoc.GetAnyAst().Returns(MakeAst("y = 1"));
 
-            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), _rootPath, new string[] { }, new string[] { });
             await indexManager.AddRootDirectoryAsync();
             indexManager.ProcessNewFile(new Uri(pythonTestFile), latestDoc);
             // It Needs to remake the stream for the file, previous one is closed
@@ -157,7 +160,7 @@ namespace Microsoft.Python.Analysis.Tests {
             IDocument doc = Substitute.For<IDocument>();
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
 
-            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), _rootPath, new string[] { }, new string[] { });
             indexManager.ProcessNewFile(new Uri(pythonTestFile), doc);
             await indexManager.ProcessClosedFileAsync(new Uri(pythonTestFile));
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
@@ -168,7 +171,7 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         private PythonAst MakeAst(string testCode) {
-            return Parser.CreateParser(MakeStream(testCode), PythonLanguageVersion.V37).ParseFile();
+            return Parser.CreateParser(MakeStream(testCode), PythonVersions.LatestAvailable3X.Version.ToLanguageVersion()).ParseFile();
         }
 
         private void AddFileToRootTestFileSystem(string filePath) {

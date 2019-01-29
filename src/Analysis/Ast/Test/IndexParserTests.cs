@@ -8,6 +8,7 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Indexing;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 using TestUtilities;
@@ -16,15 +17,18 @@ namespace Microsoft.Python.Analysis.Tests {
 
     [TestClass]
     public class IndexParserTests : AnalysisTestBase {
+        private ISymbolIndex _symbolIndex;
+        private IFileSystem _fileSystem;
+        private PythonLanguageVersion _pythonLanguageVersion;
+
         public TestContext TestContext { get; set; }
-        ISymbolIndex _symbolIndex;
-        IFileSystem _fileSystem;
 
         [TestInitialize]
         public void TestInitialize() {
             TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
             _symbolIndex = new SymbolIndex();
             _fileSystem = Substitute.For<IFileSystem>();
+            _pythonLanguageVersion = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
         }
 
         [TestCleanup]
@@ -33,7 +37,7 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod, Priority(0)]
         public void NullIndexThrowsException() {
             Action build = () => {
-                IIndexParser indexParser = new IndexParser(null, _fileSystem, PythonLanguageVersion.V37);
+                IIndexParser indexParser = new IndexParser(null, _fileSystem, _pythonLanguageVersion);
             };
             build.Should().Throw<ArgumentNullException>();
         }
@@ -44,7 +48,7 @@ namespace Microsoft.Python.Analysis.Tests {
             _fileSystem.FileExists(testFilePath).Returns(true);
             _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
 
-            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, PythonLanguageVersion.V37);
+            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             await indexParser.ParseAsync(new Uri(testFilePath));
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
@@ -58,7 +62,7 @@ namespace Microsoft.Python.Analysis.Tests {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(false);
 
-            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, PythonLanguageVersion.V37);
+            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             Func<Task> parse = async () => {
                 await indexParser.ParseAsync(new Uri(testFilePath));
             };
@@ -74,7 +78,7 @@ namespace Microsoft.Python.Analysis.Tests {
             _fileSystem.FileExists(testFilePath).Returns(true);
             _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
 
-            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, PythonLanguageVersion.V37);
+            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
             Func<Task> parse = async () => {
@@ -94,7 +98,7 @@ namespace Microsoft.Python.Analysis.Tests {
             // no writing to the stream, will block when read
             _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(stream);
 
-            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, PythonLanguageVersion.V37);
+            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             Func<Task> parse = async () => {
                 Task t = indexParser.ParseAsync(new Uri(testFilePath));
                 indexParser.Dispose();
