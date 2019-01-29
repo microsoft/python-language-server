@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.IO;
@@ -12,6 +13,7 @@ namespace Microsoft.Python.Analysis.Indexing {
         private readonly string _workspaceRootPath;
         private readonly string[] _includeFiles;
         private readonly string[] _excludeFiles;
+        private readonly ConcurrentDictionary<Uri, bool> _indexedFiles = new ConcurrentDictionary<Uri, bool>();
 
         public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
             string[] excludeFiles) {
@@ -28,24 +30,43 @@ namespace Microsoft.Python.Analysis.Indexing {
             var files = _fileSystem.GetDirectoryInfo(_workspaceRootPath).EnumerateFileSystemInfos(_includeFiles, _excludeFiles);
             foreach (var fileInfo in files) {
                 if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
-                    _indexParser.ParseFile(new Uri(fileInfo.FullName));
+                    Uri uri = new Uri(fileInfo.FullName);
+                    _indexParser.ParseFile(uri);
+                    _indexedFiles[uri] = true;
                 }
             }
         }
 
+        private bool IsFileIndexed(Uri uri) {
+            _indexedFiles.TryGetValue(uri, out var val);
+            return val;
+        }
+
         public void ProcessClosedFile(Uri uri) {
             // If path is on workspace
-            if (_fileSystem.IsPathUnderRoot(_workspaceRootPath, uri.AbsolutePath)) {
+            if (IsFileOnWorkspace(uri)) {
                 // updates index and ignores previous AST
                 _indexParser.ParseFile(uri);
             } else {
                 // remove file from index
+                _indexedFiles.TryRemove(uri, out _);
                 _symbolIndex.Delete(uri);
             }
         }
 
+        private bool IsFileOnWorkspace(Uri uri) {
+            return _fileSystem.IsPathUnderRoot(_workspaceRootPath, uri.AbsolutePath);
+        }
+
         public void ProcessFile(Uri uri, IDocument doc) {
+            _indexedFiles[uri] = true;
             _symbolIndex.UpdateIndex(uri, doc.GetAnyAst());
+        }
+
+        public void ProcessFileIfIndexed(Uri uri, IDocument doc) {
+            if (IsFileIndexed(uri)) {
+                ProcessFile(uri, doc);
+            }
         }
     }
 }

@@ -100,7 +100,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
             indexManager.AddRootDirectory();
-            indexManager.ProcessFile(new Uri(pythonTestFile), latestDoc);
+            indexManager.ProcessFileIfIndexed(new Uri(pythonTestFile), latestDoc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -144,6 +144,26 @@ namespace Microsoft.Python.Analysis.Tests {
             symbols.Should().HaveCount(1);
             symbols.First().Kind.Should().BeEquivalentTo(SymbolKind.Variable);
             symbols.First().Name.Should().BeEquivalentTo("x");
+        }
+
+        [TestMethod, Priority(0)]
+        public void ProcessFileIfIndexedAfterCloseIgnoresUpdate() {
+            // If events get to index manager in the order: [open, close, update]
+            // it should not reindex file
+
+            string nonRootPath = "C:/nonRoot";
+            string pythonTestFile = $"{nonRootPath}/bla.py";
+            IDocument doc = Substitute.For<IDocument>();
+            doc.GetAnyAst().Returns(MakeAst("x = 1"));
+
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonLanguageVersion.V37, _rootPath, new string[] { }, new string[] { });
+            indexManager.ProcessFile(new Uri(pythonTestFile), doc);
+            indexManager.ProcessClosedFile(new Uri(pythonTestFile));
+            doc.GetAnyAst().Returns(MakeAst("x = 1"));
+            indexManager.ProcessFileIfIndexed(new Uri(pythonTestFile), doc);
+
+            var symbols = _symbolIndex.WorkspaceSymbols("");
+            symbols.Should().HaveCount(0);
         }
 
         private PythonAst MakeAst(string testCode) {
