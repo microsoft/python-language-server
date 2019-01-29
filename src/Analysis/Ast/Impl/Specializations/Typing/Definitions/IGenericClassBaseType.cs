@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,26 +14,12 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Types {
+namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
-    /// Represents Python class type definition.
+    /// Represents Generic[T1, T2, ...]. Used as a base class to generic classes.
     /// </summary>
-    public interface IPythonClassType : IPythonType {
-        /// <summary>
-        /// Class definition node in the AST.
-        /// </summary>
-        ClassDefinition ClassDefinition { get; }
-
-        /// <summary>
-        /// Python Method Resolution Order (MRO).
-        /// </summary>
-        IReadOnlyList<IPythonType> Mro { get; }
-
-        /// <summary>
-        /// Base types.
-        /// </summary>
-        IReadOnlyList<IPythonType> Bases { get; }
+    public interface IGenericClassBaseType {
+        IReadOnlyList<IGenericTypeParameter> TypeArgs { get; }
     }
 }

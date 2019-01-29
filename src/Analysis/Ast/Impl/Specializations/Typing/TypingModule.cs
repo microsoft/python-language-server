@@ -146,7 +146,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             _members["Optional"] = new GenericType("Optional", this, (typeArgs, module, location) => CreateOptional(typeArgs));
             _members["Type"] = new GenericType("Type", this, (typeArgs, module, location) => CreateType(typeArgs));
-            _members["Generic"] = new GenericType("Generic", this, (typeArgs, module, location) => CreateGeneric(typeArgs));
+
+            _members["Generic"] = new GenericType("Generic", this, (typeArgs, module, location) => CreateGenericBase(typeArgs, module));
         }
 
 
@@ -290,15 +291,20 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType CreateGeneric(IReadOnlyList<IPythonType> typeArgs) {
-            // Handle Generic[_T]
-            if (typeArgs.Count == 1 && typeArgs[0] is IGenericTypeParameter gp && gp.Constraints.Count > 0) {
-                // TODO: how to choose among multiple constraints? A Union[...] of all?
-               return gp.Constraints[0];
+        private IPythonType CreateGenericBase(IReadOnlyList<IPythonType> typeArgs, IPythonModule declaringModule) {
+            // Handle Generic[_T1, _T2, ...]. _T1, et al are IGenericTypeParameter from TypeVar.
+            // Hold the parameter until concrete type is provided at the time
+            // of the class instantiation.
+            if (typeArgs.Count > 0) {
+                var genericTypes = typeArgs.OfType<IGenericTypeParameter>().ToArray();
+                if (genericTypes.Length == typeArgs.Count) {
+                    return new GenericType("Generic", declaringModule, genericTypes);
+                } else {
+                    // TODO: report some type arguments are undefined.
+                }
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
         }
-
     }
 }

@@ -98,7 +98,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             IMember m;
             switch (expr) {
                 case NameExpression nex:
-                    m = GetValueFromName(nex, options);
+                    m = await GetValueFromNameAsync(nex, options, cancellationToken);
                     break;
                 case MemberExpression mex:
                     m = await GetValueFromMemberAsync(mex, cancellationToken);
@@ -143,19 +143,32 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return m;
         }
 
-        private IMember GetValueFromName(NameExpression expr, LookupOptions options) {
-            if (string.IsNullOrEmpty(expr?.Name)) {
+        private async Task<IMember> GetValueFromNameAsync(NameExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
+            if (expr == null || string.IsNullOrEmpty(expr.Name)) {
                 return null;
-            }
-
-            var existing = LookupNameInScopes(expr.Name, options);
-            if (existing != null) {
-                return existing;
             }
 
             if (expr.Name == Module.Name) {
                 return Module;
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var member = LookupNameInScopes(expr.Name, options);
+            if (member != null) {
+                switch(member.GetPythonType()) {
+                    case IPythonClassType cls:
+                        await SymbolTable.EvaluateAsync(cls.ClassDefinition, cancellationToken);
+                        break;
+                    case IPythonFunctionType fn:
+                        await SymbolTable.EvaluateAsync(fn.FunctionDefinition, cancellationToken);
+                        break;
+                    case IPythonPropertyType prop:
+                        await SymbolTable.EvaluateAsync(prop.FunctionDefinition, cancellationToken);
+                        break;
+                }
+                return member;
+            }
+
             Log?.Log(TraceEventType.Verbose, $"Unknown name: {expr.Name}");
             return UnknownType;
         }

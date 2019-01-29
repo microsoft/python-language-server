@@ -56,12 +56,12 @@ namespace Microsoft.Python.Analysis {
                 return false;
             }
 
-            if (ast.CommentLocations[match].Column >= location.Column) {
-                return false;
-            }
+            return ast.CommentLocations[match].Column < location.Column;
+        }
 
-            // We are inside a comment
-            return true;
+        public static bool IsInsideString(this PythonAst ast, SourceLocation location) {
+            var index = ast.LocationToIndex(location);
+            return ast.FindExpression(index, new FindExpressionOptions {Literals = true}) != null;
         }
 
         public static bool IsInParameter(this FunctionDefinition fd, PythonAst tree, SourceLocation location) {

@@ -68,7 +68,6 @@ namespace Microsoft.Python.Analysis.Modules {
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
         protected IServiceContainer Services { get; }
-        protected IDocumentAnalysis Analysis { get; private set; }
         protected object AnalysisLock { get; } = new object();
         protected State ContentState { get; set; } = State.None;
 
@@ -174,6 +173,8 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IPythonModule
+        public IDocumentAnalysis Analysis { get; private set; }
+
         public IPythonInterpreter Interpreter { get; }
 
         /// <summary>

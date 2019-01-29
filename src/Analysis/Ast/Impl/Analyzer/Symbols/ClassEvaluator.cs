@@ -45,7 +45,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     if (instance != null) {
                         // TODO: warning that variable is already declared of a different type.
                     }
-                    // May be odd case like class inside a class.
                     return;
                 }
 
@@ -62,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         bases.Add(b.GetPythonType());
                     }
                 }
-                _class.SetBases(Interpreter, bases);
+                _class.SetBases(bases);
 
                 // Declare __class__ variable in the scope.
                 Eval.DeclareVariable("__class__", _class, VariableSource.Declaration, _classDef);

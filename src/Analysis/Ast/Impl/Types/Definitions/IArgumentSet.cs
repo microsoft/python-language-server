@@ -18,28 +18,55 @@ using System.Collections.Generic;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
+    /// <summary>
+    /// Function call argument.
+    /// </summary>
     public interface IArgument {
         string Name { get; }
         Expression Expression { get; }
         object Value { get; }
     }
 
+    /// <summary>
+    /// List argument, such as *args.
+    /// </summary>
     public interface IListArgument {
         string Name { get; }
         IReadOnlyList<Expression> Expressions { get; }
         IReadOnlyList<IMember> Values { get; }
     }
 
+    /// <summary>
+    /// Dictionary argument, such as **kwargs.
+    /// </summary>
     public interface IDictionaryArgument {
         string Name { get; }
         IReadOnlyDictionary<string, IMember> Arguments { get; }
         IReadOnlyDictionary<string, Expression> Expressions { get; }
     }
 
+    /// <summary>
+    /// Describes set of arguments for a function call.
+    /// </summary>
     public interface IArgumentSet {
+        /// <summary>
+        /// Regular arguments
+        /// </summary>
         IReadOnlyList<IArgument> Arguments { get; }
+
+        /// <summary>
+        /// List argument, such as *args.
+        /// </summary>
         IListArgument ListArgument { get; }
+
+        /// <summary>
+        /// Dictionary argument, such as **kwargs.
+        /// </summary>
         IDictionaryArgument DictionaryArgument { get; }
+
+        /// <summary>
+        /// Specifies which function overload to call.
+        /// </summary>
         int OverloadIndex { get; }
     }
 }

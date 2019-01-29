@@ -320,7 +320,6 @@ x
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task MethodFromBaseClass2X() {
             const string code = @"
 import unittest
@@ -336,7 +335,6 @@ class Simple(unittest.TestCase):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task MethodFromBaseClass3X() {
             const string code = @"
 import unittest
@@ -758,6 +756,24 @@ pass";
 
             result = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 9));
             result.Should().HaveLabels("__init__").And.NotContainLabels("def");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoCompletionInString() {
+
+            var analysis = await GetAnalysisAsync("\"str.\"");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 6));
+            result.Should().HaveNoCompletion();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoCompletionInComment() {
+
+            var analysis = await GetAnalysisAsync("x = 1 #str. more text");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 12));
+            result.Should().HaveNoCompletion();
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Overload documentation.
         /// </summary>
         string Documentation { get; }
-        
+
         /// <summary>
         /// Overload parameters.
         /// </summary>
@@ -61,5 +61,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// Function definition is decorated with @overload.
         /// </summary>
         bool IsOverload { get; }
+
+        /// <summary>
+        /// Return type as determined from evaluation or from the return type annotation.
+        /// </summary>
+        IMember StaticReturnValue { get; }
     }
 }
