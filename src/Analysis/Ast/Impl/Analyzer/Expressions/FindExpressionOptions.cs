@@ -22,7 +22,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             Members = true,
             ParameterNames = true,
             ParenthesisedExpression = true,
-            Literals = true,
             ImportNames = true,
             ImportAsNames = true,
             ClassDefinitionName = true,
