@@ -200,10 +200,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 sets.Add(args);
             }
 
-            var matches = sets.OrderBy(s => s.Errors.Count).TakeWhile(e => e.Errors.Count == 0).ToArray();
-            return !matches.Any() 
-                ? matches.FirstOrDefault() 
-                : matches.FirstOrDefault(args => IsMatch(args, fn.Overloads[args.OverloadIndex].Parameters));
+            var orderedSets = sets.OrderBy(s => s.Errors.Count);
+            var noErrorsMatches = sets.OrderBy(s => s.Errors.Count).TakeWhile(e => e.Errors.Count == 0).ToArray();
+            var result = noErrorsMatches.Any()
+                ? noErrorsMatches.FirstOrDefault(args => IsMatch(args, fn.Overloads[args.OverloadIndex].Parameters))
+                : null;
+            
+            // Optimistically pick the best available.
+            return result ?? orderedSets.FirstOrDefault();
         }
 
         private static bool IsMatch(IArgumentSet args, IReadOnlyList<IParameterInfo> parameters) {
