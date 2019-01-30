@@ -69,6 +69,7 @@ namespace Microsoft.PythonTools.Analysis.DependencyResolution {
 
         public IEnumerable<string> GetAllModuleNames() => GetModuleNames(_roots.Prepend(_nonRooted).Append(_builtins));
         public IEnumerable<string> GetInterpreterModuleNames() => GetModuleNames(_roots.Skip(_userRootsCount).Append(_builtins));
+        public IEnumerable<string> GetRootPaths() => _roots.Select(r => r.Name);
 
         private static IEnumerable<string> GetModuleNames(IEnumerable<Node> roots) => roots
             .SelectMany(r => r.TraverseBreadthFirst(n => n.IsModule ? Enumerable.Empty<Node>() : n.Children))
