@@ -68,7 +68,7 @@ namespace Microsoft.PythonTools.Analysis {
         public static async Task<PythonAnalyzer> CreateAsync(IPythonInterpreterFactory factory, CancellationToken token = default) {
             var analyzer = new PythonAnalyzer(factory);
             try {
-                await analyzer.ReloadModulesAsync(token).ConfigureAwait(false);
+                await analyzer.ReloadModulesAsync(false, token).ConfigureAwait(false);
             } catch(Exception) {
                 analyzer.Dispose();
                 throw;
@@ -140,7 +140,9 @@ namespace Microsoft.PythonTools.Analysis {
         /// This method should be called on the analysis thread and is usually invoked
         /// when the interpreter signals that it's modules have changed.
         /// </summary>
-        public async Task ReloadModulesAsync(CancellationToken token = default) {
+        public Task ReloadModulesAsync(CancellationToken token = default) => ReloadModulesAsync(true, token);
+
+        private async Task ReloadModulesAsync(bool reScanRoots, CancellationToken token) {
             if (!_reloadLock.Wait(0)) {
                 // If we don't lock immediately, wait for the current reload to
                 // complete and then return.
@@ -156,6 +158,11 @@ namespace Microsoft.PythonTools.Analysis {
                 InterpreterFactory.NotifyImportNamesChanged();
                 // Now initialize the interpreter
                 Interpreter.Initialize(this);
+                // Rescan roots for modules if requested
+                if (reScanRoots) {
+                    ReloadModulePaths(CurrentPathResolver.GetRootPaths());
+                }
+
                 // Reload importable modules
                 Modules.Reload();
                 // Load known types from the selected interpreter
@@ -760,7 +767,7 @@ namespace Microsoft.PythonTools.Analysis {
 
             if (_builtinModule == null) {
                 Debug.Fail("Used analyzer without reloading modules");
-                ReloadModulesAsync(cancel).WaitAndUnwrapExceptions();
+                ReloadModulesAsync(true, cancel).WaitAndUnwrapExceptions();
             }
 
             var ddg = new DDG();
