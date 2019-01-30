@@ -39,8 +39,7 @@ namespace Microsoft.Python.Analysis.Indexing {
 
         public bool IsIndexed(Uri uri) => _index.ContainsKey(uri);
 
-        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(IEnumerable<HierarchicalSymbol> symbols, string parentName) {
-            return symbols.Select((symbol) => (symbol, parentName));
-        }
+        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(IEnumerable<HierarchicalSymbol> symbols, string parentName)
+            => symbols.Select((symbol) => (symbol, parentName));
     }
 }
