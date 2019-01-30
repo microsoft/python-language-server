@@ -24,6 +24,7 @@ namespace Microsoft.Python.Analysis.Types {
     internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName, IEquatable<IPythonType> {
         private readonly object _lock = new object();
         private readonly Func<string, LocationInfo> _locationProvider;
+        private readonly string _name;
         private Func<string, string> _documentationProvider;
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
@@ -49,7 +50,7 @@ namespace Microsoft.Python.Analysis.Types {
             Func<string, LocationInfo> locationProvider,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
         ) {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
+            _name = name ?? throw new ArgumentNullException(nameof(name));
             DeclaringModule = declaringModule;
             _documentationProvider = documentationProvider;
             _locationProvider = locationProvider;
@@ -57,7 +58,8 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         #region IPythonType
-        public virtual string Name { get; }
+
+        public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
         public virtual string Documentation => _documentationProvider?.Invoke(Name);
         public IPythonModule DeclaringModule { get; }
         public virtual PythonMemberType MemberType => _typeId.GetMemberId();

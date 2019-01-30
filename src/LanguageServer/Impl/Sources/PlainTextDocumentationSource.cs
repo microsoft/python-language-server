@@ -30,11 +30,15 @@ namespace Microsoft.Python.LanguageServer.Sources {
             // We need to tell between instance and type.
             var type = member.GetPythonType();
             if (!type.IsUnknown()) {
-                if (member is IPythonInstance) {
+                if (member is IPythonInstance && !(type is IPythonFunctionType)) {
                     text = !string.IsNullOrEmpty(name) ? $"{name}: {type.Name}" : $"{type.Name}";
                 } else {
                     var typeDoc = !string.IsNullOrEmpty(type.Documentation) ? $"\n\n{type.Documentation}" : string.Empty;
                     switch (type) {
+                        case IPythonPropertyType prop:
+                            text = GetPropertyHoverString(prop);
+                            break;
+
                         case IPythonFunctionType ft:
                             text = GetFunctionHoverString(ft);
                             break;
@@ -46,11 +50,11 @@ namespace Microsoft.Python.LanguageServer.Sources {
                             }
 
                         case IPythonModule _:
-                            text = !string.IsNullOrEmpty(name) ? $"Module {name}: {type.Name}{typeDoc}" : $"{type.Name}{typeDoc}";
+                            text = !string.IsNullOrEmpty(name) ? $"module {name}{typeDoc}" : $"{type.Name}{typeDoc}";
                             break;
 
                         default:
-                            text = !string.IsNullOrEmpty(name) ? $"Type {name}: {type.Name}{typeDoc}" : $"{type.Name}{typeDoc}";
+                            text = !string.IsNullOrEmpty(name) ? $"type {name}: {type.Name}{typeDoc}" : $"{type.Name}{typeDoc}";
                             break;
                     }
                 }
@@ -80,6 +84,12 @@ namespace Microsoft.Python.LanguageServer.Sources {
             // TODO: show fully qualified type?
             var text = parameter.Type.IsUnknown() ? parameter.Name : $"{parameter.Name}: {parameter.Type.Name}";
             return new MarkupContent { kind = MarkupKind.PlainText, value = text };
+        }
+
+        private string GetPropertyHoverString(IPythonPropertyType prop, int overloadIndex = 0) {
+            var decTypeString = prop.DeclaringType != null ? $"{prop.DeclaringType.Name}." : string.Empty;
+            var propDoc = !string.IsNullOrEmpty(prop.Documentation) ? $"\n\n{prop.Documentation}" : string.Empty;
+            return $"{decTypeString}{propDoc}";
         }
 
         private string GetFunctionHoverString(IPythonFunctionType ft, int overloadIndex = 0) {
