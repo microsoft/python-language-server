@@ -33,6 +33,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
+            // Try generics
+            var result = await GetValueFromGenericAsync(target, expr, cancellationToken);
+            if (result != null) {
+                return result;
+            }
+
             // Should only be two types of returns here. First, an bound type
             // so we can invoke Call over the instance. Second, an type info
             // so we can create an instance of the type (as in C() where C is class).

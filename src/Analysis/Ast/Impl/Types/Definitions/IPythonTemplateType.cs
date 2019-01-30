@@ -14,20 +14,19 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing {
+namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents generic type, such as class or function.
-    /// Generic type is a template for the actual type.
+    /// Represents type that can be a template for specific types.
+    /// The base type of generics.
     /// </summary>
-    public interface IGenericType : IPythonTemplateType {
+    public interface IPythonTemplateType: IPythonType {
         /// <summary>
-        /// Type parameters such as in Tuple[T1, T2. ...] or
-        /// Generic[_T1, _T2, ...] as returned by TypeVar.
+        /// Creates instance of a type information with the specific
+        /// type arguments from a generic template.
         /// </summary>
-        IReadOnlyList<IGenericTypeParameter> Parameters { get; }
-
-        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null);
+        Task<IPythonType> CreateSpecificTypeAsync(IArgumentSet typeArguments, IPythonModule declaringModule, LocationInfo location, CancellationToken cancellationToken = default);
     }
 }

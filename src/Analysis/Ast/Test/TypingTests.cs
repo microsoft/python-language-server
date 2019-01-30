@@ -637,7 +637,7 @@ x = l[0]
 
 
         [TestMethod, Priority(0)]
-        public async Task GenericClassBase() {
+        public async Task GenericClassBase1() {
             const string code = @"
 from typing import TypeVar, Generic
 
@@ -694,6 +694,50 @@ y = b.a
             analysis.Should().HaveVariable("y")
                 .Which.Should().HaveType("A[TypeError]") // TODO: should be A[[TypeError]
                 .Which.Should().HaveMembers("args", @"with_traceback");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassBase2() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_T = TypeVar('_T')
+
+class Box(Generic[_T]):
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+boxed = Box[int]()
+x = boxed.get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassBase3() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_T = TypeVar('_T')
+
+class Box(Generic[_T]):
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+boxed = Box(1234)
+x = boxed.get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
         }
 
         [TestMethod, Priority(0)]

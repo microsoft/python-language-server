@@ -24,6 +24,9 @@ namespace Microsoft.Python.Analysis {
         public static bool IsGenericParameter(this IPythonType value) 
             => value is IGenericTypeParameter;
 
+        public static bool IsGeneric(this IPythonType value)
+            => value is IGenericTypeParameter || value is IGenericType || (value is IPythonClassType c && c.IsGeneric());
+
         public static void TransferDocumentation(this IPythonType src, IPythonType dst) {
             if (src != null && dst is PythonType pt) {
                 pt.TrySetTypeId(dst.TypeId);
