@@ -17,14 +17,10 @@ namespace Microsoft.Python.Analysis.Indexing {
         }
 
         private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string query, Uri uri, IEnumerable<HierarchicalSymbol> symbols) {
-            var rootSymbols = symbols.Select((symbol) => {
-                return (symbol, parentName: (string) null);
-            });
+            var rootSymbols = DecorateWithParentsName(symbols, null);
             var treeSymbols = rootSymbols.TraverseBreadthFirst((symbolAndParent) => {
-                var symbol = symbolAndParent.symbol;
-                return symbol.Children.MaybeEnumerate().Select((child) => {
-                    return (child, symbol.Name);
-                });
+                var sym = symbolAndParent.symbol;
+                return DecorateWithParentsName(sym.Children.MaybeEnumerate(), sym.Name);
             });
             foreach (var (sym, parentName) in treeSymbols) {
                 if (sym.Name.ContainsOrdinal(query, ignoreCase: true)) {
@@ -42,5 +38,11 @@ namespace Microsoft.Python.Analysis.Indexing {
         public void Delete(Uri uri) => _index.TryRemove(uri, out var _);
 
         public bool IsIndexed(Uri uri) => _index.ContainsKey(uri);
+
+        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(IEnumerable<HierarchicalSymbol> symbols, string parentName) {
+            return symbols.Select((symbol) => {
+                return (symbol, parentName);
+            });
+        }
     }
 }
