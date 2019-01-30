@@ -4,9 +4,9 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Indexing {
     internal interface ISymbolIndex {
-        void UpdateIndex(Uri uri, PythonAst pythonAst);
+        void UpdateIndex(string path, PythonAst pythonAst);
         IEnumerable<FlatSymbol> WorkspaceSymbols(string query);
-        void Delete(Uri uri);
-        bool IsIndexed(Uri uri);
+        void Delete(string path);
+        bool IsIndexed(string path);
     }
 }

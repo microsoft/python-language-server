@@ -12,6 +12,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
@@ -614,11 +615,11 @@ else:
         [TestMethod, Priority(0)]
         public void IndexHierarchicalDocument() {
             var index = new SymbolIndex();
-            var uri = TestData.GetDefaultModuleUri();
+            var path = TestData.GetDefaultModulePath();
             var ast = GetParse("x = 1");
-            index.UpdateIndex(uri, ast);
+            index.UpdateIndex(path, ast);
 
-            var symbols = index.HierarchicalDocumentSymbols(uri);
+            var symbols = index.HierarchicalDocumentSymbols(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
@@ -627,19 +628,19 @@ else:
         [TestMethod, Priority(0)]
         public void IndexHierarchicalDocumentUpdate() {
             var index = new SymbolIndex();
-            var uri = TestData.GetDefaultModuleUri();
+            var path = TestData.GetDefaultModulePath();
             var ast = GetParse("x = 1");
-            index.UpdateIndex(uri, ast);
+            index.UpdateIndex(path, ast);
 
-            var symbols = index.HierarchicalDocumentSymbols(uri);
+            var symbols = index.HierarchicalDocumentSymbols(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
 
             ast = GetParse("y = 1");
-            index.UpdateIndex(uri, ast);
+            index.UpdateIndex(path, ast);
 
-            symbols = index.HierarchicalDocumentSymbols(uri);
+            symbols = index.HierarchicalDocumentSymbols(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
@@ -648,9 +649,9 @@ else:
         [TestMethod, Priority(0)]
         public void IndexHierarchicalDocumentNotFound() {
             var index = new SymbolIndex();
-            var uri = TestData.GetDefaultModuleUri();
+            var path = TestData.GetDefaultModulePath();
 
-            var symbols = index.HierarchicalDocumentSymbols(uri);
+            var symbols = index.HierarchicalDocumentSymbols(path);
             symbols.Should().BeEmpty();
         }
 
@@ -662,7 +663,7 @@ else:
             var index = new SymbolIndex();
             var uri = TestData.GetDefaultModuleUri();
             var ast = GetParse(code);
-            index.UpdateIndex(uri, ast);
+            index.UpdateIndex(uri.AbsolutePath, ast);
 
             var symbols = index.WorkspaceSymbols("");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -679,20 +680,20 @@ else:
     def foo(self, x): ...";
 
             var index = new SymbolIndex();
-            var uri = TestData.GetDefaultModuleUri();
+            var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
-            index.UpdateIndex(uri, ast);
+            index.UpdateIndex(path, ast);
 
             var symbols = index.WorkspaceSymbols("x");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new FlatSymbol("x", SymbolKind.Variable, uri, new SourceSpan(2, 19, 2, 20), "foo"),
+                new FlatSymbol("x", SymbolKind.Variable, new Uri(path), new SourceSpan(2, 19, 2, 20), "foo"),
             });
         }
 
         [TestMethod, Priority(0)]
         public void IndexWorkspaceSymbolsNotFound() {
             var index = new SymbolIndex();
-            var uri = TestData.GetDefaultModuleUri();
+            var path = TestData.GetDefaultModulePath();
 
             var symbols = index.WorkspaceSymbols("");
             symbols.Should().BeEmpty();
@@ -704,14 +705,14 @@ else:
     def foo(self, x): ...";
 
             var index = new SymbolIndex();
-            var uri = TestData.GetDefaultModuleUri();
+            var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
-            index.UpdateIndex(uri, ast);
+            index.UpdateIndex(path, ast);
 
             var symbols = index.WorkspaceSymbols("foo");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new FlatSymbol("Foo", SymbolKind.Class, uri, new SourceSpan(1, 7, 1, 10)),
-                new FlatSymbol("foo", SymbolKind.Method, uri, new SourceSpan(2, 9, 2, 12), "Foo"),
+                new FlatSymbol("Foo", SymbolKind.Class, new Uri(path), new SourceSpan(1, 7, 1, 10)),
+                new FlatSymbol("foo", SymbolKind.Method, new Uri(path), new SourceSpan(2, 9, 2, 12), "Foo"),
             });
         }
 

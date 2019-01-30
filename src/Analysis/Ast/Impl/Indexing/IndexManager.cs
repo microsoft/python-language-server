@@ -38,8 +38,7 @@ namespace Microsoft.Python.Analysis.Indexing {
             var parseTasks = new List<Task>();
             foreach (var fileInfo in WorkspaceFiles()) {
                 if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
-                    Uri uri = new Uri(fileInfo.FullName);
-                    parseTasks.Add(_indexParser.ParseAsync(uri, linkedCts.Token));
+                    parseTasks.Add(_indexParser.ParseAsync(fileInfo.FullName, linkedCts.Token));
                 }
             }
             return Task.WhenAll(parseTasks.ToArray());
@@ -49,32 +48,32 @@ namespace Microsoft.Python.Analysis.Indexing {
             return _fileSystem.GetDirectoryInfo(_workspaceRootPath).EnumerateFileSystemInfos(_includeFiles, _excludeFiles);
         }
 
-        private bool IsFileIndexed(Uri uri) => _symbolIndex.IsIndexed(uri);
+        private bool IsFileIndexed(string path) => _symbolIndex.IsIndexed(path);
 
-        public Task ProcessClosedFileAsync(Uri uri, CancellationToken fileCancellationToken = default) {
+        public Task ProcessClosedFileAsync(string path, CancellationToken fileCancellationToken = default) {
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(fileCancellationToken, _allIndexCts.Token);
             // If path is on workspace
-            if (IsFileOnWorkspace(uri)) {
+            if (IsFileOnWorkspace(path)) {
                 // updates index and ignores previous AST
-                return _indexParser.ParseAsync(uri, linkedCts.Token);
+                return _indexParser.ParseAsync(path, linkedCts.Token);
             } else {
                 // remove file from index
-                _symbolIndex.Delete(uri);
+                _symbolIndex.Delete(path);
                 return Task.CompletedTask;
             }
         }
 
-        private bool IsFileOnWorkspace(Uri uri) {
-            return _fileSystem.IsPathUnderRoot(_workspaceRootPath, uri.AbsolutePath);
+        private bool IsFileOnWorkspace(string path) {
+            return _fileSystem.IsPathUnderRoot(_workspaceRootPath, path);
         }
 
-        public void ProcessNewFile(Uri uri, IDocument doc) {
-            _symbolIndex.UpdateIndex(uri, doc.GetAnyAst());
+        public void ProcessNewFile(string path, IDocument doc) {
+            _symbolIndex.UpdateIndex(path, doc.GetAnyAst());
         }
 
-        public void ReIndexFile(Uri uri, IDocument doc) {
-            if (IsFileIndexed(uri)) {
-                ProcessNewFile(uri, doc);
+        public void ReIndexFile(string path, IDocument doc) {
+            if (IsFileIndexed(path)) {
+                ProcessNewFile(path, doc);
             }
         }
 

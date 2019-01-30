@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Tests {
             _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
-            await indexParser.ParseAsync(new Uri(testFilePath));
+            await indexParser.ParseAsync(testFilePath);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -64,7 +64,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             Func<Task> parse = async () => {
-                await indexParser.ParseAsync(new Uri(testFilePath));
+                await indexParser.ParseAsync(testFilePath);
             };
 
             parse.Should().Throw<FileNotFoundException>();
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Tests {
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
             Func<Task> parse = async () => {
-                await indexParser.ParseAsync(new Uri(testFilePath), cancellationTokenSource.Token);
+                await indexParser.ParseAsync(testFilePath, cancellationTokenSource.Token);
             };
 
             parse.Should().Throw<TaskCanceledException>();
@@ -100,7 +100,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             Func<Task> parse = async () => {
-                Task t = indexParser.ParseAsync(new Uri(testFilePath));
+                Task t = indexParser.ParseAsync(testFilePath);
                 indexParser.Dispose();
                 await t;
             };

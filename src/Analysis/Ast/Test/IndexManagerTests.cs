@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Tests {
             TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
             _fileSystem = Substitute.For<IFileSystem>();
             _symbolIndex = new SymbolIndex();
-            _rootPath = "C:/root";
+            _rootPath = "C:\root";
             _pythonLanguageVersion = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
             _rootFileList = new List<IFileSystemInfo>();
             IDirectoryInfo directoryInfo = Substitute.For<IDirectoryInfo>();
@@ -45,9 +45,9 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task AddsRootDirectoryAsync() {
-            string pythonTestFile = $"{_rootPath}/bla.py";
-            AddFileToRootTestFileSystem(pythonTestFile);
-            _fileSystem.FileOpen(pythonTestFile, FileMode.Open).Returns(MakeStream("x = 1"));
+            var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
+            AddFileToRootTestFileSystem(pythonTestFileInfo);
+            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(MakeStream("x = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
             await indexManager.AddRootDirectoryAsync();
@@ -68,24 +68,24 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public void IgnoresNonPythonFiles() {
-            string nonPythonTestFile = $"{_rootPath}/bla.txt";
-            AddFileToRootTestFileSystem(nonPythonTestFile);
+            var nonPythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}/bla.txt");
+            AddFileToRootTestFileSystem(nonPythonTestFileInfo);
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), this._rootPath, new string[] { }, new string[] { });
             indexManager.AddRootDirectoryAsync();
 
-            _fileSystem.DidNotReceive().FileExists(nonPythonTestFile);
+            _fileSystem.DidNotReceive().FileExists(nonPythonTestFileInfo.FullName);
         }
 
         [TestMethod, Priority(0)]
         public void CanOpenFiles() {
             string nonRootPath = "C:/nonRoot";
-            string pythonTestFile = $"{nonRootPath}/bla.py";
+            var pythonTestFileInfo = MakeFileInfoProxy($"{nonRootPath}/bla.py");
             IDocument doc = Substitute.For<IDocument>();
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), _rootPath, new string[] { }, new string[] { });
-            indexManager.ProcessNewFile(new Uri(pythonTestFile), doc);
+            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -95,16 +95,16 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task UpdateFilesOnWorkspaceIndexesLatestAsync() {
-            string pythonTestFile = $"{_rootPath}/bla.py";
-            AddFileToRootTestFileSystem(pythonTestFile);
-            _fileSystem.FileOpen(pythonTestFile, FileMode.Open).Returns(MakeStream("x = 1"));
+            var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}/bla.py");
+            AddFileToRootTestFileSystem(pythonTestFileInfo);
+            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(MakeStream("x = 1"));
 
             IDocument latestDoc = Substitute.For<IDocument>();
             latestDoc.GetAnyAst().Returns(MakeAst("y = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), _rootPath, new string[] { }, new string[] { });
             await indexManager.AddRootDirectoryAsync();
-            indexManager.ReIndexFile(new Uri(pythonTestFile), latestDoc);
+            indexManager.ReIndexFile(pythonTestFileInfo.FullName, latestDoc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -115,13 +115,13 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod, Priority(0)]
         public async Task CloseNonWorkspaceFilesRemovesFromIndexAsync() {
             string nonRootPath = "C:/nonRoot";
-            string pythonTestFile = $"{nonRootPath}/bla.py";
+            var pythonTestFileInfo = MakeFileInfoProxy($"{nonRootPath}/bla.py");
             IDocument doc = Substitute.For<IDocument>();
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), _rootPath, new string[] { }, new string[] { });
-            indexManager.ProcessNewFile(new Uri(pythonTestFile), doc);
-            await indexManager.ProcessClosedFileAsync(new Uri(pythonTestFile));
+            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            await indexManager.ProcessClosedFileAsync(pythonTestFileInfo.FullName);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
@@ -129,20 +129,20 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task CloseWorkspaceFilesReUpdatesIndexAsync() {
-            string pythonTestFile = $"{_rootPath}/bla.py";
+            var pythonTestFile = MakeFileInfoProxy($"{_rootPath}/bla.py");
             AddFileToRootTestFileSystem(pythonTestFile);
-            _fileSystem.FileOpen(pythonTestFile, FileMode.Open).Returns(MakeStream("x = 1"));
-            _fileSystem.IsPathUnderRoot(_rootPath, pythonTestFile).Returns(true);
+            _fileSystem.FileOpen(pythonTestFile.FullName, FileMode.Open).Returns(MakeStream("x = 1"));
+            _fileSystem.IsPathUnderRoot(_rootPath, pythonTestFile.FullName).Returns(true);
 
             IDocument latestDoc = Substitute.For<IDocument>();
             latestDoc.GetAnyAst().Returns(MakeAst("y = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), _rootPath, new string[] { }, new string[] { });
             await indexManager.AddRootDirectoryAsync();
-            indexManager.ProcessNewFile(new Uri(pythonTestFile), latestDoc);
+            indexManager.ProcessNewFile(pythonTestFile.FullName, latestDoc);
             // It Needs to remake the stream for the file, previous one is closed
-            _fileSystem.FileOpen(pythonTestFile, FileMode.Open).Returns(MakeStream("x = 1"));
-            await indexManager.ProcessClosedFileAsync(new Uri(pythonTestFile));
+            _fileSystem.FileOpen(pythonTestFile.FullName, FileMode.Open).Returns(MakeStream("x = 1"));
+            await indexManager.ProcessClosedFileAsync(pythonTestFile.FullName);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -156,15 +156,15 @@ namespace Microsoft.Python.Analysis.Tests {
             // it should not reindex file
 
             string nonRootPath = "C:/nonRoot";
-            string pythonTestFile = $"{nonRootPath}/bla.py";
+            var pythonTestFileInfo = MakeFileInfoProxy($"{nonRootPath}/bla.py");
             IDocument doc = Substitute.For<IDocument>();
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, PythonVersions.LatestAvailable3X.Version.ToLanguageVersion(), _rootPath, new string[] { }, new string[] { });
-            indexManager.ProcessNewFile(new Uri(pythonTestFile), doc);
-            await indexManager.ProcessClosedFileAsync(new Uri(pythonTestFile));
+            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            await indexManager.ProcessClosedFileAsync(pythonTestFileInfo.FullName);
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
-            indexManager.ReIndexFile(new Uri(pythonTestFile), doc);
+            indexManager.ReIndexFile(pythonTestFileInfo.FullName, doc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
@@ -174,9 +174,12 @@ namespace Microsoft.Python.Analysis.Tests {
             return Parser.CreateParser(MakeStream(testCode), PythonVersions.LatestAvailable3X.Version.ToLanguageVersion()).ParseFile();
         }
 
-        private void AddFileToRootTestFileSystem(string filePath) {
-            _rootFileList.Add(new FileInfoProxy(new FileInfo(filePath)));
-            _fileSystem.FileExists(filePath).Returns(true);
+        private FileInfoProxy MakeFileInfoProxy(string filePath)
+            => new FileInfoProxy(new FileInfo(filePath));
+
+        private void AddFileToRootTestFileSystem(FileInfoProxy fileInfo) {
+            _rootFileList.Add(fileInfo);
+            _fileSystem.FileExists(fileInfo.FullName).Returns(true);
         }
 
         private Stream MakeStream(string str) {
