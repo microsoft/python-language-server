@@ -42,7 +42,10 @@ namespace Microsoft.Python.Analysis {
             if(t is IGenericType || t is IGenericTypeParameter) {
                 return true;
             }
-            if(m?.MemberType == PythonMemberType.Generic) {
+            if (t is IPythonClassType c && c.IsGeneric()) {
+                return true;
+            }
+            if (m?.MemberType == PythonMemberType.Generic) {
                 return true;
             }
             return m is IVariable v && v.Value.MemberType == PythonMemberType.Generic;
