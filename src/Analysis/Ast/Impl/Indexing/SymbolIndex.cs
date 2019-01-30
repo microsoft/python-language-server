@@ -21,7 +21,10 @@ namespace Microsoft.Python.Analysis.Indexing {
                 return (symbol, parentName: (string) null);
             });
             var treeSymbols = rootSymbols.TraverseBreadthFirst((symbolAndParent) => {
-                return symbolAndParent.symbol.ChildrenWithParentName();
+                var symbol = symbolAndParent.symbol;
+                return symbol.Children.MaybeEnumerate().Select((child) => {
+                    return (child, symbol.Name);
+                });
             });
             foreach (var (sym, parentName) in treeSymbols) {
                 if (sym.Name.ContainsOrdinal(query, ignoreCase: true)) {
