@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
 
-        private string _documentation = string.Empty;
+        private string _documentation; // Must be null initially.
         private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
         private CancellationTokenSource _linkedAnalysisCts; // cancellation token combined with the 'dispose' cts
         private CancellationTokenSource _parseCts;

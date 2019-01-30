@@ -38,11 +38,17 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         case IPythonFunctionType ft:
                             text = GetFunctionHoverString(ft);
                             break;
+
                         case IPythonClassType cls: {
                                 var clsDoc = !string.IsNullOrEmpty(cls.Documentation) ? $"\n\n{cls.Documentation}" : string.Empty;
                                 text = $"class {cls.Name}{clsDoc}";
                                 break;
                             }
+
+                        case IPythonModule _:
+                            text = !string.IsNullOrEmpty(name) ? $"Module {name}: {type.Name}{typeDoc}" : $"{type.Name}{typeDoc}";
+                            break;
+
                         default:
                             text = !string.IsNullOrEmpty(name) ? $"Type {name}: {type.Name}{typeDoc}" : $"{type.Name}{typeDoc}";
                             break;

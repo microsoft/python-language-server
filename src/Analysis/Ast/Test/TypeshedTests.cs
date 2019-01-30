@@ -149,5 +149,17 @@ x = 1";
                 .Which.Should().HaveMember("bit_length")
                 .And.NotHaveMember("SIGABRT");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task VersionCheck() {
+            const string code = @"
+import asyncio
+loop = asyncio.get_event_loop()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should()
+                .HaveVariable("loop")
+                .Which.Value.Should().HaveMembers("add_reader", "add_writer", "call_at", "close");
+        }
     }
 }

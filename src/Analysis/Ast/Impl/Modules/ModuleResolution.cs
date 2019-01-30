@@ -56,6 +56,11 @@ namespace Microsoft.Python.Analysis.Modules {
             _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_interpreter.Configuration.Version);
             // TODO: merge with user-provided stub paths
             _typeStubPaths = GetTypeShedPaths(_interpreter.Configuration?.TypeshedPath).ToArray();
+
+            _log?.Log(TraceEventType.Verbose, "Typeshed paths:");
+            foreach (var p in _typeStubPaths) {
+                _log?.Log(TraceEventType.Verbose, $"    {p}");
+            }
         }
 
         internal async Task<IPythonModule> CreateBuiltinModuleAsync(CancellationToken cancellationToken = default) {
@@ -374,8 +379,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 return null;
             }
 
-            _log?.Log(TraceEventType.Verbose, "FindModule", name, "system", string.Join(", ", searchPaths));
-
             var i = name.IndexOf('.');
             var firstBit = i < 0 ? name : name.Remove(i);
 
@@ -424,11 +427,17 @@ namespace Microsoft.Python.Analysis.Modules {
             var thirdParty = Path.Combine(typeshedRootPath, "third_party");
 
             var v = Configuration.Version;
-            foreach (var subdir in new[] { v.ToString(), v.Major.ToString(), "2and3" }) {
+            var subdirs = new List<string> { v.Major.ToString(), "2and3" };
+            for (var i = 1; i < v.Minor; i++) {
+                subdirs.Add($"{v.Major}.{i}");
+            }
+
+            // For 3: all between 3 and current version inclusively + 2and3
+            foreach (var subdir in subdirs) {
                 yield return Path.Combine(stdlib, subdir);
             }
 
-            foreach (var subdir in new[] { v.ToString(), v.Major.ToString(), "2and3" }) {
+            foreach (var subdir in subdirs) {
                 yield return Path.Combine(thirdParty, subdir);
             }
         }

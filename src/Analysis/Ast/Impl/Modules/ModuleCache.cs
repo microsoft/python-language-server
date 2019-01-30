@@ -151,7 +151,8 @@ namespace Microsoft.Python.Analysis.Modules {
             var cache = GetCacheFilePath(filePath);
             if (!string.IsNullOrEmpty(cache)) {
                 _log?.Log(TraceEventType.Verbose, "Write cached module: ", cache);
-                _fs.WriteTextWithRetry(cache, code);
+                // Don't block analysis on cache writes.
+                Task.Run(() =>_fs.WriteTextWithRetry(cache, code)).DoNotWait();
             }
         }
     }
