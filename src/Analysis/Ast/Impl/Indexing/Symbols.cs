@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Indexing {
@@ -70,6 +72,8 @@ namespace Microsoft.Python.Analysis.Indexing {
             Children = children;
             _functionKind = functionKind;
         }
+
+        public IEnumerable<(HierarchicalSymbol, string)> ChildrenWithParentName() => Children.MaybeEnumerate().Select((child) => (child, Name));
     }
 
     // Analagous to LSP's SymbolInformation.

@@ -13,26 +13,19 @@ namespace Microsoft.Python.Analysis.Indexing {
             => _index.TryGetValue(uri, out var list) ? list : Enumerable.Empty<HierarchicalSymbol>();
 
         public IEnumerable<FlatSymbol> WorkspaceSymbols(string query) {
-            foreach (var kvp in _index) {
-                foreach (var found in WorkspaceSymbolsQuery(query, kvp.Key, kvp.Value)) {
-                    yield return found;
-                }
-            }
+            return _index.SelectMany(kvp => WorkspaceSymbolsQuery(query, kvp.Key, kvp.Value));
         }
 
         private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string query, Uri uri, IEnumerable<HierarchicalSymbol> symbols) {
-            // Some semblance of a BFS.
-            var queue = new Queue<(HierarchicalSymbol, string)>(symbols.Select(s => (s, (string)null)));
-
-            while (queue.Count > 0) {
-                var (sym, parent) = queue.Dequeue();
-
+            var rootSymbols = symbols.Select((symbol) => {
+                return (symbol, parentName: (string) null);
+            });
+            var treeSymbols = rootSymbols.TraverseBreadthFirst((symbolAndParent) => {
+                return symbolAndParent.symbol.ChildrenWithParentName();
+            });
+            foreach (var (sym, parentName) in treeSymbols) {
                 if (sym.Name.ContainsOrdinal(query, ignoreCase: true)) {
-                    yield return new FlatSymbol(sym.Name, sym.Kind, uri, sym.SelectionRange, parent);
-                }
-
-                foreach (var child in sym.Children.MaybeEnumerate()) {
-                    queue.Enqueue((child, sym.Name));
+                    yield return new FlatSymbol(sym.Name, sym.Kind, uri, sym.SelectionRange, parentName);
                 }
             }
         }

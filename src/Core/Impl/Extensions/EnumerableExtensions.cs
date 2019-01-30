@@ -90,19 +90,19 @@ namespace Microsoft.Python.Core {
         }
 
         public static IEnumerable<T> TraverseBreadthFirst<T>(this T root, Func<T, IEnumerable<T>> selectChildren) {
-            var items = new Queue<T>();
-            items.Enqueue(root);
-            while (items.Count > 0) {
-                var item = items.Dequeue();
+            return new List<T>() { root }.TraverseBreadthFirst(selectChildren);
+        }
+
+        public static IEnumerable<T> TraverseBreadthFirst<T>(this IEnumerable<T> roots, Func<T, IEnumerable<T>> selectChildren) {
+            var queue = new Queue<T>(roots);
+
+            while (!queue.IsNullOrEmpty()) {
+                var item = queue.Dequeue();
                 yield return item;
 
-                var children = selectChildren(item);
-                if (children == null) {
-                    continue;
-                }
-
+                var children = selectChildren(item) ?? new List<T>();
                 foreach (var child in children) {
-                    items.Enqueue(child);
+                    queue.Enqueue(child);
                 }
             }
         }
