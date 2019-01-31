@@ -91,7 +91,7 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public void DisposeParserCancelesParsing() {
+        public void DisposeParserCancelsParsing() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);
             MemoryStream stream = new MemoryStream();

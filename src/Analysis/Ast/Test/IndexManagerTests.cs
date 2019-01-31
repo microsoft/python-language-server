@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Documents;
@@ -166,6 +167,56 @@ namespace Microsoft.Python.Analysis.Tests {
             doc.GetAnyAst().Returns(MakeAst("x = 1"));
             indexManager.ReIndexFile(pythonTestFileInfo.FullName, doc);
 
+            var symbols = _symbolIndex.WorkspaceSymbols("");
+            symbols.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public void AddingRootMightThrowUnauthorizedAccess() {
+            var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
+            AddFileToRootTestFileSystem(pythonTestFileInfo);
+            _fileSystem.GetDirectoryInfo(_rootPath).EnumerateFileSystemInfos(new string[] { }, new string[] { })
+                .ReturnsForAnyArgs(_ => throw new UnauthorizedAccessException());
+            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(MakeStream("x = 1"));
+
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
+            Func<Task> add = async () => await indexManager.AddRootDirectoryAsync();
+
+            add.Should().Throw<UnauthorizedAccessException>();
+            var symbols = _symbolIndex.WorkspaceSymbols("");
+            symbols.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public void CancelAdding() {
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
+
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+            Func<Task> add = async () => await indexManager.AddRootDirectoryAsync(cancellationTokenSource.Token);
+
+            add.Should().Throw<TaskCanceledException>();
+            var symbols = _symbolIndex.WorkspaceSymbols("");
+            symbols.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public void DisposeManagerCancelsTask() {
+            var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
+            AddFileToRootTestFileSystem(pythonTestFileInfo);
+            // Reading this stream will block
+            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(new MemoryStream());
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
+
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+            Func<Task> add = async () => {
+                var t = indexManager.AddRootDirectoryAsync(cancellationTokenSource.Token);
+                indexManager.Dispose();
+                await t;
+            };
+
+            add.Should().Throw<TaskCanceledException>();
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
         }

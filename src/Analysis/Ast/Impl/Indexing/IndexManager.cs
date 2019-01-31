@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Indexing {
                     parseTasks.Add(_indexParser.ParseAsync(fileInfo.FullName, linkedCts.Token));
                 }
             }
-            return Task.WhenAll(parseTasks.ToArray());
+            return Task.Run(() => Task.WaitAll(parseTasks.ToArray()), linkedCts.Token);
         }
 
         private IEnumerable<IFileSystemInfo> WorkspaceFiles() {
