@@ -19,7 +19,7 @@ using Microsoft.Python.Core.Text;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
-    internal sealed class RangeAssertions {
+    public sealed class RangeAssertions {
         public Range? Subject { get; }
 
         public RangeAssertions(Range? range) {

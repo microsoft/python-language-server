@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -68,6 +69,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return await _signatureSource.GetSignatureAsync(analysis, @params.position, cancellationToken);
             }
             return null;
+        }
+
+        public async Task<Reference[]> GotoDefinition(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Goto Definition in {uri} at {@params.position}");
+
+            var analysis = GetAnalysis(uri, cancellationToken);
+            var ds = new DefinitionSource();
+            var reference = await ds.FindDefinitionAsync(analysis, @params.position, cancellationToken);
+            return reference != null ? new[] { reference } : Array.Empty<Reference>();
         }
     }
 }
