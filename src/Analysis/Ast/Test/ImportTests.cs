@@ -81,14 +81,6 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task ImportNonExistingModule() {
-            var code = await File.ReadAllTextAsync(Path.Combine(GetAnalysisTestDataFilesPath(), "Imports.py"));
-            var analysis = await GetAnalysisAsync(code);
-
-            analysis.GlobalScope.Variables.Names.Should().OnlyContain("version_info", "a_made_up_module");
-        }
-
-        [TestMethod, Priority(0)]
         public async Task FromImportReturnTypes() {
             const string code = @"from ReturnValues import *
 R_str = r_str()

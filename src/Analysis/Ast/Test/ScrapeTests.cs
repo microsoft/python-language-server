@@ -94,13 +94,13 @@ namespace Microsoft.Python.Analysis.Tests {
                     continue;
                 }
 
-                Console.WriteLine("Importing {0} from {1}", mp.ModuleName, mp.SourceFile);
+                Console.WriteLine(@"Importing {0} from {1}", mp.ModuleName, mp.SourceFile);
                 var mod = await interpreter.ModuleResolution.ImportModuleAsync(mp.ModuleName);
                 Assert.IsInstanceOfType(mod, typeof(CompiledPythonModule));
 
+                await ((ModuleCache)interpreter.ModuleResolution.ModuleCache).CacheWritingTask;
                 var modPath = interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(pyd);
                 Assert.IsTrue(File.Exists(modPath), "No cache file created");
-                var moduleCache = File.ReadAllText(modPath);
 
                 var doc = (IDocument)mod;
                 var ast = await doc.GetAstAsync();
@@ -109,7 +109,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 foreach (var err in errors) {
                     Console.WriteLine(err);
                 }
-                Assert.AreEqual(0, errors.Count(), "Parse errors occurred");
+                Assert.AreEqual(0, errors.Length, "Parse errors occurred");
 
 
                 var imports = ((SuiteStatement)ast.Body).Statements
