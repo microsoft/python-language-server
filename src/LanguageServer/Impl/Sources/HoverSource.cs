@@ -13,11 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.ComponentModel.Design.Serialization;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -43,28 +46,51 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 return null; // No hover for literals.
             }
 
-            if (node is Expression expr) {
-                using (analysis.ExpressionEvaluator.OpenScope(scope)) {
-                    var value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(expr, cancellationToken);
-                    var type = value?.GetPythonType();
-                    if (type != null) {
-                        var range = new Range {
-                            start = expr.GetStart(analysis.Ast),
-                            end = expr.GetEnd(analysis.Ast),
-                        };
+            if (!(node is Expression expr)) {
+                return null;
+            }
 
-                        // Figure out name, if any
-                        var name = (expr as MemberExpression)?.Name;
-                        name = name ?? (node as NameExpression)?.Name;
-                        name = statement is ClassDefinition || statement is FunctionDefinition ? null : name;
+            var range = new Range {
+                start = expr.GetStart(analysis.Ast),
+                end = expr.GetEnd(analysis.Ast),
+            };
 
-                        return new Hover {
-                            contents = _docSource.GetHover(name, value),
-                            range = range
-                        };
+            var eval = analysis.ExpressionEvaluator;
+            if (statement is FromImportStatement fi && node is NameExpression nex) {
+                // In 'from A import B as C' B is not declared as a variable
+                // so we need manually fetch type.
+                var index = fi.Names.IndexOf(nex);
+                if (index >= 0) {
+                    using (eval.OpenScope(scope)) {
+                        var variable = eval.LookupNameInScopes(fi.Root.MakeString());
+                        if (variable.GetPythonType() is IPythonModule mod) {
+                            var value = mod.GetMember(nex.Name)?.GetPythonType();
+                            return new Hover {
+                                contents = _docSource.GetHover(mod.Name, value),
+                                range = range
+                            };
+                        }
                     }
                 }
             }
+
+            using (eval.OpenScope(scope)) {
+                var value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(expr, cancellationToken);
+                var type = value?.GetPythonType();
+
+                if (type != null) {
+                    // Figure out name, if any
+                    var name = (expr as MemberExpression)?.Name;
+                    name = name ?? (node as NameExpression)?.Name;
+                    name = statement is ClassDefinition || statement is FunctionDefinition ? null : name;
+
+                    return new Hover {
+                        contents = _docSource.GetHover(name, value),
+                        range = range
+                    };
+                }
+            }
+
             return null;
         }
     }

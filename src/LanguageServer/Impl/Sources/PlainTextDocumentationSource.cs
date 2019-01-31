@@ -49,8 +49,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
                                 break;
                             }
 
-                        case IPythonModule _:
-                            text = !string.IsNullOrEmpty(name) ? $"module {name}{typeDoc}" : $"{type.Name}{typeDoc}";
+                        case IPythonModule mod:
+                            text = !string.IsNullOrEmpty(mod.Name) ? $"module {mod.Name}{typeDoc}" : $"module{typeDoc}";
                             break;
 
                         default:

@@ -105,13 +105,18 @@ datetime.datetime.now().day
             await AssertHover(hs, analysis, new SourceLocation(3, 20), "datetime.now(tz: Optional[tzinfo]) -> datetime*", new SourceSpan(3, 1, 3, 22));
         }
 
-        //        [TestMethod, Priority(0)]
-        //        public async Task FromImportHover() {
-        //            var mod = await server.OpenDefaultDocumentAndGetUriAsync("from os import path as p\n");
-        //            await AssertHover(server, mod, new SourceLocation(1, 6), "module os*", null, new SourceSpan(1, 6, 1, 8));
-        //            await AssertHover(server, mod, new SourceLocation(1, 16), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 16, 1, 20));
-        //            await AssertHover(server, mod, new SourceLocation(1, 24), "module posixpath*", new[] { "posixpath" }, new SourceSpan(1, 24, 1, 25));
-        //        }
+        [TestMethod, Priority(0)]
+        public async Task FromImportHover() {
+            const string code = @"
+from os import path as p
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+
+            await AssertHover(hs, analysis, new SourceLocation(2, 6), "module os*", new SourceSpan(2, 6, 2, 8));
+            await AssertHover(hs, analysis, new SourceLocation(2, 16), "module*", new SourceSpan(2, 16, 2, 20));
+            await AssertHover(hs, analysis, new SourceLocation(2, 24), "module*", new SourceSpan(2, 24, 2, 25));
+        }
 
         //        [TestMethod, Priority(0)]
         //        public async Task FromImportRelativeHover() {

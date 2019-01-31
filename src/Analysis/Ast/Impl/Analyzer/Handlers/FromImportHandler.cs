@@ -94,6 +94,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var names = node.Names;
             var asNames = node.AsNames;
             var module = await ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
+            if (module == null) {
+                return;
+            }
 
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: warn this is not a good style per
@@ -103,14 +106,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return;
             }
 
+            Eval.DeclareVariable(module.Name, module, VariableSource.Import, node);
+
             for (var i = 0; i < names.Count; i++) {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var memberReference = asNames[i] ?? names[i];
-                var memberName = memberReference.Name;
+                var memberName = names[i].Name;
                 if (!string.IsNullOrEmpty(memberName)) {
-                    var type = module?.GetMember(memberReference.Name) ?? Interpreter.UnknownType;
-                    Eval.DeclareVariable(memberName, type, VariableSource.Import, names[i]);
+                    var variableName = asNames[i]?.Name ?? memberName;
+                    var type = module.GetMember(memberName) ?? Interpreter.UnknownType;
+                    Eval.DeclareVariable(variableName, type, VariableSource.Import, names[i]);
                 }
             }
         }
