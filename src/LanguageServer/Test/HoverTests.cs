@@ -118,41 +118,23 @@ from os import path as p
             await AssertHover(hs, analysis, new SourceLocation(2, 24), "module*", new SourceSpan(2, 24, 2, 25));
         }
 
-        //        [TestMethod, Priority(0)]
-        //        public async Task FromImportRelativeHover() {
-        //            var mod1 = await server.OpenDocumentAndGetUriAsync("mod1.py", "from . import mod2\n");
-        //            var mod2 = await server.OpenDocumentAndGetUriAsync("mod2.py", "def foo():\n  pass\n");
-        //            await AssertHover(server, mod1, new SourceLocation(1, 16), "module mod2", null, new SourceSpan(1, 15, 1, 19));
-        //        }
+        [TestMethod, Priority(0)]
+        public async Task SelfHover() {
+            const string code = @"
+class Base(object):
+    def fob_base(self):
+       pass
 
-        //        [TestMethod, Priority(0)]
-        //        public async Task SelfHover() {
-        //            var code =  @"
-        //class Base(object):
-        //    def fob_base(self):
-        //       pass
-
-        //class Derived(Base):
-        //    def fob_derived(self):
-        //       self.fob_base()
-        //       pass
-        //";
-        //            var uri = await server.OpenDefaultDocumentAndGetUriAsync(text);
-        //            await AssertHover(server, uri, new SourceLocation(3, 19), "class module.Base(object)", null, new SourceSpan(2, 7, 2, 11));
-        //            await AssertHover(server, uri, new SourceLocation(8, 8), "class module.Derived(Base)", null, new SourceSpan(6, 7, 6, 14));
-        //        }
-
-        //        [TestMethod, Priority(0)]
-        //        public async Task TupleFunctionArgumentsHover() {
-        //            var uri = await server.OpenDefaultDocumentAndGetUriAsync("def what(a, b):\n    return a, b, 1\n");
-        //            await AssertHover(server, uri, new SourceLocation(1, 6), "function module.what(a, b) -> tuple[Any, Any, int]", null, new SourceSpan(1, 5, 1, 9));
-        //        }
-
-        //        [TestMethod, Priority(0)]
-        //        public async Task TupleFunctionArgumentsWithCallHover() {
-        //            var uri = await server.OpenDefaultDocumentAndGetUriAsync("def what(a, b):\n    return a, b, 1\n\nwhat(1, 2)");
-        //            await AssertHover(server, uri, new SourceLocation(1, 6), "function module.what(a, b) -> tuple[int, int, int]", null, new SourceSpan(1, 5, 1, 9));
-        //        }
+class Derived(Base):
+    def fob_derived(self):
+       self.fob_base()
+       pass
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            await AssertHover(hs, analysis, new SourceLocation(3, 19), "class Base*", new SourceSpan(3, 18, 3, 22));
+            await AssertHover(hs, analysis, new SourceLocation(8, 8), "class Derived*", new SourceSpan(8, 8, 8, 12));
+        }
 
         private static async Task AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
             var hover = await hs.GetHoverAsync(analysis, position);

@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -64,9 +65,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     using (eval.OpenScope(scope)) {
                         var variable = eval.LookupNameInScopes(fi.Root.MakeString());
                         if (variable.GetPythonType() is IPythonModule mod) {
-                            var value = mod.GetMember(nex.Name)?.GetPythonType();
+                            var v = mod.GetMember(nex.Name)?.GetPythonType();
                             return new Hover {
-                                contents = _docSource.GetHover(mod.Name, value),
+                                contents = _docSource.GetHover(mod.Name, v),
                                 range = range
                             };
                         }
@@ -74,24 +75,35 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
             }
 
+            IMember value;
+            IPythonType type;
             using (eval.OpenScope(scope)) {
-                var value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(expr, cancellationToken);
-                var type = value?.GetPythonType();
-
-                if (type != null) {
-                    // Figure out name, if any
-                    var name = (expr as MemberExpression)?.Name;
-                    name = name ?? (node as NameExpression)?.Name;
-                    name = statement is ClassDefinition || statement is FunctionDefinition ? null : name;
-
-                    return new Hover {
-                        contents = _docSource.GetHover(name, value),
-                        range = range
-                    };
+                value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(expr, cancellationToken);
+                type = value?.GetPythonType();
+                if (type == null) {
+                    return null;
                 }
             }
 
-            return null;
+            // Figure out name, if any
+            var name = (expr as MemberExpression)?.Name;
+            name = name ?? (node as NameExpression)?.Name;
+
+            // Special case hovering over self or cls
+            if ((name.EqualsOrdinal("self") || name.EqualsOrdinal("cls")) && type is IPythonClassType) {
+                return new Hover {
+                    contents = _docSource.GetHover(null, type),
+                    range = range
+                };
+            }
+
+            name = name == null && statement is ClassDefinition cd ? cd.Name : name;
+            name = name == null && statement is FunctionDefinition fd ? fd.Name : name;
+
+            return new Hover {
+                contents = _docSource.GetHover(name, value),
+                range = range
+            };
         }
     }
 }

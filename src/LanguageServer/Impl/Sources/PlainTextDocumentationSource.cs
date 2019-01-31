@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis;
@@ -26,41 +25,47 @@ namespace Microsoft.Python.LanguageServer.Sources {
         public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
 
         public MarkupContent GetHover(string name, IMember member) {
-            var text = name;
             // We need to tell between instance and type.
             var type = member.GetPythonType();
-            if (!type.IsUnknown()) {
-                if (member is IPythonInstance && !(type is IPythonFunctionType)) {
+            if (type.IsUnknown()) {
+                return new MarkupContent { kind = MarkupKind.PlainText, value = name };
+            }
+
+            string text;
+            if (member is IPythonInstance) {
+                if (!(type is IPythonFunctionType)) {
                     text = !string.IsNullOrEmpty(name) ? $"{name}: {type.Name}" : $"{type.Name}";
-                } else {
-                    var typeDoc = !string.IsNullOrEmpty(type.Documentation) ? $"\n\n{type.Documentation}" : string.Empty;
-                    switch (type) {
-                        case IPythonPropertyType prop:
-                            text = GetPropertyHoverString(prop);
-                            break;
-
-                        case IPythonFunctionType ft:
-                            text = GetFunctionHoverString(ft);
-                            break;
-
-                        case IPythonClassType cls: {
-                                var clsDoc = !string.IsNullOrEmpty(cls.Documentation) ? $"\n\n{cls.Documentation}" : string.Empty;
-                                text = $"class {cls.Name}{clsDoc}";
-                                break;
-                            }
-
-                        case IPythonModule mod:
-                            text = !string.IsNullOrEmpty(mod.Name) ? $"module {mod.Name}{typeDoc}" : $"module{typeDoc}";
-                            break;
-
-                        default:
-                            text = !string.IsNullOrEmpty(name) ? $"type {name}: {type.Name}{typeDoc}" : $"{type.Name}{typeDoc}";
-                            break;
-                    }
+                    return new MarkupContent { kind = MarkupKind.PlainText, value = text };
                 }
             }
 
-            return new MarkupContent { kind = MarkupKind.PlainText, value = text };
+            var typeDoc = !string.IsNullOrEmpty(type.Documentation) ? $"\n\n{type.Documentation}" : string.Empty;
+            switch (type) {
+                case IPythonPropertyType prop:
+                    text = GetPropertyHoverString(prop);
+                    break;
+
+                case IPythonFunctionType ft:
+                    text = GetFunctionHoverString(ft);
+                    break;
+
+                case IPythonClassType cls:
+                    var clsDoc = !string.IsNullOrEmpty(cls.Documentation) ? $"\n\n{cls.Documentation}" : string.Empty;
+                    text = $"class {cls.Name}{clsDoc}";
+                    break;
+
+                case IPythonModule mod:
+                    text = !string.IsNullOrEmpty(mod.Name) ? $"module {mod.Name}{typeDoc}" : $"module{typeDoc}";
+                    break;
+
+                default:
+                    text = !string.IsNullOrEmpty(name) ? $"type {name}: {type.Name}{typeDoc}" : $"{type.Name}{typeDoc}";
+                    break;
+            }
+
+            return new MarkupContent {
+                kind = MarkupKind.PlainText, value = text
+            };
         }
 
         public MarkupContent FormatDocumentation(string documentation) {
