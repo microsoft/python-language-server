@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Indexing {
 
         public Task AddRootDirectoryAsync(CancellationToken workspaceCancellationToken = default) {
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(workspaceCancellationToken, _allIndexCts.Token);
-            var parseTasks = new List<Task>();
+            var parseTasks = new List<Task<bool>>();
             foreach (var fileInfo in WorkspaceFiles()) {
                 if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
                     parseTasks.Add(_indexParser.ParseAsync(fileInfo.FullName, linkedCts.Token));

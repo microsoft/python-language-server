@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,17 +28,23 @@ namespace Microsoft.Python.Analysis.Indexing {
             _allProcessingCts.Dispose();
         }
 
-        public Task ParseAsync(string path, CancellationToken parseCancellationToken = default) {
+        public Task<bool> ParseAsync(string path, CancellationToken parseCancellationToken = default) {
             var linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, parseCancellationToken);
             var linkedParseToken = linkedParseCts.Token;
-            return Task.Run(() => {
+            return Task<bool>.Run(() => {
                 if (!_fileSystem.FileExists(path)) {
-                    throw new FileNotFoundException($"{path} does not exist", path);
+                    return false;
                 }
-                using (var stream = _fileSystem.FileOpen(path, FileMode.Open)) {
-                    var parser = Parser.CreateParser(stream, _version);
-                    linkedParseToken.ThrowIfCancellationRequested();
-                    _symbolIndex.UpdateIndex(path, parser.ParseFile());
+                try {
+                    using (var stream = _fileSystem.FileOpen(path, FileMode.Open)) {
+                        var parser = Parser.CreateParser(stream, _version);
+                        linkedParseToken.ThrowIfCancellationRequested();
+                        _symbolIndex.UpdateIndex(path, parser.ParseFile());
+                        return true;
+                    }
+                } catch (FileNotFoundException e) {
+                    Trace.TraceError(e.ToString());
+                    return false;
                 }
             }, linkedParseToken);
         }

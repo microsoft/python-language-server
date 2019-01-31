@@ -63,11 +63,25 @@ namespace Microsoft.Python.Analysis.Tests {
             _fileSystem.FileExists(testFilePath).Returns(false);
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
-            Func<Task> parse = async () => {
-                await indexParser.ParseAsync(testFilePath);
-            };
+            var t = indexParser.ParseAsync(testFilePath);
+            t.Wait();
 
-            parse.Should().Throw<FileNotFoundException>();
+            t.Result.Should().BeFalse();
+            var symbols = _symbolIndex.WorkspaceSymbols("");
+            symbols.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public void ParseFileThatStopsExisting() {
+            const string testFilePath = "C:/bla.py";
+            _fileSystem.FileExists(testFilePath).Returns(true);
+            _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(_ => throw new FileNotFoundException());
+
+            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
+            var t = indexParser.ParseAsync(testFilePath);
+            t.Wait();
+
+            t.Result.Should().BeFalse();
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
         }
