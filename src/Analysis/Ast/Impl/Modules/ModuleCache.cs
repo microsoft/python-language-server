@@ -65,9 +65,9 @@ namespace Microsoft.Python.Analysis.Modules {
 
             var rdt = _services.GetService<IRunningDocumentTable>();
             var mco = new ModuleCreationOptions {
-                ModuleName =  name,
+                ModuleName = name,
                 ModuleType = ModuleType.Stub,
-                FilePath =  cache
+                FilePath = cache
             };
             var module = rdt.AddModule(mco);
 
@@ -118,32 +118,51 @@ namespace Microsoft.Python.Analysis.Modules {
                 return string.Empty;
             }
 
-            var path = GetCacheFilePath(filePath);
-            if (string.IsNullOrEmpty(path)) {
+            var cachePath = GetCacheFilePath(filePath);
+            if (string.IsNullOrEmpty(cachePath)) {
                 return string.Empty;
             }
 
-            var fileIsOkay = false;
+            var cachedFileExists = false;
+            var cachedFileOlderThanAssembly = false;
+            var cachedFileOlderThanSource = false;
+            Exception exception = null;
+
             try {
-                var cacheTime = _fs.GetLastWriteTimeUtc(path);
-                var sourceTime = _fs.GetLastWriteTimeUtc(filePath);
-                if (sourceTime <= cacheTime) {
-                    var assemblyTime = _fs.GetLastWriteTimeUtc(GetType().Assembly.Location);
-                    if (assemblyTime <= cacheTime) {
-                        fileIsOkay = true;
+                cachedFileExists = _fs.FileExists(cachePath);
+                if (cachedFileExists) {
+                    // Source path is fake for scraped/compiled modules.
+                    // The time will be very old, which is good.
+                    var sourceTime = _fs.GetLastWriteTimeUtc(filePath);
+                    var cacheTime = _fs.GetLastWriteTimeUtc(cachePath);
+
+                    cachedFileOlderThanSource = cacheTime < sourceTime;
+                    if (!cachedFileOlderThanSource) {
+                        var assemblyTime = _fs.GetLastWriteTimeUtc(GetType().Assembly.Location);
+                        if (assemblyTime > cacheTime) {
+                            cachedFileOlderThanAssembly = true;
+                        } else {
+                            return _fs.ReadAllText(cachePath);
+                        }
                     }
                 }
             } catch (Exception ex) when (!ex.IsCriticalException()) {
+                exception = ex;
             }
 
-            if (fileIsOkay) {
-                try {
-                    return _fs.ReadAllText(filePath);
-                } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            var reason = "Unknown";
+            if (!cachedFileExists) {
+                reason = "Cached file does not exist";
+            } else if (cachedFileOlderThanAssembly) {
+                reason = "Cached file is older than the assembly.";
+            } else if (cachedFileOlderThanSource) {
+                reason = $"Cached file is older than the source {filePath}.";
+            } else {
+                reason = $"Exception during cache file check {exception.Message}.";
             }
 
-            _log?.Log(TraceEventType.Verbose, "Invalidate cached module", path);
-            _fs.DeleteFileWithRetries(path);
+            _log?.Log(TraceEventType.Verbose, $"Invalidate cached module {cachePath}. Reason: {reason}");
+            _fs.DeleteFileWithRetries(cachePath);
             return string.Empty;
         }
 
@@ -152,12 +171,12 @@ namespace Microsoft.Python.Analysis.Modules {
             if (!string.IsNullOrEmpty(cache)) {
                 _log?.Log(TraceEventType.Verbose, "Write cached module: ", cache);
                 // Don't block analysis on cache writes.
-                CacheWritingTask = Task.Run(() =>_fs.WriteTextWithRetry(cache, code));
+                CacheWritingTask = Task.Run(() => _fs.WriteTextWithRetry(cache, code));
                 CacheWritingTask.DoNotWait();
             }
         }
 
         // For tests synchronization
-        internal Task CacheWritingTask { get; private set; } =Task.CompletedTask;
+        internal Task CacheWritingTask { get; private set; } = Task.CompletedTask;
     }
 }
