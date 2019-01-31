@@ -614,7 +614,7 @@ else:
 
         [TestMethod, Priority(0)]
         public void IndexHierarchicalDocument() {
-            var index = new SymbolIndex();
+            ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse("x = 1");
             index.UpdateIndex(path, ast);
@@ -627,7 +627,7 @@ else:
 
         [TestMethod, Priority(0)]
         public void IndexHierarchicalDocumentUpdate() {
-            var index = new SymbolIndex();
+            ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse("x = 1");
             index.UpdateIndex(path, ast);
@@ -648,7 +648,7 @@ else:
 
         [TestMethod, Priority(0)]
         public void IndexHierarchicalDocumentNotFound() {
-            var index = new SymbolIndex();
+            ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
 
             var symbols = index.HierarchicalDocumentSymbols(path);
@@ -660,7 +660,7 @@ else:
             var code = @"class Foo(object):
     def foo(self, x): ...";
 
-            var index = new SymbolIndex();
+            ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
             index.UpdateIndex(path, ast);
@@ -679,7 +679,7 @@ else:
             var code = @"class Foo(object):
     def foo(self, x): ...";
 
-            var index = new SymbolIndex();
+            ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
             index.UpdateIndex(path, ast);
@@ -692,7 +692,7 @@ else:
 
         [TestMethod, Priority(0)]
         public void IndexWorkspaceSymbolsNotFound() {
-            var index = new SymbolIndex();
+            ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
 
             var symbols = index.WorkspaceSymbols("");
@@ -704,7 +704,7 @@ else:
             var code = @"class Foo(object):
     def foo(self, x): ...";
 
-            var index = new SymbolIndex();
+            ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
             index.UpdateIndex(path, ast);
