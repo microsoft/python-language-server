@@ -63,13 +63,11 @@ namespace Microsoft.Python.Analysis.Indexing {
             }
         }
 
-        private bool IsFileOnWorkspace(string path) {
-            return _fileSystem.IsPathUnderRoot(_workspaceRootPath, path);
-        }
+        private bool IsFileOnWorkspace(string path)
+            => _fileSystem.IsPathUnderRoot(_workspaceRootPath, path);
 
-        public void ProcessNewFile(string path, IDocument doc) {
-            _symbolIndex.UpdateIndex(path, doc.GetAnyAst());
-        }
+        public void ProcessNewFile(string path, IDocument doc)
+            => _symbolIndex.UpdateIndex(path, doc.GetAnyAst());
 
         public void ReIndexFile(string path, IDocument doc) {
             if (IsFileIndexed(path)) {
