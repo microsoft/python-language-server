@@ -775,5 +775,31 @@ pass";
             var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 12));
             result.Should().HaveNoCompletion();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task OsPath1() {
+            const string code = @"
+import os
+os.
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 4));
+            result.Should().HaveLabels("path", @"devnull", "SEEK_SET", @"curdir");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OsPath2() {
+            const string code = @"
+import os
+os.path.
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
+            result.Should().HaveLabels("split", @"getsize", @"islink", @"abspath");
+        }
     }
 }
