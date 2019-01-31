@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default);
 
-        IMember LookupNameInScopes(string name);
+        IMember LookupNameInScopes(string name, out IScope scope);
 
         PythonAst Ast { get; }
         IPythonModule Module { get; }

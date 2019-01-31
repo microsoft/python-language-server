@@ -640,11 +640,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         /// The kind of reference
         /// </summary>
         public ReferenceKind? _kind;
-        /// <summary>
-        /// The document version that range applies to
-        /// </summary>
-        public int? _version;
-        public bool _isModule;
     }
 
     [Serializable]

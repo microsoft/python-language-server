@@ -53,9 +53,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember LookupNameInScopes(string name, out IScope scope) => LookupNameInScopes(name, out scope, DefaultLookupOptions);
 
         [DebuggerStepThrough]
-        public IMember LookupNameInScopes(string name) => LookupNameInScopes(name, DefaultLookupOptions);
-
-        [DebuggerStepThrough]
         public IMember LookupNameInScopes(string name, LookupOptions options) => LookupNameInScopes(name, out _, options);
 
         public IMember LookupNameInScopes(string name, out IScope scope, LookupOptions options) {

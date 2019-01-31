@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             var n = GetName(type);
             if (!string.IsNullOrEmpty(n)) {
-                return _eval.LookupNameInScopes(n).GetPythonType();
+                return _eval.LookupNameInScopes(n, out _).GetPythonType();
             }
 
             return type;
