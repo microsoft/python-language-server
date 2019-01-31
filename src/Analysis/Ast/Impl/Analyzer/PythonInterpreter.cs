@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             await pi.LoadBuiltinTypesAsync(root, sm, cancellationToken);
 
             // Specialize typing
-            await TypingModule.CreateAsync(sm, cancellationToken);
+            TypingModule.Create(sm);
             return pi;
         }
 

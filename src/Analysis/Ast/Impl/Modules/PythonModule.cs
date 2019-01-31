@@ -152,8 +152,8 @@ namespace Microsoft.Python.Analysis.Modules {
             if (all?.Value is IPythonCollection collection) {
                 return collection.Contents
                     .OfType<IPythonConstant>()
-                    .Select(c => c.Value)
-                    .OfType<string>()
+                    .Select(c => c.GetString())
+                    .ExcludeDefault()
                     .Where(s => !string.IsNullOrEmpty(s));
             }
 

@@ -78,9 +78,8 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         /// <param name="name">Module to specialize.</param>
         /// <param name="specializationConstructor">Specialized module constructor.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Original (library) module loaded as stub.</returns>
-        Task<IPythonModule> SpecializeModuleAsync(string name, Func<string, IPythonModule> specializationConstructor, CancellationToken cancellationToken = default);
+        /// <returns>Original (library) module loaded as stub, if any.</returns>
+        IPythonModule SpecializeModule(string name, Func<string, IPythonModule> specializationConstructor);
 
         /// <summary>
         /// Returns specialized module, if any.
