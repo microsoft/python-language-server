@@ -661,16 +661,16 @@ else:
     def foo(self, x): ...";
 
             var index = new SymbolIndex();
-            var uri = TestData.GetDefaultModuleUri();
+            var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
-            index.UpdateIndex(uri.AbsolutePath, ast);
+            index.UpdateIndex(path, ast);
 
             var symbols = index.WorkspaceSymbols("");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new FlatSymbol("Foo", SymbolKind.Class, uri, new SourceSpan(1, 7, 1, 10)),
-                new FlatSymbol("foo", SymbolKind.Method, uri, new SourceSpan(2, 9, 2, 12), "Foo"),
-                new FlatSymbol("self", SymbolKind.Variable, uri, new SourceSpan(2, 13, 2, 17), "foo"),
-                new FlatSymbol("x", SymbolKind.Variable, uri, new SourceSpan(2, 19, 2, 20), "foo"),
+                new FlatSymbol("Foo", SymbolKind.Class, path, new SourceSpan(1, 7, 1, 10)),
+                new FlatSymbol("foo", SymbolKind.Method, path, new SourceSpan(2, 9, 2, 12), "Foo"),
+                new FlatSymbol("self", SymbolKind.Variable, path, new SourceSpan(2, 13, 2, 17), "foo"),
+                new FlatSymbol("x", SymbolKind.Variable, path, new SourceSpan(2, 19, 2, 20), "foo"),
             });
         }
 
@@ -686,7 +686,7 @@ else:
 
             var symbols = index.WorkspaceSymbols("x");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new FlatSymbol("x", SymbolKind.Variable, new Uri(path), new SourceSpan(2, 19, 2, 20), "foo"),
+                new FlatSymbol("x", SymbolKind.Variable, path, new SourceSpan(2, 19, 2, 20), "foo"),
             });
         }
 
@@ -711,8 +711,8 @@ else:
 
             var symbols = index.WorkspaceSymbols("foo");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new FlatSymbol("Foo", SymbolKind.Class, new Uri(path), new SourceSpan(1, 7, 1, 10)),
-                new FlatSymbol("foo", SymbolKind.Method, new Uri(path), new SourceSpan(2, 9, 2, 12), "Foo"),
+                new FlatSymbol("Foo", SymbolKind.Class, path, new SourceSpan(1, 7, 1, 10)),
+                new FlatSymbol("foo", SymbolKind.Method, path, new SourceSpan(2, 9, 2, 12), "Foo"),
             });
         }
 

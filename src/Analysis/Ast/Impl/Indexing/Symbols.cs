@@ -79,20 +79,20 @@ namespace Microsoft.Python.Analysis.Indexing {
         public string Name;
         public SymbolKind Kind;
         public bool? Deprecated;
-        public Uri DocumentUri;
+        public string DocumentPath;
         public SourceSpan Range;
         public string ContainerName;
 
         public FlatSymbol(
             string name,
             SymbolKind kind,
-            Uri documentUri,
+            string documentPath,
             SourceSpan range,
             string containerName = null
         ) {
             Name = name;
             Kind = kind;
-            DocumentUri = documentUri;
+            DocumentPath = documentPath;
             Range = range;
             ContainerName = containerName;
         }

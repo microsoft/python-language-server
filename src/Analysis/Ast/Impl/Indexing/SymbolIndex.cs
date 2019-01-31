@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Indexing {
             });
             foreach (var (sym, parentName) in treeSymbols) {
                 if (sym.Name.ContainsOrdinal(query, ignoreCase: true)) {
-                    yield return new FlatSymbol(sym.Name, sym.Kind, new Uri(path), sym.SelectionRange, parentName);
+                    yield return new FlatSymbol(sym.Name, sym.Kind, path, sym.SelectionRange, parentName);
                 }
             }
         }
