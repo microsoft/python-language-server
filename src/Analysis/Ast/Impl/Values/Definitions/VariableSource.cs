@@ -13,24 +13,30 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
-
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
-    /// Represents a variable.
+    /// Describes variable source. Used in filtering variables during completion
+    /// so the list does not show what the imported module has imported itself
+    /// or what generic variables it has declared for internal purposes.
     /// </summary>
-    public interface IVariable: ILocatedMember {
+    public enum VariableSource {
         /// <summary>
-        /// Variable name.
+        /// Variable is user declaration.
         /// </summary>
-        string Name { get; }
+        Declaration,
         /// <summary>
-        /// Variable source.
+        /// Variable is import from another module.
         /// </summary>
-        VariableSource Source { get; }
+        Import,
         /// <summary>
-        /// Variable value.
+        /// Variable is a generic type definition.
         /// </summary>
-        IMember Value { get; set; }
+        Generic,
+
+        /// <summary>
+        /// Variable is as reference to existing variable
+        /// declared as nonlocal or global.
+        /// </summary>
+        Locality
     }
 }

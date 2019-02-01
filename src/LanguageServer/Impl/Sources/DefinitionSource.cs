@@ -113,7 +113,13 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return null;
         }
 
-        private bool CanNavigateToModule(IPythonModule m)
-            => m.ModuleType == ModuleType.User || m.ModuleType == ModuleType.Package || m.ModuleType == ModuleType.Library;
+        private static bool CanNavigateToModule(IPythonModule m) {
+#if DEBUG
+            // Allow navigation anywhere in debug.
+            return m.ModuleType != ModuleType.Specialized && m.ModuleType != ModuleType.Unresolved; 
+#else
+            return m.ModuleType == ModuleType.User || m.ModuleType == ModuleType.Package || m.ModuleType == ModuleType.Library;
+#endif
+        }
     }
 }
