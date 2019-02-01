@@ -110,7 +110,7 @@ namespace Microsoft.Python.Analysis.Tests {
             _fileSystem.FileExists(testFilePath).Returns(true);
             MemoryStream stream = new MemoryStream();
             // no writing to the stream, will block when read
-            _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(stream);
+            _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(new FakeBlockingStream(new byte[] { }));
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             Func<Task> parse = async () => {

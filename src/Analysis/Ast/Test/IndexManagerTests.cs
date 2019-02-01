@@ -208,7 +208,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
             AddFileToRootTestFileSystem(pythonTestFileInfo);
             // Reading this stream will block
-            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(new MemoryStream());
+            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(new FakeBlockingStream(new byte[] { }));
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
 
             Func<Task> add = async () => {
