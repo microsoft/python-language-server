@@ -36,6 +36,7 @@ namespace Microsoft.Python.Analysis.Indexing {
                     return false;
                 }
                 try {
+                    linkedParseToken.ThrowIfCancellationRequested();
                     using (var stream = _fileSystem.FileOpen(path, FileMode.Open)) {
                         var parser = Parser.CreateParser(stream, _version);
                         linkedParseToken.ThrowIfCancellationRequested();

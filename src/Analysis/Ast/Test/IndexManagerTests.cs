@@ -48,12 +48,15 @@ namespace Microsoft.Python.Analysis.Tests {
         public async Task AddsRootDirectoryAsync() {
             var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
             AddFileToRootTestFileSystem(pythonTestFileInfo);
+            var fooFile = MakeFileInfoProxy($"{_rootPath}\foo.py");
+            AddFileToRootTestFileSystem(fooFile);
             _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(MakeStream("x = 1"));
+            _fileSystem.FileOpen(fooFile.FullName, FileMode.Open).Returns(MakeStream("y = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
             await indexManager.AddRootDirectoryAsync();
 
-            var symbols = _symbolIndex.WorkspaceSymbols("");
+            var symbols = _symbolIndex.WorkspaceSymbols("x");
             symbols.Should().HaveCount(1);
             symbols.First().Kind.Should().BeEquivalentTo(SymbolKind.Variable);
             symbols.First().Name.Should().BeEquivalentTo("x");
