@@ -36,8 +36,8 @@ namespace Microsoft.Python.Analysis.Documents {
         private readonly object _lock = new object();
         private readonly string _workspaceRoot;
 
-        private IModuleResolution _moduleResolution;
-        private IModuleResolution ModuleResolution => _moduleResolution ?? (_moduleResolution = _services.GetService<IPythonInterpreter>().ModuleResolution);
+        private IModuleManagement _moduleManagement;
+        private IModuleManagement ModuleManagement => _moduleManagement ?? (_moduleManagement = _services.GetService<IPythonInterpreter>().ModuleResolution);
 
         private class DocumentEntry {
             public IDocument Document;
@@ -186,7 +186,7 @@ namespace Microsoft.Python.Analysis.Documents {
             _documentsByUri[document.Uri] = entry;
             _documentsByName[mco.ModuleName] = entry;
 
-            ModuleResolution.AddModulePath(document.FilePath);
+            ModuleManagement.AddModulePath(document.FilePath);
             return entry;
         }
 

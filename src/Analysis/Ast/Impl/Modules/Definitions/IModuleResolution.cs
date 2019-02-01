@@ -13,27 +13,25 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
-using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
-    /// Represents module resolution and search subsystem.
+    /// Represents basic module resolution and search subsystem.
     /// </summary>
     public interface IModuleResolution {
+        /// <summary>
+        /// Builtins module name.
+        /// </summary>
         string BuiltinModuleName { get; }
 
         /// <summary>
-        /// Locates module by path.
+        /// Builtins module.
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <returns></returns>
-        ModulePath FindModule(string filePath);
+        IBuiltinsPythonModule BuiltinsModule { get; }
 
         /// <summary>
         /// Path resolver providing file resolution in module imports.
@@ -52,38 +50,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         IPythonModule GetImportedModule(string name);
 
-        IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Determines if directory contains Python package.
-        /// </summary>
-        bool IsPackage(string directory);
-
-        /// <summary>
-        /// Builtins module.
-        /// </summary>
-        IBuiltinsPythonModule BuiltinsModule { get; }
-
-        IModuleCache ModuleCache { get; }
-
         Task ReloadAsync(CancellationToken token = default);
-
-        void AddModulePath(string path);
-
-        /// <summary>
-        /// Provides ability to specialize module by replacing module import by
-        /// <see cref="IPythonModule"/> implementation in code. Real module
-        /// content is loaded and analyzed only for class/functions definitions
-        /// so the original documentation can be extracted.
-        /// </summary>
-        /// <param name="name">Module to specialize.</param>
-        /// <param name="specializationConstructor">Specialized module constructor.</param>
-        /// <returns>Original (library) module loaded as stub, if any.</returns>
-        IPythonModule SpecializeModule(string name, Func<string, IPythonModule> specializationConstructor);
-
-        /// <summary>
-        /// Returns specialized module, if any.
-        /// </summary>
-        IPythonModule GetSpecializedModule(string name);
     }
 }

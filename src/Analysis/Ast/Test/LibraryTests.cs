@@ -71,7 +71,9 @@ import requests
 x = requests.get('microsoft.com')
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            if(analysis.GlobalScope.Variables["requests"].GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
+            var v = analysis.GlobalScope.Variables["requests"];
+            v.Should().NotBeNull();
+            if (v.Value.GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
                 Assert.Inconclusive("'requests' package is not installed.");
             }
             analysis.Should().HaveVariable("x").OfType("Response");

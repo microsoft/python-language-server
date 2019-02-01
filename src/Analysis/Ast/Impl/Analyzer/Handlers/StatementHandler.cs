@@ -26,12 +26,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         protected AnalysisWalker Walker { get; }
         protected ExpressionEval Eval => Walker.Eval;
         protected IPythonModule Module => Eval.Module;
-        protected IModuleResolution ModuleResolution => Module.Interpreter.ModuleResolution;
         protected ILogger Log => Eval.Log;
         protected IPythonInterpreter Interpreter => Eval.Interpreter;
         protected GlobalScope GlobalScope => Eval.GlobalScope;
         protected PythonAst Ast => Eval.Ast;
         protected ModuleSymbolTable SymbolTable => Eval.SymbolTable;
+
+        protected IModuleResolution ModuleResolution
+            => Module.ModuleType == ModuleType.Stub
+                ? Module.Interpreter.StubResolution
+                : Module.Interpreter.ModuleResolution;
 
         protected StatementHandler(AnalysisWalker walker) {
             Walker = walker;

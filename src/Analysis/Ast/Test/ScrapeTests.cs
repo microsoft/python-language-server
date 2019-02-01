@@ -261,7 +261,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var anyParseError = false;
 
             foreach (var m in skip) {
-                ((ModuleResolution)interpreter.ModuleResolution).AddUnimportableModule(m);
+                ((ModuleManagement)interpreter.ModuleResolution).AddUnimportableModule(m);
             }
 
             var set = modules
