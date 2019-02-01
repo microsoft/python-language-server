@@ -211,10 +211,8 @@ namespace Microsoft.Python.Analysis.Tests {
             _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(new MemoryStream());
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
 
-            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-            cancellationTokenSource.Cancel();
             Func<Task> add = async () => {
-                var t = indexManager.AddRootDirectoryAsync(cancellationTokenSource.Token);
+                var t = indexManager.AddRootDirectoryAsync();
                 indexManager.Dispose();
                 await t;
             };
