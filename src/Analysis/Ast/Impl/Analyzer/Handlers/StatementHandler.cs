@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         protected IModuleResolution ModuleResolution
             => Module.ModuleType == ModuleType.Stub
-                ? Module.Interpreter.StubResolution
+                ? Module.Interpreter.TypeshedResolution
                 : Module.Interpreter.ModuleResolution;
 
         protected StatementHandler(AnalysisWalker walker) {

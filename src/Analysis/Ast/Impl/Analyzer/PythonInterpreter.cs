@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// Describes Python interpreter associated with the analysis.
     /// </summary>
     public sealed class PythonInterpreter : IPythonInterpreter {
-        private ModuleManagement _moduleResolution;
+        private MainModuleResolution _moduleResolution;
         private TypeshedResolution _stubResolution;
         private readonly object _lock = new object();
 
@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             cancellationToken.ThrowIfCancellationRequested();
 
             sm.AddService(this);
-            _moduleResolution = new ModuleManagement(root, sm);
+            _moduleResolution = new MainModuleResolution(root, sm);
             await _moduleResolution.InitializeAsync(cancellationToken);
 
             var builtinModule = _moduleResolution.BuiltinsModule;
@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Stub resolution service.
         /// </summary>
-        public IModuleResolution StubResolution => _stubResolution;
+        public IModuleResolution TypeshedResolution => _stubResolution;
 
         /// <summary>
         /// Gets a well known built-in type such as int, list, dict, etc...

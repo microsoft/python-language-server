@@ -210,5 +210,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 _pathResolver.TryAddModulePath(modulePath, out _);
             }
         }
+
+        protected async Task<IPythonModule> CreateStubModuleAsync(string moduleName, string filePath, CancellationToken cancellationToken = default) {
+            _log?.Log(TraceEventType.Verbose, "Import type stub", moduleName, filePath);
+            var module = new StubPythonModule(moduleName, filePath, _services);
+            await module.LoadAndAnalyzeAsync(cancellationToken);
+            return module;
+        }
     }
 }

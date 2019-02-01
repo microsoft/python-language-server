@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         /// Stub resolution service.
         /// </summary>
-        IModuleResolution StubResolution { get; }
+        IModuleResolution TypeshedResolution { get; }
 
         /// <summary>
         /// Tells analyzer that module set has changed. Client application that tracks changes

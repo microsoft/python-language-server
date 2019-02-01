@@ -77,13 +77,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return Task.CompletedTask;
         }
 
-        private async Task<IPythonModule> CreateStubModuleAsync(string moduleName, string filePath, CancellationToken cancellationToken = default) {
-            _log?.Log(TraceEventType.Verbose, "Import type stub", moduleName, filePath);
-            var module = new StubPythonModule(moduleName, filePath, _services);
-            await module.LoadAndAnalyzeAsync(cancellationToken);
-            return module;
-        }
-
         private IEnumerable<string> GetTypeShedPaths(string typeshedRootPath) {
             if (string.IsNullOrEmpty(typeshedRootPath)) {
                 yield break;

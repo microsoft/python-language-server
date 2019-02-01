@@ -24,6 +24,7 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.IO;
@@ -261,7 +262,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var anyParseError = false;
 
             foreach (var m in skip) {
-                ((ModuleManagement)interpreter.ModuleResolution).AddUnimportableModule(m);
+                ((MainModuleResolution)interpreter.ModuleResolution).AddUnimportableModule(m);
             }
 
             var set = modules

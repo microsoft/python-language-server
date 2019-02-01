@@ -28,11 +28,11 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
-    internal sealed class ModuleManagement : ModuleResolutionBase, IModuleManagement {
+    internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
         private readonly ConcurrentDictionary<string, IPythonModule> _specialized = new ConcurrentDictionary<string, IPythonModule>();
         private IReadOnlyList<string> _searchPaths;
 
-        public ModuleManagement(string root, IServiceContainer services)
+        public MainModuleResolution(string root, IServiceContainer services)
             : base(root, services) { }
 
         internal async Task InitializeAsync(CancellationToken cancellationToken = default) {
@@ -75,16 +75,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             // If there is a stub, make sure it is loaded and attached
             // First check stub next to the module.
-            IPythonModule stub = null;
-            if(!string.IsNullOrEmpty(moduleImport.ModulePath)) {
-                var pyiPath = Path.ChangeExtension(moduleImport.ModulePath, "pyi");
-                if(_fs.FileExists(pyiPath)) {
-                    stub = new StubPythonModule(name, pyiPath, _services);
-                    await stub.LoadAndAnalyzeAsync(cancellationToken);
-                }
-            }
-
-            stub = stub ?? await _interpreter.StubResolution.ImportModuleAsync(moduleImport.IsBuiltin ? name : moduleImport.FullName, cancellationToken);
+            var stub = await GetModuleStubAsync(name, moduleImport.ModulePath, cancellationToken);
+            // If nothing found, try Typeshed.
+            stub = stub ?? await _interpreter.TypeshedResolution.ImportModuleAsync(moduleImport.IsBuiltin ? name : moduleImport.FullName, cancellationToken);
 
             IPythonModule module;
             if (moduleImport.IsBuiltin) {
@@ -179,5 +172,22 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         // For tests
         internal void AddUnimportableModule(string moduleName)
             => _modules[moduleName] = new SentinelModule(moduleName, _services);
+
+        private async Task<IPythonModule> GetModuleStubAsync(string name, string modulePath, CancellationToken cancellationToken = default) {
+            // First check stub next to the module.
+            if (!string.IsNullOrEmpty(modulePath)) {
+                var pyiPath = Path.ChangeExtension(modulePath, "pyi");
+                if (_fs.FileExists(pyiPath)) {
+                    return await CreateStubModuleAsync(name, pyiPath, cancellationToken);
+                }
+            }
+
+            // Try location of stubs that are in a separate folder next to the package.
+            var stubPath = CurrentPathResolver.GetPossibleModuleStubPaths(name).FirstOrDefault(p => _fs.FileExists(p));
+            if (!string.IsNullOrEmpty(stubPath)) {
+               return await CreateStubModuleAsync(name, stubPath, cancellationToken);
+            }
+            return null;
+        }
     }
 }
