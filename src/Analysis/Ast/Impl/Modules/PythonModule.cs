@@ -286,11 +286,16 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         public async Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default) {
             Task t = null;
-            while (t != _parsingTask) {
-                cancellationToken.ThrowIfCancellationRequested();
-                t = _parsingTask;
+            while (true) {
+                lock (AnalysisLock) {
+                    if(t == _parsingTask) {
+                        break;
+                    }
+                    cancellationToken.ThrowIfCancellationRequested();
+                    t = _parsingTask;
+                }
                 try {
-                    await t;
+                    await (t ?? Task.CompletedTask);
                     break;
                 } catch (OperationCanceledException) {
                     // Parsing as canceled, try next task.
