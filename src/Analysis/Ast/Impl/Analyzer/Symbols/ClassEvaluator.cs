@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             // Process imports
             foreach (var s in GetStatements<FromImportStatement>(_classDef)) {
-                await FromImportHandler.HandleFromImportAsync(s, cancellationToken);
+                await ImportHandler.HandleFromImportAsync(s, cancellationToken);
             }
             foreach (var s in GetStatements<ImportStatement>(_classDef)) {
                 await ImportHandler.HandleImportAsync(s, cancellationToken);

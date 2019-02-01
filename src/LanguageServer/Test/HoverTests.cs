@@ -77,22 +77,10 @@ string = str
             hover.contents.value.Should().StartWith("class str\n\nstr(object='') -> str");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task HoverSpanCheck_V2() {
-            const string code = @"
-import datetime
-datetime.datetime.now().day
-";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
-            var hs = new HoverSource(new PlainTextDocumentationSource());
-
-            await AssertHover(hs, analysis, new SourceLocation(3, 2), "module datetime*", new SourceSpan(3, 1, 3, 9));
-            await AssertHover(hs, analysis, new SourceLocation(3, 11), "class datetime*", new SourceSpan(3, 1, 3, 18));
-            await AssertHover(hs, analysis, new SourceLocation(3, 20), "datetime.now(tz: ...) -> datetime*", new SourceSpan(3, 1, 3, 22));
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task HoverSpanCheck_V3() {
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod]
+        public async Task HoverSpanCheck(bool is3x) {
             const string code = @"
 import datetime
 datetime.datetime.now().day

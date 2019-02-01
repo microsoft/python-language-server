@@ -30,10 +30,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private TypingModule(string modulePath, IServiceContainer services) : base("typing", modulePath, services) { }
 
-        public static async Task<IPythonModule> CreateAsync(IServiceContainer services, CancellationToken cancellationToken = default) {
+        public static IPythonModule Create(IServiceContainer services) {
             var interpreter = services.GetService<IPythonInterpreter>();
-            var module = await interpreter.ModuleResolution
-                .SpecializeModuleAsync("typing", modulePath => new TypingModule(modulePath, services), cancellationToken) as TypingModule;
+            var module = interpreter.ModuleResolution
+                .SpecializeModule("typing", modulePath => new TypingModule(modulePath, services)) as TypingModule;
             module?.SpecializeMembers();
             return module;
         }

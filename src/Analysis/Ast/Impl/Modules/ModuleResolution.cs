@@ -295,17 +295,12 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         /// <param name="name">Module to specialize.</param>
         /// <param name="specializationConstructor">Specialized module constructor.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Original (library) module loaded as stub.</returns>
-        public async Task<IPythonModule> SpecializeModuleAsync(string name, Func<string, IPythonModule> specializationConstructor, CancellationToken cancellationToken = default) {
+        public IPythonModule SpecializeModule(string name, Func<string, IPythonModule> specializationConstructor) {
             var import = CurrentPathResolver.GetModuleImportFromModuleName(name);
-            if (!string.IsNullOrEmpty(import?.ModulePath)) {
-                var module = specializationConstructor(import.ModulePath);
-                _modules[name] = module;
-                await module.LoadAndAnalyzeAsync(cancellationToken);
-                return module;
-            }
-            return null;
+            var module = specializationConstructor(import?.ModulePath);
+            _modules[name] = module;
+            return module;
         }
 
         /// <summary>

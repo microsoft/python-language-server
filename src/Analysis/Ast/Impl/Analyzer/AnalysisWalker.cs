@@ -30,7 +30,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// </summary>
     internal abstract class AnalysisWalker : PythonWalkerAsync {
         protected ImportHandler ImportHandler { get; }
-        protected FromImportHandler FromImportHandler { get; }
         protected LoopHandler LoopHandler { get; }
         protected ConditionalHandler ConditionalHandler { get; }
         protected AssignmentHandler AssignmentHandler { get; }
@@ -47,7 +46,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         protected AnalysisWalker(ExpressionEval eval) {
             Eval = eval;
             ImportHandler = new ImportHandler(this);
-            FromImportHandler = new FromImportHandler(this);
             AssignmentHandler = new AssignmentHandler(this);
             LoopHandler = new LoopHandler(this);
             ConditionalHandler = new ConditionalHandler(this);
@@ -77,7 +75,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
-            => FromImportHandler.HandleFromImportAsync(node, cancellationToken);
+            => ImportHandler.HandleFromImportAsync(node, cancellationToken);
 
         public override Task<bool> WalkAsync(GlobalStatement node, CancellationToken cancellationToken = default)
             => NonLocalHandler.HandleGlobalAsync(node, cancellationToken);

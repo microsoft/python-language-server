@@ -775,5 +775,35 @@ pass";
             var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 12));
             result.Should().HaveNoCompletion();
         }
+
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task OsMembers(bool is3x) {
+            const string code = @"
+import os
+os.
+";
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 4));
+            result.Should().HaveLabels("path", @"devnull", "SEEK_SET", @"curdir");
+        }
+
+        [DataRow(false), Ignore("https://github.com/Microsoft/python-language-server/issues/574")]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task OsPathMembers(bool is3x) {
+            const string code = @"
+import os
+os.path.
+";
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
+            result.Should().HaveLabels("split", @"getsize", @"islink", @"abspath");
+        }
     }
 }

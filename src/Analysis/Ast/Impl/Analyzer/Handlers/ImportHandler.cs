@@ -24,7 +24,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
-    internal sealed class ImportHandler: StatementHandler {
+    internal sealed partial class ImportHandler: StatementHandler {
         public ImportHandler(AnalysisWalker walker) : base(walker) { }
 
         public async Task<bool> HandleImportAsync(ImportStatement node, CancellationToken cancellationToken = default) {
@@ -42,9 +42,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var asNameExpression = node.AsNames[i];
                 var memberName = asNameExpression?.Name ?? moduleImportExpression.Names[0].Name;
 
+                IImportSearchResult imports = null;
+                if (importNames.Length == 1) {
+                    imports = ResolveSpecialized(importNames[0]);
+                }
+
                 // If we are processing stub, ignore imports of the original module.
                 // For example, typeshed stub for sys imports sys.
-                var imports = ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, node.ForceAbsolute);
+                imports = imports ?? ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, node.ForceAbsolute);
                 if (Module.ModuleType == ModuleType.Stub && imports is ModuleImport mi && mi.Name == Module.Name) {
                     continue;
                 }
@@ -83,7 +88,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return module;
         }
 
-        private async Task<IPythonModule> HandlePossibleImportAsync(ImportStatement node, PossibleModuleImport possibleModuleImport, CancellationToken cancellationToken) {
+        private async Task<IPythonModule> HandlePossibleImportAsync(Node node, PossibleModuleImport possibleModuleImport, CancellationToken cancellationToken) {
             var fullName = possibleModuleImport.PrecedingModuleFullName;
             var module = await ModuleResolution.ImportModuleAsync(possibleModuleImport.PrecedingModuleFullName, cancellationToken);
             if (module == null) {
