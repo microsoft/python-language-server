@@ -39,10 +39,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (rootName.EqualsOrdinal("__future__")) {
                     return false;
                 }
-                imports = ResolveSpecialized(rootName);
             }
 
-            imports = imports ?? ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
+            imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
             // If we are processing stub, ignore imports of the original module.
             // For example, typeshed stub for sys imports sys.
             if (Module.ModuleType == ModuleType.Stub && imports is ModuleImport mi && mi.Name == Module.Name) {
@@ -166,17 +165,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
                 Eval.DeclareVariable(memberName, member, VariableSource.Import, location);
             }
-        }
-
-        private IImportSearchResult ResolveSpecialized(string name) {
-            if (name.EqualsOrdinal(ModuleResolution.BuiltinModuleName) ||
-                name.EqualsOrdinal("builtin") || name.EqualsOrdinal("builtins")) {
-                return new ModuleImport(
-                    name: ModuleResolution.BuiltinModuleName, fullName: ModuleResolution.BuiltinModuleName,
-                    rootPath: ModuleResolution.BuiltinsModule.FilePath, modulePath: ModuleResolution.BuiltinsModule.FilePath,
-                    isCompiled: true);
-            }
-            return name.EqualsOrdinal("typing") ? new ModuleImport(name, name, null, null, true) : null;
         }
     }
 }

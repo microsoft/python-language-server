@@ -42,14 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var asNameExpression = node.AsNames[i];
                 var memberName = asNameExpression?.Name ?? moduleImportExpression.Names[0].Name;
 
-                IImportSearchResult imports = null;
-                if (importNames.Length == 1) {
-                    imports = ResolveSpecialized(importNames[0]);
-                }
-
-                // If we are processing stub, ignore imports of the original module.
-                // For example, typeshed stub for sys imports sys.
-                imports = imports ?? ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, node.ForceAbsolute);
+                var imports = ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, node.ForceAbsolute);
                 if (Module.ModuleType == ModuleType.Stub && imports is ModuleImport mi && mi.Name == Module.Name) {
                     continue;
                 }

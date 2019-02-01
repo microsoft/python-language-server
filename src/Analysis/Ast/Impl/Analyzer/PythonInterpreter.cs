@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -30,7 +31,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// Describes Python interpreter associated with the analysis.
     /// </summary>
     public sealed class PythonInterpreter : IPythonInterpreter {
-        private ModuleResolution _moduleResolution;
+        private MainModuleResolution _moduleResolution;
+        private TypeshedResolution _stubResolution;
         private readonly object _lock = new object();
 
         private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>();
@@ -44,9 +46,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             cancellationToken.ThrowIfCancellationRequested();
 
             sm.AddService(this);
+            _moduleResolution = new MainModuleResolution(root, sm);
+            await _moduleResolution.InitializeAsync(cancellationToken);
 
-            _moduleResolution = new ModuleResolution(root, sm);
-            var builtinModule = await _moduleResolution.CreateBuiltinModuleAsync(cancellationToken);
+            var builtinModule = _moduleResolution.BuiltinsModule;
             lock (_lock) {
                 _builtinTypes[BuiltinTypeId.NoneType]
                     = new PythonType("NoneType", builtinModule, string.Empty, LocationInfo.Empty, BuiltinTypeId.NoneType);
@@ -54,6 +57,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     = UnknownType = new PythonType("Unknown", builtinModule, string.Empty, LocationInfo.Empty);
             }
             await _moduleResolution.LoadBuiltinTypesAsync(cancellationToken);
+
+            _stubResolution = new TypeshedResolution(sm);
+            await _stubResolution.InitializeAsync(cancellationToken);
         }
 
         public static async Task<IPythonInterpreter> CreateAsync(InterpreterConfiguration configuration, string root, IServiceManager sm, CancellationToken cancellationToken = default) {
@@ -78,7 +84,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Module resolution service.
         /// </summary>
-        public IModuleResolution ModuleResolution => _moduleResolution;
+        public IModuleManagement ModuleResolution => _moduleResolution;
+
+        /// <summary>
+        /// Stub resolution service.
+        /// </summary>
+        public IModuleResolution TypeshedResolution => _stubResolution;
 
         /// <summary>
         /// Gets a well known built-in type such as int, list, dict, etc...
