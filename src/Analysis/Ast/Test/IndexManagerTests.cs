@@ -208,7 +208,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
             AddFileToRootTestFileSystem(pythonTestFileInfo);
             // Reading this stream will block
-            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(new FakeBlockingStream(new byte[] { }));
+            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(new FakeBlockingStream());
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
 
             Func<Task> add = async () => {
@@ -220,6 +220,25 @@ namespace Microsoft.Python.Analysis.Tests {
             add.Should().Throw<TaskCanceledException>();
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task QueueWait() {
+            var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
+            AddFileToRootTestFileSystem(pythonTestFileInfo);
+            Stream stream = new FakeBlockingStream();
+            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(stream);
+
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
+            indexManager.AddRootDirectoryAsync();
+
+            stream.Write(Encoding.UTF8.GetBytes("x = 1"));
+            var t = indexManager.WorkspaceSymbolsAsync("");
+            await t;
+            var symbols = t.Result;
+            symbols.Should().HaveCount(1);
+            symbols.First().Kind.Should().BeEquivalentTo(SymbolKind.Variable);
+            symbols.First().Name.Should().BeEquivalentTo("x");
         }
 
         private PythonAst MakeAst(string testCode) {

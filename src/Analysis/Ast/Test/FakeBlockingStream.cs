@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading;
 
 namespace Microsoft.Python.Analysis.Tests {
 
     internal class FakeBlockingStream : Stream {
         ManualResetEventSlim mres1 = new ManualResetEventSlim(false); // initialize as unsignaled
-        private byte[] _internalBuffer;
+        private MemoryStream _memoryStream;
 
-        public FakeBlockingStream(byte[] buffer) {
-            _internalBuffer = new byte[buffer.Length];
-            Buffer.BlockCopy(buffer, 0, _internalBuffer, 0, buffer.Length);
+        public FakeBlockingStream() {
+            _memoryStream = new MemoryStream();
         }
 
         public override bool CanRead => throw new NotImplementedException();
@@ -31,8 +28,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         public override int Read(byte[] buffer, int offset, int count) {
             mres1.Wait();
-            Buffer.BlockCopy(_internalBuffer, 0, buffer, 0, count);
-            return count;
+            return _memoryStream.Read(buffer, offset, count);
         }
 
         public override long Seek(long offset, SeekOrigin origin) {
@@ -44,10 +40,7 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         public override void Write(byte[] buffer, int offset, int count) {
-            throw new NotImplementedException();
-        }
-
-        public void Unblock() {
+            _memoryStream.Write(buffer, offset, count);
             mres1.Set();
         }
     }

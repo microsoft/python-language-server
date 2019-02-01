@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.Interpreter;
@@ -16,7 +15,9 @@ namespace Microsoft.Python.Analysis.Indexing {
         private readonly string _workspaceRootPath;
         private readonly string[] _includeFiles;
         private readonly string[] _excludeFiles;
+        private bool _isRootAddTaskSet;
         private readonly CancellationTokenSource _allIndexCts = new CancellationTokenSource();
+        private Task _addRootTask;
 
         public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
             string[] excludeFiles) {
@@ -31,17 +32,26 @@ namespace Microsoft.Python.Analysis.Indexing {
             _workspaceRootPath = rootPath;
             _includeFiles = includeFiles;
             _excludeFiles = excludeFiles;
+            _isRootAddTaskSet = false;
         }
 
         public Task AddRootDirectoryAsync(CancellationToken workspaceCancellationToken = default) {
-            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(workspaceCancellationToken, _allIndexCts.Token);
-            var parseTasks = new List<Task<bool>>();
-            foreach (var fileInfo in WorkspaceFiles()) {
-                if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
-                    parseTasks.Add(_indexParser.ParseAsync(fileInfo.FullName, linkedCts.Token));
+            if (_isRootAddTaskSet) {
+                return _addRootTask;
+            } else {
+                lock (this) {
+                    var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(workspaceCancellationToken, _allIndexCts.Token);
+                    var parseTasks = new List<Task<bool>>();
+                    foreach (var fileInfo in WorkspaceFiles()) {
+                        if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
+                            parseTasks.Add(_indexParser.ParseAsync(fileInfo.FullName, linkedCts.Token));
+                        }
+                    }
+                    _addRootTask = Task.Run(() => Task.WaitAll(parseTasks.ToArray()), linkedCts.Token);
+                    _isRootAddTaskSet = true;
                 }
+                return _addRootTask;
             }
-            return Task.Run(() => Task.WaitAll(parseTasks.ToArray()), linkedCts.Token);
         }
 
         private IEnumerable<IFileSystemInfo> WorkspaceFiles() {
@@ -78,6 +88,16 @@ namespace Microsoft.Python.Analysis.Indexing {
         public void Dispose() {
             _allIndexCts.Cancel();
             _allIndexCts.Dispose();
+        }
+
+        public async Task<IEnumerable<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path) {
+            await AddRootDirectoryAsync();
+            return _symbolIndex.HierarchicalDocumentSymbols(path);
+        }
+
+        public async Task<IEnumerable<FlatSymbol>> WorkspaceSymbolsAsync(string query) {
+            await AddRootDirectoryAsync();
+            return _symbolIndex.WorkspaceSymbols(query);
         }
     }
 }
