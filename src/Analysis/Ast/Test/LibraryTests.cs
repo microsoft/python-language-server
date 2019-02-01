@@ -16,8 +16,10 @@
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -60,6 +62,19 @@ namespace Microsoft.Python.Analysis.Tests {
                 .Which.Should().HaveMembers(
                     @"astimezone", @"isocalendar", @"resolution", @"fromordinal", @"fromtimestamp",
                     @"min", @"max", @"date", @"utcnow", "combine", "replace", "second");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Requests() {
+            const string code = @"
+import requests
+x = requests.get('microsoft.com')
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            if(analysis.GlobalScope.Variables["requests"].GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
+                Assert.Inconclusive("'requests' package is not installed.");
+            }
+            analysis.Should().HaveVariable("x").OfType("Response");
         }
     }
 }
