@@ -93,7 +93,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 switch (lhs) {
                     case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1: {
                         if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
-                            t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, true);
+                            t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, false);
                         }
                         continue;
                     }

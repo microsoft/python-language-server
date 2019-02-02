@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Types {
         private ArgumentSet() { }
 
         public ArgumentSet(IReadOnlyList<IPythonType> typeArgs) {
-            _arguments = typeArgs.Select(t => new Argument(t)).ToList();
+            _arguments = typeArgs.Select(t => new Argument(t, LocationInfo.Empty)).ToList();
             _evaluated = true;
         }
 
@@ -83,11 +83,14 @@ namespace Microsoft.Python.Analysis.Types {
                 _arguments = new List<Argument>();
                 for (var i = 0; i < callExpr.Args.Count; i++) {
                     var name = callExpr.Args[i].Name;
+                    var location = fd != null && i < fd.Parameters.Length ? fd.Parameters[i].GetLocation(fn.DeclaringModule) : LocationInfo.Empty;
                     if (string.IsNullOrEmpty(name)) {
                         name = fd != null && i < fd.Parameters.Length ? fd.Parameters[i].Name : null;
                     }
                     name = name ?? $"arg{i}";
-                    _arguments.Add(new Argument(name, ParameterKind.Normal) { Expression = callExpr.Args[i].Expression });
+                    _arguments.Add(new Argument(name, ParameterKind.Normal, location) {
+                        Expression = callExpr.Args[i].Expression
+                    });
                 }
                 return;
             }
@@ -106,7 +109,7 @@ namespace Microsoft.Python.Analysis.Types {
             // had values assigned to them are marked as 'filled'.Slots which have
             // no value assigned to them yet are considered 'empty'.
 
-            var slots = fd.Parameters.Select(p => new Argument(p.Name, p.Kind)).ToArray();
+            var slots = fd.Parameters.Select(p => new Argument(p.Name, p.Kind, p.GetLocation(module))).ToArray();
             // Locate sequence argument, if any
             var sa = slots.Where(s => s.Kind == ParameterKind.List).ToArray();
             if (sa.Length > 1) {
@@ -120,8 +123,8 @@ namespace Microsoft.Python.Analysis.Types {
                 return;
             }
 
-            _listArgument = sa.Length == 1 && sa[0].Name.Length > 0 ? new ListArg(sa[0].Name) : null;
-            _dictArgument = da.Length == 1 ? new DictArg(da[0].Name) : null;
+            _listArgument = sa.Length == 1 && sa[0].Name.Length > 0 ? new ListArg(sa[0].Name, sa[0].Expression, sa[0].Location) : null;
+            _dictArgument = da.Length == 1 ? new DictArg(da[0].Name, da[0].Expression, da[0].Location) : null;
 
             // Class methods
             var formalParamIndex = 0;
@@ -288,54 +291,56 @@ namespace Microsoft.Python.Analysis.Types {
 
             public ParameterKind Kind { get; }
             public Expression Expression { get; set; }
+            public LocationInfo Location { get; }
 
-            public Argument(string name, ParameterKind kind) {
+            public Argument(string name, ParameterKind kind, LocationInfo location) {
                 Name = name;
                 Kind = kind;
-            }
-            public Argument(IParameterInfo info) {
-                Name = info.Name;
-                if (info.IsKeywordDict) {
-                    Kind = ParameterKind.Dictionary;
-                } else if (info.IsParamArray) {
-                    Kind = ParameterKind.List;
-                } else if (string.IsNullOrEmpty(info.DefaultValueString)) {
-                    Kind = ParameterKind.KeywordOnly;
-                } else {
-                    Kind = ParameterKind.Normal;
-                }
+                Location = location;
             }
 
-            public Argument(IPythonType type) : this(type.Name, type) { }
-            public Argument(string name, IPythonType type) {
+            public Argument(IPythonType type, LocationInfo location) : this(type.Name, type, location) { }
+
+            public Argument(string name, IPythonType type, LocationInfo location) {
                 Name = name;
                 Value = type;
+                Location = location;
             }
         }
 
         private sealed class ListArg : IListArgument {
             public string Name { get; }
+            public Expression Expression { get; }
+            public LocationInfo Location { get; }
+
             public IReadOnlyList<IMember> Values => _Values;
             public IReadOnlyList<Expression> Expressions => _Expressions;
 
             public List<IMember> _Values { get; } = new List<IMember>();
             public List<Expression> _Expressions { get; } = new List<Expression>();
 
-            public ListArg(string name) {
+            public ListArg(string name, Expression expression, LocationInfo location) {
                 Name = name;
+                Expression = expression;
+                Location = location;
             }
         }
 
         private sealed class DictArg : IDictionaryArgument {
             public string Name { get; }
+            public Expression Expression { get; }
+            public LocationInfo Location { get; }
+
             public IReadOnlyDictionary<string, IMember> Arguments => _Args;
             public IReadOnlyDictionary<string, Expression> Expressions => _Expressions;
 
             public Dictionary<string, IMember> _Args { get; } = new Dictionary<string, IMember>();
             public Dictionary<string, Expression> _Expressions { get; } = new Dictionary<string, Expression>();
 
-            public DictArg(string name) {
+            public DictArg(string name, Expression expression, LocationInfo location) {
                 Name = name;
+                Expression = expression;
+                Location = location;
             }
         }
     }

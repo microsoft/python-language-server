@@ -23,9 +23,7 @@ namespace Microsoft.Python.Analysis.Types {
         [DebuggerDisplay("{StartLine}, {StartColumn} - {EndLine}, {EndColumn}")]
         public static readonly LocationInfo Empty = new LocationInfo();
 
-        private LocationInfo() {
-            FilePath = string.Empty;
-        }
+        private LocationInfo() : this(string.Empty, null, 1, 1) { }
 
         public LocationInfo(string path, Uri documentUri, int line, int column) :
              this(path, documentUri, line, column, null, null) {

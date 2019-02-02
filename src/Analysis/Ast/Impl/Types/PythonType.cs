@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Types {
             lock (_lock) {
                 if (!_readonly) {
                     foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
-                        WritableMembers[v.Name] = v.Value.GetPythonType();
+                        WritableMembers[v.Name] = v.Value;
                     }
                 }
             }
