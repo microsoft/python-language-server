@@ -6,11 +6,11 @@ using Microsoft.Python.Analysis.Documents;
 
 namespace Microsoft.Python.Analysis.Indexing {
     internal interface IIndexManager : IDisposable {
-        Task AddRootDirectoryAsync(CancellationToken workspaceCancellationToken = default);
+        Task AddRootDirectoryAsync();
         void ProcessNewFile(string path, IDocument doc);
         Task ProcessClosedFileAsync(string path, CancellationToken fileCancellationToken = default);
         void ReIndexFile(string path, IDocument doc);
-        Task<IEnumerable<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path);
-        Task<IEnumerable<FlatSymbol>> WorkspaceSymbolsAsync(string query);
+        Task<List<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path);
+        Task<List<FlatSymbol>> WorkspaceSymbolsAsync(string query);
     }
 }

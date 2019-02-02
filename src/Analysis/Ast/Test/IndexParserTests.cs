@@ -109,8 +109,7 @@ namespace Microsoft.Python.Analysis.Tests {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);
             MemoryStream stream = new MemoryStream();
-            // no writing to the stream, will block when read
-            _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(new FakeBlockingStream());
+            _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             Func<Task> parse = async () => {

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Documents;
@@ -183,22 +182,11 @@ namespace Microsoft.Python.Analysis.Tests {
             _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(MakeStream("x = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
-            Func<Task> add = async () => await indexManager.AddRootDirectoryAsync();
+            Func<Task> add = async () => {
+                await indexManager.AddRootDirectoryAsync();
+            };
 
             add.Should().Throw<UnauthorizedAccessException>();
-            var symbols = _symbolIndex.WorkspaceSymbols("");
-            symbols.Should().HaveCount(0);
-        }
-
-        [TestMethod, Priority(0)]
-        public void CancelAdding() {
-            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
-
-            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-            cancellationTokenSource.Cancel();
-            Func<Task> add = async () => await indexManager.AddRootDirectoryAsync(cancellationTokenSource.Token);
-
-            add.Should().Throw<TaskCanceledException>();
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
         }
@@ -207,8 +195,7 @@ namespace Microsoft.Python.Analysis.Tests {
         public void DisposeManagerCancelsTask() {
             var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
             AddFileToRootTestFileSystem(pythonTestFileInfo);
-            // Reading this stream will block
-            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(new FakeBlockingStream());
+            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(MakeStream("x = 1"));
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
 
             Func<Task> add = async () => {
@@ -223,16 +210,13 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task QueueWait() {
+        public async Task WorkspaceSymbolsAddsRootDirectory() {
             var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
             AddFileToRootTestFileSystem(pythonTestFileInfo);
-            Stream stream = new FakeBlockingStream();
-            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(stream);
+            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(MakeStream("x = 1"));
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
-            indexManager.AddRootDirectoryAsync();
 
-            stream.Write(Encoding.UTF8.GetBytes("x = 1"));
             var t = indexManager.WorkspaceSymbolsAsync("");
             await t;
             var symbols = t.Result;

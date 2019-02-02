@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,7 +46,10 @@ namespace Microsoft.Python.Analysis.Indexing {
                     Trace.TraceError(e.ToString());
                     return false;
                 }
-            }, linkedParseToken);
+            }, linkedParseToken).ContinueWith((task) => {
+                linkedParseCts.Dispose();
+                return task.Result;
+            });
         }
     }
 }
