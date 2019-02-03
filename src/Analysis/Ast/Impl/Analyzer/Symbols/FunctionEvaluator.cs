@@ -186,7 +186,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 }
             }
 
-            Eval.DeclareVariable(p.Name, paramType, VariableSource.Declaration, p.NameExpression);
+            Eval.DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
         }
 
         private async Task EvaluateInnerFunctionsAsync(FunctionDefinition fd, CancellationToken cancellationToken = default) {

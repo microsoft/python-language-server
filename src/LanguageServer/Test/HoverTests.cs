@@ -41,7 +41,7 @@ x = 'str'
 
 class C:
     '''Class C is awesome'''
-    def method(self, a, b) -> float:
+    def method(self, a:int, b) -> float:
         '''Returns a float!!!'''
         return 1.0
 
@@ -65,7 +65,10 @@ string = str
             hover.contents.value.Should().Be("class C\n\nClass C is awesome");
 
             hover = await hs.GetHoverAsync(analysis, new SourceLocation(6, 9));
-            hover.contents.value.Should().Be("C.method(a, b) -> float\n\nReturns a float!!!");
+            hover.contents.value.Should().Be("C.method(a: int, b) -> float\n\nReturns a float!!!");
+
+            hover = await hs.GetHoverAsync(analysis, new SourceLocation(6, 22));
+            hover.contents.value.Should().Be("a: int");
 
             hover = await hs.GetHoverAsync(analysis, new SourceLocation(10, 7));
             hover.contents.value.Should().Be("func(a, b)\n\nDoes nothing useful");
