@@ -44,7 +44,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="$(SignPackage)">
-    <SignFiles Include="$(OutputPath)\Python-Language-Server-*.nupkg" />
+    <SignFiles Include="$(OutputPath)\*.nupkg" />
   </ItemGroup>
 
   <Target Name="_CheckFiles" BeforeTargets="SignFiles">
@@ -55,6 +55,7 @@
       <FilesToSign Include="@(SignFiles)">
         <Authenticode Condition="%(Extension) == '.nupkg'">NuGet</Authenticode>
         <Authenticode Condition="%(Extension) != '.nupkg'">Microsoft</Authenticode>
+        <StrongName Condition="%(Extension) != '.nupkg'">StrongName</StrongName> 
       </FilesToSign>
     </ItemGroup>
     <Error Condition="@(_Missing) != ''" Text="Following files are missing: @(_Missing,'%0A')" />
