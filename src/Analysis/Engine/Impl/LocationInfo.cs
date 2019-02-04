@@ -83,9 +83,12 @@ namespace Microsoft.PythonTools.Analysis {
         /// Provides an IEqualityComparer that compares line, column and project entries.  By
         /// default locations are equaitable based upon only line/project entry.
         /// </summary>
-        public static IEqualityComparer<ILocationInfo> FullComparer { get; } = new FullLocationComparer();
+        public static IEqualityComparer<ILocationInfo> FullComparer => FullLocationComparer.Instance;
 
         sealed class FullLocationComparer : IEqualityComparer<ILocationInfo>, IEqualityComparer<LocationInfo> {
+            public static readonly FullLocationComparer Instance = new FullLocationComparer();
+
+            private FullLocationComparer() { }
             public bool Equals(LocationInfo x, LocationInfo y) => EqualsImpl(x, y);
             public bool Equals(ILocationInfo x, ILocationInfo y) => EqualsImpl(x, y);
 

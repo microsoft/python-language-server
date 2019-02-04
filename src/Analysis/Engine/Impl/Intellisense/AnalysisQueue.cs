@@ -67,7 +67,7 @@ namespace Microsoft.PythonTools.Intellisense {
                     return;
                 } catch (Exception ex) when (!ex.IsCriticalException()) {
                     UnhandledException?.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
-                    Dispose();
+                    throw;
                 }
             }
             RaiseEventOnThreadPool(AnalysisComplete);
@@ -208,7 +208,7 @@ namespace Microsoft.PythonTools.Intellisense {
         }
 
         private sealed class QueueItemComparer : IEqualityComparer<QueueItem> {
-            public static IEqualityComparer<QueueItem> Instance { get; } = new QueueItemComparer();
+            public static readonly IEqualityComparer<QueueItem> Instance = new QueueItemComparer();
 
             private QueueItemComparer() { }
             public bool Equals(QueueItem x, QueueItem y) => Equals(x.Key, y.Key);

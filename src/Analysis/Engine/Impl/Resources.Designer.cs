@@ -106,6 +106,15 @@ namespace Microsoft.PythonTools.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to attempted relative import with no known parent package.
+        /// </summary>
+        internal static string ErrorRelativeImportNoPackage {
+            get {
+                return ResourceManager.GetString("ErrorRelativeImportNoPackage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to unresolved import &apos;{0}&apos;.
         /// </summary>
         internal static string ErrorUnresolvedImport {

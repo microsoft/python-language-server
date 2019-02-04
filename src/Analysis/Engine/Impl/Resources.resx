@@ -312,6 +312,9 @@
   <data name="ErrorUnresolvedImport" xml:space="preserve">
     <value>unresolved import '{0}'</value>
   </data>
+  <data name="ErrorRelativeImportNoPackage" xml:space="preserve">
+    <value>attempted relative import with no known parent package</value>
+  </data>
   <data name="ErrorUseBeforeDef" xml:space="preserve">
     <value>'{0}' used before definition</value>
   </data>

@@ -831,6 +831,10 @@ namespace Microsoft.PythonTools.Analysis.Values {
                         result = result.Union(ns.GetMember(node, unit, name));
                     }
                 }
+
+                if (result != null && result.Count > 0) {
+                    break;
+                }
             }
             return result;
         }

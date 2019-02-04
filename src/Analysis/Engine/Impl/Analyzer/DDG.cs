@@ -296,6 +296,9 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
                 case ImportNotFound notFound:
                     MakeUnresolvedImport(notFound.FullName, node.Root);
                     return false;
+                case NoKnownParentPackage _:
+                    MakeNoKnownParentPackageImport(node.Root);
+                    return false;
                 default:
                     return false;
             }
@@ -462,6 +465,10 @@ namespace Microsoft.PythonTools.Analysis.Analyzer {
         private void MakeUnresolvedImport(string name, Node spanNode) {
             _unit.DeclaringModule.AddUnresolvedModule(name);
             ProjectState.AddDiagnostic(spanNode, _unit, ErrorMessages.UnresolvedImport(name), DiagnosticSeverity.Warning, ErrorMessages.UnresolvedImportCode);
+        }
+
+        private void MakeNoKnownParentPackageImport(Node spanNode) {
+            ProjectState.AddDiagnostic(spanNode, _unit, Resources.ErrorRelativeImportNoPackage, DiagnosticSeverity.Warning, ErrorMessages.UnresolvedImportCode);
         }
 
         private void ImportModule(in ImportStatement node, in IModule module, in DottedName moduleImportExpression, in NameExpression asNameExpression) {
