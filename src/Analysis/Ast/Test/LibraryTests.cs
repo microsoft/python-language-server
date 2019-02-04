@@ -76,7 +76,9 @@ x = requests.get('microsoft.com')
             if (v.Value.GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
                 Assert.Inconclusive("'requests' package is not installed.");
             }
-            analysis.Should().HaveVariable("x").OfType("Response");
+
+            var r = analysis.Should().HaveVariable("x").OfType("Response").Which;
+            r.Should().HaveMember("encoding").Which.Should().HaveType(BuiltinTypeId.Str);
         }
     }
 }
