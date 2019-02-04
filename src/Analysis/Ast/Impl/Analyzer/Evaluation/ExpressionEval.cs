@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionEval: IExpressionEvaluator {
+    internal sealed partial class ExpressionEval : IExpressionEvaluator {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
         private readonly IDiagnosticsService _diagnostics;
 
@@ -155,7 +155,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             cancellationToken.ThrowIfCancellationRequested();
             var member = LookupNameInScopes(expr.Name, options);
             if (member != null) {
-                switch(member.GetPythonType()) {
+                switch (member.GetPythonType()) {
                     case IPythonClassType cls:
                         await SymbolTable.EvaluateAsync(cls.ClassDefinition, cancellationToken);
                         break;

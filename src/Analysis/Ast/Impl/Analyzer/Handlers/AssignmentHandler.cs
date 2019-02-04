@@ -33,10 +33,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
+            // Check PEP hint first
+            var valueType = Eval.TryGetTypeFromPepHint(node.Right);
+            if (valueType != null) {
+                HandleTypedVariable(valueType, value, node.Left.FirstOrDefault());
+                return;
+            }
+
             if (value.IsUnknown()) {
                 Log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(Ast).Trim()}");
             }
-
             if (value?.GetPythonType().TypeId == BuiltinTypeId.Ellipsis) {
                 value = Eval.UnknownType;
             }
@@ -47,6 +53,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 await texHandler.HandleTupleAssignmentAsync(lhs, node.Right, value, cancellationToken);
                 return;
             }
+
+            // Process annotations, if any.
             foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                 // x: List[str] = [...]
                 await HandleAnnotatedExpressionAsync(expr, value, cancellationToken);
@@ -88,7 +96,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             //   x: List[str]
             // without a value. If value is provided, then this is
             //   x: List[str] = [...]
+            HandleTypedVariable(variableType, value, expr.Expression);
+        }
 
+        private void HandleTypedVariable(IPythonType variableType, IMember value, Expression expr) {
             // Check value type for compatibility
             IMember instance = null;
             if (value != null) {
@@ -101,14 +112,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     instance = value;
                 }
             }
-            instance = instance ?? variableType?.CreateInstance(variableType.Name, Eval.GetLoc(expr.Expression), ArgumentSet.Empty) ?? Eval.UnknownType;
+            instance = instance ?? variableType?.CreateInstance(variableType.Name, Eval.GetLoc(expr), ArgumentSet.Empty) ?? Eval.UnknownType;
 
-            if (expr.Expression is NameExpression ne) {
-                Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, expr.Expression);
+            if (expr is NameExpression ne) {
+                Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, expr);
                 return;
             }
 
-            if (expr.Expression is MemberExpression m) {
+            if (expr is MemberExpression m) {
                 // self.x : int = 42
                 var self = Eval.LookupNameInScopes("self", out var scope);
                 var argType = self?.GetPythonType();

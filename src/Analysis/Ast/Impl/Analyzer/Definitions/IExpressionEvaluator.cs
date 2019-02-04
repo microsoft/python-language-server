@@ -59,6 +59,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         IMember LookupNameInScopes(string name, out IScope scope);
 
+        IPythonType TryGetTypeFromPepHint(Node node);
+
         PythonAst Ast { get; }
         IPythonModule Module { get; }
         IPythonInterpreter Interpreter { get; }
