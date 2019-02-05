@@ -123,7 +123,6 @@ namespace Microsoft.Python.Analysis.Tests {
         public void DisposeParserCancelsParsing() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);
-            MemoryStream stream = new MemoryStream();
             _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
