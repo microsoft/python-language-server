@@ -127,7 +127,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             Func<Task> parse = async () => {
-                Task t = indexParser.ParseAsync(testFilePath);
+                var t = indexParser.ParseAsync(testFilePath);
                 indexParser.Dispose();
                 await t;
             };

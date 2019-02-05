@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Indexing {
         void ProcessNewFile(string path, IDocument doc);
         Task ProcessClosedFileAsync(string path, CancellationToken fileCancellationToken = default);
         void ReIndexFile(string path, IDocument doc);
-        Task<List<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path);
-        Task<List<FlatSymbol>> WorkspaceSymbolsAsync(string query);
+        Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path);
+        Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength = IndexManager.DefaultWorkspaceSymbolsLimit);
     }
 }

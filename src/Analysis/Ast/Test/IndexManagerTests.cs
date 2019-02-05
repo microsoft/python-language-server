@@ -240,6 +240,23 @@ namespace Microsoft.Python.Analysis.Tests {
             symbols.First().Name.Should().BeEquivalentTo("x");
         }
 
+        [TestMethod, Priority(0)]
+        public async Task WorkspaceSymbolsLimited() {
+            for (int fileNumber = 0; fileNumber < 10; fileNumber++) {
+                var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla{fileNumber}.py");
+                AddFileToRootTestFileSystem(pythonTestFileInfo);
+                _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(MakeStream($"x{fileNumber} = 1"));
+            }
+            IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
+
+            const int amountOfSymbols = 3;
+            var t = indexManager.WorkspaceSymbolsAsync("", amountOfSymbols);
+            await t;
+
+            var symbols = t.Result;
+            symbols.Should().HaveCount(amountOfSymbols);
+        }
+
         private PythonAst MakeAst(string testCode) {
             return Parser.CreateParser(MakeStream(testCode), PythonVersions.LatestAvailable3X.Version.ToLanguageVersion()).ParseFile();
         }
