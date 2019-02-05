@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Documents;
@@ -207,15 +208,20 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public void DisposeManagerCancelsTask() {
+        public async Task DisposeManagerCancelsTask() {
             var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
             AddFileToRootTestFileSystem(pythonTestFileInfo);
-            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(MakeStream("x = 1"));
+            ManualResetEventSlim mres = new ManualResetEventSlim(false);
+            _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(_ => {
+                mres.Wait();
+                return MakeStream("x = 1");
+            });
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
+            await Task.Delay(1000);
+            indexManager.Dispose();
 
             Func<Task> add = async () => {
                 var t = indexManager.AddRootDirectoryAsync();
-                indexManager.Dispose();
                 await t;
             };
 
