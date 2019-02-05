@@ -58,13 +58,13 @@ namespace Microsoft.Python.Analysis.Indexing {
                         return true;
                     }
                 } catch (FileNotFoundException e) {
-                    Trace.TraceError(e.ToString());
+                    Trace.TraceError(e.Message);
                     return false;
                 }
-            }, linkedParseToken).ContinueWith((task) => {
+            }).ContinueWith((task) => {
                 linkedParseCts.Dispose();
                 return task.Result;
-            });
+            }, linkedParseToken);
         }
     }
 }

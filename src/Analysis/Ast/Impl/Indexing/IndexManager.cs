@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,6 +65,7 @@ namespace Microsoft.Python.Analysis.Indexing {
                     Task.WaitAll(parseTasks.ToArray(), _allIndexCts.Token);
                     _addRootTcs.SetResult(true);
                 } catch (Exception e) {
+                    Trace.TraceError(e.Message);
                     _addRootTcs.SetException(e);
                 }
             });

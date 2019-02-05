@@ -208,16 +208,22 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task DisposeManagerCancelsTask() {
+        public void DisposeManagerCancelsTask() {
             var pythonTestFileInfo = MakeFileInfoProxy($"{_rootPath}\bla.py");
             AddFileToRootTestFileSystem(pythonTestFileInfo);
-            ManualResetEventSlim mres = new ManualResetEventSlim(false);
+            ManualResetEventSlim neverSignaledEvent = new ManualResetEventSlim(false);
+            ManualResetEventSlim fileOpenedEvent = new ManualResetEventSlim(false);
+
             _fileSystem.FileOpen(pythonTestFileInfo.FullName, FileMode.Open).Returns(_ => {
-                mres.Wait();
-                return MakeStream("x = 1");
+                fileOpenedEvent.Set();
+                // Wait forever
+                neverSignaledEvent.Wait();
+                throw new InternalTestFailureException("Task should have been cancelled");
             });
+
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
-            await Task.Delay(1000);
+
+            fileOpenedEvent.Wait();
             indexManager.Dispose();
 
             Func<Task> add = async () => {

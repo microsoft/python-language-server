@@ -123,11 +123,19 @@ namespace Microsoft.Python.Analysis.Tests {
         public void DisposeParserCancelsParsing() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);
-            _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
+            ManualResetEventSlim neverSignaledEvent = new ManualResetEventSlim(false);
+            ManualResetEventSlim fileOpenedEvent = new ManualResetEventSlim(false);
+            _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(_ => {
+                fileOpenedEvent.Set();
+                // Wait forever
+                neverSignaledEvent.Wait();
+                throw new InternalTestFailureException("Task should have been cancelled");
+            });
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             Func<Task> parse = async () => {
                 var t = indexParser.ParseAsync(testFilePath);
+                fileOpenedEvent.Wait();
                 indexParser.Dispose();
                 await t;
             };
