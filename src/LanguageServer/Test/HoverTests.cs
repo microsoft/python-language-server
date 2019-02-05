@@ -110,6 +110,18 @@ from os import path as p
         }
 
         [TestMethod, Priority(0)]
+        public async Task ImportAsNameHover() {
+            const string code = @"
+import datetime as d123
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+
+            await AssertHover(hs, analysis, new SourceLocation(2, 11), "module datetime*", new SourceSpan(2, 8, 2, 16));
+            await AssertHover(hs, analysis, new SourceLocation(2, 21), "module datetime*", new SourceSpan(2, 20, 2, 24));
+        }
+
+        [TestMethod, Priority(0)]
         public async Task SelfHover() {
             const string code = @"
 class Base(object):

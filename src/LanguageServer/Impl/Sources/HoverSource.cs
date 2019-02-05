@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
@@ -41,12 +42,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             ExpressionLocator.FindExpression(analysis.Ast, location,
                 FindExpressionOptions.Hover, out var node, out var statement, out var scope);
 
-            if (node is ConstantExpression) {
+            if (node is ConstantExpression || !(node is Expression expr)) {
                 return null; // No hover for literals.
-            }
-
-            if (!(node is Expression expr)) {
-                return null;
             }
 
             var range = new Range {
@@ -55,21 +52,41 @@ namespace Microsoft.Python.LanguageServer.Sources {
             };
 
             var eval = analysis.ExpressionEvaluator;
-            if (statement is FromImportStatement fi && node is NameExpression nex) {
-                // In 'from A import B as C' B is not declared as a variable
-                // so we need manually fetch type.
-                var index = fi.Names.IndexOf(nex);
-                if (index >= 0) {
-                    using (eval.OpenScope(scope)) {
-                        var variable = eval.LookupNameInScopes(fi.Root.MakeString(), out _);
-                        if (variable.GetPythonType() is IPythonModule mod) {
-                            var v = mod.GetMember(nex.Name)?.GetPythonType();
+            switch (statement) {
+                case FromImportStatement fi when node is NameExpression nex: {
+                    // In 'from A import B as C' B is not declared as a variable
+                    // so we have to fetch the type manually.
+                    var index = fi.Names.IndexOf(nex);
+                    if (index >= 0) {
+                        using (eval.OpenScope(scope)) {
+                            var variable = eval.LookupNameInScopes(fi.Root.MakeString(), out _);
+                            if (variable.GetPythonType() is IPythonModule mod) {
+                                var v = mod.GetMember(nex.Name)?.GetPythonType();
+                                return new Hover {
+                                    contents = _docSource.GetHover(mod.Name, v),
+                                    range = range
+                                };
+                            }
+                        }
+                    }
+
+                    break;
+                }
+                case ImportStatement imp: {
+                    // In 'import A as B' 'A' is not declared as a variable
+                    // so we have to fetch the type manually.
+                    var index = location.ToIndex(analysis.Ast);
+                    var dottedName = imp.Names.FirstOrDefault(n => n.StartIndex <= index && index < n.EndIndex);
+                    if (dottedName != null) {
+                        var mod = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(dottedName.MakeString());
+                        if (mod != null) {
                             return new Hover {
-                                contents = _docSource.GetHover(mod.Name, v),
+                                contents = _docSource.GetHover(null, mod),
                                 range = range
                             };
                         }
                     }
+                    break;
                 }
             }
 
