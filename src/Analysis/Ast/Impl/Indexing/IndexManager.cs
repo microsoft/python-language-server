@@ -35,8 +35,6 @@ namespace Microsoft.Python.Analysis.Indexing {
         private readonly CancellationTokenSource _allIndexCts = new CancellationTokenSource();
         private readonly TaskCompletionSource<bool> _addRootTcs;
 
-        public const int DefaultWorkspaceSymbolsLimit = 50;
-
         public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
             string[] excludeFiles) {
             Check.ArgumentNotNull(nameof(fileSystem), fileSystem);
@@ -118,7 +116,7 @@ namespace Microsoft.Python.Analysis.Indexing {
             return _symbolIndex.HierarchicalDocumentSymbols(path).ToList();
         }
 
-        public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength = DefaultWorkspaceSymbolsLimit) {
+        public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength) {
             await AddRootDirectoryAsync();
             return _symbolIndex.WorkspaceSymbols(query).Take(maxLength).ToList();
         }

@@ -221,8 +221,7 @@ namespace Microsoft.Python.Analysis.Tests {
             indexManager.Dispose();
 
             Func<Task> add = async () => {
-                var t = indexManager.AddRootDirectoryAsync();
-                await t;
+                await indexManager.AddRootDirectoryAsync();
             };
 
             add.Should().Throw<TaskCanceledException>();
@@ -238,9 +237,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
 
-            var t = indexManager.WorkspaceSymbolsAsync("");
-            await t;
-            var symbols = t.Result;
+            var symbols = await indexManager.WorkspaceSymbolsAsync("", 10);
             symbols.Should().HaveCount(1);
             symbols.First().Kind.Should().BeEquivalentTo(SymbolKind.Variable);
             symbols.First().Name.Should().BeEquivalentTo("x");
@@ -256,10 +253,9 @@ namespace Microsoft.Python.Analysis.Tests {
             IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion, _rootPath, new string[] { }, new string[] { });
 
             const int amountOfSymbols = 3;
-            var t = indexManager.WorkspaceSymbolsAsync("", amountOfSymbols);
-            await t;
+            await indexManager.WorkspaceSymbolsAsync("", amountOfSymbols);
 
-            var symbols = t.Result;
+            var symbols = indexManager.WorkspaceSymbolsAsync("", amountOfSymbols).Result;
             symbols.Should().HaveCount(amountOfSymbols);
         }
 
