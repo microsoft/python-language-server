@@ -13,8 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Documents;
@@ -22,19 +26,18 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class DocumentAnalysis : IDocumentAnalysis {
-        public static readonly IDocumentAnalysis Empty = new EmptyAnalysis();
-
-        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, PythonAst ast) {
+        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, IExpressionEvaluator eval) {
             Check.ArgumentNotNull(nameof(document), document);
             Check.ArgumentNotNull(nameof(globalScope), globalScope);
             Document = document;
             Version = version;
             GlobalScope = globalScope;
-            Ast = ast;
+            ExpressionEvaluator = eval;
         }
 
         #region IDocumentAnalysis
@@ -53,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// AST that was used in the analysis.
         /// </summary>
-        public PythonAst Ast { get; }
+        public PythonAst Ast => ExpressionEvaluator.Ast;
 
         /// <summary>
         /// Document/module global scope.
@@ -61,39 +64,29 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IGlobalScope GlobalScope { get; }
 
         /// <summary>
-        /// Module top-level members
+        /// Expression evaluator used in the analysis.
         /// </summary>
-        public IVariableCollection TopLevelVariables => GlobalScope.Variables;
-
-        /// <summary>
-        /// All module members from all scopes.
-        /// </summary>
-        public IEnumerable<IVariable> AllVariables
-            => (GlobalScope as IScope).TraverseBreadthFirst(s => s.Children).SelectMany(s => s.Variables);
-
-        public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
-        public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
-        public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
-        public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
+        public IExpressionEvaluator ExpressionEvaluator { get; }
         #endregion
-
-        private sealed class EmptyAnalysis : IDocumentAnalysis {
-            public EmptyAnalysis(IDocument document = null) {
-                Document = document;
-                GlobalScope = new EmptyGlobalScope(document);
-            }
-
-            public IDocument Document { get; }
-            public int Version { get; } = -1;
-            public IGlobalScope GlobalScope { get; }
-            public PythonAst Ast => null;
-            public IEnumerable<IPythonType> GetAllAvailableItems(SourceLocation location) => Enumerable.Empty<IPythonType>();
-            public IEnumerable<DiagnosticsEntry> Diagnostics => Enumerable.Empty<DiagnosticsEntry>();
-            public IVariableCollection TopLevelVariables => VariableCollection.Empty;
-            public IEnumerable<IVariable> AllVariables => Enumerable.Empty<IVariable>();
-            public IEnumerable<IPythonType> GetMembers(SourceLocation location) => Enumerable.Empty<IPythonType>();
-            public IEnumerable<IPythonFunctionOverload> GetSignatures(SourceLocation location) => Enumerable.Empty<IPythonFunctionOverload>();
-            public IEnumerable<IPythonType> GetValues(SourceLocation location) => Enumerable.Empty<IPythonType>();
-        }
     }
+
+    public sealed class EmptyAnalysis : IDocumentAnalysis {
+        private static PythonAst _emptyAst;
+
+        public EmptyAnalysis(IServiceContainer services, IDocument document) {
+            Document = document ?? throw new ArgumentNullException(nameof(document));
+            GlobalScope = new EmptyGlobalScope(document);
+
+            _emptyAst = _emptyAst ?? (_emptyAst = Parser.CreateParser(new StringReader(string.Empty), PythonLanguageVersion.None).ParseFile());
+            ExpressionEvaluator = new ExpressionEval(services, document, Ast);
+        }
+
+        public IDocument Document { get; }
+        public int Version { get; } = -1;
+        public IGlobalScope GlobalScope { get; }
+        public PythonAst Ast => _emptyAst;
+        public IExpressionEvaluator ExpressionEvaluator { get; }
+        public IEnumerable<DiagnosticsEntry> Diagnostics => Enumerable.Empty<DiagnosticsEntry>();
+    }
+
 }

@@ -22,7 +22,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             Members = true,
             ParameterNames = true,
             ParenthesisedExpression = true,
-            Literals = true,
             ImportNames = true,
             ImportAsNames = true,
             ClassDefinitionName = true,
@@ -50,10 +49,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
         };
         public static FindExpressionOptions Complete => new FindExpressionOptions {
             Names = true,
-            MemberName = true,
+            Members = true,
             NamedArgumentNames = true,
             ImportNames = true,
-            Keywords = true
+            ImportAsNames = true,
+            Literals = true,
+            Errors = true
         };
 
         public bool Calls { get; set; }

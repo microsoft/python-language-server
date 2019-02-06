@@ -201,7 +201,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
                 if (NameExpression != null) {
-                    await NameExpression?.WalkAsync(walker, cancellationToken);
+                    await NameExpression.WalkAsync(walker, cancellationToken);
                 }
 
                 foreach (var p in _parameters.MaybeEnumerate()) {

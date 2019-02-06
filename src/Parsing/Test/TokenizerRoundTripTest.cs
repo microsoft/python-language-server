@@ -179,7 +179,7 @@ namespace Microsoft.Python.Parsing.Tests {
             while ((token = tokenizer.GetNextToken()) != Tokens.EndOfFileToken) {
                 tokens.Add(new TokenWithSpan(token, tokenizer.TokenSpan));
 
-                output.Append(tokenizer.PreceedingWhiteSpace);
+                output.Append(tokenizer.PrecedingWhiteSpace);
                 output.Append(token.VerbatimImage);
 
                 const int contextSize = 50;
@@ -211,7 +211,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
                 prevOffset = output.Length;
             }
-            output.Append(tokenizer.PreceedingWhiteSpace);
+            output.Append(tokenizer.PrecedingWhiteSpace);
 
             Assert.AreEqual(originalText.Length, output.Length);
             return tokens;

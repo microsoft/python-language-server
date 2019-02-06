@@ -20,7 +20,6 @@ namespace Microsoft.Python.Analysis.Documents {
     public sealed class DocumentChange {
         public string InsertedText { get; set; }
         public SourceSpan ReplacedSpan { get; set; }
-        public bool WholeBuffer { get; set; }
 
         public static DocumentChange Insert(string text, SourceLocation start) 
             => new DocumentChange { InsertedText = text, ReplacedSpan = new SourceSpan(start, start) };

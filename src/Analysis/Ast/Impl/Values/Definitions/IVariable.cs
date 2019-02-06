@@ -20,7 +20,17 @@ namespace Microsoft.Python.Analysis.Values {
     /// Represents a variable.
     /// </summary>
     public interface IVariable: ILocatedMember {
+        /// <summary>
+        /// Variable name.
+        /// </summary>
         string Name { get; }
+        /// <summary>
+        /// Variable source.
+        /// </summary>
+        VariableSource Source { get; }
+        /// <summary>
+        /// Variable value.
+        /// </summary>
         IMember Value { get; set; }
     }
 }

@@ -24,6 +24,7 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.IO;
@@ -94,13 +95,13 @@ namespace Microsoft.Python.Analysis.Tests {
                     continue;
                 }
 
-                Console.WriteLine("Importing {0} from {1}", mp.ModuleName, mp.SourceFile);
+                Console.WriteLine(@"Importing {0} from {1}", mp.ModuleName, mp.SourceFile);
                 var mod = await interpreter.ModuleResolution.ImportModuleAsync(mp.ModuleName);
                 Assert.IsInstanceOfType(mod, typeof(CompiledPythonModule));
 
+                await ((ModuleCache)interpreter.ModuleResolution.ModuleCache).CacheWritingTask;
                 var modPath = interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(pyd);
                 Assert.IsTrue(File.Exists(modPath), "No cache file created");
-                var moduleCache = File.ReadAllText(modPath);
 
                 var doc = (IDocument)mod;
                 var ast = await doc.GetAstAsync();
@@ -109,7 +110,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 foreach (var err in errors) {
                     Console.WriteLine(err);
                 }
-                Assert.AreEqual(0, errors.Count(), "Parse errors occurred");
+                Assert.AreEqual(0, errors.Length, "Parse errors occurred");
 
 
                 var imports = ((SuiteStatement)ast.Body).Statements
@@ -261,7 +262,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var anyParseError = false;
 
             foreach (var m in skip) {
-                ((ModuleResolution)interpreter.ModuleResolution).AddUnimportableModule(m);
+                ((MainModuleResolution)interpreter.ModuleResolution).AddUnimportableModule(m);
             }
 
             var set = modules

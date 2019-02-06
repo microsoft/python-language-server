@@ -60,7 +60,7 @@ e1, e2, e3 = sys.exc_info()
 
         [TestMethod, Priority(0)]
         public async Task TypeShedJsonMakeScanner() {
-            var code = @"import _json
+            const string code = @"import _json
 scanner = _json.make_scanner()";
             var analysis = await GetAnalysisAsync(code);
 
@@ -92,7 +92,7 @@ scanner = _json.make_scanner()";
         public async Task TypeStubConditionalDefine() {
             var seen = new HashSet<Version>();
 
-            var code = @"import sys
+            const string code = @"import sys
 
 if sys.version_info < (2, 7):
     LT_2_7 : bool = ...
@@ -134,6 +134,32 @@ if sys.version_info >= (2, 7):
                         .And.NotContain(fullSet.Except(expected));
                 }
             }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeShedNoTypeLeaks() {
+            const string code = @"import json
+json.dump()
+x = 1";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("json")
+                .Which.Should().HaveMember("dump");
+
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveMember("bit_length")
+                .And.NotHaveMember("SIGABRT");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task VersionCheck() {
+            const string code = @"
+import asyncio
+loop = asyncio.get_event_loop()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should()
+                .HaveVariable("loop")
+                .Which.Value.Should().HaveMembers("add_reader", "add_writer", "call_at", "close");
         }
     }
 }

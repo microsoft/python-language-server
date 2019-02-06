@@ -43,7 +43,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// </summary>
         public TypingIteratorType(IReadOnlyList<IPythonType> itemTypes, BuiltinTypeId iteratorType, IPythonInterpreter interpreter)
             : base(iteratorType, interpreter) {
-            Check.ArgumentOutOfRange(nameof(itemTypes), () => itemTypes.Count == 0);
             ItemTypes = itemTypes;
             Name = $"Iterator[{CodeFormatter.FormatSequence(string.Empty, '(', itemTypes)}]";
         }

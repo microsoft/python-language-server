@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
@@ -32,7 +33,7 @@ def g(y):
     return y * 2
 ");
 
-            doc.Update(new DocumentChangeSet(0, 1, new[] {
+            doc.Update(new List<DocumentChange> {
                 // We *should* batch adjacent insertions, but we should also
                 // work fine even if we don't. Note that the insertion point
                 // tracks backwards with previous insertions in the same version.
@@ -43,33 +44,29 @@ def g(y):
                 DocumentChange.Insert("(", new SourceLocation(2, 11)),
                 DocumentChange.Insert("g", new SourceLocation(2, 11)),
                 DocumentChange.Insert(" ", new SourceLocation(2, 11))
-            }));
+            });
 
             doc.Text.Should().Contain("return g(x)");
             Assert.AreEqual(1, doc.Version);
 
             doc.Update(new[] {
-                new DocumentChangeSet(1, 2, new [] {
-                    DocumentChange.Delete(new SourceLocation(2, 14), new SourceLocation(2, 15))
-                }),
-                new DocumentChangeSet(2, 3, new [] {
-                    DocumentChange.Insert("x * 2", new SourceLocation(2, 14))
-                })
+                DocumentChange.Delete(new SourceLocation(2, 14), new SourceLocation(2, 15)),
+                DocumentChange.Insert("x * 2", new SourceLocation(2, 14))
             });
 
             doc.Text.Should().Contain("return g(x * 2)");
 
-            doc.Update(new DocumentChangeSet(3, 4, new[] {
+            doc.Update(new[] {
                 DocumentChange.Replace(new SourceLocation(2, 18), new SourceLocation(2, 19), "300")
-            }));
+            });
 
             doc.Text.Should().Contain("return g(x * 300)");
 
-            doc.Update(new DocumentChangeSet(4, 5, new[] {
+            doc.Update(new[] {
                 // Changes are out of order, but we should fix that automatically
                 DocumentChange.Delete(new SourceLocation(2, 13), new SourceLocation(2, 22)),
                 DocumentChange.Insert("#", new SourceLocation(2, 7))
-            }));
+            });
             doc.Text.Should().Contain("re#turn g");
         }
 
@@ -77,31 +74,19 @@ def g(y):
         public void ResetDocumentBuffer() {
             var doc = new DocumentBuffer();
 
-            doc.Reset(0, "");
+            doc.Reset(0, string.Empty);
+            Assert.AreEqual(string.Empty, doc.Text);
 
-            Assert.AreEqual("", doc.Text.ToString());
-
-            doc.Update(new[] { new DocumentChangeSet(0, 1, new[] {
+            doc.Update(new[] { 
                 DocumentChange.Insert("text", SourceLocation.MinValue)
-            }) });
+            });
 
-            Assert.AreEqual("text", doc.Text.ToString());
-
-            try {
-                doc.Update(new[] { new DocumentChangeSet(1, 0, new[] {
-                DocumentChange.Delete(SourceLocation.MinValue, SourceLocation.MinValue.AddColumns(4))
-            }) });
-                Assert.Fail("expected InvalidOperationException");
-            } catch (InvalidOperationException) {
-            }
-            Assert.AreEqual("text", doc.Text.ToString());
+            Assert.AreEqual("text", doc.Text);
             Assert.AreEqual(1, doc.Version);
 
-            doc.Update(new[] { new DocumentChangeSet(1, 0, new[] {
-                new DocumentChange { WholeBuffer = true }
-            }) });
+            doc.Reset(0, @"abcdef");
 
-            Assert.AreEqual("", doc.Text.ToString());
+            Assert.AreEqual(@"abcdef", doc.Text);
             Assert.AreEqual(0, doc.Version);
         }
     }

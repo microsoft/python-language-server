@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics;
+using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Services {
     internal static class TraceEventTypeExtensions {

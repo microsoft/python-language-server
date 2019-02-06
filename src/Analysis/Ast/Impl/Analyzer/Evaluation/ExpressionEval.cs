@@ -24,9 +24,8 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -34,7 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionEval {
+    internal sealed partial class ExpressionEval : IExpressionEvaluator {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
         private readonly IDiagnosticsService _diagnostics;
 
@@ -49,28 +48,42 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             //Log = services.GetService<ILogger>();
             _diagnostics = services.GetService<IDiagnosticsService>();
-
-            UnknownType = Interpreter.UnknownType ??
-                new FallbackBuiltinPythonType(new FallbackBuiltinsModule(Ast.LanguageVersion), BuiltinTypeId.Unknown);
         }
 
-        public PythonAst Ast { get; }
-        public IPythonModule Module { get; }
         public LookupOptions DefaultLookupOptions { get; set; }
         public GlobalScope GlobalScope { get; }
         public Scope CurrentScope { get; private set; }
-        public IPythonInterpreter Interpreter => Module.Interpreter;
         public bool SuppressBuiltinLookup => Module.ModuleType == ModuleType.Builtins;
         public ILogger Log { get; }
-        public IServiceContainer Services { get; }
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
-        public IPythonType UnknownType { get; }
+        public IPythonType UnknownType => Interpreter.UnknownType;
 
         public LocationInfo GetLoc(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
         public LocationInfo GetLocOfName(Node node, NameExpression header) => node?.GetLocationOfName(header, Module, Ast) ?? LocationInfo.Empty;
 
+        #region IExpressionEvaluator
+        public PythonAst Ast { get; }
+        public IPythonModule Module { get; }
+        public IPythonInterpreter Interpreter => Module.Interpreter;
+        public IServiceContainer Services { get; }
+        IScope IExpressionEvaluator.CurrentScope => CurrentScope;
+        IGlobalScope IExpressionEvaluator.GlobalScope => GlobalScope;
+        public LocationInfo GetLocation(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
+
         public Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default)
             => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
+
+        public IDisposable OpenScope(IScope scope) {
+            if (!(scope is Scope s)) {
+                return Disposable.Empty;
+            }
+            _openScopes.Push(s);
+            CurrentScope = s;
+            return new ScopeTracker(this);
+        }
+
+        public IDisposable OpenScope(IPythonModule module, ScopeStatement scope) => OpenScope(module, scope, out _);
+        #endregion
 
         public async Task<IMember> GetValueFromExpressionAsync(Expression expr, LookupOptions options, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
@@ -85,7 +98,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             IMember m;
             switch (expr) {
                 case NameExpression nex:
-                    m = GetValueFromName(nex, options);
+                    m = await GetValueFromNameAsync(nex, options, cancellationToken);
                     break;
                 case MemberExpression mex:
                     m = await GetValueFromMemberAsync(mex, cancellationToken);
@@ -130,19 +143,32 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return m;
         }
 
-        private IMember GetValueFromName(NameExpression expr, LookupOptions options) {
-            if (string.IsNullOrEmpty(expr?.Name)) {
+        private async Task<IMember> GetValueFromNameAsync(NameExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
+            if (expr == null || string.IsNullOrEmpty(expr.Name)) {
                 return null;
-            }
-
-            var existing = LookupNameInScopes(expr.Name, options);
-            if (existing != null) {
-                return existing;
             }
 
             if (expr.Name == Module.Name) {
                 return Module;
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var member = LookupNameInScopes(expr.Name, options);
+            if (member != null) {
+                switch (member.GetPythonType()) {
+                    case IPythonClassType cls:
+                        await SymbolTable.EvaluateAsync(cls.ClassDefinition, cancellationToken);
+                        break;
+                    case IPythonFunctionType fn:
+                        await SymbolTable.EvaluateAsync(fn.FunctionDefinition, cancellationToken);
+                        break;
+                    case IPythonPropertyType prop:
+                        await SymbolTable.EvaluateAsync(prop.FunctionDefinition, cancellationToken);
+                        break;
+                }
+                return member;
+            }
+
             Log?.Log(TraceEventType.Verbose, $"Unknown name: {expr.Name}");
             return UnknownType;
         }
@@ -167,6 +193,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             instance = instance ?? m as IPythonInstance;
             var type = m.GetPythonType(); // Try inner type
             var value = type?.GetMember(expr.Name);
+
+            // Class type GetMember returns a type. However, class members are
+            // mostly instances (consider self.x = 1, x is an instance of int).
+            // However, it is indeed possible to have them as types, like in
+            //  class X ...
+            //  class C: ...
+            //      self.x = X
+            // which is somewhat rare as compared to self.x = X() but does happen.
+
             switch (value) {
                 case IPythonClassType _:
                     return value;
@@ -193,9 +228,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return trueValue ?? falseValue;
         }
 
-        private void AddDiagnostics(IEnumerable<DiagnosticsEntry> entries) {
-            foreach (var e in entries) {
-                _diagnostics?.Add(e);
+        private void AddDiagnostics(Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
+            // Do not add if module is library, etc. Only handle user code.
+            if (Module.ModuleType == ModuleType.User) {
+                foreach (var e in entries) {
+                    _diagnostics?.Add(documentUri, e);
+                }
             }
         }
     }

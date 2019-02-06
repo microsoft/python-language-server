@@ -24,6 +24,11 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     public interface IPythonModule : IPythonType, IPythonFile, ILocatedMember {
         /// <summary>
+        /// Module analysis.
+        /// </summary>
+        IDocumentAnalysis Analysis { get; }
+
+        /// <summary>
         /// Interpreter associated with the module.
         /// </summary>
         IPythonInterpreter Interpreter { get; }

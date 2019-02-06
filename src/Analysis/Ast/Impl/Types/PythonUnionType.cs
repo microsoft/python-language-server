@@ -47,13 +47,18 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IPythonModule DeclaringModule => null;
+        public IPythonModule DeclaringModule {
+            get { lock (_lock) { return _types.First().DeclaringModule; } }
+        }
+
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public PythonMemberType MemberType => PythonMemberType.Union;
         public string Documentation => Name;
+
         public bool IsBuiltin {
             get { lock (_lock) { return _types.All(t => t.IsBuiltin); } }
         }
+
         public bool IsAbstract => false;
         public bool IsSpecialized => true;
 
@@ -61,9 +66,9 @@ namespace Microsoft.Python.Analysis.Types {
             => new PythonUnion(this, location);
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => DeclaringModule?.Interpreter.UnknownType ?? this;
+            => DeclaringModule.Interpreter.UnknownType;
         public IMember Index(IPythonInstance instance, object index)
-            => DeclaringModule?.Interpreter.UnknownType ?? this;
+            => DeclaringModule.Interpreter.UnknownType;
         #endregion
 
         #region IPythonUnionType

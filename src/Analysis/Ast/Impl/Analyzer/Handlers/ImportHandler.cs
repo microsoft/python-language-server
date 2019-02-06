@@ -20,10 +20,11 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
-    internal sealed class ImportHandler: StatementHandler {
+    internal sealed partial class ImportHandler: StatementHandler {
         public ImportHandler(AnalysisWalker walker) : base(walker) { }
 
         public async Task<bool> HandleImportAsync(ImportStatement node, CancellationToken cancellationToken = default) {
@@ -41,8 +42,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var asNameExpression = node.AsNames[i];
                 var memberName = asNameExpression?.Name ?? moduleImportExpression.Names[0].Name;
 
-                // If we are processing stub, ignore imports of the original module.
-                // For example, typeshed stub for sys imports sys.
                 var imports = ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, node.ForceAbsolute);
                 if (Module.ModuleType == ModuleType.Stub && imports is ModuleImport mi && mi.Name == Module.Name) {
                     continue;
@@ -52,7 +51,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 IPythonModule module = null;
                 switch (imports) {
                     case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
-                        Eval.DeclareVariable(memberName, Module, location);
+                        Eval.DeclareVariable(memberName, Module, VariableSource.Declaration, location);
                         break;
                     case ModuleImport moduleImport:
                         module = await HandleImportAsync(node, moduleImport, cancellationToken);
@@ -82,7 +81,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return module;
         }
 
-        private async Task<IPythonModule> HandlePossibleImportAsync(ImportStatement node, PossibleModuleImport possibleModuleImport, CancellationToken cancellationToken) {
+        private async Task<IPythonModule> HandlePossibleImportAsync(Node node, PossibleModuleImport possibleModuleImport, CancellationToken cancellationToken) {
             var fullName = possibleModuleImport.PrecedingModuleFullName;
             var module = await ModuleResolution.ImportModuleAsync(possibleModuleImport.PrecedingModuleFullName, cancellationToken);
             if (module == null) {
@@ -109,7 +108,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // "import fob.oar as baz" is handled as
             // baz = import_module('fob.oar')
             if (asNameExpression != null) {
-                Eval.DeclareVariable(asNameExpression.Name, module, asNameExpression);
+                Eval.DeclareVariable(asNameExpression.Name, module, VariableSource.Import, asNameExpression);
                 return;
             }
 
@@ -138,13 +137,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             if (pythonPackage == null) {
-                Eval.DeclareVariable(importNames[0].Name, child, importNames[0]);
+                Eval.DeclareVariable(importNames[0].Name, child, VariableSource.Import, importNames[0]);
             } else {
                 pythonPackage.AddChildModule(importNames[existingDepth].Name, child);
             }
         }
 
         private void MakeUnresolvedImport(string name, Node node)
-            => Eval.DeclareVariable(name, new SentinelModule(name, Eval.Services), Eval.GetLoc(node));
+            => Eval.DeclareVariable(name, new SentinelModule(name, Eval.Services), VariableSource.Import, Eval.GetLoc(node));
     }
 }

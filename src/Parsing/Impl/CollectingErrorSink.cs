@@ -20,7 +20,7 @@ using Microsoft.Python.Core.Text;
 namespace Microsoft.Python.Parsing {
     public class CollectingErrorSink  : ErrorSink {
         public override void Add(string message, SourceSpan span, int errorCode, Severity severity) {
-            if (severity == Severity.Error || severity == Severity.FatalError) {
+            if (severity == Severity.Error) {
                 Errors.Add(new ErrorResult(message, span));
             } else if (severity == Severity.Warning) {
                 Warnings.Add(new ErrorResult(message, span));

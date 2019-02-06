@@ -67,12 +67,12 @@ namespace Microsoft.Python.Analysis.Values {
         }
 
         public IEnumerable<IScope> EnumerateFromGlobal => EnumerateTowardsGlobal.Reverse();
-        public void DeclareVariable(string name, IMember value, LocationInfo location)
-            => (_variables ?? (_variables = new VariableCollection())).DeclareVariable(name, value, location);
+        public void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location)
+            => (_variables ?? (_variables = new VariableCollection())).DeclareVariable(name, value, source, location);
         public void DeclareNonLocal(string name, LocationInfo location)
-            => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, location);
+            => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, location);
         public void DeclareGlobal(string name, LocationInfo location)
-            => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, location);
+            => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, location);
         #endregion
 
         public void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Values {
         public IVariableCollection NonLocals => VariableCollection.Empty;
         public  IVariableCollection Globals => VariableCollection.Empty;
 
-        public void DeclareVariable(string name, IMember value, LocationInfo location) { }
+        public void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location) { }
 
     }
 }

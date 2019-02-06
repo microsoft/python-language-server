@@ -37,42 +37,11 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public void Update(IEnumerable<DocumentChangeSet> sets) {
-            foreach (var set in sets) {
-                Update(set);
-            }
-        }
-
-        public void Update(DocumentChangeSet set) {
-            Check.InvalidOperation(() => _ownerThreadId == Thread.CurrentThread.ManagedThreadId,
-                "Document buffer update must be done from the thread that created it");
-
-            if (!set.Changes.Any(c => c.WholeBuffer)) {
-                if (Version >= 0) {
-                    if (set.FromVersion < Version) {
-                        return;
-                    }
-                    if (set.FromVersion > Version) {
-                        throw new InvalidOperationException("missing prior versions");
-                    }
-                }
-                if (set.FromVersion >= set.ToVersion) {
-                    throw new InvalidOperationException("cannot reduce version without resetting buffer");
-                }
-            }
-
+        public void Update(IEnumerable<DocumentChange> changes) {
             var lastStart = int.MaxValue;
             var lineLoc = SplitLines(_sb).ToArray();
 
-            foreach (var change in set.Changes) {
-                if (change.WholeBuffer) {
-                    _sb.Clear();
-                    if (!string.IsNullOrEmpty(change.InsertedText)) {
-                        _sb.Append(change.InsertedText);
-                    }
-                    continue;
-                }
-
+            foreach (var change in changes) {
                 var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, _sb.Length);
                 if (start > lastStart) {
                     throw new InvalidOperationException("changes must be in reverse order of start location");
@@ -87,8 +56,7 @@ namespace Microsoft.Python.Analysis.Documents {
                     _sb.Insert(start, change.InsertedText);
                 }
             }
-
-            Version = set.ToVersion;
+            Version++;
         }
 
         private static IEnumerable<NewLineLocation> SplitLines(StringBuilder text) {

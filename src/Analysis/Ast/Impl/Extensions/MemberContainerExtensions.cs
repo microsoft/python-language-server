@@ -13,8 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Microsoft.Python.Analysis.Types {
     public static class MemberContainerExtensions {
         public static T GetMember<T>(this IMemberContainer mc, string name) where T: class, IPythonType => mc.GetMember(name) as T;
+        public  static IEnumerable<IMember> GetMembers(this IMemberContainer mc) => mc.GetMemberNames().Select(mc.GetMember);
     }
 }

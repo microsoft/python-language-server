@@ -7,9 +7,8 @@
   <PropertyGroup>
     <!--
       1701, 1702 - "You may need to supply assembly policy"
-      1998 - "This async method lacks 'await'"
     -->
-    <NoWarn>1701;1702;1998;$(NoWarn)</NoWarn>
+    <NoWarn>1701;1702;$(NoWarn)</NoWarn>
     <LangVersion>7.2</LangVersion>
   </PropertyGroup>
   <Import Project="..\..\..\..\build\NetStandard.settings" />

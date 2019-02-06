@@ -21,7 +21,7 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Expressions {
-    internal sealed class ExpressionFinder {
+    public sealed class ExpressionFinder {
         public ExpressionFinder(PythonAst ast, FindExpressionOptions options) {
             Ast = ast;
             Options = options;
@@ -85,7 +85,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
         public SourceSpan? GetExpressionSpan(SourceSpan range) => GetExpression(range)?.GetSpan(Ast);
 
         private abstract class ExpressionWalker : PythonWalkerWithLocation {
-            public ExpressionWalker(int location) : base(location) { }
+            protected ExpressionWalker(int location) : base(location) { }
             public Node Expression { get; protected set; }
             public Node Statement { get; protected set; }
             public ScopeStatement Scope { get; protected set; }
@@ -420,26 +420,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsAsync && !Save(node, true, "async")) {
                         return false;
                     }
-                    if (!Save(node.GetIndexOfFor(_ast), true, "for")) {
-                        return false;
-                    }
-                    if (!Save(node.GetIndexOfIn(_ast), true, "in")) {
-                        return false;
-                    }
-                    return true;
+                    return Save(node.GetIndexOfFor(_ast), true, "for") && Save(node.GetIndexOfIn(_ast), true, "in");
                 }
                 return false;
             }
 
             public override bool Walk(ConditionalExpression node) {
                 if (base.Walk(node)) {
-                    if (!Save(node.IfIndex, true, "if")) {
-                        return false;
-                    }
-                    if (!Save(node.ElseIndex, true, "else")) {
-                        return false;
-                    }
-                    return true;
+                    return Save(node.IfIndex, true, "if") && Save(node.ElseIndex, true, "else");
                 }
                 return false;
             }
@@ -455,10 +443,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (!Save(node.InIndex, true, "in")) {
                         return false;
                     }
-                    if (node.Else != null) {
-                        return Save(node.Else.StartIndex, true, "else");
-                    }
-                    return true;
+                    return node.Else == null || Save(node.Else.StartIndex, true, "else");
                 }
                 return false;
             }
@@ -490,17 +475,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             }
 
 
-            public override bool Walk(IfStatement node) {
-                if (base.Walk(node)) {
-                    if (!Save(node, true, "if")) {
-                        return false;
-                    }
-                    // TODO: elif and if locations
-                    // These cannot be trivially obtained from the node
-                    return true;
-                }
-                return false;
-            }
+            public override bool Walk(IfStatement node) 
+                => base.Walk(node) && Save(node, true, "if");
 
             public override bool Walk(UnaryExpression node) {
                 if (base.Walk(node)) {
@@ -511,27 +487,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 return false;
             }
 
-            public override bool Walk(TryStatement node) {
-                if (base.Walk(node)) {
-                    if (!Save(node, true, "try")) {
-                        return false;
-                    }
-                    // TODO: except, finally and else locations
-                    // These cannot be trivially obtained from the node
-                    return true;
-                }
-                return base.Walk(node);
-            }
+            public override bool Walk(TryStatement node) 
+                => base.Walk(node) ? Save(node, true, "try") : base.Walk(node);
 
             public override bool Walk(WhileStatement node) {
                 if (base.Walk(node)) {
                     if (!Save(node, true, "while")) {
                         return false;
                     }
-                    if (node.ElseStatement != null) {
-                        return Save(node.ElseStatement.StartIndex, true, "else");
-                    }
-                    return true;
+                    return node.ElseStatement == null || Save(node.ElseStatement.StartIndex, true, "else");
                 }
                 return false;
             }
@@ -541,28 +505,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsAsync && !Save(node, true, "async")) {
                         return false;
                     }
-                    if (!Save(node.GetIndexOfWith(_ast), true, "with")) {
-                        return false;
-                    }
-                    foreach (var item in node.Items.MaybeEnumerate()) {
-                        if (!Save(item.AsIndex, true, "as")) {
-                            return false;
-                        }
-                    }
-                    return true;
+                    return Save(node.GetIndexOfWith(_ast), true, "with") && 
+                           node.Items.MaybeEnumerate().All(item => Save(item.AsIndex, true, "as"));
                 }
                 return false;
             }
 
             public override bool Walk(YieldFromExpression node) {
                 if (base.Walk(node)) {
-                    if (!Save(node, true, "yield")) {
-                        return false;
-                    }
-                    if (!Save(node.GetIndexOfFrom(_ast), true, "from")) {
-                        return false;
-                    }
-                    return true;
+                    return Save(node, true, "yield") && Save(node.GetIndexOfFrom(_ast), true, "from");
                 }
                 return false;
             }

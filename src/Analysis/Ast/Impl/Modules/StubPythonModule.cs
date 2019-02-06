@@ -28,13 +28,9 @@ namespace Microsoft.Python.Analysis.Modules {
             : base(moduleName, ModuleType.Stub, stubPath, null, services) {
         }
 
-        protected override string LoadContent(ModuleLoadOptions options) {
-            try {
-                if (FileSystem.FileExists(FilePath) && (options & ModuleLoadOptions.Load) == ModuleLoadOptions.Load) {
-                    return FileSystem.ReadAllText(FilePath);
-                }
-            } catch (IOException) { } catch(UnauthorizedAccessException) { }
-            return string.Empty;
+        protected override string LoadContent() {
+            // Exceptions are handled in the base
+            return FileSystem.FileExists(FilePath) ? FileSystem.ReadAllText(FilePath) : string.Empty;
         }
 
         protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter factory) => Enumerable.Empty<string>();

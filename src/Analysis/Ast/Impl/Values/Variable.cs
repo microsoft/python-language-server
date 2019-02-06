@@ -19,17 +19,15 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("{DebuggerDisplay}")]
     internal sealed class Variable : IVariable {
-        public Variable(string name, IMember value, LocationInfo location = null) {
+        public Variable(string name, IMember value, VariableSource source, LocationInfo location = null) {
             Name = name;
             Value = value;
-            if (location != null) {
-                Location = location;
-            } else {
-                Location = value is ILocatedMember lm ? lm.Location : LocationInfo.Empty;
-            }
+            Source = source;
+            Location = location ?? (value is ILocatedMember lm ? lm.Location : LocationInfo.Empty);
         }
 
         public string Name { get; }
+        public VariableSource Source { get; }
         public IMember Value { get; set; }
         public LocationInfo Location { get; }
         public PythonMemberType MemberType => PythonMemberType.Variable;

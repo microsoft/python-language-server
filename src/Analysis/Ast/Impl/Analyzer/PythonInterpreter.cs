@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -29,29 +30,44 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Describes Python interpreter associated with the analysis.
     /// </summary>
-    internal sealed class PythonInterpreter : IPythonInterpreter {
-        private ModuleResolution _moduleResolution;
+    public sealed class PythonInterpreter : IPythonInterpreter {
+        private MainModuleResolution _moduleResolution;
+        private TypeshedResolution _stubResolution;
         private readonly object _lock = new object();
 
-        private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>() {
-            {BuiltinTypeId.NoneType, new PythonType("NoneType", BuiltinTypeId.NoneType)},
-            {BuiltinTypeId.Unknown, new PythonType("Unknown", BuiltinTypeId.Unknown)}
-        };
+        private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>();
 
         private PythonInterpreter(InterpreterConfiguration configuration) {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             LanguageVersion = Configuration.Version.ToLanguageVersion();
-            UnknownType = _builtinTypes[BuiltinTypeId.Unknown];
+        }
+
+        private async Task LoadBuiltinTypesAsync(string root, IServiceManager sm, CancellationToken cancellationToken = default) {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            sm.AddService(this);
+            _moduleResolution = new MainModuleResolution(root, sm);
+            await _moduleResolution.InitializeAsync(cancellationToken);
+
+            var builtinModule = _moduleResolution.BuiltinsModule;
+            lock (_lock) {
+                _builtinTypes[BuiltinTypeId.NoneType]
+                    = new PythonType("NoneType", builtinModule, string.Empty, LocationInfo.Empty, BuiltinTypeId.NoneType);
+                _builtinTypes[BuiltinTypeId.Unknown]
+                    = UnknownType = new PythonType("Unknown", builtinModule, string.Empty, LocationInfo.Empty);
+            }
+            await _moduleResolution.LoadBuiltinTypesAsync(cancellationToken);
+
+            _stubResolution = new TypeshedResolution(sm);
+            await _stubResolution.InitializeAsync(cancellationToken);
         }
 
         public static async Task<IPythonInterpreter> CreateAsync(InterpreterConfiguration configuration, string root, IServiceManager sm, CancellationToken cancellationToken = default) {
             var pi = new PythonInterpreter(configuration);
-            sm.AddService(pi);
-            pi._moduleResolution = new ModuleResolution(root, sm);
-            // Load builtins
-            await pi._moduleResolution.LoadBuiltinTypesAsync(cancellationToken);
+            await pi.LoadBuiltinTypesAsync(root, sm, cancellationToken);
+
             // Specialize typing
-            await TypingModule.CreateAsync(sm, cancellationToken);
+            TypingModule.Create(sm);
             return pi;
         }
 
@@ -68,7 +84,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Module resolution service.
         /// </summary>
-        public IModuleResolution ModuleResolution => _moduleResolution;
+        public IModuleManagement ModuleResolution => _moduleResolution;
+
+        /// <summary>
+        /// Stub resolution service.
+        /// </summary>
+        public IModuleResolution TypeshedResolution => _stubResolution;
 
         /// <summary>
         /// Gets a well known built-in type such as int, list, dict, etc...
@@ -109,7 +130,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Unknown type.
         /// </summary>
-        public IPythonType UnknownType { get; }
+        public IPythonType UnknownType { get; private set; }
 
         public void NotifyImportableModulesChanged() => ModuleResolution.ReloadAsync().DoNotWait();
     }

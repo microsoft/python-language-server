@@ -50,9 +50,14 @@ namespace Microsoft.Python.Analysis {
         IPythonType UnknownType { get; }
 
         /// <summary>
-        /// Module resolution service.
+        /// Regular module resolution service.
         /// </summary>
-        IModuleResolution ModuleResolution { get; }
+        IModuleManagement ModuleResolution { get; }
+
+        /// <summary>
+        /// Stub resolution service.
+        /// </summary>
+        IModuleResolution TypeshedResolution { get; }
 
         /// <summary>
         /// Tells analyzer that module set has changed. Client application that tracks changes

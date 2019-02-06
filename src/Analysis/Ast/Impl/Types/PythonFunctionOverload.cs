@@ -16,7 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -35,7 +36,7 @@ namespace Microsoft.Python.Analysis.Types {
         IPythonModule declaringModule,
         IPythonFunctionOverload overload,
         LocationInfo location,
-        IReadOnlyList<IMember> args);
+        IArgumentSet args);
 
     internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
         private readonly Func<string, LocationInfo> _locationProvider;
@@ -51,20 +52,21 @@ namespace Microsoft.Python.Analysis.Types {
         private Func<string, string> _documentationProvider;
         private bool _fromAnnotation;
 
-        public PythonFunctionOverload(string name, IPythonModule declaringModule, LocationInfo location, string returnDocumentation = null)
-            : this(name, declaringModule, _ => location ?? LocationInfo.Empty, returnDocumentation) {
+        public PythonFunctionOverload(string name, IPythonModule declaringModule, LocationInfo location)
+            : this(name, declaringModule, _ => location ?? LocationInfo.Empty) {
             _declaringModule = declaringModule;
         }
 
-        public PythonFunctionOverload(FunctionDefinition fd, IPythonModule declaringModule, LocationInfo location, string returnDocumentation = null)
-            : this(fd.Name, declaringModule, _ => location, returnDocumentation) {
+        public PythonFunctionOverload(FunctionDefinition fd, IPythonClassMember classMember, IPythonModule declaringModule, LocationInfo location)
+            : this(fd.Name, declaringModule, _ => location) {
             FunctionDefinition = fd;
+            ClassMember = classMember;
+            var ast = (declaringModule as IDocument)?.Analysis.Ast;
+            ReturnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
         }
 
-        public PythonFunctionOverload(string name, IPythonModule declaringModule,
-            Func<string, LocationInfo> locationProvider, string returnDocumentation = null) {
+        public PythonFunctionOverload(string name, IPythonModule declaringModule, Func<string, LocationInfo> locationProvider) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            ReturnDocumentation = returnDocumentation;
             _declaringModule = declaringModule;
             _locationProvider = locationProvider;
         }
@@ -100,11 +102,9 @@ namespace Microsoft.Python.Analysis.Types {
         internal void SetReturnValueProvider(ReturnValueProvider provider)
             => _returnValueProvider = provider;
 
-        internal IMember StaticReturnValue { get; private set; }
-
-
         #region IPythonFunctionOverload
         public FunctionDefinition FunctionDefinition { get; }
+        public IPythonClassMember ClassMember { get; }
         public string Name { get; }
 
         public string Documentation {
@@ -122,16 +122,35 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
         public LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
         public PythonMemberType MemberType => PythonMemberType.Function;
+        public IMember StaticReturnValue { get; private set; }
 
         public IMember GetReturnValue(LocationInfo callLocation, IArgumentSet args) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
-                var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args.Values<IMember>());
+                var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args);
                 if (!rt.IsUnknown()) {
                     return rt;
                 }
             }
-            return StaticReturnValue;
+
+            // If function returns generic, try to return the incoming argument
+            // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
+            IMember retValue = null;
+            if (StaticReturnValue.GetPythonType() is IGenericTypeParameter) {
+                if (args.Arguments.Count > 0) {
+                    retValue = args.Arguments[0].Value as IMember;
+                }
+
+                if (retValue == null) {
+                    // Try returning the constraint
+                    var name = StaticReturnValue.GetPythonType()?.Name;
+                    var typeDefVar = _declaringModule.Analysis.GlobalScope.Variables[name];
+                    if (typeDefVar?.Value is IGenericTypeParameter gtp) {
+                        retValue = gtp.Constraints.FirstOrDefault();
+                    }
+                }
+            }
+            return retValue ?? StaticReturnValue;
         }
         #endregion
 

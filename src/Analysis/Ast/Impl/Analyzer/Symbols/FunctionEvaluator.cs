@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -73,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 }
             }
 
-            using (Eval.OpenScope(FunctionDefinition, out _)) {
+            using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
                 await DeclareParametersAsync(cancellationToken);
                 if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries
@@ -92,7 +93,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 switch (lhs) {
                     case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1: {
                         if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
-                            t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, true);
+                            t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, false);
                         }
                         continue;
                     }
@@ -131,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // Actual parameter type will be determined when method is invoked.
                     // The reason is that if method might be called on a derived class.
                     // Declare self or cls in this scope.
-                    Eval.DeclareVariable(p0.Name, _self, p0.NameExpression);
+                    Eval.DeclareVariable(p0.Name, new PythonInstance(_self), VariableSource.Declaration, p0.NameExpression);
                     // Set parameter info.
                     var pi = new ParameterInfo(Ast, p0, _self);
                     pi.SetType(_self);
@@ -185,7 +186,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 }
             }
 
-            Eval.DeclareVariable(p.Name, paramType, p.NameExpression);
+            Eval.DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
         }
 
         private async Task EvaluateInnerFunctionsAsync(FunctionDefinition fd, CancellationToken cancellationToken = default) {

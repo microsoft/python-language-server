@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     if (returnedExpressions[i] != null && !string.IsNullOrEmpty(names[i])) {
                         var v = await Eval.GetValueFromExpressionAsync(returnedExpressions[i], cancellationToken);
                         if (v != null) {
-                            Eval.DeclareVariable(names[i], v, returnedExpressions[i]);
+                            Eval.DeclareVariable(names[i], v, VariableSource.Declaration, returnedExpressions[i]);
                         }
                     }
                 }
@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {
                     if (names[i] != null && types[i] != null) {
                         var instance = types[i].CreateInstance(null, Eval.GetLoc(expressions[i]), ArgumentSet.Empty);
-                        Eval.DeclareVariable(names[i], instance, expressions[i]);
+                        Eval.DeclareVariable(names[i], instance, VariableSource.Declaration, expressions[i]);
                     }
                 }
             }
