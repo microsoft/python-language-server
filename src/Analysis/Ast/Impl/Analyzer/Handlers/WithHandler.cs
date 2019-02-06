@@ -32,7 +32,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
                 var enter = cmType?.GetMember(node.IsAsync ? @"__aenter__" : @"__enter__")?.GetPythonType<IPythonFunctionType>();
                 if (enter != null) {
-                    var context = await Eval.GetValueFromFunctionTypeAsync(enter, null, null, cancellationToken);
+                    var instance = contextManager as IPythonInstance;
+                    var callExpr = item.ContextManager as CallExpression;
+                    var context = await Eval.GetValueFromFunctionTypeAsync(enter, instance, callExpr, cancellationToken);
                     if (item.Variable is NameExpression nex && !string.IsNullOrEmpty(nex.Name)) {
                         Eval.DeclareVariable(nex.Name, context, VariableSource.Declaration, Eval.GetLoc(item));
                     }

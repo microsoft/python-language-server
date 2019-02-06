@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -133,5 +134,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// Specifies which function overload to call.
         /// </summary>
         int OverloadIndex { get; }
+
+        /// <summary>
+        /// Evaluator associated with the set.
+        /// </summary>
+        IExpressionEvaluator Eval { get; }
     }
 }

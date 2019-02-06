@@ -143,7 +143,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // their types might not have been known and now argument set
             // may contain concrete values.
             if (fd != null) {
-                using (OpenScope(fn.FunctionDefinition, out _)) {
+                using (OpenScope(fn.DeclaringModule, fn.FunctionDefinition, out _)) {
                     args.DeclareParametersInScope(this);
                 }
             }
@@ -166,7 +166,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             // Try and evaluate with specific arguments but prevent recursion.
-            return await TryEvaluateWithArgumentsAsync(fd, args, cancellationToken);
+            return await TryEvaluateWithArgumentsAsync(fn.DeclaringModule, fd, args, cancellationToken);
         }
 
         public async Task<IMember> GetValueFromPropertyAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
@@ -175,15 +175,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return instance.Call(p.Name, ArgumentSet.Empty);
         }
 
-        private async Task<IMember> TryEvaluateWithArgumentsAsync(FunctionDefinition fd, IArgumentSet args, CancellationToken cancellationToken = default) {
+        private async Task<IMember> TryEvaluateWithArgumentsAsync(IPythonModule module, FunctionDefinition fd, IArgumentSet args, CancellationToken cancellationToken = default) {
             // Attempt to evaluate with specific arguments but prevent recursion.
             IMember result = UnknownType;
             if (fd != null && !_callEvalStack.Contains(fd)) {
-                using (OpenScope(fd.Parent, out _)) {
+                using (OpenScope(module, fd.Parent, out _)) {
                     _callEvalStack.Push(fd);
                     try {
                         // TODO: cache results per function + argument set?
-                        var eval = new FunctionCallEvaluator(fd, this, Interpreter);
+                        var eval = new FunctionCallEvaluator(module, fd, this);
                         result = await eval.EvaluateCallAsync(args, cancellationToken);
                     } finally {
                         _callEvalStack.Pop();

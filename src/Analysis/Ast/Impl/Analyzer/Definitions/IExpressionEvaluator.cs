@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// on the stack and will be removed when the returned
         /// disposable is disposed.
         /// </summary>
-        IDisposable OpenScope(ScopeStatement scope);
+        IDisposable OpenScope(IPythonModule module, ScopeStatement scope);
 
         /// <summary>
         /// Currently opened (deep-most) scope.
@@ -59,7 +59,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         IMember LookupNameInScopes(string name, out IScope scope);
 
-        IPythonType TryGetTypeFromPepHint(Node node);
+        IPythonType GetTypeFromPepHint(Node node);
+        IPythonType GetTypeFromString(string typeString);
 
         PythonAst Ast { get; }
         IPythonModule Module { get; }

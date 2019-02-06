@@ -31,7 +31,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
         }
 
         public static Task<IEnumerable<CompletionItem>> GetCompletionsFromMembersAsync(Expression e, ScopeStatement scope, CompletionContext context, CancellationToken cancellationToken = default) {
-            using (context.Analysis.ExpressionEvaluator.OpenScope(scope)) {
+            using (context.Analysis.ExpressionEvaluator.OpenScope(context.Analysis.Document, scope)) {
                 return GetItemsFromExpressionAsync(e, context, cancellationToken);
             }
         }

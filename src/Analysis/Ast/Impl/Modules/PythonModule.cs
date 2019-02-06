@@ -522,43 +522,6 @@ namespace Microsoft.Python.Analysis.Modules {
             return string.Empty;
         }
 
-        /// <summary>
-        /// Provides ability to specialize function return type manually.
-        /// </summary>
-        protected void SpecializeFunction(string name, IMember returnValue) {
-            var f = GetOrCreateFunction(name);
-            if (f != null) {
-                foreach (var o in f.Overloads.OfType<PythonFunctionOverload>()) {
-                    o.SetReturnValue(returnValue, true);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Provides ability to dynamically calculate function return type.
-        /// </summary>
-        internal void SpecializeFunction(string name, ReturnValueProvider returnTypeCallback) {
-            var f = GetOrCreateFunction(name);
-            if (f != null) {
-                foreach (var o in f.Overloads.OfType<PythonFunctionOverload>()) {
-                    o.SetReturnValueProvider(returnTypeCallback);
-                }
-                f.Specialize();
-            }
-        }
-
-        private PythonFunctionType GetOrCreateFunction(string name) {
-            var f = Analysis.GlobalScope.Variables[name]?.Value as PythonFunctionType;
-            // We DO want to replace class by function. Consider type() in builtins.
-            // 'type()' in code is a function call, not a type class instantiation.
-            if (f == null) {
-                f = PythonFunctionType.ForSpecialization(name, this);
-                f.AddOverload(new PythonFunctionOverload(name, this, LocationInfo.Empty));
-                Analysis.GlobalScope.DeclareVariable(name, f, VariableSource.Declaration, LocationInfo.Empty);
-            }
-            return f;
-        }
-
         public bool Equals(IPythonModule other) => Name.Equals(other?.Name) && FilePath.Equals(other?.FilePath);
     }
 }

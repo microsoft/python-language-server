@@ -45,7 +45,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             IMember value = null;
             var call = node as CallExpression;
             if (call != null) {
-                using (analysis.ExpressionEvaluator.OpenScope(scope)) {
+                using (analysis.ExpressionEvaluator.OpenScope(analysis.Document, scope)) {
                     value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(call.Target, cancellationToken);
                 }
             }

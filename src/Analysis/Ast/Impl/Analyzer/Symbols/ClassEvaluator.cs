@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             cancellationToken.ThrowIfCancellationRequested();
 
             // Open class scope chain
-            using (Eval.OpenScope(_classDef, out var outerScope)) {
+            using (Eval.OpenScope(Module, _classDef, out var outerScope)) {
                 var instance = Eval.GetInScope(_classDef.Name, outerScope);
                 if (!(instance?.GetPythonType() is PythonClassType classInfo)) {
                     if (instance != null) {

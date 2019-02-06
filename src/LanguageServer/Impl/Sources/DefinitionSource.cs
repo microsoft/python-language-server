@@ -43,7 +43,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             var eval = analysis.ExpressionEvaluator;
-            using (eval.OpenScope(exprScope)) {
+            using (eval.OpenScope(analysis.Document, exprScope)) {
                 var value = await eval.GetValueFromExpressionAsync(expr, cancellationToken);
                 return await FromMemberAsync(value, expr, eval, cancellationToken);
             }

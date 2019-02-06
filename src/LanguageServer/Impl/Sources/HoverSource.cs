@@ -58,7 +58,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     // so we have to fetch the type manually.
                     var index = fi.Names.IndexOf(nex);
                     if (index >= 0) {
-                        using (eval.OpenScope(scope)) {
+                        using (eval.OpenScope(analysis.Document, scope)) {
                             var variable = eval.LookupNameInScopes(fi.Root.MakeString(), out _);
                             if (variable.GetPythonType() is IPythonModule mod) {
                                 var v = mod.GetMember(nex.Name)?.GetPythonType();
@@ -92,7 +92,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             IMember value;
             IPythonType type;
-            using (eval.OpenScope(scope)) {
+            using (eval.OpenScope(analysis.Document, scope)) {
                 value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(expr, cancellationToken);
                 type = value?.GetPythonType();
                 if (type == null) {

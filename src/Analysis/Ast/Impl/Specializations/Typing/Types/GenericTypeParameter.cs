@@ -33,7 +33,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsSpecialized => true;
 
 
-        public static IPythonType FromTypeVar(IReadOnlyList<IMember> args, IPythonModule declaringModule, LocationInfo location) {
+        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, LocationInfo location) {
+            var args = argSet.Values<IMember>();
             if (args.Count == 0) {
                 // TODO: report that at least one argument is required.
                 return declaringModule.Interpreter.UnknownType;
@@ -45,7 +46,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var constraints = args.Skip(1).Select(a => a.GetPythonType()).ToArray();
+            var constraints = args.Skip(1).Select(a => {
+                // Type constraints may be specified as type name strings.
+                var typeString = (a as IPythonConstant)?.GetString();
+                return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
+            }).ToArray();
             if (constraints.Any(c => c.IsUnknown())) {
                 // TODO: report that some constraints could be be resolved.
             }

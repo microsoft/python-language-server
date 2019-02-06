@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return new ScopeTracker(this);
         }
 
-        public IDisposable OpenScope(ScopeStatement scope) => OpenScope(scope, out _);
+        public IDisposable OpenScope(IPythonModule module, ScopeStatement scope) => OpenScope(module, scope, out _);
         #endregion
 
         public async Task<IMember> GetValueFromExpressionAsync(Expression expr, LookupOptions options, CancellationToken cancellationToken = default) {

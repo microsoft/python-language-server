@@ -33,6 +33,14 @@ namespace Microsoft.Python.Analysis {
         public static T Argument<T>(this IArgumentSet args, int index) where T : class
             => args.Arguments[index].Value as T;
 
+        public static T GetArgumentValue<T>(this IArgumentSet args, string name) where T : class {
+            var value = args.Arguments.FirstOrDefault(a => name.Equals(a.Name))?.Value;
+            if (value == null && args.DictionaryArgument.Arguments.TryGetValue(name, out var m)) {
+                return m as T;
+            }
+            return value as T;
+        }
+
         internal static void DeclareParametersInScope(this IArgumentSet args, ExpressionEval eval) {
             if (eval == null) {
                 return;

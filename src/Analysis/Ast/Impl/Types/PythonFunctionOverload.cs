@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -36,7 +35,7 @@ namespace Microsoft.Python.Analysis.Types {
         IPythonModule declaringModule,
         IPythonFunctionOverload overload,
         LocationInfo location,
-        IReadOnlyList<IMember> args);
+        IArgumentSet args);
 
     internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
         private readonly Func<string, LocationInfo> _locationProvider;
@@ -127,7 +126,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IMember GetReturnValue(LocationInfo callLocation, IArgumentSet args) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
-                var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args.Values<IMember>());
+                var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args);
                 if (!rt.IsUnknown()) {
                     return rt;
                 }

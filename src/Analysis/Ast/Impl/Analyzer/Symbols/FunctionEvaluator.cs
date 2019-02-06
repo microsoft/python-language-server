@@ -74,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 }
             }
 
-            using (Eval.OpenScope(FunctionDefinition, out _)) {
+            using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
                 await DeclareParametersAsync(cancellationToken);
                 if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries

@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
             // Check PEP hint first
-            var valueType = Eval.TryGetTypeFromPepHint(node.Right);
+            var valueType = Eval.GetTypeFromPepHint(node.Right);
             if (valueType != null) {
                 HandleTypedVariable(valueType, value, node.Left.FirstOrDefault());
                 return;

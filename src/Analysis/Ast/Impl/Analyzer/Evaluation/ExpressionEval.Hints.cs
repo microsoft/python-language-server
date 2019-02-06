@@ -17,7 +17,6 @@ using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -27,7 +26,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// and types in a chain of scopes during analysis.
     /// </summary>
     internal sealed partial class ExpressionEval : IExpressionEvaluator {
-        public IPythonType TryGetTypeFromPepHint(Node node) {
+        public IPythonType GetTypeFromPepHint(Node node) {
             var location = GetLoc(node);
             var content = (Module as IDocument)?.Content;
             if (string.IsNullOrEmpty(content) || !location.EndLine.HasValue) {
@@ -80,7 +79,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             // Type alone is not a valid syntax, so we need to simulate the annotation.
-            var typeString = $"x: {content.Substring(hintStart, i - hintStart)}";
+            var typeString = content.Substring(hintStart, i - hintStart);
+            return GetTypeFromString(typeString);
+        }
+
+        public IPythonType GetTypeFromString(string typeString) {
+            // Type alone is not a valid syntax, so we need to simulate the annotation.
+            typeString = $"x: {typeString}";
             using (var sr = new StringReader(typeString)) {
                 var sink = new CollectingErrorSink();
                 var parser = Parser.CreateParser(sr, Module.Interpreter.LanguageVersion, new ParserOptions { ErrorSink = sink });

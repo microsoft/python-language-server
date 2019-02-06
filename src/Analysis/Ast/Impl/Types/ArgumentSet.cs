@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Extensions;
@@ -34,7 +35,6 @@ namespace Microsoft.Python.Analysis.Types {
     internal sealed class ArgumentSet : IArgumentSet {
         private readonly List<Argument> _arguments = new List<Argument>();
         private readonly List<DiagnosticsEntry> _errors = new List<DiagnosticsEntry>();
-        private readonly ExpressionEval _eval;
         private readonly ListArg _listArgument;
         private readonly DictArg _dictArgument;
         private bool _evaluated;
@@ -46,11 +46,18 @@ namespace Microsoft.Python.Analysis.Types {
         public IDictionaryArgument DictionaryArgument => _dictArgument;
         public IReadOnlyList<DiagnosticsEntry> Errors => _errors;
         public int OverloadIndex { get; }
+        public IExpressionEvaluator Eval { get; }
+
 
         private ArgumentSet() { }
 
         public ArgumentSet(IReadOnlyList<IPythonType> typeArgs) {
             _arguments = typeArgs.Select(t => new Argument(t, LocationInfo.Empty)).ToList();
+            _evaluated = true;
+        }
+
+        public ArgumentSet(IReadOnlyList<IMember> memberArgs) {
+            _arguments = memberArgs.Select(t => new Argument(t, LocationInfo.Empty)).ToList();
             _evaluated = true;
         }
 
@@ -70,7 +77,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="module">Module that contains the call expression.</param>
         /// <param name="eval">Evaluator that can calculate values of arguments from their respective expressions.</param>
         public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IPythonModule module, ExpressionEval eval) {
-            _eval = eval;
+            Eval = eval;
             OverloadIndex = overloadIndex;
 
             var overload = fn.Overloads[overloadIndex];
@@ -259,24 +266,24 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public async Task<ArgumentSet> EvaluateAsync(CancellationToken cancellationToken = default) {
-            if (_evaluated || _eval == null) {
+            if (_evaluated || Eval == null) {
                 return this;
             }
 
             foreach (var a in _arguments.Where(x => x.Value == null)) {
-                a.Value = await _eval.GetValueFromExpressionAsync(a.Expression, cancellationToken);
+                a.Value = await Eval.GetValueFromExpressionAsync(a.Expression, cancellationToken);
             }
 
             if (_listArgument != null) {
                 foreach (var e in _listArgument.Expressions) {
-                    var value = await _eval.GetValueFromExpressionAsync(e, cancellationToken);
+                    var value = await Eval.GetValueFromExpressionAsync(e, cancellationToken);
                     _listArgument._Values.Add(value);
                 }
             }
 
             if (_dictArgument != null) {
                 foreach (var e in _dictArgument.Expressions) {
-                    var value = await _eval.GetValueFromExpressionAsync(e.Value, cancellationToken);
+                    var value = await Eval.GetValueFromExpressionAsync(e.Value, cancellationToken);
                     _dictArgument._Args[e.Key] = value;
                 }
             }
@@ -300,10 +307,11 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             public Argument(IPythonType type, LocationInfo location) : this(type.Name, type, location) { }
+            public Argument(IMember member, LocationInfo location) : this(string.Empty, member, location) { }
 
-            public Argument(string name, IPythonType type, LocationInfo location) {
+            private Argument(string name, object value, LocationInfo location) {
                 Name = name;
-                Value = type;
+                Value = value;
                 Location = location;
             }
         }

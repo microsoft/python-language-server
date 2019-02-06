@@ -147,6 +147,22 @@ T = TypeVar('T', str, bytes)
         }
 
         [TestMethod, Priority(0)]
+        public async Task TypeVarStringConstraint() {
+            const string code = @"
+from typing import TypeVar
+import io
+
+T = TypeVar('T', bound='io.TextIOWrapper')
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("T")
+                .Which.Value.Should().HaveDocumentation("TypeVar('T', TextIOWrapper)");
+            analysis.Should().HaveVariable("T").OfType(typeof(IGenericTypeParameter));
+        }
+
+
+        [TestMethod, Priority(0)]
         [Ignore]
         public async Task TypeVarFunc() {
             const string code = @"

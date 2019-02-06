@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, GetLoc(cd));
                 _table.Add(new ClassEvaluator(_eval, cd));
                 // Open class scope
-                _scopes.Push(_eval.OpenScope(cd, out _));
+                _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
             }
             return Task.FromResult(true);
         }
@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!string.IsNullOrEmpty(fd.NameExpression?.Name)) {
                 AddFunctionOrProperty(fd);
                 // Open function scope
-                _scopes.Push(_eval.OpenScope(fd, out _));
+                _scopes.Push(_eval.OpenScope(_eval.Module, fd, out _));
             }
 
             return Task.FromResult(true);

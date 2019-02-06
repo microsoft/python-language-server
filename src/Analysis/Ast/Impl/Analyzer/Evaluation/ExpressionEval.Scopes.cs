@@ -118,26 +118,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// as a child of the specified scope. Scope is pushed on the stack
         /// and will be removed when returned the disposable is disposed.
         /// </summary>
-        public IDisposable OpenScope(ScopeStatement node, out Scope fromScope) {
+        public IDisposable OpenScope(IPythonModule module, ScopeStatement node, out Scope fromScope) {
             fromScope = null;
             if (node == null) {
                 return Disposable.Empty;
             }
 
+            var gs = module.GlobalScope as Scope ?? GlobalScope;
             if (node.Parent != null) {
-                fromScope = (GlobalScope as Scope)
+                fromScope = gs
                     .TraverseBreadthFirst(s => s.Children.OfType<Scope>())
                     .FirstOrDefault(s => s.Node == node.Parent);
             }
 
-            fromScope = fromScope ?? GlobalScope;
-            var scope = fromScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
-            if (scope == null) {
-                scope = new Scope(node, fromScope, true);
-                fromScope.AddChildScope(scope);
+            fromScope = fromScope ?? gs;
+            if (fromScope != null) {
+                var scope = fromScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
+                if (scope == null) {
+                    scope = new Scope(node, fromScope, true);
+                    fromScope.AddChildScope(scope);
+                }
+
+                _openScopes.Push(scope);
+                CurrentScope = scope;
             }
-            _openScopes.Push(scope);
-            CurrentScope = scope;
             return new ScopeTracker(this);
         }
 

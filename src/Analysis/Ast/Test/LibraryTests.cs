@@ -80,5 +80,15 @@ x = requests.get('microsoft.com')
             var r = analysis.Should().HaveVariable("x").OfType("Response").Which;
             r.Should().HaveMember("encoding").Which.Should().HaveType(BuiltinTypeId.Str);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task OpenFile() {
+            const string code = @"
+with open('foo.txt', 'wb') as file:
+    file
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var v = analysis.Should().HaveVariable("file");
+        }
     }
 }
