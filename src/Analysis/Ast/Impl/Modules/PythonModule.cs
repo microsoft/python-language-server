@@ -56,6 +56,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
+        private readonly IDiagnosticsService _diagnosticsService;
 
         private string _documentation; // Must be null initially.
         private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
@@ -72,14 +73,15 @@ namespace Microsoft.Python.Analysis.Modules {
         protected State ContentState { get; set; } = State.None;
 
         protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) {
-            Check.ArgumentNotNull(nameof(name), name);
-            Name = name;
-            Services = services;
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Services = services ?? throw new ArgumentNullException(nameof(services));
             ModuleType = moduleType;
 
             Log = services?.GetService<ILogger>();
             Interpreter = services?.GetService<IPythonInterpreter>();
             Analysis = new EmptyAnalysis(services, this);
+
+            _diagnosticsService = services.GetService<IDiagnosticsService>();
         }
 
         protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, IServiceContainer services) :
@@ -376,7 +378,10 @@ namespace Microsoft.Python.Analysis.Modules {
                     throw new OperationCanceledException();
                 }
                 _ast = ast;
+
                 _parseErrors = sink.Diagnostics;
+                _diagnosticsService.Add(Uri, _parseErrors);
+
                 _parsingTask = null;
                 ContentState = State.Parsed;
             }

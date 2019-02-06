@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
@@ -22,5 +23,11 @@ namespace Microsoft.Python.Analysis {
     public static class DiagnosticsServiceExtensions {
         public static void Add(this IDiagnosticsService ds, Uri documentUri, string message, SourceSpan span, string errorCode, Severity severity)
             => ds.Add(documentUri, new DiagnosticsEntry(message, span, errorCode, severity));
+
+        public static void Add(this IDiagnosticsService ds, Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
+            foreach (var e in entries) {
+                ds.Add(documentUri, e);
+            }
+        }
     }
 }
