@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis {
 
         public static T GetArgumentValue<T>(this IArgumentSet args, string name) where T : class {
             var value = args.Arguments.FirstOrDefault(a => name.Equals(a.Name))?.Value;
-            if (value == null && args.DictionaryArgument.Arguments.TryGetValue(name, out var m)) {
+            if (value == null && args.DictionaryArgument?.Arguments != null && args.DictionaryArgument.Arguments.TryGetValue(name, out var m)) {
                 return m as T;
             }
             return value as T;

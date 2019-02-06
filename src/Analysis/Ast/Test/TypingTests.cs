@@ -154,7 +154,6 @@ import io
 
 T = TypeVar('T', bound='io.TextIOWrapper')
 ";
-
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("T")
                 .Which.Value.Should().HaveDocumentation("TypeVar('T', TextIOWrapper)");

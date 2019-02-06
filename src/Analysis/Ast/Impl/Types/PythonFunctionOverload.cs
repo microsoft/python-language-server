@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -131,7 +132,25 @@ namespace Microsoft.Python.Analysis.Types {
                     return rt;
                 }
             }
-            return StaticReturnValue;
+
+            // If function returns generic, try to return the incoming argument
+            // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
+            IMember retValue = null;
+            if (StaticReturnValue.GetPythonType() is IGenericTypeParameter) {
+                if (args.Arguments.Count > 0) {
+                    retValue = args.Arguments[0].Value as IMember;
+                }
+
+                if (retValue == null) {
+                    // Try returning the constraint
+                    var name = StaticReturnValue.GetPythonType()?.Name;
+                    var typeDefVar = _declaringModule.Analysis.GlobalScope.Variables[name];
+                    if (typeDefVar?.Value is IGenericTypeParameter gtp) {
+                        retValue = gtp.Constraints.FirstOrDefault();
+                    }
+                }
+            }
+            return retValue ?? StaticReturnValue;
         }
         #endregion
 

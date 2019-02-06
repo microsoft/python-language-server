@@ -20,7 +20,7 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis {
     public static class ModuleResolutionExtensions {
         public static IPythonModule ImportModule(this IModuleResolution m, string name, int timeout) {
-            m.ImportModuleAsync(name).Wait(2000);
+            m.ImportModuleAsync(name).Wait(timeout);
             return m.GetImportedModule(name);
         }
     }
