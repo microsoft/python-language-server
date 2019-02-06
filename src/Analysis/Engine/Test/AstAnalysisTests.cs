@@ -24,7 +24,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Core;
 using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.PythonTools.Analysis;
@@ -32,11 +36,9 @@ using Microsoft.PythonTools.Analysis.FluentAssertions;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
-using Microsoft.PythonTools.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
-using static Microsoft.PythonTools.Analysis.Infrastructure.StringExtensions;
-using Ast = Microsoft.PythonTools.Parsing.Ast;
+using Ast = Microsoft.Python.Parsing.Ast;
 
 namespace AnalysisTests {
     [TestClass]
@@ -622,7 +624,7 @@ class BankAccount(object):
                         new[] { interpreter.BuiltinModuleName, "exceptions" } :
                         new[] { interpreter.BuiltinModuleName };
 
-                    foreach (var pyd in Microsoft.PythonTools.Analysis.Infrastructure.PathUtils.EnumerateFiles(dllsDir, "*", recurse: false).Where(ModulePath.IsPythonFile)) {
+                    foreach (var pyd in Microsoft.Python.Core.IO.PathUtils.EnumerateFiles(dllsDir, "*", recurse: false).Where(ModulePath.IsPythonFile)) {
                         var mp = ModulePath.FromFullPath(pyd);
                         if (mp.IsDebug) {
                             continue;
@@ -762,7 +764,7 @@ class BankAccount(object):
                         interp.AddUnimportableModule(m);
                     }
 
-                    foreach (var r in modules
+                    var set = modules
                         .Where(m => !skip.Contains(m.ModuleName))
                         .GroupBy(m => {
                             var i = m.FullName.IndexOf('.');
@@ -770,7 +772,9 @@ class BankAccount(object):
                         })
                         .AsParallel()
                         .SelectMany(g => g.Select(m => Tuple.Create(m, interp.ImportModule(m.ModuleName))))
-                    ) {
+                        .ToArray();
+
+                    foreach (var r in set) {
                         var modName = r.Item1;
                         var mod = r.Item2;
 

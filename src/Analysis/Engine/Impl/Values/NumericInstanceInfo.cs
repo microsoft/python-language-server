@@ -15,8 +15,8 @@
 // permissions and limitations under the License.
 
 using Microsoft.PythonTools.Interpreter;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Analysis.Values {
     class NumericInstanceInfo : BuiltinInstanceInfo {

@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -22,18 +22,22 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Services;
+using Microsoft.Python.Core.Tests;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer;
 using Microsoft.Python.LanguageServer.Extensions;
 using Microsoft.Python.LanguageServer.Implementation;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
-using Microsoft.PythonTools;
 using Microsoft.PythonTools.Analysis;
 using Microsoft.PythonTools.Analysis.Analyzer;
 using Microsoft.PythonTools.Analysis.FluentAssertions;
-using Microsoft.PythonTools.Analysis.Infrastructure;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
-using Microsoft.PythonTools.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -79,8 +83,11 @@ namespace AnalysisTests {
         public async Task<Server> CreateServer(Uri rootUri, InterpreterConfiguration configuration = null, Dictionary<Uri, PublishDiagnosticsEventArgs> diagnosticEvents = null) {
             configuration = configuration ?? Default;
             configuration.AssertInstalled();
-            var s = new Server();
-            s.OnLogMessage += Server_OnLogMessage;
+
+            var sm = new ServiceManager();
+            sm.AddService(new TestLogger());
+            var s = new Server(sm);
+
             var properties = new InterpreterFactoryCreationOptions {
                 TraceLevel = System.Diagnostics.TraceLevel.Verbose,
                 DatabasePath = TestData.GetAstAnalysisCachePath(configuration.Version)
@@ -126,15 +133,6 @@ namespace AnalysisTests {
                 if (ModulePath.IsPythonSourceFile(file)) {
                     await s.LoadFileAsync(new Uri(file));
                 }
-            }
-        }
-
-        private void Server_OnLogMessage(object sender, LogMessageEventArgs e) {
-            switch (e.type) {
-                case MessageType.Error: Trace.TraceError(e.message); break;
-                case MessageType.Warning: Trace.TraceWarning(e.message); break;
-                case MessageType.Info: Trace.TraceInformation(e.message); break;
-                case MessageType.Log: Trace.TraceInformation("LOG: " + e.message); break;
             }
         }
 

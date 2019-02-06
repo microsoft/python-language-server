@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -17,6 +17,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core;
+using Microsoft.Python.LanguageServer.Extensibility;
 
 namespace Microsoft.Python.LanguageServer.Extensions {
     /// <summary>
@@ -27,10 +29,7 @@ namespace Microsoft.Python.LanguageServer.Extensions {
         /// <summary>
         /// Called when the extension is loaded for a language server.
         /// </summary>
-        Task<ILanguageServerExtension> CreateAsync(
-            IPythonLanguageServer server,
-            IReadOnlyDictionary<string, object> properties,
-            CancellationToken cancellationToken
-        );
+        Task<ILanguageServerExtension> CreateAsync(IServiceContainer services, 
+            IReadOnlyDictionary<string, object> properties, CancellationToken cancellationToken = default);
     }
 }

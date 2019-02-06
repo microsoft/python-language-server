@@ -19,10 +19,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
+using Microsoft.Python.Core;
 using Microsoft.PythonTools.Analysis;
-using Microsoft.PythonTools.Analysis.Infrastructure;
-using Microsoft.PythonTools.Parsing;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.PythonTools.Interpreter.Ast {
     sealed class NameLookupContext {
@@ -374,7 +374,7 @@ namespace Microsoft.PythonTools.Interpreter.Ast {
             }
 
             if (value == null) {
-                _log?.Log(TraceLevel.Verbose, "UnknownCallable", expr.Target.ToCodeString(Ast).Trim());
+                _log?.Log(TraceLevel.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
             }
             return value;
         }

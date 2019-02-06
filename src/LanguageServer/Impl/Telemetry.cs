@@ -17,7 +17,9 @@
 using System;
 using System.Diagnostics;
 using System.Reflection;
-using Microsoft.PythonTools.Analysis.Infrastructure;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Shell;
+using Microsoft.Python.LanguageServer.Protocol;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
@@ -50,9 +52,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     }
 
     internal class TelemetryRpcTraceListener : TraceListener {
-        private readonly ITelemetryService2 _telemetryService;
+        private readonly ITelemetryService _telemetryService;
 
-        public TelemetryRpcTraceListener(ITelemetryService2 telemetryService) {
+        public TelemetryRpcTraceListener(ITelemetryService telemetryService) {
             _telemetryService = telemetryService;
         }
 
@@ -95,7 +97,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var e = Telemetry.CreateEventWithException("rpc.exception", exception);
             e.Properties["method"] = method;
 
-            _telemetryService.SendTelemetry(e).DoNotWait();
+            _telemetryService.SendTelemetryAsync(e).DoNotWait();
         }
 
         public override void Write(string message) { }

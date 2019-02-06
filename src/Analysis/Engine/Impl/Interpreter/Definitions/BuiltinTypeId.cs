@@ -16,7 +16,7 @@
 
 
 using System;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.PythonTools.Interpreter {
     /// <summary>

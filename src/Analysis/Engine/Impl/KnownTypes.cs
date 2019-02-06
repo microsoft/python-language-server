@@ -21,7 +21,7 @@ using System.Linq;
 using Microsoft.PythonTools.Analysis.Values;
 using Microsoft.PythonTools.Interpreter;
 using Microsoft.PythonTools.Interpreter.Ast;
-using Microsoft.PythonTools.Parsing;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.PythonTools.Analysis {
     internal interface IKnownPythonTypes {

@@ -10,7 +10,9 @@
         <OutputType>Exe</OutputType>
         <DebugType>portable</DebugType>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    </PropertyGroup>
+        <NoWarn>1701;1702;$(NoWarn)</NoWarn>
+        <LangVersion>7.2</LangVersion>
+      </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
       <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
@@ -31,9 +33,6 @@
         <PackageReference Include="NewtonSoft.Json" Version="11.0.2" />
         <PackageReference Include="StreamJsonRpc" Version="2.0.102-beta" />
     </ItemGroup>
-    <ItemGroup Condition="$(AnalysisReference) == ''">
-        <ProjectReference Include="../../Analysis/Engine/Impl/Microsoft.Python.Analysis.Engine.csproj" />
-    </ItemGroup>
     <ItemGroup Condition="$(AnalysisReference) != ''">
         <Reference Include="Microsoft.Python.Analysis.Engine">
             <HintPath>$(AnalysisReference)/Microsoft.Python.Analysis.Engine.dll</HintPath>
@@ -41,6 +40,11 @@
         <Content Include="$(AnalysisReference)/**/*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\Analysis\Ast\Impl\Microsoft.Python.Analysis.csproj" />
+      <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Core.csproj" />
+      <ProjectReference Include="..\..\Parsing\Impl\Microsoft.Python.Parsing.csproj" />
     </ItemGroup>
     <ItemGroup>
       <Compile Update="Resources.Designer.cs">

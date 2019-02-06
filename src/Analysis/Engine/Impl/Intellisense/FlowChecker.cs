@@ -9,7 +9,7 @@
 // THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 // OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 // IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABLITY OR NON-INFRINGEMENT.
+// MERCHANTABILITY OR NON-INFRINGEMENT.
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
@@ -18,7 +18,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using Microsoft.PythonTools.Parsing.Ast;
+using Microsoft.Python.Parsing.Ast;
 
 /*
  * The data flow.
@@ -388,7 +388,7 @@ namespace Microsoft.PythonTools.Intellisense {
 
             _bits = new BitArray(_bits.Length);
 
-            foreach (IfStatementTest ist in node.TestsInternal) {
+            foreach (IfStatementTest ist in node.Tests) {
                 // Set the initial branch value to bits
                 _bits.SetAll(false);
                 _bits.Or(save);

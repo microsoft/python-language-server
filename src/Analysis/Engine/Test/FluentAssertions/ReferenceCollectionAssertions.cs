@@ -21,6 +21,7 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Collections;
 using FluentAssertions.Execution;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer;
 using TestUtilities;
 using static Microsoft.PythonTools.Analysis.FluentAssertions.AssertionsUtilities;
