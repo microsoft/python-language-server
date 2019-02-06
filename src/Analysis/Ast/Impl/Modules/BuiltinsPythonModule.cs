@@ -145,7 +145,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Analysis.SpecializeFunction(@"iter", BuiltinsSpecializations.Iterator);
             Analysis.SpecializeFunction("locals", BuiltinsSpecializations.DictStringToObject);
             Analysis.SpecializeFunction("next", BuiltinsSpecializations.Next);
-            Analysis.SpecializeFunction("open", BuiltinsSpecializations.Open);
+            Analysis.SpecializeFunction("open", BuiltinsSpecializations.Open, new[] { "io" });
             Analysis.SpecializeFunction("ord", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
             Analysis.SpecializeFunction("pow", BuiltinsSpecializations.Identity);
             Analysis.SpecializeFunction("range", BuiltinsSpecializations.Range);

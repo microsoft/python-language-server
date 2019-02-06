@@ -82,13 +82,24 @@ x = requests.get('microsoft.com')
         }
 
         [TestMethod, Priority(0)]
-        public async Task OpenFile() {
+        public async Task OpenBinaryFile() {
             const string code = @"
 with open('foo.txt', 'wb') as file:
     file
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var v = analysis.Should().HaveVariable("file").OfType("BufferedIOBase");
+            analysis.Should().HaveVariable("file").OfType("BufferedIOBase");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OpenTextFile() {
+            const string code = @"
+with open('foo.txt', 'w') as file:
+    file
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            // TODO: change to TextIOBase when TextIO is specialized.
+            analysis.Should().HaveVariable("file").OfType("TextIOWrapper"); 
         }
     }
 }

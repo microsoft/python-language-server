@@ -39,13 +39,13 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         /// Provides ability to dynamically calculate function return type.
         /// </summary>
-        public static void SpecializeFunction(this IDocumentAnalysis analysis, string name, ReturnValueProvider returnTypeCallback) {
+        public static void SpecializeFunction(this IDocumentAnalysis analysis, string name, ReturnValueProvider returnTypeCallback, string[] dependencies = null) {
             var f = analysis.GetOrCreateFunction(name);
             if (f != null) {
                 foreach (var o in f.Overloads.OfType<PythonFunctionOverload>()) {
                     o.SetReturnValueProvider(returnTypeCallback);
                 }
-                f.Specialize();
+                f.Specialize(dependencies);
             }
         }
 

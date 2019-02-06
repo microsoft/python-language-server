@@ -29,6 +29,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly object _lock = new object();
         private bool _isAbstract;
         private bool _isSpecialized;
+        private string[] _dependencies = Array.Empty<string>();
 
         /// <summary>
         /// Creates function for specializations
@@ -134,7 +135,12 @@ namespace Microsoft.Python.Analysis.Types {
             new KeyValuePair<string, string>((DeclaringType as IHasQualifiedName)?.FullyQualifiedName ?? DeclaringType?.Name ?? DeclaringModule?.Name, Name);
         #endregion
 
-        internal void Specialize() => _isSpecialized = true;
+        internal void Specialize(string[] dependencies) {
+            _isSpecialized = true;
+            _dependencies = dependencies ?? Array.Empty<string>();
+        }
+
+        internal IEnumerable<string> Dependencies => _dependencies;
 
         internal void AddOverload(IPythonFunctionOverload overload) {
             lock (_lock) {

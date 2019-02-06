@@ -98,7 +98,7 @@ namespace Microsoft.Python.Analysis.Specializations {
                 bytes = modeString != null && modeString.Contains("b");
             }
 
-            var io = declaringModule.Interpreter.ModuleResolution.ImportModule("io", 10000);
+            var io = declaringModule.Interpreter.ModuleResolution.GetImportedModule("io");
             var ioBase = io?.GetMember(bytes ? "BufferedIOBase" : "TextIOWrapper")?.GetPythonType();
             return ioBase != null ? new PythonInstance(ioBase) : null;
         }

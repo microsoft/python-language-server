@@ -159,6 +159,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 instanceType.Equals(fn.DeclaringType) ||
                 fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].ReturnDocumentation)) {
 
+                if (fn.IsSpecialized && fn is PythonFunctionType ft) {
+                    foreach (var module in ft.Dependencies) {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        await Interpreter.ModuleResolution.ImportModuleAsync(module, cancellationToken);
+                    }
+                }
+
                 var t = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
                 if (!t.IsUnknown()) {
                     return t;
