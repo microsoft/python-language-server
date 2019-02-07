@@ -40,17 +40,20 @@ using TestUtilities;
 namespace Microsoft.Python.Analysis.Tests {
     public abstract class AnalysisTestBase {
         protected TestLogger TestLogger { get; } = new TestLogger();
+        protected ServiceManager _sm;
+
+        protected virtual IDiagnosticsService GetDiagnosticsService(IServiceContainer s) => null;
 
         protected virtual ServiceManager CreateServiceManager() {
-            var sm = new ServiceManager();
+            _sm = new ServiceManager();
 
             var platform = new OSPlatform();
-            sm
+            _sm
                 .AddService(TestLogger)
                 .AddService(platform)
                 .AddService(new FileSystem(platform));
 
-            return sm;
+            return _sm;
         }
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
@@ -65,7 +68,10 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var sm = CreateServiceManager();
 
-            sm.AddService(new DiagnosticsService());
+            var ds = GetDiagnosticsService(_sm);
+            if (ds != null) {
+                sm.AddService(ds);
+            }
 
             TestLogger.Log(TraceEventType.Information, "Create TestDependencyResolver");
             var dependencyResolver = new TestDependencyResolver();
@@ -144,32 +150,6 @@ namespace Microsoft.Python.Analysis.Tests {
         private sealed class TestDependencyResolver : IDependencyResolver {
             public Task<IDependencyChainNode> GetDependencyChainAsync(IDocument document, CancellationToken cancellationToken)
                 => Task.FromResult<IDependencyChainNode>(new DependencyChainNode(document));
-        }
-
-        protected sealed class DiagnosticsService : IDiagnosticsService {
-            private readonly Dictionary<Uri, List<DiagnosticsEntry>> _diagnostics = new Dictionary<Uri, List<DiagnosticsEntry>>();
-            private readonly object _lock = new object();
-
-            public IReadOnlyList<DiagnosticsEntry> Diagnostics {
-                get {
-                    lock (_lock) {
-                        return _diagnostics.Values.SelectMany().ToArray();
-                    }
-                }
-            }
-
-            public void Clear(Uri uri) { }
-
-            public void Add(Uri documentUri, DiagnosticsEntry entry) {
-                lock (_lock) {
-                    if (!_diagnostics.TryGetValue(documentUri, out var list)) {
-                        _diagnostics[documentUri] = list = new List<DiagnosticsEntry>();
-                    }
-                    list.Add(entry);
-                }
-            }
-
-            public int PublishingDelay { get; set; }
         }
     }
 }

@@ -26,7 +26,7 @@ using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Diagnostics {
     internal sealed class DiagnosticsService : IDiagnosticsService, IDisposable {
-        private readonly Dictionary<Uri, List<DiagnosticsEntry>> _pendingDiagnostics = new Dictionary<Uri, List<DiagnosticsEntry>>();
+        private readonly Dictionary<Uri, List<DiagnosticsEntry>> _diagnostics = new Dictionary<Uri, List<DiagnosticsEntry>>();
         private readonly DisposableBag _disposables = DisposableBag.Create<DiagnosticsService>();
         private readonly JsonRpc _rpc;
         private readonly object _lock = new object();
@@ -35,40 +35,39 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
 
         public DiagnosticsService(IServiceContainer services) {
             var idleTimeService = services.GetService<IIdleTimeService>();
-            idleTimeService.Idle += OnIdle;
-            idleTimeService.Closing += OnClosing;
 
+            if (idleTimeService != null) {
+                idleTimeService.Idle += OnIdle;
+                idleTimeService.Closing += OnClosing;
+
+                _disposables
+                    .Add(() => idleTimeService.Idle -= OnIdle)
+                    .Add(() => idleTimeService.Idle -= OnClosing);
+            }
             _rpc = services.GetService<JsonRpc>();
-
-            _disposables
-                .Add(() => idleTimeService.Idle -= OnIdle)
-                .Add(() => idleTimeService.Idle -= OnClosing);
         }
 
         #region IDiagnosticsService
-        public IReadOnlyList<DiagnosticsEntry> Diagnostics {
+        public IReadOnlyDictionary<Uri, IReadOnlyList<DiagnosticsEntry>> Diagnostics {
             get {
                 lock (_lock) {
-                    return _pendingDiagnostics.Values.SelectMany().ToArray();
+                    return _diagnostics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value as IReadOnlyList<DiagnosticsEntry>);
                 }
             }
         }
 
-        public void Add(Uri documentUri, DiagnosticsEntry entry) {
+        public void Replace(Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
             lock (_lock) {
-                if (!_pendingDiagnostics.TryGetValue(documentUri, out var list)) {
-                    _pendingDiagnostics[documentUri] = list = new List<DiagnosticsEntry>();
-                }
-                list.Add(entry);
+                _diagnostics[documentUri] = entries.ToList();
                 _lastChangeTime = DateTime.Now;
                 _changed = true;
             }
         }
 
-        public void Clear(Uri documentUri) {
+        public void Remove(Uri documentUri) {
             lock (_lock) {
-                ClearPendingDiagnostics(documentUri);
-                _pendingDiagnostics.Remove(documentUri);
+                _diagnostics.Remove(documentUri);
+                _changed = true;
             }
         }
 
@@ -77,49 +76,38 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
 
         public void Dispose() {
             _disposables.TryDispose();
-            ClearAllPendingDiagnostics();
+            ClearAllDiagnostics();
         }
 
         private void OnClosing(object sender, EventArgs e) => Dispose();
 
         private void OnIdle(object sender, EventArgs e) {
             if (_changed && (DateTime.Now - _lastChangeTime).TotalMilliseconds > PublishingDelay) {
-                PublishPendingDiagnostics();
+                PublishDiagnostics();
             }
         }
 
-        private void PublishPendingDiagnostics() {
+        private void PublishDiagnostics() {
             lock (_lock) {
-                foreach (var kvp in _pendingDiagnostics) {
+                foreach (var kvp in _diagnostics) {
                     var parameters = new PublishDiagnosticsParams {
                         uri = kvp.Key,
-                        diagnostics = kvp.Value.Select(x => ToDiagnostic(kvp.Key, x)).ToArray()
+                        diagnostics = kvp.Value.Select(ToDiagnostic).ToArray()
                     };
                     _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
                 }
-                _pendingDiagnostics.Clear();
                 _changed = false;
             }
         }
 
-        private void ClearAllPendingDiagnostics() {
+        private void ClearAllDiagnostics() {
             lock (_lock) {
-                foreach (var uri in _pendingDiagnostics.Keys) {
-                    ClearPendingDiagnostics(uri);
-                }
+                _diagnostics.Clear();
                 _changed = false;
             }
         }
 
-        private void ClearPendingDiagnostics(Uri uri) {
-            var parameters = new PublishDiagnosticsParams {
-                uri = uri,
-                diagnostics = Array.Empty<Diagnostic>()
-            };
-            _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
-        }
-
-        private static Diagnostic ToDiagnostic(Uri uri, DiagnosticsEntry e) {
+        private static Diagnostic ToDiagnostic(DiagnosticsEntry e) {
             DiagnosticSeverity s;
             switch (e.Severity) {
                 case Severity.Warning:
