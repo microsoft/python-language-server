@@ -30,7 +30,7 @@ namespace Microsoft.Python.LanguageServer.Services {
             => _rpc.NotifyAsync(targetName, arguments);
 
         public Task NotifyWithParameterObjectAsync(string targetName, object argument = null)
-            => _rpc.NotifyAsync(targetName, argument);
+            => _rpc.NotifyWithParameterObjectAsync(targetName, argument);
 
         public Task<TResult> InvokeWithParameterObjectAsync<TResult>(string targetName, object argument = null, CancellationToken cancellationToken = default)
             => _rpc.InvokeWithParameterObjectAsync<TResult>(targetName, argument, cancellationToken);
