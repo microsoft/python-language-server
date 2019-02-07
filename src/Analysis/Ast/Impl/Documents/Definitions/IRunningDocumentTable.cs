@@ -26,12 +26,13 @@ namespace Microsoft.Python.Analysis.Documents {
     /// </summary>
     public interface IRunningDocumentTable: IEnumerable<IDocument> {
         /// <summary>
-        /// Adds file to the list of available documents.
+        /// Opens document. Adds file to the list of available documents
+        /// unless it was already loaded via indirect import.
         /// </summary>
         /// <param name="uri">Document URI.</param>
         /// <param name="content">Document content</param>
         /// <param name="filePath">Optional file path, if different from the URI.</param>
-        IDocument AddDocument(Uri uri, string content, string filePath = null);
+        IDocument OpenDocument(Uri uri, string content, string filePath = null);
 
         /// <summary>
         /// Adds library module to the list of available documents.
@@ -39,9 +40,10 @@ namespace Microsoft.Python.Analysis.Documents {
         IDocument AddModule(ModuleCreationOptions mco);
 
         /// <summary>
-        /// Removes document from the table.
+        /// Closes document. Document is removed from
+        /// the table if there are no more references to it.
         /// </summary>
-        void RemoveDocument(Uri uri);
+        void CloseDocument(Uri uri);
 
         /// <summary>
         /// Fetches document by its URI. Returns null if document is not loaded.

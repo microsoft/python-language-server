@@ -25,9 +25,8 @@ namespace Microsoft.Python.Analysis.Modules {
     internal class CompiledPythonModule : PythonModule {
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
 
-        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub,
-            IServiceContainer services, ModuleLoadOptions options = ModuleLoadOptions.Analyze)
-            : base(moduleName, filePath, moduleType, options, stub, services) { }
+        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, IServiceContainer services)
+            : base(moduleName, filePath, moduleType, stub, services) { }
 
         public override string Documentation
             => GetMember("__doc__").TryGetConstant<string>(out var s) ? s : string.Empty;
@@ -52,18 +51,16 @@ namespace Microsoft.Python.Analysis.Modules {
             return args;
         }
 
-        protected override string LoadContent(ModuleLoadOptions options) {
-            var code = string.Empty;
-            if ((options & ModuleLoadOptions.Load) == ModuleLoadOptions.Load) {
-                code = ModuleCache.ReadCachedModule(FilePath);
-                if (string.IsNullOrEmpty(code)) {
-                    if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {
-                        return string.Empty;
-                    }
-
-                    code = ScrapeModule();
-                    SaveCachedCode(code);
+        protected override string LoadContent() {
+            // Exceptions are handled in the base
+            var code = ModuleCache.ReadCachedModule(FilePath);
+            if (string.IsNullOrEmpty(code)) {
+                if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {
+                    return string.Empty;
                 }
+
+                code = ScrapeModule();
+                SaveCachedCode(code);
             }
             return code;
         }
@@ -84,21 +81,21 @@ namespace Microsoft.Python.Analysis.Modules {
             )) {
                 proc.StartInfo.StandardOutputEncoding = Encoding.UTF8;
                 proc.OnOutputLine = s => sb.AppendLine(s);
-                proc.OnErrorLine = s => Log?.Log(TraceEventType.Error, "Scrape", s);
+                proc.OnErrorLine = s => Log?.Log(TraceEventType.Warning, "Scrape", s);
 
-                Log?.Log(TraceEventType.Information, "Scrape", proc.FileName, proc.Arguments);
+                Log?.Log(TraceEventType.Verbose, "Scrape", proc.FileName, proc.Arguments);
 
                 proc.Start();
                 var exitCode = proc.Wait(60000);
 
                 if (exitCode == null) {
                     proc.Kill();
-                    Log?.Log(TraceEventType.Error, "ScrapeTimeout", proc.FileName, proc.Arguments);
+                    Log?.Log(TraceEventType.Warning, "ScrapeTimeout", proc.FileName, proc.Arguments);
                     return string.Empty;
                 }
 
                 if (exitCode != 0) {
-                    Log?.Log(TraceEventType.Error, "Scrape", "ExitCode", exitCode);
+                    Log?.Log(TraceEventType.Warning, "Scrape", "ExitCode", exitCode);
                     return string.Empty;
                 }
             }

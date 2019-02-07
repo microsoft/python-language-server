@@ -13,27 +13,25 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
-using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Modules {
+    /// <summary>
+    /// Represents basic module resolution and search subsystem.
+    /// </summary>
     public interface IModuleResolution {
+        /// <summary>
+        /// Builtins module name.
+        /// </summary>
         string BuiltinModuleName { get; }
-        Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default);
-        Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(CancellationToken cancellationToken = default);
-        Task<IReadOnlyDictionary<string, string>> GetImportableModulesAsync(IEnumerable<string> searchPaths, CancellationToken cancellationToken = default);
-        ModulePath FindModule(string filePath);
-        IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Determines if directory contains Python package.
+        /// Builtins module.
         /// </summary>
-        bool IsPackage(string directory);
+        IBuiltinsPythonModule BuiltinsModule { get; }
 
         /// <summary>
         /// Path resolver providing file resolution in module imports.
@@ -47,31 +45,11 @@ namespace Microsoft.Python.Analysis.Modules {
         Task<IPythonModule> ImportModuleAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Builtins module.
+        /// Returns an IPythonModule for a given module name. Returns null if
+        /// the module has not been imported.
         /// </summary>
-        IBuiltinsPythonModule BuiltinsModule { get; }
-
-        IModuleCache ModuleCache { get; }
+        IPythonModule GetImportedModule(string name);
 
         Task ReloadAsync(CancellationToken token = default);
-
-        void AddModulePath(string path);
-
-        /// <summary>
-        /// Provides ability to specialize module by replacing module import by
-        /// <see cref="IPythonModule"/> implementation in code. Real module
-        /// content is loaded and analyzed only for class/functions definitions
-        /// so the original documentation can be extracted.
-        /// </summary>
-        /// <param name="name">Module to specialize.</param>
-        /// <param name="specializationConstructor">Specialized module constructor.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Original (library) module loaded as stub.</returns>
-        Task<IPythonModule> SpecializeModuleAsync(string name, Func<string, IPythonModule> specializationConstructor, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns specialized module, if any.
-        /// </summary>
-        IPythonModule GetSpecializedModule(string name);
     }
 }

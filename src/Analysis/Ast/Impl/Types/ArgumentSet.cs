@@ -18,12 +18,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Extensions;
-using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -36,7 +35,6 @@ namespace Microsoft.Python.Analysis.Types {
     internal sealed class ArgumentSet : IArgumentSet {
         private readonly List<Argument> _arguments = new List<Argument>();
         private readonly List<DiagnosticsEntry> _errors = new List<DiagnosticsEntry>();
-        private readonly ExpressionEval _eval;
         private readonly ListArg _listArgument;
         private readonly DictArg _dictArgument;
         private bool _evaluated;
@@ -47,11 +45,24 @@ namespace Microsoft.Python.Analysis.Types {
         public IListArgument ListArgument => _listArgument;
         public IDictionaryArgument DictionaryArgument => _dictArgument;
         public IReadOnlyList<DiagnosticsEntry> Errors => _errors;
+        public int OverloadIndex { get; }
+        public IExpressionEvaluator Eval { get; }
+
 
         private ArgumentSet() { }
 
-        public ArgumentSet(IPythonFunctionType fn, IPythonInstance instance, CallExpression callExpr, ExpressionEval eval) :
-            this(fn, instance, callExpr, eval.Module, eval) { }
+        public ArgumentSet(IReadOnlyList<IPythonType> typeArgs) {
+            _arguments = typeArgs.Select(t => new Argument(t, LocationInfo.Empty)).ToList();
+            _evaluated = true;
+        }
+
+        public ArgumentSet(IReadOnlyList<IMember> memberArgs) {
+            _arguments = memberArgs.Select(t => new Argument(t, LocationInfo.Empty)).ToList();
+            _evaluated = true;
+        }
+
+        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, ExpressionEval eval) :
+            this(fn, overloadIndex, instance, callExpr, eval.Module, eval) { }
 
         /// <summary>
         /// Creates set of arguments for a function call based on the call expression
@@ -59,15 +70,19 @@ namespace Microsoft.Python.Analysis.Types {
         /// for arguments, but not actual values. <see cref="EvaluateAsync"/> on how to
         /// get values for actual parameters.
         /// </summary>
-        /// <param name="fn">Function to call.</param>
+        /// <param name="fn">Function type.</param>
+        /// <param name="overloadIndex">Function overload to call.</param>
         /// <param name="instance">Type instance the function is bound to. For derived classes it is different from the declared type.</param>
         /// <param name="callExpr">Call expression that invokes the function.</param>
         /// <param name="module">Module that contains the call expression.</param>
         /// <param name="eval">Evaluator that can calculate values of arguments from their respective expressions.</param>
-        public ArgumentSet(IPythonFunctionType fn, IPythonInstance instance, CallExpression callExpr, IPythonModule module, ExpressionEval eval) {
-            _eval = eval;
+        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IPythonModule module, ExpressionEval eval) {
+            Eval = eval;
+            OverloadIndex = overloadIndex;
 
-            var fd = fn.FunctionDefinition;
+            var overload = fn.Overloads[overloadIndex];
+            var fd = overload.FunctionDefinition;
+
             if (fd == null || fn.IsSpecialized) {
                 // Typically specialized function, like TypeVar() that does not actually have AST definition.
                 // Make the arguments from the call expression. If argument does not have name, 
@@ -75,11 +90,14 @@ namespace Microsoft.Python.Analysis.Types {
                 _arguments = new List<Argument>();
                 for (var i = 0; i < callExpr.Args.Count; i++) {
                     var name = callExpr.Args[i].Name;
+                    var location = fd != null && i < fd.Parameters.Length ? fd.Parameters[i].GetLocation(fn.DeclaringModule) : LocationInfo.Empty;
                     if (string.IsNullOrEmpty(name)) {
                         name = fd != null && i < fd.Parameters.Length ? fd.Parameters[i].Name : null;
                     }
                     name = name ?? $"arg{i}";
-                    _arguments.Add(new Argument(name, ParameterKind.Normal) { Expression = callExpr.Args[i].Expression });
+                    _arguments.Add(new Argument(name, ParameterKind.Normal, location) {
+                        Expression = callExpr.Args[i].Expression
+                    });
                 }
                 return;
             }
@@ -98,7 +116,7 @@ namespace Microsoft.Python.Analysis.Types {
             // had values assigned to them are marked as 'filled'.Slots which have
             // no value assigned to them yet are considered 'empty'.
 
-            var slots = fd.Parameters.Select(p => new Argument(p.Name, p.Kind)).ToArray();
+            var slots = fd.Parameters.Select(p => new Argument(p.Name, p.Kind, p.GetLocation(module))).ToArray();
             // Locate sequence argument, if any
             var sa = slots.Where(s => s.Kind == ParameterKind.List).ToArray();
             if (sa.Length > 1) {
@@ -112,8 +130,8 @@ namespace Microsoft.Python.Analysis.Types {
                 return;
             }
 
-            _listArgument = sa.Length == 1 && sa[0].Name.Length > 0 ? new ListArg(sa[0].Name) : null;
-            _dictArgument = da.Length == 1 ? new DictArg(da[0].Name) : null;
+            _listArgument = sa.Length == 1 && sa[0].Name.Length > 0 ? new ListArg(sa[0].Name, sa[0].Expression, sa[0].Location) : null;
+            _dictArgument = da.Length == 1 ? new DictArg(da[0].Name, da[0].Expression, da[0].Location) : null;
 
             // Class methods
             var formalParamIndex = 0;
@@ -248,31 +266,31 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public async Task<ArgumentSet> EvaluateAsync(CancellationToken cancellationToken = default) {
-                if (_evaluated || _eval == null) {
-                    return this;
-                }
-
-                foreach (var a in _arguments.Where(x => x.Value == null)) {
-                    a.Value = await _eval.GetValueFromExpressionAsync(a.Expression, cancellationToken);
-                }
-
-                if (_listArgument != null) {
-                    foreach (var e in _listArgument.Expressions) {
-                        var value = await _eval.GetValueFromExpressionAsync(e, cancellationToken);
-                        _listArgument._Values.Add(value);
-                    }
-                }
-
-                if (_dictArgument != null) {
-                    foreach (var e in _dictArgument.Expressions) {
-                        var value = await _eval.GetValueFromExpressionAsync(e.Value, cancellationToken);
-                        _dictArgument._Args[e.Key] = value;
-                    }
-                }
-
-                _evaluated = true;
+            if (_evaluated || Eval == null) {
                 return this;
             }
+
+            foreach (var a in _arguments.Where(x => x.Value == null)) {
+                a.Value = await Eval.GetValueFromExpressionAsync(a.Expression, cancellationToken);
+            }
+
+            if (_listArgument != null) {
+                foreach (var e in _listArgument.Expressions) {
+                    var value = await Eval.GetValueFromExpressionAsync(e, cancellationToken);
+                    _listArgument._Values.Add(value);
+                }
+            }
+
+            if (_dictArgument != null) {
+                foreach (var e in _dictArgument.Expressions) {
+                    var value = await Eval.GetValueFromExpressionAsync(e.Value, cancellationToken);
+                    _dictArgument._Args[e.Key] = value;
+                }
+            }
+
+            _evaluated = true;
+            return this;
+        }
 
         private sealed class Argument : IArgument {
             public string Name { get; }
@@ -280,36 +298,57 @@ namespace Microsoft.Python.Analysis.Types {
 
             public ParameterKind Kind { get; }
             public Expression Expression { get; set; }
+            public LocationInfo Location { get; }
 
-            public Argument(string name, ParameterKind kind) {
+            public Argument(string name, ParameterKind kind, LocationInfo location) {
                 Name = name;
                 Kind = kind;
+                Location = location;
+            }
+
+            public Argument(IPythonType type, LocationInfo location) : this(type.Name, type, location) { }
+            public Argument(IMember member, LocationInfo location) : this(string.Empty, member, location) { }
+
+            private Argument(string name, object value, LocationInfo location) {
+                Name = name;
+                Value = value;
+                Location = location;
             }
         }
 
         private sealed class ListArg : IListArgument {
             public string Name { get; }
+            public Expression Expression { get; }
+            public LocationInfo Location { get; }
+
             public IReadOnlyList<IMember> Values => _Values;
             public IReadOnlyList<Expression> Expressions => _Expressions;
 
             public List<IMember> _Values { get; } = new List<IMember>();
             public List<Expression> _Expressions { get; } = new List<Expression>();
 
-            public ListArg(string name) {
+            public ListArg(string name, Expression expression, LocationInfo location) {
                 Name = name;
+                Expression = expression;
+                Location = location;
             }
         }
 
         private sealed class DictArg : IDictionaryArgument {
             public string Name { get; }
+            public Expression Expression { get; }
+            public LocationInfo Location { get; }
+
             public IReadOnlyDictionary<string, IMember> Arguments => _Args;
             public IReadOnlyDictionary<string, Expression> Expressions => _Expressions;
 
             public Dictionary<string, IMember> _Args { get; } = new Dictionary<string, IMember>();
             public Dictionary<string, Expression> _Expressions { get; } = new Dictionary<string, Expression>();
 
-            public DictArg(string name) {
+            public DictArg(string name, Expression expression, LocationInfo location) {
                 Name = name;
+                Expression = expression;
+                Location = location;
             }
         }
     }

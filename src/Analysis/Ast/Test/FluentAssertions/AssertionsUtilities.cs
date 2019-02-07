@@ -26,7 +26,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
-    internal static class AssertionsUtilities {
+    public static class AssertionsUtilities {
         public static bool Is3X(IScope scope)
             => scope.GlobalScope.Module.Interpreter.LanguageVersion.Is3x();
 

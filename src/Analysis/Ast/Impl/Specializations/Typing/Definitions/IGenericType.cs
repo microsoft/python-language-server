@@ -21,11 +21,13 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// Represents generic type, such as class or function.
     /// Generic type is a template for the actual type.
     /// </summary>
-    public interface IGenericType: IPythonType {
+    public interface IGenericType : IPythonTemplateType {
         /// <summary>
-        /// Creates instance of a type information with the specific
-        /// type arguments from the generic template.
+        /// Type parameters such as in Tuple[T1, T2. ...] or
+        /// Generic[_T1, _T2, ...] as returned by TypeVar.
         /// </summary>
+        IReadOnlyList<IGenericTypeParameter> Parameters { get; }
+
         IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null);
     }
 }

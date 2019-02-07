@@ -16,8 +16,10 @@
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -60,6 +62,44 @@ namespace Microsoft.Python.Analysis.Tests {
                 .Which.Should().HaveMembers(
                     @"astimezone", @"isocalendar", @"resolution", @"fromordinal", @"fromtimestamp",
                     @"min", @"max", @"date", @"utcnow", "combine", "replace", "second");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Requests() {
+            const string code = @"
+import requests
+x = requests.get('microsoft.com')
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var v = analysis.GlobalScope.Variables["requests"];
+            v.Should().NotBeNull();
+            if (v.Value.GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
+                Assert.Inconclusive("'requests' package is not installed.");
+            }
+
+            var r = analysis.Should().HaveVariable("x").OfType("Response").Which;
+            r.Should().HaveMember("encoding").Which.Should().HaveType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OpenBinaryFile() {
+            const string code = @"
+with open('foo.txt', 'wb') as file:
+    file
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("file").OfType("BufferedIOBase");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OpenTextFile() {
+            const string code = @"
+with open('foo.txt', 'w') as file:
+    file
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            // TODO: change to TextIOBase when TextIO is specialized.
+            analysis.Should().HaveVariable("file").OfType("TextIOWrapper"); 
         }
     }
 }

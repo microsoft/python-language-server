@@ -61,6 +61,15 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Code analysis is in progress....
+        /// </summary>
+        internal static string AnalysisIsInProgressHover {
+            get {
+                return ResourceManager.GetString("AnalysisIsInProgressHover", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to done..
         /// </summary>
         internal static string Done {

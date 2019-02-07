@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -16,14 +15,13 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.PythonTools.Analysis;
+using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer {
     public class ServerSettings {
         public class PythonAnalysisOptions {
-            private Dictionary<string, DiagnosticSeverity> _map = new Dictionary<string, DiagnosticSeverity>();
+            private readonly Dictionary<string, DiagnosticSeverity> _map = new Dictionary<string, DiagnosticSeverity>();
 
-            public bool openFilesOnly;
             public int symbolsHierarchyDepthLimit = 10;
             public int symbolsHierarchyMaxSymbols = 1000;
 

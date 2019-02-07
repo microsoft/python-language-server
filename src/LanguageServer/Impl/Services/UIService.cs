@@ -17,6 +17,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Shell;
+using Microsoft.Python.LanguageServer.Protocol;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Services {
@@ -41,7 +42,7 @@ namespace Microsoft.Python.LanguageServer.Services {
                 message = message,
                 actions = actions.Select(a => new MessageActionItem { title = a }).ToArray()
             };
-            var result = await _rpc.InvokeWithParameterObjectAsync<MessageActionItem?>("window/showMessageRequest", parameters);
+            var result = await _rpc.InvokeWithParameterObjectAsync<MessageActionItem>("window/showMessageRequest", parameters);
             return result?.title;
         }
 

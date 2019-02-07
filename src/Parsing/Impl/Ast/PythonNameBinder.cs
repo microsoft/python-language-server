@@ -188,7 +188,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal void ReportSyntaxWarning(string message, Node node) => _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.Warning);
 
-        internal void ReportSyntaxError(string message, Node node) => _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.FatalError);
+        internal void ReportSyntaxError(string message, Node node) => _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.Error);
 
         #region AstBinder Overrides
 

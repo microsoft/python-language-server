@@ -28,14 +28,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// </summary>
     internal sealed class FunctionCallEvaluator: AnalysisWalker {
         private readonly ExpressionEval _eval;
+        private readonly IPythonModule _declaringModule;
         private readonly FunctionDefinition _function;
-        private readonly IPythonInterpreter _interpreter;
         private IMember _result;
 
-        public FunctionCallEvaluator(FunctionDefinition fd, ExpressionEval eval, IPythonInterpreter interpreter): base(eval) {
+        public FunctionCallEvaluator(IPythonModule declaringModule, FunctionDefinition fd, ExpressionEval eval): base(eval) {
+            _declaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
             _eval = eval ?? throw new ArgumentNullException(nameof(eval));
             _function = fd ?? throw new ArgumentNullException(nameof(fd));
-            _interpreter = interpreter;
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             cancellationToken.ThrowIfCancellationRequested();
 
             // Open scope and declare parameters
-            using (_eval.OpenScope(_function, out _)) {
+            using (_eval.OpenScope(_declaringModule, _function, out _)) {
                 args.DeclareParametersInScope(_eval);
                 await _function.Body.WalkAsync(this, cancellationToken);
             }

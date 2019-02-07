@@ -13,11 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
@@ -38,7 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             switch (node.Left) {
                 case NameExpression nex:
                     // for x in y:
-                    Eval.DeclareVariable(nex.Name, value, Eval.GetLoc(node.Left));
+                    Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, Eval.GetLoc(node.Left));
                     break;
                 case TupleExpression tex:
                     // x = [('abc', 42, True), ('abc', 23, False)]
@@ -47,7 +45,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     if (value is IPythonIterable valueIterable) {
                         var valueIterator = valueIterable.GetIterator();
                         foreach (var n in names) {
-                            Eval.DeclareVariable(n, valueIterator?.Next ?? Eval.UnknownType, Eval.GetLoc(node.Left));
+                            Eval.DeclareVariable(n, valueIterator?.Next ?? Eval.UnknownType, VariableSource.Declaration, Eval.GetLoc(node.Left));
                         }
                     } else {
                         // TODO: report that expression yields value that does not evaluate to iterable.

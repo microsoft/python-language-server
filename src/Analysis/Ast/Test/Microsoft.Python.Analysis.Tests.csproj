@@ -20,11 +20,6 @@
   <Import Project="..\..\..\..\build\NetStandard.settings" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
-    <!--Mocks-->
-    <Compile Remove="ModuleTableTests.cs" />
-    <Compile Remove="ProcessHelperTests.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <None Remove="app.config" />
   </ItemGroup>
   <ItemGroup>

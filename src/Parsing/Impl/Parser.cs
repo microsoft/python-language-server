@@ -303,7 +303,7 @@ namespace Microsoft.Python.Parsing {
                 _tokenizer.GetLineLocations(),
                 start, end,
                 errorCode,
-                Severity.FatalError);
+                Severity.Error);
         }
 
         #endregion
@@ -2667,9 +2667,6 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 while (true) {
-                    var s = ParseStmt();
-
-                    l.Add(s);
                     if (MaybeEat(TokenKind.Dedent)) {
                         // dedent white space belongs to the statement which follows the suite
                         if (_verbatim) {
@@ -2677,6 +2674,10 @@ namespace Microsoft.Python.Parsing {
                         }
                         break;
                     }
+
+                    var s = ParseStmt();
+                    l.Add(s);
+
                     if (PeekToken().Kind == TokenKind.EndOfFile) {
                         ReportSyntaxError("unexpected end of file");
                         break; // error handling
@@ -4790,7 +4791,7 @@ namespace Microsoft.Python.Parsing {
         private Token PeekToken2() {
             if (_lookahead2.Token == null) {
                 _lookahead2 = new TokenWithSpan(_tokenizer.GetNextToken(), _tokenizer.TokenSpan);
-                _lookahead2WhiteSpace = _tokenizer.PreceedingWhiteSpace;
+                _lookahead2WhiteSpace = _tokenizer.PrecedingWhiteSpace;
             }
             return _lookahead2.Token;
         }
@@ -4803,7 +4804,7 @@ namespace Microsoft.Python.Parsing {
                 _lookahead2WhiteSpace = null;
             } else {
                 _lookahead = new TokenWithSpan(_tokenizer.GetNextToken(), _tokenizer.TokenSpan);
-                _lookaheadWhiteSpace = _tokenizer.PreceedingWhiteSpace;
+                _lookaheadWhiteSpace = _tokenizer.PrecedingWhiteSpace;
             }
         }
 
@@ -4859,7 +4860,7 @@ namespace Microsoft.Python.Parsing {
             }
 
             public override void Add(string message, SourceSpan span, int errorCode, Severity severity) {
-                if (_parser._errorCode == 0 && (severity == Severity.Error || severity == Severity.FatalError)) {
+                if (_parser._errorCode == 0 && severity == Severity.Error) {
                     _parser._errorCode = errorCode;
                 }
 
@@ -4972,7 +4973,7 @@ namespace Microsoft.Python.Parsing {
                         encodingIndex,
                         encodingIndex + encodingName.Length,
                         ErrorCodes.SyntaxError,
-                        Severity.FatalError
+                        Severity.Error
                     );
                     encoding = Encoding.UTF8;
                 } else if (isUtf8) {
@@ -5001,7 +5002,7 @@ namespace Microsoft.Python.Parsing {
                     ex.Index,
                     ex.Index + 1,
                     ErrorCodes.SyntaxError,
-                    Severity.FatalError
+                    Severity.Error
                 );
                 return new StreamReader(new PartiallyReadStream(readBytes, stream), encoding);
             }

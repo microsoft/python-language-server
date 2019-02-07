@@ -3038,7 +3038,7 @@ pass
         }
 
         private void ParseErrors(string filename, PythonLanguageVersion version, params ErrorInfo[] errors) {
-            ParseErrors(filename, version, Severity.Ignore, errors);
+            ParseErrors(filename, version, Severity.Hint, errors);
         }
 
         private static string FormatError(ErrorResult r) {
@@ -3061,7 +3061,7 @@ pass
             for (var i = 0; i < sink.Errors.Count; i++) {
                 foundErrors.AppendFormat("{0}{1}{2}",
                     FormatError(sink.Errors[i]),
-                    i == sink.Errors.Count - 1 ? "" : ",",
+                    i == sink.Errors.Count - 1 ? string.Empty : ",",
                     Environment.NewLine
                 );
             }
@@ -3085,7 +3085,7 @@ pass
             }
         }
 
-        private static PythonAst ParseFileNoErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Ignore) {
+        private static PythonAst ParseFileNoErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Hint) {
             var errorSink = new CollectingErrorSink();
             var ast = ParseFile(filename, errorSink, version, indentationInconsistencySeverity);
             foreach (var warn in errorSink.Warnings) {
@@ -3098,7 +3098,7 @@ pass
             return ast;
         }
 
-        private static PythonAst ParseFile(string filename, ErrorSink errorSink, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Ignore) {
+        private static PythonAst ParseFile(string filename, ErrorSink errorSink, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Hint) {
             var src = TestData.GetPath("TestData", "Grammar", filename);
             using (var reader = new StreamReader(src, true)) {
                 var parser = Parser.CreateParser(reader, version, new ParserOptions() { ErrorSink = errorSink, IndentationInconsistencySeverity = indentationInconsistencySeverity });
@@ -3106,7 +3106,7 @@ pass
             }
         }
 
-        private static PythonAst ParseString(string content, ErrorSink errorSink, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Ignore) {
+        private static PythonAst ParseString(string content, ErrorSink errorSink, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Hint) {
             using (var reader = new StringReader(content)) {
                 var parser = Parser.CreateParser(reader, version, new ParserOptions() { ErrorSink = errorSink, IndentationInconsistencySeverity = indentationInconsistencySeverity });
                 return parser.ParseFile();

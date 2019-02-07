@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -34,25 +35,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember GetInScope(string name) => GetInScope(name, CurrentScope);
         public T GetInScope<T>(string name) where T : class, IMember => GetInScope<T>(name, CurrentScope);
 
-        public void DeclareVariable(string name, IMember value, Node expression)
-            => DeclareVariable(name, value, GetLoc(expression));
+        public void DeclareVariable(string name, IMember value, VariableSource source, Node expression)
+            => DeclareVariable(name, value, source, GetLoc(expression));
 
-        public void DeclareVariable(string name, IMember value, LocationInfo location, bool overwrite = false) {
+        public void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location, bool overwrite = false) {
             var member = GetInScope(name);
             if (member != null) {
                 if (!value.IsUnknown()) {
-                    CurrentScope.DeclareVariable(name, value, location);
+                    CurrentScope.DeclareVariable(name, value, source, location);
                 }
             } else {
-                CurrentScope.DeclareVariable(name, value, location);
+                CurrentScope.DeclareVariable(name, value, source, location);
             }
         }
 
         [DebuggerStepThrough]
         public IMember LookupNameInScopes(string name, out IScope scope) => LookupNameInScopes(name, out scope, DefaultLookupOptions);
-
-        [DebuggerStepThrough]
-        public IMember LookupNameInScopes(string name) => LookupNameInScopes(name, DefaultLookupOptions);
 
         [DebuggerStepThrough]
         public IMember LookupNameInScopes(string name, LookupOptions options) => LookupNameInScopes(name, out _, options);
@@ -99,6 +97,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // x: NamedTuple(...)
                 return (await GetValueFromCallableAsync(callExpr, cancellationToken))?.GetPythonType() ?? UnknownType;
             }
+
+            if (expr is IndexExpression indexExpr) {
+                // Try generics
+                var target = await GetValueFromExpressionAsync(indexExpr.Target, cancellationToken);
+                var result = await GetValueFromGenericAsync(target, indexExpr, cancellationToken);
+                if(result != null) {
+                    return result.GetPythonType();
+                }
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
             // Look at specialization and typing first
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             return ann.GetValue(new TypeAnnotationConverter(this, options));
@@ -109,22 +118,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// as a child of the specified scope. Scope is pushed on the stack
         /// and will be removed when returned the disposable is disposed.
         /// </summary>
-        public IDisposable OpenScope(ScopeStatement node, out Scope fromScope) {
+        public IDisposable OpenScope(IPythonModule module, ScopeStatement node, out Scope fromScope) {
             fromScope = null;
+            if (node == null) {
+                return Disposable.Empty;
+            }
+
+            var gs = module.GlobalScope as Scope ?? GlobalScope;
             if (node.Parent != null) {
-                fromScope = (GlobalScope as Scope)
+                fromScope = gs
                     .TraverseBreadthFirst(s => s.Children.OfType<Scope>())
                     .FirstOrDefault(s => s.Node == node.Parent);
             }
 
-            fromScope = fromScope ?? GlobalScope;
-            var scope = fromScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
-            if (scope == null) {
-                scope = new Scope(node, fromScope, true);
-                fromScope.AddChildScope(scope);
+            fromScope = fromScope ?? gs;
+            if (fromScope != null) {
+                var scope = fromScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
+                if (scope == null) {
+                    scope = new Scope(node, fromScope, true);
+                    fromScope.AddChildScope(scope);
+                }
+
+                _openScopes.Push(scope);
+                CurrentScope = scope;
             }
-            _openScopes.Push(scope);
-            CurrentScope = scope;
             return new ScopeTracker(this);
         }
 

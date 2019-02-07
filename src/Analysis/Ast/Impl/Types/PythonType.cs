@@ -24,9 +24,11 @@ namespace Microsoft.Python.Analysis.Types {
     internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName, IEquatable<IPythonType> {
         private readonly object _lock = new object();
         private readonly Func<string, LocationInfo> _locationProvider;
+        private readonly string _name;
         private Func<string, string> _documentationProvider;
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
+        private bool _readonly;
 
         protected IReadOnlyDictionary<string, IMember> Members => WritableMembers;
 
@@ -47,19 +49,17 @@ namespace Microsoft.Python.Analysis.Types {
             Func<string, string> documentationProvider,
             Func<string, LocationInfo> locationProvider,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
-        ) : this(name, typeId) {
+        ) {
+            _name = name ?? throw new ArgumentNullException(nameof(name));
             DeclaringModule = declaringModule;
             _documentationProvider = documentationProvider;
             _locationProvider = locationProvider;
-        }
-
-        public PythonType(string name, BuiltinTypeId typeId) {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId;
         }
 
         #region IPythonType
-        public virtual string Name { get; }
+
+        public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
         public virtual string Documentation => _documentationProvider?.Invoke(Name);
         public IPythonModule DeclaringModule { get; }
         public virtual PythonMemberType MemberType => _typeId.GetMemberId();
@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="instance">Instance of the type.</param>
         /// <param name="memberName">Member name to call, if applicable.</param>
         /// <param name="argSet">Call arguments.</param>
-        public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet argSet) 
+        public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet argSet)
             => instance?.Call(memberName, argSet) ?? UnknownType;
 
         /// <summary>
@@ -122,16 +122,20 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
             lock (_lock) {
-                foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
-                    WritableMembers[v.Name] = v.Value.GetPythonType();
+                if (!_readonly) {
+                    foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
+                        WritableMembers[v.Name] = v.Value;
+                    }
                 }
             }
         }
 
         internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
             lock (_lock) {
-                foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
-                    WritableMembers[kv.Key] = kv.Value;
+                if (!_readonly) {
+                    foreach (var kv in members.Where(m => overwrite || !Members.ContainsKey(m.Key))) {
+                        WritableMembers[kv.Key] = kv.Value;
+                    }
                 }
             }
         }
@@ -146,15 +150,18 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal IMember AddMember(string name, IMember member, bool overwrite) {
             lock (_lock) {
-                if (overwrite || !Members.ContainsKey(name)) {
-                    WritableMembers[name] = member;
+                if (!_readonly) {
+                    if (overwrite || !Members.ContainsKey(name)) {
+                        WritableMembers[name] = member;
+                    }
                 }
                 return member;
             }
         }
 
-        internal bool IsHidden => ContainsMember("__hidden__");
+        internal void MakeReadOnly() => _readonly = true;
 
+        internal bool IsHidden => ContainsMember("__hidden__");
         protected bool ContainsMember(string name) => Members.ContainsKey(name);
         protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;
 

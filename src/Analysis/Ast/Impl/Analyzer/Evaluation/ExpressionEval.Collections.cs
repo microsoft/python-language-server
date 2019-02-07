@@ -17,7 +17,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
@@ -32,9 +31,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            // If target is a generic type, create specific class
-            if (target is IGenericType gen) {
-                return await CreateSpecificFromGenericAsync(gen, expr, cancellationToken);
+            // Try generics
+            var result = await GetValueFromGenericAsync(target, expr, cancellationToken);
+            if (result != null) {
+                return result;
             }
 
             if (expr.Index is SliceExpression || expr.Index is TupleExpression) {
@@ -98,21 +98,5 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
             return UnknownType;
         }
-
-
-        private async Task<IMember> CreateSpecificFromGenericAsync(IGenericType gen, IndexExpression expr, CancellationToken cancellationToken = default) {
-            var args = new List<IPythonType>();
-            if (expr.Index is TupleExpression tex) {
-                foreach (var item in tex.Items) {
-                    var e = await GetValueFromExpressionAsync(item, cancellationToken);
-                    args.Add(e?.GetPythonType() ?? UnknownType);
-                }
-            } else {
-                var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
-                args.Add(index?.GetPythonType() ?? UnknownType);
-            }
-            return gen.CreateSpecificType(args, Module, GetLoc(expr));
-        }
-
     }
 }

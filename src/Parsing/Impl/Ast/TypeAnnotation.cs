@@ -27,7 +27,7 @@ namespace Microsoft.Python.Parsing.Ast {
             Expression = expr ?? throw new ArgumentNullException(nameof(expr));
         }
 
-        public static TypeAnnotation FromType<T>(TypeAnnotationConverter<T> converter, T type) where T : class 
+        public static TypeAnnotation FromType<T>(TypeAnnotationConverter<T> converter, T type) where T : class
             => throw new NotImplementedException();
 
         public PythonLanguageVersion LanguageVersion { get; }
@@ -81,13 +81,18 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             public override bool Walk(ConstantExpression node) {
-                if (node.Value is string s) {
-                    _parse(s)?.Walk(this);
-                } else if (node.Value is AsciiString a) {
-                    _parse(a.String)?.Walk(this);
-                } else if (node.Value == null) {
-                    _ops.Add(new NameOp { Name = "None" });
+                switch (node.Value) {
+                    case string s:
+                        _parse(s)?.Walk(this);
+                        break;
+                    case AsciiString a:
+                        _parse(a.String)?.Walk(this);
+                        break;
+                    case null:
+                        _ops.Add(new NameOp { Name = "None" });
+                        break;
                 }
+
                 return false;
             }
 
@@ -348,7 +353,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// union type, return null.
         /// </summary>
         public virtual IReadOnlyList<T> GetUnionTypes(T unionType) => null;
-        
+
 
         /// <summary>
         /// Returns True if the provided type is not fully defined and

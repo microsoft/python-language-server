@@ -16,11 +16,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Documents {
     /// <summary>
@@ -29,19 +29,24 @@ namespace Microsoft.Python.Analysis.Documents {
     /// the running document table in Visual Studio, see
     /// "https://docs.microsoft.com/en-us/visualstudio/extensibility/internals/running-document-table"/>
     /// </summary>
-    internal sealed class RunningDocumentTable : IRunningDocumentTable, IDisposable {
-        private readonly Dictionary<Uri, IDocument> _documentsByUri = new Dictionary<Uri, IDocument>();
-        private readonly Dictionary<string, IDocument> _documentsByName = new Dictionary<string, IDocument>();
+    public sealed class RunningDocumentTable : IRunningDocumentTable, IDisposable {
+        private readonly Dictionary<Uri, DocumentEntry> _documentsByUri = new Dictionary<Uri, DocumentEntry>();
+        private readonly Dictionary<string, DocumentEntry> _documentsByName = new Dictionary<string, DocumentEntry>();
         private readonly IServiceContainer _services;
-        private readonly IFileSystem _fs;
-        private readonly IModuleResolution _moduleResolution;
+        private readonly object _lock = new object();
         private readonly string _workspaceRoot;
+
+        private IModuleManagement _moduleManagement;
+        private IModuleManagement ModuleManagement => _moduleManagement ?? (_moduleManagement = _services.GetService<IPythonInterpreter>().ModuleResolution);
+
+        private class DocumentEntry {
+            public IDocument Document;
+            public int LockCount;
+        }
 
         public RunningDocumentTable(string workspaceRoot, IServiceContainer services) {
             _workspaceRoot = workspaceRoot;
             _services = services;
-            _fs = services.GetService<IFileSystem>();
-            _moduleResolution = services.GetService<IPythonInterpreter>().ModuleResolution;
         }
 
         public event EventHandler<DocumentEventArgs> Opened;
@@ -53,75 +58,111 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <param name="uri">Document URI.</param>
         /// <param name="content">Document content</param>
         /// <param name="filePath">Optional file path, if different from the URI.</param>
-        public IDocument AddDocument(Uri uri, string content, string filePath = null) {
-            var document = FindDocument(null, uri);
-            if (document != null) {
-                return OpenDocument(document, ModuleLoadOptions.Open);
+        public IDocument OpenDocument(Uri uri, string content, string filePath = null) {
+            var justOpened = false;
+            DocumentEntry entry;
+            lock (_lock) {
+                entry = FindDocument(null, uri);
+                if (entry == null) {
+                    var mco = new ModuleCreationOptions {
+                        ModuleName = Path.GetFileNameWithoutExtension(uri.LocalPath),
+                        Content = content,
+                        FilePath = filePath,
+                        Uri = uri,
+                        ModuleType = ModuleType.User
+                    };
+                    entry = CreateDocument(mco);
+                }
+                justOpened = TryOpenDocument(entry, content);
             }
-
-            var mco = new ModuleCreationOptions {
-                ModuleName = Path.GetFileNameWithoutExtension(uri.LocalPath),
-                Content = content,
-                FilePath = filePath,
-                Uri = uri,
-                ModuleType = ModuleType.User,
-                LoadOptions = ModuleLoadOptions.Open
-            };
-            return CreateDocument(mco);
+            if (justOpened) {
+                Opened?.Invoke(this, new DocumentEventArgs(entry.Document));
+            }
+            return entry.Document;
         }
 
         /// <summary>
         /// Adds library module to the list of available documents.
         /// </summary>
         public IDocument AddModule(ModuleCreationOptions mco) {
-            if (mco.Uri == null) {
-                mco.FilePath = mco.FilePath ?? throw new ArgumentNullException(nameof(mco.FilePath));
-                if (!Uri.TryCreate(mco.FilePath, UriKind.Absolute, out var uri)) {
-                    throw new ArgumentException("Unable to determine URI from the file path.");
-                }
-                mco.Uri = uri;
-            }
+            lock (_lock) {
+                if (mco.Uri == null) {
+                    mco.FilePath = mco.FilePath ?? throw new ArgumentNullException(nameof(mco.FilePath));
+                    if (!Uri.TryCreate(mco.FilePath, UriKind.Absolute, out var uri)) {
+                        throw new ArgumentException("Unable to determine URI from the file path.");
+                    }
 
-            return FindDocument(mco.FilePath, mco.Uri) ?? CreateDocument(mco);
+                    mco.Uri = uri;
+                }
+
+                var entry = FindDocument(mco.FilePath, mco.Uri) ?? CreateDocument(mco);
+                entry.LockCount++;
+                return entry.Document;
+            }
         }
 
-        public IDocument GetDocument(Uri documentUri)
-            => _documentsByUri.TryGetValue(documentUri, out var document) ? document : null;
+        public IDocument GetDocument(Uri documentUri) {
+            lock (_lock) {
+                return _documentsByUri.TryGetValue(documentUri, out var entry) ? entry.Document : null;
+            }
+        }
 
-        public IDocument GetDocument(string name)
-            => _documentsByName.TryGetValue(name, out var document) ? document : null;
+        public IDocument GetDocument(string name) {
+            lock (_lock) {
+                return _documentsByName.TryGetValue(name, out var entry) ? entry.Document : null;
+            }
+        }
 
-        public IEnumerator<IDocument> GetEnumerator() => _documentsByUri.Values.GetEnumerator();
+        public IEnumerator<IDocument> GetEnumerator() => _documentsByUri.Values.Select(e => e.Document).GetEnumerator();
 
-        public void RemoveDocument(Uri documentUri) {
-            if (_documentsByUri.TryGetValue(documentUri, out var document)) {
-                _documentsByUri.Remove(documentUri);
-                _documentsByName.Remove(document.Name);
-                document.IsOpen = false;
-                Closed?.Invoke(this, new DocumentEventArgs(document));
-                // TODO: Remove from module resolution?
+        public void CloseDocument(Uri documentUri) {
+            var justClosed = false;
+            DocumentEntry entry;
+            lock (_lock) {
+                if (_documentsByUri.TryGetValue(documentUri, out entry)) {
+                    Debug.Assert(entry.LockCount >= 1);
+
+                    if (entry.Document.IsOpen) {
+                        entry.Document.IsOpen = false;
+                        justClosed = true;
+                    }
+
+                    entry.LockCount--;
+
+                    if (entry.LockCount == 0) {
+                        _documentsByUri.Remove(documentUri);
+                        _documentsByName.Remove(entry.Document.Name);
+                        entry.Document.Dispose();
+                    }
+                    // TODO: Remove from module resolution?
+                }
+            }
+            if(justClosed) {
+                Closed?.Invoke(this, new DocumentEventArgs(entry.Document));
             }
         }
 
         IEnumerator IEnumerable.GetEnumerator() => _documentsByUri.Values.GetEnumerator();
 
         public void Dispose() {
-            foreach (var d in _documentsByUri.Values.OfType<IDisposable>()) {
-                d.Dispose();
+            lock(_lock) {
+                foreach (var d in _documentsByUri.Values.OfType<IDisposable>()) {
+                    d.Dispose();
+                }
             }
         }
 
-        private IDocument FindDocument(string moduleName, Uri uri) {
-            if (uri != null && _documentsByUri.TryGetValue(uri, out var document)) {
-                return document;
+        private DocumentEntry FindDocument(string moduleName, Uri uri) {
+            if (uri != null && _documentsByUri.TryGetValue(uri, out var entry)) {
+                return entry;
             }
-            if (!string.IsNullOrEmpty(moduleName) && _documentsByName.TryGetValue(moduleName, out document)) {
-                return document;
+            if (!string.IsNullOrEmpty(moduleName) && _documentsByName.TryGetValue(moduleName, out entry)) {
+                return entry;
             }
             return null;
         }
 
-        private IDocument CreateDocument(ModuleCreationOptions mco) {
+        private DocumentEntry CreateDocument(ModuleCreationOptions mco) {
             IDocument document;
             switch (mco.ModuleType) {
                 case ModuleType.Stub:
@@ -141,19 +182,22 @@ namespace Microsoft.Python.Analysis.Documents {
                     throw new InvalidOperationException($"CreateDocument does not support module type {mco.ModuleType}");
             }
 
-            _documentsByUri[document.Uri] = document;
-            _documentsByName[mco.ModuleName] = document;
+            var entry = new DocumentEntry { Document = document, LockCount = 0 };
+            _documentsByUri[document.Uri] = entry;
+            _documentsByName[mco.ModuleName] = entry;
 
-            _moduleResolution.AddModulePath(document.FilePath);
-            return OpenDocument(document, mco.LoadOptions);
+            ModuleManagement.AddModulePath(document.FilePath);
+            return entry;
         }
 
-        private IDocument OpenDocument(IDocument document, ModuleLoadOptions options) {
-            if ((options & ModuleLoadOptions.Open) == ModuleLoadOptions.Open) {
-                document.IsOpen = true;
-                Opened?.Invoke(this, new DocumentEventArgs(document));
+        private bool TryOpenDocument(DocumentEntry entry, string content) {
+            if (!entry.Document.IsOpen) {
+                entry.Document.Reset(content);
+                entry.Document.IsOpen = true;
+                entry.LockCount++;
+                return true;
             }
-            return document;
+            return false;
         }
     }
 }

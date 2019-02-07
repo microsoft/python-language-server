@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
@@ -33,7 +34,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private IPythonType _boolType;
 
         public BuiltinsPythonModule(string moduleName, string filePath, IServiceContainer services)
-            : base(moduleName, ModuleType.Builtins, filePath, null, services, ModuleLoadOptions.None) { } // TODO: builtins stub
+            : base(moduleName, ModuleType.Builtins, filePath, null, services) { } // TODO: builtins stub
 
         public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 
@@ -48,6 +49,9 @@ namespace Microsoft.Python.Analysis.Modules {
             lock (AnalysisLock) {
                 SpecializeTypes();
                 SpecializeFunctions();
+                foreach (var n in GetMemberNames()) {
+                    GetMember(n).GetPythonType<PythonType>()?.MakeReadOnly();
+                }
             }
         }
 
@@ -111,47 +115,47 @@ namespace Microsoft.Python.Analysis.Modules {
             _hiddenNames.Add("__builtin_module_names__");
 
             if (_boolType != null) {
-                Analysis.GlobalScope.DeclareVariable("True", _boolType, LocationInfo.Empty);
-                Analysis.GlobalScope.DeclareVariable("False", _boolType, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable("True", _boolType, VariableSource.Declaration, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable("False", _boolType, VariableSource.Declaration, LocationInfo.Empty);
             }
 
             if (noneType != null) {
-                Analysis.GlobalScope.DeclareVariable("None", noneType, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable("None", noneType, VariableSource.Declaration, LocationInfo.Empty);
             }
 
             foreach (var n in GetMemberNames()) {
                 var t = GetMember(n).GetPythonType();
                 if (t.TypeId == BuiltinTypeId.Unknown && t.MemberType != PythonMemberType.Unknown) {
-                    (t as PythonType)?.TrySetTypeId(BuiltinTypeId.Type);
+                    if (t is PythonType pt) {
+                        pt.TrySetTypeId(BuiltinTypeId.Type);
+                    }
                 }
             }
         }
 
         private void SpecializeFunctions() {
             // TODO: deal with commented out functions.
-            SpecializeFunction("abs", BuiltinsSpecializations.Identity);
-            SpecializeFunction("cmp", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
-            SpecializeFunction("dir", BuiltinsSpecializations.ListOfStrings);
-            SpecializeFunction("eval", Interpreter.GetBuiltinType(BuiltinTypeId.Object));
-            SpecializeFunction("globals", BuiltinsSpecializations.DictStringToObject);
-            SpecializeFunction(@"isinstance", _boolType);
-            SpecializeFunction(@"issubclass", _boolType);
-            SpecializeFunction(@"iter", BuiltinsSpecializations.Iterator);
-            SpecializeFunction("locals", BuiltinsSpecializations.DictStringToObject);
-            //SpecializeFunction(_builtinName, "max", ReturnUnionOfInputs);
-            //SpecializeFunction(_builtinName, "min", ReturnUnionOfInputs);
-            SpecializeFunction("next", BuiltinsSpecializations.Next);
-            //SpecializeFunction(_builtinName, "open", SpecialOpen);
-            SpecializeFunction("ord", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
-            SpecializeFunction("pow", BuiltinsSpecializations.Identity);
-            SpecializeFunction("range", BuiltinsSpecializations.Range);
-            SpecializeFunction("type", BuiltinsSpecializations.TypeInfo);
+            Analysis.SpecializeFunction("abs", BuiltinsSpecializations.Identity);
+            Analysis.SpecializeFunction("cmp", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
+            Analysis.SpecializeFunction("dir", BuiltinsSpecializations.ListOfStrings);
+            Analysis.SpecializeFunction("eval", Interpreter.GetBuiltinType(BuiltinTypeId.Object));
+            Analysis.SpecializeFunction("globals", BuiltinsSpecializations.DictStringToObject);
+            Analysis.SpecializeFunction(@"isinstance", _boolType);
+            Analysis.SpecializeFunction(@"issubclass", _boolType);
+            Analysis.SpecializeFunction(@"iter", BuiltinsSpecializations.Iterator);
+            Analysis.SpecializeFunction("locals", BuiltinsSpecializations.DictStringToObject);
+            Analysis.SpecializeFunction("next", BuiltinsSpecializations.Next);
+            Analysis.SpecializeFunction("open", BuiltinsSpecializations.Open, new[] { "io" });
+            Analysis.SpecializeFunction("ord", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
+            Analysis.SpecializeFunction("pow", BuiltinsSpecializations.Identity);
+            Analysis.SpecializeFunction("range", BuiltinsSpecializations.Range);
+            Analysis.SpecializeFunction("type", BuiltinsSpecializations.TypeInfo);
 
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);
-            SpecializeFunction("sum", BuiltinsSpecializations.CollectionItem);
+            Analysis.SpecializeFunction("sum", BuiltinsSpecializations.CollectionItem);
             //SpecializeFunction(_builtinName, "super", SpecialSuper);
-            SpecializeFunction("vars", BuiltinsSpecializations.DictStringToObject);
+            Analysis.SpecializeFunction("vars", BuiltinsSpecializations.DictStringToObject);
         }
     }
 }

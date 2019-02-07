@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
     public interface IVariableCollection: IReadOnlyCollection<IVariable> {

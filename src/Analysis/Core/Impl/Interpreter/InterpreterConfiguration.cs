@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             LibraryPath = libPath ?? string.Empty;
             SitePackagesPath = sitePackagesPath ?? string.Empty;
             TypeshedPath = typeshedPath ?? string.Empty;
-            ModuleCachePath = moduleCachePath ?? string.Empty;
+            DatabasePath = moduleCachePath ?? string.Empty;
         }
 
         private static string Read(IReadOnlyDictionary<string, object> d, string k)
@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             PathEnvironmentVariable = Read(properties, nameof(PathEnvironmentVariable));
             LibraryPath = Read(properties, nameof(LibraryPath));
             TypeshedPath = Read(properties, nameof(TypeshedPath));
-            ModuleCachePath = Read(properties, nameof(ModuleCachePath));
+            DatabasePath = Read(properties, nameof(DatabasePath));
             Architecture = InterpreterArchitecture.TryParse(Read(properties, nameof(Architecture)));
             try {
                 Version = Version.Parse(Read(properties, nameof(Version)));
@@ -86,7 +86,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             properties[nameof(PathEnvironmentVariable)] = PathEnvironmentVariable;
             properties[nameof(LibraryPath)] = LibraryPath;
             properties[nameof(TypeshedPath)] = TypeshedPath;
-            properties[nameof(ModuleCachePath)] = ModuleCachePath;
+            properties[nameof(DatabasePath)] = DatabasePath;
             properties[nameof(Architecture)] = Architecture.ToString();
             if (Version != null) {
                 properties[nameof(Version)] = Version.ToString();
@@ -184,7 +184,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <summary>
         /// Module cache folder.
         /// </summary>
-        public string ModuleCachePath { get; set; }
+        public string DatabasePath { get; set; }
 
         public static bool operator ==(InterpreterConfiguration x, InterpreterConfiguration y)
             => x?.Equals(y) ?? ReferenceEquals(y, null);

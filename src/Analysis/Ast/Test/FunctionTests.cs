@@ -164,6 +164,25 @@ y = f(1, 2)
         }
 
         [TestMethod, Priority(0)]
+        public async Task ReturnValueAnnotatedQuoted() {
+            const string code = @"
+def f(a, b) -> 'int':
+    return a + b
+
+x = f('x', 'y')
+y = f(1, 2)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("f")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveReturnType(BuiltinTypeId.Int);
+
+            analysis.Should()
+                .HaveVariable("x").OfType(BuiltinTypeId.Int).And
+                .HaveVariable("y").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task BadMethod() {
             const string code = @"
 class cls(object):

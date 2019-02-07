@@ -19,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -38,13 +39,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             cancellationToken.ThrowIfCancellationRequested();
 
             // Open class scope chain
-            using (Eval.OpenScope(_classDef, out var outerScope)) {
+            using (Eval.OpenScope(Module, _classDef, out var outerScope)) {
                 var instance = Eval.GetInScope(_classDef.Name, outerScope);
                 if (!(instance?.GetPythonType() is PythonClassType classInfo)) {
                     if (instance != null) {
                         // TODO: warning that variable is already declared of a different type.
                     }
-                    // May be odd case like class inside a class.
                     return;
                 }
 
@@ -61,10 +61,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         bases.Add(b.GetPythonType());
                     }
                 }
-                _class.SetBases(Interpreter, bases);
+                _class.SetBases(bases);
 
                 // Declare __class__ variable in the scope.
-                Eval.DeclareVariable("__class__", _class, _classDef);
+                Eval.DeclareVariable("__class__", _class, VariableSource.Declaration, _classDef);
 
                 await ProcessClassBody(cancellationToken);
             }
@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             // Process imports
             foreach (var s in GetStatements<FromImportStatement>(_classDef)) {
-                await FromImportHandler.HandleFromImportAsync(s, cancellationToken);
+                await ImportHandler.HandleFromImportAsync(s, cancellationToken);
             }
             foreach (var s in GetStatements<ImportStatement>(_classDef)) {
                 await ImportHandler.HandleImportAsync(s, cancellationToken);
@@ -139,7 +139,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void UpdateClassMembers() {
             // Add members from this file
-            _class.AddMembers(Eval.CurrentScope.Variables, false);
+            var members = Eval.CurrentScope.Variables.Where(v => v.Source == VariableSource.Declaration || v.Source == VariableSource.Import);
+            _class.AddMembers(members, false);
             // Add members from stub
             var stubClass = Eval.Module.Stub?.GetMember<IPythonClassType>(_class.Name);
             _class.AddMembers(stubClass, false);

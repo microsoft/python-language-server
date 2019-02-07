@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -80,7 +81,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (name != null && typeName != null) {
                     var typeId = typeName.GetTypeId();
                     if (typeId != BuiltinTypeId.Unknown) {
-                        Eval.DeclareVariable(name, new PythonType(typeName, typeId), nex);
+                        var t = new PythonType(typeName, Module, string.Empty, LocationInfo.Empty, typeId);
+                        Eval.DeclareVariable(name, t, VariableSource.Declaration, nex);
                     }
                 }
             }
