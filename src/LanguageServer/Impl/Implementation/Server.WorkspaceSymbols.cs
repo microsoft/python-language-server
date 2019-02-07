@@ -14,9 +14,11 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
+using Microsoft.Python.LanguageServer.Indexing;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
@@ -25,32 +27,50 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private static int _symbolHierarchyMaxSymbols = 1000;
 
         public async Task<SymbolInformation[]> WorkspaceSymbols(WorkspaceSymbolParams @params, CancellationToken cancellationToken) {
-            return Array.Empty< SymbolInformation>();
+            var symbols = await _indexManager.WorkspaceSymbolsAsync(@params.query,
+                                                                    _symbolHierarchyMaxSymbols,
+                                                                    cancellationToken);
+            return symbols.Select(MakeSymbolInfo).ToArray();
         }
 
-        public async Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
-            return Array.Empty<SymbolInformation>();
-        }
+        /*public async Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
+            var path = @params.textDocument.uri.AbsolutePath;
+            var symbols = await _indexManager.HierarchicalDocumentSymbolsAsync(path, cancellationToken);
+            return symbols.Flatten(path, depthLimit: _symbolHierarchyDepthLimit)
+                            .Select(s => {
+                                cancellationToken.ThrowIfCancellationRequested();
+                                return MakeSymbolInfo(s);
+                            }).ToArray();
+        }*/
 
         public async Task<DocumentSymbol[]> HierarchicalDocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
-            return Array.Empty<DocumentSymbol>();
+            var path = @params.textDocument.uri.AbsolutePath;
+            var symbols = await _indexManager.HierarchicalDocumentSymbolsAsync(path, cancellationToken);
+            return symbols.MaybeEnumerate().Select(hSym => MakeDocumentSymbol(hSym)).ToArray();
         }
 
+        private static SymbolInformation MakeSymbolInfo(Indexing.FlatSymbol s) {
+            return new SymbolInformation {
+                name = s.Name,
+                kind = (Protocol.SymbolKind)s.Kind,
+                location = new Location {
+                    range = s.Range,
+                    uri = new Uri(s.DocumentPath),
+                },
+                containerName = s.ContainerName,
+            };
+        }
 
-        private static SymbolKind ToSymbolKind(PythonMemberType memberType) {
-            switch (memberType) {
-                case PythonMemberType.Unknown: return SymbolKind.None;
-                case PythonMemberType.Class: return SymbolKind.Class;
-                case PythonMemberType.Instance: return SymbolKind.Variable;
-                case PythonMemberType.Function: return SymbolKind.Function;
-                case PythonMemberType.Method: return SymbolKind.Method;
-                case PythonMemberType.Module: return SymbolKind.Module;
-                case PythonMemberType.Property: return SymbolKind.Property;
-                case PythonMemberType.Union: return SymbolKind.Object;
-                case PythonMemberType.Variable: return SymbolKind.Variable;
-                case PythonMemberType.Generic: return SymbolKind.TypeParameter;
-                default: return SymbolKind.None;
-            }
+        private DocumentSymbol MakeDocumentSymbol(HierarchicalSymbol hSym) {
+            return new DocumentSymbol {
+                name = hSym.Name,
+                detail = hSym.Detail,
+                kind = (Protocol.SymbolKind)hSym.Kind,
+                deprecated = hSym.Deprecated ?? false,
+                range = hSym.Range,
+                selectionRange = hSym.SelectionRange,
+                children = hSym.Children.MaybeEnumerate().Select(MakeDocumentSymbol).ToArray(),
+            };
         }
     }
 }

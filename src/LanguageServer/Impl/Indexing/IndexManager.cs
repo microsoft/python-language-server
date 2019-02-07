@@ -68,11 +68,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     Trace.TraceError(e.Message);
                     _addRootTcs.SetException(e);
                 }
-            });
+            }, _allIndexCts.Token);
         }
 
-        public Task AddRootDirectoryAsync() {
-            return _addRootTcs.Task;
+        public Task AddRootDirectoryAsync(CancellationToken cancellationToken = default) {
+            // Add cancellation token around task
+            return Task.Run(async () => await _addRootTcs.Task, cancellationToken);
         }
 
 
@@ -113,13 +114,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _allIndexCts.Dispose();
         }
 
-        public async Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path) {
-            await AddRootDirectoryAsync();
+        public async Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default) {
+            await AddRootDirectoryAsync(cancellationToken);
             return _symbolIndex.HierarchicalDocumentSymbols(path).ToList();
         }
 
-        public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength) {
-            await AddRootDirectoryAsync();
+        public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default) {
+            await AddRootDirectoryAsync(cancellationToken);
             return _symbolIndex.WorkspaceSymbols(query).Take(maxLength).ToList();
         }
     }
