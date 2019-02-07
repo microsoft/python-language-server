@@ -252,6 +252,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public void Dispose() => Dispose(true);
 
         protected virtual void Dispose(bool disposing) {
+            _diagnosticsService.Clear(Uri);
             _allProcessingCts.Cancel();
             _allProcessingCts.Dispose();
         }
@@ -290,7 +291,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Task t = null;
             while (true) {
                 lock (AnalysisLock) {
-                    if(t == _parsingTask) {
+                    if (t == _parsingTask) {
                         break;
                     }
                     cancellationToken.ThrowIfCancellationRequested();
@@ -378,9 +379,15 @@ namespace Microsoft.Python.Analysis.Modules {
                     throw new OperationCanceledException();
                 }
                 _ast = ast;
-
                 _parseErrors = sink.Diagnostics;
-                _diagnosticsService.Add(Uri, _parseErrors);
+
+                if (ModuleType == ModuleType.User) {
+                    if (_parseErrors.Count > 0) {
+                        _diagnosticsService.Add(Uri, _parseErrors);
+                    } else {
+                        _diagnosticsService.Clear(Uri);
+                    }
+                }
 
                 _parsingTask = null;
                 ContentState = State.Parsed;

@@ -158,6 +158,8 @@ namespace Microsoft.Python.Analysis.Tests {
                 }
             }
 
+            public void Clear(Uri uri) { }
+
             public void Add(Uri documentUri, DiagnosticsEntry entry) {
                 lock (_lock) {
                     if (!_diagnostics.TryGetValue(documentUri, out var list)) {

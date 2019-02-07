@@ -25,13 +25,13 @@ using Microsoft.Python.Parsing;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Diagnostics {
-
     internal sealed class DiagnosticsService : IDiagnosticsService, IDisposable {
         private readonly Dictionary<Uri, List<DiagnosticsEntry>> _pendingDiagnostics = new Dictionary<Uri, List<DiagnosticsEntry>>();
         private readonly DisposableBag _disposables = DisposableBag.Create<DiagnosticsService>();
         private readonly JsonRpc _rpc;
         private readonly object _lock = new object();
         private DateTime _lastChangeTime;
+        private bool _changed;
 
         public DiagnosticsService(IServiceContainer services) {
             var idleTimeService = services.GetService<IIdleTimeService>();
@@ -48,50 +48,75 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         #region IDiagnosticsService
         public IReadOnlyList<DiagnosticsEntry> Diagnostics {
             get {
-                lock(_lock) {
+                lock (_lock) {
                     return _pendingDiagnostics.Values.SelectMany().ToArray();
                 }
             }
         }
 
         public void Add(Uri documentUri, DiagnosticsEntry entry) {
-            lock(_lock) {
-                if(!_pendingDiagnostics.TryGetValue(documentUri, out var list)) {
+            lock (_lock) {
+                if (!_pendingDiagnostics.TryGetValue(documentUri, out var list)) {
                     _pendingDiagnostics[documentUri] = list = new List<DiagnosticsEntry>();
                 }
                 list.Add(entry);
                 _lastChangeTime = DateTime.Now;
+                _changed = true;
+            }
+        }
+
+        public void Clear(Uri documentUri) {
+            lock (_lock) {
+                ClearPendingDiagnostics(documentUri);
+                _pendingDiagnostics.Remove(documentUri);
             }
         }
 
         public int PublishingDelay { get; set; }
         #endregion
 
-        public void Dispose() => _disposables.TryDispose();
+        public void Dispose() {
+            _disposables.TryDispose();
+            ClearAllPendingDiagnostics();
+        }
 
         private void OnClosing(object sender, EventArgs e) => Dispose();
 
         private void OnIdle(object sender, EventArgs e) {
-            if (_pendingDiagnostics.Count > 0 && (DateTime.Now - _lastChangeTime).TotalMilliseconds > PublishingDelay) {
+            if (_changed && (DateTime.Now - _lastChangeTime).TotalMilliseconds > PublishingDelay) {
                 PublishPendingDiagnostics();
             }
         }
 
         private void PublishPendingDiagnostics() {
-            List<KeyValuePair<Uri, List<DiagnosticsEntry>>> list;
-
             lock (_lock) {
-                list = _pendingDiagnostics.ToList();
+                foreach (var kvp in _pendingDiagnostics) {
+                    var parameters = new PublishDiagnosticsParams {
+                        uri = kvp.Key,
+                        diagnostics = kvp.Value.Select(x => ToDiagnostic(kvp.Key, x)).ToArray()
+                    };
+                    _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
+                }
                 _pendingDiagnostics.Clear();
+                _changed = false;
             }
+        }
 
-            foreach (var kvp in list) {
-                var parameters = new PublishDiagnosticsParams {
-                    uri = kvp.Key,
-                    diagnostics = kvp.Value.Select(x => ToDiagnostic(kvp.Key, x)).ToArray()
-                };
-                _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
+        private void ClearAllPendingDiagnostics() {
+            lock (_lock) {
+                foreach (var uri in _pendingDiagnostics.Keys) {
+                    ClearPendingDiagnostics(uri);
+                }
+                _changed = false;
             }
+        }
+
+        private void ClearPendingDiagnostics(Uri uri) {
+            var parameters = new PublishDiagnosticsParams {
+                uri = uri,
+                diagnostics = Array.Empty<Diagnostic>()
+            };
+            _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
         }
 
         private static Diagnostic ToDiagnostic(Uri uri, DiagnosticsEntry e) {

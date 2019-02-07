@@ -20,6 +20,7 @@ namespace Microsoft.Python.Analysis.Diagnostics {
     public interface IDiagnosticsService {
         IReadOnlyList<DiagnosticsEntry> Diagnostics { get; }
         void Add(Uri documentUri, DiagnosticsEntry entry);
+        void Clear(Uri documentUri);
         int PublishingDelay { get; set; }
     }
 }
