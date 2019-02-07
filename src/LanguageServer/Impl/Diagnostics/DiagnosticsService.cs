@@ -20,15 +20,15 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
+using Microsoft.Python.Core.Services;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
-using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Diagnostics {
     internal sealed class DiagnosticsService : IDiagnosticsService, IDisposable {
         private readonly Dictionary<Uri, List<DiagnosticsEntry>> _diagnostics = new Dictionary<Uri, List<DiagnosticsEntry>>();
         private readonly DisposableBag _disposables = DisposableBag.Create<DiagnosticsService>();
-        private readonly JsonRpc _rpc;
+        private readonly IClientApplication _clientApp;
         private readonly object _lock = new object();
         private DateTime _lastChangeTime;
         private bool _changed;
@@ -44,7 +44,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                     .Add(() => idleTimeService.Idle -= OnIdle)
                     .Add(() => idleTimeService.Idle -= OnClosing);
             }
-            _rpc = services.GetService<JsonRpc>();
+            _clientApp = services.GetService<IClientApplication>();
         }
 
         #region IDiagnosticsService
@@ -66,12 +66,14 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
 
         public void Remove(Uri documentUri) {
             lock (_lock) {
+                // Before removing the document, make sure we clear its diagnostics.
+                _diagnostics[documentUri] = new List<DiagnosticsEntry>();
+                PublishDiagnostics();
                 _diagnostics.Remove(documentUri);
-                _changed = true;
             }
         }
 
-        public int PublishingDelay { get; set; }
+        public int PublishingDelay { get; set; } = 1000;
         #endregion
 
         public void Dispose() {
@@ -94,7 +96,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                         uri = kvp.Key,
                         diagnostics = kvp.Value.Select(ToDiagnostic).ToArray()
                     };
-                    _rpc.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
+                    _clientApp.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
                 }
                 _changed = false;
             }

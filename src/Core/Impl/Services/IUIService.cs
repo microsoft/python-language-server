@@ -16,7 +16,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace Microsoft.Python.Core.Shell {
+namespace Microsoft.Python.Core.Services {
     /// <summary>
     /// Service that represents the application user interface.
     /// </summary>

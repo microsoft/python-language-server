@@ -28,6 +28,7 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
@@ -35,25 +36,26 @@ using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Tests;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
+using NSubstitute;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     public abstract class AnalysisTestBase {
         protected TestLogger TestLogger { get; } = new TestLogger();
-        protected ServiceManager _sm;
+        protected ServiceManager Services { get; private set; }
 
         protected virtual IDiagnosticsService GetDiagnosticsService(IServiceContainer s) => null;
 
         protected virtual ServiceManager CreateServiceManager() {
-            _sm = new ServiceManager();
+            Services = new ServiceManager();
 
             var platform = new OSPlatform();
-            _sm
+            Services
                 .AddService(TestLogger)
                 .AddService(platform)
                 .AddService(new FileSystem(platform));
 
-            return _sm;
+            return Services;
         }
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
@@ -68,7 +70,13 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var sm = CreateServiceManager();
 
-            var ds = GetDiagnosticsService(_sm);
+            var clientApp = Substitute.For<IClientApplication>();
+            sm.AddService(clientApp);
+
+            var idle = Substitute.For<IIdleTimeService>();
+            sm.AddService(idle);
+
+            var ds = GetDiagnosticsService(Services);
             if (ds != null) {
                 sm.AddService(ds);
             }
@@ -100,7 +108,6 @@ namespace Microsoft.Python.Analysis.Tests {
             InterpreterConfiguration configuration = null,
             string modulePath = null) {
 
-            var moduleUri = TestData.GetDefaultModuleUri();
             modulePath = modulePath ?? TestData.GetDefaultModulePath();
             var moduleName = Path.GetFileNameWithoutExtension(modulePath);
             var moduleDirectory = Path.GetDirectoryName(modulePath);
@@ -109,14 +116,20 @@ namespace Microsoft.Python.Analysis.Tests {
             return await GetAnalysisAsync(code, services, moduleName, modulePath);
         }
 
+        protected async Task<IDocumentAnalysis> GetNextAnalysisAsync(string code, string modulePath = null) {
+            modulePath = modulePath ?? TestData.GetNextModulePath();
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            return await GetAnalysisAsync(code, Services, moduleName, modulePath);
+        }
+
         protected async Task<IDocumentAnalysis> GetAnalysisAsync(
             string code,
             IServiceContainer services,
             string moduleName = null,
             string modulePath = null) {
 
-            var moduleUri = TestData.GetDefaultModuleUri();
-            modulePath = modulePath ?? TestData.GetDefaultModulePath();
+            var moduleUri = modulePath != null ? new Uri(modulePath) : TestData.GetDefaultModuleUri();
+            modulePath = modulePath ?? TestData .GetDefaultModulePath();
             moduleName = moduleName ?? Path.GetFileNameWithoutExtension(modulePath);
 
             IDocument doc;

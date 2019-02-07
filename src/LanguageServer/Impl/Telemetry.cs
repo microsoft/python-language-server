@@ -18,7 +18,7 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Shell;
+using Microsoft.Python.Core.Services;
 using Microsoft.Python.LanguageServer.Protocol;
 using StreamJsonRpc;
 
@@ -105,7 +105,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public override void WriteLine(string message) { }
 
         // The only thing that this listener should do is look for RPC
-        // incovation error events to then send. The base TraceListener
+        // invocation error events to then send. The base TraceListener
         // implements the its methods by building strings from given
         // arguments, then passing them to the abstract Write and
         // WriteLine (implemented as noops above). To prevent that extra

@@ -16,26 +16,25 @@
 
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Shell;
-using StreamJsonRpc;
+using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.LanguageServer.Services {
     public sealed class ProgressService : IProgressService {
-        private readonly JsonRpc _rpc;
-        public ProgressService(JsonRpc rpc) {
-            _rpc = rpc;
+        private readonly IClientApplication _clientApp;
+        public ProgressService(IClientApplication clientApp) {
+            _clientApp = clientApp;
         }
 
-        public IProgress BeginProgress() => new Progress(_rpc);
+        public IProgress BeginProgress() => new Progress(_clientApp);
 
         private class Progress : IProgress {
-            private readonly JsonRpc _rpc;
-            public Progress(JsonRpc rpc) {
-                _rpc = rpc;
-                _rpc.NotifyAsync("python/beginProgress").DoNotWait();
+            private readonly IClientApplication _clientApp;
+            public Progress(IClientApplication clientApp) {
+                _clientApp = clientApp;
+                _clientApp.NotifyAsync("python/beginProgress").DoNotWait();
             }
-            public Task Report(string message) => _rpc.NotifyAsync("python/reportProgress", message);
-            public void Dispose() => _rpc.NotifyAsync("python/endProgress").DoNotWait();
+            public Task Report(string message) => _clientApp.NotifyAsync("python/reportProgress", message);
+            public void Dispose() => _clientApp.NotifyAsync("python/endProgress").DoNotWait();
         }
     }
 }

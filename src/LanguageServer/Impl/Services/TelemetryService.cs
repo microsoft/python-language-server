@@ -16,18 +16,17 @@
 
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.Python.Core.Shell;
-using StreamJsonRpc;
+using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.LanguageServer.Services {
 #pragma warning disable CS0612 // Type or member is obsolete
     public sealed class TelemetryService : ITelemetryService {
 #pragma warning restore CS0612 // Type or member is obsolete
-        private readonly JsonRpc _rpc;
+        private readonly IClientApplication _clientApp;
         private readonly string _plsVersion;
 
-        public TelemetryService(JsonRpc rpc) {
-            _rpc = rpc;
+        public TelemetryService(IClientApplication clientApp) {
+            _clientApp = clientApp;
 
             _plsVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 #if DEBUG
@@ -37,7 +36,7 @@ namespace Microsoft.Python.LanguageServer.Services {
 
         public Task SendTelemetryAsync(TelemetryEvent telemetryEvent) {
             telemetryEvent.Properties["plsVersion"] = _plsVersion;
-            return _rpc.NotifyWithParameterObjectAsync("telemetry/event", telemetryEvent);
+            return _clientApp.NotifyWithParameterObjectAsync("telemetry/event", telemetryEvent);
         }
     }
 }
