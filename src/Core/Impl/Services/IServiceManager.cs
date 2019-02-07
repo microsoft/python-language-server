@@ -16,7 +16,7 @@
 
 using System;
 
-namespace Microsoft.Python.Core.Shell {
+namespace Microsoft.Python.Core.Services {
     public interface IServiceManager : IServiceContainer, IDisposable {
         /// <summary>
         /// Adds service instance

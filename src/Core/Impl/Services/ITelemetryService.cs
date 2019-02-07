@@ -17,7 +17,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Microsoft.Python.Core.Shell {
+namespace Microsoft.Python.Core.Services {
     public interface ITelemetryService {
         Task SendTelemetryAsync(TelemetryEvent telemetryEvent);
     }

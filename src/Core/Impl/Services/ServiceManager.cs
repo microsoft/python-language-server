@@ -22,7 +22,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Disposables;
-using Microsoft.Python.Core.Shell;
 using static System.FormattableString;
 
 namespace Microsoft.Python.Core.Services {

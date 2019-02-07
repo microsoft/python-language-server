@@ -23,7 +23,7 @@ using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Shell;
+using Microsoft.Python.Core.Services;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer {
