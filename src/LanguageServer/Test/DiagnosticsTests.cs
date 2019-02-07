@@ -143,19 +143,20 @@ namespace Microsoft.Python.LanguageServer.Tests {
             ds.Diagnostics[doc.Uri].Count.Should().Be(1);
 
             var clientApp = Services.GetService<IClientApplication>();
-            var idle = Services.GetService<IIdleTimeService>();
             var uri = doc.Uri;
+            var callReceived = false;
             clientApp.When(x => x.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", Arg.Any<object>()))
                 .Do(x => {
                     var dp = x.Args()[1] as PublishDiagnosticsParams;
                     dp.Should().NotBeNull();
                     dp.diagnostics.Length.Should().Be(0);
                     dp.uri.Should().Be(uri);
+                    callReceived = true;
                 });
 
             doc.Dispose();
-            idle.Idle += Raise.EventWith(null, EventArgs.Empty);
             ds.Diagnostics.TryGetValue(doc.Uri, out _).Should().BeFalse();
+            callReceived.Should().BeTrue();
         }
     }
 }
