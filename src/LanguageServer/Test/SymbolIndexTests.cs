@@ -12,12 +12,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Indexing;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.LanguageServer.Indexing;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;

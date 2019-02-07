@@ -13,12 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Indexing {
-    internal interface IIndexParser : IDisposable {
-        Task<bool> ParseAsync(string path, CancellationToken cancellationToken = default);
+namespace Microsoft.Python.LanguageServer.Indexing {
+    internal interface ISymbolIndex {
+        IEnumerable<FlatSymbol> WorkspaceSymbols(string query);
+        IEnumerable<HierarchicalSymbol> HierarchicalDocumentSymbols(string path);
+        void UpdateIndex(string path, PythonAst pythonAst);
+        void Delete(string path);
+        bool IsIndexed(string path);
     }
 }

@@ -21,7 +21,7 @@ using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 
-namespace Microsoft.Python.Analysis.Indexing {
+namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class IndexParser : IIndexParser {
         private readonly ISymbolIndex _symbolIndex;
         private readonly IFileSystem _fileSystem;

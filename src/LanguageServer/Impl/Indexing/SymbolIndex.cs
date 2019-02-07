@@ -21,7 +21,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Indexing {
+namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class SymbolIndex : ISymbolIndex {
         private readonly ConcurrentDictionary<string, IReadOnlyList<HierarchicalSymbol>> _index;
 

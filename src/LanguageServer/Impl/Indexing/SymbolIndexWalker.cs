@@ -19,7 +19,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Indexing {
+namespace Microsoft.Python.LanguageServer.Indexing {
     internal class SymbolIndexWalker : PythonWalker {
         private static readonly Regex DoubleUnderscore = new Regex(@"^__.*__$", RegexOptions.Compiled);
         private static readonly Regex ConstantLike = new Regex(@"^[\p{Lu}\p{N}_]+$", RegexOptions.Compiled);

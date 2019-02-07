@@ -13,13 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 
-namespace Microsoft.Python.Analysis.Indexing {
+namespace Microsoft.Python.LanguageServer.Indexing {
     // From LSP.
     internal enum SymbolKind {
         None = 0,

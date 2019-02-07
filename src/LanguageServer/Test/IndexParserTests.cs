@@ -20,18 +20,18 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Indexing;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.LanguageServer.Indexing;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 using TestUtilities;
 
-namespace Microsoft.Python.Analysis.Tests {
+namespace Microsoft.Python.LanguageServer.Tests {
 
     [TestClass]
-    public class IndexParserTests : AnalysisTestBase {
+    public class IndexParserTests : LanguageServerTestBase {
         private ISymbolIndex _symbolIndex;
         private IFileSystem _fileSystem;
         private PythonLanguageVersion _pythonLanguageVersion;

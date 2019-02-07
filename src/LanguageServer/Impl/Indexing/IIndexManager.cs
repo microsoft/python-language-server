@@ -15,14 +15,17 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Python.Parsing.Ast;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Documents;
 
-namespace Microsoft.Python.Analysis.Indexing {
-    internal interface ISymbolIndex {
-        IEnumerable<FlatSymbol> WorkspaceSymbols(string query);
-        IEnumerable<HierarchicalSymbol> HierarchicalDocumentSymbols(string path);
-        void UpdateIndex(string path, PythonAst pythonAst);
-        void Delete(string path);
-        bool IsIndexed(string path);
+namespace Microsoft.Python.LanguageServer.Indexing {
+    internal interface IIndexManager : IDisposable {
+        Task AddRootDirectoryAsync();
+        void ProcessNewFile(string path, IDocument doc);
+        Task ProcessClosedFileAsync(string path, CancellationToken fileCancellationToken = default);
+        void ReIndexFile(string path, IDocument doc);
+        Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path);
+        Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength);
     }
 }

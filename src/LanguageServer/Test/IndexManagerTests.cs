@@ -22,8 +22,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Indexing;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.LanguageServer.Indexing;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Tests;
@@ -31,9 +31,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 using TestUtilities;
 
-namespace Microsoft.Python.Analysis.Tests {
+namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
-    public class IndexManagerTests : AnalysisTestBase {
+    public class IndexManagerTests : LanguageServerTestBase {
         private IFileSystem _fileSystem;
         private ISymbolIndex _symbolIndex;
         private string _rootPath;
