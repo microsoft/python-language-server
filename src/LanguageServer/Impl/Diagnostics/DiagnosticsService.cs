@@ -74,6 +74,8 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         }
 
         public int PublishingDelay { get; set; } = 1000;
+
+        public DiagnosticsSeverityMap DiagnosticsSeverityMap { get; set; } = new DiagnosticsSeverityMap();
         #endregion
 
         public void Dispose() {
@@ -109,9 +111,10 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             }
         }
 
-        private static Diagnostic ToDiagnostic(DiagnosticsEntry e) {
+        private Diagnostic ToDiagnostic(DiagnosticsEntry e) {
             DiagnosticSeverity s;
-            switch (e.Severity) {
+            var severity = DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity);
+            switch (severity) {
                 case Severity.Warning:
                     s = DiagnosticSeverity.Warning;
                     break;

@@ -460,6 +460,11 @@ namespace Microsoft.Python.Analysis.Modules {
                     OnAnalysisComplete();
                     ContentState = State.Analyzed;
 
+                    // Do not report issues with libraries or stubs
+                    if (ModuleType == ModuleType.User) {
+                        _diagnosticsService?.Replace(Uri, _parseErrors.Concat(analysis.ExpressionEvaluator.Diagnostics));
+                    }
+
                     var tcs = _analysisTcs;
                     _analysisTcs = null;
                     tcs.TrySetResult(analysis);

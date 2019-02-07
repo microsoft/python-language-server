@@ -229,11 +229,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return trueValue ?? falseValue;
         }
 
-        private void ReportDiagnostics(Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
+        public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {
             // Do not add if module is library, etc. Only handle user code.
             if (Module.ModuleType == ModuleType.User) {
                 lock (_lock) {
-                    _diagnostics.AddRange(entries);
+                    _diagnostics.Add(entry);
                 }
             }
         }

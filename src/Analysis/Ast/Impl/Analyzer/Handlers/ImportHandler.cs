@@ -149,8 +149,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private void MakeUnresolvedImport(string name, LocationInfo location) {
             Eval.DeclareVariable(name, new SentinelModule(name, Eval.Services), VariableSource.Import, location);
-            Eval.Services.GetService<IDiagnosticsService>()?.Add(Eval.Module.Uri, new DiagnosticsEntry(
-                Resources.ErrorUnresolvedImport, location.Span, ErrorCodes.UnresolvedImport, Severity.Warning));
+            Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(
+                Resources.ErrorUnresolvedImport.FormatInvariant(name), location.Span, ErrorCodes.UnresolvedImport, Severity.Warning));
         }
     }
 }

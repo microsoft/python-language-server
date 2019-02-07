@@ -404,7 +404,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             public Prioritizer() {
                 _ppc = new PriorityProducerConsumer<QueueItem>(4);
-                Task.Run(ConsumerLoop);
+                Task.Run(ConsumerLoop).DoNotWait();
             }
 
             private async Task ConsumerLoop() {
