@@ -124,7 +124,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return Disposable.Empty;
             }
 
-            var gs = module.GlobalScope as Scope ?? GlobalScope;
+            // During analysis module global scope has not changed yet since it updates
+            // When the analysis completed. Therefore if module is the one we are
+            // analyzing, use scope from the evaluator rather than from the module.
+            var gs = Module.Equals(module) || module == null ? GlobalScope : module.GlobalScope as Scope;
             if (node.Parent != null) {
                 fromScope = gs
                     .TraverseBreadthFirst(s => s.Children.OfType<Scope>())
