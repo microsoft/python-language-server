@@ -18,7 +18,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Text;
@@ -110,7 +109,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var analysis = await GetAnalysisAsync(code);
             var doc = analysis.Document;
 
-            var ds = Services.GetService<IDiagnosticsService>();
             var clientApp = Services.GetService<IClientApplication>();
             var idle = Services.GetService<IIdleTimeService>();
 
