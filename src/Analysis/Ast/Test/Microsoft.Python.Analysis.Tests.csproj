@@ -42,11 +42,6 @@
     <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
     <ProjectReference Include="..\Impl\Microsoft.Python.Analysis.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="NSubstitute">
-      <HintPath>..\..\..\..\..\Users\mikhaila\.nuget\packages\nsubstitute\4.0.0\lib\netstandard2.0\NSubstitute.dll</HintPath>
-    </Reference>
-  </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <Import Project="..\..\..\..\build\NetStandard.targets" />
 </Project>
