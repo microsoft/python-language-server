@@ -83,13 +83,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private bool IsFileIndexed(string path) => _symbolIndex.IsIndexed(path);
 
-        public Task ProcessClosedFileAsync(string path, CancellationToken fileCancellationToken = default) {
+        public Task ProcessClosedFileAsync(string path) {
             // If path is on workspace
             if (IsFileOnWorkspace(path)) {
                 // updates index and ignores previous AST
-                var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(fileCancellationToken, _allIndexCts.Token);
-                return _indexParser.ParseAsync(path, linkedCts.Token)
-                    .ContinueWith(_ => linkedCts.Dispose());
+                return _indexParser.ParseAsync(path, _allIndexCts.Token);
             } else {
                 // remove file from index
                 _symbolIndex.Delete(path);

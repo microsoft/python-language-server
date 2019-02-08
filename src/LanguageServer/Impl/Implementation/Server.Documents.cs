@@ -64,11 +64,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        public async void DidCloseTextDocument(DidCloseTextDocumentParams @params) {
+        public void DidCloseTextDocument(DidCloseTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
             Uri uri = @params.textDocument.uri;
             _rdt.CloseDocument(uri);
-            await _indexManager.ProcessClosedFileAsync(uri.AbsolutePath);
+            _indexManager.ProcessClosedFileAsync(uri.AbsolutePath).DoNotWait();
         }
 
         private IDocumentAnalysis GetAnalysis(Uri uri, CancellationToken cancellationToken) {
