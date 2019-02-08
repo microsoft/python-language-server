@@ -33,16 +33,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return symbols.Select(MakeSymbolInfo).ToArray();
         }
 
-        /*public async Task<SymbolInformation[]> DocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
-            var path = @params.textDocument.uri.AbsolutePath;
-            var symbols = await _indexManager.HierarchicalDocumentSymbolsAsync(path, cancellationToken);
-            return symbols.Flatten(path, depthLimit: _symbolHierarchyDepthLimit)
-                            .Select(s => {
-                                cancellationToken.ThrowIfCancellationRequested();
-                                return MakeSymbolInfo(s);
-                            }).ToArray();
-        }*/
-
         public async Task<DocumentSymbol[]> HierarchicalDocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
             var path = @params.textDocument.uri.AbsolutePath;
             var symbols = await _indexManager.HierarchicalDocumentSymbolsAsync(path, cancellationToken);

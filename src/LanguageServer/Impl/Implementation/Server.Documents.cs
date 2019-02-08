@@ -29,14 +29,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
         public void DidOpenTextDocument(DidOpenTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
-            _log?.Log(TraceEventType.Verbose, $"Opening document {@params.textDocument.uri}");
+            Uri uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Opening document {uri}");
 
-            _rdt.OpenDocument(@params.textDocument.uri, @params.textDocument.text);
+            var doc = _rdt.OpenDocument(uri, @params.textDocument.text);
+            _indexManager.ProcessNewFile(uri.AbsolutePath, doc);
         }
 
         public void DidChangeTextDocument(DidChangeTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
-            var doc = _rdt.GetDocument(@params.textDocument.uri);
+            Uri uri = @params.textDocument.uri;
+            var doc = _rdt.GetDocument(uri);
             if (doc != null) {
                 var changes = new List<DocumentChange>();
                 foreach (var c in @params.contentChanges) {
@@ -48,6 +51,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     changes.Add(change);
                 }
                 doc.Update(changes);
+                _indexManager.ReIndexFile(uri.AbsolutePath, doc);
             } else {
                 _log?.Log(TraceEventType.Warning, $"Unable to find document for {@params.textDocument.uri}");
             }
@@ -60,9 +64,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        public void DidCloseTextDocument(DidCloseTextDocumentParams @params) {
+        public async void DidCloseTextDocument(DidCloseTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
-            _rdt.CloseDocument(@params.textDocument.uri);
+            Uri uri = @params.textDocument.uri;
+            _rdt.CloseDocument(uri);
+            await _indexManager.ProcessClosedFileAsync(uri.AbsolutePath);
         }
 
         private IDocumentAnalysis GetAnalysis(Uri uri, CancellationToken cancellationToken) {
