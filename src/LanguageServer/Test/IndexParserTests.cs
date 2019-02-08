@@ -22,7 +22,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.LanguageServer.Indexing;
-using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
