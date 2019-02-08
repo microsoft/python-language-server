@@ -122,7 +122,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             DisplayStartupInfo();
 
-            var ds = new PlainTextDocumentationSource();
+            // TODO: Pass different documentation sources to completion/hover/signature
+            // based on client capabilities.
+            IDocumentationSource ds;
+            if (DisplayOptions.preferredFormat == MarkupKind.Markdown) {
+                ds = new MarkdownDocumentationSource();
+            } else {
+                ds = new PlainTextDocumentationSource();
+            }
+
             _completionSource = new CompletionSource(ds, Settings.completion);
             _hoverSource = new HoverSource(ds);
             _signatureSource = new SignatureSource(ds);
