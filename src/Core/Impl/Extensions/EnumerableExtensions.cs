@@ -89,9 +89,8 @@ namespace Microsoft.Python.Core {
             }
         }
 
-        public static IEnumerable<T> TraverseBreadthFirst<T>(this T root, Func<T, IEnumerable<T>> selectChildren) {
-            return new[] { root }.TraverseBreadthFirst(selectChildren);
-        }
+        public static IEnumerable<T> TraverseBreadthFirst<T>(this T root, Func<T, IEnumerable<T>> selectChildren)
+            => Enumerable.Repeat(root, 1).TraverseBreadthFirst(selectChildren);
 
         public static IEnumerable<T> TraverseBreadthFirst<T>(this IEnumerable<T> roots, Func<T, IEnumerable<T>> selectChildren) {
             var items = new Queue<T>(roots);
@@ -100,7 +99,7 @@ namespace Microsoft.Python.Core {
                 var item = items.Dequeue();
                 yield return item;
 
-                var children = selectChildren(item) ?? Enumerable.Empty<T>();
+                var children = selectChildren(item).MaybeEnumerate();
                 foreach (var child in children) {
                     items.Enqueue(child);
                 }
