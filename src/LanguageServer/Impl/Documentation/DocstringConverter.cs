@@ -22,8 +22,35 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.LanguageServer.Documentation {
     internal class DocstringConverter {
-        public static string ToPlaintext(string input) => string.Join(Environment.NewLine, SplitDocstring(input));
-        public static string ToMarkdown(string input) => new DocstringConverter(input).Convert();
+        /// <summary>
+        /// Converts a docstring to a plaintext, human readable form. This will
+        /// first strip any common leading indention (like inspect.cleandoc),
+        /// then remove duplicate empty/whitespace lines.
+        /// </summary>
+        /// <param name="docstring">The docstring to convert, likely from the AST.</param>
+        /// <returns>The converted docstring, with Environment.NewLine line endings.</returns>
+        public static string ToPlaintext(string docstring) {
+            var lines = SplitDocstring(docstring);
+            var output = new List<string>();
+
+            foreach (var line in lines) {
+                if (string.IsNullOrWhiteSpace(line) && string.IsNullOrWhiteSpace(output.LastOrDefault())) {
+                    continue;
+                }
+                output.Add(line);
+            }
+
+            return string.Join(Environment.NewLine, output).TrimEnd();
+        }
+
+        /// <summary>
+        /// Converts a docstring to a markdown format. This does various things,
+        /// including removing common indention, escaping characters, handling
+        /// code blocks, and more.
+        /// </summary>
+        /// <param name="docstring">The docstring to convert, likely from the AST.</param>
+        /// <returns>The converted docstring, with Environment.NewLine line endings.</returns>
+        public static string ToMarkdown(string docstring) => new DocstringConverter(docstring).Convert();
 
         private readonly StringBuilder _builder = new StringBuilder();
         private bool _skipAppendEmptyLine = true;
@@ -372,7 +399,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 .ToList();
 
             if (lines.Count > 0) {
-                var first = lines[0].Trim();
+                var first = lines[0].TrimStart();
                 if (first == string.Empty) {
                     first = null;
                 } else {
