@@ -39,10 +39,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return symbols.MaybeEnumerate().Select(hSym => MakeDocumentSymbol(hSym)).ToArray();
         }
 
-        private static SymbolInformation MakeSymbolInfo(Indexing.FlatSymbol s) {
+        private static SymbolInformation MakeSymbolInfo(FlatSymbol s) {
             return new SymbolInformation {
                 name = s.Name,
-                kind = (Protocol.SymbolKind)s.Kind,
+                kind = s.Kind,
                 location = new Location {
                     range = s.Range,
                     uri = new Uri(s.DocumentPath),
@@ -55,7 +55,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return new DocumentSymbol {
                 name = hSym.Name,
                 detail = hSym.Detail,
-                kind = (Protocol.SymbolKind)hSym.Kind,
+                kind = hSym.Kind,
                 deprecated = hSym.Deprecated ?? false,
                 range = hSym.Range,
                 selectionRange = hSym.SelectionRange,

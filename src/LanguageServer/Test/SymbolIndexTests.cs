@@ -17,6 +17,7 @@ using System.IO;
 using FluentAssertions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Indexing;
+using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
