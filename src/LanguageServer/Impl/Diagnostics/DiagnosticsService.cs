@@ -30,6 +30,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private readonly DisposableBag _disposables = DisposableBag.Create<DiagnosticsService>();
         private readonly IClientApplication _clientApp;
         private readonly object _lock = new object();
+        private DiagnosticsSeverityMap _severityMap = new DiagnosticsSeverityMap();
         private DateTime _lastChangeTime;
         private bool _changed;
 
@@ -51,7 +52,15 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         public IReadOnlyDictionary<Uri, IReadOnlyList<DiagnosticsEntry>> Diagnostics {
             get {
                 lock (_lock) {
-                    return _diagnostics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value as IReadOnlyList<DiagnosticsEntry>);
+                    return _diagnostics.ToDictionary(kvp => kvp.Key,
+                        kvp => kvp.Value
+                            .Where(e => DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity) != Severity.Suppressed)
+                            .Select(e => new DiagnosticsEntry(
+                                e.Message,
+                                e.SourceSpan,
+                                e.ErrorCode,
+                                DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity))
+                            ).ToList() as IReadOnlyList<DiagnosticsEntry>);
                 }
             }
         }
@@ -75,7 +84,15 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
 
         public int PublishingDelay { get; set; } = 1000;
 
-        public DiagnosticsSeverityMap DiagnosticsSeverityMap { get; set; } = new DiagnosticsSeverityMap();
+        public DiagnosticsSeverityMap DiagnosticsSeverityMap {
+            get => _severityMap;
+            set {
+                lock (_lock) {
+                    _severityMap = value;
+                    PublishDiagnostics();
+                }
+            }
+        }
         #endregion
 
         public void Dispose() {
@@ -93,7 +110,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
 
         private void PublishDiagnostics() {
             lock (_lock) {
-                foreach (var kvp in _diagnostics) {
+                foreach (var kvp in Diagnostics) {
                     var parameters = new PublishDiagnosticsParams {
                         uri = kvp.Key,
                         diagnostics = kvp.Value.Select(ToDiagnostic).ToArray()
@@ -111,10 +128,9 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             }
         }
 
-        private Diagnostic ToDiagnostic(DiagnosticsEntry e) {
+        private static Diagnostic ToDiagnostic(DiagnosticsEntry e) {
             DiagnosticSeverity s;
-            var severity = DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity);
-            switch (severity) {
+            switch (e.Severity) {
                 case Severity.Warning:
                     s = DiagnosticSeverity.Warning;
                     break;

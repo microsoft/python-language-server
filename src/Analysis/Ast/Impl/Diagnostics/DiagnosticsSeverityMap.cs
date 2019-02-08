@@ -13,42 +13,33 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Diagnostics {
     public sealed class DiagnosticsSeverityMap {
         private readonly Dictionary<string, Severity> _map = new Dictionary<string, Severity>();
 
-        public string[] errors { get; private set; } = Array.Empty<string>();
-        public string[] warnings { get; private set; } = Array.Empty<string>();
-        public string[] information { get; private set; } = Array.Empty<string>();
-        public string[] disabled { get; private set; } = Array.Empty<string>();
+        public DiagnosticsSeverityMap() { }
 
-        public Severity GetEffectiveSeverity(string code, Severity defaultSeverity)
-            => _map.TryGetValue(code, out var severity) ? severity : defaultSeverity;
-
-        public void SetErrorSeverity(string[] errors, string[] warnings, string[] information, string[] disabled) {
+        public DiagnosticsSeverityMap(string[] errors, string[] warnings, string[] information, string[] disabled) {
             _map.Clear();
             // disabled > error > warning > information
-            foreach (var x in information) {
+            foreach (var x in information.MaybeEnumerate()) {
                 _map[x] = Severity.Information;
             }
-            foreach (var x in warnings) {
+            foreach (var x in warnings.MaybeEnumerate()) {
                 _map[x] = Severity.Warning;
             }
-            foreach (var x in errors) {
+            foreach (var x in errors.MaybeEnumerate()) {
                 _map[x] = Severity.Error;
             }
-            foreach (var x in disabled) {
+            foreach (var x in disabled.MaybeEnumerate()) {
                 _map[x] = Severity.Suppressed;
             }
-
-            this.errors = errors;
-            this.warnings = warnings;
-            this.information = information;
-            this.disabled = disabled;
         }
+        public Severity GetEffectiveSeverity(string code, Severity defaultSeverity)
+            => _map.TryGetValue(code, out var severity) ? severity : defaultSeverity;
     }
 }

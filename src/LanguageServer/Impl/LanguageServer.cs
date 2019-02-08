@@ -112,16 +112,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 _logger.LogLevel = GetLogLevel(analysis).ToTraceEventType();
 
+                HandlePathWatchChange(token, cancellationToken);
+
                 var ds = _services.GetService<IDiagnosticsService>();
                 ds.PublishingDelay = settings.diagnosticPublishDelay;
 
-                HandlePathWatchChange(token, cancellationToken);
-
-                var errors = GetSetting(analysis, "errors", Array.Empty<string>());
-                var warnings = GetSetting(analysis, "warnings", Array.Empty<string>());
-                var information = GetSetting(analysis, "information", Array.Empty<string>());
-                var disabled = GetSetting(analysis, "disabled", Array.Empty<string>());
-                settings.analysis.SetErrorSeverityOptions(errors, warnings, information, disabled);
+                ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(
+                    GetSetting(analysis, "errors", Array.Empty<string>()),
+                    GetSetting(analysis, "warnings", Array.Empty<string>()),
+                    GetSetting(analysis, "information", Array.Empty<string>()),
+                    GetSetting(analysis, "disabled", Array.Empty<string>()));
 
                 await _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
             }
