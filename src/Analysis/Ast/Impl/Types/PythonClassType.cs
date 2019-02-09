@@ -148,7 +148,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IReadOnlyDictionary<string, IPythonType> GenericParameters 
+        public IReadOnlyDictionary<string, IPythonType> GenericParameters
             => _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
         #endregion
 
@@ -238,29 +238,22 @@ namespace Microsoft.Python.Analysis.Types {
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
 
-        public IPythonType CreateSpecificType(IArgumentSet args, IPythonModule declaringModule, LocationInfo location) {
+        public IPythonType CreateSpecificType(IArgumentSet args, IPythonModule declaringModule, LocationInfo location = null) {
+            location = location ?? LocationInfo.Empty;
             var genericBases = Bases.OfType<IGenericType>().ToArray();
             // TODO: handle optional generics as class A(Generic[_T1], Optional[Generic[_T2]])
             if (genericBases.Length != args.Arguments.Count) {
                 // TODO: report parameters mismatch.
             }
 
+            // Create concrete type
             var specificBases = args.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray();
+            var specificName = CodeFormatter.FormatSequence(Name, '[', specificBases);
+            var classType = new PythonClassType(specificName, declaringModule);
 
             // Methods returning generic types need to know how to match generic
             // parameter name to the actual supplied type.
-            _genericParameters = new Dictionary<string, IPythonType>();
-            for (int i = 0, k = 0; i < genericBases.Length && k < specificBases.Length; i++, k++) {
-                var gb = genericBases[i];
-                for (var j = 0; j < gb.Parameters.Count && k < specificBases.Length; j++, k++) {
-                    // TODO: report duplicate names, mismatched lengths
-                    _genericParameters[gb.Parameters[j].Name] = specificBases[k];
-                }
-            }
-
-            // Create concrete type
-            var specificName = CodeFormatter.FormatSequence(Name, '[', specificBases);
-            var classType = new PythonClassType(specificName, declaringModule);
+            StoreGenericParameters(classType, genericBases, specificBases);
 
             // Prevent reentrancy when resolving generic class where
             // method may be returning instance of type of the same class.
@@ -305,6 +298,17 @@ namespace Microsoft.Python.Analysis.Types {
                 Pop();
             }
             return classType;
+        }
+
+        private void StoreGenericParameters(PythonClassType classType, IGenericType[] genericBases, IPythonType[] specificBases) {
+            classType._genericParameters = new Dictionary<string, IPythonType>();
+            for (int i = 0, k = 0; i < genericBases.Length && k < specificBases.Length; i++, k++) {
+                var gb = genericBases[i];
+                for (var j = 0; j < gb.Parameters.Count && k < specificBases.Length; j++, k++) {
+                    // TODO: report duplicate names, mismatched lengths
+                    classType._genericParameters[gb.Parameters[j].Name] = specificBases[k];
+                }
+            }
         }
     }
 }

@@ -41,6 +41,7 @@ namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
         private readonly Func<string, LocationInfo> _locationProvider;
         private readonly IPythonModule _declaringModule;
+        private readonly string _returnDocumentation;
 
         // Allow dynamic function specialization, such as defining return types for builtin
         // functions that are impossible to scrape and that are missing from stubs.
@@ -57,7 +58,7 @@ namespace Microsoft.Python.Analysis.Types {
             FunctionDefinition = fd;
             ClassMember = classMember;
             var ast = (declaringModule as IDocument)?.Analysis.Ast;
-            ReturnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
+            _returnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
         }
 
         public PythonFunctionOverload(string name, IPythonModule declaringModule, Func<string, LocationInfo> locationProvider) {
@@ -112,8 +113,40 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public string ReturnDocumentation { get; }
-        public bool IsOverload { get; private set; }
+        public string GetReturnDocumentation(IPythonType self) {
+            var returnType = StaticReturnValue.GetPythonType();
+            switch (returnType) {
+                case PythonClassType cls when cls.IsGeneric(): {
+                        // -> A[_T1, _T2, ...]
+                        // Match arguments 
+                        var typeArgs = cls.GenericParameters.Keys
+                            .Select(n => cls.GenericParameters.TryGetValue(n, out var t) ? t : null)
+                            .ExcludeDefault()
+                            .ToArray();
+                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), _declaringModule);
+                        return specificReturnValue.Name;
+                    }
+                case IGenericTypeParameter gtp1 when self is IPythonClassType cls: {
+                        // -> _T
+                        if (cls.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
+                            return specificType.Name;
+                        }
+                        // Try returning the constraint
+                        // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
+                        var name = StaticReturnValue.GetPythonType()?.Name;
+                        var typeDefVar = _declaringModule.Analysis.GlobalScope.Variables[name];
+                        if (typeDefVar?.Value is IGenericTypeParameter gtp2) {
+                            var t = gtp2.Constraints.FirstOrDefault();
+                            if (t != null) {
+                                return t.Name;
+                            }
+                        }
+                        break;
+                    }
+            }
+            return _returnDocumentation;
+        }
+
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
         public LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
         public PythonMemberType MemberType => PythonMemberType.Function;

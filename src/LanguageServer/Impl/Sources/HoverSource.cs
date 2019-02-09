@@ -115,8 +115,17 @@ namespace Microsoft.Python.LanguageServer.Sources {
             name = name == null && statement is ClassDefinition cd ? cd.Name : name;
             name = name == null && statement is FunctionDefinition fd ? fd.Name : name;
 
+            IPythonType self = null;
+            if (node is MemberExpression mex) {
+                // In case of a member expression get the target since if we end up with method
+                // of a generic class, the function will need specific type to determine its return
+                // value correctly. I.e. in x.func() we need to determine type of x (self for func).
+                var v = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(mex.Target, cancellationToken);
+                self = v.GetPythonType();
+            }
+
             return new Hover {
-                contents = _docSource.GetHover(name, value),
+                contents = _docSource.GetHover(name, value, self),
                 range = range
             };
         }

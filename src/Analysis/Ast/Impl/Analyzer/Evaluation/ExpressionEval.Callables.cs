@@ -157,7 +157,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized ||
                 instanceType.IsSpecialized || fn.DeclaringType.IsSpecialized ||
                 instanceType.Equals(fn.DeclaringType) ||
-                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].ReturnDocumentation)) {
+                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation(null))) {
 
                 if (fn.IsSpecialized && fn is PythonFunctionType ft) {
                     foreach (var module in ft.Dependencies) {

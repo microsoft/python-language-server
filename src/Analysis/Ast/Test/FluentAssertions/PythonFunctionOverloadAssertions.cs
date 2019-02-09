@@ -53,11 +53,12 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         public AndWhichConstraint<PythonFunctionOverloadAssertions, string> HaveReturnDocumentation(string documentation, string because = "", params object[] reasonArgs) {
-            Execute.Assertion.ForCondition(Subject.ReturnDocumentation == documentation)
+            var returnDoc = Subject.GetReturnDocumentation(null);
+            Execute.Assertion.ForCondition(Subject.GetReturnDocumentation(null) == documentation)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {Subject.Name} overload to have a return documentation '{documentation}', but it has '{Subject.ReturnDocumentation}'.");
+                .FailWith($"Expected {Subject.Name} overload to have a return documentation '{documentation}', but it has '{returnDoc}'.");
 
-            return new AndWhichConstraint<PythonFunctionOverloadAssertions, string>(this, Subject.ReturnDocumentation);
+            return new AndWhichConstraint<PythonFunctionOverloadAssertions, string>(this, returnDoc);
         }
 
         public AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonFunctionOverload> HaveName(string name, string because = "", params object[] reasonArgs) {

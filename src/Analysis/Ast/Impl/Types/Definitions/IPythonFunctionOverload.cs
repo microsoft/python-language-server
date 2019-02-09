@@ -59,12 +59,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Return value documentation.
         /// </summary>
-        string ReturnDocumentation { get; }
-
-        /// <summary>
-        /// Function definition is decorated with @overload.
-        /// </summary>
-        bool IsOverload { get; }
+        /// <param name="self">If function is in generic class it may need the specific type to determine the return type.</param>
+        string GetReturnDocumentation(IPythonType self);
 
         /// <summary>
         /// Return type as determined from evaluation or from the return type annotation.
