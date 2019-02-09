@@ -18,6 +18,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
+using static Microsoft.Python.LanguageServer.Tests.FluentAssertions.DocstringAssertions;
 
 namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
@@ -42,8 +43,25 @@ namespace Microsoft.Python.LanguageServer.Tests {
         [DataRow("  \n\nA \n    \nB  \n    ", "A\n\nB")]
         [DataTestMethod, Priority(0)]
         public void PlaintextIndention(string docstring, string expected) {
-            var result = DocstringConverter.ToPlaintext(docstring.NormalizeLineEndings());
-            result.NormalizeLineEndings().Should().Be(expected.NormalizeLineEndings());
+            docstring.Should().ConvertToPlaintext(expected);
+        }
+
+        [TestMethod, Priority(0)]
+        public void Doctest() {
+            var docstring = @"This is a doctest:
+
+>>> print('foo')
+foo
+";
+
+            var markdown = @"This is a doctest:
+
+```
+>>> print('foo')
+foo
+```
+";
+            docstring.Should().ConvertToMarkdown(markdown);
         }
     }
 }
