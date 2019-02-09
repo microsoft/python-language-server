@@ -95,9 +95,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
         public virtual IMember Index(IPythonInstance instance, object index) => DeclaringModule.Interpreter.UnknownType;
 
-        public Task<IPythonType> CreateSpecificTypeAsync(IArgumentSet typeArguments, IPythonModule declaringModule, LocationInfo location, CancellationToken cancellationToken = default)
-            => Task.FromResult(CreateSpecificType(typeArguments.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray(), declaringModule, location));
-
+        public IPythonType CreateSpecificType(IArgumentSet typeArguments, IPythonModule declaringModule, LocationInfo location)
+            => CreateSpecificType(typeArguments.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray(), declaringModule, location);
         #endregion
     }
 }

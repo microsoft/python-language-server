@@ -756,6 +756,33 @@ x = boxed.get()
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericClassToDifferentTypes() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_T = TypeVar('_T')
+
+class Box(Generic[_T]):
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+boxedint = Box(1234)
+x = boxedint.get()
+
+boxedstr = Box('str')
+y = boxedstr.get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y")
+                .Which.Should().HaveType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
         public void AnnotationParsing() {
             AssertTransform("List", "NameOp:List");
             AssertTransform("List[Int]", "NameOp:List", "NameOp:Int", "MakeGenericOp");

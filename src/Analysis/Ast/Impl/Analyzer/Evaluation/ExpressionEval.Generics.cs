@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -49,50 +50,51 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             IPythonType[] specificTypes;
             switch (expr) {
                 case IndexExpression indexExpr: {
-                    // Generic[T1, T2, ...] or A[type]()
-                    var indices = await EvaluateIndexAsync(indexExpr, cancellationToken);
-                    // See which ones are generic parameters as defined by TypeVar() 
-                    // and which are specific types. Normally there should not be a mix.
-                    var genericTypeArgs = indices.OfType<IGenericTypeParameter>().ToArray();
-                    specificTypes = indices.Where(i => !(i is IGenericTypeParameter)).OfType<IPythonType>().ToArray();
+                        // Generic[T1, T2, ...] or A[type]()
+                        var indices = await EvaluateIndexAsync(indexExpr, cancellationToken);
+                        // See which ones are generic parameters as defined by TypeVar() 
+                        // and which are specific types. Normally there should not be a mix.
+                        var genericTypeArgs = indices.OfType<IGenericTypeParameter>().ToArray();
+                        specificTypes = indices.Where(i => !(i is IGenericTypeParameter)).OfType<IPythonType>().ToArray();
 
-                    if (specificTypes.Length == 0 && genericTypeArgs.Length > 0) {
-                        // The expression is still generic. For example, generic return
-                        // annotation of a class method, such as 'def func(self) -> A[_E]: ...'.
-                        // Leave it alone, we don't want resolve generic with generic.
-                        return null;
-                    }
+                        if (specificTypes.Length == 0 && genericTypeArgs.Length > 0) {
+                            // The expression is still generic. For example, generic return
+                            // annotation of a class method, such as 'def func(self) -> A[_E]: ...'.
+                            // Leave it alone, we don't want resolve generic with generic.
+                            return null;
+                        }
 
-                    if (genericTypeArgs.Length > 0 && genericTypeArgs.Length != indices.Count) {
-                        // TODO: report that some type arguments are not declared with TypeVar.
-                    }
-                    if (specificTypes.Length > 0 && specificTypes.Length != indices.Count) {
-                        // TODO: report that arguments are not specific types or are not declared.
-                    }
+                        if (genericTypeArgs.Length > 0 && genericTypeArgs.Length != indices.Count) {
+                            // TODO: report that some type arguments are not declared with TypeVar.
+                        }
 
-                    // Optimistically use what we have
-                    if (target is IGenericType gt) {
-                        if (gt.Name.EqualsOrdinal("Generic")) {
-                            if (genericTypeArgs.Length > 0) {
-                                // Generic[T1, T2, ...] expression. Create generic base for the class.
-                                return new GenericClassBaseType(genericTypeArgs, Module, GetLoc(expr));
+                        if (specificTypes.Length > 0 && specificTypes.Length != indices.Count) {
+                            // TODO: report that arguments are not specific types or are not declared.
+                        }
+
+                        // Optimistically use what we have
+                        if (target is IGenericType gt) {
+                            if (gt.Name.EqualsOrdinal("Generic")) {
+                                if (genericTypeArgs.Length > 0) {
+                                    // Generic[T1, T2, ...] expression. Create generic base for the class.
+                                    return new GenericClassBaseType(genericTypeArgs, Module, GetLoc(expr));
+                                } else {
+                                    // TODO: report too few type arguments for Generic[].
+                                    return UnknownType;
+                                }
+                            }
+
+                            if (specificTypes.Length > 0) {
+                                // If target is a generic type and indexes are specific types, create specific class
+                                return gt.CreateSpecificType(new ArgumentSet(specificTypes), Module, GetLoc(expr));
                             } else {
-                                // TODO: report too few type arguments for Generic[].
+                                // TODO: report too few type arguments for the Generic[].
                                 return UnknownType;
                             }
                         }
 
-                        if (specificTypes.Length > 0) {
-                            // If target is a generic type and indexes are specific types, create specific class
-                            return await gt.CreateSpecificTypeAsync(new ArgumentSet(specificTypes), Module, GetLoc(expr), cancellationToken);
-                        } else {
-                            // TODO: report too few type arguments for the Generic[].
-                            return UnknownType;
-                        }
+                        break;
                     }
-
-                    break;
-                }
                 case CallExpression callExpr:
                     // Alternative instantiation:
                     //  class A(Generic[T]): ...
@@ -109,9 +111,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // as we resolve classes on demand. Therefore we don't know if class is generic
             // or not at the time of the PythonClassType creation.
             // TODO: figure out if we could make GenericClassType: PythonClassType, IGenericType instead.
-            return target is PythonClassType cls 
-                ? await cls.CreateSpecificTypeAsync(new ArgumentSet(specificTypes), Module, GetLoc(expr), cancellationToken) 
-                : null;
+            if (target is PythonClassType cls) {
+                var location = GetLoc(expr);
+                return cls.CreateSpecificType(new ArgumentSet(specificTypes), Module, location);
+            }
+            return null;
         }
 
         private async Task<IReadOnlyList<IMember>> EvaluateIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {

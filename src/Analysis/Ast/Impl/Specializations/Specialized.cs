@@ -19,7 +19,7 @@ namespace Microsoft.Python.Analysis.Specializations {
     internal static class Specialized {
         public static IPythonPropertyType Property(string name, IPythonModule declaringModule, IPythonType declaringType, IMember returnValue) {
             var prop = new PythonPropertyType(name, declaringModule, declaringType, false, LocationInfo.Empty);
-            var o = new PythonFunctionOverload(prop.Name, declaringModule, LocationInfo.Empty);
+            var o = new PythonFunctionOverload(prop.Name, declaringModule, _ => LocationInfo.Empty);
             o.AddReturnValue(returnValue);
             prop.AddOverload(o);
             return prop;
@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Specializations {
 
         public static IPythonFunctionType Function(string name, IPythonModule declaringModule, IPythonType declaringType, string documentation, IMember returnValue) {
             var prop = new PythonFunctionType(name, declaringModule, declaringType, documentation, LocationInfo.Empty);
-            var o = new PythonFunctionOverload(prop.Name, declaringModule, LocationInfo.Empty);
+            var o = new PythonFunctionOverload(prop.Name, declaringModule, _ => LocationInfo.Empty);
             o.AddReturnValue(returnValue);
             prop.AddOverload(o);
             return prop;

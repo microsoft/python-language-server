@@ -13,10 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents type that can be a template for specific types.
@@ -27,6 +23,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates instance of a type information with the specific
         /// type arguments from a generic template.
         /// </summary>
-        Task<IPythonType> CreateSpecificTypeAsync(IArgumentSet typeArguments, IPythonModule declaringModule, LocationInfo location, CancellationToken cancellationToken = default);
+        IPythonType CreateSpecificType(IArgumentSet typeArguments, IPythonModule declaringModule, LocationInfo location);
     }
 }
