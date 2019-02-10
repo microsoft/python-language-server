@@ -67,6 +67,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         IPythonModule Module { get; }
         IPythonInterpreter Interpreter { get; }
         IServiceContainer Services { get; }
+
+        void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry);
         IEnumerable<DiagnosticsEntry> Diagnostics { get; }
     }
 }

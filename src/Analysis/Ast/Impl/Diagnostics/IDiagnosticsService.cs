@@ -38,5 +38,12 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         /// the diagnostic publishing to the client.
         /// </summary>
         int PublishingDelay { get; set; }
+
+        /// <summary>
+        /// Provides map of error codes to severity when user wants
+        /// to override default severity settings or suppress particular
+        /// diagnostics completely.
+        /// </summary>
+        DiagnosticsSeverityMap DiagnosticsSeverityMap { get; set; }
     }
 }

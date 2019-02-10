@@ -33,7 +33,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             var rootNames = node.Root.Names;
-            IImportSearchResult imports = null;
             if (rootNames.Count == 1) {
                 var rootName = rootNames[0].Name;
                 if (rootName.EqualsOrdinal("__future__")) {
@@ -41,7 +40,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
             }
 
-            imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
+            var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
             // If we are processing stub, ignore imports of the original module.
             // For example, typeshed stub for sys imports sys.
             if (Module.ModuleType == ModuleType.Stub && imports is ModuleImport mi && mi.Name == Module.Name) {
@@ -56,7 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     await ImportMembersFromModuleAsync(node, moduleImport.FullName, cancellationToken);
                     return false;
                 case PossibleModuleImport possibleModuleImport:
-                    await HandlePossibleImportAsync(node, possibleModuleImport, cancellationToken);
+                    await HandlePossibleImportAsync(possibleModuleImport, Eval.GetLoc(node.Root), cancellationToken);
                     return false;
                 case PackageImport packageImports:
                     await ImportMembersFromPackageAsync(node, packageImports, cancellationToken);

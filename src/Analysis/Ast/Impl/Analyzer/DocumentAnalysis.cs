@@ -18,14 +18,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Diagnostics;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -67,6 +64,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Expression evaluator used in the analysis.
         /// </summary>
         public IExpressionEvaluator ExpressionEvaluator { get; }
+
+        /// <summary>
+        /// Analysis diagnostics.
+        /// </summary>
+        public IEnumerable<DiagnosticsEntry> Diagnostics => ExpressionEvaluator.Diagnostics;
         #endregion
     }
 
@@ -88,5 +90,4 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IExpressionEvaluator ExpressionEvaluator { get; }
         public IEnumerable<DiagnosticsEntry> Diagnostics => Enumerable.Empty<DiagnosticsEntry>();
     }
-
 }

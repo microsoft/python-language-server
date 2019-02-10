@@ -16,6 +16,7 @@
 
 namespace Microsoft.Python.Parsing {
     public enum Severity {
+        Suppressed,
         Error,
         Warning,
         Information,

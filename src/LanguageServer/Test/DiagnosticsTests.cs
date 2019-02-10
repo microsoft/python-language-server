@@ -22,9 +22,11 @@ using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 using TestUtilities;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
@@ -156,6 +158,84 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             doc.Dispose();
             ds.Diagnostics.TryGetValue(doc.Uri, out _).Should().BeFalse();
+            callReceived.Should().BeTrue();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SeverityMapping() {
+            const string code = @"import nonexistent";
+
+            var analysis = await GetAnalysisAsync(code);
+            var ds = Services.GetService<IDiagnosticsService>();
+            var doc = analysis.Document;
+
+            var diags = ds.Diagnostics[doc.Uri];
+            diags.Count.Should().Be(1);
+            diags[0].Severity.Should().Be(Severity.Warning);
+
+            var uri = doc.Uri;
+            var callReceived = false;
+            var clientApp = Services.GetService<IClientApplication>();
+            var expectedSeverity = DiagnosticSeverity.Error;
+            clientApp.When(x => x.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", Arg.Any<object>()))
+                .Do(x => {
+                    var dp = x.Args()[1] as PublishDiagnosticsParams;
+                    dp.Should().NotBeNull();
+                    dp.uri.Should().Be(uri);
+                    dp.diagnostics.Length.Should().Be(expectedSeverity == DiagnosticSeverity.Unspecified ? 0 : 1);
+                    if (expectedSeverity != DiagnosticSeverity.Unspecified) {
+                        dp.diagnostics[0].severity.Should().Be(expectedSeverity);
+                    }
+                    callReceived = true;
+                });
+
+            ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(new[] { ErrorCodes.UnresolvedImport }, null, null, null);
+            callReceived.Should().BeTrue();
+
+            expectedSeverity = DiagnosticSeverity.Information;
+            callReceived = false;
+            ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(null, null, new[] { ErrorCodes.UnresolvedImport }, null);
+            ds.Diagnostics[uri][0].Severity.Should().Be(Severity.Information);
+            callReceived.Should().BeTrue();
+
+            expectedSeverity = DiagnosticSeverity.Unspecified;
+            callReceived = false;
+            ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(null, null, null, new[] { ErrorCodes.UnresolvedImport });
+            ds.Diagnostics[uri].Count.Should().Be(0);
+            callReceived.Should().BeTrue();
+
+            expectedSeverity = DiagnosticSeverity.Unspecified;
+            callReceived = false;
+            ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(new[] { ErrorCodes.UnresolvedImport }, null, null, new[] { ErrorCodes.UnresolvedImport });
+            ds.Diagnostics[uri].Count.Should().Be(0);
+            callReceived.Should().BeTrue();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SuppressError() {
+            const string code = @"import nonexistent";
+
+            var analysis = await GetAnalysisAsync(code);
+            var ds = Services.GetService<IDiagnosticsService>();
+            var doc = analysis.Document;
+
+            var diags = ds.Diagnostics[doc.Uri];
+            diags.Count.Should().Be(1);
+            diags[0].Severity.Should().Be(Severity.Warning);
+
+            var uri = doc.Uri;
+            var callReceived = false;
+            var clientApp = Services.GetService<IClientApplication>();
+            clientApp.When(x => x.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", Arg.Any<object>()))
+                .Do(x => {
+                    var dp = x.Args()[1] as PublishDiagnosticsParams;
+                    dp.Should().NotBeNull();
+                    dp.uri.Should().Be(uri);
+                    dp.diagnostics.Length.Should().Be(0);
+                    callReceived = true;
+                });
+
+            ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(null, null, null, new[] { ErrorCodes.UnresolvedImport });
             callReceived.Should().BeTrue();
         }
     }
