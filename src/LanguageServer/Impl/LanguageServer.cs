@@ -25,7 +25,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.Shell;
+using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Core.Threading;
 using Microsoft.Python.LanguageServer.Extensibility;

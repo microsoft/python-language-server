@@ -35,7 +35,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// </summary>
     internal sealed partial class ExpressionEval : IExpressionEvaluator {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
-        private readonly IDiagnosticsService _diagnostics;
+        private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+        private readonly object _lock = new object();
 
         public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
@@ -47,7 +48,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             DefaultLookupOptions = LookupOptions.Normal;
 
             //Log = services.GetService<ILogger>();
-            _diagnostics = services.GetService<IDiagnosticsService>();
         }
 
         public LookupOptions DefaultLookupOptions { get; set; }
@@ -69,6 +69,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         IScope IExpressionEvaluator.CurrentScope => CurrentScope;
         IGlobalScope IExpressionEvaluator.GlobalScope => GlobalScope;
         public LocationInfo GetLocation(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
+        public IEnumerable<DiagnosticsEntry> Diagnostics => _diagnostics;
 
         public Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default)
             => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
@@ -228,11 +229,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return trueValue ?? falseValue;
         }
 
-        private void AddDiagnostics(Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
+        private void ReportDiagnostics(Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
             // Do not add if module is library, etc. Only handle user code.
             if (Module.ModuleType == ModuleType.User) {
-                foreach (var e in entries) {
-                    _diagnostics?.Add(documentUri, e);
+                lock (_lock) {
+                    _diagnostics.AddRange(entries);
                 }
             }
         }
