@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionEval {
+    internal sealed partial class ExpressionEval: IExpressionEvaluator {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
         private readonly object _lock = new object();
