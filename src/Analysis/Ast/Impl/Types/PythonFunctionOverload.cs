@@ -114,6 +114,9 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public string GetReturnDocumentation(IPythonType self) {
+            if (self == null) {
+                return _returnDocumentation;
+            }
             var returnType = StaticReturnValue.GetPythonType();
             switch (returnType) {
                 case PythonClassType cls when cls.IsGeneric(): {
@@ -162,22 +165,26 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
 
-            // If function returns generic, determine actual type
+            // If function returns generic, determine actual type based on the passed in specific type (self).
+            if (!(self is IPythonClassType selfClassType)) {
+                return StaticReturnValue;
+            }
+
             var returnType = StaticReturnValue.GetPythonType();
             switch (returnType) {
                 case PythonClassType cls when cls.IsGeneric(): {
                         // -> A[_T1, _T2, ...]
                         // Match arguments 
-                        var typeArgs = cls.GenericParameters.Keys
-                            .Select(n => cls.GenericParameters.TryGetValue(n, out var t) ? t : null)
+                        var typeArgs = selfClassType.GenericParameters.Keys
+                            .Select(n => selfClassType.GenericParameters.TryGetValue(n, out var t) ? t : null)
                             .ExcludeDefault()
                             .ToArray();
                         var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), _declaringModule, callLocation);
                         return new PythonInstance(specificReturnValue, callLocation);
                     }
-                case IGenericTypeParameter gtp1 when self is IPythonClassType cls: {
+                case IGenericTypeParameter gtp1: {
                         // -> _T
-                        if (cls.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
+                        if (selfClassType.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
                             return new PythonInstance(specificType, callLocation);
                         }
                         // Try returning the constraint

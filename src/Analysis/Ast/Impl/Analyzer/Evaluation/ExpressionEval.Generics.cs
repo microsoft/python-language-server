@@ -48,7 +48,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // rather than specific type instantiation as in List[str].
 
             IPythonType[] specificTypes;
+            var returnInstance = false;
             switch (expr) {
+                // Indexing returns type as from A[int]
                 case IndexExpression indexExpr: {
                         // Generic[T1, T2, ...] or A[type]()
                         var indices = await EvaluateIndexAsync(indexExpr, cancellationToken);
@@ -92,14 +94,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                                 return UnknownType;
                             }
                         }
-
                         break;
                     }
                 case CallExpression callExpr:
                     // Alternative instantiation:
                     //  class A(Generic[T]): ...
                     //  x = A(1234)
-                    specificTypes = (await EvaluateICallArgsAsync(callExpr, cancellationToken)).Select(x => x.GetPythonType()).ToArray();
+                    specificTypes = (await EvaluateCallArgsAsync(callExpr, cancellationToken)).Select(x => x.GetPythonType()).ToArray();
+                    // Callable returns instance (as opposed to a type with index expression)
+                    returnInstance = true;
                     break;
 
                 default:
@@ -113,7 +116,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // TODO: figure out if we could make GenericClassType: PythonClassType, IGenericType instead.
             if (target is PythonClassType cls) {
                 var location = GetLoc(expr);
-                return cls.CreateSpecificType(new ArgumentSet(specificTypes), Module, location);
+                var type = cls.CreateSpecificType(new ArgumentSet(specificTypes), Module, location);
+                return returnInstance ? new PythonInstance(type, GetLoc(expr)) : (IMember)type;
             }
             return null;
         }
@@ -133,7 +137,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return indices;
         }
 
-        private async Task<IReadOnlyList<IMember>> EvaluateICallArgsAsync(CallExpression expr, CancellationToken cancellationToken = default) {
+        private async Task<IReadOnlyList<IMember>> EvaluateCallArgsAsync(CallExpression expr, CancellationToken cancellationToken = default) {
             var indices = new List<IMember>();
             cancellationToken.ThrowIfCancellationRequested();
             foreach (var e in expr.Args.Select(a => a.Expression).ExcludeDefault()) {
