@@ -55,12 +55,73 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return new DocumentSymbol {
                 name = hSym.Name,
                 detail = hSym.Detail,
-                kind = (Protocol.SymbolKind)hSym.Kind,
+                kind = ToSymbolKind(hSym.Kind),
                 deprecated = hSym.Deprecated ?? false,
                 range = hSym.Range,
                 selectionRange = hSym.SelectionRange,
                 children = hSym.Children.MaybeEnumerate().Select(MakeDocumentSymbol).ToArray(),
             };
+        }
+
+        private Protocol.SymbolKind ToSymbolKind(Indexing.SymbolKind kind) {
+            switch (kind) {
+                case Indexing.SymbolKind.None:
+                    return Protocol.SymbolKind.None;
+                case Indexing.SymbolKind.File:
+                    return Protocol.SymbolKind.File;
+                case Indexing.SymbolKind.Module:
+                    return Protocol.SymbolKind.Module;
+                case Indexing.SymbolKind.Namespace:
+                    return Protocol.SymbolKind.Namespace;
+                case Indexing.SymbolKind.Package:
+                    return Protocol.SymbolKind.Package;
+                case Indexing.SymbolKind.Class:
+                    return Protocol.SymbolKind.Class;
+                case Indexing.SymbolKind.Method:
+                    return Protocol.SymbolKind.Method;
+                case Indexing.SymbolKind.Property:
+                    return Protocol.SymbolKind.Property;
+                case Indexing.SymbolKind.Field:
+                    return Protocol.SymbolKind.Field;
+                case Indexing.SymbolKind.Constructor:
+                    return Protocol.SymbolKind.Constructor;
+                case Indexing.SymbolKind.Enum:
+                    return Protocol.SymbolKind.Enum;
+                case Indexing.SymbolKind.Interface:
+                    return Protocol.SymbolKind.Interface;
+                case Indexing.SymbolKind.Function:
+                    return Protocol.SymbolKind.Function;
+                case Indexing.SymbolKind.Variable:
+                    return Protocol.SymbolKind.Variable;
+                case Indexing.SymbolKind.Constant:
+                    return Protocol.SymbolKind.Constant;
+                case Indexing.SymbolKind.String:
+                    return Protocol.SymbolKind.String;
+                case Indexing.SymbolKind.Number:
+                    return Protocol.SymbolKind.Number;
+                case Indexing.SymbolKind.Boolean:
+                    return Protocol.SymbolKind.Boolean;
+                case Indexing.SymbolKind.Array:
+                    return Protocol.SymbolKind.Array;
+                case Indexing.SymbolKind.Object:
+                    return Protocol.SymbolKind.Object;
+                case Indexing.SymbolKind.Key:
+                    return Protocol.SymbolKind.Key;
+                case Indexing.SymbolKind.Null:
+                    return Protocol.SymbolKind.Null;
+                case Indexing.SymbolKind.EnumMember:
+                    return Protocol.SymbolKind.EnumMember;
+                case Indexing.SymbolKind.Struct:
+                    return Protocol.SymbolKind.Struct;
+                case Indexing.SymbolKind.Event:
+                    return Protocol.SymbolKind.Event;
+                case Indexing.SymbolKind.Operator:
+                    return Protocol.SymbolKind.Operator;
+                case Indexing.SymbolKind.TypeParameter:
+                    return Protocol.SymbolKind.TypeParameter;
+                default:
+                    throw new NotImplementedException($"{kind} is not a LSP's SymbolKind");
+            }
         }
     }
 }
