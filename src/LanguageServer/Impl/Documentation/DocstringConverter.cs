@@ -158,6 +158,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             line = PreprocessTextLine(line);
 
             // Hack: attempt to put directives lines into their own paragraphs.
+            // This should be removed once proper list-like parsing is written.
             if (!_insideInlineCode && Regex.IsMatch(line, @"^:(param|type|return|rtype|copyright|license)")) {
                 AppendLine();
             }
@@ -194,16 +195,16 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 }
 
                 // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#hyperlink-references
-                part = Regex.Replace(part, @"^_+", "");
+                // part = Regex.Replace(part, @"^_+", "");
                 // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#inline-internal-targets
-                part = Regex.Replace(part, @"_+$", "");
+                // part = Regex.Replace(part, @"_+$", "");
 
                 // TODO: Strip footnote/citation references.
 
                 // TODO: Expand
 
-                // Escape _ and *, but ignore things like ":param \*\*kwargs:".
-                part = Regex.Replace(part, @"[^\\]([_*])", @"\$1");
+                // Escape _, *, and ~, but ignore things like ":param \*\*kwargs:".
+                part = Regex.Replace(part, @"(?<=^|[^\\])([_*~])", @"\$1");
 
                 Append(part);
             }

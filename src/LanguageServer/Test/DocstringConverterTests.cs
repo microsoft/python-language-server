@@ -45,6 +45,67 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void NormalText() {
+            var docstring = @"This is just some normal text
+that extends over multiple lines. This will appear
+as-is without modification.
+";
+
+            var markdown = @"This is just some normal text
+that extends over multiple lines. This will appear
+as-is without modification.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void InlineLitereals() {
+            var docstring = @"This paragraph talks about ``foo``
+which is related to :something:`bar`, and probably `qux`:something_else:.
+";
+
+            var markdown = @"This paragraph talks about `foo`
+which is related to `bar`, and probably `qux`.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void Headings() {
+            var docstring = @"Heading 1
+=========
+
+Heading 2
+---------
+
+Heading 3
+~~~~~~~~~
+";
+
+            var markdown = @"Heading 1
+=========
+
+Heading 2
+---------
+
+Heading 3
+---------
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [DataRow(@"*foo*", @"\*foo\*")]
+        [DataRow(@"``*foo*``", @"`*foo*`")]
+        [DataRow(@"foo~~bar", @"foo\~\~bar")]
+        [DataRow(@"``foo~~bar``", @"`foo~~bar`")]
+        [DataRow(@"__init__", @"\_\_init\_\_")]
+        [DataRow(@"``__init__``", @"`__init__`")]
+        [DataTestMethod, Priority(0)]
+        public void EscapedCharacters(string docstring, string markdown) {
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
         public void Doctest() {
             var docstring = @"This is a doctest:
 
