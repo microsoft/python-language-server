@@ -96,12 +96,64 @@ Heading 3
 
         [DataRow(@"*foo*", @"\*foo\*")]
         [DataRow(@"``*foo*``", @"`*foo*`")]
-        [DataRow(@"foo~~bar", @"foo\~\~bar")]
-        [DataRow(@"``foo~~bar``", @"`foo~~bar`")]
+        [DataRow(@"~foo~~bar~", @"\~foo\~\~bar\~")]
+        [DataRow(@"``~foo~~bar~``", @"`~foo~~bar~`")]
         [DataRow(@"__init__", @"\_\_init\_\_")]
         [DataRow(@"``__init__``", @"`__init__`")]
         [DataTestMethod, Priority(0)]
         public void EscapedCharacters(string docstring, string markdown) {
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void CopyrightAndLicense() {
+            var docstring = @"This is a test.
+
+:copyright: Fake Name
+:license: ABCv123
+";
+
+            var markdown = @"This is a test.
+
+:copyright: Fake Name
+
+:license: ABCv123
+";
+
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void CommonRestFieldLists() {
+            var docstring = @"This function does something.
+
+:param foo: This is a description of the foo parameter
+    which does something interesting.
+:type foo: Foo
+:param bar: This is a description of bar.
+:type bar: Bar
+:return: Something else.
+:rtype: Something
+:raises ValueError: If something goes wrong.
+";
+
+            var markdown = @"This function does something.
+
+:param foo: This is a description of the foo parameter
+    which does something interesting.
+
+:type foo: Foo
+
+:param bar: This is a description of bar.
+
+:type bar: Bar
+
+:return: Something else.
+
+:rtype: Something
+
+:raises ValueError: If something goes wrong.
+";
             docstring.Should().ConvertToMarkdown(markdown);
         }
 
@@ -142,6 +194,49 @@ foo
         }
 
         [TestMethod, Priority(0)]
+        public void DoctestTextAfter() {
+            var docstring = @"This is a doctest:
+
+>>> print('foo')
+foo
+
+This text comes after.
+";
+
+            var markdown = @"This is a doctest:
+
+```
+>>> print('foo')
+foo
+```
+
+This text comes after.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void DoctestIndentedTextAfter() {
+            var docstring = @"This is a doctest:
+
+    >>> print('foo')
+    foo
+  This line has a different indent.
+";
+
+            var markdown = @"This is a doctest:
+
+```
+>>> print('foo')
+foo
+```
+
+This line has a different indent.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
         public void MarkdownStyleBacktickBlock() {
             var docstring = @"Backtick block:
 
@@ -173,6 +268,36 @@ And some text after.
         public void RestLiteralBlock() {
             var docstring = @"
 Take a look at this code::
+
+    if foo:
+        print(foo)
+    else:
+        print('not foo!')
+
+This text comes after.
+";
+
+            var markdown = @"Take a look at this code:
+
+```
+if foo:
+    print(foo)
+else:
+    print('not foo!')
+```
+
+This text comes after.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void RestLiteralBlockExtraSpace() {
+            var docstring = @"
+Take a look at this code::
+
+
+
 
     if foo:
         print(foo)
@@ -234,6 +359,106 @@ print(a + foo + 123)
 ```
 
 And now it's text.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void DirectiveRemoval() {
+            var docstring = @"This is a test.
+
+.. ignoreme:: example
+
+This text is in-between.
+
+.. versionadded:: 1.0
+    Foo was added to Bar.
+
+.. admonition:: Note
+    
+    This paragraph appears inside the admonition
+    and spans multiple lines.
+
+This text comes after.
+";
+
+            var markdown = @"This is a test.
+
+This text is in-between.
+
+This text comes after.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void ClassDirective() {
+            var docstring = @"
+.. class:: FooBar()
+    This is a description of ``FooBar``.
+
+``FooBar`` is interesting.
+";
+
+            var markdown = @"```
+FooBar()
+```
+
+This is a description of `FooBar`.
+
+`FooBar` is interesting.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void UnfinishedBacktickBlock() {
+            var docstring = @"```
+something
+";
+
+            var markdown = @"```
+something
+```
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void UnfinishedInlineLiteral() {
+            var docstring = @"`oops
+";
+
+            var markdown = @"`oops`";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void DashList() {
+            var docstring = @"
+This is a list:
+  - Item 1
+  - Item 2
+";
+
+            var markdown = @"This is a list:
+  - Item 1
+  - Item 2
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void AsteriskList() {
+            var docstring = @"
+This is a list:
+  * Item 1
+  * Item 2
+";
+
+            var markdown = @"This is a list:
+  * Item 1
+  * Item 2
 ";
             docstring.Should().ConvertToMarkdown(markdown);
         }

@@ -59,17 +59,20 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
         private Func<bool> _state;
         private readonly Stack<Func<bool>> _stateStack = new Stack<Func<bool>>();
-        private int _blockIndent;
-        private bool _forceFirstBlockLine;
 
-        private readonly List<string> _lines;
+        private readonly IReadOnlyList<string> _lines;
         private int _lineNum = 0;
 
         private string CurrentLine => _lines.ElementAtOrDefault(_lineNum);
         private int CurrentIndent => CurrentLine.TakeWhile(char.IsWhiteSpace).Count();
         private string LineAt(int i) => _lines.ElementAtOrDefault(i);
         private int NextBlockIndent
-            => _lines.Skip(_lineNum + 1).SkipWhile(string.IsNullOrWhiteSpace).FirstOrDefault()?.TakeWhile(char.IsWhiteSpace).Count() ?? 0;
+            => _lines.Skip(_lineNum + 1).SkipWhile(string.IsNullOrWhiteSpace)
+            .FirstOrDefault()?.TakeWhile(char.IsWhiteSpace).Count() ?? 0;
+
+        private int _blockIndent = 0;
+        private bool CurrentLineIsOutsideBlock => CurrentIndent < _blockIndent;
+        private string CurrentLineWithinBlock => CurrentLine.Substring(_blockIndent);
 
         private DocstringConverter(string input) {
             _state = ParseText;
@@ -84,9 +87,11 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 }
             }
 
+            // Close out any outstanding code blocks.
             if (_state == ParseBacktickBlock || _state == ParseDoctest || _state == ParseLiteralBlock) {
-                // Close out any outstanding code blocks.
                 TrimOutputAndAppendLine("```");
+            } else if (_insideInlineCode) {
+                TrimOutputAndAppendLine("`", true);
             }
 
             return _builder.ToString().Trim();
@@ -159,7 +164,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
             // Hack: attempt to put directives lines into their own paragraphs.
             // This should be removed once proper list-like parsing is written.
-            if (!_insideInlineCode && Regex.IsMatch(line, @"^:(param|type|return|rtype|copyright|license)")) {
+            if (!_insideInlineCode && Regex.IsMatch(line, @"^:(param|arg|type|return|rtype|raise|except|var|ivar|cvar|copyright|license)")) {
                 AppendLine();
             }
 
@@ -194,14 +199,16 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                     }
                 }
 
+                // TODO: Find a better way to handle this; the below breaks escaped
+                // characters which appear at the beginning or end of a line.
+                // Applying this only when i == 0 or i == parts.Length-1 may work.
+
                 // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#hyperlink-references
                 // part = Regex.Replace(part, @"^_+", "");
                 // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#inline-internal-targets
                 // part = Regex.Replace(part, @"_+$", "");
 
                 // TODO: Strip footnote/citation references.
-
-                // TODO: Expand
 
                 // Escape _, *, and ~, but ignore things like ":param \*\*kwargs:".
                 part = Regex.Replace(part, @"(?<=^|[^\\])([_*~])", @"\$1");
@@ -211,7 +218,8 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
             // Go straight to the builder so that AppendLine doesn't think
             // we're actually trying to insert an extra blank line and skip
-            // future whitespace.
+            // future whitespace. Empty line deduplication is already handled
+            // because Append is used above.
             _builder.AppendLine();
         }
 
@@ -251,7 +259,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             }
 
             BeginMinIndentCodeBlock(ParseDoctest);
-            AppendLine(CurrentLine.Substring(_blockIndent));
+            AppendLine(CurrentLineWithinBlock);
             return true;
         }
 
@@ -260,14 +268,14 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             // >>> ...
             //  ...
             // ...
-            if (CurrentIndent < _blockIndent) {
+            if (CurrentLineIsOutsideBlock || string.IsNullOrWhiteSpace(CurrentLine)) {
                 TrimOutputAndAppendLine("```");
                 AppendLine();
                 PopState();
                 return false;
             }
 
-            AppendLine(CurrentLine.Substring(_blockIndent));
+            AppendLine(CurrentLineWithinBlock);
             return true;
         }
 
@@ -282,11 +290,9 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
             // Find the previous paragraph and check that it ends with ::
             // This goes to -1 so this can return false when it hits the beginning of the file.
-            for (var i = _lineNum - 2; i >= -1; i--) {
-                if (i < 0) {
-                    return false;
-                }
 
+            var i = _lineNum - 2;
+            for (; i >= 0; i--) {
                 var line = LineAt(i);
 
                 if (string.IsNullOrWhiteSpace(line)) {
@@ -298,6 +304,10 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                     break;
                 }
 
+                return false;
+            }
+
+            if (i < 0) {
                 return false;
             }
 
@@ -319,14 +329,14 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 return true;
             }
 
-            if (CurrentIndent < _blockIndent) {
+            if (CurrentLineIsOutsideBlock) {
                 TrimOutputAndAppendLine("```");
                 AppendLine();
                 PopState();
                 return false;
             }
 
-            AppendLine(CurrentLine.Substring(_blockIndent));
+            AppendLine(CurrentLineWithinBlock);
             return true;
         }
 
@@ -362,6 +372,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                     AppendLine("```");
                     AppendLine(directive);
                     AppendLine("```");
+                    AppendLine();
                 }
             }
 
@@ -376,14 +387,14 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         }
 
         private bool ParseDirectiveBlock() {
-            if (!string.IsNullOrWhiteSpace(CurrentLine) && CurrentIndent < _blockIndent) {
+            if (!string.IsNullOrWhiteSpace(CurrentLine) && CurrentLineIsOutsideBlock) {
                 PopState();
                 return false;
             }
 
             if (_appendDirectiveBlock) {
                 // This is a bit of a hack. This just trims the text and appends it
-                // like top-level text, rather than doing actual indent-based recusion.
+                // like top-level text, rather than doing actual indent-based recursion.
                 AppendTextLine(CurrentLine.TrimStart());
             }
 
@@ -405,10 +416,14 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             _skipAppendEmptyLine = false;
         }
 
-        private void TrimOutputAndAppendLine(string line = null) {
+        private void TrimOutputAndAppendLine(string line = null, bool noNewLine = false) {
             _builder.TrimEnd();
             _skipAppendEmptyLine = false;
-            AppendLine();
+
+            if (!noNewLine) {
+                AppendLine();
+            }
+
             AppendLine(line);
         }
 
