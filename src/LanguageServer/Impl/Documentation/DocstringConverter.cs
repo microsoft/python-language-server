@@ -88,7 +88,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 TrimOutputAndAppendLine("```");
             }
 
-            return _builder.ToString();
+            return _builder.ToString().Trim();
         }
 
         private void PushAndSetState(Func<bool> next) {
@@ -304,14 +304,19 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
         private bool ParseDoubleColonCode() {
             // Slightly different than doctest, wait until the first non-empty unindented line to exit.
-            if (!string.IsNullOrWhiteSpace(CurrentLine) && CurrentIndent < _blockIndent) {
+            if (string.IsNullOrWhiteSpace(CurrentLine)) {
+                AppendLine();
+                return true;
+            }
+
+            if (CurrentIndent < _blockIndent) {
                 TrimOutputAndAppendLine("```");
                 AppendLine();
                 PopState();
                 return false;
             }
 
-            AppendLine(CurrentLine.Substring(CurrentIndent));
+            AppendLine(CurrentLine.Substring(_blockIndent));
             return true;
         }
 

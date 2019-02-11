@@ -14,8 +14,6 @@
 // permissions and limitations under the License.
 
 using FluentAssertions;
-using Microsoft.Python.Core;
-using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 using static Microsoft.Python.LanguageServer.Tests.FluentAssertions.DocstringAssertions;
@@ -59,6 +57,100 @@ foo
 ```
 >>> print('foo')
 foo
+```
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void DoctestIndented() {
+            var docstring = @"This is a doctest:
+
+    >>> print('foo')
+    foo
+";
+
+            var markdown = @"This is a doctest:
+
+```
+>>> print('foo')
+foo
+```
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void MarkdownStyleBacktickBlock() {
+            var docstring = @"Backtick block:
+
+```
+print(foo_bar)
+
+if True:
+    print(bar_foo)
+```
+
+And some text after.
+";
+
+            var markdown = @"Backtick block:
+
+```
+print(foo_bar)
+
+if True:
+    print(bar_foo)
+```
+
+And some text after.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void RestLiteralBlock() {
+            var docstring = @"
+Take a look at this code::
+
+    if foo:
+        print(foo)
+    else:
+        print('not foo!')
+
+This text comes after.
+";
+
+            var markdown = @"Take a look at this code:
+
+```
+if foo:
+    print(foo)
+else:
+    print('not foo!')
+```
+
+This text comes after.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void RestLiteralBlockEmptyDoubleColonLine() {
+            var docstring = @"
+::
+
+    if foo:
+        print(foo)
+    else:
+        print('not foo!')
+";
+
+            var markdown = @"```
+if foo:
+    print(foo)
+else:
+    print('not foo!')
 ```
 ";
             docstring.Should().ConvertToMarkdown(markdown);
