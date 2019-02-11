@@ -34,6 +34,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var doc = _rdt.OpenDocument(uri, @params.textDocument.text);
             _indexManager.ProcessNewFile(uri.AbsolutePath, doc);
+            doc.NewAst += (d, _) => _indexManager.ReIndexFile(uri.AbsolutePath, d as IDocument);
         }
 
         public void DidChangeTextDocument(DidChangeTextDocumentParams @params) {
@@ -51,7 +52,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     changes.Add(change);
                 }
                 doc.Update(changes);
-                _indexManager.ReIndexFile(uri.AbsolutePath, doc);
             } else {
                 _log?.Log(TraceEventType.Warning, $"Unable to find document for {@params.textDocument.uri}");
             }
