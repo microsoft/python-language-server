@@ -155,5 +155,26 @@ else:
 ";
             docstring.Should().ConvertToMarkdown(markdown);
         }
+
+        [TestMethod, Priority(0)]
+        public void RestLiteralBlockNoIndentOneLiner() {
+            var docstring = @"
+The next code is a one-liner::
+
+print(a + foo + 123)
+
+And now it's text.
+";
+
+            var markdown = @"The next code is a one-liner:
+
+```
+print(a + foo + 123)
+```
+
+And now it's text.
+";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
     }
 }

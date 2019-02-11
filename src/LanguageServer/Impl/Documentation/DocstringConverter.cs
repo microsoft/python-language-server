@@ -60,6 +60,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         private Func<bool> _state;
         private readonly Stack<Func<bool>> _stateStack = new Stack<Func<bool>>();
         private int _blockIndent;
+        private bool _forceFirstBlockLine;
 
         private readonly List<string> _lines;
         private int _lineNum = 0;
@@ -71,7 +72,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             => _lines.Skip(_lineNum + 1).SkipWhile(string.IsNullOrWhiteSpace).FirstOrDefault()?.TakeWhile(char.IsWhiteSpace).Count() ?? 0;
 
         private DocstringConverter(string input) {
-            _state = ParseTopText;
+            _state = ParseText;
             _lines = SplitDocstring(input);
         }
 
@@ -83,7 +84,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 }
             }
 
-            if (_state == ParseCodeBacktick || _state == ParseTopDoctest || _state == ParseDoubleColonCode) {
+            if (_state == ParseBacktickBlock || _state == ParseDoctest || _state == ParseLiteralBlock) {
                 // Close out any outstanding code blocks.
                 TrimOutputAndAppendLine("```");
             }
@@ -92,7 +93,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         }
 
         private void PushAndSetState(Func<bool> next) {
-            if (_state == ParseTopText) {
+            if (_state == ParseText) {
                 _insideInlineCode = false;
             }
 
@@ -103,29 +104,29 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         private void PopState() {
             _state = _stateStack.Pop();
 
-            if (_state == ParseTopText) {
+            if (_state == ParseText) {
                 // Terminate inline code when leaving a block.
                 _insideInlineCode = false;
             }
         }
 
-        private bool ParseTopText() {
+        private bool ParseText() {
             if (string.IsNullOrWhiteSpace(CurrentLine)) {
-                _state = ParseTopEmpty;
+                _state = ParseEmpty;
                 return false;
             }
 
             if (CurrentLine.StartsWith("```")) {
                 AppendLine(CurrentLine);
-                PushAndSetState(ParseCodeBacktick);
+                PushAndSetState(ParseBacktickBlock);
                 return true;
             }
 
-            if (BeginDoubleColonCode()) {
+            if (BeginLiteralBlock()) {
                 return false;
             }
 
-            if (BeginTopDoctest()) {
+            if (BeginDoctest()) {
                 return true;
             }
 
@@ -213,7 +214,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             _builder.AppendLine();
         }
 
-        private bool ParseTopEmpty() {
+        private bool ParseEmpty() {
             if (string.IsNullOrWhiteSpace(CurrentLine)) {
                 AppendLine();
                 return true;
@@ -221,11 +222,11 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
             // TODO: If List-like, move into list parser, push.
 
-            _state = ParseTopText;
+            _state = ParseText;
             return false;
         }
 
-        private bool ParseCodeBacktick() {
+        private bool ParseBacktickBlock() {
             if (CurrentLine.StartsWith("```")) {
                 AppendLine("```");
                 AppendLine();
@@ -237,23 +238,23 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             return true;
         }
 
-        private void BeginConsistentCodeBlock(Func<bool> state) {
+        private void BeginMinIndentCodeBlock(Func<bool> state) {
             AppendLine("```");
             PushAndSetState(state);
             _blockIndent = CurrentIndent;
         }
 
-        private bool BeginTopDoctest() {
+        private bool BeginDoctest() {
             if (!Regex.IsMatch(CurrentLine, @" *>>> ")) {
                 return false;
             }
 
-            BeginConsistentCodeBlock(ParseTopDoctest);
+            BeginMinIndentCodeBlock(ParseDoctest);
             AppendLine(CurrentLine.Substring(_blockIndent));
             return true;
         }
 
-        private bool ParseTopDoctest() {
+        private bool ParseDoctest() {
             // Allow doctests like:
             // >>> ...
             //  ...
@@ -269,12 +270,8 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             return true;
         }
 
-        private bool BeginDoubleColonCode() {
-            // Literal blocks must have some indention.
-            if (CurrentIndent == 0) {
-                return false;
-            }
-
+        private bool BeginLiteralBlock() {
+            // The previous line must be empty.
             var prev = LineAt(_lineNum - 1);
             if (prev == null) {
                 return false;
@@ -283,7 +280,12 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             }
 
             // Find the previous paragraph and check that it ends with ::
-            for (var i = _lineNum - 2; i >= 0; i--) {
+            // This goes to -1 so this can return false when it hits the beginning of the file.
+            for (var i = _lineNum - 2; i >= -1; i--) {
+                if (i < 0) {
+                    return false;
+                }
+
                 var line = LineAt(i);
 
                 if (string.IsNullOrWhiteSpace(line)) {
@@ -298,11 +300,18 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 return false;
             }
 
-            BeginConsistentCodeBlock(ParseDoubleColonCode);
+            // Special case: allow one-liners at the same indent level.
+            if (CurrentIndent == 0) {
+                AppendLine("```");
+                PushAndSetState(ParseLiteralBlockSingleLine);
+                return true;
+            }
+
+            BeginMinIndentCodeBlock(ParseLiteralBlock);
             return true;
         }
 
-        private bool ParseDoubleColonCode() {
+        private bool ParseLiteralBlock() {
             // Slightly different than doctest, wait until the first non-empty unindented line to exit.
             if (string.IsNullOrWhiteSpace(CurrentLine)) {
                 AppendLine();
@@ -320,6 +329,13 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             return true;
         }
 
+        private bool ParseLiteralBlockSingleLine() {
+            AppendLine(CurrentLine);
+            AppendLine("```");
+            AppendLine();
+            PopState();
+            return true;
+        }
 
         private bool BeginDirective() {
             if (!Regex.IsMatch(CurrentLine, @"^\s*\.\. ")) {
