@@ -16,6 +16,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing.Ast;
@@ -37,7 +38,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return _index.SelectMany(kvp => WorkspaceSymbolsQuery(query, kvp.Key, kvp.Value.Value));
         }
 
-        private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string query, string path, IEnumerable<HierarchicalSymbol> symbols) {
+        private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string query, string path,
+            IEnumerable<HierarchicalSymbol> symbols) {
             var rootSymbols = DecorateWithParentsName(symbols, null);
             var treeSymbols = rootSymbols.TraverseBreadthFirst((symbolAndParent) => {
                 var sym = symbolAndParent.symbol;
@@ -53,70 +55,66 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void UpdateIndexIfNewer(string path, PythonAst ast, int version) {
             var walker = new SymbolIndexWalker(ast);
             ast.Walk(walker);
-            if (_index.TryGetValue(path, out var versionedList)) {
-                versionedList.UpdateIfNewer(walker.Symbols, version);
-            } else {
-                _index[path] = new VersionedValue<IReadOnlyList<HierarchicalSymbol>>(walker.Symbols, version);
-            }
+            var versionedList = _index.GetOrAdd(path, MakeVersionedValue(walker.Symbols, version));
+            versionedList.UpdateIfNewer(walker.Symbols, version);
         }
 
         public void DeleteIfNewer(string path, int version) {
             var currentVersion = _index[path].Version;
-            if (version > currentVersion) {
-                // Point A
-                _index.Remove(path, out var oldVersionedValue);
-                // Point B
-                if (oldVersionedValue.Version > version) {
-                    // An update happened at point A
-                    // Reinsert that version, only if key doesn't exist
-                    _index.GetOrAdd(path, oldVersionedValue);
-                    // Update could have happened at B
-                }
+            if (version <= currentVersion) return;
+            // Point A
+            _index.Remove(path, out var oldVersionedValue);
+            // Point B
+            if (oldVersionedValue.Version > version) {
+                // An update happened at point A
+                // Reinsert that version, only if key doesn't exist
+                _index.GetOrAdd(path, oldVersionedValue);
+                // Update could have happened at B
             }
         }
 
         public bool IsIndexed(string path) => _index.ContainsKey(path);
 
-        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(IEnumerable<HierarchicalSymbol> symbols, string parentName)
+        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(
+            IEnumerable<HierarchicalSymbol> symbols, string parentName)
             => symbols.Select((symbol) => (symbol, parentName));
 
         public int GetNewVersion(string path) {
-            if (_index.TryGetValue(path, out var versionedList)) {
-                return versionedList.GetNewVersion();
-            } else {
-                _index[path] = new VersionedValue<IReadOnlyList<HierarchicalSymbol>>(new List<HierarchicalSymbol>(), DefaultVersion);
-                return _index[path].GetNewVersion();
+            var versionedList =
+                _index.GetOrAdd(path, MakeVersionedValue(new List<HierarchicalSymbol>(), DefaultVersion));
+            return versionedList.GetNewVersion();
+        }
+
+        private VersionedValue<IReadOnlyList<HierarchicalSymbol>> MakeVersionedValue(
+            IReadOnlyList<HierarchicalSymbol> symbols, int version) {
+            return new VersionedValue<IReadOnlyList<HierarchicalSymbol>>(symbols, version);
+        }
+
+        internal class VersionedValue<T> {
+            private readonly object _syncObj = new object();
+            private int _newVersion;
+
+            public VersionedValue(T value, int version) {
+                Value = value;
+                Version = version;
+                _newVersion = version + 1;
             }
-        }
-    }
 
-    internal class VersionedValue<T> {
-        private readonly object _syncObj = new object();
-        private int _newVersion;
+            public int Version { get; private set; }
 
-        public VersionedValue(T value, int version) {
-            Value = value;
-            Version = version;
-            _newVersion = version + 1;
-        }
+            public T Value { get; private set; }
 
-        public int Version { get; private set; }
-
-        public T Value { get; private set; }
-
-        public void UpdateIfNewer(T value, int version) {
-            lock (_syncObj) {
-                if (version > Version) {
-                    Value = value;
-                    Version = version;
+            public void UpdateIfNewer(T value, int version) {
+                lock (_syncObj) {
+                    if (version > Version) {
+                        Value = value;
+                        Version = version;
+                    }
                 }
             }
-        }
 
-        public int GetNewVersion() {
-            lock (_syncObj) {
-                _newVersion++;
-                return _newVersion;
+            public int GetNewVersion() {
+                return Interlocked.Increment(ref _newVersion);
             }
         }
     }
