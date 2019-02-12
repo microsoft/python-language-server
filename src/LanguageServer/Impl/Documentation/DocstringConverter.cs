@@ -161,7 +161,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
                 if (i > 0) {
                     _insideInlineCode = !_insideInlineCode;
-                    Append("`");
+                    Append('`');
                 }
 
                 if (_insideInlineCode) {
@@ -408,6 +408,11 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
         private void Append(string text) {
             _builder.Append(text);
+            _skipAppendEmptyLine = false;
+        }
+
+        private void Append(char c) {
+            _builder.Append(c);
             _skipAppendEmptyLine = false;
         }
 
