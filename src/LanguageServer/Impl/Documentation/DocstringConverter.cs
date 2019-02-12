@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -82,7 +83,16 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
         private string Convert() {
             while (CurrentLine != null) {
+                var before = _state;
+                var beforeLine = _lineNum;
+
                 _state();
+
+                // Parser must make progress; either the state or line number must change.
+                if (_state == before && _lineNum == beforeLine) {
+                    Debug.Fail("Infinite loop during docstring conversion");
+                    break;
+                }
             }
 
             // Close out any outstanding code blocks.
