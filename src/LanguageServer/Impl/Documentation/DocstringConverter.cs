@@ -57,11 +57,12 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         private bool _insideInlineCode = false;
         private bool _appendDirectiveBlock = false;
 
-        private Func<bool> _state;
-        private readonly Stack<Func<bool>> _stateStack = new Stack<Func<bool>>();
+        private Action _state;
+        private readonly Stack<Action> _stateStack = new Stack<Action>();
 
         private readonly IReadOnlyList<string> _lines;
         private int _lineNum = 0;
+        private void EatLine() => _lineNum++;
 
         private string CurrentLine => _lines.ElementAtOrDefault(_lineNum);
         private int CurrentIndent => CurrentLine.TakeWhile(char.IsWhiteSpace).Count();
@@ -81,10 +82,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
         private string Convert() {
             while (CurrentLine != null) {
-                var shouldAdvance = _state();
-                if (shouldAdvance) {
-                    _lineNum++;
-                }
+                _state();
             }
 
             // Close out any outstanding code blocks.
@@ -97,7 +95,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             return _builder.ToString().Trim();
         }
 
-        private void PushAndSetState(Func<bool> next) {
+        private void PushAndSetState(Action next) {
             if (_state == ParseText) {
                 _insideInlineCode = false;
             }
@@ -115,34 +113,32 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             }
         }
 
-        private bool ParseText() {
+        private void ParseText() {
             if (string.IsNullOrWhiteSpace(CurrentLine)) {
                 _state = ParseEmpty;
-                return false;
+                return;
             }
 
-            if (CurrentLine.StartsWith("```")) {
-                AppendLine(CurrentLine);
-                PushAndSetState(ParseBacktickBlock);
-                return true;
+            if (BeginBacktickBlock()) {
+                return;
             }
 
             if (BeginLiteralBlock()) {
-                return false;
+                return;
             }
 
             if (BeginDoctest()) {
-                return true;
+                return;
             }
 
             if (BeginDirective()) {
-                return false;
+                return;
             }
 
             // TODO: Push into Google/Numpy style list parser.
 
             AppendTextLine(CurrentLine);
-            return true;
+            EatLine();
         }
 
         private void AppendTextLine(string line) {
@@ -197,7 +193,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 // TODO: Strip footnote/citation references.
 
                 // Escape _, *, and ~, but ignore things like ":param \*\*kwargs:".
-                part = Regex.Replace(part, @"(?<=^|[^\\])([_*~])", @"\$1");
+                part = Regex.Replace(part, @"(?<!\\)([_*~])", @"\$1");
 
                 Append(part);
             }
@@ -225,32 +221,42 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             return line;
         }
 
-        private bool ParseEmpty() {
+        private void ParseEmpty() {
             if (string.IsNullOrWhiteSpace(CurrentLine)) {
                 AppendLine();
-                return true;
+                EatLine();
+                return;
             }
 
             _state = ParseText;
-            return false;
         }
 
-        private void BeginMinIndentCodeBlock(Func<bool> state) {
+        private void BeginMinIndentCodeBlock(Action state) {
             AppendLine("```");
             PushAndSetState(state);
             _blockIndent = CurrentIndent;
         }
 
-        private bool ParseBacktickBlock() {
+        private bool BeginBacktickBlock() {
+            if (CurrentLine.StartsWith("```")) {
+                AppendLine(CurrentLine);
+                PushAndSetState(ParseBacktickBlock);
+                EatLine();
+                return true;
+            }
+            return false;
+        }
+
+        private void ParseBacktickBlock() {
             if (CurrentLine.StartsWith("```")) {
                 AppendLine("```");
                 AppendLine();
                 PopState();
-                return true;
+            } else {
+                AppendLine(CurrentLine);
             }
 
-            AppendLine(CurrentLine);
-            return true;
+            EatLine();
         }
 
         private bool BeginDoctest() {
@@ -260,19 +266,20 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
             BeginMinIndentCodeBlock(ParseDoctest);
             AppendLine(CurrentLineWithinBlock);
+            EatLine();
             return true;
         }
 
-        private bool ParseDoctest() {
+        private void ParseDoctest() {
             if (CurrentLineIsOutsideBlock || string.IsNullOrWhiteSpace(CurrentLine)) {
                 TrimOutputAndAppendLine("```");
                 AppendLine();
                 PopState();
-                return false;
+                return;
             }
 
             AppendLine(CurrentLineWithinBlock);
-            return true;
+            EatLine();
         }
 
         private bool BeginLiteralBlock() {
@@ -316,30 +323,31 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             return true;
         }
 
-        private bool ParseLiteralBlock() {
+        private void ParseLiteralBlock() {
             // Slightly different than doctest, wait until the first non-empty unindented line to exit.
             if (string.IsNullOrWhiteSpace(CurrentLine)) {
                 AppendLine();
-                return true;
+                EatLine();
+                return;
             }
 
             if (CurrentLineIsOutsideBlock) {
                 TrimOutputAndAppendLine("```");
                 AppendLine();
                 PopState();
-                return false;
+                return;
             }
 
             AppendLine(CurrentLineWithinBlock);
-            return true;
+            EatLine();
         }
 
-        private bool ParseLiteralBlockSingleLine() {
+        private void ParseLiteralBlockSingleLine() {
             AppendLine(CurrentLine);
             AppendLine("```");
             AppendLine();
             PopState();
-            return true;
+            EatLine();
         }
 
         private bool BeginDirective() {
@@ -353,7 +361,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             return true;
         }
 
-        private bool ParseDirective() {
+        private void ParseDirective() {
             // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#directives
 
             var match = Regex.Match(CurrentLine, @"^\s*\.\.\s+(\w+)::\s*(.*)$");
@@ -378,13 +386,13 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 _state = ParseDirectiveBlock;
             }
 
-            return true;
+            EatLine();
         }
 
-        private bool ParseDirectiveBlock() {
+        private void ParseDirectiveBlock() {
             if (!string.IsNullOrWhiteSpace(CurrentLine) && CurrentLineIsOutsideBlock) {
                 PopState();
-                return false;
+                return;
             }
 
             if (_appendDirectiveBlock) {
@@ -393,7 +401,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 AppendTextLine(CurrentLine.TrimStart());
             }
 
-            return true;
+            EatLine();
         }
 
         private void AppendLine(string line = null) {
