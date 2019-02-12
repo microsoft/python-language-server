@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,18 +22,19 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class SymbolIndex : ISymbolIndex {
-        private readonly ConcurrentDictionary<string, IReadOnlyList<HierarchicalSymbol>> _index;
+        private static int DefaultVersion = 0;
+        private readonly ConcurrentDictionary<string, VersionedValue<IReadOnlyList<HierarchicalSymbol>>> _index;
 
         public SymbolIndex(IEqualityComparer<string> comparer = null) {
             comparer = comparer ?? PathEqualityComparer.Instance;
-            _index = new ConcurrentDictionary<string, IReadOnlyList<HierarchicalSymbol>>(comparer);
+            _index = new ConcurrentDictionary<string, VersionedValue<IReadOnlyList<HierarchicalSymbol>>>(comparer);
         }
 
         public IEnumerable<HierarchicalSymbol> HierarchicalDocumentSymbols(string path)
-            => _index.TryGetValue(path, out var list) ? list : Enumerable.Empty<HierarchicalSymbol>();
+            => _index.TryGetValue(path, out var list) ? list.Value : Enumerable.Empty<HierarchicalSymbol>();
 
         public IEnumerable<FlatSymbol> WorkspaceSymbols(string query) {
-            return _index.SelectMany(kvp => WorkspaceSymbolsQuery(query, kvp.Key, kvp.Value));
+            return _index.SelectMany(kvp => WorkspaceSymbolsQuery(query, kvp.Key, kvp.Value.Value));
         }
 
         private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string query, string path, IEnumerable<HierarchicalSymbol> symbols) {
@@ -50,17 +50,74 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
         }
 
-        public void UpdateIndex(string path, PythonAst ast) {
+        public void UpdateIndexIfNewer(string path, PythonAst ast, int version) {
             var walker = new SymbolIndexWalker(ast);
             ast.Walk(walker);
-            _index[path] = walker.Symbols;
+            if (_index.TryGetValue(path, out var versionedList)) {
+                versionedList.UpdateIfNewer(walker.Symbols, version);
+            } else {
+                _index[path] = new VersionedValue<IReadOnlyList<HierarchicalSymbol>>(walker.Symbols, version);
+            }
         }
 
-        public void Delete(string path) => _index.TryRemove(path, out var _);
+        public void DeleteIfNewer(string path, int version) {
+            var currentVersion = _index[path].Version;
+            if (version > currentVersion) {
+                // Point A
+                _index.Remove(path, out var oldVersionedValue);
+                // Point B
+                if (oldVersionedValue.Version > version) {
+                    // An update happened at point A
+                    // Reinsert that version, only if key doesn't exist
+                    _index.GetOrAdd(path, oldVersionedValue);
+                    // Update could have happened at B
+                }
+            }
+        }
 
         public bool IsIndexed(string path) => _index.ContainsKey(path);
 
         private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(IEnumerable<HierarchicalSymbol> symbols, string parentName)
             => symbols.Select((symbol) => (symbol, parentName));
+
+        public int GetNewVersion(string path) {
+            if (_index.TryGetValue(path, out var versionedList)) {
+                return versionedList.GetNewVersion();
+            } else {
+                _index[path] = new VersionedValue<IReadOnlyList<HierarchicalSymbol>>(new List<HierarchicalSymbol>(), DefaultVersion);
+                return _index[path].GetNewVersion();
+            }
+        }
+    }
+
+    internal class VersionedValue<T> {
+        private readonly object _syncObj = new object();
+        private int _newVersion;
+
+        public VersionedValue(T value, int version) {
+            Value = value;
+            Version = version;
+            _newVersion = version + 1;
+        }
+
+        public int Version { get; private set; }
+
+        public T Value { get; private set; }
+
+        public void UpdateIfNewer(T value, int version) {
+            lock (_syncObj) {
+                if (version > Version) {
+                    Value = value;
+                    Version = version;
+                }
+            }
+        }
+
+        public int GetNewVersion() {
+            lock (_syncObj) {
+                _newVersion++;
+                return _newVersion;
+            }
+        }
     }
 }

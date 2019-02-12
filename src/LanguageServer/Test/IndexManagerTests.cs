@@ -250,6 +250,39 @@ namespace Microsoft.Python.LanguageServer.Tests {
             SymbolsShouldBeOnlyX(symbols);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task LatestVersionASTVersionIsIndexed() {
+            ManualResetEventSlim reOpenedFileFinished = new ManualResetEventSlim(false);
+            ManualResetEventSlim fileOpenedEvent = new ManualResetEventSlim(false);
+
+            var pythonTestFilePath = FileWithXVarInRootDir();
+            _fileSystem.FileOpen(pythonTestFilePath, FileMode.Open).Returns(_ => {
+                fileOpenedEvent.Set();
+                // Wait forever
+                reOpenedFileFinished.Wait();
+                return MakeStream("x = 1");
+            });
+
+            var indexManager = GetDefaultIndexManager();
+
+            IDocument yVarDoc = Substitute.For<IDocument>();
+            yVarDoc.GetAnyAst().Returns(MakeAst("y = 1"));
+            IDocument zVarDoc = Substitute.For<IDocument>();
+            zVarDoc.GetAnyAst().Returns(MakeAst("z = 1"));
+
+            indexManager.ProcessNewFile(pythonTestFilePath, yVarDoc);
+            var closeFileTask = indexManager.ProcessClosedFileAsync(pythonTestFilePath);
+            fileOpenedEvent.Wait();
+            indexManager.ProcessNewFile(pythonTestFilePath, zVarDoc);
+            reOpenedFileFinished.Set();
+
+            await closeFileTask;
+            var symbols = await indexManager.HierarchicalDocumentSymbolsAsync(pythonTestFilePath);
+            symbols.Should().HaveCount(1);
+            symbols.First().Kind.Should().BeEquivalentTo(SymbolKind.Variable);
+            symbols.First().Name.Should().BeEquivalentTo("z");
+        }
+
         private static void SymbolsShouldBeOnlyX(IEnumerable<HierarchicalSymbol> symbols) {
             symbols.Should().HaveCount(1);
             symbols.First().Kind.Should().BeEquivalentTo(SymbolKind.Variable);

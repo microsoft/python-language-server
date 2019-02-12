@@ -45,6 +45,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public Task<bool> ParseAsync(string path, CancellationToken parseCancellationToken = default) {
             var linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, parseCancellationToken);
             var linkedParseToken = linkedParseCts.Token;
+            var version = _symbolIndex.GetNewVersion(path);
             return Task<bool>.Run(() => {
                 if (!_fileSystem.FileExists(path)) {
                     return false;
@@ -54,7 +55,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     using (var stream = _fileSystem.FileOpen(path, FileMode.Open)) {
                         var parser = Parser.CreateParser(stream, _version);
                         linkedParseToken.ThrowIfCancellationRequested();
-                        _symbolIndex.UpdateIndex(path, parser.ParseFile());
+                        _symbolIndex.UpdateIndexIfNewer(path, parser.ParseFile(), version);
                         return true;
                     }
                 } catch (FileNotFoundException e) {

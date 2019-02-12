@@ -90,7 +90,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 return _indexParser.ParseAsync(path, _allIndexCts.Token);
             } else {
                 // remove file from index
-                _symbolIndex.Delete(path);
+                _symbolIndex.DeleteIfNewer(path, _symbolIndex.GetNewVersion(path));
                 return Task.CompletedTask;
             }
         }
@@ -99,7 +99,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             => _fileSystem.IsPathUnderRoot(_workspaceRootPath, path);
 
         public void ProcessNewFile(string path, IDocument doc)
-            => _symbolIndex.UpdateIndex(path, doc.GetAnyAst());
+            => _symbolIndex.UpdateIndexIfNewer(path, doc.GetAnyAst(), _symbolIndex.GetNewVersion(path));
 
         public void ReIndexFile(string path, IDocument doc) {
             if (IsFileIndexed(path)) {

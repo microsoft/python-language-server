@@ -22,7 +22,7 @@ using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
-namespace Microsoft.Python.Analysis.Tests {
+namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
     public class SymbolIndexTests {
         public TestContext TestContext { get; set; }
@@ -616,7 +616,8 @@ else:
             ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse("x = 1");
-            index.UpdateIndex(path, ast);
+            var version = index.GetNewVersion(path);
+            index.UpdateIndexIfNewer(path, ast, version);
 
             var symbols = index.HierarchicalDocumentSymbols(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -629,7 +630,8 @@ else:
             ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse("x = 1");
-            index.UpdateIndex(path, ast);
+            var version = index.GetNewVersion(path);
+            index.UpdateIndexIfNewer(path, ast, version);
 
             var symbols = index.HierarchicalDocumentSymbols(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -637,7 +639,8 @@ else:
             });
 
             ast = GetParse("y = 1");
-            index.UpdateIndex(path, ast);
+            version = index.GetNewVersion(path);
+            index.UpdateIndexIfNewer(path, ast, version);
 
             symbols = index.HierarchicalDocumentSymbols(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -662,7 +665,8 @@ else:
             ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
-            index.UpdateIndex(path, ast);
+            var version = index.GetNewVersion(path);
+            index.UpdateIndexIfNewer(path, ast, version);
 
             var symbols = index.WorkspaceSymbols("");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -681,7 +685,8 @@ else:
             ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
-            index.UpdateIndex(path, ast);
+            var version = index.GetNewVersion(path);
+            index.UpdateIndexIfNewer(path, ast, version);
 
             var symbols = index.WorkspaceSymbols("x");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -706,7 +711,8 @@ else:
             ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
-            index.UpdateIndex(path, ast);
+            var version = index.GetNewVersion(path);
+            index.UpdateIndexIfNewer(path, ast, version);
 
             var symbols = index.WorkspaceSymbols("foo");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
