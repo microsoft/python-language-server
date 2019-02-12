@@ -18,8 +18,8 @@ using FluentAssertions.Execution;
 using Microsoft.Python.Core.Text;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
-namespace Microsoft.Python.LanguageServer.Tests.FluentAssertions {
-    internal sealed class SourceSpanAssertions {
+namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
+    public sealed class SourceSpanAssertions {
         public SourceSpan? Subject { get; }
 
         public SourceSpanAssertions(SourceSpan? span) {

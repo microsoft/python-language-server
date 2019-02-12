@@ -50,19 +50,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             switch (imports) {
                 case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
                     ImportMembersFromSelf(node);
-                    return false;
+                    break;
                 case ModuleImport moduleImport:
                     await ImportMembersFromModuleAsync(node, moduleImport.FullName, cancellationToken);
-                    return false;
+                    break;
                 case PossibleModuleImport possibleModuleImport:
-                    await HandlePossibleImportAsync(possibleModuleImport, Eval.GetLoc(node.Root), cancellationToken);
-                    return false;
+                    await HandlePossibleImportAsync(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, Eval.GetLoc(node.Root), cancellationToken);
+                    break;
                 case PackageImport packageImports:
                     await ImportMembersFromPackageAsync(node, packageImports, cancellationToken);
-                    return false;
-                default:
-                    return false;
+                    break;
+                case ImportNotFound notFound:
+                    MakeUnresolvedImport(null, notFound.FullName, Eval.GetLoc(node.Root));
+                    break;
             }
+            return false;
         }
 
         private void ImportMembersFromSelf(FromImportStatement node) {

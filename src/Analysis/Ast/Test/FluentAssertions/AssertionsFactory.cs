@@ -32,5 +32,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public static VariableAssertions Should(this IVariable v) => new VariableAssertions(v);
 
         public static RangeAssertions Should(this Range? range) => new RangeAssertions(range);
+
+        public static SourceSpanAssertions Should(this SourceSpan span) => new SourceSpanAssertions(span);
+        public static SourceSpanAssertions Should(this SourceSpan? span) => new SourceSpanAssertions(span.Value);
     }
 }

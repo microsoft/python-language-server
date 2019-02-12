@@ -17,8 +17,11 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -150,6 +153,60 @@ x = f()
             var analysis = await GetAnalysisAsync(@"import os.path as P");
             analysis.Should().HaveVariable("P")
                 .Which.Should().HaveMembers(@"abspath", @"dirname");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnresolvedImport() {
+            var analysis = await GetAnalysisAsync(@"import nonexistent");
+            analysis.Should().HaveVariable("nonexistent")
+                .Which.Value.GetPythonType<IPythonModule>().ModuleType.Should().Be(ModuleType.Unresolved);
+            analysis.Diagnostics.Should().HaveCount(1);
+            var d = analysis.Diagnostics.First();
+            d.ErrorCode.Should().Be(ErrorCodes.UnresolvedImport);
+            d.SourceSpan.Should().Be(1, 8, 1, 19);
+            d.Message.Should().Be(Resources.ErrorUnresolvedImport.FormatInvariant("nonexistent"));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnresolvedImportAs() {
+            var analysis = await GetAnalysisAsync(@"import nonexistent as A");
+            analysis.Should().HaveVariable("A")
+                .Which.Value.GetPythonType<IPythonModule>().ModuleType.Should().Be(ModuleType.Unresolved);
+            analysis.Diagnostics.Should().HaveCount(1);
+            var d = analysis.Diagnostics.First();
+            d.ErrorCode.Should().Be(ErrorCodes.UnresolvedImport);
+            d.SourceSpan.Should().Be(1, 8, 1, 19);
+            d.Message.Should().Be(Resources.ErrorUnresolvedImport.FormatInvariant("nonexistent"));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnresolvedFromImport() {
+            var analysis = await GetAnalysisAsync(@"from nonexistent import A");
+            analysis.Diagnostics.Should().HaveCount(1);
+            var d = analysis.Diagnostics.First();
+            d.ErrorCode.Should().Be(ErrorCodes.UnresolvedImport);
+            d.SourceSpan.Should().Be(1, 6, 1, 17);
+            d.Message.Should().Be(Resources.ErrorUnresolvedImport.FormatInvariant("nonexistent"));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnresolvedFromImportAs() {
+            var analysis = await GetAnalysisAsync(@"from nonexistent import A as B");
+            analysis.Diagnostics.Should().HaveCount(1);
+            var d = analysis.Diagnostics.First();
+            d.ErrorCode.Should().Be(ErrorCodes.UnresolvedImport);
+            d.SourceSpan.Should().Be(1, 6, 1, 17);
+            d.Message.Should().Be(Resources.ErrorUnresolvedImport.FormatInvariant("nonexistent"));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnresolvedRelativeFromImportAs() {
+            var analysis = await GetAnalysisAsync(@"from ..nonexistent import A as B");
+            analysis.Diagnostics.Should().HaveCount(1);
+            var d = analysis.Diagnostics.First();
+            d.ErrorCode.Should().Be(ErrorCodes.UnresolvedImport);
+            d.SourceSpan.Should().Be(1, 6, 1, 19);
+            d.Message.Should().Be(Resources.ErrorUnresolvedImport.FormatInvariant("nonexistent"));
         }
     }
 }
