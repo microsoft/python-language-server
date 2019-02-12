@@ -139,24 +139,10 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 return false;
             }
 
+            // TODO: Push into Google/Numpy style list parser.
+
             AppendTextLine(CurrentLine);
             return true;
-        }
-
-        private string PreprocessTextLine(string line) {
-            // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#literal-blocks
-            if (Regex.IsMatch(line, @"^\s*::$")) {
-                return string.Empty;
-            }
-            line = Regex.Replace(line, @"\s+::$", "");
-            line = Regex.Replace(line, @"(\S)\s*::$", "$1:");
-
-            // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#interpreted-text
-            line = Regex.Replace(line, @":[\w_\-+:.]+:`", "`");
-            line = Regex.Replace(line, @"`:[\w_\-+:.]+:", "`");
-
-            line = line.Replace("``", "`");
-            return line;
         }
 
         private void AppendTextLine(string line) {
@@ -164,7 +150,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
             // Hack: attempt to put directives lines into their own paragraphs.
             // This should be removed once proper list-like parsing is written.
-            if (!_insideInlineCode && Regex.IsMatch(line, @"^:(param|arg|type|return|rtype|raise|except|var|ivar|cvar|copyright|license)")) {
+            if (!_insideInlineCode && Regex.IsMatch(line, @"^\s*:(param|arg|type|return|rtype|raise|except|var|ivar|cvar|copyright|license)")) {
                 AppendLine();
             }
 
@@ -223,16 +209,36 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             _builder.AppendLine();
         }
 
+        private string PreprocessTextLine(string line) {
+            // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#literal-blocks
+            if (Regex.IsMatch(line, @"^\s*::$")) {
+                return string.Empty;
+            }
+            line = Regex.Replace(line, @"\s+::$", "");
+            line = Regex.Replace(line, @"(\S)\s*::$", "$1:");
+
+            // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#interpreted-text
+            line = Regex.Replace(line, @":[\w_\-+:.]+:`", "`");
+            line = Regex.Replace(line, @"`:[\w_\-+:.]+:", "`");
+
+            line = line.Replace("``", "`");
+            return line;
+        }
+
         private bool ParseEmpty() {
             if (string.IsNullOrWhiteSpace(CurrentLine)) {
                 AppendLine();
                 return true;
             }
 
-            // TODO: If List-like, move into list parser, push.
-
             _state = ParseText;
             return false;
+        }
+
+        private void BeginMinIndentCodeBlock(Func<bool> state) {
+            AppendLine("```");
+            PushAndSetState(state);
+            _blockIndent = CurrentIndent;
         }
 
         private bool ParseBacktickBlock() {
@@ -247,12 +253,6 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             return true;
         }
 
-        private void BeginMinIndentCodeBlock(Func<bool> state) {
-            AppendLine("```");
-            PushAndSetState(state);
-            _blockIndent = CurrentIndent;
-        }
-
         private bool BeginDoctest() {
             if (!Regex.IsMatch(CurrentLine, @" *>>> ")) {
                 return false;
@@ -264,10 +264,6 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         }
 
         private bool ParseDoctest() {
-            // Allow doctests like:
-            // >>> ...
-            //  ...
-            // ...
             if (CurrentLineIsOutsideBlock || string.IsNullOrWhiteSpace(CurrentLine)) {
                 TrimOutputAndAppendLine("```");
                 AppendLine();
@@ -289,8 +285,6 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             }
 
             // Find the previous paragraph and check that it ends with ::
-            // This goes to -1 so this can return false when it hits the beginning of the file.
-
             var i = _lineNum - 2;
             for (; i >= 0; i--) {
                 var line = LineAt(i);
@@ -369,6 +363,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
 
                 if (directiveType == "class") {
                     _appendDirectiveBlock = true;
+                    AppendLine();
                     AppendLine("```");
                     AppendLine(directive);
                     AppendLine("```");
