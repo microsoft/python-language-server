@@ -100,8 +100,28 @@ Heading 3
         [DataRow(@"``~foo~~bar~``", @"`~foo~~bar~`")]
         [DataRow(@"__init__", @"\_\_init\_\_")]
         [DataRow(@"``__init__``", @"`__init__`")]
+        [DataRow(@"foo **bar", @"foo \*\*bar")]
         [DataTestMethod, Priority(0)]
         public void EscapedCharacters(string docstring, string markdown) {
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+        [TestMethod, Priority(0)]
+        public void AsterisksAtStartOfArgs() {
+            var docstring = @"Foo:
+
+    Args:
+        foo (Foo): Foo!
+        *args: These are positional args.
+        **kwargs: These are named args.
+";
+            var markdown = @"Foo:
+
+Args:
+    foo (Foo): Foo!
+    \*args: These are positional args.
+    \*\*kwargs: These are named args.
+";
             docstring.Should().ConvertToMarkdown(markdown);
         }
 

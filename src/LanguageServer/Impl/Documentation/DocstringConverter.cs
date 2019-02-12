@@ -66,7 +66,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         private void EatLine() => _lineNum++;
 
         private string CurrentLine => _lines.ElementAtOrDefault(_lineNum);
-        private int CurrentIndent => CurrentLine.TakeWhile(char.IsWhiteSpace).Count();
+        private int CurrentIndent => CountLeadingSpaces(CurrentLine);
         private string LineAt(int i) => _lines.ElementAtOrDefault(i);
         private int NextBlockIndent
             => _lines.Skip(_lineNum + 1).SkipWhile(string.IsNullOrWhiteSpace)
@@ -184,7 +184,11 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                     }
 
                     // Don't strip away asterisk-based bullet point lists.
-                    var match = Regex.Match(part, @"^(\s+\*)(.*)$");
+                    //
+                    // TODO: Replace this with real list parsing. This may have
+                    // false positives and cause random italics when the ReST list
+                    // doesn't match Markdown's specification.
+                    var match = Regex.Match(part, @"^(\s+\* )(.*)$");
                     if (match.Success) {
                         Append(match.Groups[1].Value);
                         part = match.Groups[2].Value;
