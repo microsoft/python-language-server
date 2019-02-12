@@ -44,11 +44,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return res;
         }
 
-        public Task<CompletionItem> CompletionItemResolve(CompletionItem item, CancellationToken token) {
-            // TODO: Fill out missing values in item
-            return Task.FromResult(item);
-        }
-
         public async Task<Hover> Hover(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Hover in {uri} at {@params.position}");

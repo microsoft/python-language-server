@@ -140,7 +140,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
         private static IEnumerable<CompletionItem> GetAllImportableModules(CompletionContext context) {
             var mres = context.Analysis.Document.Interpreter.ModuleResolution;
-            var modules = mres.CurrentPathResolver.GetAllModuleNames();
+            var modules = mres.CurrentPathResolver.GetAllModuleNames().Distinct();
             return modules.Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
         }
 
