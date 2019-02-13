@@ -79,8 +79,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return null;
         }
 
-        private void DocNewAstEvent(object d, EventArgs _) {
-            var document = d as IDocument;
+        private void DocNewAstEvent(object sender, EventArgs _) {
+            var document = (IDocument) sender;
             _indexManager.ReIndexFile(document.Uri.AbsolutePath, document);
         }
     }
