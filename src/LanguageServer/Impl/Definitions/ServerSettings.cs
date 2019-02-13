@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer {
@@ -29,31 +30,6 @@ namespace Microsoft.Python.LanguageServer {
             public string[] warnings { get; private set; } = Array.Empty<string>();
             public string[] information { get; private set; } = Array.Empty<string>();
             public string[] disabled { get; private set; } = Array.Empty<string>();
-
-            public DiagnosticSeverity GetEffectiveSeverity(string code, DiagnosticSeverity defaultSeverity)
-                => _map.TryGetValue(code, out var severity) ? severity : defaultSeverity;
-
-            public void SetErrorSeverityOptions(string[] errors, string[] warnings, string[] information, string[] disabled) {
-                _map.Clear();
-                // disabled > error > warning > information
-                foreach (var x in information) {
-                    _map[x] = DiagnosticSeverity.Information;
-                }
-                foreach (var x in warnings) {
-                    _map[x] = DiagnosticSeverity.Warning;
-                }
-                foreach (var x in errors) {
-                    _map[x] = DiagnosticSeverity.Error;
-                }
-                foreach (var x in disabled) {
-                    _map[x] = DiagnosticSeverity.Unspecified;
-                }
-
-                this.errors = errors;
-                this.warnings = warnings;
-                this.information = information;
-                this.disabled = disabled;
-            }
         }
         public readonly PythonAnalysisOptions analysis = new PythonAnalysisOptions();
 

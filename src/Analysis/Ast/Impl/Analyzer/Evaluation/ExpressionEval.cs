@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionEval : IExpressionEvaluator {
+    internal sealed partial class ExpressionEval: IExpressionEvaluator {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
         private readonly object _lock = new object();
@@ -229,11 +229,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return trueValue ?? falseValue;
         }
 
-        private void ReportDiagnostics(Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
+        public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {
             // Do not add if module is library, etc. Only handle user code.
             if (Module.ModuleType == ModuleType.User) {
                 lock (_lock) {
-                    _diagnostics.AddRange(entries);
+                    _diagnostics.Add(entry);
                 }
             }
         }

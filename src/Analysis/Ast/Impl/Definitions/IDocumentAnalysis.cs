@@ -13,7 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -49,5 +51,10 @@ namespace Microsoft.Python.Analysis {
         /// Expression evaluator used in the analysis.
         /// </summary>
         IExpressionEvaluator ExpressionEvaluator { get; }
+
+        /// <summary>
+        /// Analysis diagnostics.
+        /// </summary>
+        IEnumerable<DiagnosticsEntry> Diagnostics { get; }
     }
 }

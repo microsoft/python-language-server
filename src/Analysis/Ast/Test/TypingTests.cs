@@ -673,11 +673,11 @@ y = b.a
                 .Which.Should().HaveMembers("args", @"with_traceback");
 
             analysis.Should().HaveVariable("x")
-                .Which.Should().HaveType("A[TypeError]") // TODO: should be A[TypeError]
+                .Which.Should().HaveType("A[TypeError]")
                 .Which.Should().HaveMembers("args", @"with_traceback");
 
             analysis.Should().HaveVariable("y")
-                .Which.Should().HaveType("A[TypeError]") // TODO: should be A[[TypeError]
+                .Which.Should().HaveType("A[TypeError]")
                 .Which.Should().HaveMembers("args", @"with_traceback");
         }
 
@@ -703,11 +703,11 @@ y = b.a
                 .Which.Should().HaveMembers("args", @"with_traceback");
 
             analysis.Should().HaveVariable("x")
-                .Which.Should().HaveType("A[TypeError]") // TODO: should be A[TypeError]
+                .Which.Should().HaveType("A[TypeError]")
                 .Which.Should().HaveMembers("args", @"with_traceback");
 
             analysis.Should().HaveVariable("y")
-                .Which.Should().HaveType("A[TypeError]") // TODO: should be A[[TypeError]
+                .Which.Should().HaveType("A[TypeError]")
                 .Which.Should().HaveMembers("args", @"with_traceback");
         }
 
