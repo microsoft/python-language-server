@@ -77,8 +77,13 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
         }
 
-        public IPythonModule GetImportedModule(string name)
-            => _modules.TryGetValue(name, out var module) ? module : null;
+        public IPythonModule GetImportedModule(string name) {
+            var module = _interpreter.ModuleResolution.GetSpecializedModule(name);
+            if (module != null) {
+                return module;
+            }
+            return _modules.TryGetValue(name, out module) ? module : null;
+        }
 
         public void SetUserSearchPaths(in IEnumerable<string> searchPaths)
             => _pathResolver.SetUserSearchPaths(searchPaths);

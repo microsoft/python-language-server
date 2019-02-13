@@ -53,8 +53,8 @@ class C:
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 1))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("C", "x", "y", "while", "for", "yield");
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 1));
+            comps.Should().HaveLabels("C", "x", "y", "while", "for", "yield");
         }
 
         [TestMethod, Priority(0)]
@@ -65,8 +65,8 @@ x.
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(new[] { @"isupper", @"capitalize", @"split" });
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3));
+            comps.Should().HaveLabels(@"isupper", @"capitalize", @"split" );
         }
 
         [TestMethod, Priority(0)]
@@ -77,8 +77,8 @@ datetime.datetime.
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 19))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(new[] { "now", @"tzinfo", @"ctime" });
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 19));
+            comps.Should().HaveLabels("now", @"tzinfo", @"ctime");
         }
 
         [TestMethod, Priority(0)]
@@ -92,11 +92,11 @@ ABCDE.me
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 4))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(@"ABCDE");
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 4));
+            comps.Should().HaveLabels(@"ABCDE");
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 9))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("method1");
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 9));
+            comps.Should().HaveLabels("method1");
         }
 
         [DataRow(PythonLanguageVersion.V36, "value")]

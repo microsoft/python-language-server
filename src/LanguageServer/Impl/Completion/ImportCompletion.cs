@@ -158,8 +158,6 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     break;
                 case PackageImport packageImports:
                     return new CompletionResult(packageImports.Modules
-                        .Select(m => mres.GetImportedModule(m.FullName))
-                        .ExcludeDefault()
                         .Select(m => CompletionItemSource.CreateCompletionItem(m.Name, CompletionItemKind.Module))
                         .Prepend(CompletionItemSource.Star));
                 default:

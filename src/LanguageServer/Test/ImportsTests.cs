@@ -19,14 +19,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Sources;
+using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NSubstitute;
 using TestUtilities;
 
 namespace Microsoft.Python.LanguageServer.Tests {
@@ -70,8 +69,8 @@ projectA.";
             var analysis = await doc.GetAnalysisAsync();
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 10))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("foo");
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 10));
+            comps.Should().HaveLabels("foo");
         }
 
         [TestMethod, Priority(0)]
@@ -98,8 +97,8 @@ VALUE = 42";
             var analysis = await doc1.GetAnalysisAsync();
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("VALUE");
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
+            comps.Should().HaveLabels("VALUE");
         }
 
         [TestMethod, Priority(0)]
@@ -119,8 +118,8 @@ VALUE = 42");
             var analysis = await doc.GetAnalysisAsync();
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("VALUE");
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
+            comps.Should().HaveLabels("VALUE");
         }
 
         [TestMethod, Priority(0)]
@@ -147,8 +146,8 @@ module2.";
             var analysis = await doc.GetAnalysisAsync();
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 21))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(new[] { "module1", "module2" });
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 21));
+            comps.Should().HaveLabels("module1", "module2");
 
             doc.Update(new[] {
                 new DocumentChange {
@@ -159,11 +158,11 @@ module2.";
 
             analysis = await doc.GetAnalysisAsync();
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 9))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("X").And.NotContain("Y");
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 9));
+            comps.Should().HaveLabels("X").And.NotContainLabels("Y");
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("Y").And.NotContain("X");
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
+            comps.Should().HaveLabels("Y").And.NotContainLabels("X");
         }
 
         [TestMethod, Priority(0)]
@@ -194,7 +193,6 @@ mod2.B.";
             var interpreter = Services.GetService<IPythonInterpreter>();
             interpreter.ModuleResolution.SetUserSearchPaths(new[] { folder1, folder2 });
 
-
             rdt.OpenDocument(new Uri(module1Path), module1Content);
             rdt.OpenDocument(new Uri(module2Path), module2Content);
 
@@ -203,17 +201,17 @@ mod2.B.";
             var analysis = await doc.GetAnalysisAsync();
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 6))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("A").And.NotContain("B");
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 6));
+            comps.Should().HaveLabels("A").And.NotContainLabels("B");
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 6))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("B").And.NotContain("A");
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 6));
+            comps.Should().HaveLabels("B").And.NotContainLabels("A");
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("method1");
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8));
+            comps.Should().HaveLabels("method1");
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 8))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("method2");
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 8));
+            comps.Should().HaveLabels("method2");
         }
 
         [TestMethod, Priority(0)]
@@ -242,19 +240,25 @@ package.sub_package.module2.";
             var analysis = await doc.GetAnalysisAsync();
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 9))).Completions.ToArray();
-            var labels = comps.Select(c => c.label);
-            labels.Should().Contain("sub_package").And.HaveCount(1);
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 9));
+            comps.Should().OnlyHaveLabels("sub_package");
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 21))).Completions.ToArray();
-            labels = comps.Select(c => c.label);
-            labels.Should().Contain(new[] { "module1", "module2" }).And.HaveCount(2);
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 21));
+            comps.Should().OnlyHaveLabels("module1", "module2");
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 29))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("X").And.NotContain("Y");
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 29));
+            comps.Should().HaveLabels("X").And.NotContainLabels("Y");
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 29))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("Y").And.NotContain("X");
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 29));
+            comps.Should().HaveLabels("Y").And.NotContainLabels("X");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypingModule() {
+            var analysis = await GetAnalysisAsync(@"from typing import ");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 20));
+            comps.Should().HaveLabels("TypeVar", "List", "Dict", "Union");
         }
     }
 }
