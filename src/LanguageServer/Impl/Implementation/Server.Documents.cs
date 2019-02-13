@@ -16,9 +16,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
@@ -50,7 +54,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public void DidChangeWatchedFiles(DidChangeWatchedFilesParams @params) {
-            _disposableBag.ThrowIfDisposed();
+            foreach (var c in @params.changes.MaybeEnumerate()) {
+                _disposableBag.ThrowIfDisposed();
+                // TODO: handle?
+            }
         }
 
         public void DidCloseTextDocument(DidCloseTextDocumentParams @params) {
@@ -63,8 +70,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if (document != null) {
                 try {
                     document.GetAnalysisAsync(cancellationToken).Wait(200);
-                } catch (OperationCanceledException) { }
-                return document.GetAnyAnalysis();
+                    return document.GetAnyAnalysis();
+                } catch (OperationCanceledException) {
+                    return null;
+                }
             }
             _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
             return null;

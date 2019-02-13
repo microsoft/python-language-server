@@ -41,28 +41,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
-            // If we are processing stub, ignore imports of the original module.
-            // For example, typeshed stub for sys imports sys.
-            if (Module.ModuleType == ModuleType.Stub && imports is ModuleImport mi && mi.Name == Module.Name) {
-                return false;
-            }
-
             switch (imports) {
+                case ModuleImport moduleImport when moduleImport.FullName == Module.Name && Module.ModuleType == ModuleType.Stub:
+                    // If we are processing stub, ignore imports of the original module.
+                    // For example, typeshed stub for 'sys' imports sys.
+                    break;
                 case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
                     ImportMembersFromSelf(node);
-                    return false;
+                    break;
                 case ModuleImport moduleImport:
                     await ImportMembersFromModuleAsync(node, moduleImport.FullName, cancellationToken);
-                    return false;
+                    break;
                 case PossibleModuleImport possibleModuleImport:
-                    await HandlePossibleImportAsync(possibleModuleImport, Eval.GetLoc(node.Root), cancellationToken);
-                    return false;
+                    await HandlePossibleImportAsync(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, Eval.GetLoc(node.Root), cancellationToken);
+                    break;
                 case PackageImport packageImports:
                     await ImportMembersFromPackageAsync(node, packageImports, cancellationToken);
-                    return false;
-                default:
-                    return false;
+                    break;
+                case ImportNotFound notFound:
+                    MakeUnresolvedImport(null, notFound.FullName, Eval.GetLoc(node.Root));
+                    break;
             }
+            return false;
         }
 
         private void ImportMembersFromSelf(FromImportStatement node) {
