@@ -55,17 +55,13 @@ namespace Microsoft.Python.Core.IO {
         }
 
         private PatternMatchingResult SafeExecuteMatcher(Matcher matcher) {
-            PatternMatchingResult matchResult = null;
-            int leftTries = 5;
-            while (matchResult == null && leftTries > 0) {
+            var directoryInfo = new DirectoryInfoWrapper(_directoryInfo);
+            for (var retries = 5; retries > 0; retries--) {
                 try {
-                    matchResult = matcher.Execute(new DirectoryInfoWrapper(_directoryInfo));
-                } catch (Exception ex) when (ex is IOException // FileNotFoundException, DirectoryNotFoundException, etc
-                                          || ex is UnauthorizedAccessException) {
-                    leftTries--;
-                }
+                    return matcher.Execute(directoryInfo);
+                } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { }
             }
-            return matchResult ?? new PatternMatchingResult(Enumerable.Empty<FilePatternMatch>());
+            return new PatternMatchingResult(Enumerable.Empty<FilePatternMatch>());
         }
 
         private static IFileSystemInfo CreateFileSystemInfoProxy(FileSystemInfo fileSystemInfo)
