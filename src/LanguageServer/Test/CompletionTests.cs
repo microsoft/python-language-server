@@ -428,6 +428,36 @@ def func(a: Dict[int, str]):
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericClassMethod() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_T = TypeVar('_T')
+
+class Box(Generic[_T]):
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+boxedint = Box(1234)
+x = boxedint.
+
+boxedstr = Box('str')
+y = boxedstr.
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(14, 14));
+            result.Should().HaveItem("get").Which.Should().HaveDocumentation("Box.get() -> int");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(17, 14));
+            result.Should().HaveItem("get").Which.Should().HaveDocumentation("Box.get() -> str");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ForwardRef() {
             const string code = @"
 class D(object):
