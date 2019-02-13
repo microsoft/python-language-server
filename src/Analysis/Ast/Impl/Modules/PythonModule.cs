@@ -385,7 +385,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
                 // Do not report issues with libraries or stubs
                 if (sink != null) {
-                    _diagnosticsService?.Replace(Uri, _parseErrors);
+                    _diagnosticsService?.Replace(Uri, _parseErrors.Concat(Analysis.Diagnostics));
                 }
 
                 _parsingTask = null;
@@ -462,7 +462,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
                     // Do not report issues with libraries or stubs
                     if (ModuleType == ModuleType.User) {
-                        _diagnosticsService?.Replace(Uri, _parseErrors.Concat(analysis.ExpressionEvaluator.Diagnostics));
+                        _diagnosticsService?.Replace(Uri, _parseErrors.Concat(Analysis.Diagnostics));
                     }
 
                     var tcs = _analysisTcs;
