@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
@@ -49,6 +50,11 @@ namespace Microsoft.Python.Analysis.Modules {
         /// the module has not been imported.
         /// </summary>
         IPythonModule GetImportedModule(string name);
+
+        /// <summary>
+        /// Sets user search paths. This changes <see cref="CurrentPathResolver"/>.
+        /// </summary>
+        void SetUserSearchPaths(in IEnumerable<string> searchPaths);
 
         Task ReloadAsync(CancellationToken token = default);
     }

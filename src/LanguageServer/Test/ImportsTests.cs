@@ -18,12 +18,15 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NSubstitute;
 using TestUtilities;
 
 namespace Microsoft.Python.LanguageServer.Tests {
@@ -39,7 +42,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task Completions_ExplicitImplicitPackageMix() {
+        public async Task ExplicitImplicitPackageMix() {
             const string appCode = @"
 import projectA.foo
 import projectA.foo.bar
@@ -58,10 +61,10 @@ projectA.";
             await CreateServicesAsync(PythonVersions.LatestAvailable3X, appPath);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
-            rdt.OpenDocument(new Uri(init1Path), string.Empty, init1Path);
-            rdt.OpenDocument(new Uri(init2Path), string.Empty, init2Path);
-            rdt.OpenDocument(new Uri(init3Path), string.Empty, init3Path);
-            rdt.OpenDocument(new Uri(init4Path), string.Empty, init4Path);
+            rdt.OpenDocument(new Uri(init1Path), string.Empty);
+            rdt.OpenDocument(new Uri(init2Path), string.Empty);
+            rdt.OpenDocument(new Uri(init3Path), string.Empty);
+            rdt.OpenDocument(new Uri(init4Path), string.Empty);
 
             var doc = rdt.OpenDocument(new Uri(appPath), appCode, appPath);
             var analysis = await doc.GetAnalysisAsync();
@@ -72,7 +75,7 @@ projectA.";
         }
 
         [TestMethod, Priority(0)]
-        public async Task Completions_SysModuleChain() {
+        public async Task SysModuleChain() {
             const string content1 = @"import module2.mod as mod
 mod.";
             const string content2 = @"import module3 as mod";
@@ -97,6 +100,121 @@ VALUE = 42";
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5))).Completions.ToArray();
             comps.Select(c => c.label).Should().Contain("VALUE");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SysModuleChain_SingleOpen() {
+            const string content = @"import module1.mod as mod
+mod.";
+            await TestData.CreateTestSpecificFileAsync("module1.py", @"import module2 as mod");
+            await TestData.CreateTestSpecificFileAsync("module2.py", @"import sys
+sys.modules['module1.mod'] = None
+VALUE = 42");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            var doc = rdt.OpenDocument(TestData.GetDefaultModuleUri(), content);
+            var analysis = await doc.GetAnalysisAsync();
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5))).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain("VALUE");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UncSearchPaths() {
+            const string module1Path = @"q:\Folder\package\module1.py";
+            const string module2Path = @"\\machine\share\package\module2.py";
+
+            const string appCode1 = @"from package import ";
+            const string appCode2 = @"from package import module1, module2
+module1.
+module2.";
+            var appPath = TestData.GetTestSpecificPath("app.py");
+            var root = Path.GetDirectoryName(appPath);
+
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var interpreter = Services.GetService<IPythonInterpreter>();
+            interpreter.ModuleResolution.SetUserSearchPaths(new[] {@"q:\Folder\", @"\\machine\share\"});
+
+            rdt.OpenDocument(new Uri(module1Path), "X = 42");
+            rdt.OpenDocument(new Uri(module2Path), "Y = 6 * 9");
+
+            var doc = rdt.OpenDocument(new Uri(appPath), appCode1);
+            var analysis = await doc.GetAnalysisAsync();
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 21))).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain(new [] { "module1", "module2" });
+
+            doc.Update(new [] {
+                new DocumentChange {
+                    InsertedText = appCode2,
+                    ReplacedSpan = new SourceSpan(1, 1, 1, 21)
+                }
+            });
+
+            analysis = await doc.GetAnalysisAsync();
+
+            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 9))).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain("X").And.NotContain("Y");
+
+            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9))).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain("Y").And.NotContain("X");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UserSearchPathsInsideWorkspace() {
+            var folder1 = TestData.GetTestSpecificPath("folder1");
+            var folder2 = TestData.GetTestSpecificPath("folder2");
+            var packageInFolder1 = Path.Combine(folder1, "package");
+            var packageInFolder2 = Path.Combine(folder2, "package");
+            var module1Path = Path.Combine(packageInFolder1, "module1.py");
+            var module2Path = Path.Combine(packageInFolder2, "module2.py");
+            const string module1Content = @"class A():
+    @staticmethod
+    def method1():
+        pass";
+            const string module2Content = @"class B():
+    @staticmethod
+    def method2():
+        pass";
+            const string mainContent = @"from package import module1 as mod1, module2 as mod2
+mod1.
+mod2.
+mod1.A.
+mod2.B.";
+
+            var root = Path.GetDirectoryName(folder1);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var interpreter = Services.GetService<IPythonInterpreter>();
+            interpreter.ModuleResolution.SetUserSearchPaths(new[] { folder1, folder2 });
+
+
+            rdt.OpenDocument(new Uri(module1Path), module1Content);
+            rdt.OpenDocument(new Uri(module2Path), module2Content);
+
+            var mainPath = Path.Combine(root, "main.py");
+            var doc = rdt.OpenDocument(new Uri(mainPath), mainContent);
+            var analysis = await doc.GetAnalysisAsync();
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 6))).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain("A").And.NotContain("B");
+
+            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 6))).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain("B").And.NotContain("A");
+
+            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8))).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain("method1");
+
+            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 8))).Completions.ToArray();
+            comps.Select(c => c.label).Should().Contain("method2");
         }
     }
 }

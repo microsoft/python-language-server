@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public abstract Task ReloadAsync(CancellationToken cancellationToken = default);
         protected abstract Task<IPythonModule> DoImportAsync(string name, CancellationToken cancellationToken = default);
 
- public IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken) {
+        public IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken) {
             return ModulePath.GetModulesInPath(
                 searchPath,
                 recurse: false,
@@ -79,6 +79,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public IPythonModule GetImportedModule(string name)
             => _modules.TryGetValue(name, out var module) ? module : null;
+
+        public void SetUserSearchPaths(in IEnumerable<string> searchPaths)
+            => _pathResolver.SetUserSearchPaths(searchPaths);
 
         public void AddModulePath(string path) => _pathResolver.TryAddModulePath(path, out var _);
 
