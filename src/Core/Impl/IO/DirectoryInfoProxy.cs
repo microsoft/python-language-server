@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -46,11 +47,25 @@ namespace Microsoft.Python.Core.IO {
             Matcher matcher = new Matcher();
             matcher.AddIncludePatterns(includeFiles.IsNullOrEmpty() ? new[] { "**/*" } : includeFiles);
             matcher.AddExcludePatterns(excludeFiles ?? Enumerable.Empty<string>());
-            var matchResult = matcher.Execute(new DirectoryInfoWrapper(_directoryInfo));
+            PatternMatchingResult matchResult = SafeExecuteMatcher(matcher);
             return matchResult.Files.Select((filePatternMatch) => {
                 var fileSystemInfo = _directoryInfo.GetFileSystemInfos(filePatternMatch.Stem).First();
                 return CreateFileSystemInfoProxy(fileSystemInfo);
             });
+        }
+
+        private PatternMatchingResult SafeExecuteMatcher(Matcher matcher) {
+            PatternMatchingResult matchResult = null;
+            int leftTries = 5;
+            while (matchResult == null && leftTries > 0) {
+                try {
+                    matchResult = matcher.Execute(new DirectoryInfoWrapper(_directoryInfo));
+                } catch (Exception ex) when (ex is IOException // FileNotFoundException, DirectoryNotFoundException, etc
+                                          || ex is UnauthorizedAccessException) {
+                    leftTries--;
+                }
+            }
+            return matchResult ?? new PatternMatchingResult(Enumerable.Empty<FilePatternMatch>());
         }
 
         private static IFileSystemInfo CreateFileSystemInfoProxy(FileSystemInfo fileSystemInfo)
