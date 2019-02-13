@@ -45,6 +45,20 @@ namespace Microsoft.Python.Parsing.Tests {
             }));
         }
 
+        [TestMethod, Priority(0)]
+        public void CanEscapeBraces() {
+            var parser = Parser.CreateParser(MakeStream("f'{{bla}}'"), PythonLanguageVersion.V36);
+            var ast = parser.ParseFile();
+            ast.Walk(new MyPythonWalker(expr => {
+                if (expr is ConstantExpression) {
+                    var constExpr = expr as ConstantExpression;
+                    if (!constExpr.Value.Equals("{bla}")) {
+                        throw new InternalTestFailureException("Internal const expr didn't match substring");
+                    }
+                }
+            }));
+        }
+
         public Stream MakeStream(string s) => new MemoryStream(Encoding.UTF8.GetBytes(s));
     }
 

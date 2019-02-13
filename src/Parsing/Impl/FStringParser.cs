@@ -20,16 +20,31 @@ namespace Microsoft.Python.Parsing {
 
         public FStringExpression Parse() {
             while (HasNextChar()) {
-                if (PeekChar() != '{') {
-                    _buffer.Append(NextChar());
-                } else {
+                if (IsDoubleBrace()) {
+                    var brace = NextChar();
+                    Read(brace);
+                    _buffer.Append(brace);
+                } else if (PeekChar() == '{') {
                     AddBufferedSubstring();
                     ParseInnerExpression();
+                } else {
+                    _buffer.Append(NextChar());
                 }
             }
-
             AddBufferedSubstring();
             return new FStringExpression(_children, _fString);
+        }
+
+        private bool IsDoubleBrace() {
+            return IsDoubleChar('{') || IsDoubleChar('}');
+        }
+
+        private bool IsDoubleChar(char next) {
+            if (_position >= _fString.Length - 1) {
+                return false;
+            }
+            var doubleNextChar = _fString[_position + 1];
+            return PeekChar() == next && doubleNextChar == next;
         }
 
         private void ParseInnerExpression() {
