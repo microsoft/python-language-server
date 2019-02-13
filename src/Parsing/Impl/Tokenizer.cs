@@ -991,10 +991,10 @@ namespace Microsoft.Python.Parsing {
 
             MarkTokenEnd();
 
-            return MakeStringToken(quote, isRaw, isUnicode, isBytes, isTriple, _start + startAdd, TokenLength - startAdd - end_add);
+            return MakeStringToken(quote, isRaw, isUnicode, isBytes, isTriple, isFormatted, _start + startAdd, TokenLength - startAdd - end_add);
         }
 
-        private Token MakeStringToken(char quote, bool isRaw, bool isUnicode, bool isBytes, bool isTriple, int start, int length) {
+        private Token MakeStringToken(char quote, bool isRaw, bool isUnicode, bool isBytes, bool isTriple, bool isFormatted, int start, int length) {
             bool makeUnicode;
             if (isUnicode) {
                 makeUnicode = true;
@@ -1015,8 +1015,11 @@ namespace Microsoft.Python.Parsing {
 
                 if (Verbatim) {
                     return new VerbatimUnicodeStringToken(contents, GetTokenString());
+                } else if (isFormatted){
+                    return new ConstantValueToken(new FormattedString(contents));
+                } else {
+                    return new UnicodeStringToken(contents);
                 }
-                return new UnicodeStringToken(contents);
             } else {
                 var data = LiteralParser.ParseBytes(_buffer, start, length, isRaw, !_disableLineFeedLineSeparator);
                 if (data.Count == 0) {

@@ -3082,7 +3082,9 @@ namespace Microsoft.Python.Parsing {
                     var cv = t.Value;
                     var cvs = cv as string;
                     AsciiString bytes;
-                    if (PeekToken() is ConstantValueToken && (cv is string || cv is AsciiString)) {
+                    if (cv is FormattedString) {
+                        return new FStringExpression();
+                    } else if (PeekToken() is ConstantValueToken && (cv is string || cv is AsciiString)) {
                         // string plus
                         string[] verbatimImages = null, verbatimWhiteSpace = null;
                         if (cvs != null) {

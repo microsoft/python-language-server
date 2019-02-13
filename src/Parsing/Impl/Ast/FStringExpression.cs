@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Python.Parsing.Ast {
     public class FStringExpression : Expression {
         public override void Walk(PythonWalker walker) {
-            throw new NotImplementedException();
+            walker.Walk(this);
         }
 
         public override Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
