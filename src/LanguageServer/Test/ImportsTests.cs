@@ -260,5 +260,42 @@ package.sub_package.module2.";
             var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 20));
             comps.Should().HaveLabels("TypeVar", "List", "Dict", "Union");
         }
+
+        [DataRow(@"from package import sub_package; import package.sub_package.module1")]
+        [DataRow(@"import package.sub_package.module1; from package import sub_package")]
+        [DataRow(@"from package import sub_package; from package.sub_package import module")]
+        [DataRow(@"from package.sub_package import module; from package import sub_package")]
+        [Ignore("Not yet implemented")]
+        [TestMethod, Priority(0)]
+        public async Task FromImport_ModuleAffectsPackage(string appCodeImport) {
+            var appCode1 = appCodeImport + Environment.NewLine + "sub_package.";
+            var appCode2 = appCodeImport + Environment.NewLine + "sub_package.module.";
+
+            var appPath = TestData.GetTestSpecificPath("app.py");
+            var root = Path.GetDirectoryName(appPath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            var modulePath = Path.Combine(root, "package", "sub_package", "module.py");
+
+            rdt.OpenDocument(new Uri(modulePath), "X = 42");
+            var doc = rdt.OpenDocument(new Uri(appPath), appCode1);
+            var analysis = await doc.GetAnalysisAsync();
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 13));
+            comps.Should().OnlyHaveLabels("module");
+
+            doc.Update(new [] {
+                    new DocumentChange {
+                    InsertedText = appCode2,
+                    ReplacedSpan = new SourceSpan(1, 1, 2, 13)
+                }
+            });
+
+            analysis = await doc.GetAnalysisAsync();
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 21));
+            comps.Should().HaveLabels("X");
+        }
     }
 }
