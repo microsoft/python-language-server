@@ -20,8 +20,28 @@ namespace Microsoft.Python.Parsing.Tests {
         public void ParsesFStringExpression() {
             var parser = Parser.CreateParser(MakeStream("f'bla'"), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
-            ast.Walk(new MyPythonWalker(fExpr => {
-                return true;
+            bool foundFStringExpression = false;
+            ast.Walk(new MyPythonWalker(expr => {
+                if (expr is FStringExpression) {
+                    foundFStringExpression = true;
+                }
+            }));
+            if (!foundFStringExpression) {
+                throw new InternalTestFailureException("FStringExpression was never found");
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void FStringInternalSubString() {
+            var parser = Parser.CreateParser(MakeStream("f'bla'"), PythonLanguageVersion.V36);
+            var ast = parser.ParseFile();
+            ast.Walk(new MyPythonWalker(expr => {
+                if (expr is ConstantExpression) {
+                    var constExpr = expr as ConstantExpression;
+                    if (!constExpr.Value.Equals("bla")) {
+                        throw new InternalTestFailureException("Internal const expr didn't match substring");
+                    }
+                }
             }));
         }
 
@@ -29,17 +49,19 @@ namespace Microsoft.Python.Parsing.Tests {
     }
 
     internal class MyPythonWalker : PythonWalker {
-        private readonly Func<FStringExpression, bool> _t;
-        public MyPythonWalker(Func<FStringExpression, bool> t) {
+        private readonly Action<Expression> _t;
+        public MyPythonWalker(Action<Expression> t) {
             _t = t;
         }
 
         public override bool Walk(FStringExpression node) {
-            return _t(node);
+            _t(node);
+            return true;
         }
 
         public override bool Walk(ConstantExpression node) {
-            throw new InternalTestFailureException();
+            _t(node);
+            return true;
         }
     }
 }

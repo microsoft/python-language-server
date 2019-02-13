@@ -3083,7 +3083,8 @@ namespace Microsoft.Python.Parsing {
                     var cvs = cv as string;
                     AsciiString bytes;
                     if (cv is FormattedString) {
-                        return new FStringExpression();
+                        var fString = cv as FormattedString;
+                        return new FStringParser(fString.Value).Parse();
                     } else if (PeekToken() is ConstantValueToken && (cv is string || cv is AsciiString)) {
                         // string plus
                         string[] verbatimImages = null, verbatimWhiteSpace = null;
