@@ -16,13 +16,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
@@ -34,7 +31,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var doc = _rdt.OpenDocument(uri, @params.textDocument.text);
             _indexManager.ProcessNewFile(uri.AbsolutePath, doc);
-            doc.NewAst += (d, _) => _indexManager.ReIndexFile(uri.AbsolutePath, d as IDocument);
+            doc.NewAst += DocNewAstEvent;
         }
 
         public void DidChangeTextDocument(DidChangeTextDocumentParams @params) {
@@ -67,6 +64,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void DidCloseTextDocument(DidCloseTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
             Uri uri = @params.textDocument.uri;
+            _rdt.GetDocument(uri).NewAst -= DocNewAstEvent;
             _rdt.CloseDocument(uri);
             _indexManager.ProcessClosedFileAsync(uri.AbsolutePath).DoNotWait();
         }
@@ -79,6 +77,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
             _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
             return null;
+        }
+
+        private void DocNewAstEvent(object d, EventArgs _) {
+            var document = d as IDocument;
+            _indexManager.ReIndexFile(document.Uri.AbsolutePath, document);
         }
     }
 }
