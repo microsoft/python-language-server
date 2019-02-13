@@ -80,7 +80,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void DocNewAstEvent(object sender, EventArgs _) {
-            var document = (IDocument) sender;
+            var document = (IDocument)sender;
             _indexManager.ReIndexFile(document.Uri.AbsolutePath, document);
         }
     }
