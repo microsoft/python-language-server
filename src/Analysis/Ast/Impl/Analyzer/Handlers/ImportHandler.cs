@@ -52,7 +52,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 var location = Eval.GetLoc(moduleImportExpression);
-                var moduleName = moduleImportExpression.MakeString();
                 IPythonModule module = null;
                 switch (imports) {
                     case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
@@ -62,11 +61,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         module = await HandleImportAsync(moduleImport, location, cancellationToken);
                         break;
                     case PossibleModuleImport possibleModuleImport:
-                        module = await HandlePossibleImportAsync(possibleModuleImport, moduleName, location, cancellationToken);
+                        module = await HandlePossibleImportAsync(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, location, cancellationToken);
                         break;
                     default:
                         // TODO: Package import?
-                        MakeUnresolvedImport(memberName, moduleName, Eval.GetLoc(moduleImportExpression));
+                        MakeUnresolvedImport(memberName, moduleImportExpression.MakeString(), Eval.GetLoc(moduleImportExpression));
                         break;
                 }
 

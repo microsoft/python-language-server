@@ -109,15 +109,18 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         }
 
         private void PublishDiagnostics() {
+            KeyValuePair<Uri, IReadOnlyList<DiagnosticsEntry>>[] diagnostics;
             lock (_lock) {
-                foreach (var kvp in Diagnostics) {
-                    var parameters = new PublishDiagnosticsParams {
-                        uri = kvp.Key,
-                        diagnostics = kvp.Value.Select(ToDiagnostic).ToArray()
-                    };
-                    _clientApp.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
-                }
+                diagnostics = Diagnostics.ToArray();
                 _changed = false;
+            }
+
+            foreach (var kvp in diagnostics) {
+                var parameters = new PublishDiagnosticsParams {
+                    uri = kvp.Key,
+                    diagnostics = kvp.Value.Select(ToDiagnostic).ToArray()
+                };
+                _clientApp.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
             }
         }
 

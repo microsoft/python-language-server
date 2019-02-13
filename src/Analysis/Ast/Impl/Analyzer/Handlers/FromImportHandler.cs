@@ -41,13 +41,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
-            // If we are processing stub, ignore imports of the original module.
-            // For example, typeshed stub for sys imports sys.
-            if (Module.ModuleType == ModuleType.Stub && imports is ModuleImport mi && mi.Name == Module.Name) {
-                return false;
-            }
-
             switch (imports) {
+                case ModuleImport moduleImport when moduleImport.FullName == Module.Name && Module.ModuleType == ModuleType.Stub:
+                    // If we are processing stub, ignore imports of the original module.
+                    // For example, typeshed stub for 'sys' imports sys.
+                    break;
                 case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
                     ImportMembersFromSelf(node);
                     break;
