@@ -22,7 +22,7 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.Shell;
+using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer, IDisposable {
@@ -55,7 +55,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public async Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken) {
             var node = new DependencyChainNode(document);
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
-                node.Analyzable.NotifyAnalysisPending();
                 try {
                     var analysis = await AnalyzeAsync(node, cts.Token);
                     node.Analyzable.NotifyAnalysisComplete(analysis);
@@ -78,17 +77,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_globalCts.Token, cancellationToken)) {
                 var dependencyRoot = await _dependencyResolver.GetDependencyChainAsync(document, cts.Token);
                 // Notify each dependency that the analysis is now pending
-                NotifyAnalysisPending(dependencyRoot);
+                NotifyAnalysisPending(document, dependencyRoot);
 
                 cts.Token.ThrowIfCancellationRequested();
                 await AnalyzeChainAsync(dependencyRoot, cts.Token);
             }
         }
 
-        private void NotifyAnalysisPending(IDependencyChainNode node) {
-            node.Analyzable.NotifyAnalysisPending();
+        private void NotifyAnalysisPending(IDocument document, IDependencyChainNode node) {
+            // Notify each dependency that the analysis is now pending except the source
+            // since if document has changed, it already incremented its expected analysis.
+            if (node.Analyzable != document) {
+                node.Analyzable.NotifyAnalysisPending();
+            }
             foreach (var c in node.Children) {
-                NotifyAnalysisPending(c);
+                NotifyAnalysisPending(document, c);
             }
         }
 

@@ -46,14 +46,15 @@ namespace Microsoft.Python.LanguageServer.Server {
                 using (var rpc = new LanguageServerJsonRpc(cout, cin, messageFormatter, server)) {
                     rpc.TraceSource.Switch.Level = SourceLevels.Error;
                     rpc.SynchronizationContext = new SingleThreadSynchronizationContext();
+                    var clientApp = new ClientApplication(rpc);
 
                     var osp = new OSPlatform();
                     services
-                        .AddService(rpc)
-                        .AddService(new Logger(rpc))
-                        .AddService(new UIService(rpc))
-                        .AddService(new ProgressService(rpc))
-                        .AddService(new TelemetryService(rpc))
+                        .AddService(clientApp)
+                        .AddService(new Logger(clientApp))
+                        .AddService(new UIService(clientApp))
+                        .AddService(new ProgressService(clientApp))
+                        .AddService(new TelemetryService(clientApp))
                         .AddService(new IdleTimeService())
                         .AddService(osp)
                         .AddService(new FileSystem(osp));

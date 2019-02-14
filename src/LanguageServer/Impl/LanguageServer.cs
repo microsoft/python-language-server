@@ -25,7 +25,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.Shell;
+using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Core.Threading;
 using Microsoft.Python.LanguageServer.Extensibility;
@@ -112,16 +112,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 _logger.LogLevel = GetLogLevel(analysis).ToTraceEventType();
 
+                HandlePathWatchChange(token, cancellationToken);
+
                 var ds = _services.GetService<IDiagnosticsService>();
                 ds.PublishingDelay = settings.diagnosticPublishDelay;
 
-                HandlePathWatchChange(token, cancellationToken);
-
-                var errors = GetSetting(analysis, "errors", Array.Empty<string>());
-                var warnings = GetSetting(analysis, "warnings", Array.Empty<string>());
-                var information = GetSetting(analysis, "information", Array.Empty<string>());
-                var disabled = GetSetting(analysis, "disabled", Array.Empty<string>());
-                settings.analysis.SetErrorSeverityOptions(errors, warnings, information, disabled);
+                ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(
+                    GetSetting(analysis, "errors", Array.Empty<string>()),
+                    GetSetting(analysis, "warnings", Array.Empty<string>()),
+                    GetSetting(analysis, "information", Array.Empty<string>()),
+                    GetSetting(analysis, "disabled", Array.Empty<string>()));
 
                 await _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
             }
@@ -404,7 +404,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             public Prioritizer() {
                 _ppc = new PriorityProducerConsumer<QueueItem>(4);
-                Task.Run(ConsumerLoop);
+                Task.Run(ConsumerLoop).DoNotWait();
             }
 
             private async Task ConsumerLoop() {

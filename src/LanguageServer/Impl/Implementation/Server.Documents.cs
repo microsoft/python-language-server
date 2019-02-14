@@ -72,8 +72,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IDocumentAnalysis GetAnalysis(Uri uri, CancellationToken cancellationToken) {
             var document = _rdt.GetDocument(uri);
             if (document != null) {
-                document.GetAnalysisAsync(cancellationToken).Wait(200);
-                return document.GetAnyAnalysis();
+                try {
+                    document.GetAnalysisAsync(cancellationToken).Wait(200);
+                    return document.GetAnyAnalysis();
+                } catch (OperationCanceledException) {
+                    return null;
+                }
             }
             _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
             return null;

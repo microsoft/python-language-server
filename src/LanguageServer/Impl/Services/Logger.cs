@@ -19,15 +19,15 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Services;
 using Microsoft.Python.LanguageServer.Protocol;
-using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Services {
     internal sealed class Logger: ILogger {
-        private readonly JsonRpc _rpc;
+        private readonly IClientApplication _clientApp;
 
-        public Logger(JsonRpc rpc) {
-            _rpc = rpc;
+        public Logger(IClientApplication clientApp) {
+            _clientApp = clientApp;
         }
 
         public TraceEventType LogLevel { get; set; } = TraceEventType.Error;
@@ -54,7 +54,7 @@ namespace Microsoft.Python.LanguageServer.Services {
                 type = eventType.ToMessageType(),
                 message = message
             };
-            return _rpc.NotifyWithParameterObjectAsync("window/logMessage", parameters);
+            return _clientApp.NotifyWithParameterObjectAsync("window/logMessage", parameters);
         }
     }
 }

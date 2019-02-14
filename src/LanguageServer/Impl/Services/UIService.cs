@@ -16,16 +16,15 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Python.Core.Shell;
+using Microsoft.Python.Core.Services;
 using Microsoft.Python.LanguageServer.Protocol;
-using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Services {
     public sealed class UIService : IUIService {
-        private readonly JsonRpc _rpc;
+        private readonly IClientApplication _clientApp;
 
-        public UIService(JsonRpc rpc) {
-            _rpc = rpc;
+        public UIService(IClientApplication clientApp) {
+            _clientApp = clientApp;
         }
 
         public Task ShowMessageAsync(string message, TraceEventType eventType) {
@@ -33,7 +32,7 @@ namespace Microsoft.Python.LanguageServer.Services {
                 type = eventType.ToMessageType(),
                 message = message
             };
-            return _rpc.NotifyWithParameterObjectAsync("window/showMessage", parameters);
+            return _clientApp.NotifyWithParameterObjectAsync("window/showMessage", parameters);
         }
 
         public async Task<string> ShowMessageAsync(string message, string[] actions, TraceEventType eventType) {
@@ -42,11 +41,11 @@ namespace Microsoft.Python.LanguageServer.Services {
                 message = message,
                 actions = actions.Select(a => new MessageActionItem { title = a }).ToArray()
             };
-            var result = await _rpc.InvokeWithParameterObjectAsync<MessageActionItem>("window/showMessageRequest", parameters);
+            var result = await _clientApp.InvokeWithParameterObjectAsync<MessageActionItem>("window/showMessageRequest", parameters);
             return result?.title;
         }
 
         public Task SetStatusBarMessageAsync(string message)
-            => _rpc.NotifyWithParameterObjectAsync("window/setStatusBarMessage", message);
+            => _clientApp.NotifyWithParameterObjectAsync("window/setStatusBarMessage", message);
     }
 }
