@@ -116,16 +116,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
         }
 
         private static IEnumerable<CompletionItem> GetImportsFromModuleName(IEnumerable<NameExpression> nameExpressions, CompletionContext context) {
-            IReadOnlyList<CompletionItem> items;
             var names = nameExpressions.TakeWhile(n => n.StartIndex <= context.Position).Select(n => n.Name).ToArray();
-            if (names.Length <= 1) {
-                var mres = context.Analysis.Document.Interpreter.ModuleResolution;
-                var importable = mres.CurrentPathResolver.GetAllModuleNames();
-                items = importable.Select(m => CompletionItemSource.CreateCompletionItem(m, CompletionItemKind.Module)).ToArray();
-            } else {
-                items = GetChildModules(names, context);
-            }
-            return items;
+            return names.Length <= 1 ? GetAllImportableModules(context) : GetChildModules(names, context);
         }
 
         private static IEnumerable<CompletionItem> GetModuleMembers(IEnumerable<NameExpression> nameExpressions, CompletionContext context) {

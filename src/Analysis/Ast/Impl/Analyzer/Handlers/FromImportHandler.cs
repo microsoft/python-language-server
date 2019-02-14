@@ -42,12 +42,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
             switch (imports) {
-                case ModuleImport moduleImport when moduleImport.FullName == Module.Name && Module.ModuleType == ModuleType.Stub:
-                    // If we are processing stub, ignore imports of the original module.
-                    // For example, typeshed stub for 'sys' imports sys.
-                    break;
                 case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
-                    ImportMembersFromSelf(node);
+                    await ImportMembersFromSelfAsync(node, cancellationToken);
                     break;
                 case ModuleImport moduleImport:
                     await ImportMembersFromModuleAsync(node, moduleImport.FullName, cancellationToken);
@@ -65,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        private void ImportMembersFromSelf(FromImportStatement node) {
+        private async Task ImportMembersFromSelfAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
             var names = node.Names;
             var asNames = node.AsNames;
 
@@ -84,6 +80,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var memberName = memberReference.Name;
 
                 var member = Module.GetMember(importName);
+                if (member == null && Eval.Module == Module) {
+                    // We are still evaluating this module so members are not complete yet.
+                    // Consider 'from . import path as path' in os.pyi in typeshed.
+                    var import = ModuleResolution.CurrentPathResolver.GetModuleImportFromModuleName($"{Module.Name}.{importName}");
+                    if (!string.IsNullOrEmpty(import?.FullName)) {
+                        member = await ModuleResolution.ImportModuleAsync(import.FullName, cancellationToken);
+                    }
+                }
                 Eval.DeclareVariable(memberName, member ?? Eval.UnknownType, VariableSource.Declaration, Eval.GetLoc(names[i]));
             }
         }
