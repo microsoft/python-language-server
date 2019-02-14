@@ -90,6 +90,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
                                       ?.Item2 ?? -1;
             }
 
+            activeSignature = activeSignature >= 0
+                ? activeSignature
+                : (signatures.Length > 0 ? 0 : -1);
+
             return new SignatureHelp {
                 signatures = signatures.ToArray(),
                 activeSignature = activeSignature,
