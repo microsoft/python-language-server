@@ -39,6 +39,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly TaskCompletionSource<bool> _addRootTcs;
         private readonly IIdleTimeService _idleTimeService;
         private HashSet<IDocument> _pendingDocs;
+        private DateTime _lastPendingDocAddedTime;
 
         public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
             string[] excludeFiles, IIdleTimeService idleTimeService) {
@@ -55,10 +56,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _excludeFiles = excludeFiles;
             _idleTimeService = idleTimeService;
             _addRootTcs = new TaskCompletionSource<bool>();
-            _idleTimeService.Idle += ReIndexPendingDocsAsync;
+            _idleTimeService.Idle += OnIdle;
             _pendingDocs = new HashSet<IDocument>(new UriDocumentComparer());
+            ReIndexingDelay = 1000;
             StartAddRootDir();
         }
+
+        public int ReIndexingDelay { get; set; }
 
         private void StartAddRootDir() {
             Task.Run(() => {
@@ -140,11 +144,18 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public void AddPendingDoc(IDocument doc) {
             lock (_pendingDocs) {
+                _lastPendingDocAddedTime = DateTime.Now;
                 _pendingDocs.Add(doc);
             }
         }
 
-        private void ReIndexPendingDocsAsync(object sender, EventArgs _) {
+        private void OnIdle(object sender, EventArgs _) {
+            if (_pendingDocs.Count > 0 && (DateTime.Now - _lastPendingDocAddedTime).TotalMilliseconds > ReIndexingDelay) {
+                ReIndexPendingDocsAsync();
+            }
+        }
+
+        private void ReIndexPendingDocsAsync() {
             IEnumerable<IDocument> pendingDocs;
             lock (_pendingDocs) {
                 pendingDocs = _pendingDocs.ToList();

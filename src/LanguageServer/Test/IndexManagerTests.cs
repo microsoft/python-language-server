@@ -345,9 +345,12 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         private IIndexManager GetDefaultIndexManager() {
-            return new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion,
+            var indexM = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion,
                                     _rootPath, new string[] { }, new string[] { },
-                                    _idleTimeService);
+                                    _idleTimeService) {
+                ReIndexingDelay = 1
+            };
+            return indexM;
         }
 
         private string AddFileToRoot(string filePath, Stream stream) {
