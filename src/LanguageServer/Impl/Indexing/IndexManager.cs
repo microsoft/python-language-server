@@ -78,6 +78,9 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
 
         private IEnumerable<IFileSystemInfo> WorkspaceFiles() {
+            if (string.IsNullOrEmpty(_workspaceRootPath)) {
+                return Enumerable.Empty<IFileSystemInfo>();
+            }
             return _fileSystem.GetDirectoryInfo(_workspaceRootPath).EnumerateFileSystemInfos(_includeFiles, _excludeFiles);
         }
 
