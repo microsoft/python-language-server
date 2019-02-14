@@ -13,24 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Python.Core.Shell {
+namespace Microsoft.Python.Core.Services {
     /// <summary>
-    /// Progress reporting service
+    /// Represents client application
     /// </summary>
-    public interface IProgressService {
-        /// <summary>
-        /// Displays progress message in the application UI.
-        /// </summary>
-        IProgress BeginProgress();
-    }
-
-    public interface IProgress: IDisposable {
-        /// <summary>
-        /// Updates progress message in the application UI.
-        /// </summary>
-        Task Report(string message);
+    public interface IClientApplication {
+        Task NotifyAsync(string targetName, params object[] arguments);
+        Task NotifyWithParameterObjectAsync(string targetName, object argument = null);
+        Task<TResult> InvokeWithParameterObjectAsync<TResult>(string targetName, object argument = null, CancellationToken cancellationToken = default);
     }
 }

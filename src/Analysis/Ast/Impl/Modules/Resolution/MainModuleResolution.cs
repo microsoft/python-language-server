@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             // Initialize built-in
             var moduleName = BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
-            var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath ?? "python.exe");
+            var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath);
 
             var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
             _modules[BuiltinModuleName] = BuiltinsModule = b;

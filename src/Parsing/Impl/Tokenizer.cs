@@ -66,7 +66,7 @@ namespace Microsoft.Python.Parsing {
         public Tokenizer(PythonLanguageVersion version, ErrorSink errorSink, TokenizerOptions options, Action<SourceSpan, string> commentProcessor) {
             _errors = errorSink ?? ErrorSink.Null;
             _commentProcessor = commentProcessor;
-            _state = new State(options, MaxIndent);
+            _state = new State(options);
             PrintFunction = false;
             UnicodeLiterals = false;
             _names = new Dictionary<object, NameToken>(new TokenEqualityComparer(this));
@@ -166,9 +166,9 @@ namespace Microsoft.Python.Parsing {
                     throw new ArgumentException("bad state provided");
                 }
 
-                _state = new State((State)state, Verbatim, MaxIndent);
+                _state = new State((State)state, Verbatim);
             } else {
-                _state = new State(_options, MaxIndent);
+                _state = new State(_options);
             }
 
             Debug.Assert(_reader == null, "Must uninitialize tokenizer before reinitializing");
@@ -2272,7 +2272,7 @@ namespace Microsoft.Python.Parsing {
             public StringBuilder NextWhiteSpace;
             public GroupingRecovery GroupingRecovery;
 
-            public State(State state, bool verbatim, int maxIndent) {
+            public State(State state, bool verbatim) {
                 Indent = (int[])state.Indent.Clone();
                 LastNewLine = state.LastNewLine;
                 BracketLevel = state.BraceLevel;
@@ -2290,10 +2290,10 @@ namespace Microsoft.Python.Parsing {
                     NextWhiteSpace = null;
                 }
                 GroupingRecovery = null;
-                IndentFormat = new string[maxIndent];
+                IndentFormat = new string[MaxIndent];
             }
 
-            public State(TokenizerOptions options, int maxIndent) {
+            public State(TokenizerOptions options) {
                 Indent = new int[MaxIndent]; // TODO
                 LastNewLine = true;
                 BracketLevel = ParenLevel = BraceLevel = PendingDedents = IndentLevel = 0;
@@ -2307,7 +2307,7 @@ namespace Microsoft.Python.Parsing {
                     NextWhiteSpace = null;
                 }
                 GroupingRecovery = null;
-                IndentFormat = new string[maxIndent];
+                IndentFormat = new string[MaxIndent];
             }
 
             public override bool Equals(object obj) {

@@ -21,5 +21,6 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string UnknownParameterName = "unknown-parameter-name";
         public const string ParameterAlreadySpecified = "parameter-already-specified";
         public const string ParameterMissing = "parameter-missing";
+        public const string UnresolvedImport = "unresolved-import";
     }
 }

@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionEval : IExpressionEvaluator {
+    internal sealed partial class ExpressionEval {
         public IPythonType GetTypeFromPepHint(Node node) {
             var location = GetLoc(node);
             var content = (Module as IDocument)?.Content;

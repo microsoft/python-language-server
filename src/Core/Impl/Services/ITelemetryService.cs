@@ -1,4 +1,5 @@
-﻿// Copyright(c) Microsoft Corporation
+﻿// Python Tools for Visual Studio
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,14 +14,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using Microsoft.Python.Analysis.Diagnostics;
-using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace Microsoft.Python.Analysis {
-    public static class DiagnosticsServiceExtensions {
-        public static void Add(this IDiagnosticsService ds, Uri documentUri, string message, SourceSpan span, string errorCode, Severity severity)
-            => ds.Add(documentUri, new DiagnosticsEntry(message, span, errorCode, severity));
+namespace Microsoft.Python.Core.Services {
+    public interface ITelemetryService {
+        Task SendTelemetryAsync(TelemetryEvent telemetryEvent);
+    }
+
+    public sealed class TelemetryEvent {
+        public string EventName { get; set; }
+        public Dictionary<string, string> Properties { get; } = new Dictionary<string, string>();
+        public Dictionary<string, double> Measurements { get; } = new Dictionary<string, double>();
     }
 }

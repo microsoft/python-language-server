@@ -181,7 +181,7 @@ namespace Microsoft.Python.Core {
             return true;
         }
 
-        public static int IndexOfOrdinal(this string s, string value, int startIndex = 0, bool ignoreCase = false) 
+        public static int IndexOfOrdinal(this string s, string value, int startIndex = 0, bool ignoreCase = false)
             => s?.IndexOf(value, startIndex, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? -1;
 
         public static bool EqualsIgnoreCase(this string s, string other)
@@ -265,6 +265,19 @@ namespace Microsoft.Python.Core {
             var nextSeparatorIndex = s.IndexOf(separator, start);
             span = (start, nextSeparatorIndex == -1 || nextSeparatorIndex >= substringLength ? substringLength - start : nextSeparatorIndex - start);
             return true;
+        }
+
+        public static string[] SplitLines(this string s, params string[] lineEndings) {
+            if (lineEndings == null || lineEndings.Length == 0) {
+                lineEndings = new[] { "\r\n", "\r", "\n" };
+            }
+
+            return s.Split(lineEndings, StringSplitOptions.None);
+        }
+
+        public static string NormalizeLineEndings(this string s, string lineEnding = null) {
+            lineEnding = lineEnding ?? Environment.NewLine;
+            return string.Join(lineEnding, s.SplitLines());
         }
     }
 }

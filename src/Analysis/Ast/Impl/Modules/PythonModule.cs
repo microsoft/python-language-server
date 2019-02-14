@@ -56,6 +56,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
+        private readonly IDiagnosticsService _diagnosticsService;
 
         private string _documentation; // Must be null initially.
         private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
@@ -72,14 +73,15 @@ namespace Microsoft.Python.Analysis.Modules {
         protected State ContentState { get; set; } = State.None;
 
         protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) {
-            Check.ArgumentNotNull(nameof(name), name);
-            Name = name;
-            Services = services;
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Services = services ?? throw new ArgumentNullException(nameof(services));
             ModuleType = moduleType;
 
             Log = services?.GetService<ILogger>();
             Interpreter = services?.GetService<IPythonInterpreter>();
             Analysis = new EmptyAnalysis(services, this);
+
+            _diagnosticsService = services.GetService<IDiagnosticsService>();
         }
 
         protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, IServiceContainer services) :
@@ -218,13 +220,13 @@ namespace Microsoft.Python.Analysis.Modules {
         private void InitializeContent(string content) {
             lock (AnalysisLock) {
                 LoadContent(content);
+
                 var startParse = ContentState < State.Parsing && _parsingTask == null;
                 var startAnalysis = startParse | (ContentState < State.Analyzing && _analysisTcs?.Task == null);
 
                 if (startAnalysis) {
-                    _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
+                    ExpectNewAnalysis();
                 }
-
                 if (startParse) {
                     Parse();
                 }
@@ -250,6 +252,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public void Dispose() => Dispose(true);
 
         protected virtual void Dispose(bool disposing) {
+            _diagnosticsService?.Remove(Uri);
             _allProcessingCts.Cancel();
             _allProcessingCts.Dispose();
         }
@@ -288,7 +291,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Task t = null;
             while (true) {
                 lock (AnalysisLock) {
-                    if(t == _parsingTask) {
+                    if (t == _parsingTask) {
                         break;
                     }
                     cancellationToken.ThrowIfCancellationRequested();
@@ -314,10 +317,8 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void Update(IEnumerable<DocumentChange> changes) {
             lock (AnalysisLock) {
-                ExpectedAnalysisVersion++;
-
+                ExpectNewAnalysis();
                 _linkedAnalysisCts?.Cancel();
-                _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
 
                 _parseCts?.Cancel();
                 _parseCts = new CancellationTokenSource();
@@ -352,7 +353,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private void Parse(CancellationToken cancellationToken) {
-            var sink = new CollectingErrorSink();
+            CollectingErrorSink sink = null;
             int version;
             Parser parser;
 
@@ -360,10 +361,14 @@ namespace Microsoft.Python.Analysis.Modules {
 
             lock (AnalysisLock) {
                 version = _buffer.Version;
-                parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, new ParserOptions {
-                    StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison),
-                    ErrorSink = sink
-                });
+                var options = new ParserOptions {
+                    StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison)
+                };
+                if (ModuleType == ModuleType.User) {
+                    sink = new CollectingErrorSink();
+                    options.ErrorSink = sink;
+                }
+                parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, options);
             }
 
             var ast = parser.ParseFile();
@@ -376,7 +381,13 @@ namespace Microsoft.Python.Analysis.Modules {
                     throw new OperationCanceledException();
                 }
                 _ast = ast;
-                _parseErrors = sink.Diagnostics;
+                _parseErrors = sink?.Diagnostics ?? Array.Empty<DiagnosticsEntry>();
+
+                // Do not report issues with libraries or stubs
+                if (sink != null) {
+                    _diagnosticsService?.Replace(Uri, _parseErrors.Concat(Analysis.Diagnostics));
+                }
+
                 _parsingTask = null;
                 ContentState = State.Parsed;
             }
@@ -428,11 +439,10 @@ namespace Microsoft.Python.Analysis.Modules {
         public void NotifyAnalysisPending() {
             lock (AnalysisLock) {
                 // The notification comes from the analyzer when it needs to invalidate
-                // current analysis since one of the dependencies changed. Upon text
-                // buffer change the version may be incremented twice - once in Update()
-                // and then here. This is normal.
-                ExpectedAnalysisVersion++;
-                _analysisTcs = _analysisTcs ?? new TaskCompletionSource<IDocumentAnalysis>();
+                // current analysis since one of the dependencies changed. If text
+                // buffer changed then the notification won't come since the analyzer
+                // filters out original initiator of the analysis.
+                ExpectNewAnalysis();
                 //Log?.Log(TraceEventType.Verbose, $"Analysis pending: {Name}");
             }
         }
@@ -448,10 +458,16 @@ namespace Microsoft.Python.Analysis.Modules {
                     // to perform additional actions on the completed analysis such
                     // as declare additional variables, etc.
                     OnAnalysisComplete();
-
-                    _analysisTcs.TrySetResult(analysis);
-                    _analysisTcs = null;
                     ContentState = State.Analyzed;
+
+                    // Do not report issues with libraries or stubs
+                    if (ModuleType == ModuleType.User) {
+                        _diagnosticsService?.Replace(Uri, _parseErrors.Concat(Analysis.Diagnostics));
+                    }
+
+                    var tcs = _analysisTcs;
+                    _analysisTcs = null;
+                    tcs.TrySetResult(analysis);
 
                     NewAnalysis?.Invoke(this, EventArgs.Empty);
                     return true;
@@ -476,6 +492,11 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
         #endregion
+
+        private void ExpectNewAnalysis() {
+            ExpectedAnalysisVersion++;
+            _analysisTcs = _analysisTcs ?? new TaskCompletionSource<IDocumentAnalysis>();
+        }
 
         private string TryGetDocFromModuleInitFile() {
             if (string.IsNullOrEmpty(FilePath) || !FileSystem.FileExists(FilePath)) {

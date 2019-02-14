@@ -14,8 +14,10 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -59,12 +61,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         IMember LookupNameInScopes(string name, out IScope scope);
 
-        IPythonType GetTypeFromPepHint(Node node);
         IPythonType GetTypeFromString(string typeString);
 
         PythonAst Ast { get; }
         IPythonModule Module { get; }
         IPythonInterpreter Interpreter { get; }
         IServiceContainer Services { get; }
+
+        void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry);
+        IEnumerable<DiagnosticsEntry> Diagnostics { get; }
     }
 }

@@ -13,10 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests;
+using Microsoft.Python.Core;
+using Microsoft.Python.LanguageServer.Diagnostics;
 
 namespace Microsoft.Python.LanguageServer.Tests {
     public abstract class LanguageServerTestBase : AnalysisTestBase {
         protected static readonly ServerSettings ServerSettings = new ServerSettings();
+        protected override IDiagnosticsService GetDiagnosticsService(IServiceContainer s) => new DiagnosticsService(s);
     }
 }

@@ -18,8 +18,32 @@ using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis.Diagnostics {
     public interface IDiagnosticsService {
-        IReadOnlyList<DiagnosticsEntry> Diagnostics { get; }
-        void Add(Uri documentUri, DiagnosticsEntry entry);
+        /// <summary>
+        /// Current complete diagnostics.
+        /// </summary>
+        IReadOnlyDictionary<Uri, IReadOnlyList<DiagnosticsEntry>> Diagnostics { get; }
+
+        /// <summary>
+        /// Replaces diagnostics for the document by the new set.
+        /// </summary>
+        void Replace(Uri documentUri, IEnumerable<DiagnosticsEntry> entries);
+
+        /// <summary>
+        /// Removes document from the diagnostics report. Typically when document closes.
+        /// </summary>
+        void Remove(Uri documentUri);
+
+        /// <summary>
+        /// Defines delay in milliseconds from the idle time start and
+        /// the diagnostic publishing to the client.
+        /// </summary>
         int PublishingDelay { get; set; }
+
+        /// <summary>
+        /// Provides map of error codes to severity when user wants
+        /// to override default severity settings or suppress particular
+        /// diagnostics completely.
+        /// </summary>
+        DiagnosticsSeverityMap DiagnosticsSeverityMap { get; set; }
     }
 }
