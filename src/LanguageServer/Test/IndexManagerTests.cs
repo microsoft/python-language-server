@@ -93,24 +93,29 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public void CanOpenFiles() {
+        public async Task CanOpenFiles() {
             string nonRootPath = "C:/nonRoot";
             var pythonTestFileInfo = MakeFileInfoProxy($"{nonRootPath}/bla.py");
-            IDocument doc = Substitute.For<IDocument>();
-            doc.GetAnyAst().Returns(MakeAst("x = 1"));
+            const string TestCode = "x = 1";
+            IDocument doc = DocumentWithAst(TestCode);
 
             IIndexManager indexManager = GetDefaultIndexManager();
-            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            await indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             SymbolsShouldBeOnlyX(symbols);
         }
 
+        private IDocument DocumentWithAst(string TestCode) {
+            IDocument doc = Substitute.For<IDocument>();
+            doc.GetAstAsync().Returns(Task.FromResult(MakeAst(TestCode)));
+            return doc;
+        }
+
         [TestMethod, Priority(0)]
         public async Task UpdateFilesOnWorkspaceIndexesLatestAsync() {
             var pythonTestFilePath = FileWithXVarInRootDir();
-            IDocument latestDoc = Substitute.For<IDocument>();
-            latestDoc.GetAnyAst().Returns(MakeAst("y = 1"));
+            IDocument latestDoc = DocumentWithAst("y = 1");
 
             var indexManager = GetDefaultIndexManager();
             await indexManager.AddRootDirectoryAsync();
@@ -126,10 +131,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task CloseNonWorkspaceFilesRemovesFromIndexAsync() {
             var pythonTestFileInfo = MakeFileInfoProxy("C:/nonRoot/bla.py");
             IDocument doc = Substitute.For<IDocument>();
-            doc.GetAnyAst().Returns(MakeAst("x = 1"));
+            doc.GetAstAsync().Returns(Task.FromResult(MakeAst("x = 1")));
 
             var indexManager = GetDefaultIndexManager();
-            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            await indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
             await indexManager.ProcessClosedFileAsync(pythonTestFileInfo.FullName);
 
             SymbolIndexShouldBeEmpty();
@@ -140,12 +145,11 @@ namespace Microsoft.Python.LanguageServer.Tests {
             string pythonTestFilePath = FileWithXVarInRootDir();
             _fileSystem.IsPathUnderRoot(_rootPath, pythonTestFilePath).Returns(true);
 
-            IDocument latestDoc = Substitute.For<IDocument>();
-            latestDoc.GetAnyAst().Returns(MakeAst("y = 1"));
+            IDocument latestDoc = DocumentWithAst("y = 1");
 
             var indexManager = GetDefaultIndexManager();
             await indexManager.AddRootDirectoryAsync();
-            indexManager.ProcessNewFile(pythonTestFilePath, latestDoc);
+            await indexManager.ProcessNewFile(pythonTestFilePath, latestDoc);
             // It Needs to remake the stream for the file, previous one is closed
             _fileSystem.FileOpen(pythonTestFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
             await indexManager.ProcessClosedFileAsync(pythonTestFilePath);
@@ -160,14 +164,13 @@ namespace Microsoft.Python.LanguageServer.Tests {
             // it should not reindex file
 
             var pythonTestFileInfo = MakeFileInfoProxy("C:/nonRoot/bla.py");
-            IDocument doc = Substitute.For<IDocument>();
-            doc.GetAnyAst().Returns(MakeAst("x = 1"));
+            IDocument doc = DocumentWithAst("x = 1");
 
             var indexManager = GetDefaultIndexManager();
-            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            await indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
             await indexManager.ProcessClosedFileAsync(pythonTestFileInfo.FullName);
-            doc.GetAnyAst().Returns(MakeAst("x = 1"));
-            indexManager.ReIndexFile(pythonTestFileInfo.FullName, doc);
+            doc = DocumentWithAst("x = 1");
+            await indexManager.ReIndexFile(pythonTestFileInfo.FullName, doc);
 
             SymbolIndexShouldBeEmpty();
         }
@@ -265,15 +268,13 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             var indexManager = GetDefaultIndexManager();
 
-            IDocument yVarDoc = Substitute.For<IDocument>();
-            yVarDoc.GetAnyAst().Returns(MakeAst("y = 1"));
-            IDocument zVarDoc = Substitute.For<IDocument>();
-            zVarDoc.GetAnyAst().Returns(MakeAst("z = 1"));
+            IDocument yVarDoc = DocumentWithAst("y = 1");
+            IDocument zVarDoc = DocumentWithAst("z = 1");
 
-            indexManager.ProcessNewFile(pythonTestFilePath, yVarDoc);
+            await indexManager.ProcessNewFile(pythonTestFilePath, yVarDoc);
             var closeFileTask = indexManager.ProcessClosedFileAsync(pythonTestFilePath);
             fileOpenedEvent.Wait();
-            indexManager.ProcessNewFile(pythonTestFilePath, zVarDoc);
+            await indexManager.ProcessNewFile(pythonTestFilePath, zVarDoc);
             reOpenedFileFinished.Set();
 
             await closeFileTask;

@@ -98,15 +98,18 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
         }
 
-        private bool IsFileOnWorkspace(string path)
-            => _fileSystem.IsPathUnderRoot(_workspaceRootPath, path);
+        private bool IsFileOnWorkspace(string path) {
+            if (string.IsNullOrEmpty(_workspaceRootPath)) {
+                return true;
+            }
+            return _fileSystem.IsPathUnderRoot(_workspaceRootPath, path);
+        }
+        public async Task ProcessNewFile(string path, IDocument doc)
+            => _symbolIndex.UpdateIndexIfNewer(path, await doc.GetAstAsync(), _symbolIndex.GetNewVersion(path));
 
-        public void ProcessNewFile(string path, IDocument doc)
-            => _symbolIndex.UpdateIndexIfNewer(path, doc.GetAnyAst(), _symbolIndex.GetNewVersion(path));
-
-        public void ReIndexFile(string path, IDocument doc) {
+        public async Task ReIndexFile(string path, IDocument doc) {
             if (IsFileIndexed(path)) {
-                ProcessNewFile(path, doc);
+                await ProcessNewFile(path, doc);
             }
         }
 

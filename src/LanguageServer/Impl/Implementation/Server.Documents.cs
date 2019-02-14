@@ -30,8 +30,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Opening document {uri}");
 
             var doc = _rdt.OpenDocument(uri, @params.textDocument.text);
-            _indexManager.ProcessNewFile(uri.AbsolutePath, doc);
             doc.NewAst += DocNewAstEvent;
+            _indexManager.ProcessNewFile(uri.AbsolutePath, doc).DoNotWait();
         }
 
         public void DidChangeTextDocument(DidChangeTextDocumentParams @params) {
