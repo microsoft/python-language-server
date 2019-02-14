@@ -100,7 +100,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             IDocument doc = DocumentWithAst(TestCode);
 
             IIndexManager indexManager = GetDefaultIndexManager();
-            await indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            await indexManager.ProcessNewFileAsync(pythonTestFileInfo.FullName, doc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             SymbolsShouldBeOnlyX(symbols);
@@ -119,7 +119,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             var indexManager = GetDefaultIndexManager();
             await indexManager.AddRootDirectoryAsync();
-            indexManager.ReIndexFile(pythonTestFilePath, latestDoc);
+            indexManager.ReIndexFileAsync(pythonTestFilePath, latestDoc);
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -134,7 +134,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             doc.GetAstAsync().Returns(Task.FromResult(MakeAst("x = 1")));
 
             var indexManager = GetDefaultIndexManager();
-            await indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            await indexManager.ProcessNewFileAsync(pythonTestFileInfo.FullName, doc);
             await indexManager.ProcessClosedFileAsync(pythonTestFileInfo.FullName);
 
             SymbolIndexShouldBeEmpty();
@@ -149,7 +149,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             var indexManager = GetDefaultIndexManager();
             await indexManager.AddRootDirectoryAsync();
-            await indexManager.ProcessNewFile(pythonTestFilePath, latestDoc);
+            await indexManager.ProcessNewFileAsync(pythonTestFilePath, latestDoc);
             // It Needs to remake the stream for the file, previous one is closed
             _fileSystem.FileOpen(pythonTestFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
             await indexManager.ProcessClosedFileAsync(pythonTestFilePath);
@@ -167,10 +167,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
             IDocument doc = DocumentWithAst("x = 1");
 
             var indexManager = GetDefaultIndexManager();
-            await indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            await indexManager.ProcessNewFileAsync(pythonTestFileInfo.FullName, doc);
             await indexManager.ProcessClosedFileAsync(pythonTestFileInfo.FullName);
             doc = DocumentWithAst("x = 1");
-            await indexManager.ReIndexFile(pythonTestFileInfo.FullName, doc);
+            await indexManager.ReIndexFileAsync(pythonTestFileInfo.FullName, doc);
 
             SymbolIndexShouldBeEmpty();
         }
@@ -271,10 +271,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
             IDocument yVarDoc = DocumentWithAst("y = 1");
             IDocument zVarDoc = DocumentWithAst("z = 1");
 
-            await indexManager.ProcessNewFile(pythonTestFilePath, yVarDoc);
+            await indexManager.ProcessNewFileAsync(pythonTestFilePath, yVarDoc);
             var closeFileTask = indexManager.ProcessClosedFileAsync(pythonTestFilePath);
             fileOpenedEvent.Wait();
-            await indexManager.ProcessNewFile(pythonTestFilePath, zVarDoc);
+            await indexManager.ProcessNewFileAsync(pythonTestFilePath, zVarDoc);
             reOpenedFileFinished.Set();
 
             await closeFileTask;

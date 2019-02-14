@@ -22,9 +22,9 @@ using Microsoft.Python.Analysis.Documents;
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal interface IIndexManager : IDisposable {
         Task AddRootDirectoryAsync(CancellationToken cancellationToken = default);
-        Task ProcessNewFile(string path, IDocument doc);
+        Task ProcessNewFileAsync(string path, IDocument doc);
         Task ProcessClosedFileAsync(string path);
-        Task ReIndexFile(string path, IDocument doc);
+        Task ReIndexFileAsync(string path, IDocument doc);
         Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default);
     }

@@ -31,7 +31,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var doc = _rdt.OpenDocument(uri, @params.textDocument.text);
             doc.NewAst += DocNewAstEvent;
-            _indexManager.ProcessNewFile(uri.AbsolutePath, doc).DoNotWait();
+            _indexManager.ProcessNewFileAsync(uri.AbsolutePath, doc).DoNotWait();
         }
 
         public void DidChangeTextDocument(DidChangeTextDocumentParams @params) {
@@ -85,7 +85,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private void DocNewAstEvent(object sender, EventArgs _) {
             var document = (IDocument)sender;
-            _indexManager.ReIndexFile(document.Uri.AbsolutePath, document);
+            _indexManager.ReIndexFileAsync(document.Uri.AbsolutePath, document);
         }
     }
 }

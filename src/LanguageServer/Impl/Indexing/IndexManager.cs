@@ -100,16 +100,16 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private bool IsFileOnWorkspace(string path) {
             if (string.IsNullOrEmpty(_workspaceRootPath)) {
-                return true;
+                return false;
             }
             return _fileSystem.IsPathUnderRoot(_workspaceRootPath, path);
         }
-        public async Task ProcessNewFile(string path, IDocument doc)
+        public async Task ProcessNewFileAsync(string path, IDocument doc)
             => _symbolIndex.UpdateIndexIfNewer(path, await doc.GetAstAsync(), _symbolIndex.GetNewVersion(path));
 
-        public async Task ReIndexFile(string path, IDocument doc) {
+        public async Task ReIndexFileAsync(string path, IDocument doc) {
             if (IsFileIndexed(path)) {
-                await ProcessNewFile(path, doc);
+                await ProcessNewFileAsync(path, doc);
             }
         }
 
