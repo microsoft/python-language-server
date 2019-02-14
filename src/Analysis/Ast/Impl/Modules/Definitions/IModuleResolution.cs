@@ -54,7 +54,8 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Sets user search paths. This changes <see cref="CurrentPathResolver"/>.
         /// </summary>
-        void SetUserSearchPaths(in IEnumerable<string> searchPaths);
+        /// <returns>Added roots.</returns>
+        IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths);
 
         Task ReloadAsync(CancellationToken token = default);
     }

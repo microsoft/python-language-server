@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         protected readonly bool _requireInitPy;
         protected string _root;
 
-        protected PathResolver _pathResolver;
+        protected PathResolver PathResolver { get; set; }
 
         protected InterpreterConfiguration Configuration => _interpreter.Configuration;
 
@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         /// <summary>
         /// Path resolver providing file resolution in module imports.
         /// </summary>
-        public PathResolverSnapshot CurrentPathResolver => _pathResolver.CurrentSnapshot;
+        public PathResolverSnapshot CurrentPathResolver => PathResolver.CurrentSnapshot;
 
         /// <summary>
         /// Builtins module.
@@ -85,10 +85,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return _modules.TryGetValue(name, out module) ? module : null;
         }
 
-        public void SetUserSearchPaths(in IEnumerable<string> searchPaths)
-            => _pathResolver.SetUserSearchPaths(searchPaths);
+        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths)
+            => PathResolver.SetUserSearchPaths(searchPaths);
 
-        public void AddModulePath(string path) => _pathResolver.TryAddModulePath(path, out var _);
+        public void AddModulePath(string path) => PathResolver.TryAddModulePath(path, out var _);
 
         public ModulePath FindModule(string filePath) {
             var bestLibraryPath = string.Empty;
@@ -215,7 +215,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
             foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(p))) {
-                _pathResolver.TryAddModulePath(modulePath, out _);
+                PathResolver.TryAddModulePath(modulePath, out _);
             }
         }
 
