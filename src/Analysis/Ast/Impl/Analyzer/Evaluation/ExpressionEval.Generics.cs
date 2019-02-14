@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -51,51 +50,51 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var returnInstance = false;
             switch (expr) {
                 // Indexing returns type as from A[int]
-                case IndexExpression indexExpr: {
-                        // Generic[T1, T2, ...] or A[type]()
-                        var indices = await EvaluateIndexAsync(indexExpr, cancellationToken);
-                        // See which ones are generic parameters as defined by TypeVar() 
-                        // and which are specific types. Normally there should not be a mix.
-                        var genericTypeArgs = indices.OfType<IGenericTypeParameter>().ToArray();
-                        specificTypes = indices.Where(i => !(i is IGenericTypeParameter)).OfType<IPythonType>().ToArray();
+                case IndexExpression indexExpr:
+                    // Generic[T1, T2, ...] or A[type]()
+                    var indices = await EvaluateIndexAsync(indexExpr, cancellationToken);
+                    // See which ones are generic parameters as defined by TypeVar() 
+                    // and which are specific types. Normally there should not be a mix.
+                    var genericTypeArgs = indices.OfType<IGenericTypeParameter>().ToArray();
+                    specificTypes = indices.Where(i => !(i is IGenericTypeParameter)).OfType<IPythonType>().ToArray();
 
-                        if (specificTypes.Length == 0 && genericTypeArgs.Length > 0) {
-                            // The expression is still generic. For example, generic return
-                            // annotation of a class method, such as 'def func(self) -> A[_E]: ...'.
-                            // Leave it alone, we don't want resolve generic with generic.
-                            return null;
-                        }
+                    if (specificTypes.Length == 0 && genericTypeArgs.Length > 0) {
+                        // The expression is still generic. For example, generic return
+                        // annotation of a class method, such as 'def func(self) -> A[_E]: ...'.
+                        // Leave it alone, we don't want resolve generic with generic.
+                        return null;
+                    }
 
-                        if (genericTypeArgs.Length > 0 && genericTypeArgs.Length != indices.Count) {
-                            // TODO: report that some type arguments are not declared with TypeVar.
-                        }
+                    if (genericTypeArgs.Length > 0 && genericTypeArgs.Length != indices.Count) {
+                        // TODO: report that some type arguments are not declared with TypeVar.
+                    }
 
-                        if (specificTypes.Length > 0 && specificTypes.Length != indices.Count) {
-                            // TODO: report that arguments are not specific types or are not declared.
-                        }
+                    if (specificTypes.Length > 0 && specificTypes.Length != indices.Count) {
+                        // TODO: report that arguments are not specific types or are not declared.
+                    }
 
-                        // Optimistically use what we have
-                        if (target is IGenericType gt) {
-                            if (gt.Name.EqualsOrdinal("Generic")) {
-                                if (genericTypeArgs.Length > 0) {
-                                    // Generic[T1, T2, ...] expression. Create generic base for the class.
-                                    return new GenericClassBaseType(genericTypeArgs, Module, GetLoc(expr));
-                                } else {
-                                    // TODO: report too few type arguments for Generic[].
-                                    return UnknownType;
-                                }
-                            }
-
-                            if (specificTypes.Length > 0) {
-                                // If target is a generic type and indexes are specific types, create specific class
-                                return gt.CreateSpecificType(new ArgumentSet(specificTypes), Module, GetLoc(expr));
+                    // Optimistically use what we have
+                    if (target is IGenericType gt) {
+                        if (gt.Name.EqualsOrdinal("Generic")) {
+                            if (genericTypeArgs.Length > 0) {
+                                // Generic[T1, T2, ...] expression. Create generic base for the class.
+                                return new GenericClassBaseType(genericTypeArgs, Module, GetLoc(expr));
                             } else {
-                                // TODO: report too few type arguments for the Generic[].
+                                // TODO: report too few type arguments for Generic[].
                                 return UnknownType;
                             }
                         }
-                        break;
+
+                        if (specificTypes.Length > 0) {
+                            // If target is a generic type and indexes are specific types, create specific class
+                            return gt.CreateSpecificType(new ArgumentSet(specificTypes), Module, GetLoc(expr));
+                        } else {
+                            // TODO: report too few type arguments for the Generic[].
+                            return UnknownType;
+                        }
                     }
+                    break;
+
                 case CallExpression callExpr:
                     // Alternative instantiation:
                     //  class A(Generic[T]): ...
