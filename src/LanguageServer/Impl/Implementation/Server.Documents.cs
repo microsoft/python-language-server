@@ -30,7 +30,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Opening document {uri}");
 
             var doc = _rdt.OpenDocument(uri, @params.textDocument.text);
-            doc.NewAst += DocNewAstEvent;
             _indexManager.ProcessNewFileAsync(uri.AbsolutePath, doc).DoNotWait();
         }
 
@@ -49,6 +48,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     changes.Add(change);
                 }
                 doc.Update(changes);
+                _indexManager.AddPendingDoc(doc);
             } else {
                 _log?.Log(TraceEventType.Warning, $"Unable to find document for {@params.textDocument.uri}");
             }
@@ -64,7 +64,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void DidCloseTextDocument(DidCloseTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
             Uri uri = @params.textDocument.uri;
-            _rdt.GetDocument(uri).NewAst -= DocNewAstEvent;
             _rdt.CloseDocument(uri);
             _indexManager.ProcessClosedFileAsync(uri.AbsolutePath).DoNotWait();
         }
@@ -81,11 +80,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
             _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
             return null;
-        }
-
-        private void DocNewAstEvent(object sender, EventArgs _) {
-            var document = (IDocument)sender;
-            _indexManager.ReIndexFileAsync(document.Uri.AbsolutePath, document);
         }
     }
 }

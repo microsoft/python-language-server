@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
+using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
@@ -123,10 +124,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(_interpreter);
 
             var symbolIndex = new SymbolIndex();
-            var fileSystem = _services.GetService<IFileSystem>();
-            _indexManager = new IndexManager(symbolIndex, fileSystem, _interpreter.LanguageVersion, rootDir,
+            _indexManager = new IndexManager(symbolIndex, _services.GetService<IFileSystem>(), _interpreter.LanguageVersion, rootDir,
                                             @params.initializationOptions.includeFiles,
-                                            @params.initializationOptions.excludeFiles);
+                                            @params.initializationOptions.excludeFiles,
+                                            _services.GetService<IIdleTimeService>());
             _services.AddService(_indexManager);
 
             DisplayStartupInfo();

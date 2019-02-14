@@ -21,7 +21,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 
@@ -35,9 +37,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly string[] _excludeFiles;
         private readonly CancellationTokenSource _allIndexCts = new CancellationTokenSource();
         private readonly TaskCompletionSource<bool> _addRootTcs;
+        private readonly IIdleTimeService _idleTimeService;
+        private HashSet<IDocument> _pendingDocs;
 
         public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
-            string[] excludeFiles) {
+            string[] excludeFiles, IIdleTimeService idleTimeService) {
             Check.ArgumentNotNull(nameof(fileSystem), fileSystem);
             Check.ArgumentNotNull(nameof(rootPath), rootPath);
             Check.ArgumentNotNull(nameof(includeFiles), includeFiles);
@@ -49,7 +53,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _workspaceRootPath = rootPath;
             _includeFiles = includeFiles;
             _excludeFiles = excludeFiles;
+            _idleTimeService = idleTimeService;
             _addRootTcs = new TaskCompletionSource<bool>();
+            _idleTimeService.Idle += ReIndexPendingDocsAsync;
+            _pendingDocs = new HashSet<IDocument>(new UriDocumentComparer());
             StartAddRootDir();
         }
 
@@ -104,8 +111,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
             return _fileSystem.IsPathUnderRoot(_workspaceRootPath, path);
         }
-        public async Task ProcessNewFileAsync(string path, IDocument doc)
-            => _symbolIndex.UpdateIndexIfNewer(path, await doc.GetAstAsync(), _symbolIndex.GetNewVersion(path));
+
+        public async Task ProcessNewFileAsync(string path, IDocument doc) {
+            var ast = await doc.GetAstAsync();
+            _symbolIndex.UpdateIndexIfNewer(path, ast, _symbolIndex.GetNewVersion(path));
+        }
 
         public async Task ReIndexFileAsync(string path, IDocument doc) {
             if (IsFileIndexed(path)) {
@@ -127,5 +137,31 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             await AddRootDirectoryAsync(cancellationToken);
             return _symbolIndex.WorkspaceSymbols(query).Take(maxLength).ToList();
         }
+
+        public void AddPendingDoc(IDocument doc) {
+            lock (_pendingDocs) {
+                _pendingDocs.Add(doc);
+            }
+        }
+
+        private void ReIndexPendingDocsAsync(object sender, EventArgs _) {
+            IEnumerable<IDocument> pendingDocs;
+            lock (_pendingDocs) {
+                pendingDocs = _pendingDocs.ToList();
+                _pendingDocs.Clear();
+            }
+
+            // Since its an event handler I have to synchronously wait
+            Task.WaitAll(pendingDocs.MaybeEnumerate()
+                .Select(doc => ReIndexFileAsync(doc.Uri.AbsolutePath, doc))
+                .ToArray());
+        }
+
+        private class UriDocumentComparer : IEqualityComparer<IDocument> {
+            public bool Equals(IDocument x, IDocument y) => x.Uri.Equals(y.Uri);
+
+            public int GetHashCode(IDocument obj) => obj.Uri.GetHashCode();
+        }
     }
+
 }

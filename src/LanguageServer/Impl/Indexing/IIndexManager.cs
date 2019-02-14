@@ -27,5 +27,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         Task ReIndexFileAsync(string path, IDocument doc);
         Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default);
+        void AddPendingDoc(IDocument doc);
     }
 }
