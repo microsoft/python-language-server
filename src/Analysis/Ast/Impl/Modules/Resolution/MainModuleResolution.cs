@@ -26,6 +26,7 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
@@ -89,10 +90,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             } else {
                 _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
                 var rdt = _services.GetService<IRunningDocumentTable>();
-                // TODO: handle user code and library module separately.
+                
+                // Module inside workspace == user code.
+                var moduleType = moduleImport.ModulePath.IsUnderRoot(_root, _fs.StringComparison)
+                    ? ModuleType.User : ModuleType.Library;
+
                 var mco = new ModuleCreationOptions {
                     ModuleName = moduleImport.FullName,
-                    ModuleType = ModuleType.Library,
+                    ModuleType = moduleType,
                     FilePath = moduleImport.ModulePath,
                     Stub = stub
                 };
@@ -189,5 +194,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
             return null;
         }
+
+        protected override void ReportModuleNotFound(string name)
+            => _log?.Log(TraceEventType.Information, $"Import not found: {name}");
     }
 }
