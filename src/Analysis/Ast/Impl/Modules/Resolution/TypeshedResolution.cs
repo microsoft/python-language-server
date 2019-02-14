@@ -65,12 +65,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public override Task ReloadAsync(CancellationToken cancellationToken = default) {
-            _pathResolver = new PathResolver(_interpreter.LanguageVersion);
+            PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
-            var addedRoots = _pathResolver.SetRoot(_root);
+            var addedRoots = PathResolver.SetRoot(_root);
             ReloadModulePaths(addedRoots);
 
-            addedRoots = _pathResolver.SetInterpreterSearchPaths(_typeStubPaths);
+            addedRoots = PathResolver.SetInterpreterSearchPaths(_typeStubPaths);
             ReloadModulePaths(addedRoots);
 
             cancellationToken.ThrowIfCancellationRequested();
