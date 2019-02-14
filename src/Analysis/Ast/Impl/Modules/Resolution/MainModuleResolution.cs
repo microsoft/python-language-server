@@ -147,25 +147,25 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
             if (builtinModuleNamesMember.TryGetConstant<string>(out var s)) {
                 var builtinModuleNames = s.Split(',').Select(n => n.Trim());
-                _pathResolver.SetBuiltins(builtinModuleNames);
+                PathResolver.SetBuiltins(builtinModuleNames);
             }
         }
 
         public override async Task ReloadAsync(CancellationToken cancellationToken = default) {
             ModuleCache = new ModuleCache(_interpreter, _services);
 
-            _pathResolver = new PathResolver(_interpreter.LanguageVersion);
+            PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
-            var addedRoots = _pathResolver.SetRoot(_root);
+            var addedRoots = PathResolver.SetRoot(_root);
             ReloadModulePaths(addedRoots);
 
             var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
-            addedRoots = _pathResolver.SetInterpreterSearchPaths(interpreterPaths);
+            addedRoots = PathResolver.SetInterpreterSearchPaths(interpreterPaths);
 
             ReloadModulePaths(addedRoots);
             cancellationToken.ThrowIfCancellationRequested();
 
-            addedRoots = _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
+            addedRoots = SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
             ReloadModulePaths(addedRoots);
         }
 
