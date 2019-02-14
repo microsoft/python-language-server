@@ -17,7 +17,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using FluentAssertions.Common;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -53,8 +55,8 @@ class C:
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 1))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("C", "x", "y", "while", "for", "yield");
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 1));
+            comps.Should().HaveLabels("C", "x", "y", "while", "for", "yield");
         }
 
         [TestMethod, Priority(0)]
@@ -65,8 +67,8 @@ x.
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(new[] { @"isupper", @"capitalize", @"split" });
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3));
+            comps.Should().HaveLabels(@"isupper", @"capitalize", @"split" );
         }
 
         [TestMethod, Priority(0)]
@@ -77,8 +79,8 @@ datetime.datetime.
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 19))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(new[] { "now", @"tzinfo", @"ctime" });
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 19));
+            comps.Should().HaveLabels("now", @"tzinfo", @"ctime");
         }
 
         [TestMethod, Priority(0)]
@@ -92,11 +94,11 @@ ABCDE.me
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 4))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(@"ABCDE");
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 4));
+            comps.Should().HaveLabels(@"ABCDE");
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 9))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("method1");
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 9));
+            comps.Should().HaveLabels("method1");
         }
 
         [DataRow(PythonLanguageVersion.V36, "value")]
@@ -821,7 +823,7 @@ os.
             result.Should().HaveLabels("path", @"devnull", "SEEK_SET", @"curdir");
         }
 
-        [DataRow(false), Ignore("https://github.com/Microsoft/python-language-server/issues/574")]
+        [DataRow(false)]
         [DataRow(true)]
         [DataTestMethod, Priority(0)]
         public async Task OsPathMembers(bool is3x) {
@@ -834,6 +836,17 @@ os.path.
 
             var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
             result.Should().HaveLabels("split", @"getsize", @"islink", @"abspath");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoDuplicateMembers() {
+            const string code = @"import sy";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 10));
+            result.Completions.Count(c => c.label.EqualsOrdinal(@"sys")).Should().Be(1);
+            result.Completions.Count(c => c.label.EqualsOrdinal(@"sysconfig")).Should().Be(1);
         }
     }
 }

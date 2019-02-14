@@ -71,12 +71,14 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         public IEnumerable<string> GetAllModuleNames() => GetModuleNames(_roots.Prepend(_nonRooted).Append(_builtins));
         public IEnumerable<string> GetInterpreterModuleNames() => GetModuleNames(_roots.Skip(_userRootsCount).Append(_builtins));
 
-        private static IEnumerable<string> GetModuleNames(IEnumerable<Node> roots) => roots
-            .SelectMany(r => r.TraverseBreadthFirst(n => n.IsModule ? Enumerable.Empty<Node>() : n.Children))
-            .Where(n => n.IsModule)
+        private IEnumerable<string> GetModuleNames(IEnumerable<Node> roots) {
+            var builtins =  new HashSet<Node>(_builtins.Children);
+            return roots.SelectMany(r => r.TraverseBreadthFirst(n => n.IsModule? Enumerable.Empty<Node>() : n.Children))
+            .Where(n => n.IsModule || builtins.Contains(n))
             .Select(n => n.FullModuleName);
+        }
 
-        public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {
+    public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {
             foreach (var root in _roots) {
                 var node = root;
                 var matched = true;
