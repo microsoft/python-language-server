@@ -131,7 +131,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             } else {
                 var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
-                indices.Add(index);
+                indices.Add(index ?? UnknownType);
             }
             return indices;
         }
@@ -139,8 +139,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private async Task<IReadOnlyList<IMember>> EvaluateCallArgsAsync(CallExpression expr, CancellationToken cancellationToken = default) {
             var indices = new List<IMember>();
             cancellationToken.ThrowIfCancellationRequested();
-            foreach (var e in expr.Args.Select(a => a.Expression).ExcludeDefault()) {
-                var value = await GetValueFromExpressionAsync(e, cancellationToken);
+            foreach (var e in expr.Args.Select(a => a.Expression)) {
+                var value = await GetValueFromExpressionAsync(e, cancellationToken) ?? UnknownType;
                 indices.Add(value);
             }
             return indices;

@@ -114,7 +114,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 // of a generic class, the function will need specific type to determine its return
                 // value correctly. I.e. in x.func() we need to determine type of x (self for func).
                 var v = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(mex.Target, cancellationToken);
-                self = v.GetPythonType();
+                self = v?.GetPythonType();
             }
 
             // Figure out name, if any

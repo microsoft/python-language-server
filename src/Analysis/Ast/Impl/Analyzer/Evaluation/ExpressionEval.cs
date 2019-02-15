@@ -192,7 +192,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             instance = instance ?? m as IPythonInstance;
-            var type = m.GetPythonType(); // Try inner type
+            var type = m?.GetPythonType(); // Try inner type
             var value = type?.GetMember(expr.Name);
 
             // Class type GetMember returns a type. However, class members are
@@ -226,7 +226,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var trueValue = await GetValueFromExpressionAsync(expr.TrueExpression, cancellationToken);
             var falseValue = await GetValueFromExpressionAsync(expr.FalseExpression, cancellationToken);
 
-            return trueValue ?? falseValue;
+            return trueValue ?? falseValue ?? UnknownType;
         }
 
         public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {

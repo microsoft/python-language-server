@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case PythonOperator.Pos:
                     return await GetValueFromUnaryOpAsync(expr, "__pos__", cancellationToken);
             }
-            return null;
+            return UnknownType;
         }
 
         private async Task<IMember> GetValueFromUnaryOpAsync(UnaryExpression expr, string op, CancellationToken cancellationToken = default) {
@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     ? new PythonConstant(-value, c.Type, GetLoc(expr))
                     : instance;
             }
-            return null;
+            return UnknownType;
         }
 
         private async Task<IMember> GetValueFromBinaryOpAsync(Expression expr, CancellationToken cancellationToken = default) {
@@ -87,8 +87,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             }
 
-            var left = await GetValueFromExpressionAsync(binop.Left, cancellationToken);
-            var right = await GetValueFromExpressionAsync(binop.Right, cancellationToken);
+            var left = await GetValueFromExpressionAsync(binop.Left, cancellationToken) ?? UnknownType;
+            var right = await GetValueFromExpressionAsync(binop.Right, cancellationToken) ?? UnknownType;
 
             switch (binop.Operator) {
                 case PythonOperator.Divide:

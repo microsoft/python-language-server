@@ -218,7 +218,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var result = noErrorsMatches.Any()
                 ? noErrorsMatches.FirstOrDefault(args => IsMatch(args, fn.Overloads[args.OverloadIndex].Parameters))
                 : null;
-            
+
             // Optimistically pick the best available.
             return result ?? orderedSets.FirstOrDefault();
         }
