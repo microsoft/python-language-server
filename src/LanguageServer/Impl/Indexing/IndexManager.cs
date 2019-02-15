@@ -86,7 +86,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private bool IsFileIndexed(string path) => _symbolIndex.IsIndexed(path);
 
         public void ProcessClosedFile(string path) {
-            _files[path].Close(IsFileOnWorkspace(path));
+            if (IsFileOnWorkspace(path)) {
+                _files[path].Parse();
+            } else {
+                _files[path].Delete();
+            }
         }
 
         private bool IsFileOnWorkspace(string path) {
@@ -121,11 +125,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return s.ToList();
         }
 
-        public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default) {
-            foreach(var mostRecentSymbols in _files.Values) {
-                await mostRecentSymbols.GetSymbolsAsync();
-            }
-            return _symbolIndex.WorkspaceSymbols(query).Take(maxLength).ToList();
+        public Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default) {
+            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_allIndexCts.Token, cancellationToken);
+            return Task.WhenAll(_files.Values.Select(mostRecent => mostRecent.GetSymbolsAsync()).ToArray()).ContinueWith<IReadOnlyList<FlatSymbol>>(
+                _ => {
+                    return _symbolIndex.WorkspaceSymbols(query).Take(maxLength).ToList();
+                }, linkedCts.Token);
+             
         }
 
         public void AddPendingDoc(IDocument doc) {

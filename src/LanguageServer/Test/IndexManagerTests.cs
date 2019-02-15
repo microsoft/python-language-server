@@ -37,7 +37,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
     public class IndexManagerTests : LanguageServerTestBase {
         private IFileSystem _fileSystem;
-        private ISymbolIndex _symbolIndex;
         private string _rootPath;
         private List<IFileSystemInfo> _rootFileList;
         private PythonLanguageVersion _pythonLanguageVersion;
@@ -52,7 +51,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public void TestInitialize() {
             TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
             _fileSystem = Substitute.For<IFileSystem>();
-            _symbolIndex = new SymbolIndex();
             _rootPath = "C:/root";
             _pythonLanguageVersion = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
             _rootFileList = new List<IFileSystemInfo>();
@@ -91,7 +89,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public void NullDirectoryThrowsException() {
             Action construct = () => {
                 PythonLanguageVersion version = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
-                IIndexManager indexManager = new IndexManager(_symbolIndex, _fileSystem,
+                IIndexManager indexManager = new IndexManager(new SymbolIndex(), _fileSystem,
                                                               version, null, new string[] { }, new string[] { }, _idleTimeService);
             };
             construct.Should().Throw<ArgumentNullException>();
@@ -148,7 +146,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task CloseNonWorkspaceFilesRemovesFromIndexAsync() {
             var pythonTestFileInfo = MakeFileInfoProxy("C:/nonRoot/bla.py");
             IDocument doc = DocumentWithAst("x = 1");
-            _fileSystem.IsPathUnderRoot("", "").ReturnsForAnyArgs(false);
+            _fileSystem.IsPathUnderRoot(_rootPath, pythonTestFileInfo.FullName).Returns(false);
 
             var indexManager = GetDefaultIndexManager();
             indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
@@ -159,7 +157,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
         [TestMethod, Priority(0)]
         public async Task CloseWorkspaceFilesReUpdatesIndexAsync() {
-            string pythonTestFilePath = FileWithXVarInRootDir();
+            var pythonTestFilePath = FileWithXVarInRootDir();
             _fileSystem.IsPathUnderRoot(_rootPath, pythonTestFilePath).Returns(true);
 
             var indexManager = GetDefaultIndexManager();
@@ -168,6 +166,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             indexManager.ProcessNewFile(pythonTestFilePath, DocumentWithAst("y = 1"));
             // It Needs to remake the stream for the file, previous one is closed
             _fileSystem.FileOpen(pythonTestFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
+            _fileSystem.IsPathUnderRoot(_rootPath, pythonTestFilePath).Returns(true);
             indexManager.ProcessClosedFile(pythonTestFilePath);
 
             var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
@@ -180,12 +179,14 @@ namespace Microsoft.Python.LanguageServer.Tests {
             // it should not reindex file
 
             var pythonTestFileInfo = MakeFileInfoProxy("C:/nonRoot/bla.py");
-            IDocument doc = DocumentWithAst("x = 1");
+            var doc = DocumentWithAst("x = 1");
 
             var indexManager = GetDefaultIndexManager();
             indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
             indexManager.ProcessClosedFile(pythonTestFileInfo.FullName);
             doc = DocumentWithAst("x = 1");
+            
+            _fileSystem.IsPathUnderRoot(_rootPath, pythonTestFileInfo.FullName).Returns(false);
             indexManager.ReIndexFile(pythonTestFileInfo.FullName, doc);
 
             await SymbolIndexShouldBeEmpty(indexManager);
@@ -199,10 +200,11 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             symbols.Should().HaveCount(0);
         }
-        /*
+        
+        
         [TestMethod, Priority(0)]
         public async Task DisposeManagerCancelsTaskAsync() {
-            string pythonTestFilePath = FileWithXVarInRootDir();
+            var pythonTestFilePath = FileWithXVarInRootDir();
             ManualResetEventSlim neverSignaledEvent = new ManualResetEventSlim(false);
             ManualResetEventSlim fileOpenedEvent = new ManualResetEventSlim(false);
 
@@ -220,14 +222,14 @@ namespace Microsoft.Python.LanguageServer.Tests {
             Func<Task> add = async () => {
                 await WaitForWorkspaceAddedAsync(indexManager);
             };
-
+            
             add.Should().Throw<TaskCanceledException>();
             await SymbolIndexShouldBeEmpty(indexManager);
-        }*/
+        }
 
         [TestMethod, Priority(0)]
         public async Task WorkspaceSymbolsAddsRootDirectory() {
-            string pythonTestFilePath = FileWithXVarInRootDir();
+            var pythonTestFilePath = FileWithXVarInRootDir();
 
             var indexManager = GetDefaultIndexManager();
 
@@ -250,7 +252,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
         [TestMethod, Priority(0)]
         public async Task HierarchicalDocumentSymbolsAsync() {
-            string pythonTestFilePath = FileWithXVarInRootDir();
+            var pythonTestFilePath = FileWithXVarInRootDir();
 
             var indexManager = GetDefaultIndexManager();
 
@@ -336,7 +338,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         private IIndexManager GetDefaultIndexManager() {
-            var indexM = new IndexManager(_symbolIndex, _fileSystem, _pythonLanguageVersion,
+            var indexM = new IndexManager(new SymbolIndex(), _fileSystem, _pythonLanguageVersion,
                                     _rootPath, new string[] { }, new string[] { },
                                     _idleTimeService) {
                 ReIndexingDelay = 1

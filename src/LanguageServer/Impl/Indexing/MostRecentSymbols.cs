@@ -31,13 +31,9 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
         }
 
-        public void Close(bool isOnWorkspace) {
-            if (isOnWorkspace) {
-                Parse();
-            } else {
-                lock (_syncObj) {
-                    _symbolIndex.Delete(_path);
-                }
+        public void Delete() {
+            lock (_syncObj) {
+                _symbolIndex.Delete(_path);
             }
         }
 
@@ -64,12 +60,15 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private void CancelExistingTask() {
             if (_fileTask != null) {
-                _fileCts.Cancel();
+                if (_fileTcs.Task.IsCompleted) {
+                    _fileCts.Cancel();
+                
+                    _fileTcs.TrySetCanceled();
+                    _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
+                }
+
                 _fileCts.Dispose();
                 _fileCts = new CancellationTokenSource();
-
-                _fileTcs.TrySetCanceled();
-                _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
 
                 _fileTask = null;
             }
