@@ -16,7 +16,6 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -26,9 +25,9 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed partial class ImportHandler {
-        public async Task<bool> HandleFromImportAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
+        public bool HandleFromImportAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            if (node.Root == null || node.Names == null || Module.ModuleType == ModuleType.Specialized) {
+            if (Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
 
@@ -50,13 +49,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     ImportMembersFromSelf(node);
                     break;
                 case ModuleImport moduleImport:
-                    await ImportMembersFromModuleAsync(node, moduleImport.FullName, cancellationToken);
+                    ImportMembersFromModule(node, moduleImport.FullName, cancellationToken);
                     break;
                 case PossibleModuleImport possibleModuleImport:
-                    await HandlePossibleImportAsync(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, Eval.GetLoc(node.Root), cancellationToken);
+                    HandlePossibleImport(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, Eval.GetLoc(node.Root));
                     break;
                 case PackageImport packageImports:
-                    await ImportMembersFromPackageAsync(node, packageImports, cancellationToken);
+                    ImportMembersFromPackage(node, packageImports);
                     break;
                 case ImportNotFound notFound:
                     MakeUnresolvedImport(null, notFound.FullName, Eval.GetLoc(node.Root));
@@ -88,10 +87,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        private async Task ImportMembersFromModuleAsync(FromImportStatement node, string moduleName, CancellationToken cancellationToken = default) {
+        private void ImportMembersFromModule(FromImportStatement node, string moduleName, CancellationToken cancellationToken = default) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var module = await ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
+            var module = ModuleResolution.GetOrLoadModule(moduleName);
             if (module == null) {
                 return;
             }
@@ -100,7 +99,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // TODO: warn this is not a good style per
                 // TODO: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
                 // TODO: warn this is invalid if not in the global scope.
-                await HandleModuleImportStarAsync(module, cancellationToken);
+                HandleModuleImportStar(module, cancellationToken);
                 return;
             }
 
@@ -118,7 +117,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        private async Task HandleModuleImportStarAsync(IPythonModule module, CancellationToken cancellationToken = default) {
+        private void HandleModuleImportStar(IPythonModule module, CancellationToken cancellationToken = default) {
             foreach (var memberName in module.GetMemberNames()) {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -131,14 +130,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
                 member = member ?? Eval.UnknownType;
                 if (member is IPythonModule m) {
-                    await ModuleResolution.ImportModuleAsync(m.Name, cancellationToken);
+                    ModuleResolution.GetOrLoadModule(m.Name);
                 }
 
                 Eval.DeclareVariable(memberName, member, VariableSource.Import, module.Location);
             }
         }
 
-        private async Task ImportMembersFromPackageAsync(FromImportStatement node, PackageImport packageImport, CancellationToken cancellationToken = default) {
+        private void ImportMembersFromPackage(FromImportStatement node, PackageImport packageImport) {
             var names = node.Names;
             var asNames = node.AsNames;
 
@@ -154,13 +153,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var memberName = memberReference.Name;
                 var location = Eval.GetLoc(memberReference);
 
-                ModuleImport moduleImport;
-                IPythonType member;
-                if ((moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName))) != null) {
-                    member = await ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
-                } else {
-                    member = Eval.UnknownType;
-                }
+                var moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName));
+                var member = moduleImport != null 
+                    ? ModuleResolution.GetOrLoadModule(moduleImport.FullName) 
+                    : Eval.UnknownType;
 
                 Eval.DeclareVariable(memberName, member, VariableSource.Import, location);
             }

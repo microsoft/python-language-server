@@ -95,7 +95,7 @@ namespace Microsoft.Python.Analysis.Documents {
                     mco.Uri = uri;
                 }
 
-                var entry = FindDocument(mco.FilePath, mco.Uri) ?? CreateDocument(mco);
+                var entry = FindDocument(mco.ModuleName, mco.Uri) ?? CreateDocument(mco);
                 entry.LockCount++;
                 return entry.Document;
             }
@@ -165,9 +165,6 @@ namespace Microsoft.Python.Analysis.Documents {
         private DocumentEntry CreateDocument(ModuleCreationOptions mco) {
             IDocument document;
             switch (mco.ModuleType) {
-                case ModuleType.Stub:
-                    document = new StubPythonModule(mco.ModuleName, mco.FilePath, _services);
-                    break;
                 case ModuleType.Compiled:
                     document = new CompiledPythonModule(mco.ModuleName, ModuleType.Compiled, mco.FilePath, mco.Stub, _services);
                     break;

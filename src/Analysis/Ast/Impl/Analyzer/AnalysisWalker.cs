@@ -74,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return await base.WalkAsync(node, cancellationToken);
         }
 
-        public override Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
+        public override async Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
             => ImportHandler.HandleFromImportAsync(node, cancellationToken);
 
         public override Task<bool> WalkAsync(GlobalStatement node, CancellationToken cancellationToken = default)
@@ -83,7 +83,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default)
             => ConditionalHandler.HandleIfAsync(node, cancellationToken);
 
-        public override Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default)
+        public override async Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default)
             => ImportHandler.HandleImportAsync(node, cancellationToken);
 
         public override Task<bool> WalkAsync(NonlocalStatement node, CancellationToken cancellationToken = default)

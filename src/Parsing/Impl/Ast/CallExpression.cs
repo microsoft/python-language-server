@@ -18,25 +18,24 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class CallExpression : Expression {
-        private readonly Arg[] _args;
-
-        public CallExpression(Expression target, Arg[] args) {
+        public CallExpression(Expression target, ImmutableArray<Arg> args) {
             Target = target;
-            _args = args;
+            Args = args;
         }
 
         public Expression Target { get; }
-        public IList<Arg> Args => _args;
+        public ImmutableArray<Arg> Args { get; }
 
         public bool NeedsLocalsDictionary() {
             if (!(Target is NameExpression nameExpr)) {
                 return false;
             }
 
-            if (_args.Length == 0) {
+            if (Args.Count == 0) {
                 switch (nameExpr.Name) {
                     case "locals":
                     case "vars":
@@ -47,13 +46,13 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             }
 
-            if (_args.Length == 1 && (nameExpr.Name == "dir" || nameExpr.Name == "vars")) {
-                if (_args[0].Name == "*" || _args[0].Name == "**") {
+            if (Args.Count == 1 && (nameExpr.Name == "dir" || nameExpr.Name == "vars")) {
+                if (Args[0].Name == "*" || Args[0].Name == "**") {
                     // could be splatting empty list or dict resulting in 0-param call which needs context
                     return true;
                 }
-            } else if (_args.Length == 2 && (nameExpr.Name == "dir" || nameExpr.Name == "vars")) {
-                if (_args[0].Name == "*" && _args[1].Name == "**") {
+            } else if (Args.Count == 2 && (nameExpr.Name == "dir" || nameExpr.Name == "vars")) {
+                if (Args[0].Name == "*" && Args[1].Name == "**") {
                     // could be splatting empty list and dict resulting in 0-param call which needs context
                     return true;
                 }
@@ -71,10 +70,17 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override string CheckDelete() => "can't delete function call";
 
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Target != null) yield return Target;
+            foreach (var arg in Args) {
+                yield return arg;
+            }
+        }
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 Target?.Walk(walker);
-                foreach (var arg in _args.MaybeEnumerate()) {
+                foreach (var arg in Args) {
                     arg.Walk(walker);
                 }
             }
@@ -87,7 +93,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (Target != null) {
                     await Target.WalkAsync(walker, cancellationToken);
                 }
-                foreach (var arg in _args.MaybeEnumerate()) {
+                foreach (var arg in Args) {
                     await arg.WalkAsync(walker, cancellationToken);
                 }
             }
@@ -106,14 +112,14 @@ namespace Microsoft.Python.Parsing.Ast {
 
             res.Append('(');
 
-            if (_args.Length == 0) {
+            if (Args.Count == 0) {
                 if (format.SpaceWithinEmptyCallArgumentList != null && format.SpaceWithinEmptyCallArgumentList.Value) {
                     res.Append(' ');
                 }
             } else {
                 var listWhiteSpace = format.SpaceBeforeComma == null ? this.GetListWhiteSpace(ast) : null;
                 var spaceAfterComma = format.SpaceAfterComma.HasValue ? (format.SpaceAfterComma.Value ? " " : string.Empty) : (string)null;
-                for (var i = 0; i < _args.Length; i++) {
+                for (var i = 0; i < Args.Count; i++) {
                     if (i > 0) {
                         if (format.SpaceBeforeComma == true) {
                             res.Append(' ');
@@ -122,14 +128,14 @@ namespace Microsoft.Python.Parsing.Ast {
                         }
                         res.Append(',');
                     } else if (format.SpaceWithinCallParens != null) {
-                        _args[i].AppendCodeString(res, ast, format, format.SpaceWithinCallParens.Value ? " " : string.Empty);
+                        Args[i].AppendCodeString(res, ast, format, format.SpaceWithinCallParens.Value ? " " : string.Empty);
                         continue;
                     }
 
-                    _args[i].AppendCodeString(res, ast, format, spaceAfterComma);
+                    Args[i].AppendCodeString(res, ast, format, spaceAfterComma);
                 }
 
-                if (listWhiteSpace != null && listWhiteSpace.Length == _args.Length) {
+                if (listWhiteSpace != null && listWhiteSpace.Length == Args.Count) {
                     // trailing comma
                     res.Append(listWhiteSpace[listWhiteSpace.Length - 1]);
                     res.Append(",");

@@ -160,9 +160,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].ReturnDocumentation)) {
 
                 if (fn.IsSpecialized && fn is PythonFunctionType ft) {
-                    foreach (var module in ft.Dependencies) {
+                    foreach (var moduleName in ft.Dependencies) {
                         cancellationToken.ThrowIfCancellationRequested();
-                        await Interpreter.ModuleResolution.ImportModuleAsync(module, cancellationToken);
+                        Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
                     }
                 }
 

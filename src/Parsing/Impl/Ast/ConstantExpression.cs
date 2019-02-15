@@ -14,7 +14,9 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading;
@@ -30,6 +32,8 @@ namespace Microsoft.Python.Parsing.Ast {
         public object Value { get; }
 
         internal override string CheckAssign() => Value == null ? "assignment to None" : "can't assign to literal";
+
+        public override IEnumerable<Node> GetChildNodes() => Enumerable.Empty<Node>();
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

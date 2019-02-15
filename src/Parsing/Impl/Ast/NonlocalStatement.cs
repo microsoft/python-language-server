@@ -18,20 +18,21 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class NonlocalStatement : Statement {
-        private readonly NameExpression[] _names;
-
-        public NonlocalStatement(NameExpression[] names) {
-            _names = names;
+        public NonlocalStatement(ImmutableArray<NameExpression> names) {
+            Names = names;
         }
 
-        public IList<NameExpression> Names => _names;
+        public ImmutableArray<NameExpression> Names { get; }
+
+        public override IEnumerable<Node> GetChildNodes() => Names;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (var n in _names.MaybeEnumerate().ExcludeDefault()) {
+                foreach (var n in Names) {
                     n.Walk(walker);
                 }
             }
@@ -40,7 +41,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                foreach (var n in _names.MaybeEnumerate().ExcludeDefault()) {
+                foreach (var n in Names) {
                     await n.WalkAsync(walker, cancellationToken);
                 }
             }

@@ -81,12 +81,8 @@ namespace Microsoft.Python.Analysis.Tests {
                 sm.AddService(ds);
             }
 
-            TestLogger.Log(TraceEventType.Information, "Create TestDependencyResolver");
-            var dependencyResolver = new TestDependencyResolver();
-            sm.AddService(dependencyResolver);
-
             TestLogger.Log(TraceEventType.Information, "Create PythonAnalyzer");
-            var analyzer = new PythonAnalyzer(sm, root);
+            var analyzer = new PythonAnalyzer(sm);
             sm.AddService(analyzer);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonInterpreter");
@@ -129,7 +125,7 @@ namespace Microsoft.Python.Analysis.Tests {
             string modulePath = null) {
 
             var moduleUri = modulePath != null ? new Uri(modulePath) : TestData.GetDefaultModuleUri();
-            modulePath = modulePath ?? TestData .GetDefaultModulePath();
+            modulePath = modulePath ?? TestData.GetDefaultModulePath();
             moduleName = moduleName ?? Path.GetFileNameWithoutExtension(modulePath);
 
             IDocument doc;
@@ -153,16 +149,12 @@ namespace Microsoft.Python.Analysis.Tests {
             TestLogger.Log(TraceEventType.Information, "Ast end");
 
             TestLogger.Log(TraceEventType.Information, "Analysis begin");
+            await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await doc.GetAnalysisAsync(CancellationToken.None);
             analysis.Should().NotBeNull();
             TestLogger.Log(TraceEventType.Information, "Analysis end");
 
             return analysis;
-        }
-
-        private sealed class TestDependencyResolver : IDependencyResolver {
-            public Task<IDependencyChainNode> GetDependencyChainAsync(IDocument document, CancellationToken cancellationToken)
-                => Task.FromResult<IDependencyChainNode>(new DependencyChainNode(document));
         }
     }
 }

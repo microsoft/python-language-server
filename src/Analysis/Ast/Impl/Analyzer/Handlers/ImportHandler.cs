@@ -16,7 +16,6 @@
 using System;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -31,9 +30,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed partial class ImportHandler : StatementHandler {
         public ImportHandler(AnalysisWalker walker) : base(walker) { }
 
-        public async Task<bool> HandleImportAsync(ImportStatement node, CancellationToken cancellationToken = default) {
+        public bool HandleImportAsync(ImportStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
-            if (node.Names == null || Module.ModuleType == ModuleType.Specialized) {
+            if (Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
 
@@ -58,10 +57,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         Eval.DeclareVariable(memberName, Module, VariableSource.Declaration, location);
                         break;
                     case ModuleImport moduleImport:
-                        module = await HandleImportAsync(moduleImport, location, cancellationToken);
+                        module = HandleImport(moduleImport, location);
                         break;
                     case PossibleModuleImport possibleModuleImport:
-                        module = await HandlePossibleImportAsync(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, location, cancellationToken);
+                        module = HandlePossibleImport(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, location);
                         break;
                     default:
                         // TODO: Package import?
@@ -73,22 +72,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     AssignImportedVariables(module, moduleImportExpression, asNameExpression);
                 }
             }
+
             return false;
         }
 
-        private async Task<IPythonModule> HandleImportAsync(ModuleImport moduleImport, LocationInfo location, CancellationToken cancellationToken) {
-            var module = await ModuleResolution.ImportModuleAsync(moduleImport.FullName, cancellationToken);
-            if (module == null) {
-                MakeUnresolvedImport(moduleImport.FullName, moduleImport.FullName, location);
-                return null;
+        private IPythonModule HandleImport(ModuleImport moduleImport, LocationInfo location) {
+            var module = ModuleResolution.GetOrLoadModule(moduleImport.FullName);
+            if (module != null) {
+                return module;
             }
-            return module;
+
+            MakeUnresolvedImport(moduleImport.FullName, moduleImport.FullName, location);
+            return null;
         }
 
-        private async Task<IPythonModule> HandlePossibleImportAsync(
-            PossibleModuleImport possibleModuleImport, string moduleName, LocationInfo location, CancellationToken cancellationToken) {
+        private IPythonModule HandlePossibleImport(PossibleModuleImport possibleModuleImport, string moduleName, LocationInfo location) {
             var fullName = possibleModuleImport.PrecedingModuleFullName;
-            var module = await ModuleResolution.ImportModuleAsync(possibleModuleImport.PrecedingModuleFullName, cancellationToken);
+            var module = ModuleResolution.GetOrLoadModule(possibleModuleImport.PrecedingModuleFullName);
             if (module == null) {
                 MakeUnresolvedImport(possibleModuleImport.PrecedingModuleFullName, moduleName, location);
                 return null;

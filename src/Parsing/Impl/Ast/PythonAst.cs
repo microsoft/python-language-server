@@ -73,6 +73,8 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public bool HasVerbatim { get; internal set; }
 
+        public override IEnumerable<Node> GetChildNodes() => new[] {_body};
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 _body.Walk(walker);
