@@ -37,40 +37,35 @@ namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
     public class IndexManagerTests : LanguageServerTestBase {
         private IFileSystem _fileSystem;
-        private string _rootPath;
-        private List<IFileSystemInfo> _rootFileList;
-        private PythonLanguageVersion _pythonLanguageVersion;
         private IIdleTimeService _idleTimeService;
-        private ServiceManager _services;
 
         private const int maxSymbolsCount = 1000;
+        private const string _rootPath = "C:/root";
+        private readonly PythonLanguageVersion _pythonLanguageVersion = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();;
 
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void TestInitialize() {
             TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
-            _fileSystem = Substitute.For<IFileSystem>();
-            _rootPath = "C:/root";
-            _pythonLanguageVersion = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
-            _rootFileList = new List<IFileSystemInfo>();
-            _idleTimeService = Substitute.For<IIdleTimeService>();
-            CreateServices();
-            IDirectoryInfo directoryInfo = Substitute.For<IDirectoryInfo>();
-            // Doesn't work without 'forAnyArgs'
-            directoryInfo.EnumerateFileSystemInfos(new string[] { }, new string[] { }).ReturnsForAnyArgs(_rootFileList);
-            _fileSystem.GetDirectoryInfo(_rootPath).Returns(directoryInfo);
         }
 
-        private void CreateServices() {
-            _services = new ServiceManager();
-            _services.AddService(_fileSystem);
+        private void Setup() {
+            _fileSystem = Substitute.For<IFileSystem>();
+            _idleTimeService = Substitute.For<IIdleTimeService>();
+        }
+
+        private List<IFileSystemInfo> SetupRootDir(IFileSystem _fileSystem) {
+            var rootFileList = new List<IFileSystemInfo>();
+            IDirectoryInfo directoryInfo = Substitute.For<IDirectoryInfo>();
+            // Doesn't work without 'forAnyArgs'
+            directoryInfo.EnumerateFileSystemInfos(new string[] { }, new string[] { }).ReturnsForAnyArgs(rootFileList);
+            _fileSystem.GetDirectoryInfo(_rootPath).Returns(directoryInfo);
+            return rootFileList;
         }
 
         [TestCleanup]
         public void Cleanup() {
-            _services.Dispose();
-            _rootFileList.Clear();
             TestEnvironmentImpl.TestCleanup();
         }
 
@@ -324,7 +319,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         private FileInfoProxy MakeFileInfoProxy(string filePath)
             => new FileInfoProxy(new FileInfo(filePath));
 
-        private void AddFileInfoToRootTestFS(FileInfoProxy fileInfo) {
+        private void AddFileInfoToRootTestFS(FileInfoProxy fileInfo, List<IFileSystemInfo>_rootFileList, IFileSystem fileSystem) {
             _rootFileList.Add(fileInfo);
             _fileSystem.FileExists(fileInfo.FullName).Returns(true);
         }
@@ -333,11 +328,12 @@ namespace Microsoft.Python.LanguageServer.Tests {
             return new MemoryStream(Encoding.UTF8.GetBytes(str));
         }
 
-        private string FileWithXVarInRootDir() {
-            return AddFileToRoot($"{_rootPath}\bla.py", MakeStream("x = 1"));
+        private string FileWithXVarInRootDir(IFileSystem fileSystem) {
+            return AddFileToRoot($"{_rootPath}\bla.py", MakeStream("x = 1"), fileSystem);
         }
 
         private IIndexManager GetDefaultIndexManager() {
+            var _rootFileList = SetupRootDir(_fileSystem);
             var indexM = new IndexManager(new SymbolIndex(), _fileSystem, _pythonLanguageVersion,
                                     _rootPath, new string[] { }, new string[] { },
                                     _idleTimeService) {
@@ -346,9 +342,9 @@ namespace Microsoft.Python.LanguageServer.Tests {
             return indexM;
         }
 
-        private string AddFileToRoot(string filePath, Stream stream) {
+        private string AddFileToRoot(string filePath, Stream stream, List<IFileSystemInfo> rootFileList, IFileSystem fileSystem) {
             var fileInfo = MakeFileInfoProxy(filePath);
-            AddFileInfoToRootTestFS(fileInfo);
+            AddFileInfoToRootTestFS(fileInfo, rootFileList, fileSystem);
             string fullName = fileInfo.FullName;
             _fileSystem.FileOpen(fullName, FileMode.Open).Returns(stream);
             // FileInfo fullName is used everywhere as path
