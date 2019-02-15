@@ -29,17 +29,18 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal class IndexManager : IIndexManager {
+        private static int DefaultReIndexDelay = 1000;
         private readonly ISymbolIndex _symbolIndex;
         private readonly IFileSystem _fileSystem;
         private readonly IndexParser _indexParser;
         private readonly string _workspaceRootPath;
         private readonly string[] _includeFiles;
         private readonly string[] _excludeFiles;
-        private readonly CancellationTokenSource _allIndexCts = new CancellationTokenSource();
-        private readonly TaskCompletionSource<bool> _addRootTcs;
         private readonly IIdleTimeService _idleTimeService;
-        private readonly ConcurrentDictionary<string, MostRecentDocumentSymbols> _files;
-        private HashSet<IDocument> _pendingDocs;
+        private readonly CancellationTokenSource _allIndexCts = new CancellationTokenSource();
+        private readonly TaskCompletionSource<bool> _addRootTcs = new TaskCompletionSource<bool>();
+        private readonly ConcurrentDictionary<string, MostRecentDocumentSymbols> _files = new ConcurrentDictionary<string, MostRecentDocumentSymbols>(PathEqualityComparer.Instance);
+        private readonly HashSet<IDocument> _pendingDocs = new HashSet<IDocument>(new UriDocumentComparer());
         private DateTime _lastPendingDocAddedTime;
 
         public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
@@ -56,13 +57,9 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _includeFiles = includeFiles;
             _excludeFiles = excludeFiles;
             _idleTimeService = idleTimeService;
-            _addRootTcs = new TaskCompletionSource<bool>();
             _idleTimeService.Idle += OnIdle;
-            _pendingDocs = new HashSet<IDocument>(new UriDocumentComparer());
-            _files = new ConcurrentDictionary<string, MostRecentDocumentSymbols>(PathEqualityComparer.Instance);
-            ReIndexingDelay = 1000;
+            ReIndexingDelay = DefaultReIndexDelay;
             StartAddRootDir();
-
         }
 
         public int ReIndexingDelay { get; set; }

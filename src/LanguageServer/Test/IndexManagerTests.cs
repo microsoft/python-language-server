@@ -36,7 +36,7 @@ using TestUtilities;
 namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
     public class IndexManagerTests : LanguageServerTestBase {
-        private const int maxSymbolsCount = 1000;
+        private readonly int maxSymbolsCount = 1000;
         private const string _rootPath = "C:/root";
 
         public TestContext TestContext { get; set; }
@@ -122,11 +122,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task CloseNonWorkspaceFilesRemovesFromIndexAsync() {
             var context = new IndexTestContext(this);
             var pythonTestFileInfo = MakeFileInfoProxy("C:/nonRoot/bla.py");
-            IDocument doc = DocumentWithAst("x = 1");
             context.FileSystem.IsPathUnderRoot(_rootPath, pythonTestFileInfo.FullName).Returns(false);
 
             var indexManager = context.GetDefaultIndexManager();
-            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, DocumentWithAst("x = 1"));
             indexManager.ProcessClosedFile(pythonTestFileInfo.FullName);
 
             await SymbolIndexShouldBeEmpty(indexManager);
@@ -169,16 +168,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             await SymbolIndexShouldBeEmpty(indexManager);
         }
-
-        private static async Task WaitForWorkspaceAddedAsync(IIndexManager indexManager) {
-            await indexManager.WorkspaceSymbolsAsync("", 1000);
-        }
-
-        private async Task SymbolIndexShouldBeEmpty(IIndexManager indexManager) {
-            var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
-            symbols.Should().HaveCount(0);
-        }
-
 
         [TestMethod, Priority(0)]
         public async Task DisposeManagerCancelsTaskAsync() {
@@ -300,15 +289,21 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
 
         private class IndexTestContext : IDisposable {
-            private List<IFileSystemInfo> _rootFileList;
-            private IIdleTimeService _idleTimeService;
+            private readonly List<IFileSystemInfo> _rootFileList = new List<IFileSystemInfo>();
+            private readonly IIdleTimeService _idleTimeService = Substitute.For<IIdleTimeService>();
+            private readonly PythonLanguageVersion _pythonLanguageVersion = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
             private IIndexManager _indexM;
             private IndexManagerTests _tests;
-            private readonly PythonLanguageVersion _pythonLanguageVersion = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
 
             public IndexTestContext(IndexManagerTests tests) {
                 _tests = tests;
                 Setup();
+            }
+
+            private void Setup() {
+                FileSystem = Substitute.For<IFileSystem>();
+                SymbolIndex = new SymbolIndex();
+                SetupRootDir();
             }
 
             public IFileSystem FileSystem { get; private set; }
@@ -347,15 +342,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 _idleTimeService.Idle += handler;
             }
 
-            private void Setup() {
-                FileSystem = Substitute.For<IFileSystem>();
-                SymbolIndex = new SymbolIndex();
-                _idleTimeService = Substitute.For<IIdleTimeService>();
-                _rootFileList = new List<IFileSystemInfo>();
-
-                SetupRootDir();
-            }
-
             private void SetupRootDir() {
                 IDirectoryInfo directoryInfo = Substitute.For<IDirectoryInfo>();
                 // Doesn't work without 'forAnyArgs'
@@ -374,6 +360,15 @@ namespace Microsoft.Python.LanguageServer.Tests {
             doc.GetAstAsync().ReturnsForAnyArgs(Task.FromResult(MakeAst(testCode)));
             doc.Uri.Returns(new Uri(filePath));
             return doc;
+        }
+
+        private static async Task WaitForWorkspaceAddedAsync(IIndexManager indexManager) {
+            await indexManager.WorkspaceSymbolsAsync("", 1000);
+        }
+
+        private async Task SymbolIndexShouldBeEmpty(IIndexManager indexManager) {
+            var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
+            symbols.Should().HaveCount(0);
         }
 
         public PythonAst MakeAst(string testCode) {

@@ -12,16 +12,14 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly ISymbolIndex _symbolIndex;
         private readonly string _path;
 
-        private CancellationTokenSource _fileCts;
+        private CancellationTokenSource _fileCts = new CancellationTokenSource();
         private Task _fileTask;
-        private TaskCompletionSource<IEnumerable<HierarchicalSymbol>> _fileTcs;
+        private TaskCompletionSource<IEnumerable<HierarchicalSymbol>> _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
 
         public MostRecentDocumentSymbols(string path, IIndexParser indexParser, ISymbolIndex symbolIndex) {
             _path = path;
             _indexParser = indexParser;
             _symbolIndex = symbolIndex;
-            _fileCts = new CancellationTokenSource();
-            _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
         }
 
         public void Parse() {
