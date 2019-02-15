@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            // Try generics
+            // Try generics first since this may be an expression like Dict[int, str]
             var result = await GetValueFromGenericAsync(target, expr, cancellationToken);
             if (result != null) {
                 return result;
