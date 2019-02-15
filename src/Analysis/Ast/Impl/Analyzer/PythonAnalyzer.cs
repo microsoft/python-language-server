@@ -161,7 +161,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 stopWatch.Stop();
 
-                if (walker.MissingKeys.Count == 0) {
+                if (walker.MissingKeys.Where(k => !k.IsTypeshed).Count == 0) {
                     Interlocked.Exchange(ref _runningTasks, 0);
                     _analysisCompleteEvent.Set();
                 }

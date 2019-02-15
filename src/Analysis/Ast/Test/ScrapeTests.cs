@@ -281,7 +281,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 var modName = r.Item1;
 
                 var mod = interpreter.ModuleResolution.GetOrLoadModule(r.Item2);
-                await mod.LoadAndAnalyzeAsync(new CancellationTokenSource(5000).Token);
+                await mod.LoadAndAnalyzeAsync(new CancellationTokenSource(10000).Token);
 
                 anyExtensionSeen |= modName.IsNativeExtension;
                 switch (mod) {
