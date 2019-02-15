@@ -616,7 +616,7 @@ else:
             ISymbolIndex index = new SymbolIndex();
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse("x = 1");
-            index.Update(path, ast);
+            index.Add(path, ast);
 
             var symbols = index.HierarchicalDocumentSymbols(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -630,7 +630,7 @@ else:
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse("x = 1");
 
-            index.Update(path, ast);
+            index.Add(path, ast);
 
             var symbols = index.HierarchicalDocumentSymbols(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -638,7 +638,7 @@ else:
             });
 
             ast = GetParse("y = 1");
-            index.Update(path, ast);
+            index.Add(path, ast);
 
             symbols = index.HierarchicalDocumentSymbols(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -664,7 +664,7 @@ else:
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
 
-            index.Update(path, ast);
+            index.Add(path, ast);
 
             var symbols = index.WorkspaceSymbols("");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -684,7 +684,7 @@ else:
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
 
-            index.Update(path, ast);
+            index.Add(path, ast);
 
             var symbols = index.WorkspaceSymbols("x");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
@@ -710,7 +710,7 @@ else:
             var path = TestData.GetDefaultModulePath();
             var ast = GetParse(code);
 
-            index.Update(path, ast);
+            index.Add(path, ast);
 
             var symbols = index.WorkspaceSymbols("foo");
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {

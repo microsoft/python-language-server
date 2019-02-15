@@ -27,8 +27,17 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void Parse() {
             lock (_syncObj) {
                 CancelExistingTask();
-                SetFileTask(_indexParser.ParseAsync(_path, _fileCts.Token));
+                _fileTask = ParseAsync();
             }
+        }
+
+        private async Task ParseAsync() {
+            var ast = await _indexParser.ParseAsync(_path, _fileCts.Token);
+            _fileCts.Token.ThrowIfCancellationRequested();
+            lock (_syncObj) {
+                SetFileTcsResult();
+            }
+
         }
 
         public void Delete() {
@@ -40,19 +49,24 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void Process(PythonAst ast) {
             lock (_syncObj) {
                 CancelExistingTask();
-                _symbolIndex.Update(_path, ast);
+                _symbolIndex.Add(_path, ast);
                 SetFileTcsResult();
             }
         }
 
-        public void Process(IDocument doc) {
+        public void Add(IDocument doc) {
             lock (_syncObj) {
                 CancelExistingTask();
-                SetFileTask(doc.GetAstAsync(_fileCts.Token).ContinueWith(t => {
-                    lock (_syncObj) {
-                        _symbolIndex.Update(_path, t.Result);
-                    }
-                }, _fileCts.Token));
+                _fileTask = AddAsync(doc);
+            }
+        }
+
+        private async Task AddAsync(IDocument doc) {
+            var ast = await doc.GetAstAsync(_fileCts.Token);
+            _fileCts.Token.ThrowIfCancellationRequested();
+            lock (_syncObj) {
+                _symbolIndex.Add(_path, ast);
+                SetFileTcsResult();
             }
         }
 
@@ -61,12 +75,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private void CancelExistingTask() {
             if (_fileTask != null) {
                 if (_fileTcs.Task.IsCompleted) {
-                    _fileCts.Cancel();
-                
                     _fileTcs.TrySetCanceled();
                     _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
                 }
 
+                _fileCts.Cancel();
                 _fileCts.Dispose();
                 _fileCts = new CancellationTokenSource();
 
@@ -74,26 +87,34 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
         }
 
+        public void ReIndex(IDocument doc) {
+            lock (_syncObj) {
+                CancelExistingTask();
+                _fileTask = ReIndexAsync(doc);
+            }
+        }
+
+        private async Task ReIndexAsync(IDocument doc) {
+            var ast = await doc.GetAstAsync(_fileCts.Token);
+            _fileCts.Token.ThrowIfCancellationRequested();
+            lock (_syncObj) {
+                _symbolIndex.Update(_path, ast);
+                SetFileTcsResult();
+            }
+        }
+
         private void SetFileTcsResult() {
             _fileTcs.TrySetResult(_symbolIndex.HierarchicalDocumentSymbols(_path));
         }
 
-        private void SetFileTask(Task task) {
-            _fileTask = task;
-            _fileTask.ContinueWith(t => {
-                if (t.Status.Equals(TaskStatus.RanToCompletion)) {
-                    lock (_syncObj) {
-                        SetFileTcsResult();
-                    }
-                }
-            });
-        }
-
         public void Dispose() {
             lock (_syncObj) {
-                _fileCts.Dispose();
+                _fileCts?.Cancel();
+                _fileCts?.Dispose();
+                _fileCts = null;
                 _fileTask = null;
             }
         }
     }
 }
+

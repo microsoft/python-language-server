@@ -88,8 +88,9 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void ProcessClosedFile(string path) {
             if (IsFileOnWorkspace(path)) {
                 _files[path].Parse();
-            } else {
-                _files[path].Delete();
+            } else if (_files.TryRemove(path, out var fileSymbols)) {
+                fileSymbols.Delete();
+                fileSymbols.Dispose();
             }
         }
 
@@ -102,12 +103,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public void ProcessNewFile(string path, IDocument doc) {
             _files.GetOrAdd(path, MakeMostRecentFileSymbols(path));
-            _files[path].Process(doc);
+            _files[path].Add(doc);
         }
 
         public void ReIndexFile(string path, IDocument doc) {
-            if (IsFileIndexed(path)) {
-                ProcessNewFile(path, doc);
+            if (_files.TryGetValue(path, out var fileSymbols)) {
+                fileSymbols.ReIndex(doc);
             }
         }
 
@@ -125,13 +126,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return s.ToList();
         }
 
-        public Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default) {
+        public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default) {
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_allIndexCts.Token, cancellationToken);
-            return Task.WhenAll(_files.Values.Select(mostRecent => mostRecent.GetSymbolsAsync()).ToArray()).ContinueWith<IReadOnlyList<FlatSymbol>>(
-                _ => {
-                    return _symbolIndex.WorkspaceSymbols(query).Take(maxLength).ToList();
-                }, linkedCts.Token);
-             
+            await Task.WhenAny(
+                Task.WhenAll(_files.Values.Select(mostRecent => mostRecent.GetSymbolsAsync()).ToArray()),
+                Task.Delay(Timeout.Infinite, linkedCts.Token));
+            linkedCts.Dispose();
+            return _symbolIndex.WorkspaceSymbols(query).Take(maxLength).ToList();
         }
 
         public void AddPendingDoc(IDocument doc) {

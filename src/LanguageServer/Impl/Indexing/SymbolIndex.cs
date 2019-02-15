@@ -16,15 +16,12 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class SymbolIndex : ISymbolIndex {
-        private static int DefaultVersion = 0;
         private readonly ConcurrentDictionary<string, IReadOnlyList<HierarchicalSymbol>> _index;
 
         public SymbolIndex() {
@@ -37,6 +34,30 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public IEnumerable<FlatSymbol> WorkspaceSymbols(string query) {
             return _index.SelectMany(kvp => WorkspaceSymbolsQuery(query, kvp.Key, kvp.Value));
+        }
+
+        public void Add(string path, PythonAst ast) {
+            var walker = new SymbolIndexWalker(ast);
+            ast.Walk(walker);
+            _index[path] = walker.Symbols;
+        }
+
+        public void Delete(string path) {
+            _index.Remove(path, out var _);
+        }
+
+        public bool IsIndexed(string path) => _index.ContainsKey(path);
+
+        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(
+            IEnumerable<HierarchicalSymbol> symbols, string parentName)
+            => symbols.Select((symbol) => (symbol, parentName));
+
+        public void Update(string path, PythonAst ast) {
+            if (_index.TryGetValue(path, out var currentSymbols)) {
+                var walker = new SymbolIndexWalker(ast);
+                ast.Walk(walker);
+                _index.TryUpdate(path, walker.Symbols, currentSymbols);
+            }
         }
 
         private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string query, string path,
@@ -52,21 +73,5 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 }
             }
         }
-
-        public void Update(string path, PythonAst ast) {
-            var walker = new SymbolIndexWalker(ast);
-            ast.Walk(walker);
-            _index[path] = walker.Symbols;
-        }
-
-        public void Delete(string path) {
-            _index.Remove(path, out var _);
-        }
-
-        public bool IsIndexed(string path) => _index.ContainsKey(path);
-
-        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(
-            IEnumerable<HierarchicalSymbol> symbols, string parentName)
-            => symbols.Select((symbol) => (symbol, parentName));
     }
 }

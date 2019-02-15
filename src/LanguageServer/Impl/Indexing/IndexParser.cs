@@ -54,7 +54,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     using (var stream = _fileSystem.FileOpen(path, FileMode.Open)) {
                         var parser = Parser.CreateParser(stream, _version);
                         linkedParseToken.ThrowIfCancellationRequested();
-                        _symbolIndex.Update(path, parser.ParseFile());
+                        _symbolIndex.Add(path, parser.ParseFile());
                         return true;
                     }
                 } catch (FileNotFoundException e) {
