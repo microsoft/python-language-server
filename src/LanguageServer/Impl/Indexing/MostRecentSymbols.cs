@@ -27,13 +27,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void Parse() {
             lock (_syncObj) {
                 CancelExistingTask();
-                _fileTask = ParseAsync();
+                _fileTask = ParseAsync(_fileCts.Token);
             }
         }
 
-        private async Task ParseAsync() {
-            var ast = await _indexParser.ParseAsync(_path, _fileCts.Token);
-            _fileCts.Token.ThrowIfCancellationRequested();
+        private async Task ParseAsync(CancellationToken cancellationToken) {
+            var ast = await _indexParser.ParseAsync(_path, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             lock (_syncObj) {
                 SetFileTcsResult();
             }
@@ -57,13 +57,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void Add(IDocument doc) {
             lock (_syncObj) {
                 CancelExistingTask();
-                _fileTask = AddAsync(doc);
+                _fileTask = AddAsync(doc, _fileCts.Token);
             }
         }
 
-        private async Task AddAsync(IDocument doc) {
-            var ast = await doc.GetAstAsync(_fileCts.Token);
-            _fileCts.Token.ThrowIfCancellationRequested();
+        private async Task AddAsync(IDocument doc, CancellationToken cancellationToken) {
+            var ast = await doc.GetAstAsync(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             lock (_syncObj) {
                 _symbolIndex.Add(_path, ast);
                 SetFileTcsResult();
@@ -74,10 +74,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private void CancelExistingTask() {
             if (_fileTask != null) {
-                if (_fileTcs.Task.IsCompleted) {
-                    _fileTcs.TrySetCanceled();
-                    _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
-                }
+                _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
 
                 _fileCts.Cancel();
                 _fileCts.Dispose();
@@ -90,17 +87,24 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void ReIndex(IDocument doc) {
             lock (_syncObj) {
                 CancelExistingTask();
-                _fileTask = ReIndexAsync(doc);
+                _fileTask = ReIndexAsync(doc, _fileCts.Token);
             }
         }
 
-        private async Task ReIndexAsync(IDocument doc) {
-            var ast = await doc.GetAstAsync(_fileCts.Token);
-            _fileCts.Token.ThrowIfCancellationRequested();
+        private async Task ReIndexAsync(IDocument doc, CancellationToken cancellationToken) {
+            var ast = await doc.GetAstAsync(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             lock (_syncObj) {
                 _symbolIndex.Update(_path, ast);
                 SetFileTcsResult();
             }
+        }
+
+        public void MarkAsPending() {
+            lock (_syncObj) {
+                CancelExistingTask();
+            }
+
         }
 
         private void SetFileTcsResult() {

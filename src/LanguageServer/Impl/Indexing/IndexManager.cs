@@ -139,6 +139,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             lock (_pendingDocs) {
                 _lastPendingDocAddedTime = DateTime.Now;
                 _pendingDocs.Add(doc);
+                _files[doc.Uri.AbsolutePath].MarkAsPending();
             }
         }
 
