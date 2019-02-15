@@ -21,10 +21,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Services;
@@ -46,6 +43,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
         private PythonLanguageVersion _pythonLanguageVersion;
         private IIdleTimeService _idleTimeService;
         private ServiceManager _services;
+
+        private const int maxSymbolsCount = 1000;
 
         public TestContext TestContext { get; set; }
 
@@ -71,7 +70,11 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         [TestCleanup]
-        public void Cleanup() => TestEnvironmentImpl.TestCleanup();
+        public void Cleanup() {
+            _services.Dispose();
+            _rootFileList.Clear();
+            TestEnvironmentImpl.TestCleanup();
+        }
 
         [TestMethod, Priority(0)]
         public async Task AddsRootDirectoryAsync() {
@@ -79,9 +82,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
             AddFileToRoot($"{_rootPath}\foo.py", MakeStream("y = 1"));
 
             var indexManager = GetDefaultIndexManager();
-            await indexManager.AddRootDirectoryAsync();
 
-            var symbols = _symbolIndex.WorkspaceSymbols("");
+            var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             symbols.Should().HaveCount(2);
         }
 
@@ -101,7 +103,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             AddFileInfoToRootTestFS(nonPythonTestFileInfo);
 
             IIndexManager indexManager = GetDefaultIndexManager();
-            await indexManager.AddRootDirectoryAsync();
+            await WaitForWorkspaceAddedAsync(indexManager);
 
             _fileSystem.DidNotReceive().FileExists(nonPythonTestFileInfo.FullName);
         }
@@ -113,9 +115,9 @@ namespace Microsoft.Python.LanguageServer.Tests {
             IDocument doc = DocumentWithAst("x = 1");
 
             IIndexManager indexManager = GetDefaultIndexManager();
-            await indexManager.ProcessNewFileAsync(pythonTestFileInfo.FullName, doc);
+            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
 
-            var symbols = _symbolIndex.WorkspaceSymbols("");
+            var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             SymbolsShouldBeOnlyX(symbols);
         }
 
@@ -130,13 +132,13 @@ namespace Microsoft.Python.LanguageServer.Tests {
         [TestMethod, Priority(0)]
         public async Task UpdateFilesOnWorkspaceIndexesLatestAsync() {
             var pythonTestFilePath = FileWithXVarInRootDir();
-            IDocument latestDoc = DocumentWithAst("y = 1");
 
             var indexManager = GetDefaultIndexManager();
-            await indexManager.AddRootDirectoryAsync();
-            await indexManager.ReIndexFileAsync(pythonTestFilePath, latestDoc);
+            await WaitForWorkspaceAddedAsync(indexManager);
 
-            var symbols = _symbolIndex.WorkspaceSymbols("");
+            indexManager.ReIndexFile(pythonTestFilePath, DocumentWithAst("y = 1"));
+
+            var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             symbols.Should().HaveCount(1);
             symbols.First().Kind.Should().BeEquivalentTo(SymbolKind.Variable);
             symbols.First().Name.Should().BeEquivalentTo("y");
@@ -146,12 +148,13 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task CloseNonWorkspaceFilesRemovesFromIndexAsync() {
             var pythonTestFileInfo = MakeFileInfoProxy("C:/nonRoot/bla.py");
             IDocument doc = DocumentWithAst("x = 1");
+            _fileSystem.IsPathUnderRoot("", "").ReturnsForAnyArgs(false);
 
             var indexManager = GetDefaultIndexManager();
-            await indexManager.ProcessNewFileAsync(pythonTestFileInfo.FullName, doc);
-            await indexManager.ProcessClosedFileAsync(pythonTestFileInfo.FullName);
+            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            indexManager.ProcessClosedFile(pythonTestFileInfo.FullName);
 
-            SymbolIndexShouldBeEmpty();
+            await SymbolIndexShouldBeEmpty(indexManager);
         }
 
         [TestMethod, Priority(0)]
@@ -159,16 +162,15 @@ namespace Microsoft.Python.LanguageServer.Tests {
             string pythonTestFilePath = FileWithXVarInRootDir();
             _fileSystem.IsPathUnderRoot(_rootPath, pythonTestFilePath).Returns(true);
 
-            IDocument latestDoc = DocumentWithAst("y = 1");
-
             var indexManager = GetDefaultIndexManager();
-            await indexManager.AddRootDirectoryAsync();
-            await indexManager.ProcessNewFileAsync(pythonTestFilePath, latestDoc);
+            await WaitForWorkspaceAddedAsync(indexManager);
+
+            indexManager.ProcessNewFile(pythonTestFilePath, DocumentWithAst("y = 1"));
             // It Needs to remake the stream for the file, previous one is closed
             _fileSystem.FileOpen(pythonTestFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
-            await indexManager.ProcessClosedFileAsync(pythonTestFilePath);
+            indexManager.ProcessClosedFile(pythonTestFilePath);
 
-            var symbols = _symbolIndex.WorkspaceSymbols("");
+            var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             SymbolsShouldBeOnlyX(symbols);
         }
 
@@ -181,36 +183,25 @@ namespace Microsoft.Python.LanguageServer.Tests {
             IDocument doc = DocumentWithAst("x = 1");
 
             var indexManager = GetDefaultIndexManager();
-            await indexManager.ProcessNewFileAsync(pythonTestFileInfo.FullName, doc);
-            await indexManager.ProcessClosedFileAsync(pythonTestFileInfo.FullName);
+            indexManager.ProcessNewFile(pythonTestFileInfo.FullName, doc);
+            indexManager.ProcessClosedFile(pythonTestFileInfo.FullName);
             doc = DocumentWithAst("x = 1");
-            await indexManager.ReIndexFileAsync(pythonTestFileInfo.FullName, doc);
+            indexManager.ReIndexFile(pythonTestFileInfo.FullName, doc);
 
-            SymbolIndexShouldBeEmpty();
+            await SymbolIndexShouldBeEmpty(indexManager);
         }
 
-        [TestMethod, Priority(0)]
-        public void AddingRootMightThrowUnauthorizedAccess() {
-            string pythonTestFilePath = FileWithXVarInRootDir();
-            _fileSystem.GetDirectoryInfo(_rootPath).EnumerateFileSystemInfos(new string[] { }, new string[] { })
-                .ReturnsForAnyArgs(_ => throw new UnauthorizedAccessException());
-
-            var indexManager = GetDefaultIndexManager();
-            Func<Task> add = async () => {
-                await indexManager.AddRootDirectoryAsync();
-            };
-
-            add.Should().Throw<UnauthorizedAccessException>();
-            SymbolIndexShouldBeEmpty();
+        private static async Task WaitForWorkspaceAddedAsync(IIndexManager indexManager) {
+            await indexManager.WorkspaceSymbolsAsync("", 1000);
         }
 
-        private void SymbolIndexShouldBeEmpty() {
-            var symbols = _symbolIndex.WorkspaceSymbols("");
+        private async Task SymbolIndexShouldBeEmpty(IIndexManager indexManager) {
+            var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             symbols.Should().HaveCount(0);
         }
-
+        /*
         [TestMethod, Priority(0)]
-        public void DisposeManagerCancelsTask() {
+        public async Task DisposeManagerCancelsTaskAsync() {
             string pythonTestFilePath = FileWithXVarInRootDir();
             ManualResetEventSlim neverSignaledEvent = new ManualResetEventSlim(false);
             ManualResetEventSlim fileOpenedEvent = new ManualResetEventSlim(false);
@@ -227,12 +218,12 @@ namespace Microsoft.Python.LanguageServer.Tests {
             indexManager.Dispose();
 
             Func<Task> add = async () => {
-                await indexManager.AddRootDirectoryAsync();
+                await WaitForWorkspaceAddedAsync(indexManager);
             };
 
             add.Should().Throw<TaskCanceledException>();
-            SymbolIndexShouldBeEmpty();
-        }
+            await SymbolIndexShouldBeEmpty(indexManager);
+        }*/
 
         [TestMethod, Priority(0)]
         public async Task WorkspaceSymbolsAddsRootDirectory() {
@@ -240,7 +231,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             var indexManager = GetDefaultIndexManager();
 
-            var symbols = await indexManager.WorkspaceSymbolsAsync("", 10);
+            var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             SymbolsShouldBeOnlyX(symbols);
         }
 
@@ -285,13 +276,12 @@ namespace Microsoft.Python.LanguageServer.Tests {
             IDocument yVarDoc = DocumentWithAst("y = 1");
             IDocument zVarDoc = DocumentWithAst("z = 1");
 
-            await indexManager.ProcessNewFileAsync(pythonTestFilePath, yVarDoc);
-            var closeFileTask = indexManager.ProcessClosedFileAsync(pythonTestFilePath);
+            indexManager.ProcessNewFile(pythonTestFilePath, yVarDoc);
+            indexManager.ProcessClosedFile(pythonTestFilePath);
             fileOpenedEvent.Wait();
-            await indexManager.ProcessNewFileAsync(pythonTestFilePath, zVarDoc);
+            indexManager.ProcessNewFile(pythonTestFilePath, zVarDoc);
             reOpenedFileFinished.Set();
 
-            await closeFileTask;
             var symbols = await indexManager.HierarchicalDocumentSymbolsAsync(pythonTestFilePath);
             symbols.Should().HaveCount(1);
             symbols.First().Kind.Should().BeEquivalentTo(SymbolKind.Variable);
@@ -304,11 +294,12 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var f2 = AddFileToRoot($"{_rootPath}/fileB.py", MakeStream(""));
 
             var indexManager = GetDefaultIndexManager();
+            await WaitForWorkspaceAddedAsync(indexManager);
 
             indexManager.AddPendingDoc(DocumentWithAst("y = 1", f1));
             indexManager.AddPendingDoc(DocumentWithAst("x = 1", f2));
             _idleTimeService.Idle += Raise.Event();
-            var symbols = await indexManager.WorkspaceSymbolsAsync("", 1000);
+            var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             symbols.Should().HaveCount(2);
         }
 

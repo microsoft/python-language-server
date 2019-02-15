@@ -30,7 +30,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Opening document {uri}");
 
             var doc = _rdt.OpenDocument(uri, @params.textDocument.text);
-            _indexManager.ProcessNewFileAsync(uri.AbsolutePath, doc).DoNotWait();
+            _indexManager.ProcessNewFile(uri.AbsolutePath, doc);
         }
 
         public void DidChangeTextDocument(DidChangeTextDocumentParams @params) {
@@ -65,7 +65,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposableBag.ThrowIfDisposed();
             Uri uri = @params.textDocument.uri;
             _rdt.CloseDocument(uri);
-            _indexManager.ProcessClosedFileAsync(uri.AbsolutePath).DoNotWait();
+            _indexManager.ProcessClosedFile(uri.AbsolutePath);
         }
 
         private IDocumentAnalysis GetAnalysis(Uri uri, CancellationToken cancellationToken) {

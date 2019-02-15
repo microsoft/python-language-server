@@ -21,12 +21,11 @@ using Microsoft.Python.Analysis.Documents;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal interface IIndexManager : IDisposable {
-        Task AddRootDirectoryAsync(CancellationToken cancellationToken = default);
-        Task ProcessNewFileAsync(string path, IDocument doc);
-        Task ProcessClosedFileAsync(string path);
-        Task ReIndexFileAsync(string path, IDocument doc);
+        void ProcessNewFile(string path, IDocument doc);
+        void ProcessClosedFile(string path);
+        void ReIndexFile(string path, IDocument doc);
+        void AddPendingDoc(IDocument doc);
         Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default);
-        void AddPendingDoc(IDocument doc);
     }
 }

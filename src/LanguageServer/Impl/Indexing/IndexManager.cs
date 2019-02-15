@@ -14,8 +14,8 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,6 +38,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly CancellationTokenSource _allIndexCts = new CancellationTokenSource();
         private readonly TaskCompletionSource<bool> _addRootTcs;
         private readonly IIdleTimeService _idleTimeService;
+        private readonly ConcurrentDictionary<string, MostRecentDocumentSymbols> _files;
         private HashSet<IDocument> _pendingDocs;
         private DateTime _lastPendingDocAddedTime;
 
@@ -58,35 +59,22 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _addRootTcs = new TaskCompletionSource<bool>();
             _idleTimeService.Idle += OnIdle;
             _pendingDocs = new HashSet<IDocument>(new UriDocumentComparer());
+            _files = new ConcurrentDictionary<string, MostRecentDocumentSymbols>(PathEqualityComparer.Instance);
             ReIndexingDelay = 1000;
             StartAddRootDir();
+
         }
 
         public int ReIndexingDelay { get; set; }
 
         private void StartAddRootDir() {
-            Task.Run(() => {
-                try {
-                    var parseTasks = new List<Task<bool>>();
-                    foreach (var fileInfo in WorkspaceFiles()) {
-                        if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
-                            parseTasks.Add(_indexParser.ParseAsync(fileInfo.FullName, _allIndexCts.Token));
-                        }
-                    }
-                    Task.WaitAll(parseTasks.ToArray(), _allIndexCts.Token);
-                    _addRootTcs.SetResult(true);
-                } catch (Exception e) {
-                    Trace.TraceError(e.Message);
-                    _addRootTcs.SetException(e);
+            foreach (var fileInfo in WorkspaceFiles()) {
+                if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
+                    _files.GetOrAdd(fileInfo.FullName, MakeMostRecentFileSymbols(fileInfo.FullName));
+                    _files[fileInfo.FullName].Parse();
                 }
-            }, _allIndexCts.Token);
+            }
         }
-
-        public Task AddRootDirectoryAsync(CancellationToken cancellationToken = default) {
-            // Add cancellation token around task
-            return Task.Run(async () => await _addRootTcs.Task, cancellationToken);
-        }
-
 
         private IEnumerable<IFileSystemInfo> WorkspaceFiles() {
             if (string.IsNullOrEmpty(_workspaceRootPath)) {
@@ -97,16 +85,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private bool IsFileIndexed(string path) => _symbolIndex.IsIndexed(path);
 
-        public Task ProcessClosedFileAsync(string path) {
-            // If path is on workspace
-            if (IsFileOnWorkspace(path)) {
-                // updates index and ignores previous AST
-                return _indexParser.ParseAsync(path, _allIndexCts.Token);
-            } else {
-                // remove file from index
-                _symbolIndex.DeleteIfNewer(path, _symbolIndex.GetNewVersion(path));
-                return Task.CompletedTask;
-            }
+        public void ProcessClosedFile(string path) {
+            _files[path].Close(IsFileOnWorkspace(path));
         }
 
         private bool IsFileOnWorkspace(string path) {
@@ -116,29 +96,35 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return _fileSystem.IsPathUnderRoot(_workspaceRootPath, path);
         }
 
-        public async Task ProcessNewFileAsync(string path, IDocument doc) {
-            var ast = await doc.GetAstAsync();
-            _symbolIndex.UpdateIndexIfNewer(path, ast, _symbolIndex.GetNewVersion(path));
+        public void ProcessNewFile(string path, IDocument doc) {
+            _files.GetOrAdd(path, MakeMostRecentFileSymbols(path));
+            _files[path].Process(doc);
         }
 
-        public async Task ReIndexFileAsync(string path, IDocument doc) {
+        public void ReIndexFile(string path, IDocument doc) {
             if (IsFileIndexed(path)) {
-                await ProcessNewFileAsync(path, doc);
+                ProcessNewFile(path, doc);
             }
         }
 
         public void Dispose() {
+            foreach (var mostRecentSymbols in _files.Values) {
+                mostRecentSymbols.Dispose();
+            }
+            _indexParser.Dispose();
             _allIndexCts.Cancel();
             _allIndexCts.Dispose();
         }
 
         public async Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default) {
-            await AddRootDirectoryAsync(cancellationToken);
-            return _symbolIndex.HierarchicalDocumentSymbols(path).ToList();
+            var s = await _files[path].GetSymbolsAsync();
+            return s.ToList();
         }
 
         public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default) {
-            await AddRootDirectoryAsync(cancellationToken);
+            foreach(var mostRecentSymbols in _files.Values) {
+                await mostRecentSymbols.GetSymbolsAsync();
+            }
             return _symbolIndex.WorkspaceSymbols(query).Take(maxLength).ToList();
         }
 
@@ -162,10 +148,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 _pendingDocs.Clear();
             }
 
-            // Since its an event handler I have to synchronously wait
-            Task.WaitAll(pendingDocs.MaybeEnumerate()
-                .Select(doc => ReIndexFileAsync(doc.Uri.AbsolutePath, doc))
-                .ToArray());
+            foreach (var doc in pendingDocs.MaybeEnumerate()) {
+                ReIndexFile(doc.Uri.AbsolutePath, doc);
+            }
+        }
+
+        private MostRecentDocumentSymbols MakeMostRecentFileSymbols(string path) {
+            return new MostRecentDocumentSymbols(path, _indexParser, _symbolIndex);
         }
 
         private class UriDocumentComparer : IEqualityComparer<IDocument> {

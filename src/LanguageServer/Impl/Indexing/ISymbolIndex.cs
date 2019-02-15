@@ -20,9 +20,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
     internal interface ISymbolIndex {
         IEnumerable<FlatSymbol> WorkspaceSymbols(string query);
         IEnumerable<HierarchicalSymbol> HierarchicalDocumentSymbols(string path);
-        void UpdateIndexIfNewer(string path, PythonAst pythonAst, int version);
-        void DeleteIfNewer(string path, int version);
+        void Update(string path, PythonAst pythonAst);
+        void Delete(string path);
         bool IsIndexed(string path);
-        int GetNewVersion(string path);
     }
 }
