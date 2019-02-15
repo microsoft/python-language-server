@@ -66,12 +66,13 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             Version = version;
         }
 
-        public IEnumerable<string> GetAllModuleNames() => GetModuleNames(_roots.Prepend(_nonRooted).Append(_builtins));
+        public IEnumerable<string> GetAllModuleNames() => GetModuleNames(_roots.Prepend(_nonRooted));
         public IEnumerable<string> GetInterpreterModuleNames() => GetModuleNames(_roots.Skip(_userRootsCount).Append(_builtins));
 
-        private static IEnumerable<string> GetModuleNames(IEnumerable<Node> roots) => roots
+        private IEnumerable<string> GetModuleNames(IEnumerable<Node> roots) => roots
             .SelectMany(r => r.TraverseBreadthFirst(n => n.IsModule ? Enumerable.Empty<Node>() : n.Children))
             .Where(n => n.IsModule)
+            .Concat(_builtins.Children)
             .Select(n => n.FullModuleName);
 
         public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {

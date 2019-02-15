@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -791,7 +792,7 @@ os.
             result.Should().HaveLabels("path", @"devnull", "SEEK_SET", @"curdir");
         }
 
-        [DataRow(false), Ignore("https://github.com/Microsoft/python-language-server/issues/574")]
+        [DataRow(false)]
         [DataRow(true)]
         [DataTestMethod, Priority(0)]
         public async Task OsPathMembers(bool is3x) {
@@ -804,6 +805,17 @@ os.path.
 
             var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
             result.Should().HaveLabels("split", @"getsize", @"islink", @"abspath");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoDuplicateMembers() {
+            const string code = @"import sy";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 10));
+            result.Completions.Count(c => c.label.EqualsOrdinal(@"sys")).Should().Be(1);
+            result.Completions.Count(c => c.label.EqualsOrdinal(@"sysconfig")).Should().Be(1);
         }
     }
 }

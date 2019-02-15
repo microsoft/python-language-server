@@ -83,6 +83,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var memberName = memberReference.Name;
 
                 var member = Module.GetMember(importName);
+                if (member == null && Eval.Module == Module) {
+                    // We are still evaluating this module so members are not complete yet.
+                    // Consider 'from . import path as path' in os.pyi in typeshed.
+                    var import = ModuleResolution.CurrentPathResolver.GetModuleImportFromModuleName($"{Module.Name}.{importName}");
+                    if (!string.IsNullOrEmpty(import?.FullName)) {
+                        member = ModuleResolution.GetOrLoadModule(import.FullName);
+                    }
+                }
+
                 Eval.DeclareVariable(memberName, member ?? Eval.UnknownType, VariableSource.Declaration, Eval.GetLoc(names[i]));
             }
         }

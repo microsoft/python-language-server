@@ -238,10 +238,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return await _server.Completion(ToObject<CompletionParams>(token), GetToken(cancellationToken));
         }
 
-        [JsonRpcMethod("completionItem/resolve")]
-        public Task<CompletionItem> CompletionItemResolve(JToken token, CancellationToken cancellationToken)
-           => _server.CompletionItemResolve(ToObject<CompletionItem>(token), GetToken(cancellationToken));
-
         [JsonRpcMethod("textDocument/hover")]
         public async Task<Hover> Hover(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
