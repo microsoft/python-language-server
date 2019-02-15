@@ -113,7 +113,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public string GetReturnDocumentation(IPythonType self) {
+        public string GetReturnDocumentation(IPythonType self = null) {
             if (self == null) {
                 return _returnDocumentation;
             }

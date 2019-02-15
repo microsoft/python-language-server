@@ -59,8 +59,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Return value documentation.
         /// </summary>
-        /// <param name="self">If function is in generic class it may need the specific type to determine the return type.</param>
-        string GetReturnDocumentation(IPythonType self);
+        /// <param name="self">If function is in generic class it may need to know specific type
+        /// in order to be able to determine the return type. Passing null will yield either
+        /// static return type determined during analysis or type supplied by dynamic
+        /// return type provider.</param>
+        string GetReturnDocumentation(IPythonType self = null);
 
         /// <summary>
         /// Return type as determined from evaluation or from the return type annotation.
