@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -34,6 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly object _lock = new object();
         private readonly AsyncLocal<IPythonClassType> _processing = new AsyncLocal<IPythonClassType>();
         private IReadOnlyList<IPythonType> _mro;
+        private Dictionary<string, IPythonType> _genericParameters;
 
         // For tests
         internal PythonClassType(string name, IPythonModule declaringModule, LocationInfo location = null)
@@ -125,6 +125,18 @@ namespace Microsoft.Python.Analysis.Types {
             }
             return new PythonInstance(this, location);
         }
+
+        public override IMember Index(IPythonInstance instance, object index) {
+            var defaultReturn = base.Index(instance, index);
+            var fromBases = Bases
+                .MaybeEnumerate()
+                .Select(b => b.Index(instance, index))
+                .Except(new[] { defaultReturn, UnknownType })
+                .FirstOrDefault();
+
+            return fromBases ?? defaultReturn;
+        }
+
         #endregion
 
         #region IPythonClass
@@ -147,6 +159,9 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
         }
+
+        public IReadOnlyDictionary<string, IPythonType> GenericParameters
+            => _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
         #endregion
 
         internal void SetBases(IEnumerable<IPythonType> bases) {
@@ -235,19 +250,24 @@ namespace Microsoft.Python.Analysis.Types {
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
 
-        public async Task<IPythonType> CreateSpecificTypeAsync(IArgumentSet args, IPythonModule declaringModule, LocationInfo location, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var genericBases = Bases.Where(b => b is IGenericType).ToArray();
+        public IPythonType CreateSpecificType(IArgumentSet args, IPythonModule declaringModule, LocationInfo location = null) {
+            location = location ?? LocationInfo.Empty;
+            var allGenericClassBases = Bases.OfType<IGenericClassBaseType>().ToArray(); // Generic[T1, T2, ...]
+            var genericClassBase = allGenericClassBases.FirstOrDefault();
+            var genericClassParameters = genericClassBase?.TypeArgs ?? Array.Empty<IGenericTypeParameter>();
             // TODO: handle optional generics as class A(Generic[_T1], Optional[Generic[_T2]])
-            if (genericBases.Length != args.Arguments.Count) {
+            if (genericClassParameters.Count != args.Arguments.Count) {
                 // TODO: report parameters mismatch.
             }
 
-            // Create concrete type
-            var bases = args.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray();
-            var specificName = CodeFormatter.FormatSequence(Name, '[', bases);
+            // Record match between class template parameters and actual type arguments.
+            var specificTypes = args.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray();
+            var specificName = CodeFormatter.FormatSequence(Name, '[', specificTypes);
             var classType = new PythonClassType(specificName, declaringModule);
+
+            // Methods returning generic types need to know how to match generic
+            // parameter name to the actual supplied type.
+            StoreGenericParameters(classType, genericClassParameters.ToArray(), specificTypes);
 
             // Prevent reentrancy when resolving generic class where
             // method may be returning instance of type of the same class.
@@ -256,11 +276,32 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             try {
-                // Optimistically use what is available even if there is an argument mismatch.
-                // TODO: report unresolved types?
+                // Create specific bases since we may have generic types there.
+                // Match generic parameter names to base type parameter names.
+                // Consider 'class A(Generic[T], B[T], C[E]): ...'
+                var genericTypeBases = Bases.Except(allGenericClassBases).OfType<IGenericType>().ToArray();
+                // Start with regular types, then add specific types for all generic types.
+                var bases = Bases.Except(genericTypeBases).Except(allGenericClassBases).ToList();
+
+                // Create specific types for generic type bases
+                // it for generic types but not Generic[T, ...] itself.
+                foreach (var gt in genericTypeBases) {
+                    var st = gt.Parameters
+                        .Select(p => classType.GenericParameters.TryGetValue(p.Name, out var t) ? t : null)
+                        .Where(p => !p.IsUnknown())
+                        .ToArray();
+                    if (st.Length > 0) {
+                        var type = gt.CreateSpecificType(new ArgumentSet(st), classType.DeclaringModule, location);
+                        if (!type.IsUnknown()) {
+                            bases.Add(type);
+                        }
+                    }
+                }
                 classType.SetBases(bases);
 
                 // Add members from the template class (this one).
+                // Members must be clones rather than references since
+                // we are going to set specific types on them.
                 classType.AddMembers(this, true);
 
                 // Resolve return types of methods, if any were annotated as generics
@@ -268,36 +309,18 @@ namespace Microsoft.Python.Analysis.Types {
                     .Except(new[] { "__class__", "__bases__", "__base__" })
                     .ToDictionary(n => n, n => classType.GetMember(n));
 
+                // Create specific types.
+                // Functions handle generics internally upon the call to Call.
                 foreach (var m in members) {
                     switch (m.Value) {
-                        case IPythonFunctionType fn: {
-                                foreach (var o in fn.Overloads.OfType<PythonFunctionOverload>()) {
-                                    var returnType = o.StaticReturnValue.GetPythonType();
-                                    if (returnType is PythonClassType cls && cls.IsGeneric()) {
-                                        // -> A[_E]
-                                        if (!cls.Equals(classType)) {
-                                            // Prevent reentrancy
-                                            var specificReturnValue = await cls.CreateSpecificTypeAsync(args, declaringModule, location, cancellationToken);
-                                            o.SetReturnValue(new PythonInstance(specificReturnValue, location), true);
-                                        }
-                                    } else if (returnType is IGenericTypeParameter) {
-                                        // -> _T
-                                        var b = bases.FirstOrDefault();
-                                        if (b != null) {
-                                            o.SetReturnValue(new PythonInstance(b, location), true);
-                                        }
-                                    }
-                                }
-                                break;
-                            }
                         case IPythonTemplateType tt: {
-                                var specificType = await tt.CreateSpecificTypeAsync(args, declaringModule, location, cancellationToken);
+                                var specificType = tt.CreateSpecificType(args, declaringModule, location);
                                 classType.AddMember(m.Key, specificType, true);
                                 break;
                             }
                         case IPythonInstance inst: {
                                 if (inst.GetPythonType() is IPythonTemplateType tt && tt.IsGeneric()) {
-                                    var specificType = await tt.CreateSpecificTypeAsync(args, declaringModule, location, cancellationToken);
+                                    var specificType = tt.CreateSpecificType(args, declaringModule, location);
                                     classType.AddMember(m.Key, new PythonInstance(specificType, location), true);
                                 }
                                 break;
@@ -308,6 +331,14 @@ namespace Microsoft.Python.Analysis.Types {
                 Pop();
             }
             return classType;
+        }
+
+        private void StoreGenericParameters(PythonClassType classType, IGenericTypeParameter[] genericParameters, IPythonType[] specificTypes) {
+            classType._genericParameters = new Dictionary<string, IPythonType>();
+            for (var i = 0; i < genericParameters.Length; i++) {
+                var gb = genericParameters[i];
+                classType._genericParameters[gb.Name] = i < specificTypes.Length ? specificTypes[i] : UnknownType.GetPythonType();
+            }
         }
     }
 }

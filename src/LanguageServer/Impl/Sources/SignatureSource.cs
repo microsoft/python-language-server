@@ -43,9 +43,14 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 FindExpressionOptions.Hover, out var node, out var statement, out var scope);
 
             IMember value = null;
+            IPythonType selfType = null;
             var call = node as CallExpression;
             if (call != null) {
                 using (analysis.ExpressionEvaluator.OpenScope(analysis.Document, scope)) {
+                    if (call.Target is MemberExpression mex) {
+                        var v = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(mex.Target, cancellationToken);
+                        selfType = v?.GetPythonType();
+                    }
                     value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(call.Target, cancellationToken);
                 }
             }
@@ -67,7 +72,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }).ToArray();
 
                 signatures[i] = new SignatureInformation {
-                    label = _docSource.GetSignatureString(ft, i),
+                    label = _docSource.GetSignatureString(ft, selfType, i),
                     documentation = _docSource.FormatDocumentation(ft.Documentation),
                     parameters = parameters
                 };

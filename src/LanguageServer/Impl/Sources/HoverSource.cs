@@ -48,7 +48,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var range = new Range {
                 start = expr.GetStart(analysis.Ast),
-                end = expr.GetEnd(analysis.Ast),
+                end = expr.GetEnd(analysis.Ast)
             };
 
             var eval = analysis.ExpressionEvaluator;
@@ -100,8 +100,24 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
             }
 
+            IPythonType self = null;
+            string name = null;
+            // If expression is A.B, trim applicable span to 'B'.
+            if (expr is MemberExpression mex) {
+                name = mex.Name;
+                range = new Range {
+                    start = mex.Target.GetEnd(analysis.Ast),
+                    end = range.end
+                };
+
+                // In case of a member expression get the target since if we end up with method
+                // of a generic class, the function will need specific type to determine its return
+                // value correctly. I.e. in x.func() we need to determine type of x (self for func).
+                var v = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(mex.Target, cancellationToken);
+                self = v?.GetPythonType();
+            }
+
             // Figure out name, if any
-            var name = (expr as MemberExpression)?.Name;
             name = name ?? (node as NameExpression)?.Name;
 
             // Special case hovering over self or cls
@@ -116,7 +132,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             name = name == null && statement is FunctionDefinition fd ? fd.Name : name;
 
             return new Hover {
-                contents = _docSource.GetHover(name, value),
+                contents = _docSource.GetHover(name, value, self),
                 range = range
             };
         }

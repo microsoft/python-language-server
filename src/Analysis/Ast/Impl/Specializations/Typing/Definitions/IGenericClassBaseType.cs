@@ -14,12 +14,13 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
     /// Represents Generic[T1, T2, ...]. Used as a base class to generic classes.
     /// </summary>
-    public interface IGenericClassBaseType {
+    public interface IGenericClassBaseType: IPythonType {
         IReadOnlyList<IGenericTypeParameter> TypeArgs { get; }
     }
 }

@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var handler in node.Handlers.MaybeEnumerate()) {
                 if (handler.Test != null && handler.Target is NameExpression nex) {
                     var value = await Eval.GetValueFromExpressionAsync(handler.Test, cancellationToken);
-                    Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, nex);
+                    Eval.DeclareVariable(nex.Name, value ?? Eval.UnknownType, VariableSource.Declaration, nex);
                 }
                 await handler.Body.WalkAsync(Walker, cancellationToken);
             }
