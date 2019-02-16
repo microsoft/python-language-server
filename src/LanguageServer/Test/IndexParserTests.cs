@@ -73,36 +73,32 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public void ParseNonexistentFile() {
+        public async Task ParseNonexistentFile() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(false);
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
-            var t = indexParser.ParseAsync(testFilePath);
-            t.Wait();
+            await indexParser.ParseAsync(testFilePath);
 
-            t.Result.Should().BeFalse();
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
         }
 
         [TestMethod, Priority(0)]
-        public void ParseFileThatStopsExisting() {
+        public async Task ParseFileThatStopsExisting() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);
             _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(_ => throw new FileNotFoundException());
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
-            var t = indexParser.ParseAsync(testFilePath);
-            t.Wait();
+            await indexParser.ParseAsync(testFilePath);
 
-            t.Result.Should().BeFalse();
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
         }
 
         [TestMethod, Priority(0)]
-        public void CancellParsing() {
+        public void CancellParsingAsync() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);
             _fileSystem.FileOpen(testFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
@@ -110,11 +106,12 @@ namespace Microsoft.Python.LanguageServer.Tests {
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
+
             Func<Task> parse = async () => {
                 await indexParser.ParseAsync(testFilePath, cancellationTokenSource.Token);
             };
-
             parse.Should().Throw<TaskCanceledException>();
+
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
         }
@@ -133,14 +130,16 @@ namespace Microsoft.Python.LanguageServer.Tests {
             });
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
+
+            var parseTask = indexParser.ParseAsync(testFilePath);
+            fileOpenedEvent.Wait();
+            indexParser.Dispose();
             Func<Task> parse = async () => {
-                var t = indexParser.ParseAsync(testFilePath);
-                fileOpenedEvent.Wait();
-                indexParser.Dispose();
-                await t;
+                await parseTask;
             };
 
             parse.Should().Throw<TaskCanceledException>();
+
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(0);
         }

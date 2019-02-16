@@ -19,6 +19,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal interface IIndexParser : IDisposable {
-        Task<bool> ParseAsync(string path, CancellationToken cancellationToken = default);
+        Task ParseAsync(string path, CancellationToken cancellationToken = default);
     }
 }

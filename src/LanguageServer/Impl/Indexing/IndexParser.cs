@@ -27,6 +27,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly IFileSystem _fileSystem;
         private readonly PythonLanguageVersion _version;
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
+        private readonly object _syncObj = new object();
+        private CancellationTokenSource _linkedParseCts;
+        private Task _parseTask;
+        private TaskCompletionSource<object> _tcs;
 
         public IndexParser(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version) {
             Check.ArgumentNotNull(nameof(symbolIndex), symbolIndex);
@@ -37,34 +41,64 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _version = version;
         }
 
-        public void Dispose() {
-            _allProcessingCts.Cancel();
-            _allProcessingCts.Dispose();
+        public Task ParseAsync(string path, CancellationToken cancellationToken = default) {
+            lock (_syncObj) {
+                CancelCurrentParse();
+                _tcs = new TaskCompletionSource<object>();
+                _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
+                _parseTask = Task.Run(() => Parse(path, _linkedParseCts));
+                return _tcs.Task;
+            }
         }
 
-        public Task<bool> ParseAsync(string path, CancellationToken parseCancellationToken = default) {
-            var linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, parseCancellationToken);
-            var linkedParseToken = linkedParseCts.Token;
-            return Task<bool>.Run((System.Func<bool>)(() => {
-                if (!_fileSystem.FileExists(path)) {
-                    return false;
-                }
+        private void CancelCurrentParse() {
+            _linkedParseCts?.Cancel();
+            _linkedParseCts?.Dispose();
+            _linkedParseCts = null;
+            _parseTask = null;
+        }
+
+        private void Parse(string path, CancellationTokenSource parseCts) {
+            if (parseCts.Token.IsCancellationRequested) {
+                _tcs.SetCanceled();
+                parseCts.Token.ThrowIfCancellationRequested();
+            }
+            if (_fileSystem.FileExists(path)) {
                 try {
-                    linkedParseToken.ThrowIfCancellationRequested();
+                    if (parseCts.Token.IsCancellationRequested) {
+                        _tcs.SetCanceled();
+                        parseCts.Token.ThrowIfCancellationRequested();
+                    }
                     using (var stream = _fileSystem.FileOpen(path, FileMode.Open)) {
                         var parser = Parser.CreateParser(stream, _version);
-                        linkedParseToken.ThrowIfCancellationRequested();
                         _symbolIndex.Add(path, parser.ParseFile());
-                        return true;
                     }
                 } catch (FileNotFoundException e) {
                     Trace.TraceError(e.Message);
-                    return false;
                 }
-            })).ContinueWith((Task<bool> task) => {
-                linkedParseCts.Dispose();
-                return task.Result;
-            }, linkedParseToken);
+            }
+            lock (_syncObj) {
+                if (_linkedParseCts == parseCts) {
+                    _linkedParseCts.Dispose();
+                    _linkedParseCts = null;
+                    _tcs.SetResult(new object());
+                }
+            }
+        }
+
+        public void Dispose() {
+            lock (_syncObj) {
+                _tcs?.TrySetCanceled();
+                _tcs = null;
+                _allProcessingCts.Cancel();
+                _allProcessingCts.Dispose();
+
+                _linkedParseCts?.Cancel();
+                _linkedParseCts?.Dispose();
+                _linkedParseCts = null;
+
+                _parseTask = null;
+            }
         }
     }
 }

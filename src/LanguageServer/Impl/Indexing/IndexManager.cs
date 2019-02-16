@@ -32,7 +32,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private static int DefaultReIndexDelay = 1000;
         private readonly ISymbolIndex _symbolIndex;
         private readonly IFileSystem _fileSystem;
-        private readonly IndexParser _indexParser;
         private readonly string _workspaceRootPath;
         private readonly string[] _includeFiles;
         private readonly string[] _excludeFiles;
@@ -41,6 +40,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly TaskCompletionSource<bool> _addRootTcs = new TaskCompletionSource<bool>();
         private readonly ConcurrentDictionary<string, MostRecentDocumentSymbols> _files = new ConcurrentDictionary<string, MostRecentDocumentSymbols>(PathEqualityComparer.Instance);
         private readonly HashSet<IDocument> _pendingDocs = new HashSet<IDocument>(new UriDocumentComparer());
+        private readonly PythonLanguageVersion _version;
         private DateTime _lastPendingDocAddedTime;
 
         public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
@@ -52,12 +52,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
             _symbolIndex = symbolIndex;
             _fileSystem = fileSystem;
-            _indexParser = new IndexParser(symbolIndex, fileSystem, version);
             _workspaceRootPath = rootPath;
             _includeFiles = includeFiles;
             _excludeFiles = excludeFiles;
             _idleTimeService = idleTimeService;
             _idleTimeService.Idle += OnIdle;
+            _version = version;
             ReIndexingDelay = DefaultReIndexDelay;
             StartAddRootDir();
         }
@@ -113,7 +113,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             foreach (var mostRecentSymbols in _files.Values) {
                 mostRecentSymbols.Dispose();
             }
-            _indexParser.Dispose();
             _allIndexCts.Cancel();
             _allIndexCts.Dispose();
         }
@@ -159,7 +158,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         private MostRecentDocumentSymbols MakeMostRecentFileSymbols(string path) {
-            return new MostRecentDocumentSymbols(path, _indexParser, _symbolIndex);
+            return new MostRecentDocumentSymbols(path, _symbolIndex, _fileSystem, _version);
         }
 
         private class UriDocumentComparer : IEqualityComparer<IDocument> {

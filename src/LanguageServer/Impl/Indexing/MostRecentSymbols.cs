@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core.IO;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
@@ -16,10 +18,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private Task _fileTask;
         private TaskCompletionSource<IEnumerable<HierarchicalSymbol>> _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
 
-        public MostRecentDocumentSymbols(string path, IIndexParser indexParser, ISymbolIndex symbolIndex) {
+        public MostRecentDocumentSymbols(string path, ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version) {
             _path = path;
-            _indexParser = indexParser;
             _symbolIndex = symbolIndex;
+            _indexParser = new IndexParser(_symbolIndex, fileSystem, version);
         }
 
         public void Parse() {
@@ -30,12 +32,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         private async Task ParseAsync(CancellationToken cancellationToken) {
-            var ast = await _indexParser.ParseAsync(_path, cancellationToken);
+            await _indexParser.ParseAsync(_path, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             lock (_syncObj) {
                 SetFileTcsResult();
             }
-
         }
 
         public void Delete() {
@@ -115,6 +116,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 _fileCts?.Dispose();
                 _fileCts = null;
                 _fileTask = null;
+
+                _indexParser.Dispose();
             }
         }
     }
