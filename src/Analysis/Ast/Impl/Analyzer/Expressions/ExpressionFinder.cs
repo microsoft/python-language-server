@@ -108,7 +108,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 }
 
                 if (baseWalk && ifTrue) {
-                    Expression = (node is ModuleName m && m.Names != null) ? m.Names.FirstOrDefault() : node;
+                    Expression = node is ModuleName m && m.Names != null
+                        ? m.Names.FirstOrDefault(n => n.StartIndex <= _endLocation && _endLocation <= n.EndIndex)
+                        : node;
                 }
                 return baseWalk;
             }
@@ -264,7 +266,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             public override bool Walk(ImportStatement node) {
                 if (!base.Walk(node)) {
                     return false;
-                    
+
                 }
 
                 SaveStmt(node, true);
@@ -475,7 +477,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             }
 
 
-            public override bool Walk(IfStatement node) 
+            public override bool Walk(IfStatement node)
                 => base.Walk(node) && Save(node, true, "if");
 
             public override bool Walk(UnaryExpression node) {
@@ -487,7 +489,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 return false;
             }
 
-            public override bool Walk(TryStatement node) 
+            public override bool Walk(TryStatement node)
                 => base.Walk(node) ? Save(node, true, "try") : base.Walk(node);
 
             public override bool Walk(WhileStatement node) {
@@ -505,7 +507,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsAsync && !Save(node, true, "async")) {
                         return false;
                     }
-                    return Save(node.GetIndexOfWith(_ast), true, "with") && 
+                    return Save(node.GetIndexOfWith(_ast), true, "with") &&
                            node.Items.MaybeEnumerate().All(item => Save(item.AsIndex, true, "as"));
                 }
                 return false;

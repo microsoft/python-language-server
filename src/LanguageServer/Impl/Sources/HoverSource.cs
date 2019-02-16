@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
@@ -54,40 +55,25 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var eval = analysis.ExpressionEvaluator;
             switch (statement) {
                 case FromImportStatement fi when node is NameExpression nex: {
-                    // In 'from A import B as C' B is not declared as a variable
-                    // so we have to fetch the type manually.
-                    var index = fi.Names.IndexOf(nex);
-                    if (index >= 0) {
-                        using (eval.OpenScope(analysis.Document, scope)) {
-                            var variable = eval.LookupNameInScopes(fi.Root.MakeString(), out _);
-                            if (variable.GetPythonType() is IPythonModule mod) {
-                                var v = mod.GetMember(nex.Name)?.GetPythonType();
-                                return new Hover {
-                                    contents = _docSource.GetHover(mod.Name, v),
-                                    range = range
-                                };
-                            }
-                        }
-                    }
-
-                    break;
-                }
-                case ImportStatement imp: {
-                    // In 'import A as B' 'A' is not declared as a variable
-                    // so we have to fetch the type manually.
-                    var index = location.ToIndex(analysis.Ast);
-                    var dottedName = imp.Names.FirstOrDefault(n => n.StartIndex <= index && index < n.EndIndex);
-                    if (dottedName != null) {
-                        var mod = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(dottedName.MakeString());
-                        if (mod != null) {
+                        var contents = HandleFromImport(fi, nex, scope, analysis);
+                        if (contents != null) {
                             return new Hover {
-                                contents = _docSource.GetHover(null, mod),
+                                contents = contents,
                                 range = range
                             };
                         }
+                        break;
                     }
-                    break;
-                }
+                case ImportStatement imp: {
+                        var contents = HandleImport(imp, location, analysis);
+                        if (contents != null) {
+                            return new Hover {
+                                contents = contents,
+                                range = range
+                            };
+                        }
+                        break;
+                    }
             }
 
             IMember value;
@@ -135,6 +121,65 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 contents = _docSource.GetHover(name, value, self),
                 range = range
             };
+        }
+
+        private MarkupContent HandleImport(ImportStatement imp, SourceLocation location, IDocumentAnalysis analysis) {
+            // In 'import A as B' 'A' is not declared as a variable
+            // so we have to fetch the type manually.
+            var index = location.ToIndex(analysis.Ast);
+            var dottedName = imp.Names.FirstOrDefault(n => n.StartIndex <= index && index < n.EndIndex);
+            if (dottedName != null) {
+                var mod = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(dottedName.MakeString());
+                if (mod != null) {
+                    return _docSource.GetHover(null, mod);
+                }
+            }
+            return null;
+        }
+
+        private MarkupContent HandleFromImport(FromImportStatement fi, NameExpression nex, ScopeStatement scope, IDocumentAnalysis analysis) {
+            var eval = analysis.ExpressionEvaluator;
+            var index = fi.Names.IndexOf(nex);
+            if (index >= 0) {
+                // Name expression is B in 'from A import B as C'
+                // In 'from A import B as C' B is not declared as a variable
+                // so we have to fetch the type manually.
+                using (eval.OpenScope(analysis.Document, scope)) {
+                    var variable = eval.LookupNameInScopes(fi.Root.MakeString(), out _);
+
+                    var module = variable == null 
+                        ? GetModuleFromDottedName(fi, null, eval) 
+                        : variable.GetPythonType<IPythonModule>();
+
+                    if (module != null) {
+                        var name = fi.Names[index].Name;
+                        if (!string.IsNullOrEmpty(name)) {
+                            var m = module.GetMember(name);
+                            return m != null ? _docSource.GetHover(name, m) : null;
+                        }
+                    }
+                }
+            } else {
+                // Name expression is the ModuleName such as B in 'from A.B.C ...'
+                var module = GetModuleFromDottedName(fi, nex, eval);
+                if (module != null) {
+                    return _docSource.GetHover(module.Name, module);
+                }
+            }
+
+            return null;
+        }
+
+        private IPythonModule GetModuleFromDottedName(FromImportStatement fi, NameExpression nex, IExpressionEvaluator eval) {
+            IPythonModule module = null;
+            var index = nex != null ? fi.Root.Names.IndexOf(n => n == nex) : fi.Root.Names.Count - 1;
+            if (index >= 0) {
+                module = eval.Interpreter.ModuleResolution.GetImportedModule(fi.Root.Names[0].Name);
+                for (var i = 1; module != null && i <= index; i++) {
+                    module = module.GetMember(fi.Root.Names[i].Name) as IPythonModule;
+                }
+            }
+            return module;
         }
     }
 }

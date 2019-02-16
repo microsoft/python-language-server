@@ -165,6 +165,19 @@ y = boxedstr.get()
             await AssertHover(hs, analysis, new SourceLocation(17, 15), "Box.get() -> str", new SourceSpan(17, 13, 17, 17));
         }
 
+        [TestMethod, Priority(0)]
+        public async Task OsPath() {
+            const string code = @"
+from os.path import join
+";
+            var analysis = await GetAnalysisAsync(code);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            await AssertHover(hs, analysis, new SourceLocation(2, 7), @"module os*", new SourceSpan(2, 6, 2, 8));
+            await AssertHover(hs, analysis, new SourceLocation(2, 10), @"module ntpath*", new SourceSpan(2, 9, 2, 13));
+            await AssertHover(hs, analysis, new SourceLocation(2, 22), @"join(path: str, paths: str) -> str", new SourceSpan(2, 21, 2, 25));
+        }
+
+
         private static async Task AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
             var hover = await hs.GetHoverAsync(analysis, position);
 
