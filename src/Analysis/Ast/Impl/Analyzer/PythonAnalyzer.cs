@@ -133,14 +133,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private async Task<IDocumentAnalysis> AnalyzeAsync(IDependencyChainNode node, CancellationToken cancellationToken) {
             var startTime = DateTime.Now;
 
-            //_log?.Log(TraceEventType.Verbose, $"Analysis begins: {node.Document.Name}({node.Document.ModuleType})");
+            //_log?.Log(TraceEventType.Verbose, $"Analysis begins: {node.Document.Name} ({node.Document.ModuleType})");
             // Store current expected version so we can see if it still 
             // the same at the time the analysis completes.
             var analysisVersion = node.Analyzable.ExpectedAnalysisVersion;
 
             // Make sure the file is parsed ans the AST is up to date.
             var ast = await node.Document.GetAstAsync(cancellationToken);
-            //_log?.Log(TraceEventType.Verbose, $"Parse of {node.Document.Name}({node.Document.ModuleType}) complete in {(DateTime.Now - startTime).TotalMilliseconds} ms.");
+            //_log?.Log(TraceEventType.Verbose, $"Parse of {node.Document.Name} ({node.Document.ModuleType}) complete in {(DateTime.Now - startTime).TotalMilliseconds} ms.");
 
             // Now run the analysis.
             var walker = new ModuleWalker(_services, node.Document, ast);
@@ -151,7 +151,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Note that we do not set the new analysis here and rather let
             // Python analyzer to call NotifyAnalysisComplete.
             await walker.CompleteAsync(cancellationToken);
-            _log?.Log(TraceEventType.Verbose, $"Analysis of {node.Document.Name}({node.Document.ModuleType}) complete in {(DateTime.Now - startTime).TotalMilliseconds} ms.");
+            _log?.Log(TraceEventType.Verbose, $"Analysis of {node.Document.Name} ({node.Document.ModuleType}) complete in {(DateTime.Now - startTime).TotalMilliseconds} ms.");
             return new DocumentAnalysis(node.Document, analysisVersion, walker.GlobalScope, walker.Eval);
         }
     }

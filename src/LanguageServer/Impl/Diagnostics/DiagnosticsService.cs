@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
@@ -28,13 +29,20 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
     internal sealed class DiagnosticsService : IDiagnosticsService, IDisposable {
         private readonly Dictionary<Uri, List<DiagnosticsEntry>> _diagnostics = new Dictionary<Uri, List<DiagnosticsEntry>>();
         private readonly DisposableBag _disposables = DisposableBag.Create<DiagnosticsService>();
+        private readonly IServiceContainer _services;
         private readonly IClientApplication _clientApp;
         private readonly object _lock = new object();
         private DiagnosticsSeverityMap _severityMap = new DiagnosticsSeverityMap();
+        private IRunningDocumentTable _rdt;
         private DateTime _lastChangeTime;
         private bool _changed;
 
+        private IRunningDocumentTable Rdt => _rdt ?? (_rdt = _services.GetService<IRunningDocumentTable>());
+
         public DiagnosticsService(IServiceContainer services) {
+            _services = services;
+            _clientApp = services.GetService<IClientApplication>();
+
             var idleTimeService = services.GetService<IIdleTimeService>();
 
             if (idleTimeService != null) {
@@ -45,7 +53,6 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                     .Add(() => idleTimeService.Idle -= OnIdle)
                     .Add(() => idleTimeService.Idle -= OnClosing);
             }
-            _clientApp = services.GetService<IClientApplication>();
         }
 
         #region IDiagnosticsService
@@ -118,7 +125,9 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             foreach (var kvp in diagnostics) {
                 var parameters = new PublishDiagnosticsParams {
                     uri = kvp.Key,
-                    diagnostics = kvp.Value.Select(ToDiagnostic).ToArray()
+                    diagnostics = Rdt.GetDocument(kvp.Key)?.IsOpen == true 
+                            ? kvp.Value.Select(ToDiagnostic).ToArray()
+                            : Array.Empty<Diagnostic>()
                 };
                 _clientApp.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
             }
