@@ -27,20 +27,27 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void Parse() {
             lock (_syncObj) {
                 CancelExistingTask();
-                _fileTask = ParseAsync(_fileCts.Token);
+                _fileTask = ParseAsync(_fileCts.Token, _fileTcs);
             }
         }
 
-        private async Task ParseAsync(CancellationToken cancellationToken) {
-            await _indexParser.ParseAsync(_path, cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-            lock (_syncObj) {
-                SetFileTcsResult();
+        private async Task ParseAsync(CancellationToken cancellationToken, TaskCompletionSource<IEnumerable<HierarchicalSymbol>> parseTcs) {
+            try {
+                await _indexParser.ParseAsync(_path, cancellationToken);
+                lock (_syncObj) {
+                    SetFileTcsResult();
+                }
+            } catch (OperationCanceledException) {
+                parseTcs.TrySetCanceled();
+            } catch (Exception ex) {
+                parseTcs.TrySetException(ex);
+               throw;
             }
         }
 
         public void Delete() {
             lock (_syncObj) {
+                CancelExistingTask();
                 _symbolIndex.Delete(_path);
             }
         }
