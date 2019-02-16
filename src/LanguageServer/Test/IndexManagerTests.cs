@@ -143,7 +143,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             indexManager.ProcessNewFile(pythonTestFilePath, DocumentWithAst("r = 1"));
             // It Needs to remake the stream for the file, previous one is closed
             context.FileSystem.FileExists(pythonTestFilePath).Returns(true);
-            context.FileSystem.FileOpen(pythonTestFilePath, FileMode.Open).Returns(MakeStream("x = 1"));
+            context.SetFileOpen(pythonTestFilePath, MakeStream("x = 1"));
             context.FileSystem.IsPathUnderRoot(_rootPath, pythonTestFilePath).Returns(true);
             indexManager.ProcessClosedFile(pythonTestFilePath);
 
@@ -176,7 +176,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             ManualResetEventSlim neverSignaledEvent = new ManualResetEventSlim(false);
             ManualResetEventSlim fileOpenedEvent = new ManualResetEventSlim(false);
 
-            context.FileSystem.FileOpen(pythonTestFilePath, FileMode.Open).Returns(_ => {
+            context.SetFileOpen(pythonTestFilePath, _ => {
                 fileOpenedEvent.Set();
                 // Wait forever
                 neverSignaledEvent.Wait();
@@ -238,7 +238,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             ManualResetEventSlim fileOpenedEvent = new ManualResetEventSlim(false);
             var context = new IndexTestContext(this);
             var pythonTestFilePath = context.FileWithXVarInRootDir();
-            context.FileSystem.FileOpen(pythonTestFilePath, FileMode.Open).Returns(_ => {
+            context.SetFileOpen(pythonTestFilePath, _ => {
                 fileOpenedEvent.Set();
                 reOpenedFileFinished.Wait();
                 return MakeStream("x = 1");
@@ -331,11 +331,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
             public string AddFileToRoot(string filePath, Stream stream) {
                 var fileInfo = _tests.MakeFileInfoProxy(filePath);
                 AddFileInfoToRootTestFS(fileInfo);
-                string fullName = fileInfo.FullName;
-                FileSystem.FileOpen(fullName, FileMode.Open).Returns(stream);
+                SetFileOpen(fileInfo.FullName, stream);
                 // FileInfo fullName is used everywhere as path
                 // Otherwise, path discrepancies might appear
-                return fullName;
+                return fileInfo.FullName;
             }
 
             public void SetIdleEvent(EventHandler<EventArgs> handler) {
@@ -351,6 +350,14 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             public void Dispose() {
                 _indexM?.Dispose();
+            }
+
+            public void SetFileOpen(string pythonTestFilePath, Func<object, Stream> returnFunc) {
+                FileSystem.FileOpen(pythonTestFilePath, FileMode.Open, FileAccess.Read, FileShare.Read).Returns(returnFunc);
+            }
+
+            internal void SetFileOpen(string path, Stream stream) {
+                FileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read).Returns(stream);
             }
         }
 

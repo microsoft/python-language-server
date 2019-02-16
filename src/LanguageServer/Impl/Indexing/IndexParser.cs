@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -63,19 +64,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 _tcs.SetCanceled();
                 parseCts.Token.ThrowIfCancellationRequested();
             }
-            if (_fileSystem.FileExists(path)) {
-                try {
-                    if (parseCts.Token.IsCancellationRequested) {
-                        _tcs.SetCanceled();
-                        parseCts.Token.ThrowIfCancellationRequested();
-                    }
-                    using (var stream = _fileSystem.FileOpen(path, FileMode.Open)) {
-                        var parser = Parser.CreateParser(stream, _version);
-                        _symbolIndex.Add(path, parser.ParseFile());
-                    }
-                } catch (FileNotFoundException e) {
-                    Trace.TraceError(e.Message);
+            try {
+                using (var stream = _fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    var parser = Parser.CreateParser(stream, _version);
+                    _symbolIndex.Add(path, parser.ParseFile());
                 }
+            } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
+                Trace.TraceError(e.Message);
             }
             lock (_syncObj) {
                 if (_linkedParseCts == parseCts) {
