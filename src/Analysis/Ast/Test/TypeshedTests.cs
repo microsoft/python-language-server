@@ -54,7 +54,7 @@ e1, e2, e3 = sys.exc_info()
                 .Which.Should().HaveMember<IPythonFunctionType>("exc_info").Which;
 
             f.Overloads.Should().HaveCount(1);
-            f.Overloads[0].ReturnDocumentation
+            f.Overloads[0].GetReturnDocumentation(null)
                 .Should().Be(@"Tuple[ (Optional[Type[BaseException]],Optional[BaseException],Optional[TracebackType])]");
         }
 

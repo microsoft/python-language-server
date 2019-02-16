@@ -17,6 +17,9 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
+    /// <summary>
+    /// Represents Generic[T1, T2, ...]
+    /// </summary>
     internal sealed class GenericClassBaseType: PythonClassType, IGenericClassBaseType {
         internal GenericClassBaseType(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule, LocationInfo location) 
             : base("Generic", declaringModule, location) {

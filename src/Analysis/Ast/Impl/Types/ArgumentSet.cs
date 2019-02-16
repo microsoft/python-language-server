@@ -37,6 +37,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly List<DiagnosticsEntry> _errors = new List<DiagnosticsEntry>();
         private readonly ListArg _listArgument;
         private readonly DictArg _dictArgument;
+        private readonly ExpressionEval _eval;
         private bool _evaluated;
 
         public static IArgumentSet Empty = new ArgumentSet();
@@ -46,7 +47,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IDictionaryArgument DictionaryArgument => _dictArgument;
         public IReadOnlyList<DiagnosticsEntry> Errors => _errors;
         public int OverloadIndex { get; }
-        public IExpressionEvaluator Eval { get; }
+        public IExpressionEvaluator Eval => _eval;
 
 
         private ArgumentSet() { }
@@ -77,7 +78,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="module">Module that contains the call expression.</param>
         /// <param name="eval">Evaluator that can calculate values of arguments from their respective expressions.</param>
         public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IPythonModule module, ExpressionEval eval) {
-            Eval = eval;
+            _eval = eval;
             OverloadIndex = overloadIndex;
 
             var overload = fn.Overloads[overloadIndex];
@@ -271,19 +272,19 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             foreach (var a in _arguments.Where(x => x.Value == null)) {
-                a.Value = await Eval.GetValueFromExpressionAsync(a.Expression, cancellationToken);
+                a.Value = await Eval.GetValueFromExpressionAsync(a.Expression, cancellationToken) ?? _eval.UnknownType;
             }
 
             if (_listArgument != null) {
                 foreach (var e in _listArgument.Expressions) {
-                    var value = await Eval.GetValueFromExpressionAsync(e, cancellationToken);
+                    var value = await Eval.GetValueFromExpressionAsync(e, cancellationToken) ?? _eval.UnknownType;
                     _listArgument._Values.Add(value);
                 }
             }
 
             if (_dictArgument != null) {
                 foreach (var e in _dictArgument.Expressions) {
-                    var value = await Eval.GetValueFromExpressionAsync(e.Value, cancellationToken);
+                    var value = await Eval.GetValueFromExpressionAsync(e.Value, cancellationToken) ?? _eval.UnknownType;
                     _dictArgument._Args[e.Key] = value;
                 }
             }

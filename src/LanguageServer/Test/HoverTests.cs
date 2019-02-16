@@ -92,8 +92,8 @@ datetime.datetime.now().day
             var hs = new HoverSource(new PlainTextDocumentationSource());
 
             await AssertHover(hs, analysis, new SourceLocation(3, 2), "module datetime*", new SourceSpan(3, 1, 3, 9));
-            await AssertHover(hs, analysis, new SourceLocation(3, 11), "class datetime*", new SourceSpan(3, 1, 3, 18));
-            await AssertHover(hs, analysis, new SourceLocation(3, 20), "datetime.now(tz: Optional[tzinfo]) -> datetime*", new SourceSpan(3, 1, 3, 22));
+            await AssertHover(hs, analysis, new SourceLocation(3, 11), "class datetime*", new SourceSpan(3, 9, 3, 18));
+            await AssertHover(hs, analysis, new SourceLocation(3, 20), "datetime.now(tz: Optional[tzinfo]) -> datetime*", new SourceSpan(3, 18, 3, 22));
         }
 
         [TestMethod, Priority(0)]
@@ -137,6 +137,32 @@ class Derived(Base):
             var hs = new HoverSource(new PlainTextDocumentationSource());
             await AssertHover(hs, analysis, new SourceLocation(3, 19), "class Base*", new SourceSpan(3, 18, 3, 22));
             await AssertHover(hs, analysis, new SourceLocation(8, 8), "class Derived*", new SourceSpan(8, 8, 8, 12));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task HoverGenericClass() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_T = TypeVar('_T')
+
+class Box(Generic[_T]):
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+boxedint = Box(1234)
+x = boxedint.get()
+
+boxedstr = Box('str')
+y = boxedstr.get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            await AssertHover(hs, analysis, new SourceLocation(14, 15), "Box.get() -> int", new SourceSpan(14, 13, 14, 17));
+            await AssertHover(hs, analysis, new SourceLocation(17, 15), "Box.get() -> str", new SourceSpan(17, 13, 17, 17));
         }
 
         private static async Task AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {

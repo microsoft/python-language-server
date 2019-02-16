@@ -56,7 +56,7 @@ class C:
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 1));
-            comps.Should().HaveLabels("C", "x", "y", "while", "for", "yield");
+            comps.Should().HaveLabels("C", "x", "y", "while", "for");
         }
 
         [TestMethod, Priority(0)]
@@ -427,6 +427,70 @@ def func(a: Dict[int, str]):
 
             result = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 10));
             result.Should().HaveLabels("capitalize");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassMethod() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_T = TypeVar('_T')
+
+class Box(Generic[_T]):
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+boxedint = Box(1234)
+x = boxedint.
+
+boxedstr = Box('str')
+y = boxedstr.
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(14, 14));
+            result.Should().HaveItem("get").Which.Should().HaveDocumentation("Box.get() -> int");
+            result.Should().NotContainLabels("bit_length");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(17, 14));
+            result.Should().HaveItem("get").Which.Should().HaveDocumentation("Box.get() -> str");
+            result.Should().NotContainLabels("capitalize");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericAndRegularBases() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_T = TypeVar('_T')
+
+class Box(Generic[_T], list):
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+boxedint = Box(1234)
+x = boxedint.
+
+boxedstr = Box('str')
+y = boxedstr.
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(14, 14));
+            result.Should().HaveLabels("append", "index");
+            result.Should().NotContainLabels("bit_length");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(17, 14));
+            result.Should().HaveLabels("append", "index");
+            result.Should().NotContainLabels("capitalize");
         }
 
         [TestMethod, Priority(0)]

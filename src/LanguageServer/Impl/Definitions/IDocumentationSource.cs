@@ -19,8 +19,8 @@ using Microsoft.Python.LanguageServer.Protocol;
 namespace Microsoft.Python.LanguageServer {
     public interface IDocumentationSource {
         InsertTextFormat DocumentationFormat { get; }
-        MarkupContent GetHover(string name, IMember member);
-        string GetSignatureString(IPythonFunctionType ft, int overloadIndex = 0);
+        MarkupContent GetHover(string name, IMember member, IPythonType self = null);
+        string GetSignatureString(IPythonFunctionType ft, IPythonType self, int overloadIndex = 0);
         MarkupContent FormatParameterDocumentation(IParameterInfo parameter);
         MarkupContent FormatDocumentation(string documentation);
     }

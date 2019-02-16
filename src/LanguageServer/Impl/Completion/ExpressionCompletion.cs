@@ -18,7 +18,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 
@@ -47,7 +49,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     if(m is IVariable v && v.Source != VariableSource.Declaration) {
                         continue;
                     }
-                    items.Add(context.ItemSource.CreateCompletionItem(t, m));
+                    items.Add(context.ItemSource.CreateCompletionItem(t, m, type));
                 }
                 return items;
             }
