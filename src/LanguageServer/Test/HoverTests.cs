@@ -166,6 +166,17 @@ y = boxedstr.get()
         }
 
         [TestMethod, Priority(0)]
+        public async Task FromImportParts() {
+            const string code = @"
+from time import time
+";
+            var analysis = await GetAnalysisAsync(code);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            await AssertHover(hs, analysis, new SourceLocation(2, 7), @"module time*", new SourceSpan(2, 6, 2, 10));
+            await AssertHover(hs, analysis, new SourceLocation(2, 22), @"time() -> float*", new SourceSpan(2, 18, 2, 22));
+        }
+
+        [TestMethod, Priority(0)]
         public async Task OsPath() {
             const string code = @"
 from os.path import join
@@ -173,10 +184,9 @@ from os.path import join
             var analysis = await GetAnalysisAsync(code);
             var hs = new HoverSource(new PlainTextDocumentationSource());
             await AssertHover(hs, analysis, new SourceLocation(2, 7), @"module os*", new SourceSpan(2, 6, 2, 8));
-            await AssertHover(hs, analysis, new SourceLocation(2, 10), @"module ntpath*", new SourceSpan(2, 9, 2, 13));
-            await AssertHover(hs, analysis, new SourceLocation(2, 22), @"join(path: str, paths: str) -> str", new SourceSpan(2, 21, 2, 25));
+            await AssertHover(hs, analysis, new SourceLocation(2, 10), @"module os.path", new SourceSpan(2, 9, 2, 13));
+            await AssertHover(hs, analysis, new SourceLocation(2, 22), @"join(*", new SourceSpan(2, 21, 2, 25));
         }
-
 
         private static async Task AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
             var hover = await hs.GetHoverAsync(analysis, position);
