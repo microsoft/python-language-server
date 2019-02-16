@@ -120,34 +120,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
             fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read).Returns(stream);
         }
 
-        [TestMethod, Priority(0)]
-        public void DisposeParserCancelsParsing() {
-            const string testFilePath = "C:/bla.py";
-            _fileSystem.FileExists(testFilePath).Returns(true);
-            ManualResetEventSlim neverSignaledEvent = new ManualResetEventSlim(false);
-            ManualResetEventSlim fileOpenedEvent = new ManualResetEventSlim(false);
-            SetFileOpen(_fileSystem, testFilePath, _ => {
-                fileOpenedEvent.Set();
-                // Wait forever
-                neverSignaledEvent.Wait();
-                throw new InternalTestFailureException("Task should have been cancelled");
-            });
-
-            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
-
-            var parseTask = indexParser.ParseAsync(testFilePath);
-            fileOpenedEvent.Wait();
-            indexParser.Dispose();
-            Func<Task> parse = async () => {
-                await parseTask;
-            };
-
-            parse.Should().Throw<TaskCanceledException>();
-
-            var symbols = _symbolIndex.WorkspaceSymbols("");
-            symbols.Should().HaveCount(0);
-        }
-
         private void SetFileOpen(IFileSystem fileSystem, string path, Func<object, Stream> p) {
             fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read).Returns(p);
         }

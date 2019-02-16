@@ -31,7 +31,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly object _syncObj = new object();
         private CancellationTokenSource _linkedParseCts;
         private Task _parseTask;
-        private TaskCompletionSource<object> _tcs;
 
         public IndexParser(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version) {
             Check.ArgumentNotNull(nameof(symbolIndex), symbolIndex);
@@ -45,10 +44,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public Task ParseAsync(string path, CancellationToken cancellationToken = default) {
             lock (_syncObj) {
                 CancelCurrentParse();
-                _tcs = new TaskCompletionSource<object>();
                 _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
-                _parseTask = Task.Run(() => Parse(path, _linkedParseCts));
-                return _tcs.Task;
+                return Task.Run(() => Parse(path, _linkedParseCts));
             }
         }
 
@@ -61,7 +58,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private void Parse(string path, CancellationTokenSource parseCts) {
             if (parseCts.Token.IsCancellationRequested) {
-                _tcs.SetCanceled();
                 parseCts.Token.ThrowIfCancellationRequested();
             }
             try {
@@ -76,15 +72,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 if (_linkedParseCts == parseCts) {
                     _linkedParseCts.Dispose();
                     _linkedParseCts = null;
-                    _tcs.SetResult(new object());
                 }
             }
         }
 
         public void Dispose() {
             lock (_syncObj) {
-                _tcs?.TrySetCanceled();
-                _tcs = null;
                 _allProcessingCts.Cancel();
                 _allProcessingCts.Dispose();
 
