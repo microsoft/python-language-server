@@ -61,10 +61,12 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task ParseVariableInFileAsync() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);
-            SetFileOpen(_fileSystem, testFilePath, MakeStream("x = 1"));
 
-            IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
-            await indexParser.ParseAsync(testFilePath);
+            using (var fileStream = MakeStream("x = 1")) {
+                SetFileOpen(_fileSystem, testFilePath, fileStream);
+                IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
+                await indexParser.ParseAsync(testFilePath);
+            }
 
             var symbols = _symbolIndex.WorkspaceSymbols("");
             symbols.Should().HaveCount(1);
@@ -101,7 +103,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public void CancellParsingAsync() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);
-            SetFileOpen(_fileSystem, testFilePath, MakeStream("x = 1"));
+
+            using (var fileStream = MakeStream("x = 1")) {
+                SetFileOpen(_fileSystem, testFilePath, fileStream);
+            }
 
             IIndexParser indexParser = new IndexParser(_symbolIndex, _fileSystem, _pythonLanguageVersion);
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
