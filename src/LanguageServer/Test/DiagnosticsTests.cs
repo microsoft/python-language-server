@@ -55,7 +55,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
                     ReplacedSpan = new SourceSpan(1, 5, 1, 5)
             } });
 
-            await doc.GetAnalysisAsync();
+            await doc.GetAstAsync();
+            await doc.GetAnalysisAsync(0);
             ds.Diagnostics[doc.Uri].Count.Should().Be(0);
 
             doc.Update(new[] {new DocumentChange {
@@ -63,7 +64,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 6)
             } });
 
-            await doc.GetAnalysisAsync();
+            await doc.GetAstAsync();
+            await doc.GetAnalysisAsync(0);
             ds.Diagnostics[doc.Uri].Count.Should().Be(1);
         }
 
@@ -87,7 +89,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 5)
             } });
 
-            await doc2.GetAnalysisAsync();
+            await doc2.GetAstAsync();
+            await doc2.GetAnalysisAsync(0);
             ds.Diagnostics[doc1.Uri].Count.Should().Be(1);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(0);
 
@@ -96,7 +99,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 6)
             } });
 
-            await doc2.GetAnalysisAsync();
+            await doc2.GetAstAsync();
+            await doc2.GetAnalysisAsync(0);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
 
             doc1.Dispose();
@@ -130,7 +134,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 5)
             } });
 
-            await doc.GetAnalysisAsync();
+            await doc.GetAnalysisAsync(0);
             idle.Idle += Raise.EventWith(null, EventArgs.Empty);
         }
 

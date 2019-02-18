@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     _log?.Log(TraceEventType.Warning, "Unsupported native module in stubs", mp.Value.FullName, mp.Value.SourceFile);
                     return null;
                 }
-                return new StubPythonModule(mp.Value.FullName, mp.Value.SourceFile, _services);
+                return new StubPythonModule(mp.Value.FullName, mp.Value.SourceFile, true, _services);
             }
 
             var i = name.IndexOf('.');
@@ -63,16 +63,16 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             var stubPath = CurrentPathResolver.GetPossibleModuleStubPaths(name).FirstOrDefault(p => _fs.FileExists(p));
-            return stubPath != null ? new StubPythonModule(name, stubPath, _services) : null;
+            return stubPath != null ? new StubPythonModule(name, stubPath, true, _services) : null;
         }
 
         public Task ReloadAsync(CancellationToken cancellationToken = default) {
-            _pathResolver = new PathResolver(_interpreter.LanguageVersion);
+            PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
-            var addedRoots = _pathResolver.SetRoot(_root);
+            var addedRoots = PathResolver.SetRoot(_root);
             ReloadModulePaths(addedRoots);
 
-            addedRoots = _pathResolver.SetInterpreterSearchPaths(_typeStubPaths);
+            addedRoots = PathResolver.SetInterpreterSearchPaths(_typeStubPaths);
             ReloadModulePaths(addedRoots);
 
             cancellationToken.ThrowIfCancellationRequested();

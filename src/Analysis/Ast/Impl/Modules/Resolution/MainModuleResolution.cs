@@ -85,6 +85,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 stub = _interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
             }
 
+            // If stub is created and its path equals to module, return stub instead of module
+            if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
+                return stub;
+            }
+
             IPythonModule module;
             if (moduleImport.IsBuiltin) {
                 _log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
@@ -154,27 +159,30 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
             if (builtinModuleNamesMember.TryGetConstant<string>(out var s)) {
                 var builtinModuleNames = s.Split(',').Select(n => n.Trim());
-                _pathResolver.SetBuiltins(builtinModuleNames);
+                PathResolver.SetBuiltins(builtinModuleNames);
             }
         }
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
             ModuleCache = new ModuleCache(_interpreter, _services);
 
-            _pathResolver = new PathResolver(_interpreter.LanguageVersion);
+            PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
-            var addedRoots = _pathResolver.SetRoot(_root);
+            var addedRoots = PathResolver.SetRoot(_root);
             ReloadModulePaths(addedRoots);
 
             var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
-            addedRoots = _pathResolver.SetInterpreterSearchPaths(interpreterPaths);
+            addedRoots = PathResolver.SetInterpreterSearchPaths(interpreterPaths);
 
             ReloadModulePaths(addedRoots);
             cancellationToken.ThrowIfCancellationRequested();
 
-            addedRoots = _pathResolver.SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
+            addedRoots = SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
             ReloadModulePaths(addedRoots);
         }
+
+        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths)
+            => PathResolver.SetUserSearchPaths(searchPaths);
 
         // For tests
         internal void AddUnimportableModule(string moduleName) 
@@ -185,14 +193,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             if (!string.IsNullOrEmpty(modulePath)) {
                 var pyiPath = Path.ChangeExtension(modulePath, "pyi");
                 if (_fs.FileExists(pyiPath)) {
-                    module = new StubPythonModule(name, pyiPath, _services);
+                    module = new StubPythonModule(name, pyiPath, false, _services);
                     return true;
                 }
             }
 
             // Try location of stubs that are in a separate folder next to the package.
             var stubPath = CurrentPathResolver.GetPossibleModuleStubPaths(name).FirstOrDefault(p => _fs.FileExists(p));
-            module = !string.IsNullOrEmpty(stubPath) ? new StubPythonModule(name, stubPath, _services) : null;
+            module = !string.IsNullOrEmpty(stubPath) ? new StubPythonModule(name, stubPath, false, _services) : null;
             return module != null;
         }
     }

@@ -13,14 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
@@ -39,7 +36,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         protected readonly bool _requireInitPy;
         protected string _root;
 
-        protected PathResolver _pathResolver;
+        protected PathResolver PathResolver { get; set; }
 
         protected InterpreterConfiguration Configuration => _interpreter.Configuration;
 
@@ -59,7 +56,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         /// <summary>
         /// Path resolver providing file resolution in module imports.
         /// </summary>
-        public PathResolverSnapshot CurrentPathResolver => _pathResolver.CurrentSnapshot;
+        public PathResolverSnapshot CurrentPathResolver => PathResolver.CurrentSnapshot;
 
         /// <summary>
         /// Builtins module.
@@ -78,7 +75,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public IPythonModule GetImportedModule(string name) 
-            => _modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : null;
+            => _modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
 
         public IPythonModule GetOrLoadModule(string name) {
             if (_modules.TryGetValue(name, out var moduleRef)) {
@@ -94,7 +91,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return moduleRef.GetOrCreate(name, this);
         }
 
-        public void AddModulePath(string path) => _pathResolver.TryAddModulePath(path, out var _);
+        public bool TryAddModulePath(in string path, out string fullModuleName) 
+            => PathResolver.TryAddModulePath(path, out fullModuleName);
 
         public ModulePath FindModule(string filePath) {
             var bestLibraryPath = string.Empty;
@@ -111,7 +109,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
             foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(p))) {
-                _pathResolver.TryAddModulePath(modulePath, out _);
+                PathResolver.TryAddModulePath(modulePath, out _);
             }
         }
 

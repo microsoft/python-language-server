@@ -401,6 +401,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IAnalyzable
         public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
             lock (AnalysisLock) {
+                if (analysis.Version < Analysis.Version) {
+                    return;
+                }
+
                 Analysis = analysis;
                 GlobalScope = analysis.GlobalScope;
 
@@ -425,9 +429,9 @@ namespace Microsoft.Python.Analysis.Modules {
         #region Analysis
         public IDocumentAnalysis GetAnyAnalysis() => Analysis;
 
-        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
-            return Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, cancellationToken: cancellationToken);
-        }
+        public Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime = 200, CancellationToken cancellationToken = default) 
+            => Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, waitTime, cancellationToken);
+
         #endregion
 
         private string TryGetDocFromModuleInitFile() {

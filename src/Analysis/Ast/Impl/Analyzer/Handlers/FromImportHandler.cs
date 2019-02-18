@@ -25,7 +25,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed partial class ImportHandler {
-        public bool HandleFromImportAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
+        public bool HandleFromImport(FromImportStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             if (Module.ModuleType == ModuleType.Specialized) {
                 return false;

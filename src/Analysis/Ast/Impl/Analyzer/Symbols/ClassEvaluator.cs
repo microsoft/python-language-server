@@ -84,11 +84,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             // Process imports
             foreach (var s in GetStatements<FromImportStatement>(_classDef)) {
-                ImportHandler.HandleFromImportAsync(s, cancellationToken);
+                ImportHandler.HandleFromImport(s, cancellationToken);
             }
 
             foreach (var s in GetStatements<ImportStatement>(_classDef)) {
-                ImportHandler.HandleImportAsync(s, cancellationToken);
+                ImportHandler.HandleImport(s, cancellationToken);
             }
 
             UpdateClassMembers();

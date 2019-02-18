@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed partial class ImportHandler : StatementHandler {
         public ImportHandler(AnalysisWalker walker) : base(walker) { }
 
-        public bool HandleImportAsync(ImportStatement node, CancellationToken cancellationToken = default) {
+        public bool HandleImport(ImportStatement node, CancellationToken cancellationToken = default) {
             cancellationToken.ThrowIfCancellationRequested();
             if (Module.ModuleType == ModuleType.Specialized) {
                 return false;
