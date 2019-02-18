@@ -55,7 +55,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 Version = version;
             }
 
-            Version = version;
             _analysisTcs.TrySetResult(analysis);
         }
 
@@ -68,7 +67,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 Version = version;
             }
 
-            Version = version;
             _analysisTcs.TrySetException(ex);
         }
 
