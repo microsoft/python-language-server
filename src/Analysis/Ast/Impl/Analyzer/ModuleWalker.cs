@@ -114,8 +114,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         cls.AddMember(name, stubMember, overwrite: true);
                     }
                 } else {
-                    // Re-declare variable with the data from the stub.
-                    if (!stubType.IsUnknown()) {
+                    // Re-declare variable with the data from the stub unless member is a module.
+                    // Modules members that are modules should remain as they are, i.e. os.path
+                    // should remain library with its own stub attached.
+                    if (!stubType.IsUnknown() && !(stubType is IPythonModule)) {
                         sourceType.TransferDocumentation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;

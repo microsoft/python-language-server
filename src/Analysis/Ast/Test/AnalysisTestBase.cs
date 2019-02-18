@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
 
-        protected async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration = null) {
+        protected async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration, IServiceManager sm = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             Trace.TraceInformation("Cache Path: " + configuration.DatabasePath);
@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Tests {
             configuration.SearchPaths = new[] { GetAnalysisTestDataFilesPath() };
             configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
 
-            var sm = CreateServiceManager();
+            sm = sm ?? CreateServiceManager();
 
             var clientApp = Substitute.For<IClientApplication>();
             sm.AddService(clientApp);
@@ -106,19 +106,20 @@ namespace Microsoft.Python.Analysis.Tests {
             await CreateServicesAsync(moduleDirectory, configuration);
         }
 
-        protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, PythonLanguageVersion version, string modulePath = null)
-            => GetAnalysisAsync(code, PythonVersions.GetRequiredCPythonConfiguration(version), modulePath);
+        protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, PythonLanguageVersion version, IServiceManager sm = null, string modulePath = null)
+            => GetAnalysisAsync(code, PythonVersions.GetRequiredCPythonConfiguration(version), sm, modulePath);
 
         protected async Task<IDocumentAnalysis> GetAnalysisAsync(
             string code,
             InterpreterConfiguration configuration = null,
+            IServiceManager sm = null,
             string modulePath = null) {
 
             modulePath = modulePath ?? TestData.GetDefaultModulePath();
             var moduleName = Path.GetFileNameWithoutExtension(modulePath);
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
-            var services = await CreateServicesAsync(moduleDirectory, configuration);
+            var services = await CreateServicesAsync(moduleDirectory, configuration, sm);
             return await GetAnalysisAsync(code, services, moduleName, modulePath);
         }
 

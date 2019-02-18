@@ -49,7 +49,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     await ImportMembersFromModuleAsync(node, moduleImport.FullName, cancellationToken);
                     break;
                 case PossibleModuleImport possibleModuleImport:
-                    await HandlePossibleImportAsync(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, Eval.GetLoc(node.Root), cancellationToken);
+                    var module = await HandlePossibleImportAsync(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, Eval.GetLoc(node.Root), cancellationToken);
+                    if (module != null) {
+                        await ImportMembersFromModuleAsync(node, module, cancellationToken);
+                    }
                     break;
                 case PackageImport packageImports:
                     await ImportMembersFromPackageAsync(node, packageImports, cancellationToken);
@@ -93,13 +96,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         private async Task ImportMembersFromModuleAsync(FromImportStatement node, string moduleName, CancellationToken cancellationToken = default) {
+            var module = await ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
+            if (module != null) {
+                await ImportMembersFromModuleAsync(node, module, cancellationToken);
+            }
+        }
+
+        private async Task ImportMembersFromModuleAsync(FromImportStatement node, IPythonModule module, CancellationToken cancellationToken = default) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var module = await ModuleResolution.ImportModuleAsync(moduleName, cancellationToken);
-            if (module == null) {
-                return;
-            }
-
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: warn this is not a good style per
                 // TODO: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module

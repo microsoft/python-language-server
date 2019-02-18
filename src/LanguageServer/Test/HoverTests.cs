@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
@@ -177,15 +178,32 @@ from time import time
         }
 
         [TestMethod, Priority(0)]
-        public async Task OsPath() {
+        public async Task FromOsPath() {
             const string code = @"
-from os.path import join
+from os.path import join as JOIN
 ";
             var analysis = await GetAnalysisAsync(code);
             var hs = new HoverSource(new PlainTextDocumentationSource());
             await AssertHover(hs, analysis, new SourceLocation(2, 7), @"module os*", new SourceSpan(2, 6, 2, 8));
-            await AssertHover(hs, analysis, new SourceLocation(2, 10), @"module os.path", new SourceSpan(2, 9, 2, 13));
-            await AssertHover(hs, analysis, new SourceLocation(2, 22), @"join(*", new SourceSpan(2, 21, 2, 25));
+
+            var name = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"ntpath" : @"posixpath";
+            await AssertHover(hs, analysis, new SourceLocation(2, 10), $"module {name}*", new SourceSpan(2, 9, 2, 13));
+
+            await AssertHover(hs, analysis, new SourceLocation(2, 22), @"join(path: str, paths: str) -> str", new SourceSpan(2, 21, 2, 25));
+            await AssertHover(hs, analysis, new SourceLocation(2, 30), @"join(path: str, paths: str) -> str", new SourceSpan(2, 29, 2, 33));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OsPath() {
+            const string code = @"
+import os.path as PATH
+";
+            var analysis = await GetAnalysisAsync(code);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            await AssertHover(hs, analysis, new SourceLocation(2, 9), @"module os*", new SourceSpan(2, 8, 2, 10));
+            var name = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"ntpath" : @"posixpath";
+            await AssertHover(hs, analysis, new SourceLocation(2, 12), $"module {name}*", new SourceSpan(2, 11, 2, 15));
+            await AssertHover(hs, analysis, new SourceLocation(2, 20), $"module {name}*", new SourceSpan(2, 19, 2, 23));
         }
 
         private static async Task AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {

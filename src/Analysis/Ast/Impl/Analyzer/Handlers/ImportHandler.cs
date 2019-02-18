@@ -85,8 +85,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return module;
         }
 
-        private async Task<IPythonModule> HandlePossibleImportAsync(
-            PossibleModuleImport possibleModuleImport, string moduleName, LocationInfo location, CancellationToken cancellationToken) {
+        private async Task<IPythonModule> HandlePossibleImportAsync(PossibleModuleImport possibleModuleImport, string moduleName, LocationInfo location, CancellationToken cancellationToken) {
             var fullName = possibleModuleImport.PrecedingModuleFullName;
             var module = await ModuleResolution.ImportModuleAsync(possibleModuleImport.PrecedingModuleFullName, cancellationToken);
             if (module == null) {
@@ -105,7 +104,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
                 module = childModule;
             }
-
             return module;
         }
 
