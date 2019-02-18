@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly CancellationTokenSource _globalCts = new CancellationTokenSource();
         private readonly ILogger _log;
 
-        public PythonAnalyzer(IServiceManager services, string root) {
+        public PythonAnalyzer(IServiceManager services) {
             _services = services;
             _log = services.GetService<ILogger>();
 
@@ -40,11 +40,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _dependencyResolver = new DependencyResolver(_services);
                 _services.AddService(_dependencyResolver);
             }
-
-            //var rdt = services.GetService<IRunningDocumentTable>();
-            //if (rdt == null) {
-            //    services.AddService(new RunningDocumentTable(root, services));
-            //}
         }
 
         public void Dispose() => _globalCts.Cancel();
@@ -151,7 +146,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Note that we do not set the new analysis here and rather let
             // Python analyzer to call NotifyAnalysisComplete.
             await walker.CompleteAsync(cancellationToken);
-            _log?.Log(TraceEventType.Verbose, $"Analysis of {node.Document.Name}({node.Document.ModuleType}) complete in {(DateTime.Now - startTime).TotalMilliseconds} ms.");
+            _log?.Log(TraceEventType.Verbose, $"Analysis of {node.Document.Name} ({node.Document.ModuleType}) complete in {(DateTime.Now - startTime).TotalMilliseconds} ms.");
             return new DocumentAnalysis(node.Document, analysisVersion, walker.GlobalScope, walker.Eval);
         }
     }

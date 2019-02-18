@@ -86,7 +86,7 @@ namespace Microsoft.Python.Analysis.Tests {
             sm.AddService(dependencyResolver);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonAnalyzer");
-            var analyzer = new PythonAnalyzer(sm, root);
+            var analyzer = new PythonAnalyzer(sm);
             sm.AddService(analyzer);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonInterpreter");

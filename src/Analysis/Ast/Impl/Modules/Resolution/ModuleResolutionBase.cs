@@ -137,7 +137,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     case TryImportModuleResultCode.Success:
                         return result.Module;
                     case TryImportModuleResultCode.ModuleNotFound:
-                        _log?.Log(TraceEventType.Information, $"Import not found: {name}");
+                        ReportModuleNotFound(name);
                         return null;
                     case TryImportModuleResultCode.NeedRetry:
                     case TryImportModuleResultCode.Timeout:
@@ -225,5 +225,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             await module.LoadAndAnalyzeAsync(cancellationToken);
             return module;
         }
+
+        protected abstract void ReportModuleNotFound(string name);
     }
 }
