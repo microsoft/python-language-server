@@ -23,7 +23,7 @@ namespace Microsoft.Python.Analysis {
             switch (m) {
                 case IPythonType pt when pt.IsUnknown():
                 case IPythonInstance pi when pi.IsUnknown():
-                case IVariable v when v.Value.IsUnknown():
+                case IVariable v when v.Value == null || v.Value.IsUnknown():
                 case null:
                     return true;
                 default:
@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis {
                     return pt;
                 case IPythonInstance pi:
                     return pi.Type;
-                case IVariable v:
+                case IVariable v when v.Value != null:
                     return v.Value.GetPythonType();
             }
             return null;
@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis {
             if (m?.MemberType == PythonMemberType.Generic) {
                 return true;
             }
-            return m is IVariable v && v.Value.MemberType == PythonMemberType.Generic;
+            return m is IVariable v && v.Value?.MemberType == PythonMemberType.Generic;
         }
 
         public static bool TryGetConstant<T>(this IMember m, out T value) {
