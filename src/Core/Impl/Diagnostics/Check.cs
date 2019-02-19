@@ -67,6 +67,13 @@ namespace Microsoft.Python.Core.Diagnostics {
         }
 
         [DebuggerStepThrough]
+        public static void InvalidOperation(bool condition, string message = null) {
+            if (!condition) {
+                throw new InvalidOperationException(message ?? string.Empty);
+            }
+        }
+
+        [DebuggerStepThrough]
         public static void Argument(string argumentName, Func<bool> predicate) {
             if (!predicate()) {
                 throw new ArgumentException(Invariant($"{argumentName} is not valid"));

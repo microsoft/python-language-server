@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class IndexParser : IIndexParser {
@@ -50,6 +51,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         private void CancelCurrentParse() {
+            Check.InvalidOperation(Monitor.IsEntered(_syncObj));
+
             _linkedParseCts?.Cancel();
             _linkedParseCts?.Dispose();
             _linkedParseCts = null;
@@ -61,7 +64,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             try {
                 using (var stream = _fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     var parser = Parser.CreateParser(stream, _version);
-                    _symbolIndex.Add(path, parser.ParseFile());
+                    var ast = parser.ParseFile();
+                    lock (_syncObj) {
+                        parseCts.Token.ThrowIfCancellationRequested();
+                        _symbolIndex.Add(path, ast);
+                    }
                 }
             } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
                 Trace.TraceError(e.Message);
