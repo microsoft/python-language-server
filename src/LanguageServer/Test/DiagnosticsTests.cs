@@ -57,7 +57,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             } });
 
             await doc.GetAstAsync();
-            await doc.GetAnalysisAsync(10000);
+            await doc.GetAnalysisAsync(1000);
             ds.Diagnostics[doc.Uri].Count.Should().Be(0);
 
             doc.Update(new[] {new DocumentChange {
@@ -66,7 +66,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             } });
 
             await doc.GetAstAsync();
-            await doc.GetAnalysisAsync(0);
+            await doc.GetAnalysisAsync(1000);
             ds.Diagnostics[doc.Uri].Count.Should().Be(1);
         }
 
@@ -91,7 +91,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             } });
 
             await doc2.GetAstAsync();
-            await doc2.GetAnalysisAsync(0);
+            await doc2.GetAnalysisAsync(1000);
             ds.Diagnostics[doc1.Uri].Count.Should().Be(1);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(0);
 
@@ -101,7 +101,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             } });
 
             await doc2.GetAstAsync();
-            await doc2.GetAnalysisAsync(0);
+            await doc2.GetAnalysisAsync(1000);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
 
             doc1.Dispose();
@@ -133,7 +133,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             } });
 
             await doc.GetAstAsync();
-            await doc.GetAnalysisAsync(10000);
+            await doc.GetAnalysisAsync(1000);
 
             PublishDiagnostics();
             reported.Count.Should().Be(1);
@@ -229,7 +229,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             } });
 
             await doc1.GetAstAsync();
-            await doc1.GetAnalysisAsync(10000);
+            await doc1.GetAnalysisAsync(1000);
 
             ds.Diagnostics[doc1.Uri].Count.Should().Be(0);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
@@ -245,7 +245,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             } });
 
             await doc1.GetAstAsync();
-            await doc1.GetAnalysisAsync(10000);
+            await doc1.GetAnalysisAsync(1000);
             ds.Diagnostics[doc1.Uri].Count.Should().Be(1);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
 
