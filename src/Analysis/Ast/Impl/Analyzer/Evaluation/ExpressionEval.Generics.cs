@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         ///     x = A(TypeError)
         /// </example>
         private async Task<IMember> GetValueFromGenericAsync(IMember target, Expression expr, CancellationToken cancellationToken = default) {
-            if (!(target is PythonClassType c && c.IsGeneric()) && !(target is IGenericType)) {
+            if (!(target is PythonClassType c && c.IsGeneric()) && !(target.GetPythonType() is IGenericType)) {
                 return null;
             }
             // Evaluate index to check if the result is generic parameter.

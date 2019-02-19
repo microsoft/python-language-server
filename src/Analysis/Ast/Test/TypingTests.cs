@@ -832,6 +832,23 @@ y = boxedstr.get()
                 .Which.Should().HaveType(BuiltinTypeId.Str);
         }
 
+
+        [TestMethod, Priority(0)]
+        public async Task OptionalNone() {
+            const string code = @"
+import typing
+
+class C:
+    def __init__(self, x: typing.Optional[typing.Mapping[str, str]] = None):
+        self.X = x
+
+c = C()
+y = c.X
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var r = analysis.Should().HaveVariable("y").OfType("Mapping[str, str]");
+        }
+
         [TestMethod, Priority(0)]
         public void AnnotationParsing() {
             AssertTransform("List", "NameOp:List");

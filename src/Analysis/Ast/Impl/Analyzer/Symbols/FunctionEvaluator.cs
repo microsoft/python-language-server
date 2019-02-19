@@ -76,9 +76,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
                 await DeclareParametersAsync(cancellationToken);
-                if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
-                    // Return type from the annotation is sufficient for libraries
-                    // and stubs, no need to walk the body.
+                // Return type from the annotation is sufficient for libraries
+                // and stubs, no need to walk the body. Exceptions are constructors
+                // since they can be adding class members.
+                if (_function.IsConstructor() || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     if (FunctionDefinition.Body != null && Module.ModuleType != ModuleType.Specialized) {
                         await FunctionDefinition.Body.WalkAsync(this, cancellationToken);
                     }

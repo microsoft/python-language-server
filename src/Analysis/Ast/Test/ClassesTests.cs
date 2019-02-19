@@ -258,6 +258,19 @@ a = X(2)
         }
 
         [TestMethod, Priority(0)]
+        public async Task ClassInitAnnotated() {
+            const string code = @"
+class X:
+    def __init__(self) -> None:
+        self.value = 1
+
+a = X().value
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("a").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
         [Ignore]
         public async Task ClassNew() {
             const string code = @"
