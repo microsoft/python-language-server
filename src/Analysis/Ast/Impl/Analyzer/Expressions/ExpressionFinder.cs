@@ -272,12 +272,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 SaveStmt(node, true);
 
                 if (_options.ImportNames) {
-                    foreach (var n in node.Names.MaybeEnumerate()) {
+                    foreach (var n in node.Names) {
                         n?.Walk(this);
                     }
                 }
                 if (_options.ImportAsNames) {
-                    foreach (var n in node.AsNames.MaybeEnumerate()) {
+                    foreach (var n in node.AsNames) {
                         n?.Walk(this);
                     }
                 }
@@ -293,13 +293,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 SaveStmt(node, true);
 
                 if (_options.ImportNames) {
-                    node.Root?.Walk(this);
+                    node.Root.Walk(this);
                 }
 
-                foreach (var n in node.Names.MaybeEnumerate()) {
+                foreach (var n in node.Names) {
                     n?.Walk(this);
                 }
-                foreach (var n in node.AsNames.MaybeEnumerate()) {
+
+                foreach (var n in node.AsNames) {
                     n?.Walk(this);
                 }
 

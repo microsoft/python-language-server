@@ -34,6 +34,13 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public Expression Right { get; }
 
+        public override IEnumerable<Node> GetChildNodes() {
+            foreach (var expression in _left) {
+                yield return expression;
+            }
+            if (Right != null) yield return Right;
+        }
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 foreach (var e in _left) {

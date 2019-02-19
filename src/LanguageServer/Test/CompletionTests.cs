@@ -1,4 +1,4 @@
-﻿// Copyright(c) Microsoft Corporation
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -17,7 +17,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using FluentAssertions.Common;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
@@ -69,7 +68,7 @@ x.
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3));
-            comps.Should().HaveLabels(@"isupper", @"capitalize", @"split" );
+            comps.Should().HaveLabels(@"isupper", @"capitalize", @"split");
         }
 
         [TestMethod, Priority(0)]

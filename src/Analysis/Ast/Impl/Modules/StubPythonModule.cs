@@ -24,8 +24,11 @@ namespace Microsoft.Python.Analysis.Modules {
     /// Represents module that contains stub code such as from typeshed.
     /// </summary>
     internal class StubPythonModule : CompiledPythonModule {
-        public StubPythonModule(string moduleName, string stubPath, IServiceContainer services)
+        public bool IsTypeshed { get; }
+
+        public StubPythonModule(string moduleName, string stubPath, bool isTypeshed, IServiceContainer services)
             : base(moduleName, ModuleType.Stub, stubPath, null, services) {
+            IsTypeshed = isTypeshed;
         }
 
         protected override string LoadContent() {

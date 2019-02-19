@@ -16,13 +16,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
@@ -65,18 +63,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _rdt.CloseDocument(@params.textDocument.uri);
         }
 
-        private IDocumentAnalysis GetAnalysis(Uri uri, CancellationToken cancellationToken) {
+        private Task<IDocumentAnalysis> GetAnalysisAsync(Uri uri, CancellationToken cancellationToken) {
             var document = _rdt.GetDocument(uri);
-            if (document != null) {
-                try {
-                    document.GetAnalysisAsync(cancellationToken).Wait(200);
-                    return document.GetAnyAnalysis();
-                } catch (OperationCanceledException) {
-                    return null;
-                }
+            if (document == null) {
+                _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
+                return Task.FromResult(default(IDocumentAnalysis));
             }
-            _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
-            return null;
+
+            return document.GetAnalysisAsync(200, cancellationToken);
         }
     }
 }

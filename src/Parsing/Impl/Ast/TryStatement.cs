@@ -55,6 +55,18 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public IList<TryStatementHandler> Handlers => _handlers;
 
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Body != null) yield return Body;
+            if (_handlers != null) {
+                foreach (var handler in _handlers) {
+                    yield return handler;
+                }
+            }
+
+            if (Else != null) yield return Else;
+            if (Finally != null) yield return Finally;
+        }
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 Body?.Walk(walker);
@@ -123,6 +135,12 @@ namespace Microsoft.Python.Parsing.Ast {
         public Expression Test { get; }
         public Expression Target { get; }
         public Statement Body { get; }
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Test != null) yield return Test;
+            if (Target != null) yield return Target;
+            if (Body != null) yield return Body;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

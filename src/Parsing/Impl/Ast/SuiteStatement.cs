@@ -30,6 +30,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public IList<Statement> Statements => _statements;
 
+        public override IEnumerable<Node> GetChildNodes() => _statements.WhereNotNull();
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 foreach (var s in _statements.MaybeEnumerate()) {

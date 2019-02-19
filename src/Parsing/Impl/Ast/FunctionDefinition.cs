@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
@@ -26,7 +27,6 @@ namespace Microsoft.Python.Parsing.Ast {
     public class FunctionDefinition : ScopeStatement, IMaybeAsyncStatement {
         internal static readonly object WhitespaceAfterAsync = new object();
 
-        private readonly Parameter[] _parameters;
         private int? _keywordEndIndex;
 
         protected Statement _body;
@@ -43,14 +43,14 @@ namespace Microsoft.Python.Parsing.Ast {
                 NameExpression = name;
             }
 
-            _parameters = parameters;
+            Parameters = parameters ?? Array.Empty<Parameter>();
             _body = body;
             Decorators = decorators;
         }
 
         public bool IsLambda { get; }
 
-        public Parameter[] Parameters => _parameters ?? Array.Empty<Parameter>();
+        public Parameter[] Parameters { get; }
 
         public override int ArgCount => Parameters.Length;
 
@@ -185,10 +185,20 @@ namespace Microsoft.Python.Parsing.Ast {
             return DefIndex + NodeAttributes.GetWhiteSpace(this, ast, WhitespaceAfterAsync).Length + 5;
         }
 
+        public override IEnumerable<Node> GetChildNodes() {
+            if (NameExpression != null) yield return NameExpression;
+            foreach (var parameter in Parameters) {
+                yield return parameter;
+            }
+            if (Decorators != null) yield return Decorators;
+            if (_body != null) yield return _body;
+            if (ReturnAnnotation != null) yield return ReturnAnnotation;
+        }
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 NameExpression?.Walk(walker);
-                foreach (var p in _parameters.MaybeEnumerate()) {
+                foreach (var p in Parameters) {
                     p.Walk(walker);
                 }
                 Decorators?.Walk(walker);
@@ -204,7 +214,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     await NameExpression.WalkAsync(walker, cancellationToken);
                 }
 
-                foreach (var p in _parameters.MaybeEnumerate()) {
+                foreach (var p in Parameters) {
                     await p.WalkAsync(walker, cancellationToken);
                 }
 

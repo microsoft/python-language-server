@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Documents {
     /// <summary>
@@ -95,7 +96,7 @@ namespace Microsoft.Python.Analysis.Documents {
                     mco.Uri = uri;
                 }
 
-                var entry = FindDocument(mco.FilePath, mco.Uri) ?? CreateDocument(mco);
+                var entry = FindDocument(mco.ModuleName, mco.Uri) ?? CreateDocument(mco);
                 entry.LockCount++;
                 return entry.Document;
             }
@@ -165,17 +166,14 @@ namespace Microsoft.Python.Analysis.Documents {
         private DocumentEntry CreateDocument(ModuleCreationOptions mco) {
             IDocument document;
             switch (mco.ModuleType) {
-                case ModuleType.Stub:
-                    document = new StubPythonModule(mco.ModuleName, mco.FilePath, _services);
-                    break;
-                case ModuleType.Compiled:
+                case ModuleType.Compiled when TryAddModulePath(mco):
                     document = new CompiledPythonModule(mco.ModuleName, ModuleType.Compiled, mco.FilePath, mco.Stub, _services);
                     break;
                 case ModuleType.CompiledBuiltin:
                     document = new CompiledBuiltinPythonModule(mco.ModuleName, mco.Stub, _services);
                     break;
-                case ModuleType.User:
-                case ModuleType.Library:
+                case ModuleType.User when TryAddModulePath(mco):
+                case ModuleType.Library when TryAddModulePath(mco):
                     document = new PythonModule(mco, _services);
                     break;
                 default:
@@ -185,9 +183,22 @@ namespace Microsoft.Python.Analysis.Documents {
             var entry = new DocumentEntry { Document = document, LockCount = 0 };
             _documentsByUri[document.Uri] = entry;
             _documentsByName[mco.ModuleName] = entry;
-
-            ModuleManagement.AddModulePath(document.FilePath);
             return entry;
+        }
+
+        private bool TryAddModulePath(ModuleCreationOptions mco) {
+            var filePath = mco.FilePath ?? mco.Uri?.ToAbsolutePath();
+            if (filePath == null) {
+                throw new InvalidOperationException("Can't create document with no file path or URI specified");
+            }
+
+            if (!ModuleManagement.TryAddModulePath(filePath, out var fullName)) {
+                return false;
+            }
+
+            mco.FilePath = filePath;
+            mco.ModuleName = fullName;
+            return true;
         }
 
         private bool TryOpenDocument(DocumentEntry entry, string content) {

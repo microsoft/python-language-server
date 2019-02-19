@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Modules {
             var rdt = _services.GetService<IRunningDocumentTable>();
             var mco = new ModuleCreationOptions {
                 ModuleName = name,
-                ModuleType = ModuleType.Stub,
+                ModuleType = ModuleType.Compiled,
                 FilePath = cache
             };
             var module = rdt.AddModule(mco);

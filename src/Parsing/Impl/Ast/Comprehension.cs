@@ -18,16 +18,15 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class ComprehensionIterator : Node {
     }
 
     public abstract class Comprehension : Expression {
-        public abstract IList<ComprehensionIterator> Iterators { get; }
+        public abstract ImmutableArray<ComprehensionIterator> Iterators { get; }
         public abstract override string NodeName { get; }
-
-        public abstract override void Walk(PythonWalker walker);
 
         internal void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format, string start, string end, Expression item) {
             if (!string.IsNullOrEmpty(start)) {
@@ -49,23 +48,28 @@ namespace Microsoft.Python.Parsing.Ast {
     }
 
     public sealed class ListComprehension : Comprehension {
-        private readonly ComprehensionIterator[] _iterators;
-
-        public ListComprehension(Expression item, ComprehensionIterator[] iterators) {
+        public ListComprehension(Expression item, ImmutableArray<ComprehensionIterator> iterators) {
             Item = item;
-            _iterators = iterators;
+            Iterators = iterators;
         }
 
         public Expression Item { get; }
 
-        public override IList<ComprehensionIterator> Iterators => _iterators;
+        public override ImmutableArray<ComprehensionIterator> Iterators { get; }
 
         public override string NodeName => "list comprehension";
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Item != null) yield return Item;
+            foreach (var iterator in Iterators) {
+                yield return iterator;
+            }
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 Item?.Walk(walker);
-                foreach (var ci in _iterators.MaybeEnumerate()) {
+                foreach (var ci in Iterators) {
                     ci.Walk(walker);
                 }
             }
@@ -77,7 +81,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (Item != null) {
                     await Item.WalkAsync(walker, cancellationToken);
                 }
-                foreach (var ci in _iterators.MaybeEnumerate()) {
+                foreach (var ci in Iterators) {
                     await ci.WalkAsync(walker, cancellationToken);
                 }
             }
@@ -88,23 +92,28 @@ namespace Microsoft.Python.Parsing.Ast {
     }
 
     public sealed class SetComprehension : Comprehension {
-        private readonly ComprehensionIterator[] _iterators;
-
-        public SetComprehension(Expression item, ComprehensionIterator[] iterators) {
+        public SetComprehension(Expression item, ImmutableArray<ComprehensionIterator> iterators) {
             Item = item;
-            _iterators = iterators;
+            Iterators = iterators;
         }
 
         public Expression Item { get; }
 
-        public override IList<ComprehensionIterator> Iterators => _iterators;
+        public override ImmutableArray<ComprehensionIterator> Iterators { get; }
 
         public override string NodeName => "set comprehension";
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Item != null) yield return Item;
+            foreach (var iterator in Iterators) {
+                yield return iterator;
+            }
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 Item?.Walk(walker);
-                foreach (var ci in _iterators.MaybeEnumerate()) {
+                foreach (var ci in Iterators.MaybeEnumerate()) {
                     ci.Walk(walker);
                 }
             }
@@ -116,7 +125,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (Item != null) {
                     await Item.WalkAsync(walker, cancellationToken);
                 }
-                foreach (var ci in _iterators.MaybeEnumerate()) {
+                foreach (var ci in Iterators.MaybeEnumerate()) {
                     await ci.WalkAsync(walker, cancellationToken);
                 }
             }
@@ -127,26 +136,32 @@ namespace Microsoft.Python.Parsing.Ast {
     }
 
     public sealed class DictionaryComprehension : Comprehension {
-        private readonly ComprehensionIterator[] _iterators;
         private readonly SliceExpression _value;
 
-        public DictionaryComprehension(SliceExpression value, ComprehensionIterator[] iterators) {
+        public DictionaryComprehension(SliceExpression value, ImmutableArray<ComprehensionIterator> iterators) {
             _value = value;
-            _iterators = iterators;
+            Iterators = iterators;
         }
 
         public Expression Key => _value.SliceStart;
 
         public Expression Value => _value.SliceStop;
 
-        public override IList<ComprehensionIterator> Iterators => _iterators;
+        public override ImmutableArray<ComprehensionIterator> Iterators { get; }
 
         public override string NodeName => "dict comprehension";
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (_value != null) yield return _value;
+            foreach (var iterator in Iterators) {
+                yield return iterator;
+            }
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 _value?.Walk(walker);
-                foreach (var ci in _iterators.MaybeEnumerate()) {
+                foreach (var ci in Iterators.MaybeEnumerate()) {
                     ci.Walk(walker);
                 }
             }
@@ -158,7 +173,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (_value != null) {
                     await _value.WalkAsync(walker, cancellationToken);
                 }
-                foreach (var ci in _iterators.MaybeEnumerate()) {
+                foreach (var ci in Iterators.MaybeEnumerate()) {
                     await ci.WalkAsync(walker, cancellationToken);
                 }
             }

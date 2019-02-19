@@ -13,35 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Documents;
-
 namespace Microsoft.Python.Analysis.Dependencies {
-    /// <summary>
-    /// Represents a node in a chain of a document dependencies.
-    /// </summary>
-    internal interface IDependencyChainNode {
-        /// <summary>
-        /// Analyzable object (usually the document itself).
-        /// </summary>
-        IAnalyzable Analyzable { get; }
-
-        /// <summary>
-        /// Document to analyze.
-        /// </summary>
-        IDocument Document { get; }
-
-        /// <summary>
-        /// Version of the document at the time of the dependency chain creation.
-        /// Used to track if completed analysis matches current document snapshot.
-        /// </summary>
-        int SnapshotVersion { get; }
-
-        /// <summary>
-        /// Dependent documents to analyze after this one. Child chains
-        /// can be analyzed concurrently.
-        /// </summary>
-        IEnumerable<IDependencyChainNode> Children { get; }
+    internal interface IDependencyChainNode<out TValue> {
+        TValue Value { get; }
+        void MarkCompleted();
     }
 }

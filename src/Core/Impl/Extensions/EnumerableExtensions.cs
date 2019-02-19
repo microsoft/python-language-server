@@ -89,6 +89,48 @@ namespace Microsoft.Python.Core {
             }
         }
 
+        public static Dictionary<TKey, TValue> ToDictionary<TSource, TKey, TValue>(this IEnumerable<TSource> source, Func<TSource, int, TKey> keySelector, Func<TSource, int, TValue> valueSelector) {
+            var dictionary = source is IReadOnlyCollection<TSource> collection 
+                ? new Dictionary<TKey, TValue>(collection.Count) 
+                : new Dictionary<TKey, TValue>();
+
+            var index = 0;
+            foreach (var item in source) {
+                var key = keySelector(item, index);
+                var value = valueSelector(item, index);
+                dictionary.Add(key, value);
+                index++;
+            }
+
+            return dictionary;
+        }
+
+        public static IEnumerable<T> TraverseDepthFirst<T>(this T root, Func<T, IEnumerable<T>> selectChildren) {
+            var items = new Stack<T>();
+            var reverseChildren = new Stack<T>();
+
+            items.Push(root);
+            while (items.Count > 0) {
+                var item = items.Pop();
+                yield return item;
+
+                var children = selectChildren(item);
+                if (children == null) {
+                    continue;
+                }
+
+                foreach (var child in children) {
+                    reverseChildren.Push(child);
+                }
+
+                foreach (var child in reverseChildren) {
+                    items.Push(child);
+                }
+
+                reverseChildren.Clear();
+            }
+        }
+
         public static IEnumerable<T> TraverseBreadthFirst<T>(this T root, Func<T, IEnumerable<T>> selectChildren) {
             var items = new Queue<T>();
             items.Enqueue(root);

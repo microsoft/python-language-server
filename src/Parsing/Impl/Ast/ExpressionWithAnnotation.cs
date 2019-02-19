@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override string ToString() {
             if (Annotation != null) {
-                return Expression.ToString() + ":" + Annotation.ToString();
+                return Expression + ":" + Annotation;
             }
             return Expression.ToString();
         }
@@ -39,6 +40,8 @@ namespace Microsoft.Python.Parsing.Ast {
         internal override string CheckAssign() => null;
         internal override string CheckAugmentedAssign() => "cannot assign to " + NodeName;
         internal override string CheckDelete() => "cannot delete " + NodeName;
+
+        public override IEnumerable<Node> GetChildNodes() => new[] {Expression, Annotation};
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

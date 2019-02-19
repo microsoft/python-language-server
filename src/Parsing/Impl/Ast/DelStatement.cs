@@ -18,21 +18,21 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
-
     public class DelStatement : Statement {
-        private readonly Expression[] _expressions;
-
-        public DelStatement(Expression[] expressions) {
-            _expressions = expressions;
+        public DelStatement(ImmutableArray<Expression> expressions) {
+            Expressions = expressions;
         }
 
-        public IList<Expression> Expressions => _expressions;
+        public ImmutableArray<Expression> Expressions { get; }
+
+        public override IEnumerable<Node> GetChildNodes() => Expressions;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (var expression in _expressions.MaybeEnumerate()) {
+                foreach (var expression in Expressions.MaybeEnumerate()) {
                     expression.Walk(walker);
                 }
             }
@@ -41,7 +41,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                foreach (var expression in _expressions.MaybeEnumerate()) {
+                foreach (var expression in Expressions.MaybeEnumerate()) {
                     await expression.WalkAsync(walker, cancellationToken);
                 }
             }

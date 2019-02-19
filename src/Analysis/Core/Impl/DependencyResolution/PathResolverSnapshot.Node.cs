@@ -16,11 +16,12 @@
 using System.Diagnostics;
 using System.Text;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
-    public partial struct PathResolverSnapshot {
+    public partial class PathResolverSnapshot {
         [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
         private class Node {
             public readonly ImmutableArray<Node> Children;

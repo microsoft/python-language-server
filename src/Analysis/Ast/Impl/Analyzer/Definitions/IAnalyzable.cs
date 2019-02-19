@@ -21,38 +21,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// </summary>
     internal interface IAnalyzable {
         /// <summary>
-        /// Expected version of the analysis when asynchronous operations complete.
-        /// Typically every change to the document or documents that depend on it
-        /// increment the expected version. At the end of the analysis if the expected
-        /// version is still the same, the analysis is applied to the document and
-        /// becomes available to consumers.
-        /// </summary>
-        int ExpectedAnalysisVersion { get; }
-
-        /// <summary>
-        /// Notifies document that analysis is now pending. Typically document increments 
-        /// the expected analysis version. The method can be called repeatedly without
-        /// calling `CompleteAnalysis` first. The method is invoked for every dependency
-        /// in the chain to ensure that objects know that their dependencies have been
-        /// modified and the current analysis is no longer up to date.
-        /// </summary>
-        void NotifyAnalysisPending();
-
-        /// <summary>
         /// Notifies document that its analysis is now complete.
         /// </summary>
         /// <param name="analysis">Document analysis</param>
-        /// <returns>True if analysis was accepted, false if is is out of date.</returns>
-        bool NotifyAnalysisComplete(IDocumentAnalysis analysis);
-
-        /// <summary>
-        /// Notifies module that analysis has been canceled.
-        /// </summary>
-        void NotifyAnalysisCanceled();
-
-        /// <summary>
-        /// Notifies module that analysis has thrown an exception.
-        /// </summary>
-        void NotifyAnalysisFailed(Exception ex);
+        void NotifyAnalysisComplete(IDocumentAnalysis analysis);
     }
 }
