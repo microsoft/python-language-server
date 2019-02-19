@@ -16,17 +16,21 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public interface IPythonAnalyzer {
-        /// <summary>
-        /// Analyze single document.
-        /// </summary>
-        Task AnalyzeDocumentAsync(IDocument document, CancellationToken cancellationToken);
+        Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Analyze document with dependents.
+        /// Schedules module for re-analysis
         /// </summary>
-        Task AnalyzeDocumentDependencyChainAsync(IDocument document, CancellationToken cancellationToken);
+        void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int version, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime = 200, CancellationToken cancellationToken = default);
     }
 }

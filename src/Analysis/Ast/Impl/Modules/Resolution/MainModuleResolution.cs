@@ -21,11 +21,13 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
@@ -45,7 +47,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath);
 
             var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
-            _modules[BuiltinModuleName] = BuiltinsModule = b;
+            BuiltinsModule = b;
+            _modules[BuiltinModuleName] = new ModuleRef(b);
         }
 
         public async Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default) {
@@ -55,9 +58,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             _searchPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
             Debug.Assert(_searchPaths != null, "Should have search paths");
-            _searchPaths = _searchPaths != null
-                            ? _searchPaths.Concat(Configuration.SearchPaths ?? Array.Empty<string>()).ToArray()
-                            : Array.Empty<string>();
+            _searchPaths = _searchPaths != null 
+                ? Configuration.SearchPaths != null 
+                    ? _searchPaths.Concat(Configuration.SearchPaths).ToArray()
+                    : _searchPaths
+                : Array.Empty<string>();
 
             _log?.Log(TraceEventType.Information, "SearchPaths:");
             foreach (var s in _searchPaths) {
@@ -66,7 +71,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return _searchPaths;
         }
 
-        protected override async Task<IPythonModule> DoImportAsync(string name, CancellationToken cancellationToken = default) {
+        protected override IPythonModule CreateModule(string name) {
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (moduleImport == null) {
                 _log?.Log(TraceEventType.Verbose, "Import not found: ", name);
@@ -75,19 +80,25 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             // If there is a stub, make sure it is loaded and attached
             // First check stub next to the module.
-            var stub = await GetModuleStubAsync(name, moduleImport.ModulePath, cancellationToken);
-            // If nothing found, try Typeshed.
-            stub = stub ?? await _interpreter.TypeshedResolution.ImportModuleAsync(moduleImport.IsBuiltin ? name : moduleImport.FullName, cancellationToken);
+            if (!TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
+                // If nothing found, try Typeshed.
+                stub = _interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
+            }
+
+            // If stub is created and its path equals to module, return stub instead of module
+            if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
+                return stub;
+            }
 
             IPythonModule module;
             if (moduleImport.IsBuiltin) {
-                _log?.Log(TraceEventType.Verbose, "Import built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
+                _log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
                 module = new CompiledBuiltinPythonModule(name, stub, _services);
             } else if (moduleImport.IsCompiled) {
-                _log?.Log(TraceEventType.Verbose, "Import compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
+                _log?.Log(TraceEventType.Verbose, "Create compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
                 module = new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, _services);
             } else {
-                _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
+                _log?.Log(TraceEventType.Verbose, "Create: ", moduleImport.FullName, moduleImport.ModulePath);
                 var rdt = _services.GetService<IRunningDocumentTable>();
                 // TODO: handle user code and library module separately.
                 var mco = new ModuleCreationOptions {
@@ -99,7 +110,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 module = rdt.AddModule(mco);
             }
 
-            await module.LoadAndAnalyzeAsync(cancellationToken);
             return module;
         }
 
@@ -143,6 +153,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
             await BuiltinsModule.LoadAndAnalyzeAsync(cancellationToken);
 
+            Check.InvalidOperation(!(BuiltinsModule.Analysis is EmptyAnalysis), "After await");
+
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
             if (builtinModuleNamesMember.TryGetConstant<string>(out var s)) {
@@ -151,7 +163,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
         }
 
-        public override async Task ReloadAsync(CancellationToken cancellationToken = default) {
+        public async Task ReloadAsync(CancellationToken cancellationToken = default) {
             ModuleCache = new ModuleCache(_interpreter, _services);
 
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
@@ -169,25 +181,27 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             ReloadModulePaths(addedRoots);
         }
 
-        // For tests
-        internal void AddUnimportableModule(string moduleName)
-            => _modules[moduleName] = new SentinelModule(moduleName, _services);
+        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths)
+            => PathResolver.SetUserSearchPaths(searchPaths);
 
-        private async Task<IPythonModule> GetModuleStubAsync(string name, string modulePath, CancellationToken cancellationToken = default) {
+        // For tests
+        internal void AddUnimportableModule(string moduleName) 
+            => _modules[moduleName] = new ModuleRef(new SentinelModule(moduleName, _services));
+
+        private bool TryCreateModuleStub(string name, string modulePath, out IPythonModule module) {
             // First check stub next to the module.
             if (!string.IsNullOrEmpty(modulePath)) {
                 var pyiPath = Path.ChangeExtension(modulePath, "pyi");
                 if (_fs.FileExists(pyiPath)) {
-                    return await CreateStubModuleAsync(name, pyiPath, cancellationToken);
+                    module = new StubPythonModule(name, pyiPath, false, _services);
+                    return true;
                 }
             }
 
             // Try location of stubs that are in a separate folder next to the package.
             var stubPath = CurrentPathResolver.GetPossibleModuleStubPaths(name).FirstOrDefault(p => _fs.FileExists(p));
-            if (!string.IsNullOrEmpty(stubPath)) {
-               return await CreateStubModuleAsync(name, stubPath, cancellationToken);
-            }
-            return null;
+            module = !string.IsNullOrEmpty(stubPath) ? new StubPythonModule(name, stubPath, false, _services) : null;
+            return module != null;
         }
     }
 }

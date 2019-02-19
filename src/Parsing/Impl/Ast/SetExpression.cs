@@ -17,23 +17,25 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
 
     public class SetExpression : Expression {
-        private readonly Expression[] _items;
-
-        public SetExpression(params Expression[] items) {
-            _items = items;
+        public SetExpression(ImmutableArray<Expression> items) {
+            Items = items;
         }
 
-        public IList<Expression> Items => _items;
+        public ImmutableArray<Expression> Items { get; }
 
         public override string NodeName => "set display";
 
+        public override IEnumerable<Node> GetChildNodes() => Items.WhereNotNull();
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (var s in _items) {
+                foreach (var s in Items) {
                     s.Walk(walker);
                 }
             }
@@ -42,7 +44,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                foreach (var s in _items) {
+                foreach (var s in Items) {
                     await s.WalkAsync(walker, cancellationToken);
                 }
             }

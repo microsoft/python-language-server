@@ -40,7 +40,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     return new CompletionResult(await ExpressionCompletion.GetCompletionsFromMembersAsync(me.Target, scope, context, cancellationToken));
                 case ConstantExpression ce1 when ce1.Value is double || ce1.Value is float:
                     // no completions on integer ., the user is typing a float
-                case ConstantExpression ce2 when ce2.Value is string: 
+                    return CompletionResult.Empty;
+                case ConstantExpression ce2 when ce2.Value is string:
                     // no completions in strings
                 case null when context.Ast.IsInsideComment(context.Location):
                 case null when context.Ast.IsInsideString(context.Location):

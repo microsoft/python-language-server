@@ -41,8 +41,8 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
         public void SetBuiltins(in IEnumerable<string> builtinModuleNames) => _currentSnapshot = _currentSnapshot.SetBuiltins(builtinModuleNames);
         public void RemoveModulePath(in string path) => _currentSnapshot = _currentSnapshot.RemoveModulePath(path);
-        public bool TryAddModulePath(in string path, out string fullModuleName) {
-            _currentSnapshot = _currentSnapshot.AddModulePath(path, out fullModuleName);
+        public bool TryAddModulePath(in string path, in bool allowNonRooted, out string fullModuleName) {
+            _currentSnapshot = _currentSnapshot.AddModulePath(path, allowNonRooted, out fullModuleName);
             return fullModuleName != null;
         }
 

@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +35,12 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public int IfIndex { get; }
         public int ElseIndex { get; }
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Test != null) yield return Test;
+            if (TrueExpression != null) yield return TrueExpression;
+            if (FalseExpression != null) yield return FalseExpression;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

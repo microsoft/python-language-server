@@ -1,4 +1,4 @@
-﻿// Copyright(c) Microsoft Corporation
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,16 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -30,7 +28,7 @@ using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal abstract class ModuleResolutionBase {
-        protected readonly ConcurrentDictionary<string, IPythonModule> _modules = new ConcurrentDictionary<string, IPythonModule>();
+        protected readonly ConcurrentDictionary<string, ModuleRef> _modules = new ConcurrentDictionary<string, ModuleRef>();
         protected readonly IServiceContainer _services;
         protected readonly IPythonInterpreter _interpreter;
         protected readonly IFileSystem _fs;
@@ -65,8 +63,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         /// </summary>
         public IBuiltinsPythonModule BuiltinsModule { get; protected set; }
 
-        public abstract Task ReloadAsync(CancellationToken cancellationToken = default);
-        protected abstract Task<IPythonModule> DoImportAsync(string name, CancellationToken cancellationToken = default);
+        protected abstract IPythonModule CreateModule(string name);
 
         public IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken) {
             return ModulePath.GetModulesInPath(
@@ -77,18 +74,25 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
         }
 
-        public IPythonModule GetImportedModule(string name) {
+        public IPythonModule GetImportedModule(string name) 
+            => _modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
+
+        public IPythonModule GetOrLoadModule(string name) {
+            if (_modules.TryGetValue(name, out var moduleRef)) {
+                return moduleRef.GetOrCreate(name, this);
+            }
+
             var module = _interpreter.ModuleResolution.GetSpecializedModule(name);
             if (module != null) {
                 return module;
             }
-            return _modules.TryGetValue(name, out module) ? module : null;
+
+            moduleRef = _modules.GetOrAdd(name, new ModuleRef());
+            return moduleRef.GetOrCreate(name, this);
         }
 
-        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths)
-            => PathResolver.SetUserSearchPaths(searchPaths);
-
-        public void AddModulePath(string path) => PathResolver.TryAddModulePath(path, out var _);
+        public bool TryAddModulePath(in string path, out string fullModuleName) 
+            => PathResolver.TryAddModulePath(path, true, out fullModuleName);
 
         public ModulePath FindModule(string filePath) {
             var bestLibraryPath = string.Empty;
@@ -103,127 +107,57 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return ModulePath.FromFullPath(filePath, bestLibraryPath);
         }
 
-        public async Task<IPythonModule> ImportModuleAsync(string name, CancellationToken cancellationToken = default) {
-            if (name == BuiltinModuleName) {
-                return BuiltinsModule;
+        protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
+            foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(p))) {
+                PathResolver.TryAddModulePath(modulePath, false, out _);
             }
-            var module = _interpreter.ModuleResolution.GetSpecializedModule(name);
-            if (module != null) {
-                return module;
-            }
-            return await DoImportModuleAsync(name, cancellationToken);
         }
 
-        private async Task<IPythonModule> DoImportModuleAsync(string name, CancellationToken cancellationToken = default) {
-            for (var retries = 5; retries > 0; --retries) {
-                cancellationToken.ThrowIfCancellationRequested();
+        protected class ModuleRef {
+            private readonly object _syncObj = new object();
+            private IPythonModule _module;
+            private bool _creating;
 
-                // The call should be cancelled by the cancellation token, but since we
-                // are blocking here we wait for slightly longer. Timeouts are handled
-                // gracefully by TryImportModuleAsync(), so we want those to trigger if
-                // possible, but if all else fails then we'll abort and treat it as an
-                // error.
-                // (And if we've got a debugger attached, don't time out at all.)
-                TryImportModuleResult result;
-                try {
-                    result = await TryImportModuleAsync(name, cancellationToken);
-                } catch (OperationCanceledException) {
-                    _log?.Log(TraceEventType.Error, $"Import timeout: {name}");
-                    Debug.Fail("Import timeout");
+            public ModuleRef(IPythonModule module) {
+                _module = module;
+            }
+
+            public ModuleRef() {}
+
+            public IPythonModule Value {
+                get {
+                    lock (_syncObj) {
+                        return _module;
+                    }
+                }
+            }
+
+            public IPythonModule GetOrCreate(string name, ModuleResolutionBase mrb) {
+                bool create = false;
+                lock (_syncObj) {
+                    if (_module != null) {
+                        return _module;
+                    }
+
+                    if (!_creating) {
+                        create = true;
+                        _creating = true;
+                    }
+                }
+
+                if (!create) {
                     return null;
                 }
 
-                switch (result.Status) {
-                    case TryImportModuleResultCode.Success:
-                        return result.Module;
-                    case TryImportModuleResultCode.ModuleNotFound:
-                        _log?.Log(TraceEventType.Information, $"Import not found: {name}");
-                        return null;
-                    case TryImportModuleResultCode.NeedRetry:
-                    case TryImportModuleResultCode.Timeout:
-                        break;
-                    case TryImportModuleResultCode.NotSupported:
-                        _log?.Log(TraceEventType.Error, $"Import not supported: {name}");
-                        return null;
+                var module = mrb.CreateModule(name);
+                ((IDocument)module)?.Reset(null);
+
+                lock (_syncObj) {
+                    _creating = false;
+                    _module = module;
+                    return module;
                 }
             }
-            // Never succeeded, so just log the error and fail
-            _log?.Log(TraceEventType.Error, $"Retry import failed: {name}");
-            return null;
-        }
-
-        private async Task<TryImportModuleResult> TryImportModuleAsync(string name, CancellationToken cancellationToken = default) {
-            if (string.IsNullOrEmpty(name)) {
-                return TryImportModuleResult.ModuleNotFound;
-            }
-            if (name == BuiltinModuleName) {
-                return new TryImportModuleResult(BuiltinsModule);
-            }
-
-            Debug.Assert(!name.EndsWithOrdinal("."), $"{name} should not end with '.'");
-            // Return any existing module
-            if (_modules.TryGetValue(name, out var module) && module != null) {
-                if (module is SentinelModule) {
-                    // TODO: we can't just wait here or we hang. There are two cases:
-                    //   a. Recursion on the same analysis chain (A -> B -> A)
-                    //   b. Call from another chain (A -> B -> C and D -> B -> E).
-                    // TODO: Both should be resolved at the dependency chain level.
-                    //_log?.Log(TraceEventType.Warning, $"Recursive import: {name}");
-                }
-                return new TryImportModuleResult(module);
-            }
-
-            // Set up a sentinel so we can detect recursive imports
-            var sentinelValue = new SentinelModule(name, _services);
-            if (!_modules.TryAdd(name, sentinelValue)) {
-                // Try to get the new module, in case we raced with a .Clear()
-                if (_modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
-                    return new TryImportModuleResult(module);
-                }
-                // If we reach here, the race is too complicated to recover
-                // from. Signal the caller to try importing again.
-                _log?.Log(TraceEventType.Warning, $"Retry import: {name}");
-                return TryImportModuleResult.NeedRetry;
-            }
-
-            // Do normal searches
-            try {
-                module = await DoImportAsync(name, cancellationToken);
-            } catch (OperationCanceledException) {
-                _log?.Log(TraceEventType.Error, $"Import timeout {name}");
-                return TryImportModuleResult.Timeout;
-            }
-
-            if (ModuleCache != null) {
-                module = module ?? await ModuleCache.ImportFromCacheAsync(name, cancellationToken);
-            }
-
-            // Replace our sentinel
-            if (!_modules.TryUpdate(name, module, sentinelValue)) {
-                // Try to get the new module, in case we raced
-                if (_modules.TryGetValue(name, out module) && !(module is SentinelModule)) {
-                    return new TryImportModuleResult(module);
-                }
-                // If we reach here, the race is too complicated to recover
-                // from. Signal the caller to try importing again.
-                _log?.Log(TraceEventType.Warning, $"Retry import: {name}");
-                return TryImportModuleResult.NeedRetry;
-            }
-
-            return new TryImportModuleResult(module);
-        }
-
-        protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
-            foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(p))) {
-                PathResolver.TryAddModulePath(modulePath, out _);
-            }
-        }
-
-        protected async Task<IPythonModule> CreateStubModuleAsync(string moduleName, string filePath, CancellationToken cancellationToken = default) {
-            _log?.Log(TraceEventType.Verbose, "Import type stub", moduleName, filePath);
-            var module = new StubPythonModule(moduleName, filePath, _services);
-            await module.LoadAndAnalyzeAsync(cancellationToken);
-            return module;
         }
     }
 }

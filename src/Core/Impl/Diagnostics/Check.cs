@@ -60,8 +60,29 @@ namespace Microsoft.Python.Core.Diagnostics {
         }
 
         [DebuggerStepThrough]
+        public static void ArgumentOutOfRange(string argumentName, bool isInRange) {
+            if (isInRange) {
+                throw new ArgumentOutOfRangeException(argumentName);
+            }
+        }
+
+        [DebuggerStepThrough]
+        public static void ArgumentOutOfRange<T>(string argumentName, T value, params T[] allowedValues) where T : Enum {
+            if (Array.IndexOf(allowedValues, value) == -1) {
+                throw new ArgumentOutOfRangeException(argumentName);
+            }
+        }
+
+        [DebuggerStepThrough]
         public static void InvalidOperation(Func<bool> predicate, string message = null) {
             if (!predicate()) {
+                throw new InvalidOperationException(message ?? string.Empty);
+            }
+        }
+
+        [DebuggerStepThrough]
+        public static void InvalidOperation(bool condition, string message = null) {
+            if (!condition) {
                 throw new InvalidOperationException(message ?? string.Empty);
             }
         }

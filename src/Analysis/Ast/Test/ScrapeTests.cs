@@ -96,7 +96,8 @@ namespace Microsoft.Python.Analysis.Tests {
                 }
 
                 Console.WriteLine(@"Importing {0} from {1}", mp.ModuleName, mp.SourceFile);
-                var mod = await interpreter.ModuleResolution.ImportModuleAsync(mp.ModuleName);
+                var mod = interpreter.ModuleResolution.GetOrLoadModule(mp.ModuleName);
+                await mod.LoadAndAnalyzeAsync();
                 Assert.IsInstanceOfType(mod, typeof(CompiledPythonModule));
 
                 await ((ModuleCache)interpreter.ModuleResolution.ModuleCache).CacheWritingTask;
@@ -147,7 +148,8 @@ namespace Microsoft.Python.Analysis.Tests {
             var services = await CreateServicesAsync(moduleDirectory, configuration);
             var interpreter = services.GetService<IPythonInterpreter>();
 
-            var mod = await interpreter.ModuleResolution.ImportModuleAsync(interpreter.ModuleResolution.BuiltinModuleName, new CancellationTokenSource(5000).Token);
+            var mod = interpreter.ModuleResolution.GetOrLoadModule(interpreter.ModuleResolution.BuiltinModuleName);
+            await mod.LoadAndAnalyzeAsync(new CancellationTokenSource(5000).Token);
             Assert.IsInstanceOfType(mod, typeof(BuiltinsPythonModule));
             var modPath = interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath);
 
@@ -277,28 +279,29 @@ namespace Microsoft.Python.Analysis.Tests {
 
             foreach (var r in set) {
                 var modName = r.Item1;
-                var mod = await interpreter.ModuleResolution.ImportModuleAsync(r.Item2);
+
+                var mod = interpreter.ModuleResolution.GetOrLoadModule(r.Item2);
+                await mod.LoadAndAnalyzeAsync(new CancellationTokenSource(10000).Token);
 
                 anyExtensionSeen |= modName.IsNativeExtension;
                 switch (mod) {
                     case null:
                         Trace.TraceWarning("failed to import {0} from {1}", modName.ModuleName, modName.SourceFile);
                         break;
-                    case CompiledPythonModule _: {
-                            var errors = ((IDocument)mod).GetParseErrors().ToArray();
-                            if (errors.Any()) {
-                                anyParseError = true;
-                                Trace.TraceError("Parse errors in {0}", modName.SourceFile);
-                                foreach (var e in errors) {
-                                    Trace.TraceError(e.Message);
-                                }
-                            } else {
-                                anySuccess = true;
-                                anyExtensionSuccess |= modName.IsNativeExtension;
+                    case CompiledPythonModule compiledPythonModule:
+                        var errors = compiledPythonModule.GetParseErrors().ToArray();
+                        if (errors.Any()) {
+                            anyParseError = true;
+                            Trace.TraceError("Parse errors in {0}", modName.SourceFile);
+                            foreach (var e in errors) {
+                                Trace.TraceError(e.Message);
                             }
-
-                            break;
+                        } else {
+                            anySuccess = true;
+                            anyExtensionSuccess |= modName.IsNativeExtension;
                         }
+
+                        break;
                     case IPythonModule _: {
                             var filteredErrors = ((IDocument)mod).GetParseErrors().Where(e => !e.Message.Contains("encoding problem")).ToArray();
                             if (filteredErrors.Any()) {
