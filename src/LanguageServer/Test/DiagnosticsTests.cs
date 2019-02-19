@@ -132,7 +132,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 5)
             } });
 
-            await doc.GetAnalysisAsync();
+            await doc.GetAnalysisAsync(10000);
 
             PublishDiagnostics();
             reported.Count.Should().Be(1);
@@ -227,7 +227,9 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 5)
             } });
 
-            await doc1.GetAnalysisAsync();
+            await doc1.GetAstAsync();
+            await doc1.GetAnalysisAsync(10000);
+
             ds.Diagnostics[doc1.Uri].Count.Should().Be(0);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
 
@@ -241,7 +243,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 6)
             } });
 
-            await doc1.GetAnalysisAsync();
+            await doc1.GetAnalysisAsync(1000);
             ds.Diagnostics[doc1.Uri].Count.Should().Be(1);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
 

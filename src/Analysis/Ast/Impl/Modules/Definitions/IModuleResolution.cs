@@ -51,12 +51,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         IPythonModule GetOrLoadModule(string name);
 
-        /// <summary>
-        /// Sets user search paths. This changes <see cref="CurrentPathResolver"/>.
-        /// </summary>
-        /// <returns>Added roots.</returns>
-        IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths);
-
         Task ReloadAsync(CancellationToken token = default);
     }
 }
