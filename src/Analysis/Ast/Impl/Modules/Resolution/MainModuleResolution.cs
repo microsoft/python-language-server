@@ -100,7 +100,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return stub;
             }
 
-            IPythonModule module;
             if (moduleImport.IsBuiltin) {
                 _log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
                 module = new CompiledBuiltinPythonModule(name, stub, _services);
@@ -109,8 +108,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 module = new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, _services);
             } else {
                 _log?.Log(TraceEventType.Verbose, "Create: ", moduleImport.FullName, moduleImport.ModulePath);
-                var rdt = _services.GetService<IRunningDocumentTable>();
-                _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
                 // Module inside workspace == user code.
                 var moduleType = moduleImport.ModulePath.IsUnderRoot(_root, _fs.StringComparison)
                     ? ModuleType.User : ModuleType.Library;
@@ -217,8 +214,5 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             module = !string.IsNullOrEmpty(stubPath) ? new StubPythonModule(name, stubPath, false, _services) : null;
             return module != null;
         }
-
-        protected override void ReportModuleNotFound(string name)
-            => _log?.Log(TraceEventType.Information, $"Import not found: {name}");
     }
 }
