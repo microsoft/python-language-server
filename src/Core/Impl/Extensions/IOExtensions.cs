@@ -126,8 +126,11 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public static bool IsUnderRoot(this string path, string root, StringComparison comparison) {
-            var normalized = PathUtils.NormalizePath(path);
-            return normalized.StartsWith(root, comparison);
+            if (!string.IsNullOrEmpty(root)) {
+                var normalized = PathUtils.NormalizePath(path);
+                return normalized.StartsWith(root, comparison);
+            }
+            return false;
         }
     }
 }
