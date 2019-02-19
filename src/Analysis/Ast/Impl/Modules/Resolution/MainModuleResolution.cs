@@ -27,7 +27,6 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 
