@@ -302,7 +302,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private IPythonType CreateOptional(IReadOnlyList<IPythonType> typeArgs) {
             if (typeArgs.Count == 1) {
-                return TypingTypeFactory.CreateOptionalType(this, typeArgs[0]);
+                return typeArgs[0];
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
