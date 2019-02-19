@@ -57,7 +57,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             } });
 
             await doc.GetAstAsync();
-            await doc.GetAnalysisAsync(0);
+            await doc.GetAnalysisAsync(10000);
             ds.Diagnostics[doc.Uri].Count.Should().Be(0);
 
             doc.Update(new[] {new DocumentChange {
@@ -132,6 +132,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 5)
             } });
 
+            await doc.GetAstAsync();
             await doc.GetAnalysisAsync(10000);
 
             PublishDiagnostics();
