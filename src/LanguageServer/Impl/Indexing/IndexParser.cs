@@ -21,7 +21,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class IndexParser : IIndexParser {
@@ -31,7 +30,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private readonly object _syncObj = new object();
         private CancellationTokenSource _linkedParseCts;
-        private Task _parseTask;
 
         public IndexParser(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version) {
             Check.ArgumentNotNull(nameof(symbolIndex), symbolIndex);
@@ -56,7 +54,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _linkedParseCts?.Cancel();
             _linkedParseCts?.Dispose();
             _linkedParseCts = null;
-            _parseTask = null;
         }
 
         private void Parse(string path, CancellationTokenSource parseCts) {
@@ -90,8 +87,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 _linkedParseCts?.Cancel();
                 _linkedParseCts?.Dispose();
                 _linkedParseCts = null;
-
-                _parseTask = null;
             }
         }
     }
