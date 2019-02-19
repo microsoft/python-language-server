@@ -16,6 +16,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -42,7 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
             switch (imports) {
                 case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
-                    ImportMembersFromSelf(node, cancellationToken);
+                    ImportMembersFromSelf(node);
                     break;
                 case ModuleImport moduleImport:
                     ImportMembersFromModule(node, moduleImport.FullName, cancellationToken);
@@ -60,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        private void ImportMembersFromSelf(FromImportStatement node, CancellationToken cancellationToken = default) {
+        private void ImportMembersFromSelf(FromImportStatement node) {
             var names = node.Names;
             var asNames = node.AsNames;
 

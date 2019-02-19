@@ -27,7 +27,25 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Diagnostics {
     internal sealed class DiagnosticsService : IDiagnosticsService, IDisposable {
-        private readonly Dictionary<Uri, List<DiagnosticsEntry>> _diagnostics = new Dictionary<Uri, List<DiagnosticsEntry>>();
+        private sealed class DocumentDiagnostics {
+            private DiagnosticsEntry[] _entries;
+
+            public DiagnosticsEntry[] Entries {
+                get => _entries ?? Array.Empty<DiagnosticsEntry>();
+                set {
+                    _entries = value;
+                    Changed = true;
+                }
+            }
+            public bool Changed { get; set; }
+
+            public void Clear() {
+                Changed = _entries.Length > 0;
+                _entries = Array.Empty<DiagnosticsEntry>();
+            }
+        }
+
+        private readonly Dictionary<Uri, DocumentDiagnostics> _diagnostics = new Dictionary<Uri, DocumentDiagnostics>();
         private readonly DisposableBag _disposables = DisposableBag.Create<DiagnosticsService>();
         private readonly IServiceContainer _services;
         private readonly IClientApplication _clientApp;
@@ -35,7 +53,6 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private DiagnosticsSeverityMap _severityMap = new DiagnosticsSeverityMap();
         private IRunningDocumentTable _rdt;
         private DateTime _lastChangeTime;
-        private bool _changed;
 
         private IRunningDocumentTable Rdt => _rdt ?? (_rdt = _services.GetService<IRunningDocumentTable>());
 
@@ -44,7 +61,6 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             _clientApp = services.GetService<IClientApplication>();
 
             var idleTimeService = services.GetService<IIdleTimeService>();
-
             if (idleTimeService != null) {
                 idleTimeService.Idle += OnIdle;
                 idleTimeService.Closing += OnClosing;
@@ -60,32 +76,31 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             get {
                 lock (_lock) {
                     return _diagnostics.ToDictionary(kvp => kvp.Key,
-                        kvp => kvp.Value
-                            .Where(e => DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity) != Severity.Suppressed)
-                            .Select(e => new DiagnosticsEntry(
-                                e.Message,
-                                e.SourceSpan,
-                                e.ErrorCode,
-                                DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity))
-                            ).ToList() as IReadOnlyList<DiagnosticsEntry>);
+                        kvp => FilterBySeverityMap(kvp.Value).ToList() as IReadOnlyList<DiagnosticsEntry>);
                 }
             }
         }
 
         public void Replace(Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
             lock (_lock) {
-                _diagnostics[documentUri] = entries.ToList();
+                if (!_diagnostics.TryGetValue(documentUri, out var documentDiagnostics)) {
+                    documentDiagnostics = new DocumentDiagnostics();
+                    _diagnostics[documentUri] = documentDiagnostics;
+                }
+                documentDiagnostics.Entries = entries.ToArray();
+                documentDiagnostics.Changed = true;
                 _lastChangeTime = DateTime.Now;
-                _changed = true;
             }
         }
 
         public void Remove(Uri documentUri) {
             lock (_lock) {
                 // Before removing the document, make sure we clear its diagnostics.
-                _diagnostics[documentUri] = new List<DiagnosticsEntry>();
-                PublishDiagnostics();
-                _diagnostics.Remove(documentUri);
+                if (_diagnostics.TryGetValue(documentUri, out var d)) {
+                    d.Clear();
+                    PublishDiagnostics();
+                    _diagnostics.Remove(documentUri);
+                }
             }
         }
 
@@ -96,6 +111,10 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             set {
                 lock (_lock) {
                     _severityMap = value;
+                    foreach (var d in _diagnostics) {
+                        _diagnostics[d.Key].Changed = true;
+                        _lastChangeTime = DateTime.Now;
+                    }
                     PublishDiagnostics();
                 }
             }
@@ -110,23 +129,28 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private void OnClosing(object sender, EventArgs e) => Dispose();
 
         private void OnIdle(object sender, EventArgs e) {
-            if (_changed && (DateTime.Now - _lastChangeTime).TotalMilliseconds > PublishingDelay) {
+            if ((DateTime.Now - _lastChangeTime).TotalMilliseconds > PublishingDelay) {
+                ConnectToRdt();
                 PublishDiagnostics();
             }
         }
 
         private void PublishDiagnostics() {
-            KeyValuePair<Uri, IReadOnlyList<DiagnosticsEntry>>[] diagnostics;
+            var diagnostics = new List<KeyValuePair<Uri, DocumentDiagnostics>>();
             lock (_lock) {
-                diagnostics = Diagnostics.ToArray();
-                _changed = false;
+                foreach (var d in _diagnostics) {
+                    if (d.Value.Changed) {
+                        diagnostics.Add(d);
+                        _diagnostics[d.Key].Changed = false;
+                    }
+                }
             }
 
             foreach (var kvp in diagnostics) {
                 var parameters = new PublishDiagnosticsParams {
                     uri = kvp.Key,
-                    diagnostics = Rdt.GetDocument(kvp.Key)?.IsOpen == true 
-                            ? kvp.Value.Select(ToDiagnostic).ToArray()
+                    diagnostics = Rdt.GetDocument(kvp.Key)?.IsOpen == true
+                            ? FilterBySeverityMap(kvp.Value).Select(ToDiagnostic).ToArray()
                             : Array.Empty<Diagnostic>()
                 };
                 _clientApp.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
@@ -136,7 +160,6 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private void ClearAllDiagnostics() {
             lock (_lock) {
                 _diagnostics.Clear();
-                _changed = false;
             }
         }
 
@@ -164,6 +187,49 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                 code = e.ErrorCode,
                 message = e.Message,
             };
+        }
+
+        private IEnumerable<DiagnosticsEntry> FilterBySeverityMap(DocumentDiagnostics d)
+           => d.Entries
+                .Where(e => DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity) != Severity.Suppressed)
+                .Select(e => new DiagnosticsEntry(
+                    e.Message,
+                    e.SourceSpan,
+                    e.ErrorCode,
+                    DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity))
+                );
+
+        private void ConnectToRdt() {
+            if (_rdt == null) {
+                _rdt = _services.GetService<IRunningDocumentTable>();
+                if (_rdt != null) {
+                    _rdt.Opened += OnOpenDocument;
+                    _rdt.Closed += OnCloseDocument;
+
+                    _disposables
+                        .Add(() => _rdt.Opened -= OnOpenDocument)
+                        .Add(() => _rdt.Closed -= OnCloseDocument);
+                }
+            }
+        }
+
+        private void OnOpenDocument(object sender, DocumentEventArgs e) {
+            lock (_lock) {
+                if(_diagnostics.TryGetValue(e.Document.Uri, out var d)) {
+                    d.Changed = d.Entries.Length > 0;
+                }
+            }
+        }
+
+        private void OnCloseDocument(object sender, DocumentEventArgs e) {
+            lock (_lock) {
+                // Before removing the document, make sure we clear its diagnostics.
+                if (_diagnostics.TryGetValue(e.Document.Uri, out var d)) {
+                    d.Clear();
+                    PublishDiagnostics();
+                    _diagnostics.Remove(e.Document.Uri);
+                }
+            }
         }
     }
 }
