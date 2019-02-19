@@ -243,7 +243,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 6)
             } });
 
-            await doc1.GetAnalysisAsync(1000);
+            await doc1.GetAstAsync();
+            await doc1.GetAnalysisAsync(10000);
             ds.Diagnostics[doc1.Uri].Count.Should().Be(1);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
 
