@@ -27,8 +27,8 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
@@ -211,8 +211,5 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             module = !string.IsNullOrEmpty(stubPath) ? new StubPythonModule(name, stubPath, false, _services) : null;
             return module != null;
         }
-
-        protected override void ReportModuleNotFound(string name)
-            => _log?.Log(TraceEventType.Information, $"Import not found: {name}");
     }
 }

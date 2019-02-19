@@ -369,7 +369,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
                 // Do not report issues with libraries or stubs
                 if (sink != null) {
-                    _diagnosticsService?.Replace(Uri, _parseErrors.Concat(Analysis.Diagnostics));
+                    _diagnosticsService?.Replace(Uri, _parseErrors);
                 }
 
                 ContentState = State.Parsed;
