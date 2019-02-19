@@ -139,5 +139,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 !string.IsNullOrEmpty(ModulePath.GetPackageInitPy(directory)) :
                 _fs.DirectoryExists(directory);
 
+        protected override void ReportModuleNotFound(string name)
+            => _log?.Log(TraceEventType.Verbose, $"Typeshed stub not found for '{name}'");
     }
 }

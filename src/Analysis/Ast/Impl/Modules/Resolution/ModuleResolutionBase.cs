@@ -159,5 +159,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 }
             }
         }
+
+        protected abstract void ReportModuleNotFound(string name);
     }
 }
