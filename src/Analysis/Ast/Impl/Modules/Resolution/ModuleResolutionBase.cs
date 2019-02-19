@@ -92,7 +92,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public bool TryAddModulePath(in string path, out string fullModuleName) 
-            => PathResolver.TryAddModulePath(path, out fullModuleName);
+            => PathResolver.TryAddModulePath(path, true, out fullModuleName);
 
         public ModulePath FindModule(string filePath) {
             var bestLibraryPath = string.Empty;
@@ -109,7 +109,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
             foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(p))) {
-                PathResolver.TryAddModulePath(modulePath, out _);
+                PathResolver.TryAddModulePath(modulePath, false, out _);
             }
         }
 

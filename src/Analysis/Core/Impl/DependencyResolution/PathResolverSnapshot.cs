@@ -401,9 +401,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private Node GetOrCreateRoot(string path)
             => _roots.FirstOrDefault(r => r.Name.PathEquals(path)) ?? Node.CreateRoot(path);
 
-        public PathResolverSnapshot AddModulePath(in string modulePath, out string fullModuleName) {
+        public PathResolverSnapshot AddModulePath(in string modulePath, in bool allowNonRooted, out string fullModuleName) {
             var isFound = TryFindModule(modulePath, out var lastEdge, out var unmatchedPathSpan);
-            if (unmatchedPathSpan.Source == default) {
+            if (unmatchedPathSpan.Source == default || (!allowNonRooted && lastEdge.IsNonRooted)) {
                 // Not a module
                 fullModuleName = null;
                 return this;
