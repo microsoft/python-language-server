@@ -212,8 +212,5 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             module = !string.IsNullOrEmpty(stubPath) ? new StubPythonModule(name, stubPath, false, _services) : null;
             return module != null;
         }
-
-        protected override void ReportModuleNotFound(string name)
-            => _log?.Log(TraceEventType.Information, $"Import not found: {name}");
     }
 }
