@@ -123,10 +123,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 _fileCts.Cancel();
                 _fileCts.Dispose();
                 _fileCts = new CancellationTokenSource();
-                // Re use current tcs if possible
-                if (_fileTcs.Task.IsCompleted) {
-                    _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
-                }
+
+                _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
                 wasLastTaskDisposed = true;
             }
         }
