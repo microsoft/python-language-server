@@ -13,18 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
-
     public class ExpressionStatement : Statement {
         public ExpressionStatement(Expression expression) {
             Expression = expression;
         }
 
         public Expression Expression { get; }
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Expression != null) yield return Expression;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

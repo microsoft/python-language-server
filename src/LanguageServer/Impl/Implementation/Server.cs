@@ -105,7 +105,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _services.AddService(new DiagnosticsService(_services));
 
-            var analyzer = new PythonAnalyzer(_services, @params.rootPath);
+            var analyzer = new PythonAnalyzer(_services);
             _services.AddService(analyzer);
 
             _services.AddService(new RunningDocumentTable(@params.rootPath, _services));

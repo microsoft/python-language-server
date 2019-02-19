@@ -32,18 +32,6 @@ namespace Microsoft.Python.Core {
             return cancellationToken.Register(action.Invoke);
         }
 
-        private struct TrySetResultStateAction<T> {
-            public TaskCompletionSource<T> Tcs { get; }
-            public T Result { get; }
-
-            public TrySetResultStateAction(TaskCompletionSource<T> tcs, T result) {
-                Tcs = tcs;
-                Result = result;
-            }
-
-            public void Invoke(object state) => Tcs.TrySetResult(Result);
-        }
-
         private struct CancelOnTokenAction<T> {
             private readonly TaskCompletionSource<T> _taskCompletionSource;
             private readonly CancellationToken _cancellationToken;

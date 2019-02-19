@@ -16,18 +16,17 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ImportStatement : Statement {
-        private readonly ModuleName[] _names;
-        private readonly NameExpression[] _asNames;
-
-        public ImportStatement(ModuleName[] names, NameExpression[] asNames, bool forceAbsolute) {
-            _names = names;
-            _asNames = asNames;
+        public ImportStatement(ImmutableArray<ModuleName> names, ImmutableArray<NameExpression> asNames, bool forceAbsolute) {
+            Names = names;
+            AsNames = asNames;
             ForceAbsolute = forceAbsolute;
         }
 
@@ -40,8 +39,11 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public PythonReference[] GetReferences(PythonAst ast) => GetVariableReferences(this, ast);
 
-        public IList<DottedName> Names => _names;
-        public IList<NameExpression> AsNames => _asNames;
+        public ImmutableArray<ModuleName> Names { get; }
+        public ImmutableArray<NameExpression> AsNames { get; }
+
+        // TODO: return names and aliases when they are united into one node
+        public override IEnumerable<Node> GetChildNodes() => Enumerable.Empty<Node>();
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -56,78 +58,13 @@ namespace Microsoft.Python.Parsing.Ast {
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        /// <summary>
-        /// Removes the import at the specified index (which must be in the range of
-        /// the Names property) and returns a new ImportStatement which is the same
-        /// as this one minus the imported name.  Preserves all round-tripping metadata
-        /// in the process.
-        /// 
-        /// New in 1.1.
-        /// </summary>
-        public ImportStatement RemoveImport(PythonAst ast, int index) {
-            if (index < 0 || index >= _names.Length) {
-                throw new ArgumentOutOfRangeException("index");
-            }
-            if (ast == null) {
-                throw new ArgumentNullException("ast");
-            }
-
-            var names = new ModuleName[_names.Length - 1];
-            var asNames = _asNames == null ? null : new NameExpression[_asNames.Length - 1];
-            var asNameWhiteSpace = this.GetNamesWhiteSpace(ast);
-            var itemWhiteSpace = this.GetListWhiteSpace(ast);
-            var newAsNameWhiteSpace = new List<string>();
-            var newListWhiteSpace = new List<string>();
-            var asIndex = 0;
-            for (int i = 0, write = 0; i < _names.Length; i++) {
-                var includingCurrentName = i != index;
-
-                // track the white space, this needs to be kept in sync w/ ToCodeString and how the
-                // parser creates the white space.
-                if (i > 0 && itemWhiteSpace != null) {
-                    if (includingCurrentName) {
-                        newListWhiteSpace.Add(itemWhiteSpace[i - 1]);
-                    }
-                }
-
-                if (includingCurrentName) {
-                    names[write] = _names[i];
-
-                    if (_asNames != null) {
-                        asNames[write] = _asNames[i];
-                    }
-
-                    write++;
-                }
-
-                if (AsNames[i] != null && includingCurrentName) {
-                    if (asNameWhiteSpace != null) {
-                        newAsNameWhiteSpace.Add(asNameWhiteSpace[asIndex++]);
-                    }
-
-                    if (_asNames[i].Name.Length != 0) {
-                        if (asNameWhiteSpace != null) {
-                            newAsNameWhiteSpace.Add(asNameWhiteSpace[asIndex++]);
-                        }
-                    }
-                }
-            }
-
-            var res = new ImportStatement(names, asNames, ForceAbsolute);
-            ast.CopyAttributes(this, res);
-            ast.SetAttribute(res, NodeAttributes.NamesWhiteSpace, newAsNameWhiteSpace.ToArray());
-            ast.SetAttribute(res, NodeAttributes.ListWhiteSpace, newListWhiteSpace.ToArray());
-
-            return res;
-        }
-
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             var asNameWhiteSpace = this.GetNamesWhiteSpace(ast);
             if (format.ReplaceMultipleImportsWithMultipleStatements) {
                 var proceeding = this.GetPreceedingWhiteSpace(ast);
                 var additionalProceeding = format.GetNextLineProceedingText(proceeding);
                 
-                for (int i = 0, asIndex = 0; i < _names.Length; i++) {
+                for (int i = 0, asIndex = 0; i < Names.Count; i++) {
                     if (i == 0) {
                         format.ReflowComment(res, proceeding) ;
                     } else {
@@ -135,7 +72,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     }
                     res.Append("import");
 
-                    _names[i].AppendCodeString(res, ast, format);
+                    Names[i].AppendCodeString(res, ast, format);
                     AppendAs(res, ast, format, asNameWhiteSpace, i, ref asIndex);
                 }
                 return;
@@ -144,13 +81,13 @@ namespace Microsoft.Python.Parsing.Ast {
                 res.Append("import");
 
                 var itemWhiteSpace = this.GetListWhiteSpace(ast);
-                for (int i = 0, asIndex = 0; i < _names.Length; i++) {
+                for (int i = 0, asIndex = 0; i < Names.Count; i++) {
                     if (i > 0 && itemWhiteSpace != null) {
                         res.Append(itemWhiteSpace[i - 1]);
                         res.Append(',');
                     }
 
-                    _names[i].AppendCodeString(res, ast, format);
+                    Names[i].AppendCodeString(res, ast, format);
                     AppendAs(res, ast, format, asNameWhiteSpace, i, ref asIndex);
                 }
             }
@@ -163,12 +100,12 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
                 res.Append("as");
 
-                if (_asNames[i].Name.Length != 0) {
+                if (AsNames[i].Name.Length != 0) {
                     if (asNameWhiteSpace != null) {
                         res.Append(asNameWhiteSpace[asIndex++]);
                     }
 
-                    _asNames[i].AppendCodeString(res, ast, format);
+                    AsNames[i].AppendCodeString(res, ast, format);
                 }
             }
         }

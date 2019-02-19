@@ -18,27 +18,33 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class PrintStatement : Statement {
-        private readonly Expression[] _expressions;
-
-        public PrintStatement(Expression destination, Expression[] expressions, bool trailingComma) {
+        public PrintStatement(Expression destination, ImmutableArray<Expression> expressions, bool trailingComma) {
             Destination = destination;
-            _expressions = expressions;
+            Expressions = expressions;
             TrailingComma = trailingComma;
         }
 
         public Expression Destination { get; }
 
-        public IList<Expression> Expressions => _expressions;
+        public ImmutableArray<Expression> Expressions { get; }
 
         public bool TrailingComma { get; }
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Destination != null) yield return Destination;
+            foreach (var expression in Expressions) {
+                yield return expression;
+            }
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 Destination?.Walk(walker);
-                foreach (var expression in _expressions.MaybeEnumerate()) {
+                foreach (var expression in Expressions.MaybeEnumerate()) {
                     expression.Walk(walker);
                 }
             }
@@ -50,7 +56,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (Destination != null) {
                     await Destination.WalkAsync(walker, cancellationToken);
                 }
-                foreach (var expression in _expressions.MaybeEnumerate()) {
+                foreach (var expression in Expressions.MaybeEnumerate()) {
                     await expression.WalkAsync(walker, cancellationToken);
                 }
             }
@@ -64,7 +70,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 res.Append(this.GetSecondWhiteSpace(ast));
                 res.Append(">>");
                 Destination.AppendCodeString(res, ast, format);
-                if (_expressions.Length > 0) {
+                if (Expressions.Count > 0) {
                     res.Append(this.GetThirdWhiteSpace(ast));
                     res.Append(',');
                 }

@@ -89,10 +89,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
             if (activeParameter >= 0) {
                 // TODO: Better selection of active signature by argument set
                 activeSignature = signatures
-                                      .Select((s, i) => Tuple.Create(s, i))
-                                      .OrderBy(t => t.Item1.parameters.Length)
-                                      .FirstOrDefault(t => t.Item1.parameters.Length > activeParameter)
-                                      ?.Item2 ?? -1;
+                    .Select((s, i) => Tuple.Create(s, i))
+                    .OrderBy(t => t.Item1.parameters.Length)
+                    .FirstOrDefault(t => t.Item1.parameters.Length > activeParameter)
+                    ?.Item2 ?? -1;
             }
 
             activeSignature = activeSignature >= 0

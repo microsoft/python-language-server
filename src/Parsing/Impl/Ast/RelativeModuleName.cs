@@ -15,10 +15,11 @@
 // permissions and limitations under the License.
 
 using System.Text;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class RelativeModuleName : ModuleName {
-        public RelativeModuleName(NameExpression[]/*!*/ names, int dotCount)
+        public RelativeModuleName(ImmutableArray<NameExpression> names, int dotCount)
             : base(names) {
             DotCount = dotCount;
         }
