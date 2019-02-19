@@ -17,6 +17,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private CancellationTokenSource _fileCts = new CancellationTokenSource();
         private TaskCompletionSource<IEnumerable<HierarchicalSymbol>> _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
+        private bool wasLastTaskDisposed = true;
 
         public MostRecentDocumentSymbols(string path, ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version) {
             _path = path;
@@ -31,6 +32,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 CancelExistingTask();
                 currentCt = _fileCts.Token;
                 currentTcs = _fileTcs;
+                wasLastTaskDisposed = false;
             }
             ParseAsync(currentCt).SetCompletionResultTo(currentTcs);
         }
@@ -42,6 +44,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 CancelExistingTask();
                 currentCt = _fileCts.Token;
                 currentTcs = _fileTcs;
+                wasLastTaskDisposed = false;
             }
             AddAsync(doc, currentCt).SetCompletionResultTo(currentTcs);
         }
@@ -53,6 +56,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 CancelExistingTask();
                 currentCt = _fileCts.Token;
                 currentTcs = _fileTcs;
+                wasLastTaskDisposed = false;
             }
             ReIndexAsync(doc, currentCt).SetCompletionResultTo(currentTcs);
         }
@@ -74,18 +78,16 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public void Dispose() {
             lock (_syncObj) {
-                _fileCts?.Cancel();
-                _fileCts?.Dispose();
-                _fileCts = null;
+                if (!wasLastTaskDisposed) {
+                    _fileCts?.Cancel();
+                    _fileCts?.Dispose();
+                    _fileCts = null;
 
-                _fileTcs.TrySetCanceled();
-
+                    wasLastTaskDisposed = true;
+                    _fileTcs.TrySetCanceled();
+                }
                 _indexParser.Dispose();
             }
-        }
-
-        private void SetResultOn(TaskCompletionSource<IEnumerable<HierarchicalSymbol>> tcs) {
-            tcs.TrySetResult(_symbolIndex.HierarchicalDocumentSymbols(_path));
         }
 
         private async Task<IEnumerable<HierarchicalSymbol>> AddAsync(IDocument doc, CancellationToken addCancellationToken) {
@@ -117,11 +119,15 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private void CancelExistingTask() {
             Check.InvalidOperation(Monitor.IsEntered(_syncObj));
 
-            _fileCts.Cancel();
-            _fileCts.Dispose();
-            _fileCts = new CancellationTokenSource();
-            if (_fileTcs.Task.IsCompleted) {
-                _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
+            if (!wasLastTaskDisposed) {
+                _fileCts.Cancel();
+                _fileCts.Dispose();
+                _fileCts = new CancellationTokenSource();
+                // Re use current tcs if possible
+                if (_fileTcs.Task.IsCompleted) {
+                    _fileTcs = new TaskCompletionSource<IEnumerable<HierarchicalSymbol>>();
+                }
+                wasLastTaskDisposed = true;
             }
         }
     }
