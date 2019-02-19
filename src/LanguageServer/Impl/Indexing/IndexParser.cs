@@ -57,9 +57,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         private void Parse(string path, CancellationTokenSource parseCts) {
-            if (parseCts.Token.IsCancellationRequested) {
-                parseCts.Token.ThrowIfCancellationRequested();
-            }
+            parseCts.Token.ThrowIfCancellationRequested();
             try {
                 using (var stream = _fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     var parser = Parser.CreateParser(stream, _version);
@@ -67,11 +65,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 }
             } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
                 Trace.TraceError(e.Message);
-            }
-            lock (_syncObj) {
-                if (_linkedParseCts == parseCts) {
-                    _linkedParseCts.Dispose();
-                    _linkedParseCts = null;
+            } finally {
+                lock (_syncObj) {
+                    if (_linkedParseCts == parseCts) {
+                        _linkedParseCts.Dispose();
+                        _linkedParseCts = null;
+                    }
                 }
             }
         }

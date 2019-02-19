@@ -100,7 +100,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public void CancellParsingAsync() {
+        public void CancelParsingAsync() {
             const string testFilePath = "C:/bla.py";
             _fileSystem.FileExists(testFilePath).Returns(true);
 

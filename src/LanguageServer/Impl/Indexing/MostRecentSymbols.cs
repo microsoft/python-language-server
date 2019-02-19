@@ -41,7 +41,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 parseTcs.TrySetCanceled();
             } catch (Exception ex) {
                 parseTcs.TrySetException(ex);
-               throw;
+                throw;
             }
         }
 
