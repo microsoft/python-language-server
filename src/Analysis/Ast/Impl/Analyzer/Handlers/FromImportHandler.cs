@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
             switch (imports) {
                 case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
-                    await ImportMembersFromSelfAsync(node, cancellationToken);
+                    ImportMembersFromSelf(node, cancellationToken);
                     break;
                 case ModuleImport moduleImport:
                     ImportMembersFromModule(node, moduleImport.FullName, cancellationToken);
@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        private async Task ImportMembersFromSelfAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
+        private void ImportMembersFromSelf(FromImportStatement node, CancellationToken cancellationToken = default) {
             var names = node.Names;
             var asNames = node.AsNames;
 
