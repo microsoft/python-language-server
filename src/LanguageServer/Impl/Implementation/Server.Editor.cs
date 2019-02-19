@@ -43,7 +43,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             //    => (ext as ICompletionExtension)?.HandleCompletionAsync(uri, analysis, tree, @params.position, res, cancellationToken), cancellationToken);
             return res;
         }
-        
+
         public async Task<Hover> Hover(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Hover in {uri} at {@params.position}");

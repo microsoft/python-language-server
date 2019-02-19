@@ -41,12 +41,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
             switch (imports) {
-                case ModuleImport moduleImport when moduleImport.FullName == Module.Name && Module.ModuleType == ModuleType.Stub:
-                    // If we are processing stub, ignore imports of the original module.
-                    // For example, typeshed stub for 'sys' imports sys.
-                    break;
                 case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
-                    ImportMembersFromSelf(node);
+                    await ImportMembersFromSelfAsync(node, cancellationToken);
                     break;
                 case ModuleImport moduleImport:
                     ImportMembersFromModule(node, moduleImport.FullName, cancellationToken);
@@ -64,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        private void ImportMembersFromSelf(FromImportStatement node) {
+        private async Task ImportMembersFromSelfAsync(FromImportStatement node, CancellationToken cancellationToken = default) {
             var names = node.Names;
             var asNames = node.AsNames;
 
@@ -91,7 +87,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         member = ModuleResolution.GetOrLoadModule(import.FullName);
                     }
                 }
-
                 Eval.DeclareVariable(memberName, member ?? Eval.UnknownType, VariableSource.Declaration, Eval.GetLoc(names[i]));
             }
         }

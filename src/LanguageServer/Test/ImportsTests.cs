@@ -148,6 +148,7 @@ module2.";
             var doc = rdt.OpenDocument(new Uri(appPath), appCode1);
             var analysis = await doc.GetAnalysisAsync(0);
 
+
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 21));
             comps.Should().HaveLabels("module1", "module2");
