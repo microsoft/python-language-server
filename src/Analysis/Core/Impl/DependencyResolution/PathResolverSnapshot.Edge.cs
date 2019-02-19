@@ -14,9 +14,10 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
-    public partial struct PathResolverSnapshot {
+    public partial class PathResolverSnapshot {
         /// <summary>
         /// Represents the edge between two nodes in the tree
         /// </summary>
@@ -73,7 +74,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             public Edge Append(int nextVertexIndex) {
                 var nextVertex = End.Children[nextVertexIndex];
                 var trimLength = _vertices.Count - _index - 1;
-                var vertices = _vertices.TrimEnd(trimLength).Add((nextVertexIndex, nextVertex));
+                var vertices = _vertices.ReplaceAt(_index + 1, trimLength, (nextVertexIndex, nextVertex));
                 return new Edge(vertices, _index + 1);
             }
 

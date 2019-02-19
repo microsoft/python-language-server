@@ -46,13 +46,13 @@ namespace Microsoft.Python.Analysis.Modules {
             => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new List<string> { "-B", "-E", sb };
 
         protected override void OnAnalysisComplete() {
-            lock (AnalysisLock) {
-                SpecializeTypes();
-                SpecializeFunctions();
-                foreach (var n in GetMemberNames()) {
-                    GetMember(n).GetPythonType<PythonType>()?.MakeReadOnly();
-                }
+            SpecializeTypes();
+            SpecializeFunctions();
+            foreach (var n in GetMemberNames()) {
+                GetMember(n).GetPythonType<PythonType>()?.MakeReadOnly();
             }
+
+            base.OnAnalysisComplete();
         }
 
         private void SpecializeTypes() {

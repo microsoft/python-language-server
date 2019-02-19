@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +36,11 @@ namespace Microsoft.Python.Parsing.Ast {
         public int OrIndex { get; }
 
         public override string NodeName => "or expression";
+
+        public override IEnumerable<Node> GetChildNodes() {
+            yield return Left;
+            if (Right != null) yield return Right;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

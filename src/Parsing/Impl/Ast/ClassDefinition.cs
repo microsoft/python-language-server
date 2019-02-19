@@ -15,22 +15,23 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ClassDefinition : ScopeStatement {
         private readonly NameExpression/*!*/ _name;
         private readonly Statement _body;
-        private readonly Arg[] _bases;
         private DecoratorStatement _decorators;
 
-        public ClassDefinition(NameExpression/*!*/ name, Arg[] bases, Statement body) {
+        public ClassDefinition(NameExpression/*!*/ name, ImmutableArray<Arg> bases, Statement body) {
             _name = name;
-            _bases = bases;
+            Bases = bases;
             _body = body;
         }
 
@@ -42,7 +43,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public NameExpression/*!*/ NameExpression => _name;
 
-        public Arg[] Bases => _bases ?? Array.Empty<Arg>();
+        public ImmutableArray<Arg> Bases { get; }
 
         public override Statement Body => _body;
 
@@ -128,11 +129,20 @@ namespace Microsoft.Python.Parsing.Ast {
             return null;
         }
 
+        public override IEnumerable<Node> GetChildNodes() {
+            if (_name != null) yield return _name;
+            if (_decorators != null) yield return _decorators;
+            foreach (var b in Bases) {
+                yield return b;
+            }
+            if (_body != null) yield return _body;
+        }
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 _name?.Walk(walker);
                 _decorators?.Walk(walker);
-                foreach (var b in _bases.MaybeEnumerate()) {
+                foreach (var b in Bases) {
                     b.Walk(walker);
                 }
                 _body?.Walk(walker);
@@ -149,7 +159,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (_decorators != null) {
                     await _decorators.WalkAsync(walker, cancellationToken);
                 }
-                foreach (var b in _bases.MaybeEnumerate()) {
+                foreach (var b in Bases) {
                     await b.WalkAsync(walker, cancellationToken);
                 }
                 if (_body != null) {
@@ -183,7 +193,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 res.Append('(');
             }
 
-            if (Bases.Length != 0) {
+            if (Bases.Count != 0) {
                 ListExpression.AppendItems(
                     res,
                     ast,
@@ -191,7 +201,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     "",
                     "",
                     this,
-                    Bases.Length,
+                    Bases.Count,
                     (i, sb) => {
                         if (format.SpaceWithinClassDeclarationParens != null && i == 0) {
                             // need to remove any leading whitespace which was preserved for
@@ -209,7 +219,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             if (!this.IsAltForm(ast) && !this.IsMissingCloseGrouping(ast)) {
-                if (Bases.Length != 0 ||
+                if (Bases.Count != 0 ||
                     format.SpaceWithinEmptyBaseClassList == null ||
                     !string.IsNullOrWhiteSpace(this.GetFourthWhiteSpace(ast))) {
                     format.Append(

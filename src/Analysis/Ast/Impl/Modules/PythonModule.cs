@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
     public class PythonModule : IDocument, IAnalyzable, IEquatable<IPythonModule> {
-        protected enum State {
+        private enum State {
             None,
             Loading,
             Loaded,
@@ -52,15 +52,12 @@ namespace Microsoft.Python.Analysis.Modules {
             Analyzed
         }
 
-        private readonly AsyncLocal<bool> _awaiting = new AsyncLocal<bool>();
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
         private readonly IDiagnosticsService _diagnosticsService;
 
         private string _documentation; // Must be null initially.
-        private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
-        private CancellationTokenSource _linkedAnalysisCts; // cancellation token combined with the 'dispose' cts
         private CancellationTokenSource _parseCts;
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
         private Task _parsingTask;
@@ -69,8 +66,8 @@ namespace Microsoft.Python.Analysis.Modules {
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
         protected IServiceContainer Services { get; }
-        protected object AnalysisLock { get; } = new object();
-        protected State ContentState { get; set; } = State.None;
+        private object AnalysisLock { get; } = new object();
+        private State ContentState { get; set; } = State.None;
 
         protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -196,13 +193,10 @@ namespace Microsoft.Python.Analysis.Modules {
         /// loaded (lazy) modules may choose to defer content retrieval and
         /// analysis until later time, when module members are actually needed.
         /// </summary>
-        public virtual Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) {
-            if (_awaiting.Value) {
-                return Task.FromResult(Analysis);
-            }
-            _awaiting.Value = true;
+        public async Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) {
             InitializeContent(null);
-            return GetAnalysisAsync(cancellationToken);
+            await GetAstAsync(cancellationToken);
+            await Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, -1, cancellationToken);
         }
 
         protected virtual string LoadContent() {
@@ -222,11 +216,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 LoadContent(content);
 
                 var startParse = ContentState < State.Parsing && _parsingTask == null;
-                var startAnalysis = startParse | (ContentState < State.Analyzing && _analysisTcs?.Task == null);
-
-                if (startAnalysis) {
-                    ExpectNewAnalysis();
-                }
                 if (startParse) {
                     Parse();
                 }
@@ -317,9 +306,6 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void Update(IEnumerable<DocumentChange> changes) {
             lock (AnalysisLock) {
-                ExpectNewAnalysis();
-                _linkedAnalysisCts?.Cancel();
-
                 _parseCts?.Cancel();
                 _parseCts = new CancellationTokenSource();
 
@@ -340,8 +326,6 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private void Parse() {
-            _awaiting.Value = false;
-
             _parseCts?.Cancel();
             _parseCts = new CancellationTokenSource();
 
@@ -388,25 +372,20 @@ namespace Microsoft.Python.Analysis.Modules {
                     _diagnosticsService?.Replace(Uri, _parseErrors.Concat(Analysis.Diagnostics));
                 }
 
-                _parsingTask = null;
                 ContentState = State.Parsed;
             }
 
             NewAst?.Invoke(this, EventArgs.Empty);
 
             if (ContentState < State.Analyzing) {
-                Log?.Log(TraceEventType.Verbose, $"Analysis queued: {Name}");
                 ContentState = State.Analyzing;
 
-                _linkedAnalysisCts?.Dispose();
-                _linkedAnalysisCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
-
                 var analyzer = Services.GetService<IPythonAnalyzer>();
-                if (ModuleType == ModuleType.User || ModuleType == ModuleType.Library) {
-                    analyzer.AnalyzeDocumentDependencyChainAsync(this, _linkedAnalysisCts.Token).DoNotWait();
-                } else {
-                    analyzer.AnalyzeDocumentAsync(this, _linkedAnalysisCts.Token).DoNotWait();
-                }
+                analyzer.EnqueueDocumentForAnalysis(this, ast, version, _allProcessingCts.Token);
+            }
+
+            lock (AnalysisLock) {
+                _parsingTask = null;
             }
         }
 
@@ -420,65 +399,29 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAnalyzable
-        /// <summary>
-        /// Expected version of the analysis when asynchronous operations complete.
-        /// Typically every change to the document or documents that depend on it
-        /// increment the expected version. At the end of the analysis if the expected
-        /// version is still the same, the analysis is applied to the document and
-        /// becomes available to consumers.
-        /// </summary>
-        public int ExpectedAnalysisVersion { get; private set; }
-
-        /// <summary>
-        /// Notifies document that analysis is now pending. Typically document increments 
-        /// the expected analysis version. The method can be called repeatedly without
-        /// calling `CompleteAnalysis` first. The method is invoked for every dependency
-        /// in the chain to ensure that objects know that their dependencies have been
-        /// modified and the current analysis is no longer up to date.
-        /// </summary>
-        public void NotifyAnalysisPending() {
+        public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
             lock (AnalysisLock) {
-                // The notification comes from the analyzer when it needs to invalidate
-                // current analysis since one of the dependencies changed. If text
-                // buffer changed then the notification won't come since the analyzer
-                // filters out original initiator of the analysis.
-                ExpectNewAnalysis();
-                //Log?.Log(TraceEventType.Verbose, $"Analysis pending: {Name}");
-            }
-        }
-
-        public virtual bool NotifyAnalysisComplete(IDocumentAnalysis analysis) {
-            lock (AnalysisLock) {
-                // Log?.Log(TraceEventType.Verbose, $"Analysis complete: {Name}, Version: {analysis.Version}, Expected: {ExpectedAnalysisVersion}");
-                if (analysis.Version == ExpectedAnalysisVersion) {
-                    Analysis = analysis;
-                    GlobalScope = analysis.GlobalScope;
-
-                    // Derived classes can override OnAnalysisComplete if they want
-                    // to perform additional actions on the completed analysis such
-                    // as declare additional variables, etc.
-                    OnAnalysisComplete();
-                    ContentState = State.Analyzed;
-
-                    // Do not report issues with libraries or stubs
-                    if (ModuleType == ModuleType.User) {
-                        _diagnosticsService?.Replace(Uri, _parseErrors.Concat(Analysis.Diagnostics));
-                    }
-
-                    var tcs = _analysisTcs;
-                    _analysisTcs = null;
-                    tcs.TrySetResult(analysis);
-
-                    NewAnalysis?.Invoke(this, EventArgs.Empty);
-                    return true;
+                if (analysis.Version < Analysis.Version) {
+                    return;
                 }
-                Debug.Assert(ExpectedAnalysisVersion > analysis.Version);
-                return false;
-            }
-        }
 
-        public void NotifyAnalysisCanceled() => _analysisTcs?.TrySetCanceled();
-        public void NotifyAnalysisFailed(Exception ex) => _analysisTcs?.TrySetException(ex);
+                Analysis = analysis;
+                GlobalScope = analysis.GlobalScope;
+
+                // Derived classes can override OnAnalysisComplete if they want
+                // to perform additional actions on the completed analysis such
+                // as declare additional variables, etc.
+                OnAnalysisComplete();
+                ContentState = State.Analyzed;
+            }
+
+            // Do not report issues with libraries or stubs
+            if (ModuleType == ModuleType.User) {
+                _diagnosticsService?.Replace(Uri, _parseErrors.Concat(analysis.Diagnostics));
+            }
+
+            NewAnalysis?.Invoke(this, EventArgs.Empty);
+        }
 
         protected virtual void OnAnalysisComplete() { }
         #endregion
@@ -486,17 +429,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #region Analysis
         public IDocumentAnalysis GetAnyAnalysis() => Analysis;
 
-        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken = default) {
-            lock (AnalysisLock) {
-                return _analysisTcs?.Task ?? Task.FromResult(Analysis);
-            }
-        }
-        #endregion
+        public Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime = 200, CancellationToken cancellationToken = default) 
+            => Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, waitTime, cancellationToken);
 
-        private void ExpectNewAnalysis() {
-            ExpectedAnalysisVersion++;
-            _analysisTcs = _analysisTcs ?? new TaskCompletionSource<IDocumentAnalysis>();
-        }
+        #endregion
 
         private string TryGetDocFromModuleInitFile() {
             if (string.IsNullOrEmpty(FilePath) || !FileSystem.FileExists(FilePath)) {

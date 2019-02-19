@@ -41,15 +41,15 @@ namespace Microsoft.Python.Analysis.Modules {
 
         /// <summary>
         /// Returns an IPythonModule for a given module name. Returns null if
-        /// the module does not exist. The import is performed asynchronously.
-        /// </summary>
-        Task<IPythonModule> ImportModuleAsync(string name, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns an IPythonModule for a given module name. Returns null if
         /// the module has not been imported.
         /// </summary>
         IPythonModule GetImportedModule(string name);
+
+        /// <summary>
+        /// Returns an IPythonModule for a given module name.
+        /// Returns null if the module wasn't found.
+        /// </summary>
+        IPythonModule GetOrLoadModule(string name);
 
         /// <summary>
         /// Sets user search paths. This changes <see cref="CurrentPathResolver"/>.

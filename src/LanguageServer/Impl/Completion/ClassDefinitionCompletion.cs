@@ -30,7 +30,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 return true;
             }
 
-            if (cd.Bases.Length > 0 && context.Position >= cd.Bases[0].StartIndex) {
+            if (cd.Bases.Count > 0 && context.Position >= cd.Bases[0].StartIndex) {
                 foreach (var p in cd.Bases.Reverse()) {
                     if (context.Position >= p.StartIndex) {
                         if (p.Name == null && context.Ast.LanguageVersion.Is3x() && cd.Bases.All(b => b.Name != @"metaclass")) {

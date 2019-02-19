@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,6 +40,10 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override string ToString() => base.ToString() + ":" + NameExpression;
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Expression != null) yield return Expression;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

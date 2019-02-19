@@ -18,24 +18,32 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class IfStatement : Statement {
-        private readonly IfStatementTest[] _tests;
-
-        public IfStatement(IfStatementTest[] tests, Statement else_) {
-            _tests = tests;
+        public IfStatement(ImmutableArray<IfStatementTest> tests, Statement else_) {
+            Tests = tests;
             ElseStatement = else_;
         }
 
-        public IList<IfStatementTest> Tests => _tests;
+        public ImmutableArray<IfStatementTest> Tests { get; }
+
         public Statement ElseStatement { get; }
 
         public int ElseIndex { get; set; }
 
+        public override IEnumerable<Node> GetChildNodes() {
+            foreach (var test in Tests) {
+                yield return test;
+            }
+
+            if (ElseStatement != null) yield return ElseStatement;
+        }
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (var test in _tests.MaybeEnumerate()) {
+                foreach (var test in Tests) {
                     test.Walk(walker);
                 }
 
@@ -46,7 +54,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                foreach (var test in _tests.MaybeEnumerate()) {
+                foreach (var test in Tests) {
                     await test.WalkAsync(walker, cancellationToken);
                 }
                 if (ElseStatement != null) {
@@ -58,7 +66,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             var itemWhiteSpace = this.GetListWhiteSpace(ast);
-            for (var i = 0; i < _tests.Length; i++) {
+            for (var i = 0; i < Tests.Count; i++) {
                 if (itemWhiteSpace != null) {
                     format.ReflowComment(res, itemWhiteSpace[i]);
                 }
@@ -68,7 +76,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 } else {
                     res.Append("elif");
                 }
-                _tests[i].AppendCodeString(res, ast, format);
+                Tests[i].AppendCodeString(res, ast, format);
             }
 
             if (ElseStatement != null) {

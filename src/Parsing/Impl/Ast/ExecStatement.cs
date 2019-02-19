@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -37,6 +38,13 @@ namespace Microsoft.Python.Parsing.Ast {
         public Expression Globals => _globals ?? _codeTuple?.Items.ElementAtOrDefault(1);
 
         public bool NeedsLocalsDictionary() => Globals == null && Locals == null;
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (_code != null) yield return _code;
+            if (_codeTuple != null) yield return _codeTuple;
+            if (_locals != null) yield return _locals;
+            if (_globals != null) yield return _globals;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
