@@ -258,6 +258,29 @@ a = X(2)
         }
 
         [TestMethod, Priority(0)]
+        public async Task ClassBase2X() {
+            const string code = @"
+class X: ...
+a = X()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveVariable("a")
+                .Which.Should().NotHaveMember(@"__repr__");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassBase3X() {
+            const string code = @"
+class X: ...
+a = X()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var objectType = analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+            analysis.Should().HaveVariable("a")
+                .Which.Should().HaveMembers(objectType.GetMemberNames());
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ClassInitAnnotated() {
             const string code = @"
 class X:

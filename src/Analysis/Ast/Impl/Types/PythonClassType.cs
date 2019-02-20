@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -170,15 +171,25 @@ namespace Microsoft.Python.Analysis.Types {
                     return; // Already set
                 }
 
-                Bases = bases.MaybeEnumerate().ToArray();
+                bases = bases != null ? bases.ToArray() : Array.Empty<IPythonType>();
+                if (DeclaringModule.Interpreter.LanguageVersion.Is3x()) {
+                    var objectType = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+                    if(!bases.Any(b => objectType.Equals(b))) {
+                        bases = bases.Concat(Enumerable.Repeat(objectType, 1));
+                    }
+                }
+
+                Bases = bases.ToArray();
                 if (Bases.Count > 0) {
                     AddMember("__base__", Bases[0], true);
                 }
 
-                if (!(DeclaringModule is BuiltinsPythonModule)) {
+                if (DeclaringModule is BuiltinsPythonModule) {
                     // TODO: If necessary, we can set __bases__ on builtins when the module is fully analyzed.
-                    AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Bases), true);
+                    return;
                 }
+
+                AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Bases), true);
             }
         }
 
