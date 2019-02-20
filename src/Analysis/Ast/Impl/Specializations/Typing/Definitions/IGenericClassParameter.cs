@@ -18,13 +18,9 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
-    /// Represents generic type parameter. Typically value returned by TypeVar.
+    /// Represents Generic[T1, T2, ...]. Used as a base class to generic classes.
     /// </summary>
-    public interface IGenericTypeParameter: IPythonType {
-        /// <summary>
-        /// List of constraints for the type.
-        /// </summary>
-        /// <remarks>See 'https://docs.python.org/3/library/typing.html#typing.TypeVar'</remarks>
-        IReadOnlyList<IPythonType> Constraints { get; }
+    public interface IGenericClassParameter: IPythonType {
+        IReadOnlyList<IGenericTypeDefinition> TypeDefinitions { get; }
     }
 }

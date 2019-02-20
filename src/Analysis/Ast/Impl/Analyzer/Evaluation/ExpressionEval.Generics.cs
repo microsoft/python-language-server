@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -46,8 +47,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // If it is, then this is a declaration expression such as Generic[T]
             // rather than specific type instantiation as in List[str].
 
-            IPythonType[] specificTypes;
-            var returnInstance = false;
             switch (expr) {
                 // Indexing returns type as from A[int]
                 case IndexExpression indexExpr:
@@ -55,8 +54,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     var indices = await EvaluateIndexAsync(indexExpr, cancellationToken);
                     // See which ones are generic parameters as defined by TypeVar() 
                     // and which are specific types. Normally there should not be a mix.
-                    var genericTypeArgs = indices.OfType<IGenericTypeParameter>().ToArray();
-                    specificTypes = indices.Where(i => !(i is IGenericTypeParameter)).OfType<IPythonType>().ToArray();
+                    var genericTypeArgs = indices.OfType<IGenericTypeDefinition>().ToArray();
+                    var specificTypes = indices.Where(i => !(i is IGenericTypeDefinition)).OfType<IPythonType>().ToArray();
 
                     if (specificTypes.Length == 0 && genericTypeArgs.Length > 0) {
                         // The expression is still generic. For example, generic return
@@ -78,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         if (gt.Name.EqualsOrdinal("Generic")) {
                             if (genericTypeArgs.Length > 0) {
                                 // Generic[T1, T2, ...] expression. Create generic base for the class.
-                                return new GenericClassBaseType(genericTypeArgs, Module, GetLoc(expr));
+                                return new GenericClassParameter(genericTypeArgs, Module, GetLoc(expr));
                             } else {
                                 // TODO: report too few type arguments for Generic[].
                                 return UnknownType;
@@ -88,35 +87,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         if (specificTypes.Length > 0) {
                             // If target is a generic type and indexes are specific types, create specific class
                             return gt.CreateSpecificType(new ArgumentSet(specificTypes), Module, GetLoc(expr));
-                        } else {
-                            // TODO: report too few type arguments for the Generic[].
-                            return UnknownType;
                         }
+                        // TODO: report too few type arguments for the Generic[].
+                        return UnknownType;
                     }
                     break;
 
-                case CallExpression callExpr:
+                case CallExpression callExpr when target is PythonClassType c1:
                     // Alternative instantiation:
                     //  class A(Generic[T]): ...
                     //  x = A(1234)
-                    specificTypes = (await EvaluateCallArgsAsync(callExpr, cancellationToken)).Select(x => x.GetPythonType()).ToArray();
-                    // Callable returns instance (as opposed to a type with index expression)
-                    returnInstance = true;
-                    break;
-
-                default:
-                    return null;
-            }
-
-            // This is a bit of a hack since we don't have GenericClassType at the moment.
-            // The reason is that PythonClassType is created before ClassDefinition is walked
-            // as we resolve classes on demand. Therefore we don't know if class is generic
-            // or not at the time of the PythonClassType creation.
-            // TODO: figure out if we could make GenericClassType: PythonClassType, IGenericType instead.
-            if (target is PythonClassType cls) {
-                var location = GetLoc(expr);
-                var type = cls.CreateSpecificType(new ArgumentSet(specificTypes), Module, location);
-                return returnInstance ? new PythonInstance(type, GetLoc(expr)) : (IMember)type;
+                    return await CreateClassInstanceAsync(c1, callExpr, cancellationToken);
             }
             return null;
         }
@@ -136,14 +117,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return indices;
         }
 
-        private async Task<IReadOnlyList<IMember>> EvaluateCallArgsAsync(CallExpression expr, CancellationToken cancellationToken = default) {
-            var indices = new List<IMember>();
-            cancellationToken.ThrowIfCancellationRequested();
-            foreach (var e in expr.Args.Select(a => a.Expression)) {
-                var value = await GetValueFromExpressionAsync(e, cancellationToken) ?? UnknownType;
-                indices.Add(value);
-            }
-            return indices;
+        private async Task<IMember> CreateClassInstanceAsync(PythonClassType cls, CallExpression callExpr, CancellationToken cancellationToken = default) {
+            // Look at the constructor arguments and create argument set
+            // based on the __init__ definition.
+            var location = GetLoc(callExpr);
+            var initFunc = cls.GetMember(@"__init__") as IPythonFunctionType;
+            var initOverload = initFunc?.Overloads.FirstOrDefault();
+
+            var argSet = initOverload != null 
+                ? new ArgumentSet(initFunc, 0, null, callExpr, this) 
+                : new ArgumentSet(Array.Empty<IPythonType>());
+
+            await argSet.EvaluateAsync(cancellationToken);
+            var specificType = cls.CreateSpecificType(argSet, Module, location);
+            return new PythonInstance(specificType, location);
         }
     }
 }
