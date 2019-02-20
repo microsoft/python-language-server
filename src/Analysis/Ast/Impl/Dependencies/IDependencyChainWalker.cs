@@ -1,5 +1,4 @@
-﻿// Python Tools for Visual Studio
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -14,14 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Types;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core.Collections;
 
-namespace Microsoft.Python.Analysis {
-    public static class ModuleResolutionExtensions {
-        public static IPythonModule ImportModule(this IModuleResolution m, string name, int timeout) {
-            m.ImportModuleAsync(name).Wait(timeout);
-            return m.GetImportedModule(name);
-        }
+namespace Microsoft.Python.Analysis.Dependencies {
+    internal interface IDependencyChainWalker<TKey, TValue> {
+        Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken);
+        ImmutableArray<TKey> MissingKeys { get; }
+        ImmutableArray<TValue> AffectedValues { get; }
+        int Version { get; }
+        bool IsCompleted { get; }
     }
 }

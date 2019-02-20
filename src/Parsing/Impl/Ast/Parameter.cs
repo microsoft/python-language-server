@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,6 +53,11 @@ namespace Microsoft.Python.Parsing.Ast {
         public bool IsKeywordOnly => Kind == ParameterKind.KeywordOnly;
 
         public ParameterKind Kind { get; }
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Annotation != null) yield return Annotation;
+            if (DefaultValue != null) yield return DefaultValue;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

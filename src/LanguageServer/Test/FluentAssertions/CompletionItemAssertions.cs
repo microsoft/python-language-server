@@ -51,10 +51,19 @@ namespace Microsoft.Python.LanguageServer.Tests.FluentAssertions {
         [CustomAssertion]
         public AndConstraint<CompletionItemAssertions> HaveDocumentation(string documentation, string because = "", params object[] reasonArgs) {
             Execute.Assertion.BecauseOf(because, reasonArgs)
-                .AssertIsNotNull(Subject.documentation, $"'{Subject.label}' completion", "documentation", "\'CompletionItem.documentation\'")
-                .Then
-                .ForCondition(string.Equals(Subject.documentation.value, documentation, StringComparison.Ordinal))
-                .FailWith($"Expected '{Subject.label}' completion to have documentation '{documentation}'{{reason}}, but it has '{Subject.documentation.value}'");
+                .AssertIsNotNull(Subject.documentation, $"'{Subject.label}' completion", "documentation", "\'CompletionItem.documentation\'");
+
+            var subjectDoc = Subject.documentation.value;
+            if (documentation.EndsWith("*")) {
+                documentation = documentation.Remove(documentation.Length - 1);
+                if (subjectDoc.Length > documentation.Length) {
+                    subjectDoc = subjectDoc.Remove(documentation.Length);
+                }
+            }
+
+            Execute.Assertion.BecauseOf(because, reasonArgs)
+                    .ForCondition(string.Equals(subjectDoc, documentation, StringComparison.Ordinal))
+                    .FailWith($"Expected '{Subject.label}' completion to have documentation '{documentation}'{{reason}}, but it has '{Subject.documentation.value}'");
 
             return new AndConstraint<CompletionItemAssertions>(this);
         }

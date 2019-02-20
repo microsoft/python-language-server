@@ -1,4 +1,4 @@
-﻿// Copyright(c) Microsoft Corporation
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -17,7 +17,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using FluentAssertions.Common;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
@@ -28,6 +27,7 @@ using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NSubstitute;
 using TestUtilities;
 
 namespace Microsoft.Python.LanguageServer.Tests {
@@ -68,7 +68,7 @@ x.
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3));
-            comps.Should().HaveLabels(@"isupper", @"capitalize", @"split" );
+            comps.Should().HaveLabels(@"isupper", @"capitalize", @"split");
         }
 
         [TestMethod, Priority(0)]
@@ -870,6 +870,24 @@ os.path.
 
             var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
             result.Should().HaveLabels("split", @"getsize", @"islink", @"abspath");
+        }
+
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task FromOsPathAs(bool is3x) {
+            const string code = @"
+from os.path import exists as EX
+E
+";
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 2));
+            result.Should().HaveLabels("EX");
+
+            var doc = is3x ? "exists(path: str) -> bool*" : "exists(path: unicode) -> bool*";
+            result.Completions.FirstOrDefault(c => c.label == "EX").Should().HaveDocumentation(doc);
         }
 
         [TestMethod, Priority(0)]

@@ -14,6 +14,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 using Microsoft.Python.Core;
 
@@ -30,6 +31,11 @@ namespace Microsoft.Python.Parsing.Ast {
         public override string Name => ".{0}".FormatUI(_position);
 
         public TupleExpression Tuple { get; }
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Tuple != null) yield return Tuple;
+            if (DefaultValue != null) yield return DefaultValue;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

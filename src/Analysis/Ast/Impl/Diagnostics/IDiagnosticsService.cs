@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         void Replace(Uri documentUri, IEnumerable<DiagnosticsEntry> entries);
 
         /// <summary>
-        /// Removes document from the diagnostics report. Typically when document closes.
+        /// Removes document from the diagnostics report. Typically when document is disposed.
         /// </summary>
         void Remove(Uri documentUri);
 

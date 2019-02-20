@@ -35,7 +35,13 @@ namespace Microsoft.Python.Analysis.Modules {
 
         IModuleCache ModuleCache { get; }
 
-        void AddModulePath(string path);
+        bool TryAddModulePath(in string path, out string fullName);
+
+        /// <summary>
+        /// Sets user search paths. This changes <see cref="CurrentPathResolver"/>.
+        /// </summary>
+        /// <returns>Added roots.</returns>
+        IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths);
 
         /// <summary>
         /// Provides ability to specialize module by replacing module import by

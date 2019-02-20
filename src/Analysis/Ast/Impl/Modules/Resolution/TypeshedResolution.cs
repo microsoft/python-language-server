@@ -30,7 +30,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         private readonly IReadOnlyList<string> _typeStubPaths;
 
         public TypeshedResolution(IServiceContainer services) : base(null, services) {
-            _modules[BuiltinModuleName] = BuiltinsModule = _interpreter.ModuleResolution.BuiltinsModule;
+            BuiltinsModule = _interpreter.ModuleResolution.BuiltinsModule;
+            _modules[BuiltinModuleName] = new ModuleRef(BuiltinsModule);
+
             _root = _interpreter.Configuration?.TypeshedPath;
             // TODO: merge with user-provided stub paths
             _typeStubPaths = GetTypeShedPaths(_interpreter.Configuration?.TypeshedPath).ToArray();
@@ -44,14 +46,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         internal Task InitializeAsync(CancellationToken cancellationToken = default)
             => ReloadAsync(cancellationToken);
 
-        protected override async Task<IPythonModule> DoImportAsync(string name, CancellationToken cancellationToken = default) {
+        protected override IPythonModule CreateModule(string name) {
             var mp = FindModuleInSearchPath(_typeStubPaths, null, name);
             if (mp != null) {
                 if (mp.Value.IsCompiled) {
                     _log?.Log(TraceEventType.Warning, "Unsupported native module in stubs", mp.Value.FullName, mp.Value.SourceFile);
                     return null;
                 }
-                return await CreateStubModuleAsync(mp.Value.FullName, mp.Value.SourceFile, cancellationToken);
+                return new StubPythonModule(mp.Value.FullName, mp.Value.SourceFile, true, _services);
             }
 
             var i = name.IndexOf('.');
@@ -61,10 +63,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             var stubPath = CurrentPathResolver.GetPossibleModuleStubPaths(name).FirstOrDefault(p => _fs.FileExists(p));
-            return stubPath != null ? await CreateStubModuleAsync(name, stubPath, cancellationToken) : null;
+            return stubPath != null ? new StubPythonModule(name, stubPath, true, _services) : null;
         }
 
-        public override Task ReloadAsync(CancellationToken cancellationToken = default) {
+        public Task ReloadAsync(CancellationToken cancellationToken = default) {
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
             var addedRoots = PathResolver.SetRoot(_root);
@@ -136,6 +138,5 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             => ModulePath.PythonVersionRequiresInitPyFiles(Configuration.Version) ?
                 !string.IsNullOrEmpty(ModulePath.GetPackageInitPy(directory)) :
                 _fs.DirectoryExists(directory);
-
     }
 }

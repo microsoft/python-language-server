@@ -1,6 +1,7 @@
 output/
 packages/
 TestResults/
+src/.idea/
 
 
 # Databases

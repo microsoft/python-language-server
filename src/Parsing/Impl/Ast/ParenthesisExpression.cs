@@ -13,36 +13,38 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
-
     public class ParenthesisExpression : Expression {
-        private readonly Expression _expression;
-
         public ParenthesisExpression(Expression expression) {
-            _expression = expression;
+            Expression = expression;
         }
 
-        public Expression Expression => _expression;
+        public Expression Expression { get; }
 
-        internal override string CheckAssign() => _expression.CheckAssign();
+        internal override string CheckAssign() => Expression.CheckAssign();
 
-        internal override string CheckDelete() => _expression.CheckDelete();
+        internal override string CheckDelete() => Expression.CheckDelete();
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Expression != null) yield return Expression;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                _expression?.Walk(walker);
+                Expression?.Walk(walker);
             }
             walker.PostWalk(this);
         }
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                if (_expression != null) {
-                    await _expression.WalkAsync(walker, cancellationToken);
+                if (Expression != null) {
+                    await Expression.WalkAsync(walker, cancellationToken);
                 }
             }
             await walker.PostWalkAsync(this, cancellationToken);
@@ -53,7 +55,7 @@ namespace Microsoft.Python.Parsing.Ast {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));
             res.Append('(');
 
-            _expression.AppendCodeString(
+            Expression.AppendCodeString(
                 res,
                 ast,
                 format,

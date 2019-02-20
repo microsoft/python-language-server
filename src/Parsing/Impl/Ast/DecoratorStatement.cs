@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,9 +28,11 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public Expression[] Decorators { get; }
 
+        public override IEnumerable<Node> GetChildNodes() => Decorators.ExcludeDefault();
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (var decorator in Decorators.MaybeEnumerate()) {
+                foreach (var decorator in Decorators) {
                     decorator?.Walk(walker);
                 }
             }
@@ -38,7 +41,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                foreach (var decorator in Decorators.MaybeEnumerate().ExcludeDefault()) {
+                foreach (var decorator in Decorators.ExcludeDefault()) {
                     await decorator.WalkAsync(walker, cancellationToken);
                 }
             }

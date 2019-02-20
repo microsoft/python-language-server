@@ -80,7 +80,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task Mro() {
-            using (var s = await CreateServicesAsync(null)) {
+            using (var s = await CreateServicesAsync(null, null, null)) {
                 var interpreter = s.GetService<IPythonInterpreter>();
                 var m = new SentinelModule("test", s);
 
