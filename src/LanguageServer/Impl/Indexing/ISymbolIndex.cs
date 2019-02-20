@@ -22,7 +22,7 @@ using Microsoft.Python.Analysis.Documents;
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal interface ISymbolIndex : IDisposable {
         Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken ct = default);
-        Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbols(string path);
+        Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken ct = default);
         void Add(string path, IDocument doc);
         void Parse(string path);
         void Delete(string path);

@@ -37,9 +37,9 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _index = new ConcurrentDictionary<string, IMostRecentDocumentSymbols>(comparer);
         }
 
-        public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbols(string path) {
+        public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken ct = default) {
             if (_index.TryGetValue(path, out var mostRecentSymbols)) {
-                return mostRecentSymbols.GetSymbolsAsync();
+                return mostRecentSymbols.GetSymbolsAsync(ct);
             } else {
                 return Task.FromResult<IReadOnlyList<HierarchicalSymbol>>(new List<HierarchicalSymbol>());
             }
@@ -57,8 +57,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         private async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsQueryAsync(string filePath, string query, IMostRecentDocumentSymbols recentSymbols, CancellationToken cancellationToken) {
-            var symbols = await recentSymbols.GetSymbolsAsync();
-            cancellationToken.ThrowIfCancellationRequested();
+            var symbols = await recentSymbols.GetSymbolsAsync(cancellationToken);
             return WorkspaceSymbolsQuery(filePath, query, symbols);
         }
 

@@ -54,7 +54,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var path = TestData.GetDefaultModulePath();
             index.Add(path, DocumentWithAst("x = 1"));
 
-            var symbols = await index.HierarchicalDocumentSymbols(path);
+            var symbols = await index.HierarchicalDocumentSymbolsAsync(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
@@ -71,14 +71,14 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             index.Add(path, DocumentWithAst("x = 1"));
 
-            var symbols = await index.HierarchicalDocumentSymbols(path);
+            var symbols = await index.HierarchicalDocumentSymbolsAsync(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
 
             index.Add(path, DocumentWithAst("y = 1"));
 
-            symbols = await index.HierarchicalDocumentSymbols(path);
+            symbols = await index.HierarchicalDocumentSymbolsAsync(path);
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
             });
@@ -89,7 +89,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             ISymbolIndex index = MakeSymbolIndex();
             var path = TestData.GetDefaultModulePath();
 
-            var symbols = await index.HierarchicalDocumentSymbols(path);
+            var symbols = await index.HierarchicalDocumentSymbolsAsync(path);
             symbols.Should().BeEmpty();
         }
 

@@ -17,7 +17,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly string _path;
 
         private CancellationTokenSource _fileCts = new CancellationTokenSource();
-        private TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
+
+        private TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> _fileTcs =
+            new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
+
         private bool _wasLastTaskDisposed = true;
 
         public MostRecentDocumentSymbols(string path, IFileSystem fileSystem, PythonLanguageVersion version) {
@@ -34,6 +37,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 currentTcs = _fileTcs;
                 _wasLastTaskDisposed = false;
             }
+
             ParseAsync(currentCt).SetCompletionResultTo(currentTcs);
         }
 
@@ -46,6 +50,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 currentTcs = _fileTcs;
                 _wasLastTaskDisposed = false;
             }
+
             AddAsync(doc, currentCt).SetCompletionResultTo(currentTcs);
         }
 
@@ -58,10 +63,18 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 currentTcs = _fileTcs;
                 _wasLastTaskDisposed = false;
             }
+
             ReIndexAsync(doc, currentCt).SetCompletionResultTo(currentTcs);
         }
 
-        public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync() => _fileTcs.Task;
+        public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default) {
+            ct.Register(() => {
+                lock (_syncObj) {
+                    CancelExistingTask();
+                }
+            });
+            return _fileTcs.Task;
+        }
 
         public void MarkAsPending() {
             lock (_syncObj) {
@@ -79,11 +92,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     _wasLastTaskDisposed = true;
                     _fileTcs.TrySetCanceled();
                 }
+
                 _indexParser.Dispose();
             }
         }
 
-        private async Task<IReadOnlyList<HierarchicalSymbol>> AddAsync(IDocument doc, CancellationToken addCancellationToken) {
+        private async Task<IReadOnlyList<HierarchicalSymbol>> AddAsync(IDocument doc,
+            CancellationToken addCancellationToken) {
             var ast = await doc.GetAstAsync(addCancellationToken);
             var walker = new SymbolIndexWalker(ast);
             ast.Walk(walker);
@@ -91,7 +106,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return walker.Symbols;
         }
 
-        private async Task<IReadOnlyList<HierarchicalSymbol>> ReIndexAsync(IDocument doc, CancellationToken reIndexCancellationToken) {
+        private async Task<IReadOnlyList<HierarchicalSymbol>> ReIndexAsync(IDocument doc,
+            CancellationToken reIndexCancellationToken) {
             var ast = await doc.GetAstAsync(reIndexCancellationToken);
             var walker = new SymbolIndexWalker(ast);
             ast.Walk(walker);
@@ -109,6 +125,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
                 Trace.TraceError(e.Message);
             }
+
             return new List<HierarchicalSymbol>();
         }
 
@@ -126,4 +143,3 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
     }
 }
-

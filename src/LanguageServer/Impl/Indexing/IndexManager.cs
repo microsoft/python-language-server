@@ -109,7 +109,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default) {
-            return _symbolIndex.HierarchicalDocumentSymbols(path);
+            return _symbolIndex.HierarchicalDocumentSymbolsAsync(path, cancellationToken);
         }
 
         public Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default) {
