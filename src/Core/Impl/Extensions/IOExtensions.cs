@@ -124,13 +124,5 @@ namespace Microsoft.Python.Core.IO {
                 fs.DeleteFile(filePath);
             } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
-
-        public static bool IsUnderRoot(this string path, string root, StringComparison comparison) {
-            if (!string.IsNullOrEmpty(root)) {
-                var normalized = PathUtils.NormalizePath(path);
-                return normalized.StartsWith(root, comparison);
-            }
-            return false;
-        }
     }
 }
