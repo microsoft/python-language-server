@@ -105,13 +105,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
                 // Module inside workspace == user code.
 
-                var moduleType = moduleImport.ModulePath.IsUnderRoot(_root, _fs.StringComparison)
-                    ? ModuleType.User
-                    : ModuleType.Library;
-
                 var mco = new ModuleCreationOptions {
                     ModuleName = moduleImport.FullName,
-                    ModuleType = moduleType,
+                    ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
                     FilePath = moduleImport.ModulePath,
                     Stub = stub
                 };
