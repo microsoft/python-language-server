@@ -34,7 +34,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
     [TestClass]
     public class IndexParserTests : LanguageServerTestBase {
-        private ISymbolIndex _symbolIndex;
         private IFileSystem _fileSystem;
         private PythonLanguageVersion _pythonLanguageVersion;
 
