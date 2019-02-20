@@ -103,7 +103,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public void Dispose() {
-            //_symbolIndex.Dispose();
             _allIndexCts.Cancel();
             _allIndexCts.Dispose();
         }
