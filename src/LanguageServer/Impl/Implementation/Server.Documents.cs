@@ -26,7 +26,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
         public void DidOpenTextDocument(DidOpenTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
-            Uri uri = @params.textDocument.uri;
+            var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Opening document {uri}");
 
             var doc = _rdt.OpenDocument(uri, @params.textDocument.text);
@@ -35,7 +35,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public void DidChangeTextDocument(DidChangeTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
-            Uri uri = @params.textDocument.uri;
+            var uri = @params.textDocument.uri;
             var doc = _rdt.GetDocument(uri);
             if (doc != null) {
                 var changes = new List<DocumentChange>();
@@ -63,7 +63,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public void DidCloseTextDocument(DidCloseTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
-            Uri uri = @params.textDocument.uri;
+            var uri = @params.textDocument.uri;
             _rdt.CloseDocument(uri);
             _indexManager.ProcessClosedFile(uri.AbsolutePath);
         }
