@@ -26,7 +26,7 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class SymbolIndex : ISymbolIndex {
-        private readonly ConcurrentDictionary<string, MostRecentDocumentSymbols> _index;
+        private readonly ConcurrentDictionary<string, IMostRecentDocumentSymbols> _index;
         private readonly IFileSystem _fileSystem;
         private readonly PythonLanguageVersion _version;
 
@@ -35,7 +35,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _version = version;
 
             var comparer = PathEqualityComparer.Instance;
-            _index = new ConcurrentDictionary<string, MostRecentDocumentSymbols>(comparer);
+            _index = new ConcurrentDictionary<string, IMostRecentDocumentSymbols>(comparer);
         }
 
         public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbols(string path) {
@@ -61,7 +61,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return results;
         }
 
-        private async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsQueryAsync(string filePath, string query, MostRecentDocumentSymbols recentSymbols, CancellationToken cancellationToken) {
+        private async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsQueryAsync(string filePath, string query, IMostRecentDocumentSymbols recentSymbols, CancellationToken cancellationToken) {
             var symbols = await recentSymbols.GetSymbolsAsync();
             cancellationToken.ThrowIfCancellationRequested();
             return WorkspaceSymbolsQuery(filePath, query, symbols);
@@ -111,7 +111,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return symbols.Select((symbol) => (symbol, parentName)).ToList();
         }
 
-        private MostRecentDocumentSymbols MakeMostRecentDocSymbols(string path) {
+        private IMostRecentDocumentSymbols MakeMostRecentDocSymbols(string path) {
             return new MostRecentDocumentSymbols(path, _fileSystem, _version);
         }
     }

@@ -11,7 +11,7 @@ using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
-    class MostRecentDocumentSymbols : IDisposable {
+    class MostRecentDocumentSymbols : IMostRecentDocumentSymbols {
         private readonly object _syncObj = new object();
         private readonly IIndexParser _indexParser;
         private readonly string _path;
