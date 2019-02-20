@@ -23,9 +23,9 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private bool _wasLastTaskDisposed = true;
 
-        public MostRecentDocumentSymbols(string path, IFileSystem fileSystem, PythonLanguageVersion version) {
+        public MostRecentDocumentSymbols(string path, IFileSystem fileSystem, PythonLanguageVersion version, IIndexParser indexParser) {
             _path = path;
-            _indexParser = new IndexParser(fileSystem, version);
+            _indexParser = indexParser;
         }
 
         public void Parse() {

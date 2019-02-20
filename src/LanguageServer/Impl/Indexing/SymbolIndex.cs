@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,6 +29,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly ConcurrentDictionary<string, IMostRecentDocumentSymbols> _index;
         private readonly IFileSystem _fileSystem;
         private readonly PythonLanguageVersion _version;
+        private readonly IIndexParser _indexParser;
 
         public SymbolIndex(IFileSystem fileSystem, PythonLanguageVersion version) {
             _fileSystem = fileSystem;
@@ -35,6 +37,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
             var comparer = PathEqualityComparer.Instance;
             _index = new ConcurrentDictionary<string, IMostRecentDocumentSymbols>(comparer);
+            _indexParser = new IndexParser(_fileSystem, _version);
         }
 
         public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken ct = default) {
@@ -46,14 +49,61 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken ct = default) {
-            var tasks = _index
-                .Select(kvp => WorkspaceSymbolsQueryAsync(kvp.Key, query, kvp.Value, ct))
-                .ToArray();
-            var symbols = await Task.WhenAll(tasks);
-            // Flatten and limit
-            return symbols.SelectMany(l => l)
-                           .Take(maxLength)
-                           .ToList();
+            /*var workspaceCts = new CancellationTokenSource();
+            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, workspaceCts.Token);
+
+            var workingTasks = new List<Task<IReadOnlyList<FlatSymbol>>>();
+            var results = IterateDoneSymbols(query, maxLength, workingTasks, linkedCts);
+            await UntilMaxLength(maxLength, results, workingTasks);
+
+            workspaceCts.Cancel();
+            workspaceCts.Dispose();
+            linkedCts.Dispose();
+            return results.Take(maxLength)
+                           .ToList();*/
+            var results = new List<FlatSymbol>();
+
+            foreach (var filePathAndRecent in _index.Select(kvp => kvp)) {
+                var symbols = await filePathAndRecent.Value.GetSymbolsAsync(ct);
+                results.AddRange(WorkspaceSymbolsQuery(filePathAndRecent.Key, query, symbols));
+                if (results.Count >= maxLength) {
+                    break;
+                }
+            }
+            return results;
+        }
+
+        private List<FlatSymbol> IterateDoneSymbols(string query, int maxLength, List<Task<IReadOnlyList<FlatSymbol>>> workingTasks, CancellationTokenSource linkedCts) {
+            var results = new List<FlatSymbol>();
+            foreach (var filePathAndRecent in _index.Select(kvp => kvp)) {
+                if (results.Count >= maxLength) {
+                    break;
+                }
+
+                var symbolsTask = filePathAndRecent.Value.GetSymbolsAsync();
+                if (symbolsTask.IsCompletedSuccessfully) {
+                    results.AddRange(WorkspaceSymbolsQuery(filePathAndRecent.Key, query, symbolsTask.Result));
+                } else if (!symbolsTask.IsCompleted) {
+                    workingTasks.Add(WorkspaceSymbolsQueryAsync(filePathAndRecent.Key, query, filePathAndRecent.Value, linkedCts.Token));
+                }
+            }
+            return results;
+        }
+
+        private static async Task UntilMaxLength(int maxLength, List<FlatSymbol> results, List<Task<IReadOnlyList<FlatSymbol>>> workingTasks) {
+            while (results.Count < maxLength && !workingTasks.IsNullOrEmpty()) {
+                const int maxAwaitingTasks = 25;
+                var awaitTasks = workingTasks.Take(maxAwaitingTasks).ToArray();
+                workingTasks.RemoveRange(0, awaitTasks.Length);
+                await Task.WhenAny(awaitTasks);
+                foreach (var t in awaitTasks) {
+                    if (!t.IsCompleted) {
+                        workingTasks.Add(t);
+                    } else if (t.IsCompletedSuccessfully) {
+                        results.AddRange(t.Result);
+                    }
+                }
+            }
         }
 
         private async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsQueryAsync(string filePath, string query, IMostRecentDocumentSymbols recentSymbols, CancellationToken cancellationToken) {
@@ -106,7 +156,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         private IMostRecentDocumentSymbols MakeMostRecentDocSymbols(string path) {
-            return new MostRecentDocumentSymbols(path, _fileSystem, _version);
+            return new MostRecentDocumentSymbols(path, _fileSystem, _version, _indexParser);
         }
 
         public void Dispose() {

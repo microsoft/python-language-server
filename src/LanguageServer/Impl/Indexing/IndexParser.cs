@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,8 +24,10 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class IndexParser : IIndexParser {
+        private const int MaxConcurrentParsings = 50;
         private readonly IFileSystem _fileSystem;
         private readonly PythonLanguageVersion _version;
+        private readonly SemaphoreSlim _semaphore;
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private readonly object _syncObj = new object();
 
@@ -33,25 +36,35 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
             _fileSystem = fileSystem;
             _version = version;
+            _semaphore = new SemaphoreSlim(MaxConcurrentParsings);
         }
 
         public Task<PythonAst> ParseAsync(string path, CancellationToken cancellationToken = default) {
             var linkedParseCts =
                 CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
             Task<PythonAst> parseTask;
-            parseTask = Task.Run(() => Parse(path, linkedParseCts));
+            parseTask = Task.Run(async () => await Parse(path, linkedParseCts));
             parseTask.ContinueWith(_ => linkedParseCts.Dispose());
             return parseTask;
         }
 
-        private PythonAst Parse(string path, CancellationTokenSource parseCts) {
-            parseCts.Token.ThrowIfCancellationRequested();
-            using (var stream = _fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                var parser = Parser.CreateParser(stream, _version);
-                var ast = parser.ParseFile();
+        private async Task<PythonAst> Parse(string path, CancellationTokenSource parseCts) {
+            await _semaphore.WaitAsync();
+            PythonAst ast;
+            try {
                 parseCts.Token.ThrowIfCancellationRequested();
-                return ast;
+                using (var stream = _fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    var parser = Parser.CreateParser(stream, _version);
+                    ast = parser.ParseFile();
+                }
+            } catch (Exception ex) {
+                _semaphore.Release();
+                throw ex;
+            } finally {
+                _semaphore.Release();
             }
+
+            return ast;
         }
 
         public void Dispose() {
