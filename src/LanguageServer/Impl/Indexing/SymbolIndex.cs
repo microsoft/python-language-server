@@ -48,11 +48,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken ct = default) {
             var tasks = _index
                 .Select(kvp => WorkspaceSymbolsQueryAsync(kvp.Key, query, kvp.Value, ct))
-                .Take(maxLength)
                 .ToArray();
             var symbols = await Task.WhenAll(tasks);
-            // Flatten
-            return symbols.SelectMany(l => l).ToList();
+            // Flatten and limit
+            return symbols.SelectMany(l => l)
+                           .Take(maxLength)
+                           .ToList();
         }
 
         private async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsQueryAsync(string filePath, string query, IMostRecentDocumentSymbols recentSymbols, CancellationToken cancellationToken) {
