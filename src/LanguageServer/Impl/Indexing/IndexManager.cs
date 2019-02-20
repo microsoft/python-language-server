@@ -47,6 +47,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             Check.ArgumentNotNull(nameof(rootPath), rootPath);
             Check.ArgumentNotNull(nameof(includeFiles), includeFiles);
             Check.ArgumentNotNull(nameof(excludeFiles), excludeFiles);
+            Check.ArgumentNotNull(nameof(idleTimeService), idleTimeService);
 
             _symbolIndex = symbolIndex;
             _fileSystem = fileSystem;
@@ -140,10 +141,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             foreach (var doc in pendingDocs.MaybeEnumerate()) {
                 ReIndexFile(doc.Uri.AbsolutePath, doc);
             }
-        }
-
-        private MostRecentDocumentSymbols MakeMostRecentFileSymbols(string path) {
-            return new MostRecentDocumentSymbols(path, _fileSystem, _version);
         }
 
         private class UriDocumentComparer : IEqualityComparer<IDocument> {
