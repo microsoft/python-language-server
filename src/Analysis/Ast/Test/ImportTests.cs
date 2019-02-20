@@ -156,6 +156,12 @@ x = f()
         }
 
         [TestMethod, Priority(0)]
+        public async Task FromOsPathMembers() {
+            var analysis = await GetAnalysisAsync(@"from os.path import join as JOIN");
+            analysis.Should().HaveVariable("JOIN").Which.Should().HaveType<IPythonFunctionType>();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task UnresolvedImport() {
             var analysis = await GetAnalysisAsync(@"import nonexistent");
             analysis.Should().HaveVariable("nonexistent")

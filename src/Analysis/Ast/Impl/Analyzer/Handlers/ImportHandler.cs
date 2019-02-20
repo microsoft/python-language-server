@@ -105,7 +105,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
                 module = childModule;
             }
-
             return module;
         }
 
