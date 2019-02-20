@@ -174,19 +174,15 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
             ModuleCache = new ModuleCache(_interpreter, _services);
-
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
-
-            var addedRoots = PathResolver.SetRoot(_root);
-            ReloadModulePaths(addedRoots);
-
+            
+            var addedRoots = new HashSet<string>();
+            addedRoots.UnionWith(PathResolver.SetRoot(_root));
+            
             var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
-            addedRoots = PathResolver.SetInterpreterSearchPaths(interpreterPaths);
-
-            ReloadModulePaths(addedRoots);
-            cancellationToken.ThrowIfCancellationRequested();
-
-            addedRoots = SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
+            addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(interpreterPaths));
+            
+            addedRoots.UnionWith(SetUserSearchPaths(_interpreter.Configuration.SearchPaths));
             ReloadModulePaths(addedRoots);
         }
 
