@@ -20,7 +20,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 
@@ -51,14 +50,9 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 .Select(kvp => WorkspaceSymbolsQueryAsync(kvp.Key, query, kvp.Value, ct))
                 .Take(maxLength)
                 .ToArray();
-            var b = await Task.WhenAll(tasks);
-            List<FlatSymbol> results = new List<FlatSymbol>();
-            foreach (var t in b) {
-                foreach (var tt in t) {
-                    results.Add(tt);
-                }
-            }
-            return results;
+            var symbols = await Task.WhenAll(tasks);
+            // Flatten
+            return symbols.SelectMany(l => l).ToList();
         }
 
         private async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsQueryAsync(string filePath, string query, IMostRecentDocumentSymbols recentSymbols, CancellationToken cancellationToken) {
