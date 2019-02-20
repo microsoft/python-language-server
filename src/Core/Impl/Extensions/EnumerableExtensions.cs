@@ -99,7 +99,11 @@ namespace Microsoft.Python.Core {
                 var item = items.Dequeue();
                 yield return item;
 
-                var children = selectChildren(item).MaybeEnumerate();
+                var children = selectChildren(item);
+                if (children == null) {
+                    continue;
+                }
+
                 foreach (var child in children) {
                     items.Enqueue(child);
                 }
