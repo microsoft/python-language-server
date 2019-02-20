@@ -109,5 +109,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private IMostRecentDocumentSymbols MakeMostRecentDocSymbols(string path) {
             return new MostRecentDocumentSymbols(path, _fileSystem, _version);
         }
+
+        public void Dispose() {
+            foreach (var recentSymbols in _index.Values) {
+                recentSymbols.Dispose();
+            }
+        }
     }
 }

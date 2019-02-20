@@ -13,13 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
-    internal interface ISymbolIndex {
+    internal interface ISymbolIndex : IDisposable {
         Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken ct = default);
         Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbols(string path);
         void Add(string path, IDocument doc);

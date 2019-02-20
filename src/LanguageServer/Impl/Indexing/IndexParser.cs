@@ -27,7 +27,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly PythonLanguageVersion _version;
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
         private readonly object _syncObj = new object();
-        private CancellationTokenSource _linkedParseCts;
 
         public IndexParser(IFileSystem fileSystem, PythonLanguageVersion version) {
             Check.ArgumentNotNull(nameof(fileSystem), fileSystem);
@@ -37,46 +36,30 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public Task<PythonAst> ParseAsync(string path, CancellationToken cancellationToken = default) {
-            lock (_syncObj) {
-                CancelCurrentParse();
-                _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
-                return Task.Run(() => Parse(path, _linkedParseCts));
-            }
-        }
-
-        private void CancelCurrentParse() {
-            Check.InvalidOperation(Monitor.IsEntered(_syncObj));
-
-            _linkedParseCts?.Cancel();
-            _linkedParseCts?.Dispose();
-            _linkedParseCts = null;
+            var linkedParseCts =
+                CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
+            Task<PythonAst> parseTask;
+            parseTask = Task.Run(() => Parse(path, linkedParseCts));
+            parseTask.ContinueWith(_ => linkedParseCts.Dispose());
+            return parseTask;
         }
 
         private PythonAst Parse(string path, CancellationTokenSource parseCts) {
             parseCts.Token.ThrowIfCancellationRequested();
-            PythonAst ast = null;
             using (var stream = _fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                 var parser = Parser.CreateParser(stream, _version);
-                ast = parser.ParseFile();
+                var ast = parser.ParseFile();
+                parseCts.Token.ThrowIfCancellationRequested();
+                return ast;
             }
-            parseCts.Token.ThrowIfCancellationRequested();
-            lock (_syncObj) {
-                if (_linkedParseCts == parseCts) {
-                    _linkedParseCts.Dispose();
-                    _linkedParseCts = null;
-                }
-            }
-            return ast;
         }
 
         public void Dispose() {
             lock (_syncObj) {
-                _allProcessingCts.Cancel();
-                _allProcessingCts.Dispose();
-
-                _linkedParseCts?.Cancel();
-                _linkedParseCts?.Dispose();
-                _linkedParseCts = null;
+                if (!_allProcessingCts.IsCancellationRequested) {
+                    _allProcessingCts.Cancel();
+                    _allProcessingCts.Dispose();
+                }
             }
         }
     }
