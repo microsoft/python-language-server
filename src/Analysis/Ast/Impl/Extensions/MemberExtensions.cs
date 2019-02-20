@@ -21,10 +21,10 @@ namespace Microsoft.Python.Analysis {
     public static class MemberExtensions {
         public static bool IsUnknown(this IMember m) {
             switch (m) {
+                case null:
                 case IPythonType pt when pt.IsUnknown():
                 case IPythonInstance pi when pi.IsUnknown():
                 case IVariable v when v.Value == null || v.Value.IsUnknown():
-                case null:
                     return true;
                 default:
                     return m.MemberType == PythonMemberType.Unknown;
