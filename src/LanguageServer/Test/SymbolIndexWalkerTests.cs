@@ -611,6 +611,16 @@ else:
             });
         }
 
+        [TestMethod, Priority(0)]
+        public void WalkerAnnotatedAssignments() {
+            var code = @"x:int = 1";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2))
+            });
+        }
+
         private PythonAst GetParse(string code, PythonLanguageVersion version = PythonLanguageVersion.V37)
             => Parser.CreateParser(new StringReader(code), version).ParseFile();
 

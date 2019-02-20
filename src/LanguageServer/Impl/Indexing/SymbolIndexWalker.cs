@@ -124,9 +124,18 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public override bool Walk(AssignmentStatement node) {
             node.Right?.Walk(this);
-            foreach (var ne in node.Left.OfType<NameExpression>()) {
-                AddVarSymbol(ne);
+            foreach (var exp in node.Left) {
+                if (exp is ExpressionWithAnnotation expWithAnnot) {
+                    if (expWithAnnot.Expression is NameExpression nameExpression) {
+                        AddVarSymbol(nameExpression);
+                    }
+                }
+
+                if (exp is NameExpression ne) {
+                    AddVarSymbol(ne);
+                }
             }
+
             return false;
         }
 
