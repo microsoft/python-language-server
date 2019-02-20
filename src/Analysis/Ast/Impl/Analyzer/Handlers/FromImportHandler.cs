@@ -46,12 +46,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     ImportMembersFromSelf(node);
                     break;
                 case ModuleImport moduleImport:
-                    ImportMembersFromModule(node, moduleImport.FullName, cancellationToken);
+                    ImportMembersFromModule(node, moduleImport.FullName);
                     break;
                 case PossibleModuleImport possibleModuleImport:
                     var module = HandlePossibleImport(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, Eval.GetLoc(node.Root));
                     if (module != null) {
-                        await ImportMembersFromModule(node, module);
+                        ImportMembersFromModule(node, module.Name);
                     }
                     break;
                 case PackageImport packageImports:
@@ -95,30 +95,24 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        private void ImportMembersFromModule(FromImportStatement node, string moduleName, CancellationToken cancellationToken = default) {
+        private void ImportMembersFromModule(FromImportStatement node, string moduleName) {
             var names = node.Names;
             var asNames = node.AsNames;
             var module = ModuleResolution.GetOrLoadModule(moduleName);
             if (module == null) {
                 return;
             }
-
-        private async Task ImportMembersFromModuleAsync(FromImportStatement node, IPythonModule module, CancellationToken cancellationToken = default) {
-            var names = node.Names;
-            var asNames = node.AsNames;
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: warn this is not a good style per
                 // TODO: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
                 // TODO: warn this is invalid if not in the global scope.
-                HandleModuleImportStar(module, cancellationToken);
+                HandleModuleImportStar(module);
                 return;
             }
 
             Eval.DeclareVariable(module.Name, module, VariableSource.Import, node);
 
             for (var i = 0; i < names.Count; i++) {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 var memberName = names[i].Name;
                 if (!string.IsNullOrEmpty(memberName)) {
                     var variableName = asNames[i]?.Name ?? memberName;

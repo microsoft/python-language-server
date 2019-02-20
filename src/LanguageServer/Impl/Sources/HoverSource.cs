@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -130,18 +131,18 @@ namespace Microsoft.Python.LanguageServer.Sources {
             // 'import A.B, B.C, D.E as F, G, H'
             var eval = analysis.ExpressionEvaluator;
             var position = location.ToIndex(analysis.Ast);
-            var dottedNameIndex = imp.Names?.IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
+            var dottedNameIndex = imp.Names.IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
             if (dottedNameIndex >= 0) {
-                var dottedName = imp.Names[dottedNameIndex.Value];
+                var dottedName = imp.Names[dottedNameIndex];
                 var module = GetModule(dottedName.MakeString(), dottedName.Names, position, analysis);
                 module = module ?? GetModuleFromDottedName(dottedName.Names, position, eval);
                 return module != null ? _docSource.GetHover(module.Name, module) : null;
             }
             // Are we over 'D'?
-            var nameIndex = imp.AsNames?.ExcludeDefault().IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
+            var nameIndex = imp.AsNames.ExcludeDefault().IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
             if (nameIndex >= 0) {
                 using (eval.OpenScope(analysis.Document, scope)) {
-                    var variableName = imp.AsNames[nameIndex.Value].Name;
+                    var variableName = imp.AsNames[nameIndex].Name;
                     var m = eval.LookupNameInScopes(variableName, out _);
                     if (m != null) {
                         return _docSource.GetHover(variableName, m);
@@ -162,21 +163,21 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 return module != null ? _docSource.GetHover(module.Name, module) : null;
             }
             // Are we over 'C'?
-            var nameIndex = fi.Names?.ExcludeDefault().IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
+            var nameIndex = fi.Names.ExcludeDefault().IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
             if (nameIndex >= 0) {
                 var module = eval.Interpreter.ModuleResolution.GetImportedModule(fi.Root.MakeString());
                 module = module ?? GetModuleFromDottedName(fi.Root.Names, -1, eval);
                 if (module != null) {
-                    var memberName = fi.Names[nameIndex.Value].Name;
+                    var memberName = fi.Names[nameIndex].Name;
                     var m = module.GetMember(memberName);
                     return m != null ? _docSource.GetHover(memberName, m) : null;
                 }
             }
             // Are we over 'D'?
-            nameIndex = fi.AsNames?.ExcludeDefault().IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
+            nameIndex = fi.AsNames.ExcludeDefault().IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
             if (nameIndex >= 0) {
                 using (eval.OpenScope(analysis.Document, scope)) {
-                    var variableName = fi.AsNames[nameIndex.Value].Name;
+                    var variableName = fi.AsNames[nameIndex].Name;
                     var m = eval.LookupNameInScopes(variableName, out _);
                     return m != null ? _docSource.GetHover(variableName, m) : null;
                 }
@@ -184,7 +185,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return null;
         }
 
-        private static IPythonModule GetModule(string moduleName, IList<NameExpression> names, int position, IDocumentAnalysis analysis) {
+        private static IPythonModule GetModule(string moduleName, ImmutableArray<NameExpression> names, int position, IDocumentAnalysis analysis) {
             IPythonModule module = null;
             var eval = analysis.ExpressionEvaluator;
             var nameIndex = names.IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
@@ -194,7 +195,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return module ?? eval.Interpreter.ModuleResolution.GetImportedModule(moduleName);
         }
 
-        private static IPythonModule GetModuleFromDottedName(IList<NameExpression> names, int position, IExpressionEvaluator eval) {
+        private static IPythonModule GetModuleFromDottedName(ImmutableArray<NameExpression> names, int position, IExpressionEvaluator eval) {
             IPythonModule module = null;
             var index = position >= 0 ? names.IndexOf(n => n.StartIndex <= position && position <= n.EndIndex) : names.Count - 1;
             if (index >= 0) {
