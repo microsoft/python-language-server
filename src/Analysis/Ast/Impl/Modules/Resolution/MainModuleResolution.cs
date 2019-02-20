@@ -95,6 +95,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 stub = _interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
             }
 
+            // If stub is created and its path equals to module, return that stub as module
+            if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
+                return stub;
+            }
+            
             if (moduleImport.IsBuiltin) {
                 _log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
                 module = new CompiledBuiltinPythonModule(name, stub, _services);
