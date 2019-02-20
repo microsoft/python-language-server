@@ -43,9 +43,14 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 FindExpressionOptions.Hover, out var node, out var statement, out var scope);
 
             IMember value = null;
+            IPythonType selfType = null;
             var call = node as CallExpression;
             if (call != null) {
                 using (analysis.ExpressionEvaluator.OpenScope(analysis.Document, scope)) {
+                    if (call.Target is MemberExpression mex) {
+                        var v = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(mex.Target, cancellationToken);
+                        selfType = v?.GetPythonType();
+                    }
                     value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(call.Target, cancellationToken);
                 }
             }
@@ -67,7 +72,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }).ToArray();
 
                 signatures[i] = new SignatureInformation {
-                    label = _docSource.GetSignatureString(ft, i),
+                    label = _docSource.GetSignatureString(ft, selfType, i),
                     documentation = _docSource.FormatDocumentation(ft.Documentation),
                     parameters = parameters
                 };
@@ -84,11 +89,15 @@ namespace Microsoft.Python.LanguageServer.Sources {
             if (activeParameter >= 0) {
                 // TODO: Better selection of active signature by argument set
                 activeSignature = signatures
-                                      .Select((s, i) => Tuple.Create(s, i))
-                                      .OrderBy(t => t.Item1.parameters.Length)
-                                      .FirstOrDefault(t => t.Item1.parameters.Length > activeParameter)
-                                      ?.Item2 ?? -1;
+                    .Select((s, i) => Tuple.Create(s, i))
+                    .OrderBy(t => t.Item1.parameters.Length)
+                    .FirstOrDefault(t => t.Item1.parameters.Length > activeParameter)
+                    ?.Item2 ?? -1;
             }
+
+            activeSignature = activeSignature >= 0
+                ? activeSignature
+                : (signatures.Length > 0 ? 0 : -1);
 
             return new SignatureHelp {
                 signatures = signatures.ToArray(),

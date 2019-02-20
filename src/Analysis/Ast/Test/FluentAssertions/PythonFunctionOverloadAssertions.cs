@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         protected override string Identifier => nameof(IPythonFunctionOverload);
 
         public AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonType> HaveReturnType(string because = "", params object[] reasonArgs) {
-            var returnType = Subject.GetReturnValue(LocationInfo.Empty, ArgumentSet.Empty);
+            var returnType = Subject.Call(ArgumentSet.Empty, null);
             Execute.Assertion.ForCondition(returnType != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {Subject.Name} overload to have a return type{{reason}}, but it has none.");
@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         public AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonFunctionOverload> HaveReturnType(BuiltinTypeId typeid, string because = "", params object[] reasonArgs) {
-            Subject.GetReturnValue(LocationInfo.Empty, ArgumentSet.Empty).GetPythonType().TypeId.Should().Be(typeid);
+            Subject.Call(ArgumentSet.Empty, null).GetPythonType().TypeId.Should().Be(typeid);
             return new AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonFunctionOverload>(this, Subject);
         }
 
@@ -53,11 +53,12 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         public AndWhichConstraint<PythonFunctionOverloadAssertions, string> HaveReturnDocumentation(string documentation, string because = "", params object[] reasonArgs) {
-            Execute.Assertion.ForCondition(Subject.ReturnDocumentation == documentation)
+            var returnDoc = Subject.GetReturnDocumentation(null);
+            Execute.Assertion.ForCondition(Subject.GetReturnDocumentation(null) == documentation)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {Subject.Name} overload to have a return documentation '{documentation}', but it has '{Subject.ReturnDocumentation}'.");
+                .FailWith($"Expected {Subject.Name} overload to have a return documentation '{documentation}', but it has '{returnDoc}'.");
 
-            return new AndWhichConstraint<PythonFunctionOverloadAssertions, string>(this, Subject.ReturnDocumentation);
+            return new AndWhichConstraint<PythonFunctionOverloadAssertions, string>(this, returnDoc);
         }
 
         public AndWhichConstraint<PythonFunctionOverloadAssertions, IPythonFunctionOverload> HaveName(string name, string because = "", params object[] reasonArgs) {
@@ -105,7 +106,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             => HaveParameters(Enumerable.Empty<string>(), because, reasonArgs);
 
         public AndConstraint<PythonFunctionOverloadAssertions> HaveReturnType(string type, string because = "", params object[] reasonArgs) {
-            var returnType = Subject.GetReturnValue(LocationInfo.Empty, ArgumentSet.Empty).GetPythonType();
+            var returnType = Subject.Call(ArgumentSet.Empty, null).GetPythonType();
             Execute.Assertion.ForCondition(string.Equals(returnType.Name, type, StringComparison.Ordinal))
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {Subject.Name} to have return type [{type}]{{reason}}, but it has [{returnType}].");

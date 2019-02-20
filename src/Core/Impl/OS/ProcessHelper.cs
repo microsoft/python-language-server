@@ -24,7 +24,7 @@ namespace Microsoft.Python.Core.OS {
     public sealed class ProcessHelper : IDisposable {
         private Process _process;
         private int? _exitCode;
-        private readonly SemaphoreSlim _seenNullOutput, _seenNullError;
+        private readonly AsyncManualResetEvent _seenNullOutput, _seenNullError;
 
         public ProcessHelper(string filename, IEnumerable<string> arguments, string workingDir = null) {
             if (!File.Exists(filename)) {
@@ -44,8 +44,8 @@ namespace Microsoft.Python.Core.OS {
                 RedirectStandardError = true
             };
 
-            _seenNullOutput = new SemaphoreSlim(1);
-            _seenNullError = new SemaphoreSlim(1);
+            _seenNullOutput = new AsyncManualResetEvent();
+            _seenNullError = new AsyncManualResetEvent();
         }
 
         public ProcessStartInfo StartInfo { get; }
@@ -56,19 +56,20 @@ namespace Microsoft.Python.Core.OS {
         public Action<string> OnErrorLine { get; set; }
 
         public void Dispose() {
-            _seenNullOutput.Dispose();
-            _seenNullError.Dispose();
+            _seenNullOutput.Set();
+            _seenNullError.Set();
             _process?.Dispose();
         }
 
         public void Start() {
-            _seenNullOutput.Wait(0);
-            _seenNullError.Wait(0);
+            _seenNullOutput.Reset();
+            _seenNullError.Reset();
 
             var p = new Process {
                 StartInfo = StartInfo
             };
 
+            p.Exited += Process_Exited;
             p.OutputDataReceived += Process_OutputDataReceived;
             p.ErrorDataReceived += Process_ErrorDataReceived;
 
@@ -79,10 +80,11 @@ namespace Microsoft.Python.Core.OS {
                 // clean up.
                 _exitCode = ex.HResult;
                 OnErrorLine?.Invoke(ex.ToString());
-                _seenNullError.Release();
-                _seenNullOutput.Release();
+                _seenNullOutput.Set();
+                _seenNullError.Set();
                 p.OutputDataReceived -= Process_OutputDataReceived;
                 p.ErrorDataReceived -= Process_ErrorDataReceived;
+                p.Exited -= Process_Exited;
                 return;
             }
 
@@ -100,7 +102,7 @@ namespace Microsoft.Python.Core.OS {
         private void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e) {
             try {
                 if (e.Data == null) {
-                    _seenNullError.Release();
+                    _seenNullError.Set();
                 } else {
                     OnErrorLine?.Invoke(e.Data.TrimEnd());
                 }
@@ -109,10 +111,15 @@ namespace Microsoft.Python.Core.OS {
             }
         }
 
+        private void Process_Exited(object sender, EventArgs eventArgs) {
+            _seenNullOutput.Set();
+            _seenNullError.Set();
+        }
+
         private void Process_OutputDataReceived(object sender, DataReceivedEventArgs e) {
             try {
                 if (e.Data == null) {
-                    _seenNullOutput.Release();
+                    _seenNullOutput.Set();
                 } else {
                     OnOutputLine?.Invoke(e.Data.TrimEnd());
                 }

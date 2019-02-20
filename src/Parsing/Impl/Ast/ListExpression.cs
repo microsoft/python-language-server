@@ -19,14 +19,17 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ListExpression : SequenceExpression {
-        public ListExpression(params Expression[] items)
+        public ListExpression(ImmutableArray<Expression> items)
             : base(items) {
         }
 
         public override string NodeName => "list display";
+
+        public override IEnumerable<Node> GetChildNodes() => Items;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -61,7 +64,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        internal static void AppendItems<T>(StringBuilder res, PythonAst ast, CodeFormattingOptions format, string start, string end, Node node, IList<T> items, bool? delimiterWhiteSpace = null) where T : Expression {
+        internal static void AppendItems<T>(StringBuilder res, PythonAst ast, CodeFormattingOptions format, string start, string end, Node node, ImmutableArray<T> items, bool? delimiterWhiteSpace = null) where T : Expression {
             string initialWs = null, ws = null;
             if (delimiterWhiteSpace.HasValue) {
                 initialWs = delimiterWhiteSpace.Value ? " " : string.Empty;

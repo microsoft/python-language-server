@@ -35,5 +35,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Base types.
         /// </summary>
         IReadOnlyList<IPythonType> Bases { get; }
+
+        /// <summary>
+        /// If class is created off generic template, name/type
+        /// pairs of the generic parameter name / actual supplied type.
+        /// </summary>
+        IReadOnlyDictionary<string, IPythonType> GenericParameters { get; }
     }
 }

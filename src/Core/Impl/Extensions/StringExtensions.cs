@@ -18,11 +18,16 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Core {
     public static class StringExtensions {
+        private static readonly bool IgnoreCaseInPaths = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        public static StringComparer PathsStringComparer { get; } = IgnoreCaseInPaths ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        public static StringComparison PathsStringComparison { get; } = IgnoreCaseInPaths ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
 #if DEBUG
         private static readonly Regex SubstitutionRegex = new Regex(
             @"\{(\d+)",
@@ -141,11 +146,17 @@ namespace Microsoft.Python.Core {
             return "\"{0}\"".FormatInvariant(arg);
         }
 
+        public static bool PathStartsWith(this string s, string prefix)
+            => s?.StartsWith(prefix, PathsStringComparison) ?? false;
+
         public static bool StartsWithOrdinal(this string s, string prefix, bool ignoreCase = false)
             => s?.StartsWith(prefix, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? false;
 
         public static bool EndsWithOrdinal(this string s, string suffix, bool ignoreCase = false)
             => s?.EndsWith(suffix, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? false;
+
+        public static bool PathEndsWithAny(this string s, params string[] values)
+            => s.EndsWithAnyOrdinal(values, IgnoreCaseInPaths);
 
         public static bool EndsWithAnyOrdinal(this string s, params string[] values)
             => s.EndsWithAnyOrdinal(values, false);
@@ -190,10 +201,16 @@ namespace Microsoft.Python.Core {
         public static bool EqualsOrdinal(this string s, string other)
             => string.Equals(s, other, StringComparison.Ordinal);
 
+        public static bool PathEquals(this string s, string other)
+            => string.Equals(s, other, PathsStringComparison);
+
         public static bool EqualsOrdinal(this string s, int index, string other, int otherIndex, int length, bool ignoreCase = false)
             => string.Compare(s, index, other, otherIndex, length, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) == 0;
         public static bool ContainsOrdinal(this string s, string value, bool ignoreCase = false)
             => s.IndexOfOrdinal(value, ignoreCase: ignoreCase) != -1;
+
+        public static int GetPathHashCode(this string s)
+            => IgnoreCaseInPaths ? StringComparer.OrdinalIgnoreCase.GetHashCode(s) : StringComparer.Ordinal.GetHashCode(s);
 
         public static string[] Split(this string s, char separator, int startIndex, int length) {
             var count = 0;

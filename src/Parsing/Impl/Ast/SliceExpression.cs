@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +38,12 @@ namespace Microsoft.Python.Parsing.Ast {
         /// or providing an empty step parameter) false if only start and stop were provided.
         /// </summary>
         public bool StepProvided { get; }
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (SliceStart != null) yield return SliceStart;
+            if (SliceStop != null) yield return SliceStop;
+            if (SliceStep != null) yield return SliceStep;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

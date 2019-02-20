@@ -24,6 +24,7 @@ using System.Text;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -3306,7 +3307,7 @@ pass
             };
         }
 
-        private static Action<IList<IfStatementTest>> IfTests(params Action<IfStatementTest>[] expectedTests) {
+        private static Action<ImmutableArray<IfStatementTest>> IfTests(params Action<IfStatementTest>[] expectedTests) {
             return tests => {
                 Assert.AreEqual(expectedTests.Length, tests.Count);
                 for (var i = 0; i < expectedTests.Length; i++) {
@@ -3315,7 +3316,7 @@ pass
             };
         }
 
-        private static Action<Statement> CheckIfStmt(Action<IList<IfStatementTest>> tests, Action<Statement> _else = null) {
+        private static Action<Statement> CheckIfStmt(Action<ImmutableArray<IfStatementTest>> tests, Action<Statement> _else = null) {
             return stmt => {
                 Assert.AreEqual(typeof(IfStatement), stmt.GetType());
                 var ifStmt = (IfStatement)stmt;
@@ -3492,12 +3493,12 @@ pass
                 }
 
                 if (bases != null) {
-                    Assert.AreEqual(bases.Length, classDef.Bases.Length);
+                    Assert.AreEqual(bases.Length, classDef.Bases.Count);
                     for (var i = 0; i < bases.Length; i++) {
                         bases[i](classDef.Bases[i]);
                     }
                 } else {
-                    Assert.AreEqual(0, classDef.Bases.Length);
+                    Assert.AreEqual(0, classDef.Bases.Count);
                 }
 
                 body(classDef.Body);

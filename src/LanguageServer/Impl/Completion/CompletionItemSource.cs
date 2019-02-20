@@ -35,10 +35,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
             _options = options;
         }
 
-        public CompletionItem CreateCompletionItem(string text, IMember member, string label = null)
-            => CreateCompletionItem(text, ToCompletionItemKind(member?.MemberType ?? PythonMemberType.Class), member, label);
+        public CompletionItem CreateCompletionItem(string text, IMember member, IPythonType self = null, string label = null)
+            => CreateCompletionItem(text, ToCompletionItemKind(member?.MemberType ?? PythonMemberType.Class), member, self, label);
 
-        public CompletionItem CreateCompletionItem(string text, CompletionItemKind kind, IMember member, string label = null) {
+        public CompletionItem CreateCompletionItem(string text, CompletionItemKind kind, IMember member, IPythonType self = null, string label = null) {
             var t = member?.GetPythonType();
             var docFormat = _docSource.DocumentationFormat;
 
@@ -54,7 +54,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 // Place regular items first, advanced entries last
                 sortText = char.IsLetter(text, 0) ? "1" : "2",
                 kind = kind,
-                documentation = !t.IsUnknown() ? _docSource.GetHover(label ?? text, member) : null
+                documentation = !t.IsUnknown() ? _docSource.GetHover(label ?? text, member, self) : null
             };
         }
 

@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
-            var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
+            var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken) ?? Eval.UnknownType;
 
             foreach (var lhs in node.Left) {
                 switch (lhs) {
@@ -180,7 +180,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             } else {
                 var defaultValue = await Eval.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? Eval.UnknownType;
 
-                paramType = defaultValue.GetPythonType();
+                paramType = defaultValue?.GetPythonType();
                 if (!paramType.IsUnknown()) {
                     pi?.SetDefaultValueType(paramType);
                 }

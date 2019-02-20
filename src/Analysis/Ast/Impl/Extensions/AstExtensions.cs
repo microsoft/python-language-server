@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
@@ -76,6 +77,16 @@ namespace Microsoft.Python.Analysis {
                 var paramName = p.GetVerbatimImage(tree) ?? p.Name;
                 return index >= p.StartIndex && index <= p.StartIndex + paramName.Length;
             });
+        }
+
+        public static string GetStringValue(this ConstantExpression cex) {
+            switch (cex.Value) {
+                case AsciiString asc:
+                    return asc.String;
+                case string s:
+                    return s;
+            }
+            return null;
         }
     }
 }

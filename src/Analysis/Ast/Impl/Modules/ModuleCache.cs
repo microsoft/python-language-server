@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Modules {
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
             _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.DatabasePath);
-            SearchPathCachePath = Path.Combine(_interpreter.Configuration.DatabasePath, "database.path");
+            SearchPathCachePath = Path.Combine(_interpreter.Configuration.DatabasePath, $"database{_interpreter.Configuration.Version}.path");
         }
 
         public string SearchPathCachePath { get; }
@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Modules {
             var rdt = _services.GetService<IRunningDocumentTable>();
             var mco = new ModuleCreationOptions {
                 ModuleName = name,
-                ModuleType = ModuleType.Stub,
+                ModuleType = ModuleType.Compiled,
                 FilePath = cache
             };
             var module = rdt.AddModule(mco);

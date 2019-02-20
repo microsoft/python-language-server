@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +36,7 @@ namespace Microsoft.Python.Parsing.Ast {
             set => IndexSpan = new IndexSpan(value, 0);
         }
 
+        public abstract IEnumerable<Node> GetChildNodes();
         public abstract void Walk(PythonWalker walker);
         public abstract Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default);
 

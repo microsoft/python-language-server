@@ -14,32 +14,35 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class DottedName : Node {
-        private readonly NameExpression[] _names;
-
-        public DottedName(NameExpression[]/*!*/ names) {
-            _names = names;
+        public DottedName(ImmutableArray<NameExpression> names) {
+            Names = names;
         }
 
-        public IList<NameExpression> Names => _names;
+        public ImmutableArray<NameExpression> Names { get; }
 
         public virtual string MakeString() {
-            if (_names.Length == 0) {
+            if (Names.Count == 0) {
                 return string.Empty;
             }
 
-            var ret = new StringBuilder(_names[0].Name);
-            for (var i = 1; i < _names.Length; i++) {
+            var ret = new StringBuilder(Names[0].Name);
+            for (var i = 1; i < Names.Count; i++) {
                 ret.Append('.');
-                ret.Append(_names[i].Name);
+                ret.Append(Names[i].Name);
             }
             return ret.ToString();
         }
+
+        public override IEnumerable<Node> GetChildNodes() => Names;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -56,7 +59,7 @@ namespace Microsoft.Python.Parsing.Ast {
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             var whitespace = this.GetNamesWhiteSpace(ast);
             
-            for (int i = 0, whitespaceIndex = 0; i < _names.Length; i++) {
+            for (int i = 0, whitespaceIndex = 0; i < Names.Count; i++) {
                 if (whitespace != null) {
                     res.Append(whitespace[whitespaceIndex++]);
                 }
@@ -66,7 +69,7 @@ namespace Microsoft.Python.Parsing.Ast {
                         res.Append(whitespace[whitespaceIndex++]);
                     }
                 }
-                _names[i].AppendCodeString(res, ast, format);
+                Names[i].AppendCodeString(res, ast, format);
             }
         }
 

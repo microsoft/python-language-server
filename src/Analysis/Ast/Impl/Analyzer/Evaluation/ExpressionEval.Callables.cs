@@ -157,12 +157,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized ||
                 instanceType.IsSpecialized || fn.DeclaringType.IsSpecialized ||
                 instanceType.Equals(fn.DeclaringType) ||
-                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].ReturnDocumentation)) {
+                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation(null))) {
 
                 if (fn.IsSpecialized && fn is PythonFunctionType ft) {
-                    foreach (var module in ft.Dependencies) {
+                    foreach (var moduleName in ft.Dependencies) {
                         cancellationToken.ThrowIfCancellationRequested();
-                        await Interpreter.ModuleResolution.ImportModuleAsync(module, cancellationToken);
+                        Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
                     }
                 }
 
@@ -218,7 +218,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var result = noErrorsMatches.Any()
                 ? noErrorsMatches.FirstOrDefault(args => IsMatch(args, fn.Overloads[args.OverloadIndex].Parameters))
                 : null;
-            
+
             // Optimistically pick the best available.
             return result ?? orderedSets.FirstOrDefault();
         }

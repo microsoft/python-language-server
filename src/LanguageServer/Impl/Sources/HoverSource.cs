@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +21,9 @@ using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -48,46 +51,33 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var range = new Range {
                 start = expr.GetStart(analysis.Ast),
-                end = expr.GetEnd(analysis.Ast),
+                end = expr.GetEnd(analysis.Ast)
             };
 
             var eval = analysis.ExpressionEvaluator;
             switch (statement) {
                 case FromImportStatement fi when node is NameExpression nex: {
-                    // In 'from A import B as C' B is not declared as a variable
-                    // so we have to fetch the type manually.
-                    var index = fi.Names.IndexOf(nex);
-                    if (index >= 0) {
-                        using (eval.OpenScope(analysis.Document, scope)) {
-                            var variable = eval.LookupNameInScopes(fi.Root.MakeString(), out _);
-                            if (variable.GetPythonType() is IPythonModule mod) {
-                                var v = mod.GetMember(nex.Name)?.GetPythonType();
-                                return new Hover {
-                                    contents = _docSource.GetHover(mod.Name, v),
-                                    range = range
-                                };
-                            }
-                        }
-                    }
-
-                    break;
-                }
-                case ImportStatement imp: {
-                    // In 'import A as B' 'A' is not declared as a variable
-                    // so we have to fetch the type manually.
-                    var index = location.ToIndex(analysis.Ast);
-                    var dottedName = imp.Names.FirstOrDefault(n => n.StartIndex <= index && index < n.EndIndex);
-                    if (dottedName != null) {
-                        var mod = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(dottedName.MakeString());
-                        if (mod != null) {
+                        var contents = HandleFromImport(fi, location, scope, analysis);
+                        if (contents != null) {
                             return new Hover {
-                                contents = _docSource.GetHover(null, mod),
+                                contents = contents,
                                 range = range
                             };
                         }
+
+                        break;
                     }
-                    break;
-                }
+                case ImportStatement imp: {
+                        var contents = HandleImport(imp, location, scope, analysis);
+                        if (contents != null) {
+                            return new Hover {
+                                contents = contents,
+                                range = range
+                            };
+                        }
+
+                        break;
+                    }
             }
 
             IMember value;
@@ -100,8 +90,24 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
             }
 
+            IPythonType self = null;
+            string name = null;
+            // If expression is A.B, trim applicable span to 'B'.
+            if (expr is MemberExpression mex) {
+                name = mex.Name;
+                range = new Range {
+                    start = mex.Target.GetEnd(analysis.Ast),
+                    end = range.end
+                };
+
+                // In case of a member expression get the target since if we end up with method
+                // of a generic class, the function will need specific type to determine its return
+                // value correctly. I.e. in x.func() we need to determine type of x (self for func).
+                var v = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(mex.Target, cancellationToken);
+                self = v?.GetPythonType();
+            }
+
             // Figure out name, if any
-            var name = (expr as MemberExpression)?.Name;
             name = name ?? (node as NameExpression)?.Name;
 
             // Special case hovering over self or cls
@@ -116,9 +122,89 @@ namespace Microsoft.Python.LanguageServer.Sources {
             name = name == null && statement is FunctionDefinition fd ? fd.Name : name;
 
             return new Hover {
-                contents = _docSource.GetHover(name, value),
+                contents = _docSource.GetHover(name, value, self),
                 range = range
             };
+        }
+
+        private MarkupContent HandleImport(ImportStatement imp, SourceLocation location, ScopeStatement scope, IDocumentAnalysis analysis) {
+            // 'import A.B, B.C, D.E as F, G, H'
+            var eval = analysis.ExpressionEvaluator;
+            var position = location.ToIndex(analysis.Ast);
+            var dottedNameIndex = imp.Names.IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
+            if (dottedNameIndex >= 0) {
+                var dottedName = imp.Names[dottedNameIndex];
+                var module = GetModule(dottedName.MakeString(), dottedName.Names, position, analysis);
+                module = module ?? GetModuleFromDottedName(dottedName.Names, position, eval);
+                return module != null ? _docSource.GetHover(module.Name, module) : null;
+            }
+            // Are we over 'D'?
+            var nameIndex = imp.AsNames.ExcludeDefault().IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
+            if (nameIndex >= 0) {
+                using (eval.OpenScope(analysis.Document, scope)) {
+                    var variableName = imp.AsNames[nameIndex].Name;
+                    var m = eval.LookupNameInScopes(variableName, out _);
+                    if (m != null) {
+                        return _docSource.GetHover(variableName, m);
+                    }
+                }
+            }
+            return null;
+        }
+
+        private MarkupContent HandleFromImport(FromImportStatement fi, SourceLocation location, ScopeStatement scope, IDocumentAnalysis analysis) {
+            var eval = analysis.ExpressionEvaluator;
+            var position = location.ToIndex(analysis.Ast);
+            // 'from A.B import C as D'
+            if (fi.Root.StartIndex <= position && position < fi.Root.EndIndex) {
+                // We are over A.B
+                var module = GetModule(fi.Root.MakeString(), fi.Root.Names, position, analysis);
+                module = module ?? GetModuleFromDottedName(fi.Root.Names, position, eval);
+                return module != null ? _docSource.GetHover(module.Name, module) : null;
+            }
+            // Are we over 'C'?
+            var nameIndex = fi.Names.ExcludeDefault().IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
+            if (nameIndex >= 0) {
+                var module = eval.Interpreter.ModuleResolution.GetImportedModule(fi.Root.MakeString());
+                module = module ?? GetModuleFromDottedName(fi.Root.Names, -1, eval);
+                if (module != null) {
+                    var memberName = fi.Names[nameIndex].Name;
+                    var m = module.GetMember(memberName);
+                    return m != null ? _docSource.GetHover(memberName, m) : null;
+                }
+            }
+            // Are we over 'D'?
+            nameIndex = fi.AsNames.ExcludeDefault().IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
+            if (nameIndex >= 0) {
+                using (eval.OpenScope(analysis.Document, scope)) {
+                    var variableName = fi.AsNames[nameIndex].Name;
+                    var m = eval.LookupNameInScopes(variableName, out _);
+                    return m != null ? _docSource.GetHover(variableName, m) : null;
+                }
+            }
+            return null;
+        }
+
+        private static IPythonModule GetModule(string moduleName, ImmutableArray<NameExpression> names, int position, IDocumentAnalysis analysis) {
+            IPythonModule module = null;
+            var eval = analysis.ExpressionEvaluator;
+            var nameIndex = names.IndexOf(n => n.StartIndex <= position && position < n.EndIndex);
+            if (nameIndex == 0) {
+                module = eval.Interpreter.ModuleResolution.GetImportedModule(names[nameIndex].Name);
+            }
+            return module ?? eval.Interpreter.ModuleResolution.GetImportedModule(moduleName);
+        }
+
+        private static IPythonModule GetModuleFromDottedName(ImmutableArray<NameExpression> names, int position, IExpressionEvaluator eval) {
+            IPythonModule module = null;
+            var index = position >= 0 ? names.IndexOf(n => n.StartIndex <= position && position <= n.EndIndex) : names.Count - 1;
+            if (index >= 0) {
+                module = eval.Interpreter.ModuleResolution.GetImportedModule(names[0].Name);
+                for (var i = 1; module != null && i <= index; i++) {
+                    module = module.GetMember(names[i].Name) as IPythonModule;
+                }
+            }
+            return module;
         }
     }
 }

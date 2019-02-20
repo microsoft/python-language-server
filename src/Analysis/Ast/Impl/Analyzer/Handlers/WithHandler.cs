@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             cancellationToken.ThrowIfCancellationRequested();
             foreach (var item in node.Items.Where(x => x.Variable != null)) {
                 var contextManager = await Eval.GetValueFromExpressionAsync(item.ContextManager, cancellationToken);
-                var cmType = contextManager.GetPythonType();
+                var cmType = contextManager?.GetPythonType();
 
                 var enter = cmType?.GetMember(node.IsAsync ? @"__aenter__" : @"__enter__")?.GetPythonType<IPythonFunctionType>();
                 if (enter != null) {

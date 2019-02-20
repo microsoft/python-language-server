@@ -116,16 +116,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
         }
 
         private static IEnumerable<CompletionItem> GetImportsFromModuleName(IEnumerable<NameExpression> nameExpressions, CompletionContext context) {
-            IReadOnlyList<CompletionItem> items;
             var names = nameExpressions.TakeWhile(n => n.StartIndex <= context.Position).Select(n => n.Name).ToArray();
-            if (names.Length <= 1) {
-                var mres = context.Analysis.Document.Interpreter.ModuleResolution;
-                var importable = mres.CurrentPathResolver.GetAllModuleNames();
-                items = importable.Select(m => CompletionItemSource.CreateCompletionItem(m, CompletionItemKind.Module)).ToArray();
-            } else {
-                items = GetChildModules(names, context);
-            }
-            return items;
+            return names.Length <= 1 ? GetAllImportableModules(context) : GetChildModules(names, context);
         }
 
         private static IEnumerable<CompletionItem> GetModuleMembers(IEnumerable<NameExpression> nameExpressions, CompletionContext context) {
@@ -140,7 +132,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
         private static IEnumerable<CompletionItem> GetAllImportableModules(CompletionContext context) {
             var mres = context.Analysis.Document.Interpreter.ModuleResolution;
-            var modules = mres.CurrentPathResolver.GetAllModuleNames();
+            var modules = mres.CurrentPathResolver.GetAllModuleNames().Distinct();
             return modules.Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
         }
 
@@ -158,8 +150,6 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     break;
                 case PackageImport packageImports:
                     return new CompletionResult(packageImports.Modules
-                        .Select(m => mres.GetImportedModule(m.FullName))
-                        .ExcludeDefault()
                         .Select(m => CompletionItemSource.CreateCompletionItem(m.Name, CompletionItemKind.Module))
                         .Prepend(CompletionItemSource.Star));
                 default:

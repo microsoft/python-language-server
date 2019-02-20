@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            // Try generics
+            // Try generics first since this may be an expression like Dict[int, str]
             var result = await GetValueFromGenericAsync(target, expr, cancellationToken);
             if (result != null) {
                 return result;
@@ -48,7 +48,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     instance = new PythonInstance(type);
                 }
                 var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
-                return type.Index(instance, index);
+                if (index != null) {
+                    return type.Index(instance, index);
+                }
             }
 
             return UnknownType;
@@ -93,7 +95,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public async Task<IMember> GetValueFromGeneratorAsync(GeneratorExpression expression, CancellationToken cancellationToken = default) {
             var iter = expression.Iterators.OfType<ComprehensionFor>().FirstOrDefault();
-            if(iter != null) { 
+            if (iter != null) {
                 return await GetValueFromExpressionAsync(iter.List, cancellationToken) ?? UnknownType;
             }
             return UnknownType;

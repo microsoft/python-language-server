@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return;
             }
 
-            var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken);
+            var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken) ?? Eval.UnknownType;
             // Check PEP hint first
             var valueType = Eval.GetTypeFromPepHint(node.Right);
             if (valueType != null) {

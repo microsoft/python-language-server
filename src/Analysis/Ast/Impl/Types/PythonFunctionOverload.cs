@@ -41,6 +41,7 @@ namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
         private readonly Func<string, LocationInfo> _locationProvider;
         private readonly IPythonModule _declaringModule;
+        private readonly string _returnDocumentation;
 
         // Allow dynamic function specialization, such as defining return types for builtin
         // functions that are impossible to scrape and that are missing from stubs.
@@ -52,17 +53,12 @@ namespace Microsoft.Python.Analysis.Types {
         private Func<string, string> _documentationProvider;
         private bool _fromAnnotation;
 
-        public PythonFunctionOverload(string name, IPythonModule declaringModule, LocationInfo location)
-            : this(name, declaringModule, _ => location ?? LocationInfo.Empty) {
-            _declaringModule = declaringModule;
-        }
-
         public PythonFunctionOverload(FunctionDefinition fd, IPythonClassMember classMember, IPythonModule declaringModule, LocationInfo location)
             : this(fd.Name, declaringModule, _ => location) {
             FunctionDefinition = fd;
             ClassMember = classMember;
             var ast = (declaringModule as IDocument)?.Analysis.Ast;
-            ReturnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
+            _returnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
         }
 
         public PythonFunctionOverload(string name, IPythonModule declaringModule, Func<string, LocationInfo> locationProvider) {
@@ -73,7 +69,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal void SetParameters(IReadOnlyList<IParameterInfo> parameters) => Parameters = parameters;
 
-        internal void SetDocumentationProvider(Func<string, string> documentationProvider) 
+        internal void SetDocumentationProvider(Func<string, string> documentationProvider)
             => _documentationProvider = _documentationProvider ?? documentationProvider;
 
         internal void AddReturnValue(IMember value) {
@@ -117,14 +113,50 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public string ReturnDocumentation { get; }
-        public bool IsOverload { get; private set; }
+        public string GetReturnDocumentation(IPythonType self = null) {
+            if (self == null) {
+                return _returnDocumentation;
+            }
+            var returnType = StaticReturnValue.GetPythonType();
+            switch (returnType) {
+                case PythonClassType cls when cls.IsGeneric(): {
+                        // -> A[_T1, _T2, ...]
+                        // Match arguments 
+                        var typeArgs = cls.GenericParameters.Keys
+                            .Select(n => cls.GenericParameters.TryGetValue(n, out var t) ? t : null)
+                            .ExcludeDefault()
+                            .ToArray();
+                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), _declaringModule);
+                        return specificReturnValue.Name;
+                    }
+                case IGenericTypeParameter gtp1 when self is IPythonClassType cls: {
+                        // -> _T
+                        if (cls.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
+                            return specificType.Name;
+                        }
+                        // Try returning the constraint
+                        // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
+                        var name = StaticReturnValue.GetPythonType()?.Name;
+                        var typeDefVar = _declaringModule.Analysis.GlobalScope.Variables[name];
+                        if (typeDefVar?.Value is IGenericTypeParameter gtp2) {
+                            var t = gtp2.Constraints.FirstOrDefault();
+                            if (t != null) {
+                                return t.Name;
+                            }
+                        }
+                        break;
+                    }
+            }
+            return _returnDocumentation;
+        }
+
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
         public LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
         public PythonMemberType MemberType => PythonMemberType.Function;
         public IMember StaticReturnValue { get; private set; }
 
-        public IMember GetReturnValue(LocationInfo callLocation, IArgumentSet args) {
+        public IMember Call(IArgumentSet args, IPythonType self, LocationInfo callLocation = null) {
+            callLocation = callLocation ?? LocationInfo.Empty;
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
                 var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args);
@@ -133,50 +165,41 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
 
-            // If function returns generic, try to return the incoming argument
-            // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
-            IMember retValue = null;
-            if (StaticReturnValue.GetPythonType() is IGenericTypeParameter) {
-                if (args.Arguments.Count > 0) {
-                    retValue = args.Arguments[0].Value as IMember;
-                }
-
-                if (retValue == null) {
-                    // Try returning the constraint
-                    var name = StaticReturnValue.GetPythonType()?.Name;
-                    var typeDefVar = _declaringModule.Analysis.GlobalScope.Variables[name];
-                    if (typeDefVar?.Value is IGenericTypeParameter gtp) {
-                        retValue = gtp.Constraints.FirstOrDefault();
-                    }
-                }
+            // If function returns generic, determine actual type based on the passed in specific type (self).
+            if (!(self is IPythonClassType selfClassType)) {
+                return StaticReturnValue;
             }
-            return retValue ?? StaticReturnValue;
+
+            var returnType = StaticReturnValue.GetPythonType();
+            switch (returnType) {
+                case PythonClassType cls when cls.IsGeneric(): {
+                        // -> A[_T1, _T2, ...]
+                        // Match arguments 
+                        var typeArgs = selfClassType.GenericParameters.Keys
+                            .Select(n => selfClassType.GenericParameters.TryGetValue(n, out var t) ? t : null)
+                            .ExcludeDefault()
+                            .ToArray();
+                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), _declaringModule, callLocation);
+                        return new PythonInstance(specificReturnValue, callLocation);
+                    }
+                case IGenericTypeParameter gtp1: {
+                        // -> _T
+                        if (selfClassType.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
+                            return new PythonInstance(specificType, callLocation);
+                        }
+                        // Try returning the constraint
+                        // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
+                        var name = StaticReturnValue.GetPythonType()?.Name;
+                        var typeDefVar = _declaringModule.Analysis.GlobalScope.Variables[name];
+                        if (typeDefVar?.Value is IGenericTypeParameter gtp2) {
+                            return gtp2.Constraints.FirstOrDefault();
+                        }
+
+                        break;
+                    }
+            }
+            return StaticReturnValue;
         }
         #endregion
-
-        private void ProcessDecorators(FunctionDefinition fd) {
-            foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
-                // TODO: warn about incompatible combinations.
-                switch (dec.Name) {
-                    case @"overload":
-                        IsOverload = true;
-                        break;
-                }
-            }
-        }
-
-        //private sealed class ReturnValueCache {
-        //    private const int MaxResults = 10;
-        //    private readonly Dictionary<ArgumentSet, IMember> _results = new Dictionary<ArgumentSet, IMember>(new ArgumentSetComparer());
-
-        //    public bool TryGetResult(IReadOnlyList<IMember> args, out IMember result) 
-        //        => _results.TryGetValue(new ArgumentSet(args), out result);
-
-        //    public void AddResult(IReadOnlyList<IMember> args, out IMember result) {
-        //        var key = new ArgumentSet(args);
-        //        Debug.Assert(!_results.ContainsKey(key));
-        //        _results[key] = result;
-        //    }
-        //}
     }
 }

@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
@@ -40,15 +41,15 @@ namespace Microsoft.Python.Analysis.Modules {
 
         /// <summary>
         /// Returns an IPythonModule for a given module name. Returns null if
-        /// the module does not exist. The import is performed asynchronously.
-        /// </summary>
-        Task<IPythonModule> ImportModuleAsync(string name, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns an IPythonModule for a given module name. Returns null if
         /// the module has not been imported.
         /// </summary>
         IPythonModule GetImportedModule(string name);
+
+        /// <summary>
+        /// Returns an IPythonModule for a given module name.
+        /// Returns null if the module wasn't found.
+        /// </summary>
+        IPythonModule GetOrLoadModule(string name);
 
         Task ReloadAsync(CancellationToken token = default);
     }

@@ -33,7 +33,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Completions in {uri} at {@params.position}");
 
             var res = new CompletionList();
-            var analysis = GetAnalysis(uri, cancellationToken);
+            var analysis = await GetAnalysisAsync(uri, cancellationToken);
             if(analysis != null) { 
                 var result = await _completionSource.GetCompletionsAsync(analysis, @params.position, cancellationToken);
                 res.items = result.Completions.ToArray();
@@ -44,16 +44,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return res;
         }
 
-        public Task<CompletionItem> CompletionItemResolve(CompletionItem item, CancellationToken token) {
-            // TODO: Fill out missing values in item
-            return Task.FromResult(item);
-        }
-
         public async Task<Hover> Hover(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Hover in {uri} at {@params.position}");
 
-            var analysis = GetAnalysis(uri, cancellationToken);
+            var analysis = await GetAnalysisAsync(uri, cancellationToken);
             if (analysis != null) {
                 return await _hoverSource.GetHoverAsync(analysis, @params.position, cancellationToken);
             }
@@ -64,7 +59,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Signatures in {uri} at {@params.position}");
 
-            var analysis = GetAnalysis(uri, cancellationToken);
+            var analysis = await GetAnalysisAsync(uri, cancellationToken);
             if (analysis != null) {
                 return await _signatureSource.GetSignatureAsync(analysis, @params.position, cancellationToken);
             }
@@ -75,7 +70,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Goto Definition in {uri} at {@params.position}");
 
-            var analysis = GetAnalysis(uri, cancellationToken);
+            var analysis = await GetAnalysisAsync(uri, cancellationToken);
             var ds = new DefinitionSource();
             var reference = await ds.FindDefinitionAsync(analysis, @params.position, cancellationToken);
             return reference != null ? new[] { reference } : Array.Empty<Reference>();

@@ -50,17 +50,20 @@ namespace Microsoft.Python.Analysis.Types {
         /// Determines return value type given arguments for the particular call.
         /// For annotated or stubbed functions the annotation type is always returned.
         /// </summary>
-        IMember GetReturnValue(LocationInfo callLocation, IArgumentSet args);
+        /// <param name="args">Call arguments or type arguments.</param>
+        /// <param name="self">Invoking class instance. In case of generics it is instance of the specific type
+        /// as opposed to declaring type which is the generic template class.</param>
+        /// <param name="callLocation">Call expression location, if any.</param>
+        IMember Call(IArgumentSet args, IPythonType self, LocationInfo callLocation = null);
 
         /// <summary>
         /// Return value documentation.
         /// </summary>
-        string ReturnDocumentation { get; }
-
-        /// <summary>
-        /// Function definition is decorated with @overload.
-        /// </summary>
-        bool IsOverload { get; }
+        /// <param name="self">If function is in generic class it may need to know specific type
+        /// in order to be able to determine the return type. Passing null will yield either
+        /// static return type determined during analysis or type supplied by dynamic
+        /// return type provider.</param>
+        string GetReturnDocumentation(IPythonType self = null);
 
         /// <summary>
         /// Return type as determined from evaluation or from the return type annotation.

@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -21,6 +20,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -47,8 +47,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // rather than specific type instantiation as in List[str].
 
             IPythonType[] specificTypes;
+            var returnInstance = false;
             switch (expr) {
-                case IndexExpression indexExpr: {
+                // Indexing returns type as from A[int]
+                case IndexExpression indexExpr:
                     // Generic[T1, T2, ...] or A[type]()
                     var indices = await EvaluateIndexAsync(indexExpr, cancellationToken);
                     // See which ones are generic parameters as defined by TypeVar() 
@@ -66,6 +68,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     if (genericTypeArgs.Length > 0 && genericTypeArgs.Length != indices.Count) {
                         // TODO: report that some type arguments are not declared with TypeVar.
                     }
+
                     if (specificTypes.Length > 0 && specificTypes.Length != indices.Count) {
                         // TODO: report that arguments are not specific types or are not declared.
                     }
@@ -84,20 +87,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
                         if (specificTypes.Length > 0) {
                             // If target is a generic type and indexes are specific types, create specific class
-                            return await gt.CreateSpecificTypeAsync(new ArgumentSet(specificTypes), Module, GetLoc(expr), cancellationToken);
+                            return gt.CreateSpecificType(new ArgumentSet(specificTypes), Module, GetLoc(expr));
                         } else {
                             // TODO: report too few type arguments for the Generic[].
                             return UnknownType;
                         }
                     }
-
                     break;
-                }
+
                 case CallExpression callExpr:
                     // Alternative instantiation:
                     //  class A(Generic[T]): ...
                     //  x = A(1234)
-                    specificTypes = (await EvaluateICallArgsAsync(callExpr, cancellationToken)).Select(x => x.GetPythonType()).ToArray();
+                    specificTypes = (await EvaluateCallArgsAsync(callExpr, cancellationToken)).Select(x => x.GetPythonType()).ToArray();
+                    // Callable returns instance (as opposed to a type with index expression)
+                    returnInstance = true;
                     break;
 
                 default:
@@ -109,9 +113,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // as we resolve classes on demand. Therefore we don't know if class is generic
             // or not at the time of the PythonClassType creation.
             // TODO: figure out if we could make GenericClassType: PythonClassType, IGenericType instead.
-            return target is PythonClassType cls 
-                ? await cls.CreateSpecificTypeAsync(new ArgumentSet(specificTypes), Module, GetLoc(expr), cancellationToken) 
-                : null;
+            if (target is PythonClassType cls) {
+                var location = GetLoc(expr);
+                var type = cls.CreateSpecificType(new ArgumentSet(specificTypes), Module, location);
+                return returnInstance ? new PythonInstance(type, GetLoc(expr)) : (IMember)type;
+            }
+            return null;
         }
 
         private async Task<IReadOnlyList<IMember>> EvaluateIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
@@ -124,16 +131,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             } else {
                 var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
-                indices.Add(index);
+                indices.Add(index ?? UnknownType);
             }
             return indices;
         }
 
-        private async Task<IReadOnlyList<IMember>> EvaluateICallArgsAsync(CallExpression expr, CancellationToken cancellationToken = default) {
+        private async Task<IReadOnlyList<IMember>> EvaluateCallArgsAsync(CallExpression expr, CancellationToken cancellationToken = default) {
             var indices = new List<IMember>();
             cancellationToken.ThrowIfCancellationRequested();
-            foreach (var e in expr.Args.Select(a => a.Expression).ExcludeDefault()) {
-                var value = await GetValueFromExpressionAsync(e, cancellationToken);
+            foreach (var e in expr.Args.Select(a => a.Expression)) {
+                var value = await GetValueFromExpressionAsync(e, cancellationToken) ?? UnknownType;
                 indices.Add(value);
             }
             return indices;

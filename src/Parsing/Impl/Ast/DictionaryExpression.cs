@@ -18,22 +18,23 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class DictionaryExpression : Expression {
-        private readonly SliceExpression[] _items;
-
-        public DictionaryExpression(params SliceExpression[] items) {
-            _items = items;
+        public DictionaryExpression(ImmutableArray<SliceExpression> items) {
+            Items = items;
         }
 
-        public IList<SliceExpression> Items => _items;
+        public ImmutableArray<SliceExpression> Items { get; }
 
         public override string NodeName => "dictionary display";
 
+        public override IEnumerable<Node> GetChildNodes() => Items;
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (var s in _items.MaybeEnumerate()) {
+                foreach (var s in Items) {
                     s.Walk(walker);
                 }
             }
@@ -42,7 +43,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                foreach (var s in _items.MaybeEnumerate()) {
+                foreach (var s in Items) {
                     await s.WalkAsync(walker, cancellationToken);
                 }
             }

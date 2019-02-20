@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,6 +40,11 @@ namespace Microsoft.Python.Parsing.Ast {
             _preceding?.AppendCodeString(res, ast, format);
             res.Append(_verbatimImage ?? "<error>");
             _nested?.AppendCodeString(res, ast, format);
+        }
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (_preceding != null) yield return _preceding;
+            if (_nested != null) yield return _nested;
         }
 
         public override void Walk(PythonWalker walker) {

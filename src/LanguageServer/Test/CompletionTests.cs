@@ -1,4 +1,4 @@
-﻿// Copyright(c) Microsoft Corporation
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -26,6 +27,7 @@ using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NSubstitute;
 using TestUtilities;
 
 namespace Microsoft.Python.LanguageServer.Tests {
@@ -53,8 +55,8 @@ class C:
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 1))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("C", "x", "y", "while", "for", "yield");
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 1));
+            comps.Should().HaveLabels("C", "x", "y", "while", "for");
         }
 
         [TestMethod, Priority(0)]
@@ -65,8 +67,8 @@ x.
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(new[] { @"isupper", @"capitalize", @"split" });
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 3));
+            comps.Should().HaveLabels(@"isupper", @"capitalize", @"split");
         }
 
         [TestMethod, Priority(0)]
@@ -77,8 +79,8 @@ datetime.datetime.
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 19))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(new[] { "now", @"tzinfo", @"ctime" });
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 19));
+            comps.Should().HaveLabels("now", @"tzinfo", @"ctime");
         }
 
         [TestMethod, Priority(0)]
@@ -92,11 +94,11 @@ ABCDE.me
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 4))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain(@"ABCDE");
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 4));
+            comps.Should().HaveLabels(@"ABCDE");
 
-            comps = (await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 9))).Completions.ToArray();
-            comps.Select(c => c.label).Should().Contain("method1");
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 9));
+            comps.Should().HaveLabels("method1");
         }
 
         [DataRow(PythonLanguageVersion.V36, "value")]
@@ -425,6 +427,70 @@ def func(a: Dict[int, str]):
 
             result = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 10));
             result.Should().HaveLabels("capitalize");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassMethod() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_T = TypeVar('_T')
+
+class Box(Generic[_T]):
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+boxedint = Box(1234)
+x = boxedint.
+
+boxedstr = Box('str')
+y = boxedstr.
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(14, 14));
+            result.Should().HaveItem("get").Which.Should().HaveDocumentation("Box.get() -> int");
+            result.Should().NotContainLabels("bit_length");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(17, 14));
+            result.Should().HaveItem("get").Which.Should().HaveDocumentation("Box.get() -> str");
+            result.Should().NotContainLabels("capitalize");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericAndRegularBases() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_T = TypeVar('_T')
+
+class Box(Generic[_T], list):
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+boxedint = Box(1234)
+x = boxedint.
+
+boxedstr = Box('str')
+y = boxedstr.
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(14, 14));
+            result.Should().HaveLabels("append", "index");
+            result.Should().NotContainLabels("bit_length");
+
+            result = await cs.GetCompletionsAsync(analysis, new SourceLocation(17, 14));
+            result.Should().HaveLabels("append", "index");
+            result.Should().NotContainLabels("capitalize");
         }
 
         [TestMethod, Priority(0)]
@@ -791,7 +857,7 @@ os.
             result.Should().HaveLabels("path", @"devnull", "SEEK_SET", @"curdir");
         }
 
-        [DataRow(false), Ignore("https://github.com/Microsoft/python-language-server/issues/574")]
+        [DataRow(false)]
         [DataRow(true)]
         [DataTestMethod, Priority(0)]
         public async Task OsPathMembers(bool is3x) {
@@ -804,6 +870,35 @@ os.path.
 
             var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
             result.Should().HaveLabels("split", @"getsize", @"islink", @"abspath");
+        }
+
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task FromOsPathAs(bool is3x) {
+            const string code = @"
+from os.path import exists as EX
+E
+";
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 2));
+            result.Should().HaveLabels("EX");
+
+            var doc = is3x ? "exists(path: str) -> bool*" : "exists(path: unicode) -> bool*";
+            result.Completions.FirstOrDefault(c => c.label == "EX").Should().HaveDocumentation(doc);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoDuplicateMembers() {
+            const string code = @"import sy";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 10));
+            result.Completions.Count(c => c.label.EqualsOrdinal(@"sys")).Should().Be(1);
+            result.Completions.Count(c => c.label.EqualsOrdinal(@"sysconfig")).Should().Be(1);
         }
     }
 }

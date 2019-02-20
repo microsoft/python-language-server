@@ -16,6 +16,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     /// <summary>
@@ -24,7 +25,8 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// for the analysis. The chain is a tree where child branches can be analyzed
     /// concurrently.
     /// </summary>
-    internal interface IDependencyResolver {
-        Task<IDependencyChainNode> GetDependencyChainAsync(IDocument document, CancellationToken cancellationToken);
+    internal interface IDependencyResolver<TKey, TValue> {
+        ImmutableArray<TKey> MissingKeys { get; }
+        Task<IDependencyChainWalker<TKey, TValue>> AddChangesAsync(TKey key, TValue value, int valueVersion, CancellationToken cancellationToken);
     }
 }
