@@ -20,6 +20,6 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal interface IIndexParser : IDisposable {
-        Task ParseAsync(string path, CancellationToken cancellationToken = default);
+        Task<PythonAst> ParseAsync(string path, CancellationToken cancellationToken = default);
     }
 }

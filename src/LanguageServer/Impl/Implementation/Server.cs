@@ -123,8 +123,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _interpreter = await PythonInterpreter.CreateAsync(configuration, rootDir, _services, cancellationToken);
             _services.AddService(_interpreter);
 
-            var symbolIndex = new SymbolIndex();
-            _indexManager = new IndexManager(symbolIndex, _services.GetService<IFileSystem>(), _interpreter.LanguageVersion, rootDir,
+            var fileSystem = _services.GetService<IFileSystem>();
+            var symbolIndex = new SymbolIndex(fileSystem, _interpreter.LanguageVersion);
+            _indexManager = new IndexManager(symbolIndex, fileSystem, _interpreter.LanguageVersion, rootDir,
                                             @params.initializationOptions.includeFiles,
                                             @params.initializationOptions.excludeFiles,
                                             _services.GetService<IIdleTimeService>());

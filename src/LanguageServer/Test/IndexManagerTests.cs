@@ -68,7 +68,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var context = new IndexTestContext(this);
             Action construct = () => {
                 PythonLanguageVersion version = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
-                IIndexManager indexManager = new IndexManager(new SymbolIndex(), context.FileSystem,
+                IIndexManager indexManager = new IndexManager(new SymbolIndex(context.FileSystem, version), context.FileSystem,
                                                               version, null, new string[] { }, new string[] { },
                                                               new IdleTimeService());
             };
@@ -167,31 +167,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
             indexManager.ReIndexFile(pythonTestFileInfo.FullName, DocumentWithAst("x = 1"));
 
             await SymbolIndexShouldBeEmpty(indexManager);
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task DisposeManagerCancelsTaskAsync() {
-            var context = new IndexTestContext(this);
-            var pythonTestFilePath = context.FileWithXVarInRootDir();
-            ManualResetEventSlim neverSignaledEvent = new ManualResetEventSlim(false);
-            ManualResetEventSlim fileOpenedEvent = new ManualResetEventSlim(false);
-
-            context.SetFileOpen(pythonTestFilePath, _ => {
-                fileOpenedEvent.Set();
-                // Wait forever
-                neverSignaledEvent.Wait();
-                throw new InternalTestFailureException("Task should have been cancelled");
-            });
-
-            var indexManager = context.GetDefaultIndexManager();
-            fileOpenedEvent.Wait();
-            var t = WaitForWorkspaceAddedAsync(indexManager);
-            indexManager.Dispose();
-
-            await t;
-
-            neverSignaledEvent.IsSet.Should().BeFalse();
-            context.SymbolIndex.WorkspaceSymbols("").Should().HaveCount(0);
         }
 
         [TestMethod, Priority(0)]
@@ -302,7 +277,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             private void Setup() {
                 FileSystem = Substitute.For<IFileSystem>();
-                SymbolIndex = new SymbolIndex();
+                SymbolIndex = new SymbolIndex(FileSystem, _pythonLanguageVersion);
                 SetupRootDir();
             }
 

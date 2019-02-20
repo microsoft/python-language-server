@@ -14,16 +14,19 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Parsing.Ast;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Documents;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal interface ISymbolIndex {
-        IEnumerable<FlatSymbol> WorkspaceSymbols(string query);
-        IEnumerable<HierarchicalSymbol> HierarchicalDocumentSymbols(string path);
-        void Add(string path, PythonAst pythonAst);
+        Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken ct = default);
+        Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbols(string path);
+        void Add(string path, IDocument doc);
+        void Parse(string path);
         void Delete(string path);
         bool IsIndexed(string path);
-        void Update(string path, PythonAst pythonAst);
-
+        void ReIndex(string path, IDocument doc);
+        void MarkAsPending(string path);
     }
 }

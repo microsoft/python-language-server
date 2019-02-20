@@ -16,62 +16,103 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class SymbolIndex : ISymbolIndex {
-        private readonly ConcurrentDictionary<string, IReadOnlyList<HierarchicalSymbol>> _index;
+        private readonly ConcurrentDictionary<string, MostRecentDocumentSymbols> _index;
+        private readonly IFileSystem _fileSystem;
+        private readonly PythonLanguageVersion _version;
 
-        public SymbolIndex() {
+        public SymbolIndex(IFileSystem fileSystem, PythonLanguageVersion version) {
+            _fileSystem = fileSystem;
+            _version = version;
+
             var comparer = PathEqualityComparer.Instance;
-            _index = new ConcurrentDictionary<string, IReadOnlyList<HierarchicalSymbol>>(comparer);
+            _index = new ConcurrentDictionary<string, MostRecentDocumentSymbols>(comparer);
         }
 
-        public IEnumerable<HierarchicalSymbol> HierarchicalDocumentSymbols(string path)
-            => _index.TryGetValue(path, out var list) ? list : Enumerable.Empty<HierarchicalSymbol>();
-
-        public IEnumerable<FlatSymbol> WorkspaceSymbols(string query) {
-            return _index.SelectMany(kvp => WorkspaceSymbolsQuery(query, kvp.Key, kvp.Value));
+        public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbols(string path) {
+            if (_index.TryGetValue(path, out var mostRecentSymbols)) {
+                return mostRecentSymbols.GetSymbolsAsync();
+            } else {
+                return Task.FromResult<IReadOnlyList<HierarchicalSymbol>>(new List<HierarchicalSymbol>());
+            }
         }
 
-        public void Add(string path, PythonAst ast) {
-            var walker = new SymbolIndexWalker(ast);
-            ast.Walk(walker);
-            _index[path] = walker.Symbols;
+        public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken ct = default) {
+            var tasks = _index
+                .Select(kvp => WorkspaceSymbolsQueryAsync(kvp.Key, query, kvp.Value, ct))
+                .Take(maxLength)
+                .ToArray();
+            var b = await Task.WhenAll(tasks);
+            List<FlatSymbol> results = new List<FlatSymbol>();
+            foreach (var t in b) {
+                foreach (var tt in t) {
+                    results.Add(tt);
+                }
+            }
+            return results;
+        }
+
+        private async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsQueryAsync(string filePath, string query, MostRecentDocumentSymbols recentSymbols, CancellationToken cancellationToken) {
+            var symbols = await recentSymbols.GetSymbolsAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+            return WorkspaceSymbolsQuery(filePath, query, symbols);
+        }
+
+        public void Add(string path, IDocument doc) {
+            _index.GetOrAdd(path, MakeMostRecentDocSymbols(path)).Add(doc);
+        }
+
+        public void Parse(string path) {
+            var mostRecentSymbols = _index.GetOrAdd(path, MakeMostRecentDocSymbols(path));
+            mostRecentSymbols.Parse();
         }
 
         public void Delete(string path) {
-            _index.Remove(path, out var _);
+            _index.Remove(path, out var mostRecentDocSymbols);
+            mostRecentDocSymbols.Dispose();
         }
 
         public bool IsIndexed(string path) => _index.ContainsKey(path);
 
-        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(
-            IEnumerable<HierarchicalSymbol> symbols, string parentName)
-            => symbols.Select((symbol) => (symbol, parentName));
-
-        public void Update(string path, PythonAst ast) {
+        public void ReIndex(string path, IDocument doc) {
             if (_index.TryGetValue(path, out var currentSymbols)) {
-                var walker = new SymbolIndexWalker(ast);
-                ast.Walk(walker);
-                _index.TryUpdate(path, walker.Symbols, currentSymbols);
+                currentSymbols.ReIndex(doc);
             }
         }
 
-        private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string query, string path,
-            IEnumerable<HierarchicalSymbol> symbols) {
+        public void MarkAsPending(string path) {
+            _index[path].MarkAsPending();
+        }
+
+        private IReadOnlyList<FlatSymbol> WorkspaceSymbolsQuery(string path, string query,
+            IReadOnlyList<HierarchicalSymbol> symbols) {
             var rootSymbols = DecorateWithParentsName(symbols, null);
-            var treeSymbols = rootSymbols.TraverseBreadthFirst((symbolAndParent) => {
-                var sym = symbolAndParent.symbol;
-                return DecorateWithParentsName(sym.Children.MaybeEnumerate(), sym.Name);
+            var treeSymbols = rootSymbols.TraverseBreadthFirst((symAndPar) => {
+                var sym = symAndPar.symbol;
+                return DecorateWithParentsName(sym.Children.MaybeEnumerate().ToList(), sym.Name);
             });
-            foreach (var (sym, parentName) in treeSymbols) {
-                if (sym.Name.ContainsOrdinal(query, ignoreCase: true)) {
-                    yield return new FlatSymbol(sym.Name, sym.Kind, path, sym.SelectionRange, parentName);
-                }
-            }
+            return treeSymbols.Where(sym => sym.symbol.Name.ContainsOrdinal(query, ignoreCase: true))
+                              .Select(sym => new FlatSymbol(sym.symbol.Name, sym.symbol.Kind, path, sym.symbol.SelectionRange, sym.parentName))
+                              .ToList();
+        }
+
+
+        private static IReadOnlyList<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(
+            IReadOnlyList<HierarchicalSymbol> symbols, string parentName) {
+            return symbols.Select((symbol) => (symbol, parentName)).ToList();
+        }
+
+        private MostRecentDocumentSymbols MakeMostRecentDocSymbols(string path) {
+            return new MostRecentDocumentSymbols(path, _fileSystem, _version);
         }
     }
 }

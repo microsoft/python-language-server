@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -38,7 +37,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly IIdleTimeService _idleTimeService;
         private readonly CancellationTokenSource _allIndexCts = new CancellationTokenSource();
         private readonly TaskCompletionSource<bool> _addRootTcs = new TaskCompletionSource<bool>();
-        private readonly ConcurrentDictionary<string, MostRecentDocumentSymbols> _files = new ConcurrentDictionary<string, MostRecentDocumentSymbols>(PathEqualityComparer.Instance);
         private readonly HashSet<IDocument> _pendingDocs = new HashSet<IDocument>(new UriDocumentComparer());
         private readonly PythonLanguageVersion _version;
         private DateTime _lastPendingDocAddedTime;
@@ -67,8 +65,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private void StartAddRootDir() {
             foreach (var fileInfo in WorkspaceFiles()) {
                 if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
-                    _files.GetOrAdd(fileInfo.FullName, MakeMostRecentFileSymbols(fileInfo.FullName));
-                    _files[fileInfo.FullName].Parse();
+                    _symbolIndex.Parse(fileInfo.FullName);
                 }
             }
         }
@@ -84,10 +81,9 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public void ProcessClosedFile(string path) {
             if (IsFileOnWorkspace(path)) {
-                _files[path].Parse();
-            } else if (_files.TryRemove(path, out var fileSymbols)) {
-                fileSymbols.Delete();
-                fileSymbols.Dispose();
+                _symbolIndex.Parse(path);
+            } else {
+                _symbolIndex.Delete(path);
             }
         }
 
@@ -99,43 +95,32 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public void ProcessNewFile(string path, IDocument doc) {
-            _files.GetOrAdd(path, MakeMostRecentFileSymbols(path));
-            _files[path].Add(doc);
+            _symbolIndex.Add(path, doc);
         }
 
         public void ReIndexFile(string path, IDocument doc) {
-            if (_files.TryGetValue(path, out var fileSymbols)) {
-                fileSymbols.ReIndex(doc);
-            }
+            _symbolIndex.ReIndex(path, doc);
         }
 
         public void Dispose() {
-            foreach (var mostRecentSymbols in _files.Values) {
-                mostRecentSymbols.Dispose();
-            }
+            //_symbolIndex.Dispose();
             _allIndexCts.Cancel();
             _allIndexCts.Dispose();
         }
 
-        public async Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default) {
-            var s = await _files[path].GetSymbolsAsync();
-            return s.ToList();
+        public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default) {
+            return _symbolIndex.HierarchicalDocumentSymbols(path);
         }
 
-        public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default) {
-            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_allIndexCts.Token, cancellationToken);
-            await Task.WhenAny(
-                Task.WhenAll(_files.Values.Select(mostRecent => mostRecent.GetSymbolsAsync()).ToArray()),
-                Task.Delay(Timeout.Infinite, linkedCts.Token));
-            linkedCts.Dispose();
-            return _symbolIndex.WorkspaceSymbols(query).Take(maxLength).ToList();
+        public Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default) {
+            return _symbolIndex.WorkspaceSymbolsAsync(query, maxLength, cancellationToken);
         }
 
         public void AddPendingDoc(IDocument doc) {
             lock (_pendingDocs) {
                 _lastPendingDocAddedTime = DateTime.Now;
                 _pendingDocs.Add(doc);
-                _files[doc.Uri.AbsolutePath].MarkAsPending();
+                _symbolIndex.MarkAsPending(doc.Uri.AbsolutePath);
             }
         }
 
@@ -158,7 +143,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         private MostRecentDocumentSymbols MakeMostRecentFileSymbols(string path) {
-            return new MostRecentDocumentSymbols(path, _symbolIndex, _fileSystem, _version);
+            return new MostRecentDocumentSymbols(path, _fileSystem, _version);
         }
 
         private class UriDocumentComparer : IEqualityComparer<IDocument> {
