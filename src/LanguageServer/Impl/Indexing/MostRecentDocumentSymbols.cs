@@ -52,7 +52,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                         state = WorkQueueState.Working;
                         break;
                     default:
-                        throw new NotImplementedException();
+                        throw new InvalidOperationException();
                 }
                 currentCts = _fileCts;
                 currentTcs = _fileTcs;
@@ -93,7 +93,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                         state = WorkQueueState.WaitingForWork;
                         break;
                     default:
-                        throw new NotImplementedException();
+                        throw new InvalidOperationException();
                 }
             }
         }
@@ -114,7 +114,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     case WorkQueueState.FinishedWork:
                         break;
                     default:
-                        throw new NotImplementedException();
+                        throw new InvalidOperationException();
                 }
                 _indexParser.Dispose();
             }
