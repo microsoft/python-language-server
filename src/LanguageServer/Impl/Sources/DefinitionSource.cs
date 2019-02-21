@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
@@ -72,29 +73,13 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     module = prop.DeclaringModule;
                     location = prop.Location;
                     break;
-                case IPythonModule mod: {
-                        var member = eval.LookupNameInScopes(mod.Name, out var scope);
-                        if (member != null && scope != null) {
-                            var v = scope.Variables[mod.Name];
-                            if (v != null) {
-                                // If we are in import statement, open the module source if available.
-                                if (statement is ImportStatement || statement is FromImportStatement) {
-                                    if (mod.Uri != null && CanNavigateToModule(mod, analysis)) {
-                                        return new Reference { range = Range.FileStart, uri = mod.Uri };
-                                    }
-                                    return null;
-                                }
-                                return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
-                            }
-                        }
-                        break;
-                    }
-                case IPythonInstance instance when instance.Type is IPythonFunctionType ft: {
-                        node = ft.FunctionDefinition;
-                        module = ft.DeclaringModule;
-                        location = ft.Location;
-                        break;
-                    }
+                case IPythonModule mod:
+                    return HandleModule(mod, analysis, statement);
+                case IPythonInstance instance when instance.Type is IPythonFunctionType ft:
+                    node = ft.FunctionDefinition;
+                    module = ft.DeclaringModule;
+                    location = ft.Location;
+                    break;
                 case IPythonInstance _ when expr is NameExpression nex: {
                         var member = eval.LookupNameInScopes(nex.Name, out var scope);
                         if (member != null && scope != null) {
@@ -126,16 +111,34 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return null;
         }
 
+        private static Reference HandleModule(IPythonModule module, IDocumentAnalysis analysis, Node statement) {
+            var member = analysis.ExpressionEvaluator.LookupNameInScopes(module.Name, out var scope);
+            if (member != null && scope != null) {
+                var v = scope.Variables[module.Name];
+                if (v != null) {
+                    // If we are in import statement, open the module source if available.
+                    if (statement is ImportStatement || statement is FromImportStatement) {
+                        if (module.Uri != null && CanNavigateToModule(module, analysis)) {
+                            return new Reference { range = default, uri = module.Uri };
+                        }
+                        return null;
+                    }
+                    return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+                }
+            }
+            return null;
+        }
+
         private static bool CanNavigateToModule(IPythonModule m, IDocumentAnalysis analysis) {
             if (m.Uri != null) {
                 var fs = analysis.ExpressionEvaluator.Services.GetService<IFileSystem>();
-                if (!fs.FileExists(m.Uri.AbsolutePath)) {
+                if (!fs.FileExists(m.Uri.ToAbsolutePath())) {
                     return false;
                 }
             }
 #if DEBUG
             // Allow navigation anywhere in debug.
-            return m.ModuleType != ModuleType.Specialized && m.ModuleType != ModuleType.Unresolved; 
+            return m.ModuleType != ModuleType.Specialized && m.ModuleType != ModuleType.Unresolved;
 #else
             return m.ModuleType == ModuleType.User || m.ModuleType == ModuleType.Package || m.ModuleType == ModuleType.Library;
 #endif
