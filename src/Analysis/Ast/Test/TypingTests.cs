@@ -762,7 +762,7 @@ class Box(Generic[_T], List[_T]):
     def get(self) -> _T:
         return self.v
 
-boxed = Box(1234)
+boxed = Box(List[int])
 x = boxed.get()
 y = boxed[0]
 ";
@@ -791,7 +791,8 @@ class Box(Generic[_T, _E], List[_E]):
     def get(self) -> _T:
         return self.v
 
-boxed = Box(1234, 'abc')
+l: List[str] = {'a', 'b', 'c'}
+boxed = Box(1234, l)
 x = boxed.get()
 y = boxed[0]
 ";
