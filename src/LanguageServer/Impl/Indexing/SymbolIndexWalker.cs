@@ -125,14 +125,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public override bool Walk(AssignmentStatement node) {
             node.Right?.Walk(this);
             foreach (var exp in node.Left) {
-                if (exp is ExpressionWithAnnotation expWithAnnot) {
-                    if (expWithAnnot.Expression is NameExpression nameExpression) {
-                        AddVarSymbol(nameExpression);
-                    }
-                }
-
-                if (exp is NameExpression ne) {
-                    AddVarSymbol(ne);
+                switch (exp) {
+                    case ExpressionWithAnnotation ewa when ewa.Expression is NameExpression ne:
+                        AddVarSymbol(ne);
+                        break;
+                    case NameExpression ne:
+                        AddVarSymbol(ne);
+                        break;
                 }
             }
 
