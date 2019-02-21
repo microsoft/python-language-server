@@ -19,6 +19,11 @@ using System;
 namespace Microsoft.Python.Core.Text {
     [Serializable]
     public struct Range {
+        public static readonly Range FileStart = new Range {
+            start = new Position {line = 0, character = 0},
+            end = new Position {line = 0, character = 0}
+        };
+
         public Position start, end;
 
         public static implicit operator SourceSpan(Range r) => new SourceSpan(r.start, r.end);

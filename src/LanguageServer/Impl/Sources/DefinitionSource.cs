@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -43,34 +44,46 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var eval = analysis.ExpressionEvaluator;
             using (eval.OpenScope(analysis.Document, exprScope)) {
                 var value = await eval.GetValueFromExpressionAsync(expr, cancellationToken);
-                return await FromMemberAsync(value, expr, eval, cancellationToken);
+                return await FromMemberAsync(value, expr, statement, analysis, cancellationToken);
             }
         }
 
-        private async Task<Reference> FromMemberAsync(IMember value, Expression expr, IExpressionEvaluator eval, CancellationToken cancellationToken) {
+        private async Task<Reference> FromMemberAsync(IMember value, Expression expr, Node statement, IDocumentAnalysis analysis, CancellationToken cancellationToken) {
             cancellationToken.ThrowIfCancellationRequested();
 
             Node node = null;
             IPythonModule module = null;
+            LocationInfo location = null;
+            var eval = analysis.ExpressionEvaluator;
 
             switch (value) {
                 case IPythonClassType cls:
                     node = cls.ClassDefinition;
                     module = cls.DeclaringModule;
+                    location = cls.Location;
                     break;
                 case IPythonFunctionType fn:
                     node = fn.FunctionDefinition;
                     module = fn.DeclaringModule;
+                    location = fn.Location;
                     break;
                 case IPythonPropertyType prop:
                     node = prop.FunctionDefinition;
                     module = prop.DeclaringModule;
+                    location = prop.Location;
                     break;
                 case IPythonModule mod: {
                         var member = eval.LookupNameInScopes(mod.Name, out var scope);
                         if (member != null && scope != null) {
                             var v = scope.Variables[mod.Name];
                             if (v != null) {
+                                // If we are in import statement, open the module source if available.
+                                if (statement is ImportStatement || statement is FromImportStatement) {
+                                    if (mod.Uri != null && CanNavigateToModule(mod, analysis)) {
+                                        return new Reference { range = Range.FileStart, uri = mod.Uri };
+                                    }
+                                    return null;
+                                }
                                 return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
                             }
                         }
@@ -79,6 +92,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 case IPythonInstance instance when instance.Type is IPythonFunctionType ft: {
                         node = ft.FunctionDefinition;
                         module = ft.DeclaringModule;
+                        location = ft.Location;
                         break;
                     }
                 case IPythonInstance _ when expr is NameExpression nex: {
@@ -98,26 +112,41 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         if (member is IPythonInstance v) {
                             return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
                         }
-                        return await FromMemberAsync(member, null, eval, cancellationToken);
+                        return await FromMemberAsync(member, null, statement, analysis, cancellationToken);
                     }
             }
 
-            if (node != null && CanNavigateToModule(module) && module is IDocument doc) {
+            module = ToRealModule(module, analysis);
+            if (node != null && CanNavigateToModule(module, analysis) && module is IDocument doc) {
                 return new Reference {
-                    range = node.GetSpan(doc.GetAnyAst()), uri = doc.Uri
+                    range = location?.Span ?? node.GetSpan(doc.GetAnyAst()), uri = doc.Uri
                 };
             }
 
             return null;
         }
 
-        private static bool CanNavigateToModule(IPythonModule m) {
+        private static bool CanNavigateToModule(IPythonModule m, IDocumentAnalysis analysis) {
+            if (m.Uri != null) {
+                var fs = analysis.ExpressionEvaluator.Services.GetService<IFileSystem>();
+                if (!fs.FileExists(m.Uri.AbsolutePath)) {
+                    return false;
+                }
+            }
 #if DEBUG
             // Allow navigation anywhere in debug.
             return m.ModuleType != ModuleType.Specialized && m.ModuleType != ModuleType.Unresolved; 
 #else
             return m.ModuleType == ModuleType.User || m.ModuleType == ModuleType.Package || m.ModuleType == ModuleType.Library;
 #endif
+        }
+
+        private IPythonModule ToRealModule(IPythonModule m, IDocumentAnalysis analysis) {
+            if (m.ModuleType != ModuleType.Stub) {
+                return m;
+            }
+            var mres = analysis.Document.Interpreter.ModuleResolution;
+            return mres.GetImportedModule(m.Name);
         }
     }
 }

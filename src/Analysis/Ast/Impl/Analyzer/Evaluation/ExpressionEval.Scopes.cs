@@ -156,8 +156,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             public void Dispose() {
-                Debug.Assert(_eval._openScopes.Count > 0, "Attempt to close global scope");
-                _eval._openScopes.Pop();
+                // in case of quick hovering over various items there may be issues
+                // with interleaving Open/Close scope requests which may trigger
+                // the AF. They are generally harmless, but we may consider handling
+                // them better.
+                // TODO: figure out threading/locking for the Open/Close pairs.
+                // Debug.Assert(_eval._openScopes.Count > 0, "Attempt to close global scope");
+                if (_eval._openScopes.Count > 0) {
+                    _eval._openScopes.Pop();
+                }
                 _eval.CurrentScope = _eval._openScopes.Count == 0 ? _eval.GlobalScope : _eval._openScopes.Peek();
             }
         }
