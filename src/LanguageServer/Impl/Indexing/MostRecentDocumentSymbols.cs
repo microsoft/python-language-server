@@ -21,8 +21,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> _fileTcs =
             new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
 
-        private bool _wasLastTaskDisposed = true;
-
         public MostRecentDocumentSymbols(string path, IFileSystem fileSystem, PythonLanguageVersion version, IIndexParser indexParser) {
             _path = path;
             _indexParser = indexParser;
@@ -35,7 +33,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 CancelExistingTask();
                 currentCt = _fileCts.Token;
                 currentTcs = _fileTcs;
-                _wasLastTaskDisposed = false;
             }
 
             ParseAsync(currentCt).SetCompletionResultTo(currentTcs);
@@ -48,7 +45,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 CancelExistingTask();
                 currentCt = _fileCts.Token;
                 currentTcs = _fileTcs;
-                _wasLastTaskDisposed = false;
             }
 
             AddAsync(doc, currentCt).SetCompletionResultTo(currentTcs);
@@ -61,7 +57,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 CancelExistingTask();
                 currentCt = _fileCts.Token;
                 currentTcs = _fileTcs;
-                _wasLastTaskDisposed = false;
             }
 
             ReIndexAsync(doc, currentCt).SetCompletionResultTo(currentTcs);
@@ -78,12 +73,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public void Dispose() {
             lock (_syncObj) {
-                if (!_wasLastTaskDisposed) {
+                if (_fileCts != null) {
                     _fileCts?.Cancel();
                     _fileCts?.Dispose();
                     _fileCts = null;
 
-                    _wasLastTaskDisposed = true;
                     _fileTcs.TrySetCanceled();
                 }
 
@@ -126,14 +120,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private void CancelExistingTask() {
             Check.InvalidOperation(Monitor.IsEntered(_syncObj));
 
-            if (!_wasLastTaskDisposed) {
-                _fileCts.Cancel();
-                _fileCts.Dispose();
-                _fileCts = new CancellationTokenSource();
+            _fileCts.Cancel();
+            _fileCts.Dispose();
+            _fileCts = new CancellationTokenSource();
 
-                _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
-                _wasLastTaskDisposed = true;
-            }
+            _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
         }
     }
 }
