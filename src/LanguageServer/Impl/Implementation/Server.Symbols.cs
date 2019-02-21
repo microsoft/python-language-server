@@ -23,7 +23,6 @@ using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
-        private static int _symbolHierarchyDepthLimit = 10;
         private static int _symbolHierarchyMaxSymbols = 1000;
 
         public async Task<SymbolInformation[]> WorkspaceSymbols(WorkspaceSymbolParams @params, CancellationToken cancellationToken) {
@@ -40,7 +39,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return symbols.Select(hSym => MakeDocumentSymbol(hSym)).ToArray();
         }
 
-        private static SymbolInformation MakeSymbolInfo(Indexing.FlatSymbol s) {
+        private static SymbolInformation MakeSymbolInfo(FlatSymbol s) {
             return new SymbolInformation {
                 name = s.Name,
                 kind = (Protocol.SymbolKind)s.Kind,
