@@ -44,6 +44,16 @@ namespace Microsoft.Python.Analysis.Types {
         /// Value of the argument.
         /// </summary>
         object Value { get; }
+
+        /// <summary>
+        /// Argument annotation type, if any.
+        /// </summary>
+        IPythonType Type { get; }
+        
+        /// <summary>
+        /// Annotation expression.
+        /// </summary>
+        Expression TypeExpression { get; }
     }
 
     /// <summary>

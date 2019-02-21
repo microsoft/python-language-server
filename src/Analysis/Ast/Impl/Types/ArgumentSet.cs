@@ -273,6 +273,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             foreach (var a in _arguments.Where(x => x.Value == null)) {
                 a.Value = await Eval.GetValueFromExpressionAsync(a.Expression, cancellationToken) ?? _eval.UnknownType;
+                a.Type = await Eval.GetValueFromExpressionAsync(a.TypeExpression, cancellationToken) as IPythonType;
             }
 
             if (_listArgument != null) {
@@ -296,14 +297,19 @@ namespace Microsoft.Python.Analysis.Types {
         private sealed class Argument : IArgument {
             public string Name { get; }
             public object Value { get; internal set; }
-
             public ParameterKind Kind { get; }
             public Expression Expression { get; set; }
             public LocationInfo Location { get; }
+            public IPythonType Type { get; internal set; }
+            public Expression TypeExpression { get; }
 
-            public Argument(string name, ParameterKind kind, LocationInfo location) {
+            public Argument(Parameter p, LocationInfo location) :
+                this(p.Name, p.Kind, p.Annotation, location) { }
+
+            public Argument(string name, ParameterKind kind, Expression typeExpression, LocationInfo location) {
                 Name = name;
                 Kind = kind;
+                TypeExpression = typeExpression;
                 Location = location;
             }
 

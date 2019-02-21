@@ -143,7 +143,7 @@ T = TypeVar('T', str, bytes)
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("T")
                 .Which.Value.Should().HaveDocumentation("TypeVar('T', str, bytes)");
-            analysis.Should().HaveVariable("T").OfType(typeof(IGenericTypeParameter));
+            analysis.Should().HaveVariable("T").OfType(typeof(IGenericTypeDefinition));
         }
 
         [TestMethod, Priority(0)]
@@ -157,7 +157,7 @@ T = TypeVar('T', bound='io.TextIOWrapper')
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("T")
                 .Which.Value.Should().HaveDocumentation("TypeVar('T', TextIOWrapper)");
-            analysis.Should().HaveVariable("T").OfType(typeof(IGenericTypeParameter));
+            analysis.Should().HaveVariable("T").OfType(typeof(IGenericTypeDefinition));
         }
 
 
@@ -793,6 +793,35 @@ class Box(Generic[_T, _E], List[_E]):
 
 l: List[str] = {'a', 'b', 'c'}
 boxed = Box(1234, l)
+x = boxed.get()
+y = boxed[0]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+
+            var boxed = analysis.Should().HaveVariable("boxed").Which;
+            boxed.Should().HaveMembers("append", "index");
+            boxed.Should().NotHaveMember("bit_length");
+
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassDictBase() {
+            const string code = @"
+from typing import TypeVar, Generic, Dict
+
+_T = TypeVar('_T')
+_E = TypeVar('_E')
+
+class Box(Generic[_T, _E], Dict[_T, _E]):
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+boxed = Box(1234, 'abc')
 x = boxed.get()
 y = boxed[0]
 ";
