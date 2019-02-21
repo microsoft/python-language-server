@@ -22,8 +22,7 @@ using Microsoft.Python.Analysis.Documents;
 namespace Microsoft.Python.LanguageServer.Indexing {
     interface IMostRecentDocumentSymbols : IDisposable {
         void Parse();
-        void Add(IDocument doc);
-        void ReIndex(IDocument doc);
+        void Index(IDocument doc);
         Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default);
         void MarkAsPending();
     }

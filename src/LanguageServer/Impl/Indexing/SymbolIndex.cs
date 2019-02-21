@@ -63,7 +63,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public void Add(string path, IDocument doc) {
-            _index.GetOrAdd(path, MakeMostRecentDocSymbols(path)).Add(doc);
+            _index.GetOrAdd(path, MakeMostRecentDocSymbols(path)).Index(doc);
         }
 
         public void Parse(string path) {
@@ -80,7 +80,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public void ReIndex(string path, IDocument doc) {
             if (_index.TryGetValue(path, out var currentSymbols)) {
-                currentSymbols.ReIndex(doc);
+                currentSymbols.Index(doc);
             }
         }
 
