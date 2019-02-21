@@ -21,30 +21,6 @@ using Microsoft.Python.Core.Threading;
 
 namespace Microsoft.Python.Core {
     public static class TaskExtensions {
-        public static void SetCompletionResultTo<T>(this Task<T> task, TaskCompletionSourceEx<T> tcs) 
-            => task.ContinueWith(SetCompletionResultToContinuationEx, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-        
-        private static void SetCompletionResultToContinuationEx<T>(Task<T> task, object state) {
-            var tcs = (TaskCompletionSourceEx<T>) state;
-            switch (task.Status) {
-                case TaskStatus.RanToCompletion:
-                    tcs.TrySetResult(task.Result);
-                    break;
-                case TaskStatus.Canceled:
-                    try {
-                        task.GetAwaiter().GetResult();
-                    } catch (OperationCanceledException ex) {
-                        tcs.TrySetCanceled(ex);
-                    }
-                    break;
-                case TaskStatus.Faulted:
-                    tcs.TrySetException(task.Exception);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
         public static void SetCompletionResultTo<T>(this Task<T> task, TaskCompletionSource<T> tcs)
             => task.ContinueWith(SetCompletionResultToContinuation, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
