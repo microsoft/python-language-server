@@ -57,9 +57,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     var parser = Parser.CreateParser(stream, _version);
                     ast = parser.ParseFile();
                 }
-            } catch (Exception ex) {
-                _semaphore.Release();
-                throw ex;
             } finally {
                 _semaphore.Release();
             }
@@ -74,6 +71,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     _allProcessingCts.Dispose();
                 }
             }
+            _semaphore.Dispose();
         }
     }
 }
