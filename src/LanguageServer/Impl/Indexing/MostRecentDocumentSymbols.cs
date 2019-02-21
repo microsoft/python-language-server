@@ -19,7 +19,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private CancellationTokenSource _fileCts = new CancellationTokenSource();
 
         private TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
-        private State state = State.WaitingForWork;
+        private WorkQueueState state = WorkQueueState.WaitingForWork;
 
         public MostRecentDocumentSymbols(string path, IFileSystem fileSystem, PythonLanguageVersion version, IIndexParser indexParser) {
             _path = path;
@@ -43,17 +43,17 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> currentTcs;
             lock (_syncObj) {
                 switch (state) {
-                    case State.Working:
+                    case WorkQueueState.Working:
                         CancelExistingWork();
                         RenewTcs();
-                        state = State.Working;
+                        state = WorkQueueState.Working;
                         break;
-                    case State.WaitingForWork:
-                        state = State.Working;
+                    case WorkQueueState.WaitingForWork:
+                        state = WorkQueueState.Working;
                         break;
-                    case State.FinishedWork:
+                    case WorkQueueState.FinishedWork:
                         RenewTcs();
-                        state = State.Working;
+                        state = WorkQueueState.Working;
                         break;
                     default:
                         break;
@@ -66,7 +66,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 lock (_syncObj) {
                     currentCts.Dispose();
                     if (_fileCts == currentCts) {
-                        state = State.FinishedWork;
+                        state = WorkQueueState.FinishedWork;
                     }
                 }
                 return t.GetAwaiter().GetResult();
@@ -84,17 +84,17 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void MarkAsPending() {
             lock (_syncObj) {
                 switch (state) {
-                    case State.WaitingForWork:
-                        state = State.WaitingForWork;
+                    case WorkQueueState.WaitingForWork:
+                        state = WorkQueueState.WaitingForWork;
                         break;
-                    case State.Working:
+                    case WorkQueueState.Working:
                         CancelExistingWork();
                         RenewTcs();
-                        state = State.WaitingForWork;
+                        state = WorkQueueState.WaitingForWork;
                         break;
-                    case State.FinishedWork:
+                    case WorkQueueState.FinishedWork:
                         RenewTcs();
-                        state = State.WaitingForWork;
+                        state = WorkQueueState.WaitingForWork;
                         break;
                     default:
                         break;
@@ -105,14 +105,14 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void Dispose() {
             lock (_syncObj) {
                 switch (state) {
-                    case State.Working:
+                    case WorkQueueState.Working:
                         CancelExistingWork();
-                        state = State.FinishedWork;
+                        state = WorkQueueState.FinishedWork;
                         break;
-                    case State.WaitingForWork:
-                        state = State.FinishedWork;
+                    case WorkQueueState.WaitingForWork:
+                        state = WorkQueueState.FinishedWork;
                         break;
-                    case State.FinishedWork:
+                    case WorkQueueState.FinishedWork:
                         break;
                 }
                 _indexParser.Dispose();
@@ -153,6 +153,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _fileCts.Cancel();
         }
 
-        private enum State { WaitingForWork, Working, FinishedWork };
+        private enum WorkQueueState { WaitingForWork, Working, FinishedWork };
     }
 }
