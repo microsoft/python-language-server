@@ -36,6 +36,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<DocumentSymbol[]> HierarchicalDocumentSymbol(DocumentSymbolParams @params, CancellationToken cancellationToken) {
             var path = @params.textDocument.uri.AbsolutePath;
             var symbols = await _indexManager.HierarchicalDocumentSymbolsAsync(path, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             return symbols.Select(hSym => MakeDocumentSymbol(hSym)).ToArray();
         }
 
