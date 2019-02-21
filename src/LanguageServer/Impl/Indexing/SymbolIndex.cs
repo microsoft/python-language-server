@@ -48,9 +48,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken ct = default) {
-
             var results = new List<FlatSymbol>();
-
             foreach (var filePathAndRecent in _index) {
                 var symbols = await filePathAndRecent.Value.GetSymbolsAsync(ct);
                 results.AddRange(WorkspaceSymbolsQuery(filePathAndRecent.Key, query, symbols).Take(maxLength - results.Count));
@@ -98,7 +96,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return treeSymbols.Where(sym => sym.symbol.Name.ContainsOrdinal(query, ignoreCase: true))
                               .Select(sym => new FlatSymbol(sym.symbol.Name, sym.symbol.Kind, path, sym.symbol.SelectionRange, sym.parentName));
         }
-
 
         private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(
             IEnumerable<HierarchicalSymbol> symbols, string parentName) {
