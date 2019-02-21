@@ -62,11 +62,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return results;
         }
 
-        private async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsQueryAsync(string filePath, string query, IMostRecentDocumentSymbols recentSymbols, CancellationToken cancellationToken) {
-            var symbols = await recentSymbols.GetSymbolsAsync(cancellationToken);
-            return WorkspaceSymbolsQuery(filePath, query, symbols).ToList();
-        }
-
         public void Add(string path, IDocument doc) {
             _index.GetOrAdd(path, MakeMostRecentDocSymbols(path)).Add(doc);
         }
