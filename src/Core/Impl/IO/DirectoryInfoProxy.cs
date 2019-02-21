@@ -43,15 +43,25 @@ namespace Microsoft.Python.Core.IO {
                 .EnumerateFileSystemInfos()
                 .Select(CreateFileSystemInfoProxy);
 
-        public IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includeFiles, string[] excludeFiles) {
-            Matcher matcher = new Matcher();
-            matcher.AddIncludePatterns(includeFiles.IsNullOrEmpty() ? new[] { "**/*" } : includeFiles);
-            matcher.AddExcludePatterns(excludeFiles ?? Enumerable.Empty<string>());
+        public IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includePatterns, string[] excludePatterns) {
+            var matcher = GetMatcher(includePatterns, excludePatterns);
             PatternMatchingResult matchResult = SafeExecuteMatcher(matcher);
             return matchResult.Files.Select((filePatternMatch) => {
                 var fileSystemInfo = _directoryInfo.GetFileSystemInfos(filePatternMatch.Stem).First();
                 return CreateFileSystemInfoProxy(fileSystemInfo);
             });
+        }
+
+        public bool Match(string[] includePatterns, string[] excludePatterns, string path) {
+            var matcher = GetMatcher(includePatterns, excludePatterns);
+            return matcher.Match(FullName, path).HasMatches;
+        }
+
+        private static Matcher GetMatcher(string[] includePatterns, string[] excludePatterns) {
+            Matcher matcher = new Matcher();
+            matcher.AddIncludePatterns(includePatterns.IsNullOrEmpty() ? new[] { "**/*" } : includePatterns);
+            matcher.AddExcludePatterns(excludePatterns ?? Enumerable.Empty<string>());
+            return matcher;
         }
 
         private PatternMatchingResult SafeExecuteMatcher(Matcher matcher) {

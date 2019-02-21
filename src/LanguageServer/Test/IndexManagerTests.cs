@@ -317,7 +317,13 @@ namespace Microsoft.Python.LanguageServer.Tests {
             }
 
             private void SetupRootDir() {
-                IDirectoryInfo directoryInfo = Substitute.For<IDirectoryInfo>();
+                var directoryInfo = Substitute.For<IDirectoryInfo>();
+                directoryInfo.Match(new string[] { }, new string[] { }, "").ReturnsForAnyArgs(callInfo => {
+                    string path = callInfo.ArgAt<string>(2);
+                    return _rootFileList
+                        .Where(fsInfo => PathEqualityComparer.Instance.Equals(fsInfo.FullName, path))
+                        .Count() > 0;
+                });
                 // Doesn't work without 'forAnyArgs'
                 directoryInfo.EnumerateFileSystemInfos(new string[] { }, new string[] { }).ReturnsForAnyArgs(_rootFileList);
                 FileSystem.GetDirectoryInfo(_rootPath).Returns(directoryInfo);

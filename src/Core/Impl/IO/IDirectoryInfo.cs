@@ -20,5 +20,6 @@ namespace Microsoft.Python.Core.IO {
         IDirectoryInfo Parent { get; }
         IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos();
         IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includeFiles, string[] excludeFiles);
+        bool Match(string[] includeFiles, string[] excludeFiles, string path);
     }
 }

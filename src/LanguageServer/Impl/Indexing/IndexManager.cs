@@ -88,7 +88,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             if (string.IsNullOrEmpty(_workspaceRootPath)) {
                 return false;
             }
-            return _fileSystem.IsPathUnderRoot(_workspaceRootPath, path);
+            return _fileSystem.GetDirectoryInfo(_workspaceRootPath)
+                .Match(_includeFiles, _excludeFiles, path);
         }
 
         public void ProcessNewFile(string path, IDocument doc) {
