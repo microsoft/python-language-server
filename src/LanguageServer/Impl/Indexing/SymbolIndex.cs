@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,66 +48,23 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken ct = default) {
-            /*var workspaceCts = new CancellationTokenSource();
-            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, workspaceCts.Token);
 
-            var workingTasks = new List<Task<IReadOnlyList<FlatSymbol>>>();
-            var results = IterateDoneSymbols(query, maxLength, workingTasks, linkedCts);
-            await UntilMaxLength(maxLength, results, workingTasks);
-
-            workspaceCts.Cancel();
-            workspaceCts.Dispose();
-            linkedCts.Dispose();
-            return results.Take(maxLength)
-                           .ToList();*/
             var results = new List<FlatSymbol>();
 
-            foreach (var filePathAndRecent in _index.Select(kvp => kvp)) {
+            foreach (var filePathAndRecent in _index) {
                 var symbols = await filePathAndRecent.Value.GetSymbolsAsync(ct);
-                results.AddRange(WorkspaceSymbolsQuery(filePathAndRecent.Key, query, symbols));
+                results.AddRange(WorkspaceSymbolsQuery(filePathAndRecent.Key, query, symbols).Take(maxLength - results.Count));
+                ct.ThrowIfCancellationRequested();
                 if (results.Count >= maxLength) {
                     break;
                 }
             }
             return results;
-        }
-
-        private List<FlatSymbol> IterateDoneSymbols(string query, int maxLength, List<Task<IReadOnlyList<FlatSymbol>>> workingTasks, CancellationTokenSource linkedCts) {
-            var results = new List<FlatSymbol>();
-            foreach (var filePathAndRecent in _index.Select(kvp => kvp)) {
-                if (results.Count >= maxLength) {
-                    break;
-                }
-
-                var symbolsTask = filePathAndRecent.Value.GetSymbolsAsync();
-                if (symbolsTask.IsCompletedSuccessfully) {
-                    results.AddRange(WorkspaceSymbolsQuery(filePathAndRecent.Key, query, symbolsTask.Result));
-                } else if (!symbolsTask.IsCompleted) {
-                    workingTasks.Add(WorkspaceSymbolsQueryAsync(filePathAndRecent.Key, query, filePathAndRecent.Value, linkedCts.Token));
-                }
-            }
-            return results;
-        }
-
-        private static async Task UntilMaxLength(int maxLength, List<FlatSymbol> results, List<Task<IReadOnlyList<FlatSymbol>>> workingTasks) {
-            while (results.Count < maxLength && !workingTasks.IsNullOrEmpty()) {
-                const int maxAwaitingTasks = 25;
-                var awaitTasks = workingTasks.Take(maxAwaitingTasks).ToArray();
-                workingTasks.RemoveRange(0, awaitTasks.Length);
-                await Task.WhenAny(awaitTasks);
-                foreach (var t in awaitTasks) {
-                    if (!t.IsCompleted) {
-                        workingTasks.Add(t);
-                    } else if (t.IsCompletedSuccessfully) {
-                        results.AddRange(t.Result);
-                    }
-                }
-            }
         }
 
         private async Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsQueryAsync(string filePath, string query, IMostRecentDocumentSymbols recentSymbols, CancellationToken cancellationToken) {
             var symbols = await recentSymbols.GetSymbolsAsync(cancellationToken);
-            return WorkspaceSymbolsQuery(filePath, query, symbols);
+            return WorkspaceSymbolsQuery(filePath, query, symbols).ToList();
         }
 
         public void Add(string path, IDocument doc) {
@@ -137,21 +93,20 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _index[path].MarkAsPending();
         }
 
-        private IReadOnlyList<FlatSymbol> WorkspaceSymbolsQuery(string path, string query,
+        private IEnumerable<FlatSymbol> WorkspaceSymbolsQuery(string path, string query,
             IReadOnlyList<HierarchicalSymbol> symbols) {
             var rootSymbols = DecorateWithParentsName(symbols, null);
             var treeSymbols = rootSymbols.TraverseBreadthFirst((symAndPar) => {
                 var sym = symAndPar.symbol;
-                return DecorateWithParentsName(sym.Children.MaybeEnumerate().ToList(), sym.Name);
+                return DecorateWithParentsName((sym.Children ?? Enumerable.Empty<HierarchicalSymbol>()).ToList(), sym.Name);
             });
             return treeSymbols.Where(sym => sym.symbol.Name.ContainsOrdinal(query, ignoreCase: true))
-                              .Select(sym => new FlatSymbol(sym.symbol.Name, sym.symbol.Kind, path, sym.symbol.SelectionRange, sym.parentName))
-                              .ToList();
+                              .Select(sym => new FlatSymbol(sym.symbol.Name, sym.symbol.Kind, path, sym.symbol.SelectionRange, sym.parentName));
         }
 
 
-        private static IReadOnlyList<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(
-            IReadOnlyList<HierarchicalSymbol> symbols, string parentName) {
+        private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(
+            IEnumerable<HierarchicalSymbol> symbols, string parentName) {
             return symbols.Select((symbol) => (symbol, parentName)).ToList();
         }
 

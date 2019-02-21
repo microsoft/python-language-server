@@ -24,7 +24,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class IndexParser : IIndexParser {
-        private const int MaxConcurrentParsings = 50;
+        private const int MaxConcurrentParsings = 10;
         private readonly IFileSystem _fileSystem;
         private readonly PythonLanguageVersion _version;
         private readonly SemaphoreSlim _semaphore;

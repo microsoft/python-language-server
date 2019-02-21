@@ -67,14 +67,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             ReIndexAsync(doc, currentCt).SetCompletionResultTo(currentTcs);
         }
 
-        public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default) {
-            ct.Register(() => {
-                lock (_syncObj) {
-                    CancelExistingTask();
-                }
-            });
-            return _fileTcs.Task;
-        }
+        public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default)
+            => _fileTcs.Task.ContinueWith(t => t.GetAwaiter().GetResult(), ct);
 
         public void MarkAsPending() {
             lock (_syncObj) {
