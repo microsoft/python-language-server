@@ -94,10 +94,7 @@ namespace Microsoft.Python.Core {
 
         public static IEnumerable<T> TraverseBreadthFirst<T>(this IEnumerable<T> roots, Func<T, IEnumerable<T>> selectChildren) {
             var items = new Queue<T>(roots);
-
             while (items.Count > 0) {
-
-
                 var item = items.Dequeue();
                 yield return item;
 
