@@ -321,7 +321,7 @@ namespace Microsoft.Python.Parsing {
             return name;
         }
 
-        private Name ReadNameMaybeNone() {
+        private Name ReadNameMaybeNone(int prevTokenStart, int prevTokeLength) {
             // peek for better error recovery
             var t = PeekToken();
             if (t == Tokens.NoneToken) {
@@ -335,7 +335,7 @@ namespace Microsoft.Python.Parsing {
                 return n;
             }
 
-            ReportSyntaxError("syntax error");
+            ReportSyntaxError(prevTokenStart, prevTokenStart + prevTokeLength, "syntax error");
             return Name.Empty;
         }
 
@@ -1728,7 +1728,7 @@ namespace Microsoft.Python.Parsing {
                 while (MaybeEat(TokenKind.Dot)) {
                     var dotStart = GetStart();
                     var whitespace = _tokenWhiteSpace;
-                    name = ReadNameMaybeNone();
+                    name = ReadNameMaybeNone(dotStart, 1);
                     if (!name.HasName) {
                         decorator = Error(_verbatim ? (_tokenWhiteSpace + _token.Token.VerbatimImage + _lookaheadWhiteSpace + _lookahead.Token.VerbatimImage) : null, decorator);
                         NextToken();
@@ -3300,7 +3300,7 @@ namespace Microsoft.Python.Parsing {
                             NextToken();
                             var dotStart = GetStart();
                             whitespace = _tokenWhiteSpace;
-                            var name = ReadNameMaybeNone();
+                            var name = ReadNameMaybeNone(dotStart, 1);
                             var nameWhitespace = _tokenWhiteSpace;
                             var fe = MakeMember(ret, name);
                             fe.SetLoc(ret.StartIndex, name.HasName ? GetStart() : GetEnd(), GetEnd());
