@@ -112,7 +112,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return await GetValueFromFunctionTypeAsync(call, pi, expr, cancellationToken);
             }
 
-            return null;
+            // Optimistically return the instance itself. This happens when the call is
+            // over 'function' that was actually replaced by a instance of a type.
+            return pi;
         }
 
         public async Task<IMember> GetValueFromFunctionTypeAsync(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr, CancellationToken cancellationToken = default) {

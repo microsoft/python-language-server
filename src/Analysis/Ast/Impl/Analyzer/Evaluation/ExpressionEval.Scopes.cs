@@ -128,6 +128,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // When the analysis completed. Therefore if module is the one we are
             // analyzing, use scope from the evaluator rather than from the module.
             var gs = Module.Equals(module) || module == null ? GlobalScope : module.GlobalScope as Scope;
+            if (gs == null) {
+                return Disposable.Empty;
+            }
+
             if (node.Parent != null) {
                 fromScope = gs
                     .TraverseBreadthFirst(s => s.Children.OfType<Scope>())
