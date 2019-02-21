@@ -153,6 +153,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _fileCts.Cancel();
         }
 
+        /* It's easier to think of it as a queue of work
+         * but it maintains only one item at a time in the queue */
         private enum WorkQueueState { WaitingForWork, Working, FinishedWork };
     }
 }
