@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Documents;
@@ -151,6 +152,38 @@ namespace Microsoft.Python.LanguageServer.Tests {
             symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new FlatSymbol("Foo", SymbolKind.Class, path, new SourceSpan(1, 7, 1, 10)),
                 new FlatSymbol("foo", SymbolKind.Method, path, new SourceSpan(2, 9, 2, 12), "Foo"),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void MarkAsPendingWaitsForUpdates() {
+            ISymbolIndex index = MakeSymbolIndex();
+            var path = TestData.GetDefaultModulePath();
+
+            index.Add(path, DocumentWithAst("x = 1"));
+            index.MarkAsPending(path);
+            var cts = new CancellationTokenSource();
+            var t = index.HierarchicalDocumentSymbolsAsync(path, cts.Token);
+            t.IsCompleted.Should().BeFalse();
+            cts.Cancel();
+            Func<Task> cancelled = async () => {
+                await t;
+            };
+            cancelled.Should().Throw<OperationCanceledException>();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SymbolsAfterPendingWaitsForUpdateAsync() {
+            ISymbolIndex index = MakeSymbolIndex();
+            var path = TestData.GetDefaultModulePath();
+
+            index.Add(path, DocumentWithAst("x = 1"));
+            index.MarkAsPending(path);
+            var t = index.WorkspaceSymbolsAsync("", maxSymbols);
+            index.ReIndex(path, DocumentWithAst("x = 1"));
+            var symbols = await t;
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new FlatSymbol("x", SymbolKind.Variable, path, new SourceSpan(1, 1, 1, 2)),
             });
         }
 
