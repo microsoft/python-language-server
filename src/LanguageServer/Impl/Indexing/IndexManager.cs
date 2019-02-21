@@ -35,8 +35,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly string[] _includeFiles;
         private readonly string[] _excludeFiles;
         private readonly IIdleTimeService _idleTimeService;
-        private readonly CancellationTokenSource _allIndexCts = new CancellationTokenSource();
-        private readonly TaskCompletionSource<bool> _addRootTcs = new TaskCompletionSource<bool>();
         private readonly HashSet<IDocument> _pendingDocs = new HashSet<IDocument>(new UriDocumentComparer());
         private readonly PythonLanguageVersion _version;
         private DateTime _lastPendingDocAddedTime;
@@ -105,8 +103,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public void Dispose() {
             _symbolIndex.Dispose();
-            _allIndexCts.Cancel();
-            _allIndexCts.Dispose();
         }
 
         public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default) {
