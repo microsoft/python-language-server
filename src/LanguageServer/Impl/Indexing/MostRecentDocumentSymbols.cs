@@ -30,10 +30,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             WorkAndSetTcs(ParseAsync);
         }
 
-        public void Add(IDocument doc) {
-            WorkAndSetTcs(ct => IndexAsync(doc, ct));
-        }
-
         public void Index(IDocument doc) {
             WorkAndSetTcs(ct => IndexAsync(doc, ct));
         }

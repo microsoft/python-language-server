@@ -76,8 +76,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return _fileSystem.GetDirectoryInfo(_workspaceRootPath).EnumerateFileSystemInfos(_includeFiles, _excludeFiles);
         }
 
-        private bool IsFileIndexed(string path) => _symbolIndex.IsIndexed(path);
-
         public void ProcessClosedFile(string path) {
             if (IsFileOnWorkspace(path)) {
                 _symbolIndex.Parse(path);

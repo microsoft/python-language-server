@@ -74,8 +74,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             mostRecentDocSymbols.Dispose();
         }
 
-        public bool IsIndexed(string path) => _index.ContainsKey(path);
-
         public void ReIndex(string path, IDocument doc) {
             if (_index.TryGetValue(path, out var currentSymbols)) {
                 currentSymbols.Index(doc);

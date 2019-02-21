@@ -26,7 +26,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         void Add(string path, IDocument doc);
         void Parse(string path);
         void Delete(string path);
-        bool IsIndexed(string path);
         void ReIndex(string path, IDocument doc);
         void MarkAsPending(string path);
     }
