@@ -16,14 +16,11 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -101,7 +98,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     }
             }
 
-            module = ToRealModule(module, analysis);
+            module = module is IPythonStubModule stub ? stub.PrimaryModule : module;
             if (node != null && CanNavigateToModule(module, analysis) && module is IDocument doc) {
                 return new Reference {
                     range = location?.Span ?? node.GetSpan(doc.GetAnyAst()), uri = doc.Uri
@@ -130,26 +127,12 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private static bool CanNavigateToModule(IPythonModule m, IDocumentAnalysis analysis) {
-            if (m.Uri != null) {
-                var fs = analysis.ExpressionEvaluator.Services.GetService<IFileSystem>();
-                if (!fs.FileExists(m.Uri.ToAbsolutePath())) {
-                    return false;
-                }
-            }
+            var canNavigate = m.ModuleType == ModuleType.User || m.ModuleType == ModuleType.Package || m.ModuleType == ModuleType.Library;
 #if DEBUG
             // Allow navigation anywhere in debug.
-            return m.ModuleType != ModuleType.Specialized && m.ModuleType != ModuleType.Unresolved;
-#else
-            return m.ModuleType == ModuleType.User || m.ModuleType == ModuleType.Package || m.ModuleType == ModuleType.Library;
+            canNavigate |= m.ModuleType == ModuleType.Stub || m.ModuleType == ModuleType.Compiled;
 #endif
-        }
-
-        private IPythonModule ToRealModule(IPythonModule m, IDocumentAnalysis analysis) {
-            if (m.ModuleType != ModuleType.Stub) {
-                return m;
-            }
-            var mres = analysis.Document.Interpreter.ModuleResolution;
-            return mres.GetImportedModule(m.Name);
+            return canNavigate;
         }
     }
 }

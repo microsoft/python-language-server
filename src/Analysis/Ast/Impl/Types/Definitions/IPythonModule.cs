@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Module stub, if any.
         /// </summary>
-        IPythonModule Stub { get; }
+        IPythonStubModule Stub { get; }
 
         /// <summary>
         /// Global cope of the module.

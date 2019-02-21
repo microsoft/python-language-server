@@ -82,7 +82,7 @@ c.method(1, 2)
             reference.range.Should().Be(17, 0, 17, 1); // TODO: store all locations
 
             reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(19, 5));
-            reference.range.Should().Be(5, 0, 9, 18);
+            reference.range.Should().Be(5, 6, 9, 18);
 
             reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(20, 5));
             reference.range.Should().Be(7, 4, 9, 18);
