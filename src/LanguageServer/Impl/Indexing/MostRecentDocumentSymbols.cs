@@ -52,7 +52,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                         state = WorkQueueState.Working;
                         break;
                     default:
-                        break;
+                        throw new NotImplementedException();
                 }
                 currentCts = _fileCts;
                 currentTcs = _fileTcs;
@@ -93,7 +93,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                         state = WorkQueueState.WaitingForWork;
                         break;
                     default:
-                        break;
+                        throw new NotImplementedException();
                 }
             }
         }
@@ -106,10 +106,15 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                         state = WorkQueueState.FinishedWork;
                         break;
                     case WorkQueueState.WaitingForWork:
+                        CancelExistingWork();
+                        // Manually cancel tcs, in case any task is awaiting
+                        _fileTcs.TrySetCanceled();
                         state = WorkQueueState.FinishedWork;
                         break;
                     case WorkQueueState.FinishedWork:
                         break;
+                    default:
+                        throw new NotImplementedException();
                 }
                 _indexParser.Dispose();
             }
