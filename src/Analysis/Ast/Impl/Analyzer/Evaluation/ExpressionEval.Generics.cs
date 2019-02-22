@@ -15,8 +15,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
@@ -38,7 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         ///     class A(Generic[T]): ...
         ///     x = A(TypeError)
         /// </example>
-        private async Task<IMember> GetValueFromGenericAsync(IMember target, Expression expr, CancellationToken cancellationToken = default) {
+        private IMember GetValueFromGeneric(IMember target, Expression expr) {
             if (!(target is PythonClassType c && c.IsGeneric()) && !(target is IGenericType)) {
                 return null;
             }
@@ -52,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // Indexing returns type as from A[int]
                 case IndexExpression indexExpr:
                     // Generic[T1, T2, ...] or A[type]()
-                    var indices = await EvaluateIndexAsync(indexExpr, cancellationToken);
+                    var indices = EvaluateIndex(indexExpr);
                     // See which ones are generic parameters as defined by TypeVar() 
                     // and which are specific types. Normally there should not be a mix.
                     var genericTypeArgs = indices.OfType<IGenericTypeParameter>().ToArray();
@@ -99,7 +97,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // Alternative instantiation:
                     //  class A(Generic[T]): ...
                     //  x = A(1234)
-                    specificTypes = (await EvaluateCallArgsAsync(callExpr, cancellationToken)).Select(x => x.GetPythonType()).ToArray();
+                    specificTypes = EvaluateCallArgs(callExpr).Select(x => x.GetPythonType()).ToArray();
                     // Callable returns instance (as opposed to a type with index expression)
                     returnInstance = true;
                     break;
@@ -121,26 +119,24 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return null;
         }
 
-        private async Task<IReadOnlyList<IMember>> EvaluateIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
+        private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr) {
             var indices = new List<IMember>();
             if (expr.Index is TupleExpression tex) {
-                cancellationToken.ThrowIfCancellationRequested();
                 foreach (var item in tex.Items) {
-                    var e = await GetValueFromExpressionAsync(item, cancellationToken);
+                    var e = GetValueFromExpression(item);
                     indices.Add(e);
                 }
             } else {
-                var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
+                var index = GetValueFromExpression(expr.Index);
                 indices.Add(index ?? UnknownType);
             }
             return indices;
         }
 
-        private async Task<IReadOnlyList<IMember>> EvaluateCallArgsAsync(CallExpression expr, CancellationToken cancellationToken = default) {
+        private IReadOnlyList<IMember> EvaluateCallArgs(CallExpression expr) {
             var indices = new List<IMember>();
-            cancellationToken.ThrowIfCancellationRequested();
             foreach (var e in expr.Args.Select(a => a.Expression)) {
-                var value = await GetValueFromExpressionAsync(e, cancellationToken) ?? UnknownType;
+                var value = GetValueFromExpression(e) ?? UnknownType;
                 indices.Add(value);
             }
             return indices;

@@ -14,12 +14,8 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Types.Collections;
-using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -48,30 +44,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// that that checks for the return type annotation and attempts to determine
         /// static return type.
         /// </remarks>
-        public async Task<IMember> EvaluateCallAsync(IArgumentSet args, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
-
+        public IMember EvaluateCall(IArgumentSet args) {
             // Open scope and declare parameters
             using (_eval.OpenScope(_declaringModule, _function, out _)) {
                 args.DeclareParametersInScope(_eval);
-                await _function.Body.WalkAsync(this, cancellationToken);
+                _function.Body.Walk(this);
             }
             return _result;
         }
 
-        public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
+        public override bool Walk(AssignmentStatement node) {
             foreach (var lhs in node.Left) {
                 if (lhs is NameExpression nameExp && (nameExp.Name == "self" || nameExp.Name == "cls")) {
                     return true; // Don't assign to 'self' or 'cls'.
                 }
             }
-            return await base.WalkAsync(node, cancellationToken);
+            return base.Walk(node);
         }
 
-        public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var value = await Eval.GetValueFromExpressionAsync(node.Expression, cancellationToken);
+        public override bool Walk(ReturnStatement node) {
+            var value = Eval.GetValueFromExpression(node.Expression);
             if (!value.IsUnknown()) {
                 _result = value;
                 return false;

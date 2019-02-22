@@ -56,28 +56,28 @@ string = str
             var analysis = await GetAnalysisAsync(code);
             var hs = new HoverSource(new PlainTextDocumentationSource());
 
-            var hover = await hs.GetHoverAsync(analysis, new SourceLocation(2, 2));
+            var hover = hs.GetHover(analysis, new SourceLocation(2, 2));
             hover.contents.value.Should().Be("x: str");
 
-            hover = await hs.GetHoverAsync(analysis, new SourceLocation(2, 7));
+            hover = hs.GetHover(analysis, new SourceLocation(2, 7));
             hover.Should().BeNull();
 
-            hover = await hs.GetHoverAsync(analysis, new SourceLocation(4, 7));
+            hover = hs.GetHover(analysis, new SourceLocation(4, 7));
             hover.contents.value.Should().Be("class C\n\nClass C is awesome");
 
-            hover = await hs.GetHoverAsync(analysis, new SourceLocation(6, 9));
+            hover = hs.GetHover(analysis, new SourceLocation(6, 9));
             hover.contents.value.Should().Be("C.method(a: int, b) -> float\n\nReturns a float!!!");
 
-            hover = await hs.GetHoverAsync(analysis, new SourceLocation(6, 22));
+            hover = hs.GetHover(analysis, new SourceLocation(6, 22));
             hover.contents.value.Should().Be("a: int");
 
-            hover = await hs.GetHoverAsync(analysis, new SourceLocation(10, 7));
+            hover = hs.GetHover(analysis, new SourceLocation(10, 7));
             hover.contents.value.Should().Be("func(a, b)\n\nDoes nothing useful");
 
-            hover = await hs.GetHoverAsync(analysis, new SourceLocation(14, 2));
+            hover = hs.GetHover(analysis, new SourceLocation(14, 2));
             hover.contents.value.Should().Be("y: int");
 
-            hover = await hs.GetHoverAsync(analysis, new SourceLocation(15, 2));
+            hover = hs.GetHover(analysis, new SourceLocation(15, 2));
             hover.contents.value.Should().StartWith("class str\n\nstr(object='') -> str");
         }
 
@@ -207,7 +207,7 @@ import os.path as PATH
         }
 
         private static async Task AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
-            var hover = await hs.GetHoverAsync(analysis, position);
+            var hover = hs.GetHover(analysis, position);
 
             if (hoverText.EndsWith("*")) {
                 // Check prefix first, but then show usual message for mismatched value

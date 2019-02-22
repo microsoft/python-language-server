@@ -16,8 +16,6 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -88,26 +86,25 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return value;
         }
 
-        public async Task<IPythonType> GetTypeFromAnnotationAsync(Expression expr, CancellationToken cancellationToken = default, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
+        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
             if (expr == null) {
                 return null;
             }
 
             if (expr is CallExpression callExpr) {
                 // x: NamedTuple(...)
-                return (await GetValueFromCallableAsync(callExpr, cancellationToken))?.GetPythonType() ?? UnknownType;
+                return GetValueFromCallable(callExpr)?.GetPythonType() ?? UnknownType;
             }
 
             if (expr is IndexExpression indexExpr) {
                 // Try generics
-                var target = await GetValueFromExpressionAsync(indexExpr.Target, cancellationToken);
-                var result = await GetValueFromGenericAsync(target, indexExpr, cancellationToken);
+                var target = GetValueFromExpression(indexExpr.Target);
+                var result = GetValueFromGeneric(target, indexExpr);
                 if(result != null) {
                     return result.GetPythonType();
                 }
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
             // Look at specialization and typing first
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             return ann.GetValue(new TypeAnnotationConverter(this, options));
