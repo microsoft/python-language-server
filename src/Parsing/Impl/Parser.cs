@@ -2274,7 +2274,7 @@ namespace Microsoft.Python.Parsing {
             var itemWhiteSpace = MakeWhiteSpaceList();
 
             var items = ImmutableArray<WithItem>.Empty
-                .Add(ParseWithItem(itemWhiteSpace)); ;
+                .Add(ParseWithItem(itemWhiteSpace));
             while (MaybeEat(TokenKind.Comma)) {
                 itemWhiteSpace?.Add(_tokenWhiteSpace);
                 items = items.Add(ParseWithItem(itemWhiteSpace));
@@ -2956,7 +2956,7 @@ namespace Microsoft.Python.Parsing {
                 if (t.Value is BigInteger) {
                     var bi = (BigInteger)t.Value;
                     if (bi == 0x80000000) {
-                        var tokenString = _tokenizer.GetTokenString(); ;
+                        var tokenString = _tokenizer.GetTokenString();
                         Debug.Assert(tokenString.Length > 0);
 
                         if (tokenString[tokenString.Length - 1] != 'L' &&
