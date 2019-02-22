@@ -65,8 +65,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public void Parse(string path) {
-            var mostRecentSymbols = _index.GetOrAdd(path, MakeMostRecentDocSymbols(path));
-            mostRecentSymbols.Parse();
+            _index.GetOrAdd(path, MakeMostRecentDocSymbols(path)).Parse();
         }
 
         public void Delete(string path) {

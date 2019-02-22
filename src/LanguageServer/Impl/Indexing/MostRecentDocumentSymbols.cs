@@ -34,7 +34,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             WorkAndSetTcs(ct => IndexAsync(doc, ct));
         }
 
-        public void WorkAndSetTcs(Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> asyncFunc) {
+        public void WorkAndSetTcs(Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> asyncWork) {
             CancellationTokenSource currentCts;
             TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> currentTcs;
             lock (_syncObj) {
@@ -42,31 +42,36 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     case WorkQueueState.Working:
                         CancelExistingWork();
                         RenewTcs();
-                        state = WorkQueueState.Working;
                         break;
                     case WorkQueueState.WaitingForWork:
-                        state = WorkQueueState.Working;
                         break;
                     case WorkQueueState.FinishedWork:
                         RenewTcs();
-                        state = WorkQueueState.Working;
                         break;
                     default:
                         throw new InvalidOperationException();
                 }
+                state = WorkQueueState.Working;
                 currentCts = _fileCts;
                 currentTcs = _fileTcs;
             }
 
-            asyncFunc(currentCts.Token).ContinueWith(t => {
+            DoWork(currentCts, asyncWork).SetCompletionResultTo(currentTcs);
+        }
+
+        private async Task<IReadOnlyList<HierarchicalSymbol>> DoWork(CancellationTokenSource tcs, Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> asyncWork) {
+            var token = tcs.Token;
+
+            try {
+                return await asyncWork(token);
+            } finally {
                 lock (_syncObj) {
-                    currentCts.Dispose();
-                    if (_fileCts == currentCts) {
+                    tcs.Dispose();
+                    if (!token.IsCancellationRequested) {
                         state = WorkQueueState.FinishedWork;
                     }
                 }
-                return t.GetAwaiter().GetResult();
-            }, currentCts.Token).SetCompletionResultTo(currentTcs);
+            }
         }
 
         public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default) {
