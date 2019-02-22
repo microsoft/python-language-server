@@ -86,20 +86,18 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             lock (_syncObj) {
                 switch (state) {
                     case WorkQueueState.WaitingForWork:
-                        state = WorkQueueState.WaitingForWork;
                         break;
                     case WorkQueueState.Working:
                         CancelExistingWork();
                         RenewTcs();
-                        state = WorkQueueState.WaitingForWork;
                         break;
                     case WorkQueueState.FinishedWork:
                         RenewTcs();
-                        state = WorkQueueState.WaitingForWork;
                         break;
                     default:
                         throw new InvalidOperationException();
                 }
+                state = WorkQueueState.WaitingForWork;
             }
         }
 
@@ -108,19 +106,18 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 switch (state) {
                     case WorkQueueState.Working:
                         CancelExistingWork();
-                        state = WorkQueueState.FinishedWork;
                         break;
                     case WorkQueueState.WaitingForWork:
                         CancelExistingWork();
                         // Manually cancel tcs, in case any task is awaiting
                         _fileTcs.TrySetCanceled();
-                        state = WorkQueueState.FinishedWork;
                         break;
                     case WorkQueueState.FinishedWork:
                         break;
                     default:
                         throw new InvalidOperationException();
                 }
+                state = WorkQueueState.FinishedWork;
                 _indexParser.Dispose();
             }
         }
