@@ -335,7 +335,12 @@ namespace Microsoft.Python.Parsing {
                 return n;
             }
 
-            ReportSyntaxError(prevTokenStart, prevTokenStart + prevTokeLength, "syntax error");
+            if (_lookahead.Token.Kind == TokenKind.NewLine) {
+                // Incomplete member expression, report dot, don't point to new line.
+                ReportSyntaxError(prevTokenStart, prevTokenStart + prevTokeLength, "syntax error");
+            } else {
+                ReportSyntaxError("syntax error");
+            }
             return Name.Empty;
         }
 
