@@ -321,7 +321,7 @@ namespace Microsoft.Python.Parsing {
             return name;
         }
 
-        private Name ReadNameMaybeNone(int prevTokenStart, int prevTokeLength) {
+        private Name ReadNameMaybeNone(int prevTokenStart, int prevTokenLength) {
             // peek for better error recovery
             var t = PeekToken();
             if (t == Tokens.NoneToken) {
@@ -335,11 +335,21 @@ namespace Microsoft.Python.Parsing {
                 return n;
             }
 
+            var prevTokenEnd = prevTokenStart + prevTokenLength;
+            var message = "syntax error";
             if (_lookahead.Token.Kind == TokenKind.NewLine) {
-                // Incomplete member expression, report dot, don't point to new line.
-                ReportSyntaxError(prevTokenStart, prevTokenStart + prevTokeLength, "syntax error");
+                // Incomplete member expression, report next character unless there is none.
+                // If there is none, then point to the newline. If we are at EOF, report the dot.
+                if (_lookahead.Span.Start == prevTokenEnd) {
+                    // Dot then immediately the newline. Report the newline.
+                    ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, message);
+                } else {
+                    // There is something between the dot and the newline.
+                    // Report character after the dot.
+                    ReportSyntaxError(prevTokenEnd, prevTokenEnd + 1, message);
+                }
             } else {
-                ReportSyntaxError("syntax error");
+                ReportSyntaxError(message);
             }
             return Name.Empty;
         }
@@ -1204,7 +1214,7 @@ namespace Microsoft.Python.Parsing {
                         ReportSyntaxError(n.StartIndex, n.EndIndex, "import * only allowed at module level");
                     }
                 }
-            } 
+            }
 
             // Process from __future__ statement
             if (dname.Names.Count == 1 && dname.Names[0].Name == "__future__") {
@@ -2264,7 +2274,7 @@ namespace Microsoft.Python.Parsing {
             var itemWhiteSpace = MakeWhiteSpaceList();
 
             var items = ImmutableArray<WithItem>.Empty
-                .Add(ParseWithItem(itemWhiteSpace));;
+                .Add(ParseWithItem(itemWhiteSpace)); ;
             while (MaybeEat(TokenKind.Comma)) {
                 itemWhiteSpace?.Add(_tokenWhiteSpace);
                 items = items.Add(ParseWithItem(itemWhiteSpace));

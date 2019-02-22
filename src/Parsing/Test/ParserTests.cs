@@ -2709,7 +2709,7 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorInfo("syntax error", 7, 1, 8, 8, 1, 9),
                     new ErrorInfo("unexpected token '.'", 14, 2, 5, 15, 2, 6),
                     new ErrorInfo("syntax error", 16, 2, 7, 17, 2, 8),
-                    new ErrorInfo("syntax error", 17, 2, 7, 19, 2, 8)
+                    new ErrorInfo("syntax error", 17, 2, 8, 19, 3, 1)
                 );
             }
         }
@@ -2718,7 +2718,9 @@ namespace Microsoft.Python.Parsing.Tests {
         public void IncompleteMemberExpr() {
             foreach (var version in V2Versions) {
                 ParseErrors("IncompleteMemberExpr.py", version,
-                    new ErrorInfo("syntax error", 1, 1, 2, 2, 1, 3)
+                    new ErrorInfo("syntax error", 2, 1, 3, 3, 1, 4),
+                    new ErrorInfo("syntax error", 22, 3, 3, 24, 4, 1),
+                    new ErrorInfo("syntax error", 33, 5, 3, 33, 5, 3)
                 );
             }
         }
