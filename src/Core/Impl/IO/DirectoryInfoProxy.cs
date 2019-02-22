@@ -52,7 +52,7 @@ namespace Microsoft.Python.Core.IO {
             });
         }
 
-        public bool Match(string[] includePatterns, string[] excludePatterns, string path) {
+        public bool Match(string path, string[] includePatterns = default, string[] excludePatterns = default) {
             var matcher = GetMatcher(includePatterns, excludePatterns);
             return matcher.Match(FullName, path).HasMatches;
         }

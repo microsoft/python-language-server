@@ -89,7 +89,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 return false;
             }
             return _fileSystem.GetDirectoryInfo(_workspaceRootPath)
-                .Match(_includeFiles, _excludeFiles, path);
+                .Match(path, _includeFiles, _excludeFiles);
         }
 
         public void ProcessNewFile(string path, IDocument doc) {

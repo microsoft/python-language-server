@@ -318,8 +318,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             private void SetupRootDir() {
                 var directoryInfo = Substitute.For<IDirectoryInfo>();
-                directoryInfo.Match(new string[] { }, new string[] { }, "").ReturnsForAnyArgs(callInfo => {
-                    string path = callInfo.ArgAt<string>(2);
+                directoryInfo.Match("", new string[] { }, new string[] { }).ReturnsForAnyArgs(callInfo => {
+                    string path = callInfo.ArgAt<string>(0);
                     return _rootFileList
                         .Where(fsInfo => PathEqualityComparer.Instance.Equals(fsInfo.FullName, path))
                         .Count() > 0;
