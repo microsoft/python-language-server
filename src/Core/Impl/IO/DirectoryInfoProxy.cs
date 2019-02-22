@@ -60,7 +60,9 @@ namespace Microsoft.Python.Core.IO {
         private static Matcher GetMatcher(string[] includePatterns, string[] excludePatterns) {
             Matcher matcher = new Matcher();
             matcher.AddIncludePatterns(includePatterns.IsNullOrEmpty() ? new[] { "**/*" } : includePatterns);
-            matcher.AddExcludePatterns(excludePatterns ?? Enumerable.Empty<string>());
+            if (!excludePatterns.IsNullOrEmpty()) {
+                matcher.AddExcludePatterns(excludePatterns);
+            }
             return matcher;
         }
 
