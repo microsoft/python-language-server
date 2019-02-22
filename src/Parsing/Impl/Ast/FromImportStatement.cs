@@ -16,14 +16,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
-
     public class FromImportStatement : Statement {
-        public FromImportStatement(ModuleName/*!*/ root, NameExpression/*!*/[] names, NameExpression/*!*/[] asNames, bool fromFuture, bool forceAbsolute, int importIndex) {
+        public FromImportStatement(ModuleName/*!*/ root, ImmutableArray<NameExpression> names, ImmutableArray<NameExpression> asNames, bool fromFuture, bool forceAbsolute, int importIndex) {
             Root = root;
             Names = names;
             AsNames = asNames;
@@ -32,11 +33,11 @@ namespace Microsoft.Python.Parsing.Ast {
             ImportIndex = importIndex;
         }
 
-        public ModuleName Root { get; }
+        public ModuleName/*!*/ Root { get; }
+        public ImmutableArray<NameExpression> Names { get; }
+        public ImmutableArray<NameExpression> AsNames { get; }
         public bool IsFromFuture { get; }
         public bool ForceAbsolute { get; }
-        public IList<NameExpression/*!*/> Names { get; }
-        public IList<NameExpression> AsNames { get; }
         public int ImportIndex { get; }
 
         public override int KeywordLength => 4;
@@ -50,6 +51,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public PythonReference[] GetReferences(PythonAst ast) => GetVariableReferences(this, ast);
 
+        // TODO: return names and aliases when they are united into one node
+        public override IEnumerable<Node> GetChildNodes() => Enumerable.Empty<Node>();
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
             }
@@ -61,106 +65,6 @@ namespace Microsoft.Python.Parsing.Ast {
             if (await walker.WalkAsync(this, cancellationToken)) {
             }
             await walker.PostWalkAsync(this, cancellationToken);
-        }
-
-        /// <summary>
-        /// Returns a new FromImport statement that is identical to this one but has
-        /// removed the specified import statement.  Otherwise preserves any attributes
-        /// for the statement.
-        /// 
-        /// New in 1.1.
-        /// <param name="ast">The parent AST whose attributes should be updated for the new node.</param>
-        /// <param name="index">The index in Names of the import to be removed.</param>
-        /// </summary>
-        public FromImportStatement RemoveImport(PythonAst ast, int index) {
-            if (index < 0 || index >= Names.Count) {
-                throw new ArgumentOutOfRangeException("index");
-            }
-            if (ast == null) {
-                throw new ArgumentNullException("ast");
-            }
-
-            var names = new NameExpression[Names.Count - 1];
-            var asNames = AsNames == null ? null : new NameExpression[AsNames.Count - 1];
-            var asNameWhiteSpace = this.GetNamesWhiteSpace(ast);
-            var newAsNameWhiteSpace = new List<string>();
-            var importIndex = ImportIndex;
-            var asIndex = 0;
-            for (int i = 0, write = 0; i < Names.Count; i++) {
-                var includingCurrentName = i != index;
-
-                // track the white space, this needs to be kept in sync w/ ToCodeString and how the
-                // parser creates the white space.
-
-                if (asNameWhiteSpace != null && asIndex < asNameWhiteSpace.Length) {
-                    if (write > 0) {
-                        if (includingCurrentName) {
-                            newAsNameWhiteSpace.Add(asNameWhiteSpace[asIndex++]);
-                        } else {
-                            asIndex++;
-                        }
-                    } else if (i > 0) {
-                        asIndex++;
-                    }
-                }
-
-                if (asNameWhiteSpace != null && asIndex < asNameWhiteSpace.Length) {
-                    if (includingCurrentName) {
-                        if (newAsNameWhiteSpace.Count == 0) {
-                            // no matter what we want the 1st entry to have the whitespace after the import keyword
-                            newAsNameWhiteSpace.Add(asNameWhiteSpace[0]);
-                            asIndex++;
-                        } else {
-                            newAsNameWhiteSpace.Add(asNameWhiteSpace[asIndex++]);
-                        }
-                    } else {
-                        asIndex++;
-                    }
-                }
-
-                if (includingCurrentName) {
-                    names[write] = Names[i];
-
-                    if (AsNames != null) {
-                        asNames[write] = AsNames[i];
-                    }
-
-                    write++;
-                }
-
-                if (AsNames != null && AsNames[i] != null) {
-                    if (asNameWhiteSpace != null && asIndex < asNameWhiteSpace.Length) {
-                        if (i != index) {
-                            newAsNameWhiteSpace.Add(asNameWhiteSpace[asIndex++]);
-                        } else {
-                            asIndex++;
-                        }
-                    }
-
-                    if (AsNames[i].Name.Length != 0) {
-                        if (asNameWhiteSpace != null && asIndex < asNameWhiteSpace.Length) {
-                            if (i != index) {
-                                newAsNameWhiteSpace.Add(asNameWhiteSpace[asIndex++]);
-                            } else {
-                                asIndex++;
-                            }
-                        }
-                    } else {
-                        asIndex++;
-                    }
-                }
-            }
-
-            if (asNameWhiteSpace != null && asIndex < asNameWhiteSpace.Length) {
-                // trailing comma
-                newAsNameWhiteSpace.Add(asNameWhiteSpace[asNameWhiteSpace.Length - 1]);
-            }
-
-            var res = new FromImportStatement(Root, names, asNames, IsFromFuture, ForceAbsolute, importIndex);
-            ast.CopyAttributes(this, res);
-            ast.SetAttribute(res, NodeAttributes.NamesWhiteSpace, newAsNameWhiteSpace.ToArray());
-
-            return res;
         }
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
@@ -193,7 +97,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     }
 
                     Names[i].AppendCodeString(res, ast, format);
-                    if (AsNames != null && AsNames[i] != null) {
+                    if (AsNames[i] != null) {
                         if (asNameWhiteSpace != null && asIndex < asNameWhiteSpace.Length) {
                             res.Append(asNameWhiteSpace[asIndex++]);
                         }

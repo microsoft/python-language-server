@@ -16,25 +16,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal delegate IPythonType SpecificTypeConstructor(
-        IReadOnlyList<IPythonType> typeArgs, 
-        IPythonModule declaringModule, 
+        IReadOnlyList<IPythonType> typeArgs,
+        IPythonModule declaringModule,
         LocationInfo location);
 
     /// <summary>
     /// Base class for generic types and type declarations.
     /// </summary>
     internal class GenericType : IGenericType {
-        private readonly SpecificTypeConstructor _specificTypeConstructor;
+        internal SpecificTypeConstructor SpecificTypeConstructor { get; }
 
         /// <summary>
-        /// Constructs generic type with generic parameters. Typically used
+        /// Constructs generic type with generic type parameters. Typically used
         /// in generic classes such as when handling Generic[_T] base.
         /// </summary>
         public GenericType(string name, IPythonModule declaringModule, IReadOnlyList<IGenericTypeParameter> parameters)
@@ -46,9 +44,22 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Constructs generic type with dynamic type constructor.
         /// Typically used in type specialization scenarios.
         /// </summary>
-        public GenericType(string name, IPythonModule declaringModule, SpecificTypeConstructor specificTypeConstructor)
-            : this(name, declaringModule) {
-            _specificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
+        /// <param name="name">Type name including parameters, such as Iterator[T]</param>
+        /// <param name="declaringModule">Declaring module.</param>
+        /// <param name="specificTypeConstructor">Constructor of specific types.</param>
+        /// <param name="typeId">Type id. Used in type comparisons such as when matching
+        /// function arguments. For example, Iterator[T] normally has type id of ListIterator.</param>
+        /// <param name="parameters">Optional type parameters as declared by TypeVar.</param>
+        public GenericType(
+            string name,
+            IPythonModule declaringModule,
+            SpecificTypeConstructor specificTypeConstructor,
+            BuiltinTypeId typeId = BuiltinTypeId.Unknown,
+            IReadOnlyList<IGenericTypeParameter> parameters = null
+            ) : this(name, declaringModule) {
+            SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
+            TypeId = typeId;
+            Parameters = parameters ?? Array.Empty<IGenericTypeParameter>();
         }
 
         private GenericType(string name, IPythonModule declaringModule) {
@@ -60,14 +71,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Type parameters such as in Tuple[T1, T2. ...] or
         /// Generic[_T1, _T2, ...] as returned by TypeVar.
         /// </summary>
-        public IReadOnlyList<IGenericTypeParameter> Parameters { get; } = Array.Empty<IGenericTypeParameter>();
+        public IReadOnlyList<IGenericTypeParameter> Parameters { get; }
 
         /// <summary>
         /// Creates instance of a type information with the specific
         /// type arguments from a generic template.
         /// </summary>
         public IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null)
-            => _specificTypeConstructor(typeArguments, declaringModule, location);
+            => SpecificTypeConstructor(typeArguments, declaringModule, location);
 
         #region IPythonType
         public string Name { get; }
@@ -75,7 +86,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public PythonMemberType MemberType => PythonMemberType.Generic;
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
-        public BuiltinTypeId TypeId => BuiltinTypeId.Unknown;
+        public BuiltinTypeId TypeId { get; } = BuiltinTypeId.Unknown;
         public virtual string Documentation => Name;
         public bool IsBuiltin => false;
         public bool IsAbstract => true;
@@ -95,9 +106,21 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
         public virtual IMember Index(IPythonInstance instance, object index) => DeclaringModule.Interpreter.UnknownType;
 
-        public Task<IPythonType> CreateSpecificTypeAsync(IArgumentSet typeArguments, IPythonModule declaringModule, LocationInfo location, CancellationToken cancellationToken = default)
-            => Task.FromResult(CreateSpecificType(typeArguments.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray(), declaringModule, location));
-
+        public IPythonType CreateSpecificType(IArgumentSet typeArguments, IPythonModule declaringModule, LocationInfo location)
+            => CreateSpecificType(typeArguments.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray(), declaringModule, location);
         #endregion
+
+        public override bool Equals(object other) {
+            if (other == null) {
+                return false;
+            }
+            if (TypeId != BuiltinTypeId.Unknown && other is IPythonType t && t.TypeId == TypeId) {
+                return true;
+            }
+            return this == other;
+        }
+
+        public override int GetHashCode()
+            => TypeId != BuiltinTypeId.Unknown ? TypeId.GetHashCode() : base.GetHashCode();
     }
 }

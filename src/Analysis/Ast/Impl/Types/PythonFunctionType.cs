@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -29,7 +30,6 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly object _lock = new object();
         private bool _isAbstract;
         private bool _isSpecialized;
-        private string[] _dependencies = Array.Empty<string>();
 
         /// <summary>
         /// Creates function for specializations
@@ -101,7 +101,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
             // Now we can go and find overload with matching arguments.
             var overload = Overloads[args.OverloadIndex];
-            return overload?.GetReturnValue(instance?.Location ?? LocationInfo.Empty, args);
+            return overload?.Call(args, instance?.GetPythonType() ?? DeclaringType, instance?.Location);
         }
 
         internal override void SetDocumentationProvider(Func<string, string> provider) {
@@ -137,10 +137,12 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal void Specialize(string[] dependencies) {
             _isSpecialized = true;
-            _dependencies = dependencies ?? Array.Empty<string>();
+            Dependencies = dependencies != null
+                ? ImmutableArray<string>.Create(dependencies)
+                : ImmutableArray<string>.Empty;
         }
 
-        internal IEnumerable<string> Dependencies => _dependencies;
+        internal ImmutableArray<string> Dependencies { get; private set; } = ImmutableArray<string>.Empty;
 
         internal void AddOverload(IPythonFunctionOverload overload) {
             lock (_lock) {

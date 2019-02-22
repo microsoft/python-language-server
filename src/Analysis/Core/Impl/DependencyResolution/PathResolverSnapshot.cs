@@ -21,15 +21,13 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
-    public partial struct PathResolverSnapshot {
-        private static readonly bool IgnoreCaseInPaths = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-        private static readonly StringComparison PathsStringComparison = IgnoreCaseInPaths ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-
+    public partial class PathResolverSnapshot {
         // This root contains module paths that don't belong to any known search path. 
         // The directory of the module is stored on the first level, and name is stored on the second level
         // For example, "c:\dir\sub_dir2\module1.py" will be stored like this:
@@ -68,12 +66,13 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             Version = version;
         }
 
-        public IEnumerable<string> GetAllModuleNames() => GetModuleNames(_roots.Prepend(_nonRooted).Append(_builtins));
+        public IEnumerable<string> GetAllModuleNames() => GetModuleNames(_roots.Prepend(_nonRooted));
         public IEnumerable<string> GetInterpreterModuleNames() => GetModuleNames(_roots.Skip(_userRootsCount).Append(_builtins));
 
-        private static IEnumerable<string> GetModuleNames(IEnumerable<Node> roots) => roots
+        private IEnumerable<string> GetModuleNames(IEnumerable<Node> roots) => roots
             .SelectMany(r => r.TraverseBreadthFirst(n => n.IsModule ? Enumerable.Empty<Node>() : n.Children))
             .Where(n => n.IsModule)
+            .Concat(_builtins.Children)
             .Select(n => n.FullModuleName);
 
         public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {
@@ -103,7 +102,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             }
 
             if (_builtins.TryGetChild(fullModuleName, out var builtin)) {
-                return new ModuleImport(builtin.Name, builtin.FullModuleName, null, null, true);
+                return new ModuleImport(builtin.Name, builtin.FullModuleName, null, null, true, true);
             }
 
             return default;
@@ -149,7 +148,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             }
 
             if (fullNameList.Count == 1 && _builtins.TryGetChild(fullNameList[0], out var builtin)) {
-                return new ModuleImport(builtin.Name, builtin.FullModuleName, null, null, true);
+                return new ModuleImport(builtin.Name, builtin.FullModuleName, null, null, true, true);
             }
 
             // Special case for sys.modules
@@ -174,8 +173,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 var possibleFullName = string.Join(".", fullNameList);
                 var rootPath = shortestPath.FirstEdge.End.Name;
                 var existingModuleFullName = shortestPath.End.FullModuleName;
+                var existingModulePath = shortestPath.End.ModulePath;
                 var remainingNameParts = fullNameList.Skip(shortestPath.PathLength - 1).ToList();
-                return new PossibleModuleImport(possibleFullName, rootPath, existingModuleFullName, remainingNameParts);
+                return new PossibleModuleImport(possibleFullName, rootPath, existingModuleFullName, existingModulePath, remainingNameParts);
             }
 
             return new ImportNotFound(string.Join(".", fullNameList));
@@ -200,7 +200,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 }
 
                 if (parentCount == 1 && fullNameList.Count == 1 && lastEdge.Start.TryGetChild(fullNameList[0], out var nameNode)) {
-                    return new ModuleImport(fullNameList[0], fullNameList[0], lastEdge.Start.Name, nameNode.ModulePath, IsPythonCompiled(nameNode.ModulePath));
+                    return new ModuleImport(fullNameList[0], fullNameList[0], lastEdge.Start.Name, nameNode.ModulePath, IsPythonCompiled(nameNode.ModulePath), false);
                 }
 
                 return new ImportNotFound(new StringBuilder(lastEdge.Start.Name)
@@ -246,17 +246,17 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             return false;
         }
 
-        private static bool TryCreateModuleImport(Edge lastEdge, out ModuleImport moduleImport)
+        private bool TryCreateModuleImport(Edge lastEdge, out ModuleImport moduleImport)
             => TryCreateModuleImport(lastEdge.FirstEdge.End, lastEdge.End, out moduleImport);
 
-        private static bool TryCreateModuleImport(Node rootNode, Node moduleNode, out ModuleImport moduleImport) {
+        private bool TryCreateModuleImport(Node rootNode, Node moduleNode, out ModuleImport moduleImport) {
             if (moduleNode.TryGetChild("__init__", out var initPyNode) && initPyNode.IsModule) {
-                moduleImport = new ModuleImport(moduleNode.Name, initPyNode.FullModuleName, rootNode.Name, initPyNode.ModulePath, false);
+                moduleImport = new ModuleImport(moduleNode.Name, initPyNode.FullModuleName, rootNode.Name, initPyNode.ModulePath, false, IsLibrary(rootNode.Name));
                 return true;
             }
 
             if (moduleNode.IsModule) {
-                moduleImport = new ModuleImport(moduleNode.Name, moduleNode.FullModuleName, rootNode.Name, moduleNode.ModulePath, IsPythonCompiled(moduleNode.ModulePath));
+                moduleImport = new ModuleImport(moduleNode.Name, moduleNode.FullModuleName, rootNode.Name, moduleNode.ModulePath, IsPythonCompiled(moduleNode.ModulePath), IsLibrary(rootNode.Name));
                 return true;
             }
 
@@ -267,7 +267,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private bool TryFindNonRootedModule(string moduleName, out ModuleImport moduleImport) {
             foreach (var directoryNode in _nonRooted.Children) {
                 if (directoryNode.TryGetChild(moduleName, out var nameNode)) {
-                    moduleImport = new ModuleImport(moduleName, moduleName, directoryNode.Name, nameNode.ModulePath, IsPythonCompiled(nameNode.ModulePath));
+                    moduleImport = new ModuleImport(moduleName, moduleName, directoryNode.Name, nameNode.ModulePath, IsPythonCompiled(nameNode.ModulePath), false);
                     return true;
                 }
             }
@@ -276,7 +276,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             return false;
         }
 
-        private static bool TryCreateNamespacePackageImports(in ImmutableArray<Edge> matchedEdges, out IImportSearchResult searchResult) {
+        private bool TryCreateNamespacePackageImports(in ImmutableArray<Edge> matchedEdges, out IImportSearchResult searchResult) {
             if (matchedEdges.Count == 0) {
                 searchResult = default;
                 return false;
@@ -306,7 +306,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 ? PathUtils.NormalizePath(workDirectory)
                 : string.Empty;
 
-            if (_workDirectory.Equals(normalizedRootDirectory, PathsStringComparison)) {
+            if (_workDirectory.PathEquals(normalizedRootDirectory)) {
                 addedRoots = Enumerable.Empty<string>();
                 return this;
             }
@@ -399,11 +399,11 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         }
 
         private Node GetOrCreateRoot(string path)
-            => _roots.FirstOrDefault(r => r.Name.Equals(path, PathsStringComparison)) ?? Node.CreateRoot(path);
+            => _roots.FirstOrDefault(r => r.Name.PathEquals(path)) ?? Node.CreateRoot(path);
 
-        public PathResolverSnapshot AddModulePath(in string modulePath, out string fullModuleName) {
+        public PathResolverSnapshot AddModulePath(in string modulePath, in bool allowNonRooted, out string fullModuleName) {
             var isFound = TryFindModule(modulePath, out var lastEdge, out var unmatchedPathSpan);
-            if (unmatchedPathSpan.Source == default) {
+            if (unmatchedPathSpan.Source == default || (!allowNonRooted && lastEdge.IsNonRooted)) {
                 // Not a module
                 fullModuleName = null;
                 return this;
@@ -692,7 +692,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             var rootIndex = 0;
             while (rootIndex < _roots.Count) {
                 var rootPath = _roots[rootIndex].Name;
-                if (normalizedPath.StartsWithOrdinal(rootPath, IgnoreCaseInPaths) && IsRootedPathEndsWithValidNames(normalizedPath, rootPath.Length)) {
+                if (normalizedPath.PathStartsWith(rootPath) && IsRootedPathEndsWithValidNames(normalizedPath, rootPath.Length)) {
                     break;
                 }
 
@@ -732,10 +732,10 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             => str[start].IsLatin1LetterOrUnderscore() && str.CharsAreLatin1LetterOrDigitOrUnderscore(start + 1, length - 1);
 
         private static bool IsPythonFile(string rootedPath)
-            => rootedPath.EndsWithAnyOrdinal(new[] { ".py", ".pyi", ".pyw" }, IgnoreCaseInPaths);
+            => rootedPath.PathEndsWithAny(".py", ".pyi", ".pyw");
 
         private static bool IsPythonCompiled(string rootedPath)
-            => rootedPath.EndsWithAnyOrdinal(new[] { ".pyd", ".so", ".dylib" }, IgnoreCaseInPaths);
+            => rootedPath.PathEndsWithAny(".pyd", ".so", ".dylib");
 
         private static int GetModuleNameStart(string rootedModulePath)
             => rootedModulePath.LastIndexOf(Path.DirectorySeparatorChar) + 1;
@@ -745,6 +745,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
         private static bool IsNotInitPy(string name)
             => !name.EqualsOrdinal("__init__");
+
+        private bool IsLibrary(string rootPath)
+            => _interpreterSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer);
 
         private PathResolverSnapshot ReplaceNonRooted(Node nonRooted)
             => new PathResolverSnapshot(_pythonLanguageVersion, _workDirectory, _userSearchPaths, _interpreterSearchPaths, _roots, _userRootsCount, nonRooted, _builtins, Version + 1);

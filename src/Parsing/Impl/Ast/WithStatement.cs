@@ -18,23 +18,22 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class WithStatement : Statement, IMaybeAsyncStatement {
-        private readonly WithItem[] _items;
         private int? _keywordEndIndex;
 
-        public WithStatement(WithItem[] items, Statement body) {
-            _items = items;
+        public WithStatement(ImmutableArray<WithItem> items, Statement body) {
+            Items = items;
             Body = body;
         }
 
-        public WithStatement(WithItem[] items, Statement body, bool isAsync) : this(items, body) {
+        public WithStatement(ImmutableArray<WithItem> items, Statement body, bool isAsync) : this(items, body) {
             IsAsync = isAsync;
         }
 
-
-        public IList<WithItem> Items => _items;
+        public ImmutableArray<WithItem> Items { get; }
 
         public int HeaderIndex { get; set; }
         internal void SetKeywordEndIndex(int index) => _keywordEndIndex = index;
@@ -44,9 +43,16 @@ namespace Microsoft.Python.Parsing.Ast {
         public Statement Body { get; }
         public bool IsAsync { get; }
 
+        public override IEnumerable<Node> GetChildNodes() {
+            foreach (var item in Items) {
+                yield return item;
+            }
+            if (Body != null) yield return Body;
+        }
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (var item in _items) {
+                foreach (var item in Items) {
                     item.Walk(walker);
                 }
 
@@ -59,7 +65,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                foreach (var item in _items) {
+                foreach (var item in Items) {
                     await item.WalkAsync(walker, cancellationToken);
                 }
                 if (Body != null) {
@@ -85,8 +91,8 @@ namespace Microsoft.Python.Parsing.Ast {
             res.Append("with");
             var itemWhiteSpace = this.GetListWhiteSpace(ast);
             var whiteSpaceIndex = 0;
-            for (var i = 0; i < _items.Length; i++) {
-                var item = _items[i];
+            for (var i = 0; i < Items.Count; i++) {
+                var item = Items[i];
                 if (i != 0) {
                     if (itemWhiteSpace != null) {
                         res.Append(itemWhiteSpace[whiteSpaceIndex++]);
@@ -120,6 +126,11 @@ namespace Microsoft.Python.Parsing.Ast {
         public Expression ContextManager { get; }
         public Expression Variable { get; }
         public int AsIndex { get; }
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (ContextManager != null) yield return ContextManager;
+            if (Variable != null) yield return Variable;
+        }
 
         public override void Walk(PythonWalker walker) {
             ContextManager?.Walk(walker);

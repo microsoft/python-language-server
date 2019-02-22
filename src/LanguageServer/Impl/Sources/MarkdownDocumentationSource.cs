@@ -27,7 +27,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class MarkdownDocumentationSource : IDocumentationSource {
         public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
 
-        public MarkupContent GetHover(string name, IMember member) {
+        public MarkupContent GetHover(string name, IMember member, IPythonType self) {
             // We need to tell between instance and type.
             var type = member.GetPythonType();
             if (type.IsUnknown()) {
@@ -49,7 +49,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     break;
 
                 case IPythonFunctionType ft:
-                    text = GetFunctionHoverString(ft);
+                    text = GetFunctionHoverString(ft, self);
                     break;
 
                 case IPythonClassType cls:
@@ -75,12 +75,13 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return new MarkupContent { kind = MarkupKind.Markdown, value = DocstringConverter.ToMarkdown(documentation) };
         }
 
-        public string GetSignatureString(IPythonFunctionType ft, int overloadIndex = 0) {
+        public string GetSignatureString(IPythonFunctionType ft, IPythonType self, int overloadIndex = 0) {
             var o = ft.Overloads[overloadIndex];
 
             var parms = GetFunctionParameters(ft);
             var parmString = string.Join(", ", parms);
-            var annString = string.IsNullOrEmpty(o.ReturnDocumentation) ? string.Empty : $" -> {o.ReturnDocumentation}";
+            var returnDoc = o.GetReturnDocumentation(self);
+            var annString = string.IsNullOrEmpty(returnDoc) ? string.Empty : $" -> {returnDoc}";
 
             return $"{ft.Name}({parmString}){annString}";
         }
@@ -100,8 +101,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return $"```\n{decTypeString}\n```{propDoc}";
         }
 
-        private string GetFunctionHoverString(IPythonFunctionType ft, int overloadIndex = 0) {
-            var sigString = GetSignatureString(ft, overloadIndex);
+        private string GetFunctionHoverString(IPythonFunctionType ft, IPythonType self, int overloadIndex = 0) {
+            var sigString = GetSignatureString(ft, self, overloadIndex);
             var decTypeString = ft.DeclaringType != null ? $"{ft.DeclaringType.Name}." : string.Empty;
             var funcDoc = !string.IsNullOrEmpty(ft.Documentation) ? $"\n---\n{ft.MarkdownDoc()}" : string.Empty;
             return $"```\n{decTypeString}{sigString}\n```{funcDoc}";

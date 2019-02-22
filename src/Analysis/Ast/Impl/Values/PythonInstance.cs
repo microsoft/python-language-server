@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Values {
         public virtual IPythonIterator GetIterator() {
             var iteratorFunc = Type.GetMember(@"__iter__") as IPythonFunctionType;
             var o = iteratorFunc?.Overloads.FirstOrDefault();
-            var instance = o?.GetReturnValue(LocationInfo.Empty, ArgumentSet.Empty);
+            var instance = o?.Call(ArgumentSet.Empty, Type);
             return instance != null ? new PythonInstanceIterator(instance, Type.DeclaringModule.Interpreter) : null;
         }
 

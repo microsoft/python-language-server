@@ -39,7 +39,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public ExpressionEval Eval { get; }
         public IPythonModule Module => Eval.Module;
-        public IPythonInterpreter Interpreter => Eval.Interpreter;
         public PythonAst Ast => Eval.Ast;
         protected ModuleSymbolTable SymbolTable => Eval.SymbolTable;
 
@@ -75,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
-            => ImportHandler.HandleFromImportAsync(node, cancellationToken);
+            => Task.FromResult(ImportHandler.HandleFromImport(node, cancellationToken));
 
         public override Task<bool> WalkAsync(GlobalStatement node, CancellationToken cancellationToken = default)
             => NonLocalHandler.HandleGlobalAsync(node, cancellationToken);
@@ -84,7 +83,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             => ConditionalHandler.HandleIfAsync(node, cancellationToken);
 
         public override Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default)
-            => ImportHandler.HandleImportAsync(node, cancellationToken);
+            => Task.FromResult(ImportHandler.HandleImport(node, cancellationToken));
 
         public override Task<bool> WalkAsync(NonlocalStatement node, CancellationToken cancellationToken = default)
             => NonLocalHandler.HandleNonLocalAsync(node, cancellationToken);

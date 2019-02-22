@@ -13,14 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class TupleExpression : SequenceExpression {
-        public TupleExpression(bool expandable, params Expression[] items)
+        public TupleExpression(bool expandable, ImmutableArray<Expression> items)
             : base(items) {
             IsExpandable = expandable;
         }
@@ -31,6 +33,8 @@ namespace Microsoft.Python.Parsing.Ast {
             }
             return base.CheckAssign();
         }
+
+        public override IEnumerable<Node> GetChildNodes() => Items.WhereNotNull();
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

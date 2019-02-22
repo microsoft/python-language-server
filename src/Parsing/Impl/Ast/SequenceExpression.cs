@@ -15,16 +15,15 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class SequenceExpression : Expression {
-        private readonly Expression[] _items;
-
-        protected SequenceExpression(Expression[] items) {
-            _items = items;
+        protected SequenceExpression(ImmutableArray<Expression> items) {
+            Items = items;
         }
 
-        public IList<Expression> Items => _items;
+        public ImmutableArray<Expression> Items { get; }
 
         internal override string CheckAssign() {
             for (var i = 0; i < Items.Count; i++) {

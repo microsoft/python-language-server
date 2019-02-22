@@ -16,30 +16,39 @@
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public static class MemberExtensions {
         public static bool IsUnknown(this IMember m) {
             switch (m) {
+                case null:
                 case IPythonType pt when pt.IsUnknown():
                 case IPythonInstance pi when pi.IsUnknown():
-                case null:
+                case IVariable v when v.Value == null || v.Value.IsUnknown():
                     return true;
                 default:
                     return m.MemberType == PythonMemberType.Unknown;
             }
         }
 
-        public static IPythonType GetPythonType(this IMember m)
-            => m is IPythonType pt ? pt : (m as IPythonInstance)?.Type;
+        public static IPythonType GetPythonType(this IMember m) {
+            switch (m) {
+                case IPythonType pt:
+                    return pt;
+                case IPythonInstance pi:
+                    return pi.Type;
+                case IVariable v when v.Value != null:
+                    return v.Value.GetPythonType();
+            }
+            return null;
+        }
 
         public static T GetPythonType<T>(this IMember m) where T : class, IPythonType
-            => m is IPythonType pt ? pt as T : (m as IPythonInstance)?.Type as T;
+            => m.GetPythonType() as T;
 
         public static bool IsGeneric(this IMember m) {
             var t = m.GetPythonType();
-            if(t is IGenericType || t is IGenericTypeParameter) {
+            if (t is IGenericType || t is IGenericTypeParameter) {
                 return true;
             }
             if (t is IPythonClassType c && c.IsGeneric()) {
@@ -48,7 +57,7 @@ namespace Microsoft.Python.Analysis {
             if (m?.MemberType == PythonMemberType.Generic) {
                 return true;
             }
-            return m is IVariable v && v.Value.MemberType == PythonMemberType.Generic;
+            return m is IVariable v && v.Value?.MemberType == PythonMemberType.Generic;
         }
 
         public static bool TryGetConstant<T>(this IMember m, out T value) {

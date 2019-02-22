@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
@@ -60,6 +61,11 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override string NodeName => "binary operator";
+
+        public override IEnumerable<Node> GetChildNodes() {
+            if (Left != null) yield return Left;
+            if (Right != null) yield return Right;
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

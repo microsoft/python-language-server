@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Diagnostics;
@@ -45,7 +46,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             const string code = @"x = ";
 
             var analysis = await GetAnalysisAsync(code);
-            var ds = Services.GetService<IDiagnosticsService>();
+            var ds = GetDiagnosticsService();
 
             var doc = analysis.Document;
             ds.Diagnostics[doc.Uri].Count.Should().Be(1);
@@ -55,7 +56,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
                     ReplacedSpan = new SourceSpan(1, 5, 1, 5)
             } });
 
-            await doc.GetAnalysisAsync();
+            await doc.GetAstAsync();
+            await doc.GetAnalysisAsync(1000);
             ds.Diagnostics[doc.Uri].Count.Should().Be(0);
 
             doc.Update(new[] {new DocumentChange {
@@ -63,7 +65,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 6)
             } });
 
-            await doc.GetAnalysisAsync();
+            await doc.GetAstAsync();
+            await doc.GetAnalysisAsync(1000);
             ds.Diagnostics[doc.Uri].Count.Should().Be(1);
         }
 
@@ -74,7 +77,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             var analysis1 = await GetAnalysisAsync(code1);
             var analysis2 = await GetNextAnalysisAsync(code2);
-            var ds = Services.GetService<IDiagnosticsService>();
+            var ds = GetDiagnosticsService();
 
             var doc1 = analysis1.Document;
             var doc2 = analysis2.Document;
@@ -87,7 +90,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 5)
             } });
 
-            await doc2.GetAnalysisAsync();
+            await doc2.GetAstAsync();
+            await doc2.GetAnalysisAsync(1000);
             ds.Diagnostics[doc1.Uri].Count.Should().Be(1);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(0);
 
@@ -96,7 +100,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 ReplacedSpan = new SourceSpan(1, 5, 1, 6)
             } });
 
-            await doc2.GetAnalysisAsync();
+            await doc2.GetAstAsync();
+            await doc2.GetAnalysisAsync(1000);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
 
             doc1.Dispose();
@@ -112,26 +117,27 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var doc = analysis.Document;
 
             var clientApp = Services.GetService<IClientApplication>();
-            var idle = Services.GetService<IIdleTimeService>();
-
-            var expected = 1;
+            var reported = new List<PublishDiagnosticsParams>();
             clientApp.When(x => x.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", Arg.Any<object>()))
-                .Do(x => {
-                    var dp = x.Args()[1] as PublishDiagnosticsParams;
-                    dp.Should().NotBeNull();
-                    dp.diagnostics.Length.Should().Be(expected);
-                    dp.uri.Should().Be(doc.Uri);
-                });
-            idle.Idle += Raise.EventWith(null, EventArgs.Empty);
+                .Do(x => reported.Add(x.Args()[1] as PublishDiagnosticsParams));
 
-            expected = 0;
+            PublishDiagnostics();
+            reported.Count.Should().Be(1);
+            reported[0].diagnostics.Length.Should().Be(1);
+            reported[0].uri.Should().Be(doc.Uri);
+
+            reported.Clear();
             doc.Update(new[] {new DocumentChange {
                 InsertedText = "1",
                 ReplacedSpan = new SourceSpan(1, 5, 1, 5)
             } });
 
-            await doc.GetAnalysisAsync();
-            idle.Idle += Raise.EventWith(null, EventArgs.Empty);
+            await doc.GetAstAsync();
+            await doc.GetAnalysisAsync(1000);
+
+            PublishDiagnostics();
+            reported.Count.Should().Be(1);
+            reported[0].diagnostics.Length.Should().Be(0);
         }
 
         [TestMethod, Priority(0)]
@@ -139,26 +145,21 @@ namespace Microsoft.Python.LanguageServer.Tests {
             const string code = @"x = ";
 
             var analysis = await GetAnalysisAsync(code);
-            var ds = Services.GetService<IDiagnosticsService>();
+            var ds = GetDiagnosticsService();
 
             var doc = analysis.Document;
             ds.Diagnostics[doc.Uri].Count.Should().Be(1);
 
             var clientApp = Services.GetService<IClientApplication>();
-            var uri = doc.Uri;
-            var callReceived = false;
+            var reported = new List<PublishDiagnosticsParams>();
             clientApp.When(x => x.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", Arg.Any<object>()))
-                .Do(x => {
-                    var dp = x.Args()[1] as PublishDiagnosticsParams;
-                    dp.Should().NotBeNull();
-                    dp.diagnostics.Length.Should().Be(0);
-                    dp.uri.Should().Be(uri);
-                    callReceived = true;
-                });
+                .Do(x => reported.Add(x.Args()[1] as PublishDiagnosticsParams));
 
             doc.Dispose();
             ds.Diagnostics.TryGetValue(doc.Uri, out _).Should().BeFalse();
-            callReceived.Should().BeTrue();
+            reported.Count.Should().Be(1);
+            reported[0].uri.Should().Be(doc.Uri);
+            reported[0].diagnostics.Length.Should().Be(0);
         }
 
         [TestMethod, Priority(0)]
@@ -166,77 +167,106 @@ namespace Microsoft.Python.LanguageServer.Tests {
             const string code = @"import nonexistent";
 
             var analysis = await GetAnalysisAsync(code);
-            var ds = Services.GetService<IDiagnosticsService>();
+            var ds = GetDiagnosticsService();
             var doc = analysis.Document;
 
             var diags = ds.Diagnostics[doc.Uri];
             diags.Count.Should().Be(1);
             diags[0].Severity.Should().Be(Severity.Warning);
 
-            var uri = doc.Uri;
-            var callReceived = false;
             var clientApp = Services.GetService<IClientApplication>();
-            var expectedSeverity = DiagnosticSeverity.Error;
+            var reported = new List<PublishDiagnosticsParams>();
             clientApp.When(x => x.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", Arg.Any<object>()))
-                .Do(x => {
-                    var dp = x.Args()[1] as PublishDiagnosticsParams;
-                    dp.Should().NotBeNull();
-                    dp.uri.Should().Be(uri);
-                    dp.diagnostics.Length.Should().Be(expectedSeverity == DiagnosticSeverity.Unspecified ? 0 : 1);
-                    if (expectedSeverity != DiagnosticSeverity.Unspecified) {
-                        dp.diagnostics[0].severity.Should().Be(expectedSeverity);
-                    }
-                    callReceived = true;
-                });
+                .Do(x => reported.Add(x.Args()[1] as PublishDiagnosticsParams));
 
             ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(new[] { ErrorCodes.UnresolvedImport }, null, null, null);
-            callReceived.Should().BeTrue();
+            reported.Count.Should().Be(1);
+            reported[0].uri.Should().Be(doc.Uri);
+            reported[0].diagnostics.Length.Should().Be(1);
+            reported[0].diagnostics[0].severity.Should().Be(DiagnosticSeverity.Error);
 
-            expectedSeverity = DiagnosticSeverity.Information;
-            callReceived = false;
+            reported.Clear();
             ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(null, null, new[] { ErrorCodes.UnresolvedImport }, null);
-            ds.Diagnostics[uri][0].Severity.Should().Be(Severity.Information);
-            callReceived.Should().BeTrue();
+            reported.Count.Should().Be(1);
+            reported[0].diagnostics[0].severity.Should().Be(DiagnosticSeverity.Information);
 
-            expectedSeverity = DiagnosticSeverity.Unspecified;
-            callReceived = false;
+            reported.Clear();
             ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(null, null, null, new[] { ErrorCodes.UnresolvedImport });
-            ds.Diagnostics[uri].Count.Should().Be(0);
-            callReceived.Should().BeTrue();
-
-            expectedSeverity = DiagnosticSeverity.Unspecified;
-            callReceived = false;
-            ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(new[] { ErrorCodes.UnresolvedImport }, null, null, new[] { ErrorCodes.UnresolvedImport });
-            ds.Diagnostics[uri].Count.Should().Be(0);
-            callReceived.Should().BeTrue();
+            reported.Count.Should().Be(1);
+            reported[0].diagnostics.Length.Should().Be(0);
         }
 
         [TestMethod, Priority(0)]
-        public async Task SuppressError() {
-            const string code = @"import nonexistent";
+        public async Task OnlyPublishChangedFile() {
+            const string code1 = @"x = ";
+            const string code2 = @"y = ";
 
-            var analysis = await GetAnalysisAsync(code);
-            var ds = Services.GetService<IDiagnosticsService>();
-            var doc = analysis.Document;
+            var analysis1 = await GetAnalysisAsync(code1);
+            var analysis2 = await GetNextAnalysisAsync(code2);
+            var ds = GetDiagnosticsService();
 
-            var diags = ds.Diagnostics[doc.Uri];
-            diags.Count.Should().Be(1);
-            diags[0].Severity.Should().Be(Severity.Warning);
+            var doc1 = analysis1.Document;
+            var doc2 = analysis2.Document;
 
-            var uri = doc.Uri;
-            var callReceived = false;
+            ds.Diagnostics[doc1.Uri].Count.Should().Be(1);
+            ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
+
+            // Clear diagnostics 'changed' state by forcing publish.
+            PublishDiagnostics();
+
+            var reported = new List<PublishDiagnosticsParams>();
             var clientApp = Services.GetService<IClientApplication>();
             clientApp.When(x => x.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", Arg.Any<object>()))
                 .Do(x => {
                     var dp = x.Args()[1] as PublishDiagnosticsParams;
-                    dp.Should().NotBeNull();
-                    dp.uri.Should().Be(uri);
-                    dp.diagnostics.Length.Should().Be(0);
-                    callReceived = true;
+                    reported.Add(dp);
                 });
 
-            ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(null, null, null, new[] { ErrorCodes.UnresolvedImport });
-            callReceived.Should().BeTrue();
+
+            doc1.Update(new[] {new DocumentChange {
+                InsertedText = "1",
+                ReplacedSpan = new SourceSpan(1, 5, 1, 5)
+            } });
+
+            await doc1.GetAstAsync();
+            await doc1.GetAnalysisAsync(1000);
+
+            ds.Diagnostics[doc1.Uri].Count.Should().Be(0);
+            ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
+
+            PublishDiagnostics();
+            reported.Count.Should().Be(1);
+            reported[0].uri.Should().Be(doc1.Uri);
+            reported[0].diagnostics.Length.Should().Be(0);
+
+            doc1.Update(new[] {new DocumentChange {
+                InsertedText = string.Empty,
+                ReplacedSpan = new SourceSpan(1, 5, 1, 6)
+            } });
+
+            await doc1.GetAstAsync();
+            await doc1.GetAnalysisAsync(1000);
+            ds.Diagnostics[doc1.Uri].Count.Should().Be(1);
+            ds.Diagnostics[doc2.Uri].Count.Should().Be(1);
+
+            reported.Clear();
+            PublishDiagnostics();
+
+            reported.Count.Should().Be(1);
+            reported[0].uri.Should().Be(doc1.Uri);
+            reported[0].diagnostics.Length.Should().Be(1);
+        }
+
+        private IDiagnosticsService GetDiagnosticsService() {
+            var ds = Services.GetService<IDiagnosticsService>();
+            ds.PublishingDelay = 0;
+            return ds;
+        }
+        private void PublishDiagnostics() {
+            var ds = Services.GetService<IDiagnosticsService>();
+            ds.PublishingDelay = 0;
+            var idle = Services.GetService<IIdleTimeService>();
+            idle.Idle += Raise.EventWith(null, EventArgs.Empty);
         }
     }
 }
