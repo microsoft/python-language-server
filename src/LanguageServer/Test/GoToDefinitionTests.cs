@@ -114,5 +114,22 @@ logging.info('')
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoModuleSourceImportAs() {
+            const string code = @"
+import logging as log
+log
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource();
+
+            var reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(3, 2));
+            reference.range.Should().Be(1, 18, 1, 21);
+
+            reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(2, 20));
+            reference.uri.AbsolutePath.Should().Contain("logging");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
+        }
     }
 }

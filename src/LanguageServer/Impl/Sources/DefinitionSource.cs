@@ -41,6 +41,15 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var eval = analysis.ExpressionEvaluator;
             using (eval.OpenScope(analysis.Document, exprScope)) {
+                // First try variables, except in imports
+                if (expr is NameExpression nex && !string.IsNullOrEmpty(nex.Name) &&
+                    !(statement is ImportStatement) && !(statement is FromImportStatement)) {
+                    var m = eval.LookupNameInScopes(nex.Name, out var scope);
+                    if (m != null && scope.Variables[nex.Name] is IVariable v) {
+                        return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+                    }
+                }
+
                 var value = await eval.GetValueFromExpressionAsync(expr, cancellationToken);
                 return await FromMemberAsync(value, expr, statement, analysis, cancellationToken);
             }
@@ -109,18 +118,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private static Reference HandleModule(IPythonModule module, IDocumentAnalysis analysis, Node statement) {
-            var member = analysis.ExpressionEvaluator.LookupNameInScopes(module.Name, out var scope);
-            if (member != null && scope != null) {
-                var v = scope.Variables[module.Name];
-                if (v != null) {
-                    // If we are in import statement, open the module source if available.
-                    if (statement is ImportStatement || statement is FromImportStatement) {
-                        if (module.Uri != null && CanNavigateToModule(module, analysis)) {
-                            return new Reference { range = default, uri = module.Uri };
-                        }
-                        return null;
-                    }
-                    return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+            // If we are in import statement, open the module source if available.
+            if (statement is ImportStatement || statement is FromImportStatement) {
+                if (module.Uri != null && CanNavigateToModule(module, analysis)) {
+                    return new Reference { range = default, uri = module.Uri };
                 }
             }
             return null;
