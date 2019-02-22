@@ -118,7 +118,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                         throw new InvalidOperationException();
                 }
                 state = WorkQueueState.FinishedWork;
-                _indexParser.Dispose();
             }
         }
 

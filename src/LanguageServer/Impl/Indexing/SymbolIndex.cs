@@ -107,6 +107,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             foreach (var recentSymbols in _index.Values) {
                 recentSymbols.Dispose();
             }
+            _indexParser.Dispose();
         }
     }
 }
