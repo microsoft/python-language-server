@@ -814,24 +814,20 @@ from typing import TypeVar, Generic, Dict
 _T = TypeVar('_T')
 _E = TypeVar('_E')
 
-class Box(Generic[_T, _E], Dict[_T, _E]):
-    def __init__(self, v: _T):
-        self.v = v
+class D(Generic[_T, _E], Dict[_T, _E]): ...
 
-    def get(self) -> _T:
-        return self.v
-
-boxed = Box(1234, 'abc')
-x = boxed.get()
-y = boxed[0]
+di = {1:'a', 2:'b'}
+d = D(di)
+x = d.get()
+y = d[0]
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Str);
 
-            var boxed = analysis.Should().HaveVariable("boxed").Which;
-            boxed.Should().HaveMembers("append", "index");
-            boxed.Should().NotHaveMember("bit_length");
+            var d = analysis.Should().HaveVariable("d").Which;
+            d.Should().HaveMembers("get", "keys", "values");
 
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Str);
             analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Str);
         }
 

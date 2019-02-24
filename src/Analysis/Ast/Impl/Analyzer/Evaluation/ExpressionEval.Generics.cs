@@ -47,6 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // If it is, then this is a declaration expression such as Generic[T]
             // rather than specific type instantiation as in List[str].
 
+            IPythonType[] specificTypes;
             switch (expr) {
                 // Indexing returns type as from A[int]
                 case IndexExpression indexExpr:
@@ -55,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // See which ones are generic parameters as defined by TypeVar() 
                     // and which are specific types. Normally there should not be a mix.
                     var genericTypeArgs = indices.OfType<IGenericTypeDefinition>().ToArray();
-                    var specificTypes = indices.Where(i => !(i is IGenericTypeDefinition)).OfType<IPythonType>().ToArray();
+                    specificTypes = indices.Where(i => !(i is IGenericTypeDefinition)).OfType<IPythonType>().ToArray();
 
                     if (specificTypes.Length == 0 && genericTypeArgs.Length > 0) {
                         // The expression is still generic. For example, generic return
@@ -97,7 +98,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // Alternative instantiation:
                     //  class A(Generic[T]): ...
                     //  x = A(1234)
-                    return await CreateClassInstanceAsync(c1, callExpr, cancellationToken);
+                    var arguments = (await EvaluateCallArgsAsync(callExpr, cancellationToken)).ToArray();
+                    return await CreateClassInstanceAsync(c1, arguments, callExpr, cancellationToken);
             }
             return null;
         }
@@ -117,16 +119,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return indices;
         }
 
-        private async Task<IMember> CreateClassInstanceAsync(PythonClassType cls, CallExpression callExpr, CancellationToken cancellationToken = default) {
+        private async Task<IReadOnlyList<IMember>> EvaluateCallArgsAsync(CallExpression expr, CancellationToken cancellationToken = default) {
+            var indices = new List<IMember>();
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach (var e in expr.Args.Select(a => a.Expression)) {
+                var value = await GetValueFromExpressionAsync(e, cancellationToken) ?? UnknownType;
+                indices.Add(value);
+            }
+            return indices;
+        }
+
+        private async Task<IMember> CreateClassInstanceAsync(PythonClassType cls, IReadOnlyList<IMember> constructorArguments, CallExpression callExpr, CancellationToken cancellationToken = default) {
             // Look at the constructor arguments and create argument set
             // based on the __init__ definition.
             var location = GetLoc(callExpr);
             var initFunc = cls.GetMember(@"__init__") as IPythonFunctionType;
-            var initOverload = initFunc?.Overloads.FirstOrDefault();
+            var initOverload = initFunc?.DeclaringType == cls ? initFunc.Overloads.FirstOrDefault() : null;
 
-            var argSet = initOverload != null 
-                ? new ArgumentSet(initFunc, 0, null, callExpr, this) 
-                : new ArgumentSet(Array.Empty<IPythonType>());
+            var argSet = initOverload != null
+                    ? new ArgumentSet(initFunc, 0, null, callExpr, this)
+                    : new ArgumentSet(constructorArguments);
 
             await argSet.EvaluateAsync(cancellationToken);
             var specificType = cls.CreateSpecificType(argSet, Module, location);

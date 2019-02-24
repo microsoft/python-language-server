@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IGlobalScope GlobalScope { get; }
 
         /// <summary>
-        /// Expression evaluator used in the analysis.
+        /// ValueExpression evaluator used in the analysis.
         /// </summary>
         public IExpressionEvaluator ExpressionEvaluator { get; }
 
