@@ -124,12 +124,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(_interpreter);
 
             var fileSystem = _services.GetService<IFileSystem>();
-            var symbolIndex = new SymbolIndex(fileSystem, _interpreter.LanguageVersion);
-            _indexManager = new IndexManager(symbolIndex, fileSystem, _interpreter.LanguageVersion, rootDir,
+            _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, rootDir,
                                             @params.initializationOptions.includeFiles,
                                             @params.initializationOptions.excludeFiles,
                                             _services.GetService<IIdleTimeService>());
             _services.AddService(_indexManager);
+            _disposableBag.Add(_indexManager);
 
             DisplayStartupInfo();
 

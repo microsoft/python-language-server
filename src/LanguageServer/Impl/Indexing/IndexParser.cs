@@ -18,18 +18,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class IndexParser : IIndexParser {
+        private DisposableBag disposables = new DisposableBag(nameof(IndexParser));
         private const int MaxConcurrentParsings = 10;
         private readonly IFileSystem _fileSystem;
         private readonly PythonLanguageVersion _version;
         private readonly SemaphoreSlim _semaphore;
         private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
-        private readonly object _syncObj = new object();
 
         public IndexParser(IFileSystem fileSystem, PythonLanguageVersion version) {
             Check.ArgumentNotNull(nameof(fileSystem), fileSystem);
@@ -37,6 +38,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _fileSystem = fileSystem;
             _version = version;
             _semaphore = new SemaphoreSlim(MaxConcurrentParsings);
+
+            disposables
+                .Add(_semaphore)
+                .Add(() => {
+                    _allProcessingCts.Cancel();
+                    _allProcessingCts.Dispose();
+                });
         }
 
         public Task<PythonAst> ParseAsync(string path, CancellationToken cancellationToken = default) {
@@ -64,13 +72,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public void Dispose() {
-            lock (_syncObj) {
-                if (!_allProcessingCts.IsCancellationRequested) {
-                    _allProcessingCts.Cancel();
-                    _allProcessingCts.Dispose();
-                }
-            }
-            _semaphore.Dispose();
+            disposables.TryDispose();
         }
     }
 }

@@ -67,7 +67,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var context = new IndexTestContext(this);
             Action construct = () => {
                 PythonLanguageVersion version = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
-                IIndexManager indexManager = new IndexManager(new SymbolIndex(context.FileSystem, version), context.FileSystem,
+                IIndexManager indexManager = new IndexManager(context.FileSystem,
                                                               version, null, new string[] { }, new string[] { },
                                                               new IdleTimeService());
             };
@@ -284,7 +284,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             }
 
             public IIndexManager GetDefaultIndexManager() {
-                _indexM = new IndexManager(SymbolIndex, FileSystem, _pythonLanguageVersion,
+                _indexM = new IndexManager(FileSystem, _pythonLanguageVersion,
                                         _rootPath, new string[] { }, new string[] { },
                                         _idleTimeService) {
                     ReIndexingDelay = 1

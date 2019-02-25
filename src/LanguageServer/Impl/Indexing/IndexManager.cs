@@ -21,8 +21,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
@@ -35,11 +35,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly string _workspaceRootPath;
         private readonly string[] _includeFiles;
         private readonly string[] _excludeFiles;
-        private readonly IIdleTimeService _idleTimeService;
-        private readonly PythonLanguageVersion _version;
+        private readonly DisposableBag _disposables = new DisposableBag(nameof(IndexManager));
         private readonly ConcurrentDictionary<IDocument, DateTime> _pendingDocs = new ConcurrentDictionary<IDocument, DateTime>(new UriDocumentComparer());
 
-        public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
+        public IndexManager(IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
             string[] excludeFiles, IIdleTimeService idleTimeService) {
             Check.ArgumentNotNull(nameof(fileSystem), fileSystem);
             Check.ArgumentNotNull(nameof(rootPath), rootPath);
@@ -47,19 +46,22 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             Check.ArgumentNotNull(nameof(excludeFiles), excludeFiles);
             Check.ArgumentNotNull(nameof(idleTimeService), idleTimeService);
 
-            _symbolIndex = symbolIndex;
             _fileSystem = fileSystem;
             _workspaceRootPath = rootPath;
             _includeFiles = includeFiles;
             _excludeFiles = excludeFiles;
-            _idleTimeService = idleTimeService;
-            _idleTimeService.Idle += OnIdle;
-            _version = version;
-            ReIndexingDelay = DefaultReIndexDelay;
+
+            _symbolIndex = new SymbolIndex(_fileSystem, version);
+            idleTimeService.Idle += OnIdle;
+
+            _disposables
+                .Add(_symbolIndex)
+                .Add(() => idleTimeService.Idle -= OnIdle);
+
             StartAddRootDir();
         }
 
-        public int ReIndexingDelay { get; set; }
+        public int ReIndexingDelay { get; set; } = DefaultReIndexDelay;
 
         private void StartAddRootDir() {
             foreach (var fileInfo in WorkspaceFiles()) {
@@ -101,7 +103,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public void Dispose() {
-            _symbolIndex.Dispose();
+            _disposables.TryDispose();
         }
 
         public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default) {
