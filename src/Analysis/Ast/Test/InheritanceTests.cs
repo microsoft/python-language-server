@@ -13,9 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -91,6 +94,24 @@ y = Derived().foo(42)
                 .Which.Should().HaveName("x");
 
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task NamedTupleSubclass() {
+            const string code = @"
+import collections
+
+class A(collections.namedtuple('A', [])):
+    def __new__(cls):
+        return super(A, cls).__new__(cls)
+
+a = A()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a")
+                .Which.Value.Should().BeAssignableTo<IPythonInstance>()
+                .Which.Type.Name.Should().Be("A");
         }
     }
 }
