@@ -15,6 +15,7 @@
 
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
@@ -22,6 +23,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using OSPlatform = System.Runtime.InteropServices.OSPlatform;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class ConditionalHandler : StatementHandler {

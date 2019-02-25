@@ -95,6 +95,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 stub = _interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
             }
 
+            // If stub is created and its path equals to module, return that stub as module
+            if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
+                return stub;
+            }
+            
             if (moduleImport.IsBuiltin) {
                 _log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
                 module = new CompiledBuiltinPythonModule(name, stub, _services);
@@ -105,13 +110,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
                 // Module inside workspace == user code.
 
-                var moduleType = moduleImport.ModulePath.IsUnderRoot(_root, _fs.StringComparison)
-                    ? ModuleType.User
-                    : ModuleType.Library;
-
                 var mco = new ModuleCreationOptions {
                     ModuleName = moduleImport.FullName,
-                    ModuleType = moduleType,
+                    ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
                     FilePath = moduleImport.ModulePath,
                     Stub = stub
                 };
@@ -173,19 +174,15 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
             ModuleCache = new ModuleCache(_interpreter, _services);
-
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
-
-            var addedRoots = PathResolver.SetRoot(_root);
-            ReloadModulePaths(addedRoots);
-
+            
+            var addedRoots = new HashSet<string>();
+            addedRoots.UnionWith(PathResolver.SetRoot(_root));
+            
             var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
-            addedRoots = PathResolver.SetInterpreterSearchPaths(interpreterPaths);
-
-            ReloadModulePaths(addedRoots);
-            cancellationToken.ThrowIfCancellationRequested();
-
-            addedRoots = SetUserSearchPaths(_interpreter.Configuration.SearchPaths);
+            addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(interpreterPaths));
+            
+            addedRoots.UnionWith(SetUserSearchPaths(_interpreter.Configuration.SearchPaths));
             ReloadModulePaths(addedRoots);
         }
 

@@ -25,7 +25,8 @@ using Microsoft.Python.Core.Text;
 namespace Microsoft.Python.Core {
     public static class StringExtensions {
         private static readonly bool IgnoreCaseInPaths = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-        private static readonly StringComparison PathsStringComparison = IgnoreCaseInPaths ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        public static StringComparer PathsStringComparer { get; } = IgnoreCaseInPaths ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        public static StringComparison PathsStringComparison { get; } = IgnoreCaseInPaths ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
 #if DEBUG
         private static readonly Regex SubstitutionRegex = new Regex(

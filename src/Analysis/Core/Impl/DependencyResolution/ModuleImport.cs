@@ -20,14 +20,16 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         public string RootPath { get; }
         public string ModulePath { get; }
         public bool IsCompiled { get; }
+        public bool IsLibrary { get; }
         public bool IsBuiltin => IsCompiled && ModulePath == null;
 
-        public ModuleImport(string name, string fullName, string rootPath, string modulePath, bool isCompiled) {
+        public ModuleImport(string name, string fullName, string rootPath, string modulePath, bool isCompiled, bool isLibrary) {
             Name = name;
             FullName = fullName;
             RootPath = rootPath;
             ModulePath = modulePath;
             IsCompiled = isCompiled;
+            IsLibrary = isLibrary;
         }
     }
 }

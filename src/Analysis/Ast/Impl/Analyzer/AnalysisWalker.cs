@@ -39,7 +39,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public ExpressionEval Eval { get; }
         public IPythonModule Module => Eval.Module;
-        public IPythonInterpreter Interpreter => Eval.Interpreter;
         public PythonAst Ast => Eval.Ast;
         protected ModuleSymbolTable SymbolTable => Eval.SymbolTable;
 
