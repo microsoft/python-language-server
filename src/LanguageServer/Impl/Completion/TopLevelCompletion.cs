@@ -16,12 +16,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -29,7 +26,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class TopLevelCompletion {
-        public static async Task<CompletionResult> GetCompletionsAsync(Node statement, ScopeStatement scopeStatement, CompletionContext context, CancellationToken cancellationToken = default) {
+        public static CompletionResult GetCompletions(Node statement, ScopeStatement scopeStatement, CompletionContext context) {
             SourceSpan? applicableSpan = null;
             var eval = context.Analysis.ExpressionEvaluator;
 
@@ -61,7 +58,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             // Add possible function arguments.
             var finder = new ExpressionFinder(context.Ast, new FindExpressionOptions { Calls = true });
             if (finder.GetExpression(context.Position) is CallExpression callExpr && callExpr.GetArgumentAtIndex(context.Ast, context.Position, out _)) {
-                var value = await eval.GetValueFromExpressionAsync(callExpr.Target, cancellationToken);
+                var value = eval.GetValueFromExpression(callExpr.Target);
                 if (value?.GetPythonType() is IPythonFunctionType ft) {
                     var arguments = ft.Overloads.SelectMany(o => o.Parameters).Select(p => p?.Name)
                         .Where(n => !string.IsNullOrEmpty(n))

@@ -35,7 +35,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var res = new CompletionList();
             var analysis = await GetAnalysisAsync(uri, cancellationToken);
             if(analysis != null) { 
-                var result = await _completionSource.GetCompletionsAsync(analysis, @params.position, cancellationToken);
+                var result = _completionSource.GetCompletions(analysis, @params.position);
                 res.items = result.Completions.ToArray();
             }
 
@@ -50,7 +50,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var analysis = await GetAnalysisAsync(uri, cancellationToken);
             if (analysis != null) {
-                return await _hoverSource.GetHoverAsync(analysis, @params.position, cancellationToken);
+                return _hoverSource.GetHover(analysis, @params.position);
             }
             return null;
         }
@@ -61,7 +61,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var analysis = await GetAnalysisAsync(uri, cancellationToken);
             if (analysis != null) {
-                return await _signatureSource.GetSignatureAsync(analysis, @params.position, cancellationToken);
+                return _signatureSource.GetSignature(analysis, @params.position);
             }
             return null;
         }
@@ -72,7 +72,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var analysis = await GetAnalysisAsync(uri, cancellationToken);
             var ds = new DefinitionSource();
-            var reference = await ds.FindDefinitionAsync(analysis, @params.position, cancellationToken);
+            var reference = ds.FindDefinition(analysis, @params.position);
             return reference != null ? new[] { reference } : Array.Empty<Reference>();
         }
     }

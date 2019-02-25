@@ -14,8 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -34,33 +32,33 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
         }
 
-        public override async Task<bool> WalkAsync(PythonAst node, CancellationToken cancellationToken = default) {
+        public override bool Walk(PythonAst node) {
             Check.InvalidOperation(() => Ast == node, "walking wrong AST");
 
             // Collect basic information about classes and functions in order
             // to correctly process forward references. Does not determine
             // types yet since at this time imports or generic definitions
             // have not been processed.
-            await SymbolTable.BuildAsync(Eval, cancellationToken);
+            SymbolTable.Build(Eval);
             if (_stubAnalysis != null) {
                 Eval.Log?.Log(TraceEventType.Information, $"'{Module.Name}' evaluation skipped, stub is available.");
             }
-            return await base.WalkAsync(node, cancellationToken);
+            return base.Walk(node);
         }
 
         // Classes and functions are walked by their respective evaluators
-        public override async Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) {
-            await SymbolTable.EvaluateAsync(node, cancellationToken);
+        public override bool Walk(ClassDefinition node) {
+            SymbolTable.Evaluate(node);
             return false;
         }
 
-        public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
-            await SymbolTable.EvaluateAsync(node, cancellationToken);
+        public override bool Walk(FunctionDefinition node) {
+            SymbolTable.Evaluate(node);
             return false;
         }
 
-        public async Task CompleteAsync(CancellationToken cancellationToken = default) {
-            await SymbolTable.EvaluateAllAsync(cancellationToken);
+        public void Complete() {
+            SymbolTable.EvaluateAll();
             SymbolTable.ReplacedByStubs.Clear();
             MergeStub();
         }
@@ -110,7 +108,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                         // Get documentation from the current type, if any, since stubs
                         // typically do not contain documentation while scraped code does.
-                        member?.GetPythonType()?.TransferDocumentation(stubMember.GetPythonType());
+                        member?.GetPythonType()?.TransferDocumentationAndLocation(stubMember.GetPythonType());
                         cls.AddMember(name, stubMember, overwrite: true);
                     }
                 } else {
@@ -118,7 +116,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Modules members that are modules should remain as they are, i.e. os.path
                     // should remain library with its own stub attached.
                     if (!stubType.IsUnknown() && !(stubType is IPythonModule)) {
-                        sourceType.TransferDocumentation(stubType);
+                        sourceType.TransferDocumentationAndLocation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;
                         Eval.DeclareVariable(v.Name, v.Value, source, LocationInfo.Empty, overwrite: true);

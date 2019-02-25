@@ -14,8 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
@@ -29,7 +27,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             _itemSource = new CompletionItemSource(docSource, completionSettings);
         }
 
-        public async Task<CompletionResult> GetCompletionsAsync(IDocumentAnalysis analysis, SourceLocation location, CancellationToken cancellationToken = default) {
+        public CompletionResult GetCompletions(IDocumentAnalysis analysis, SourceLocation location) {
             var context = new CompletionContext(analysis, location, _itemSource);
 
             ExpressionLocator.FindExpression(analysis.Ast, location,
@@ -37,7 +35,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
             switch (expression) {
                 case MemberExpression me when me.Target != null && me.DotIndex > me.StartIndex && context.Position > me.DotIndex:
-                    return new CompletionResult(await ExpressionCompletion.GetCompletionsFromMembersAsync(me.Target, scope, context, cancellationToken));
+                    return new CompletionResult(ExpressionCompletion.GetCompletionsFromMembers(me.Target, scope, context));
                 case ConstantExpression ce1 when ce1.Value is double || ce1.Value is float:
                     // no completions on integer ., the user is typing a float
                     return CompletionResult.Empty;
@@ -68,7 +66,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     return CompletionResult.Empty;
                 case ClassDefinition cd:
                     if (!ClassDefinitionCompletion.NoCompletions(cd, context, out var addMetadataArg)) {
-                        var result = await TopLevelCompletion.GetCompletionsAsync(statement, scope, context, cancellationToken);
+                        var result = TopLevelCompletion.GetCompletions(statement, scope, context);
                         return addMetadataArg
                             ? new CompletionResult(result.Completions.Append(CompletionItemSource.MetadataArg), result.ApplicableSpan)
                             : result;
@@ -83,9 +81,9 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 case TryStatementHandler tryStatement when ExceptCompletion.TryGetCompletions(tryStatement, context, out var result):
                     return result;
                 default: {
-                        var result = await ErrorExpressionCompletion.GetCompletionsAsync(scope, statement, expression, context, cancellationToken);
+                        var result = ErrorExpressionCompletion.GetCompletions(scope, statement, expression, context);
                         return result == CompletionResult.Empty
-                            ? await TopLevelCompletion.GetCompletionsAsync(statement, scope, context, cancellationToken)
+                            ? TopLevelCompletion.GetCompletions(statement, scope, context)
                             : result;
                     }
             }

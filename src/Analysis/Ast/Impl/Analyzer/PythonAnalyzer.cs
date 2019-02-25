@@ -212,7 +212,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning) {
-                    await AnalyzeAsync(node, walker.Version, stopWatch, cancellationToken);
+                    Analyze(node, walker.Version, stopWatch, cancellationToken);
                 } else {
                     StartAnalysis(node, walker.Version, stopWatch, cancellationToken);
                 }
@@ -232,14 +232,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken) 
-            => Task.Run(() => AnalyzeAsync(node, version, stopWatch, cancellationToken), cancellationToken).DoNotWait();
+            => Task.Run(() => Analyze(node, version, stopWatch, cancellationToken), cancellationToken);
 
         /// <summary>
         /// Performs analysis of the document. Returns document global scope
         /// with declared variables and inner scopes. Does not analyze chain
         /// of dependencies, it is intended for the single file analysis.
         /// </summary>
-        private async Task AnalyzeAsync(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken) {
+        private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken) {
             try {
                 var startTime = stopWatch.ElapsedMilliseconds;
                 var module = node.Value.Module;
@@ -248,12 +248,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 // Now run the analysis.
                 var walker = new ModuleWalker(_services, module, ast);
 
-                await ast.WalkAsync(walker, cancellationToken);
+                ast.Walk(walker);
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // Note that we do not set the new analysis here and rather let
                 // Python analyzer to call NotifyAnalysisComplete.
-                await walker.CompleteAsync(cancellationToken);
+                walker.Complete();
                 cancellationToken.ThrowIfCancellationRequested();
                 var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
 

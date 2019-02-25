@@ -15,8 +15,6 @@
 
 using System;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
@@ -34,7 +32,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             _docSource = docSource;
         }
 
-        public async Task<SignatureHelp> GetSignatureAsync(IDocumentAnalysis analysis, SourceLocation location, CancellationToken cancellationToken = default) {
+        public SignatureHelp GetSignature(IDocumentAnalysis analysis, SourceLocation location) {
             if (analysis is EmptyAnalysis) {
                 return null;
             }
@@ -48,10 +46,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
             if (call != null) {
                 using (analysis.ExpressionEvaluator.OpenScope(analysis.Document, scope)) {
                     if (call.Target is MemberExpression mex) {
-                        var v = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(mex.Target, cancellationToken);
+                        var v = analysis.ExpressionEvaluator.GetValueFromExpression(mex.Target);
                         selfType = v?.GetPythonType();
                     }
-                    value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(call.Target, cancellationToken);
+                    value = analysis.ExpressionEvaluator.GetValueFromExpression(call.Target);
                 }
             }
 

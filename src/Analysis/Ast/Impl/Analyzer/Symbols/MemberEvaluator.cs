@@ -15,9 +15,8 @@
 
 using System;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
@@ -30,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public ScopeStatement Target { get; }
         public bool IsClass => Target is ClassDefinition;
         public bool IsFunction => Target is FunctionDefinition;
-
-        public abstract Task EvaluateAsync(CancellationToken cancellationToken = default);
+        public IMember Result { get; protected set; }
+        public abstract void Evaluate();
     }
 }
