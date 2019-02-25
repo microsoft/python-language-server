@@ -21,7 +21,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
         private WorkQueueState state = WorkQueueState.WaitingForWork;
 
-        public MostRecentDocumentSymbols(string path, IFileSystem fileSystem, PythonLanguageVersion version, IIndexParser indexParser) {
+        public MostRecentDocumentSymbols(string path, IIndexParser indexParser) {
             _path = path;
             _indexParser = indexParser;
         }

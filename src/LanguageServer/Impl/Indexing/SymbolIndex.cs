@@ -26,17 +26,12 @@ using Microsoft.Python.Parsing;
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class SymbolIndex : ISymbolIndex {
         private readonly ConcurrentDictionary<string, IMostRecentDocumentSymbols> _index;
-        private readonly IFileSystem _fileSystem;
-        private readonly PythonLanguageVersion _version;
         private readonly IIndexParser _indexParser;
 
         public SymbolIndex(IFileSystem fileSystem, PythonLanguageVersion version) {
-            _fileSystem = fileSystem;
-            _version = version;
-
             var comparer = PathEqualityComparer.Instance;
             _index = new ConcurrentDictionary<string, IMostRecentDocumentSymbols>(comparer);
-            _indexParser = new IndexParser(_fileSystem, _version);
+            _indexParser = new IndexParser(fileSystem, version);
         }
 
         public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken ct = default) {
@@ -100,7 +95,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         private IMostRecentDocumentSymbols MakeMostRecentDocSymbols(string path) {
-            return new MostRecentDocumentSymbols(path, _fileSystem, _version, _indexParser);
+            return new MostRecentDocumentSymbols(path, _indexParser);
         }
 
         public void Dispose() {
