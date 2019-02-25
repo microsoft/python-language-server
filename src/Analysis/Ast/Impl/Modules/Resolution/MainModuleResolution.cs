@@ -127,9 +127,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return Array.Empty<string>();
             }
 
-            _log?.Log(TraceEventType.Information, "GetCurrentSearchPaths", Configuration.InterpreterPath, ModuleCache.SearchPathCachePath);
+            _log?.Log(TraceEventType.Information, "GetCurrentSearchPaths", Configuration.InterpreterPath);
             try {
-                var paths = await PythonLibraryPath.GetDatabaseSearchPathsAsync(Configuration, ModuleCache.SearchPathCachePath);
+                var paths = await PythonLibraryPath.GetDatabaseSearchPathsAsync(Configuration);
                 cancellationToken.ThrowIfCancellationRequested();
                 return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
             } catch (InvalidOperationException) {
