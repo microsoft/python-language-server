@@ -79,6 +79,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Analysis = new EmptyAnalysis(services, this);
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
+            Log?.Log(TraceEventType.Verbose, $"Module {name}({moduleType}) is created.");
         }
 
         protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, IServiceContainer services) :
@@ -315,6 +316,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 _buffer.Update(changes);
                 Parse();
             }
+            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
         public void Reset(string content) {

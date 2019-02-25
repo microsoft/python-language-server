@@ -35,16 +35,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
             _dependencyFinder = dependencyFinder;
         }
 
-        public async Task<IDependencyChainWalker<TKey, TValue>> AddChangesAsync(TKey key, TValue value, int valueVersion, CancellationToken cancellationToken) {
+        public async Task<IDependencyChainWalker<TKey, TValue>> AddChangesAsync(TKey key, TValue value, CancellationToken cancellationToken) {
             int version;
             ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices;
 
             lock (_syncObj) {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (!_vertices.TryAddOrUpdate(key, value, valueVersion, out var dependencyVertex)) {
-                    throw new OperationCanceledException();
-                }
-
+                var dependencyVertex = _vertices.AddOrUpdate(key, value);
                 version = _vertices.Version;
                 _changedVertices[key] = dependencyVertex;
                 changedVertices = ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_changedVertices.Values);
@@ -89,6 +86,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
             
             return new DependencyChainWalker(this, startingVertices, affectedValues, missingKeys, totalNodesCount, version);
+        }
+
+        private void CommitChanges(DependencyVertex<TKey, TValue> vertex) {
+            lock (_syncObj) {
+                if (_changedVertices.TryGetValue(vertex.Key, out var changedVertex) && changedVertex.Version <= vertex.Version) {
+                    _changedVertices.Remove(vertex.Key);
+                }
+            }
         }
 
         private void CommitChanges(int version) {
@@ -302,6 +307,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     }
                 }
 
+                if (vertex.SecondPass == null) {
+                    _dependencyResolver.CommitChanges(vertex.DependencyVertex);
+                }
+                
                 if (isCompleted) {
                     _ppc.Produce(null);
                     _ppc.Dispose();

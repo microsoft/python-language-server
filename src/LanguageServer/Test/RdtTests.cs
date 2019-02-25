@@ -51,8 +51,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var doc1 = rdt.GetDocument(uri1);
             var doc2 = rdt.GetDocument(uri2);
 
-            await doc1.GetAnalysisAsync(10000);
-            await doc2.GetAnalysisAsync(10000);
+            await doc1.GetAnalysisAsync(-1);
+            await doc2.GetAnalysisAsync(-1);
 
             ds.Diagnostics[doc1.Uri].Count.Should().Be(1);
             ds.Diagnostics[doc2.Uri].Count.Should().Be(1);

@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
@@ -26,7 +27,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Disposables;
-using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Parsing.Ast;
@@ -39,6 +39,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonAnalyzer>();
         private readonly object _syncObj = new object();
         private readonly AsyncManualResetEvent _analysisCompleteEvent = new AsyncManualResetEvent();
+        private readonly AsyncAutoResetEvent _analysisRunningEvent = new AsyncAutoResetEvent();
         private readonly ILogger _log;
         private readonly int _maxTaskRunning = 8;
         private int _runningTasks;
@@ -47,8 +48,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public PythonAnalyzer(IServiceManager services) {
             _services = services;
             _log = services.GetService<ILogger>();
-            _dependencyResolver = new DependencyResolver<ModuleKey, PythonAnalyzerEntry>(new ModuleDependencyFinder(services.GetService<IFileSystem>()));
+            _dependencyResolver = new DependencyResolver<ModuleKey, PythonAnalyzerEntry>(new ModuleDependencyFinder());
             _analysisCompleteEvent.Set();
+            _analysisRunningEvent.Set();
         }
 
         public void Dispose() => _disposeToken.TryMarkDisposed();
@@ -56,22 +58,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default)
             => _analysisCompleteEvent.WaitAsync(cancellationToken);
 
-        public void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int version, CancellationToken cancellationToken)
-            => AnalyzeDocumentAsync(module, ast, version, cancellationToken).DoNotWait();
-
         public async Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime, CancellationToken cancellationToken) {
             var key = new ModuleKey(module);
             PythonAnalyzerEntry entry;
             lock (_syncObj) {
                 if (!_analysisEntries.TryGetValue(key, out entry)) {
                     var emptyAnalysis = new EmptyAnalysis(_services, (IDocument)module);
-                    entry = new PythonAnalyzerEntry(module, emptyAnalysis.Ast, emptyAnalysis, 0);
+                    entry = new PythonAnalyzerEntry(module, emptyAnalysis.Ast, emptyAnalysis, -1, 0);
                     _analysisEntries[key] = entry;
                 }
             }
 
-
-            if (waitTime == 0 || Debugger.IsAttached) {
+            if (waitTime < 0 || Debugger.IsAttached) {
                 return await GetAnalysisAsync(entry, default, cancellationToken);
             }
             
@@ -88,7 +86,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 try {
                     var analysis = await entry.GetAnalysisAsync(cancellationToken);
                     lock (_syncObj) {
-                        if (entry.Version == analysis.Version) {
+                        if (entry.AnalysisVersion == analysis.Version) {
                             return analysis;
                         }
                     }
@@ -100,71 +98,129 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return entry.PreviousAnalysis;
         }
 
-        private async Task AnalyzeDocumentAsync(IPythonModule module, PythonAst ast, int bufferVersion, CancellationToken cancellationToken) {
+        public void InvalidateAnalysis(IPythonModule module) {
+            lock (_syncObj) {
+                if (_analysisEntries.TryGetValue(new ModuleKey(module), out var entry)) {
+                    entry.Invalidate(_version + 1);
+                }
+            }
+        }
+
+        public void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> dependencies) {
+            var key = new ModuleKey(module);
+            PythonAnalyzerEntry entry;
+            lock (_syncObj) {
+                if (!_analysisEntries.TryGetValue(key, out entry)) {
+                    return;
+                }
+
+                var significantDependencies = dependencies.Where(IsSignificant);
+                if (significantDependencies.Count == 0) {
+                    return;
+                }
+                
+                entry.Invalidate(_version + 1);
+                entry.AddAnalysisDependencies(significantDependencies);
+            }
+
+            AnalyzeDocumentAsync(key, entry, default).DoNotWait();
+
+            bool IsSignificant(IPythonModule m) 
+                => m != entry.Module && ((m.ModuleType == ModuleType.User && m.Analysis.Version < entry.AnalysisVersion) || m.Analysis is EmptyAnalysis);
+        }
+        
+        public void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int bufferVersion, CancellationToken cancellationToken) {
             var key = new ModuleKey(module);
             PythonAnalyzerEntry entry;
             lock (_syncObj) {
                 if (_analysisEntries.TryGetValue(key, out entry)) {
-                    entry.Invalidate(_version + 1, ast);
+                    if (entry.BufferVersion >= bufferVersion) {
+                        return;
+                    }
+                    
+                    entry.Invalidate(ast, bufferVersion, _version + 1);
                 } else {
-                    entry = new PythonAnalyzerEntry(module, ast, new EmptyAnalysis(_services, (IDocument)module), _version);
+                    entry = new PythonAnalyzerEntry(module, ast, new EmptyAnalysis(_services, (IDocument)module), bufferVersion, _version + 1);
                     _analysisEntries[key] = entry;
                 }
             }
 
+            AnalyzeDocumentAsync(key, entry, cancellationToken).DoNotWait();
+        }
+
+        private async Task AnalyzeDocumentAsync(ModuleKey key, PythonAnalyzerEntry entry, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();
-            _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) queued");
+            _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, cancellationToken)) {
                 var analysisToken = cts.Token;
  
-                var walker = await _dependencyResolver.AddChangesAsync(new ModuleKey(module), entry, bufferVersion, cts.Token);
-                var abortAnalysisOnVersionChange = true;
+                var walker = await _dependencyResolver.AddChangesAsync(key, entry, cts.Token);
+                var stopOnVersionChange = true;
                 lock (_syncObj) {
-                    if (_version < walker.Version) {
-                        _version = walker.Version;
-                        foreach (var affectedEntry in walker.AffectedValues) {
-                            affectedEntry.Invalidate(_version, affectedEntry.Ast);
-                            if (affectedEntry.UserNotAnalyzed) {
-                                abortAnalysisOnVersionChange = false;
-                            }
+                    if (_version > walker.Version) {
+                        return;
+                    }
+
+                    _version = walker.Version;
+                    foreach (var affectedEntry in walker.AffectedValues) {
+                        affectedEntry.Invalidate(_version);
+                        if (affectedEntry.NotAnalyzed) {
+                            stopOnVersionChange = false;
                         }
                     }
                 }
 
                 if (walker.MissingKeys.Count > 0) {
-                    LoadMissingDocuments(module.Interpreter, walker.MissingKeys);
+                    LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
                 }
 
                 var stopWatch = Stopwatch.StartNew();
-                IDependencyChainNode<PythonAnalyzerEntry> node;
-                while ((node = await walker.GetNextAsync(analysisToken)) != null) {
-                    lock (_syncObj) {
-                        if (_version > walker.Version) {
-                            if (abortAnalysisOnVersionChange) {
-                                stopWatch.Stop();
+                await _analysisRunningEvent.WaitAsync(cancellationToken);
+                
+                try {
+                    if (stopOnVersionChange) {
+                        lock (_syncObj) {
+                            if (_version > walker.Version) {
                                 return;
-                            }
-
-                            if (!node.Value.UserNotAnalyzed) {
-                                node.MarkCompleted();
-                                continue;
                             }
                         }
                     }
-                    
-                    if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning) {
-                        await AnalyzeAsync(node, walker.Version, stopWatch, analysisToken);
-                    } else {
-                        StartAnalysis(node, walker.Version, stopWatch, analysisToken);
+
+                    await AnalyzeAffectedEntriesAsync(walker, stopOnVersionChange, stopWatch, analysisToken);
+                } finally {
+                    _analysisRunningEvent.Set();
+                    stopWatch.Stop();
+                }
+            }
+        }
+
+        private async Task AnalyzeAffectedEntriesAsync(IDependencyChainWalker<ModuleKey, PythonAnalyzerEntry> walker, bool stopOnVersionChange, Stopwatch stopWatch, CancellationToken cancellationToken) {
+            IDependencyChainNode<PythonAnalyzerEntry> node;
+            while ((node = await walker.GetNextAsync(cancellationToken)) != null) {
+                lock (_syncObj) {
+                    if (_version > walker.Version) {
+                        if (stopOnVersionChange) {
+                            return;
+                        }
+
+                        if (!node.Value.NotAnalyzed) {
+                            node.MarkCompleted();
+                            continue;
+                        }
                     }
                 }
 
-
-                if (walker.MissingKeys.Where(k => !k.IsTypeshed).Count == 0) {
-                    Interlocked.Exchange(ref _runningTasks, 0);
-                    _analysisCompleteEvent.Set();
+                if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning) {
+                    await AnalyzeAsync(node, walker.Version, stopWatch, cancellationToken);
+                } else {
+                    StartAnalysis(node, walker.Version, stopWatch, cancellationToken);
                 }
+            }
+            
+            if (walker.MissingKeys.Where(k => !k.IsTypeshed).Count == 0) {
+                Interlocked.Exchange(ref _runningTasks, 0);
+                _analysisCompleteEvent.Set();
             }
         }
 
@@ -261,12 +317,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private sealed class ModuleDependencyFinder : IDependencyFinder<ModuleKey, PythonAnalyzerEntry> {
-            private readonly IFileSystem _fileSystem;
-
-            public ModuleDependencyFinder(IFileSystem fileSystem) {
-                _fileSystem = fileSystem;
-            }
-
             public Task<ImmutableArray<ModuleKey>> FindDependenciesAsync(PythonAnalyzerEntry value, CancellationToken cancellationToken) {
                 var dependencies = new HashSet<ModuleKey>();
                 var module = value.Module;
@@ -278,6 +328,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 if (module.Stub != null) {
                     dependencies.Add(new ModuleKey(module.Stub));
+                }
+
+                foreach (var dependency in value.AnalysisDependencies) {
+                    dependencies.Add(new ModuleKey(dependency));
                 }
 
                 foreach (var node in value.Ast.TraverseDepthFirst<Node>(n => n.GetChildNodes())) {
