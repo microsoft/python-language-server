@@ -114,7 +114,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IPythonType DeclaringType { get; }
         public override string Documentation {
             get {
-                var doc = FunctionDefinition?.Name == "__init__" ? DeclaringType?.Documentation : null;
+                var doc = "__init__".EqualsOrdinal(FunctionDefinition?.Name) ? DeclaringType?.Documentation : null;
                 return doc ?? _overloads.FirstOrDefault()?.Documentation;
             }
         }

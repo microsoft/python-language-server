@@ -31,7 +31,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
     internal class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
-        private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
+        private static readonly string[] _classMethods = {"mro", "__dict__", @"__weakref__" };
         private readonly object _lock = new object();
         private readonly AsyncLocal<IPythonClassType> _processing = new AsyncLocal<IPythonClassType>();
         private List<IPythonType> _bases;
@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Types {
             foreach (var m in Mro.Skip(1)) {
                 names.UnionWith(m.GetMemberNames());
             }
-            return DeclaringModule.Interpreter.LanguageVersion.Is3x() ? names.Concat(_classMethods) : names;
+            return DeclaringModule.Interpreter.LanguageVersion.Is3x() ? names.Concat(_classMethods).Distinct() : names;
         }
 
         public override IMember GetMember(string name) {
@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Types {
                 switch (name) {
                     case "__mro__":
                     case "mro":
-                        return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro) : UnknownType;
+                            return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro) : UnknownType;
                     case "__dict__":
                         return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
                     case @"__weakref__":
@@ -102,14 +102,18 @@ namespace Microsoft.Python.Analysis.Types {
         public override string Documentation {
             get {
                 // Try doc from the type (class definition AST node).
-                var doc = base.Documentation;
-                // Try bases.
-                if (string.IsNullOrEmpty(doc) && Bases != null) {
-                    doc = Bases.FirstOrDefault(b => !string.IsNullOrEmpty(b?.Documentation))?.Documentation;
+                var doc = ClassDefinition.GetDocumentation();
+                if (string.IsNullOrEmpty(doc)) {
+                    doc = base.Documentation;
                 }
                 // Try docs __init__.
                 if (string.IsNullOrEmpty(doc)) {
-                    doc = GetMember("__init__")?.GetPythonType()?.Documentation;
+                    // Don't call GetMember("__init__").Documentation or you stack overflow.
+                    doc = (GetMember("__init__") as IPythonFunctionType)?.FunctionDefinition?.Documentation;
+                }
+                // Try bases.
+                if (string.IsNullOrEmpty(doc) && Bases != null) {
+                    doc = Bases.FirstOrDefault(b => !string.IsNullOrEmpty(b?.Documentation))?.Documentation;
                 }
                 return doc;
             }
