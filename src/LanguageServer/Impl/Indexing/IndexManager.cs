@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -35,9 +36,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly string[] _includeFiles;
         private readonly string[] _excludeFiles;
         private readonly IIdleTimeService _idleTimeService;
-        private readonly HashSet<IDocument> _pendingDocs = new HashSet<IDocument>(new UriDocumentComparer());
         private readonly PythonLanguageVersion _version;
-        private DateTime _lastPendingDocAddedTime;
+        private readonly ConcurrentDictionary<IDocument, DateTime> _pendingDocs = new ConcurrentDictionary<IDocument, DateTime>(new UriDocumentComparer());
 
         public IndexManager(ISymbolIndex symbolIndex, IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
             string[] excludeFiles, IIdleTimeService idleTimeService) {
@@ -113,28 +113,20 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public void AddPendingDoc(IDocument doc) {
-            lock (_pendingDocs) {
-                _lastPendingDocAddedTime = DateTime.Now;
-                _pendingDocs.Add(doc);
-                _symbolIndex.MarkAsPending(doc.Uri.AbsolutePath);
-            }
+            _pendingDocs.TryAdd(doc, DateTime.Now);
+            _symbolIndex.MarkAsPending(doc.Uri.AbsolutePath);
         }
 
         private void OnIdle(object sender, EventArgs _) {
-            if (_pendingDocs.Count > 0 && (DateTime.Now - _lastPendingDocAddedTime).TotalMilliseconds > ReIndexingDelay) {
-                ReIndexPendingDocsAsync();
-            }
+            ReIndexPendingDocsAsync();
         }
 
         private void ReIndexPendingDocsAsync() {
-            IEnumerable<IDocument> pendingDocs;
-            lock (_pendingDocs) {
-                pendingDocs = _pendingDocs.ToList();
-                _pendingDocs.Clear();
-            }
-
-            foreach (var doc in pendingDocs.MaybeEnumerate()) {
-                ReIndexFile(doc.Uri.AbsolutePath, doc);
+            foreach (var (doc, lastTime) in _pendingDocs) {
+                if ((DateTime.Now - lastTime).TotalMilliseconds > ReIndexingDelay) {
+                    ReIndexFile(doc.Uri.AbsolutePath, doc);
+                    _pendingDocs.TryRemove(doc, out var _);
+                }
             }
         }
 
