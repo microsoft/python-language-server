@@ -86,23 +86,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return value;
         }
 
-        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
-            if (expr == null) {
-                return null;
-            }
+        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins)
+            => GetTypeFromAnnotation(expr, out _, options);
 
-            if (expr is CallExpression callExpr) {
-                // x: NamedTuple(...)
-                return GetValueFromCallable(callExpr)?.GetPythonType() ?? UnknownType;
-            }
-
-            if (expr is IndexExpression indexExpr) {
-                // Try generics
-                var target = GetValueFromExpression(indexExpr.Target);
-                var result = GetValueFromGeneric(target, indexExpr);
-                if(result != null) {
-                    return result.GetPythonType();
-                }
+        public IPythonType GetTypeFromAnnotation(Expression expr, out bool isGeneric, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
+            isGeneric = false;
+            switch (expr) {
+                case null:
+                    return null;
+                case CallExpression callExpr:
+                    // x: NamedTuple(...)
+                    return GetValueFromCallable(callExpr)?.GetPythonType() ?? UnknownType;
+                case IndexExpression indexExpr:
+                    // Try generics
+                    var target = GetValueFromExpression(indexExpr.Target);
+                    var result = GetValueFromGeneric(target, indexExpr);
+                    if (result != null) {
+                        isGeneric = true;
+                        return result.GetPythonType();
+                    }
+                    break;
             }
 
             // Look at specialization and typing first

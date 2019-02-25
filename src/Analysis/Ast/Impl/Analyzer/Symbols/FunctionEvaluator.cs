@@ -137,7 +137,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // Declare self or cls in this scope.
                     Eval.DeclareVariable(p0.Name, new PythonInstance(_self), VariableSource.Declaration, p0.NameExpression);
                     // Set parameter info.
-                    var pi = new ParameterInfo(Ast, p0, _self);
+                    var pi = new ParameterInfo(Ast, p0, _self, false);
                     pi.SetType(_self);
                     parameters.Add(pi);
                     skip++;
@@ -146,13 +146,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             // Declare parameters in scope
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
+                var isGeneric = false;
                 var p = FunctionDefinition.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
                     // If parameter has default value, look for the annotation locally first
                     // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
                     IPythonType paramType = null;
                     if (p.DefaultValue != null) {
-                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, LookupOptions.Local | LookupOptions.Builtins);
+                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
                         if (paramType == null) {
                             var defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
                             if (!defaultValue.IsUnknown()) {
@@ -161,9 +162,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         }
                     }
                     // If all else fails, look up globally.
-                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation);
+                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric);
 
-                    var pi = new ParameterInfo(Ast, p, paramType);
+                    var pi = new ParameterInfo(Ast, p, paramType, isGeneric);
                     DeclareParameter(p, i, pi);
                     parameters.Add(pi);
                 }

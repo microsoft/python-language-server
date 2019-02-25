@@ -31,7 +31,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
     internal class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
-        private static readonly string[] _classMethods = {"mro", "__dict__", @"__weakref__" };
+        private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
         private readonly object _lock = new object();
         private readonly AsyncLocal<IPythonClassType> _processing = new AsyncLocal<IPythonClassType>();
         private List<IPythonType> _bases;
@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Types {
                 switch (name) {
                     case "__mro__":
                     case "mro":
-                            return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro) : UnknownType;
+                        return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro) : UnknownType;
                     case "__dict__":
                         return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
                     case @"__weakref__":
@@ -429,17 +429,15 @@ namespace Microsoft.Python.Analysis.Types {
                     if (!valueType.IsUnknown()) {
                         specificTypes[gt.Parameters[1].Name] = valueType;
                     }
-
                     break;
                 case IPythonIterable iter when gt.TypeId == BuiltinTypeId.List && gt.Parameters.Count == 1:
                     var itemType = iter.GetIterator().Next.GetPythonType();
                     if (!itemType.IsUnknown()) {
                         specificTypes[gt.Parameters[0].Name] = itemType;
                     }
-
                     break;
                 case IPythonCollection coll when gt.TypeId == BuiltinTypeId.Tuple && gt.Parameters.Count >= 1:
-                    var itemTypes = coll.Contents.Select(m => gt.GetPythonType()).ToArray();
+                    var itemTypes = coll.Contents.Select(m => m.GetPythonType()).ToArray();
                     for (var i = 0; i < Math.Min(itemTypes.Length, gt.Parameters.Count); i++) {
                         specificTypes[gt.Parameters[i].Name] = itemTypes[i];
                     }
@@ -472,8 +470,18 @@ namespace Microsoft.Python.Analysis.Types {
                             break;
                         }
                     case IPythonInstance inst: {
-                            if (inst.GetPythonType() is IPythonTemplateType tt && tt.IsGeneric()) {
-                                var specificType = tt.CreateSpecificType(args, declaringModule, location);
+                            var t = inst.GetPythonType();
+                            IPythonType specificType = null;
+                            switch (t) {
+                                case IPythonTemplateType tt when tt.IsGeneric():
+                                    specificType = tt.CreateSpecificType(args, declaringModule, location);
+                                    break;
+                                case IGenericTypeDefinition gtd:
+                                    classType.GenericParameters.TryGetValue(gtd.Name, out specificType);
+                                    break;
+                            }
+
+                            if (specificType != null) {
                                 classType.AddMember(m.Key, new PythonInstance(specificType, location), true);
                             }
                             break;

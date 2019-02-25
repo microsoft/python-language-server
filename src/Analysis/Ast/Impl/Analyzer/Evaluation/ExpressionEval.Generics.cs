@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -30,7 +29,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// and the specific type arguments, such as Generic[T] or constructor
         /// of a generic class.
         /// </summary>
-
         private IMember GetValueFromGeneric(IMember target, Expression expr) {
             if (!(target is PythonClassType c && c.IsGeneric()) && !(target is IGenericType)) {
                 return null;

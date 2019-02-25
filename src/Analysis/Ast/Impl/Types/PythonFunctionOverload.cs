@@ -172,16 +172,36 @@ namespace Microsoft.Python.Analysis.Types {
 
             var returnType = StaticReturnValue.GetPythonType();
             switch (returnType) {
-                case PythonClassType cls when cls.IsGeneric(): {
-                        // -> A[_T1, _T2, ...]
-                        // Match arguments 
-                        var typeArgs = selfClassType.GenericParameters.Keys
+                case PythonClassType cls when cls.IsGeneric():
+                    // -> A[_T1, _T2, ...]
+                    // Match arguments
+                    IReadOnlyList<IPythonType> typeArgs = null;
+                    var classGenericParameters = selfClassType.GenericParameters.Keys.ToArray();
+                    if (classGenericParameters.Length > 0) {
+                        // Declaring class is specific and provides definitions of generic parameters
+                        typeArgs = classGenericParameters
                             .Select(n => selfClassType.GenericParameters.TryGetValue(n, out var t) ? t : null)
                             .ExcludeDefault()
                             .ToArray();
+                    } else if(Parameters.Any(p => p.IsGeneric)) {
+                        // Declaring class is not generic, but the function is and arguments
+                        // should provide actual specific types.
+                        // TODO: handle keyword and dict args
+                        var list = new List<IPythonType>();
+                        for (var i = 0; i < Math.Min(Parameters.Count, args.Arguments.Count); i++) {
+                            if (Parameters[i].IsGeneric) {
+                                list.AddRange(GetSpecificTypeFromArgumentValue(args.Arguments[i].Value));
+                            }
+                        }
+                        typeArgs = list;
+                    }
+
+                    if (typeArgs != null) {
                         var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), _declaringModule, callLocation);
                         return new PythonInstance(specificReturnValue, callLocation);
                     }
+                    break;
+
                 case IGenericTypeDefinition gtp1: {
                         // -> _T
                         if (selfClassType.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
@@ -201,5 +221,45 @@ namespace Microsoft.Python.Analysis.Types {
             return StaticReturnValue;
         }
         #endregion
+
+        /// <summary>
+        /// Given argument attempts to extract specific types for the function generic
+        /// parameters. Handles common cases such as dictionary, list and tuple.
+        /// Typically used on value that is passed to the generic function
+        /// in place of the generic parameter.
+        /// </summary>
+        /// <remarks>
+        /// Consider 'def func(x: Mapping[K, V]) -> K: ...'
+        /// </remarks>
+        private IReadOnlyList<IPythonType> GetSpecificTypeFromArgumentValue(object argumentValue) {
+            var specificTypes = new List<IPythonType>();
+            switch (argumentValue) {
+                case IPythonDictionary dict:
+                    var keyType = dict.Keys.FirstOrDefault()?.GetPythonType();
+                    var valueType = dict.Values.FirstOrDefault()?.GetPythonType();
+                    if (!keyType.IsUnknown()) {
+                        specificTypes.Add(keyType);
+                    }
+                    if (!valueType.IsUnknown()) {
+                        specificTypes.Add(valueType);
+                    }
+                    break;
+                case IPythonCollection coll:
+                    specificTypes.AddRange(coll.Contents.Select(m => m.GetPythonType()));
+                    break;
+                case IPythonIterable iter:
+                    var itemType = iter.GetIterator().Next.GetPythonType();
+                    if (!itemType.IsUnknown()) {
+                        specificTypes.Add(itemType);
+                    }
+                    break;
+                case IMember m:
+                    if (!m.IsUnknown()) {
+                        specificTypes.Add(m.GetPythonType());
+                    }
+                    break;
+            }
+            return specificTypes;
+        }
     }
 }
