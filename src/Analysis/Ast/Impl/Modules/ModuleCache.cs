@@ -42,10 +42,7 @@ namespace Microsoft.Python.Analysis.Modules {
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
             _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.DatabasePath);
-            SearchPathCachePath = Path.Combine(_interpreter.Configuration.DatabasePath, $"database{_interpreter.Configuration.Version}.path");
         }
-
-        public string SearchPathCachePath { get; }
 
         public async Task<IDocument> ImportFromCacheAsync(string name, CancellationToken cancellationToken) {
             if (string.IsNullOrEmpty(ModuleCachePath)) {

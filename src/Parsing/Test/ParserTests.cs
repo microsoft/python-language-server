@@ -2715,6 +2715,17 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void IncompleteMemberExpr() {
+            foreach (var version in V2Versions) {
+                ParseErrors("IncompleteMemberExpr.py", version,
+                    new ErrorInfo("syntax error", 2, 1, 3, 3, 1, 4),
+                    new ErrorInfo("syntax error", 22, 3, 3, 24, 4, 1),
+                    new ErrorInfo("syntax error", 33, 5, 3, 33, 5, 3)
+                );
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void FromFuture() {
             foreach (var version in AllVersions) {
                 CheckAst(

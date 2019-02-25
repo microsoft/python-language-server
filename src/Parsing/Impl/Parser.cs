@@ -321,7 +321,7 @@ namespace Microsoft.Python.Parsing {
             return name;
         }
 
-        private Name ReadNameMaybeNone() {
+        private Name ReadNameMaybeNone(int prevTokenStart, int prevTokenLength) {
             // peek for better error recovery
             var t = PeekToken();
             if (t == Tokens.NoneToken) {
@@ -335,7 +335,22 @@ namespace Microsoft.Python.Parsing {
                 return n;
             }
 
-            ReportSyntaxError("syntax error");
+            var prevTokenEnd = prevTokenStart + prevTokenLength;
+            var message = "syntax error";
+            if (_lookahead.Token.Kind == TokenKind.NewLine) {
+                // Incomplete member expression, report next character unless there is none.
+                // If there is none, then point to the newline. If we are at EOF, report the dot.
+                if (_lookahead.Span.Start == prevTokenEnd) {
+                    // Dot then immediately the newline. Report the newline.
+                    ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, message);
+                } else {
+                    // There is something between the dot and the newline.
+                    // Report character after the dot.
+                    ReportSyntaxError(prevTokenEnd, prevTokenEnd + 1, message);
+                }
+            } else {
+                ReportSyntaxError(message);
+            }
             return Name.Empty;
         }
 
@@ -1199,7 +1214,7 @@ namespace Microsoft.Python.Parsing {
                         ReportSyntaxError(n.StartIndex, n.EndIndex, "import * only allowed at module level");
                     }
                 }
-            } 
+            }
 
             // Process from __future__ statement
             if (dname.Names.Count == 1 && dname.Names[0].Name == "__future__") {
@@ -1728,7 +1743,7 @@ namespace Microsoft.Python.Parsing {
                 while (MaybeEat(TokenKind.Dot)) {
                     var dotStart = GetStart();
                     var whitespace = _tokenWhiteSpace;
-                    name = ReadNameMaybeNone();
+                    name = ReadNameMaybeNone(dotStart, 1);
                     if (!name.HasName) {
                         decorator = Error(_verbatim ? (_tokenWhiteSpace + _token.Token.VerbatimImage + _lookaheadWhiteSpace + _lookahead.Token.VerbatimImage) : null, decorator);
                         NextToken();
@@ -2259,7 +2274,7 @@ namespace Microsoft.Python.Parsing {
             var itemWhiteSpace = MakeWhiteSpaceList();
 
             var items = ImmutableArray<WithItem>.Empty
-                .Add(ParseWithItem(itemWhiteSpace));;
+                .Add(ParseWithItem(itemWhiteSpace));
             while (MaybeEat(TokenKind.Comma)) {
                 itemWhiteSpace?.Add(_tokenWhiteSpace);
                 items = items.Add(ParseWithItem(itemWhiteSpace));
@@ -2941,7 +2956,7 @@ namespace Microsoft.Python.Parsing {
                 if (t.Value is BigInteger) {
                     var bi = (BigInteger)t.Value;
                     if (bi == 0x80000000) {
-                        var tokenString = _tokenizer.GetTokenString(); ;
+                        var tokenString = _tokenizer.GetTokenString();
                         Debug.Assert(tokenString.Length > 0);
 
                         if (tokenString[tokenString.Length - 1] != 'L' &&
@@ -3300,7 +3315,7 @@ namespace Microsoft.Python.Parsing {
                             NextToken();
                             var dotStart = GetStart();
                             whitespace = _tokenWhiteSpace;
-                            var name = ReadNameMaybeNone();
+                            var name = ReadNameMaybeNone(dotStart, 1);
                             var nameWhitespace = _tokenWhiteSpace;
                             var fe = MakeMember(ret, name);
                             fe.SetLoc(ret.StartIndex, name.HasName ? GetStart() : GetEnd(), GetEnd());

@@ -276,11 +276,11 @@ namespace Microsoft.Python.Analysis.Types {
 
         public IPythonType CreateSpecificType(IArgumentSet args, IPythonModule declaringModule, LocationInfo location = null) {
             location = location ?? LocationInfo.Empty;
-            // Get declared generic parameters of the class
-            var genericTypeParameters = Bases.OfType<IGenericClassParameter>().ToArray(); // Generic[T1, T2, ...]
-                                                                                          // Optimistically use the first one
-                                                                                          // TODO: handle optional generics as class A(Generic[_T1], Optional[Generic[_T2]])
-            var genericClassParameter = genericTypeParameters.FirstOrDefault();
+            // Get declared generic parameters of the class, i.e. list of Ts in Generic[T1, T2, ...]
+            var genericClassParameters = Bases.OfType<IGenericClassParameter>().ToArray();
+            // Optimistically use the first one
+            // TODO: handle optional generics as class A(Generic[_T1], Optional[Generic[_T2]])
+            var genericClassParameter = genericClassParameters.FirstOrDefault();
 
             // Create map of names listed in Generic[...] in the class definition.
             // We will be filling the map with specific types, if any provided.
@@ -343,7 +343,6 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
 
-
             // Define specific type in the original order
             var specificTypes = genericTypeDefinitions
                 .Select(p => specificClassTypeParameters.TryGetValue(p.Name, out var v) ? v : null)
@@ -367,9 +366,9 @@ namespace Microsoft.Python.Analysis.Types {
                 // Create specific bases since we may have generic types there.
                 // Match generic parameter names to base type parameter names.
                 // Consider 'class A(Generic[T], B[T], C[E]): ...'
-                var genericTypeBases = Bases.Except(genericTypeParameters).OfType<IGenericType>().ToArray();
+                var genericTypeBases = Bases.Except(genericClassParameters).OfType<IGenericType>().ToArray();
                 // Start with regular types, then add specific types for all generic types.
-                var bases = Bases.Except(genericTypeBases).Except(genericTypeParameters).ToList();
+                var bases = Bases.Except(genericTypeBases).Except(genericClassParameters).ToList();
 
                 // Create specific types for generic type bases
                 // it for generic types but not Generic[T, ...] itself.
