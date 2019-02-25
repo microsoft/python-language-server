@@ -13,10 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
@@ -42,17 +42,15 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public Task<PythonAst> ParseAsync(string path, CancellationToken cancellationToken = default) {
             var linkedParseCts =
                 CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, cancellationToken);
-            Task<PythonAst> parseTask;
-            parseTask = Task.Run(async () => await Parse(path, linkedParseCts));
-            parseTask.ContinueWith(_ => linkedParseCts.Dispose());
+            var parseTask = Parse(path, linkedParseCts.Token);
+            parseTask.ContinueWith(_ => linkedParseCts.Dispose()).DoNotWait();
             return parseTask;
         }
 
-        private async Task<PythonAst> Parse(string path, CancellationTokenSource parseCts) {
-            await _semaphore.WaitAsync();
+        private async Task<PythonAst> Parse(string path, CancellationToken parseCt) {
+            await _semaphore.WaitAsync(parseCt);
             PythonAst ast;
             try {
-                parseCts.Token.ThrowIfCancellationRequested();
                 using (var stream = _fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     var parser = Parser.CreateParser(stream, _version);
                     ast = parser.ParseFile();
@@ -61,6 +59,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 _semaphore.Release();
             }
 
+            parseCt.ThrowIfCancellationRequested();
             return ast;
         }
 

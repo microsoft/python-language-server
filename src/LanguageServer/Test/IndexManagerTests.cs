@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Documents;
@@ -209,22 +208,13 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
         [TestMethod, Priority(0)]
         public async Task LatestVersionASTVersionIsIndexed() {
-            ManualResetEventSlim reOpenedFileFinished = new ManualResetEventSlim(false);
-            ManualResetEventSlim fileOpenedEvent = new ManualResetEventSlim(false);
             var context = new IndexTestContext(this);
             var pythonTestFilePath = context.FileWithXVarInRootDir();
-            context.SetFileOpen(pythonTestFilePath, _ => {
-                fileOpenedEvent.Set();
-                reOpenedFileFinished.Wait();
-                return MakeStream("x = 1");
-            });
 
             var indexManager = context.GetDefaultIndexManager();
             indexManager.ProcessNewFile(pythonTestFilePath, DocumentWithAst("y = 1"));
             indexManager.ProcessClosedFile(pythonTestFilePath);
-            fileOpenedEvent.Wait();
             indexManager.ProcessNewFile(pythonTestFilePath, DocumentWithAst("z = 1"));
-            reOpenedFileFinished.Set();
 
             var symbols = await indexManager.HierarchicalDocumentSymbolsAsync(pythonTestFilePath);
             symbols.Should().HaveCount(1);
