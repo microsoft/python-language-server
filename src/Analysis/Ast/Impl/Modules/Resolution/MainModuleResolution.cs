@@ -129,7 +129,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             _log?.Log(TraceEventType.Information, "GetCurrentSearchPaths", Configuration.InterpreterPath);
             try {
-                var paths = await PythonLibraryPath.GetDatabaseSearchPathsAsync(Configuration);
+                var paths = await PythonLibraryPath.GetSearchPathsAsync(Configuration);
                 cancellationToken.ThrowIfCancellationRequested();
                 return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
             } catch (InvalidOperationException) {

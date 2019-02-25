@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <param name="library">Root of the standard library.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
         /// <remarks>New in 2.2, moved in 3.3</remarks>
-        public static List<PythonLibraryPath> GetDefaultDatabaseSearchPaths(string library) {
+        public static List<PythonLibraryPath> GetDefaultSearchPaths(string library) {
             var result = new List<PythonLibraryPath>();
             if (!Directory.Exists(library)) {
                 return result;
@@ -95,31 +95,24 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         }
 
         /// <summary>
-        /// Gets the set of search paths for the specified factory as
-        /// efficiently as possible. This may involve executing the
-        /// interpreter, and may cache the paths for retrieval later.
+        /// Gets the set of search paths for the specified factory.
         /// </summary>
-        public static async Task<IList<PythonLibraryPath>> GetDatabaseSearchPathsAsync(InterpreterConfiguration config) {
+        public static async Task<IList<PythonLibraryPath>> GetSearchPathsAsync(InterpreterConfiguration config) {
             for (int retries = 5; retries > 0; --retries) {
-                List<PythonLibraryPath> paths;
-
                 try {
-                    return await GetUncachedDatabaseSearchPathsAsync(config.InterpreterPath);
+                    return await GetSearchPathsFromInterpreterAsync(config.InterpreterPath);
                 } catch (InvalidOperationException) {
                     // Failed to get paths
                     break;
-                } catch (UnauthorizedAccessException) {
-                    // Failed to write paths - sleep and then loop
-                    Thread.Sleep(50);
-                } catch (IOException) {
-                    // Failed to write paths - sleep and then loop
+                } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
+                    // Failed to get paths due to IO exception - sleep and then loop
                     Thread.Sleep(50);
                 }
             }
 
             var ospy = PathUtils.FindFile(config.LibraryPath, "os.py");
             if (!string.IsNullOrEmpty(ospy)) {
-                return GetDefaultDatabaseSearchPaths(IOPath.GetDirectoryName(ospy));
+                return GetDefaultSearchPaths(IOPath.GetDirectoryName(ospy));
             }
 
             return Array.Empty<PythonLibraryPath>();
@@ -131,7 +124,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <param name="interpreter">Path to the interpreter.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
         /// <remarks>Added in 2.2, moved in 3.3</remarks>
-        public static async Task<List<PythonLibraryPath>> GetUncachedDatabaseSearchPathsAsync(string interpreter) {
+        public static async Task<List<PythonLibraryPath>> GetSearchPathsFromInterpreterAsync(string interpreter) {
             // sys.path will include the working directory, so we make an empty
             // path that we can filter out later
             var tempWorkingDir = IOPath.Combine(IOPath.GetTempPath(), IOPath.GetRandomFileName());
