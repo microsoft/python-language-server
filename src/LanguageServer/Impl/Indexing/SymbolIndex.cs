@@ -20,11 +20,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class SymbolIndex : ISymbolIndex {
+        private readonly DisposableBag _disposables = new DisposableBag(nameof(SymbolIndex));
         private readonly ConcurrentDictionary<string, IMostRecentDocumentSymbols> _index;
         private readonly IIndexParser _indexParser;
 
@@ -32,6 +34,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             var comparer = PathEqualityComparer.Instance;
             _index = new ConcurrentDictionary<string, IMostRecentDocumentSymbols>(comparer);
             _indexParser = new IndexParser(fileSystem, version);
+            _disposables
+                .Add(_indexParser)
+                .Add(() => {
+                    foreach (var recentSymbols in _index.Values) {
+                        recentSymbols.Dispose();
+                    }
+                });
         }
 
         public Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken ct = default) {
@@ -99,10 +108,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public void Dispose() {
-            foreach (var recentSymbols in _index.Values) {
-                recentSymbols.Dispose();
-            }
-            _indexParser.Dispose();
+            _disposables.TryDispose();
         }
     }
 }
