@@ -1,6 +1,6 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <NoWarn>2008;$(NoWarn)</NoWarn>
   </PropertyGroup>
   <Import Project="..\..\build\NetStandard.settings" />
@@ -27,7 +27,10 @@
   <Target Name="CopyFilesToOutputDirectory" />
 
   <ItemGroup Condition="$(SignEngine)">
-    <SignFiles Include="$(OutputPath)\Microsoft.Python.Analysis.Engine.dll" />
+    <SignFiles Include="$(OutputPath)\Microsoft.Python.Core.dll" />
+    <SignFiles Include="$(OutputPath)\Microsoft.Python.Parsing.dll" />
+    <SignFiles Include="$(OutputPath)\Microsoft.Python.Analysis.Core.dll" />
+    <SignFiles Include="$(OutputPath)\Microsoft.Python.Analysis.dll" />
   </ItemGroup>
 
   <ItemGroup Condition="$(SignServer)">

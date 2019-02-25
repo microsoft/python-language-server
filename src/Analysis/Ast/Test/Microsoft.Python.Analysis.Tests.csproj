@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <RootNamespace>Microsoft.Python.Analysis.Tests</RootNamespace>
     <AssemblyName>Microsoft.Python.Analysis.Tests</AssemblyName>
   </PropertyGroup>
