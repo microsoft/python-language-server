@@ -28,7 +28,7 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal class IndexManager : IIndexManager {
-        private static int DefaultReIndexDelay = 350;
+        private const int DefaultReIndexDelay = 350;
         private readonly ISymbolIndex _symbolIndex;
         private readonly IFileSystem _fileSystem;
         private readonly string _workspaceRootPath;
