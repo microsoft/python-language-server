@@ -33,42 +33,44 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
-            // Try generics
-            var result = await GetValueFromGenericAsync(target, expr, cancellationToken);
-            if (result != null) {
-                return result;
-            }
+            using (OpenScope(target.GetPythonType()?.DeclaringModule, GetScope(target), out _)) {
+                // Try generics
+                var result = await GetValueFromGenericAsync(target, expr, cancellationToken);
+                if (result != null) {
+                    return result;
+                }
 
-            // Should only be two types of returns here. First, an bound type
-            // so we can invoke Call over the instance. Second, an type info
-            // so we can create an instance of the type (as in C() where C is class).
-            IMember value = null;
-            switch (target) {
-                case IPythonBoundType bt: // Bound property, method or an iterator.
-                    value = await GetValueFromBoundAsync(bt, expr, cancellationToken);
-                    break;
-                case IPythonInstance pi:
-                    value = await GetValueFromInstanceCall(pi, expr, cancellationToken);
-                    break;
-                case IPythonFunctionType ft: // Standalone function or a class method call.
-                    var instance = ft.DeclaringType != null ? new PythonInstance(ft.DeclaringType) : null;
-                    value = await GetValueFromFunctionTypeAsync(ft, instance, expr, cancellationToken);
-                    break;
-                case IPythonClassType cls:
-                    value = await GetValueFromClassCtorAsync(cls, expr, cancellationToken);
-                    break;
-                case IPythonType t:
-                    // Target is type (info), the call creates instance.
-                    // For example, 'x = C; y = x()' or 'x = C()' where C is class
-                    value = new PythonInstance(t, GetLoc(expr));
-                    break;
-            }
+                // Should only be two types of returns here. First, an bound type
+                // so we can invoke Call over the instance. Second, an type info
+                // so we can create an instance of the type (as in C() where C is class).
+                IMember value = null;
+                switch (target) {
+                    case IPythonBoundType bt: // Bound property, method or an iterator.
+                        value = await GetValueFromBoundAsync(bt, expr, cancellationToken);
+                        break;
+                    case IPythonInstance pi:
+                        value = await GetValueFromInstanceCall(pi, expr, cancellationToken);
+                        break;
+                    case IPythonFunctionType ft: // Standalone function or a class method call.
+                        var instance = ft.DeclaringType != null ? new PythonInstance(ft.DeclaringType) : null;
+                        value = await GetValueFromFunctionTypeAsync(ft, instance, expr, cancellationToken);
+                        break;
+                    case IPythonClassType cls:
+                        value = await GetValueFromClassCtorAsync(cls, expr, cancellationToken);
+                        break;
+                    case IPythonType t:
+                        // Target is type (info), the call creates instance.
+                        // For example, 'x = C; y = x()' or 'x = C()' where C is class
+                        value = new PythonInstance(t, GetLoc(expr));
+                        break;
+                }
 
-            if (value == null) {
-                Log?.Log(TraceEventType.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
-            }
+                if (value == null) {
+                    Log?.Log(TraceEventType.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
+                }
 
-            return value;
+                return value;
+            }
         }
 
         public async Task<IMember> GetValueFromClassCtorAsync(IPythonClassType cls, CallExpression expr, CancellationToken cancellationToken = default) {
@@ -255,6 +257,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return true;
         }
 
-
+        private ScopeStatement GetScope(IMember m) {
+            switch (m.GetPythonType()) {
+                case IPythonClassType ct:
+                    return ct.ClassDefinition;
+                case IPythonFunctionType ct:
+                    return ct.FunctionDefinition;
+            }
+            return null;
+        }
     }
 }
