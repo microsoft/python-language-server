@@ -78,8 +78,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             var value = scope?.Variables[name].Value;
             if (value == null) {
-                if (Module != Interpreter.ModuleResolution.BuiltinsModule && options.HasFlag(LookupOptions.Builtins)) {
-                    value = Interpreter.ModuleResolution.BuiltinsModule.GetMember(name);
+                var builtins = Interpreter.ModuleResolution.BuiltinsModule;
+                if (Module != builtins && options.HasFlag(LookupOptions.Builtins)) {
+                    value = builtins.GetMember(name);
+                    scope = builtins.GlobalScope;
                 }
             }
 

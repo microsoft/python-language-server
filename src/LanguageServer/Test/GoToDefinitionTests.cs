@@ -131,5 +131,18 @@ log
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoBuiltinObject() {
+            const string code = @"
+class A(object):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            var ds = new DefinitionSource();
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 12));
+            reference.uri.AbsolutePath.Should().Contain("python.pyi");
+        }
     }
 }
