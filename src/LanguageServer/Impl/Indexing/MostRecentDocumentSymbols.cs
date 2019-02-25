@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.Python.Core.IO;
-using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     class MostRecentDocumentSymbols : IMostRecentDocumentSymbols {
