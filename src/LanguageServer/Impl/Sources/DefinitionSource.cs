@@ -40,38 +40,50 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var eval = analysis.ExpressionEvaluator;
             using (eval.OpenScope(analysis.Document, exprScope)) {
+
+                // First try variables, except in imports
+                if (expr is NameExpression nex && !string.IsNullOrEmpty(nex.Name) &&
+                    !(statement is ImportStatement) && !(statement is FromImportStatement)) {
+                    var m = eval.LookupNameInScopes(nex.Name, out var scope);
+                    if (m != null && scope.Variables[nex.Name] is IVariable v) {
+                        return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+                    }
+                }
+
                 var value = eval.GetValueFromExpression(expr);
-                return FromMember(value, expr, eval);
+                return FromMember(value, expr, statement, analysis);
             }
         }
 
-        private Reference FromMember(IMember value, Expression expr, IExpressionEvaluator eval) {
+        private Reference FromMember(IMember value, Expression expr, Node statement, IDocumentAnalysis analysis) {
             Node node = null;
             IPythonModule module = null;
+            LocationInfo location = null;
+            var eval = analysis.ExpressionEvaluator;
 
             switch (value) {
                 case IPythonClassType cls:
                     node = cls.ClassDefinition;
                     module = cls.DeclaringModule;
+                    location = cls.Location;
                     break;
                 case IPythonFunctionType fn:
                     node = fn.FunctionDefinition;
                     module = fn.DeclaringModule;
+                    location = fn.Location;
                     break;
                 case IPythonPropertyType prop:
                     node = prop.FunctionDefinition;
                     module = prop.DeclaringModule;
+                    location = prop.Location;
                     break;
-                case IPythonModule mod: {
-                        var member = eval.LookupNameInScopes(mod.Name, out var scope);
-                        if (member != null && scope != null) {
-                            var v = scope.Variables[mod.Name];
-                            if (v != null) {
-                                return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
-                            }
-                        }
-                        break;
-                    }
+                case IPythonModule mod:
+                    return HandleModule(mod, analysis, statement);
+                case IPythonInstance instance when instance.Type is IPythonFunctionType ft:
+                    node = ft.FunctionDefinition;
+                    module = ft.DeclaringModule;
+                    location = ft.Location;
+                    break;
                 case IPythonInstance instance when instance.Type is IPythonFunctionType ft: {
                         node = ft.FunctionDefinition;
                         module = ft.DeclaringModule;
@@ -94,26 +106,37 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         if (member is IPythonInstance v) {
                             return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
                         }
-                        return FromMember(member, null, eval);
+                        return FromMember(member, null, statement, analysis);
                     }
             }
 
-            if (node != null && CanNavigateToModule(module) && module is IDocument doc) {
+            module = module?.ModuleType == ModuleType.Stub ? module.PrimaryModule : module;
+            if (node != null && module is IDocument doc && CanNavigateToModule(module, analysis)) {
                 return new Reference {
-                    range = node.GetSpan(doc.GetAnyAst()), uri = doc.Uri
+                    range = location?.Span ?? node.GetSpan(doc.GetAnyAst()), uri = doc.Uri
                 };
             }
 
             return null;
         }
 
-        private static bool CanNavigateToModule(IPythonModule m) {
+        private static Reference HandleModule(IPythonModule module, IDocumentAnalysis analysis, Node statement) {
+            // If we are in import statement, open the module source if available.
+            if (statement is ImportStatement || statement is FromImportStatement) {
+                if (module.Uri != null && CanNavigateToModule(module, analysis)) {
+                    return new Reference { range = default, uri = module.Uri };
+                }
+            }
+            return null;
+        }
+
+        private static bool CanNavigateToModule(IPythonModule m, IDocumentAnalysis analysis) {
+            var canNavigate = m.ModuleType == ModuleType.User || m.ModuleType == ModuleType.Package || m.ModuleType == ModuleType.Library;
 #if DEBUG
             // Allow navigation anywhere in debug.
-            return m.ModuleType != ModuleType.Specialized && m.ModuleType != ModuleType.Unresolved; 
-#else
-            return m.ModuleType == ModuleType.User || m.ModuleType == ModuleType.Package || m.ModuleType == ModuleType.Library;
+            canNavigate |= m.ModuleType == ModuleType.Stub || m.ModuleType == ModuleType.Compiled;
 #endif
+            return canNavigate;
         }
     }
 }
