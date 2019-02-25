@@ -14,6 +14,10 @@ namespace Microsoft.Python.Parsing.Ast {
             _fString = fString;
         }
 
+        public override IEnumerable<Node> GetChildNodes() {
+            return _children;
+        }
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 foreach (var child in _children) {
