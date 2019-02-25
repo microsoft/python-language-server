@@ -528,5 +528,23 @@ d = f(D())";
             analysis.Should().HaveVariable("c").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("d").OfType(BuiltinTypeId.Float);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedFunction() {
+            const string code = @"
+def outer():
+    def inner():
+        x = 1
+        return x
+    return inner
+
+y = outer()
+z = y()
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Function)
+                .And.HaveVariable("z").OfType(BuiltinTypeId.Int);
+        }
     }
 }

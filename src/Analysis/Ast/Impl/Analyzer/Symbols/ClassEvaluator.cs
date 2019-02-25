@@ -15,8 +15,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -32,12 +30,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             _classDef = classDef;
         }
 
-        public override Task EvaluateAsync(CancellationToken cancellationToken = default)
-            => EvaluateClassAsync(cancellationToken);
+        public override void Evaluate() {
+            EvaluateClass();
+            Result = _class;
+        }
 
-        public async Task EvaluateClassAsync(CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
-
+        public void EvaluateClass() {
             // Open class scope chain
             using (Eval.OpenScope(Module, _classDef, out var outerScope)) {
                 var instance = Eval.GetInScope(_classDef.Name, outerScope);
@@ -49,14 +47,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 }
 
                 // Evaluate inner classes, if any
-                await EvaluateInnerClassesAsync(_classDef, cancellationToken);
+                EvaluateInnerClasses(_classDef);
 
                 _class = classInfo;
                 // Set bases to the class.
                 var bases = new List<IPythonType>();
                 foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
                     // We cheat slightly and treat base classes as annotations.
-                    var b = await Eval.GetTypeFromAnnotationAsync(a.Expression, cancellationToken);
+                    var b = Eval.GetTypeFromAnnotation(a.Expression);
                     if (b != null) {
                         bases.Add(b.GetPythonType());
                     }
@@ -66,11 +64,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Declare __class__ variable in the scope.
                 Eval.DeclareVariable("__class__", _class, VariableSource.Declaration, _classDef);
 
-                await ProcessClassBody(cancellationToken);
+                ProcessClassBody();
             }
         }
 
-        private async Task ProcessClassBody(CancellationToken cancellationToken = default) {
+        private void ProcessClassBody() {
             // Class is handled in a specific order rather than in the order of
             // the statement appearance. This is because we need all members
             // properly declared and added to the class type so when we process
@@ -79,39 +77,39 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             // Process bases.
             foreach (var b in _class.Bases.Select(b => b.GetPythonType<IPythonClassType>()).ExcludeDefault()) {
-                await SymbolTable.EvaluateAsync(b.ClassDefinition, cancellationToken);
+                SymbolTable.Evaluate(b.ClassDefinition);
             }
 
             // Process imports
             foreach (var s in GetStatements<FromImportStatement>(_classDef)) {
-                ImportHandler.HandleFromImport(s, cancellationToken);
+                ImportHandler.HandleFromImport(s);
             }
 
             foreach (var s in GetStatements<ImportStatement>(_classDef)) {
-                ImportHandler.HandleImport(s, cancellationToken);
+                ImportHandler.HandleImport(s);
             }
 
             UpdateClassMembers();
 
             // Process assignments so we get class variables declared.
             foreach (var s in GetStatements<AssignmentStatement>(_classDef)) {
-                await AssignmentHandler.HandleAssignmentAsync(s, cancellationToken);
+                AssignmentHandler.HandleAssignment(s);
             }
             foreach (var s in GetStatements<ExpressionStatement>(_classDef)) {
-                await AssignmentHandler.HandleAnnotatedExpressionAsync(s.Expression as ExpressionWithAnnotation, null, cancellationToken);
+                AssignmentHandler.HandleAnnotatedExpression(s.Expression as ExpressionWithAnnotation, null);
             }
             UpdateClassMembers();
 
             // Ensure constructors are processed so class members are initialized.
-            await EvaluateConstructorsAsync(_classDef, cancellationToken);
+            EvaluateConstructors(_classDef);
             UpdateClassMembers();
 
             // Process remaining methods.
-            await SymbolTable.EvaluateScopeAsync(_classDef, cancellationToken);
+            SymbolTable.EvaluateScope(_classDef);
             UpdateClassMembers();
         }
 
-        private async Task EvaluateConstructorsAsync(ClassDefinition cd, CancellationToken cancellationToken = default) {
+        private void EvaluateConstructors(ClassDefinition cd) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             var constructors = SymbolTable.Evaluators
@@ -121,11 +119,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 .ToArray();
 
             foreach (var ctor in constructors) {
-                await SymbolTable.EvaluateAsync(ctor, cancellationToken);
+                SymbolTable.Evaluate(ctor);
             }
         }
 
-        private async Task EvaluateInnerClassesAsync(ClassDefinition cd, CancellationToken cancellationToken = default) {
+        private void EvaluateInnerClasses(ClassDefinition cd) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             var innerClasses = SymbolTable.Evaluators
@@ -135,7 +133,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 .ToArray();
 
             foreach (var c in innerClasses) {
-                await SymbolTable.EvaluateAsync(c, cancellationToken);
+                SymbolTable.Evaluate(c);
             }
         }
 
@@ -149,7 +147,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         // Classes and functions are walked by their respective evaluators
-        public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
-        public override Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public override bool Walk(ClassDefinition node) => false;
+        public override bool Walk(FunctionDefinition node) => false;
     }
 }

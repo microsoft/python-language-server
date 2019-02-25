@@ -15,8 +15,6 @@
 
 using System;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -25,15 +23,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class TupleExpressionHandler : StatementHandler {
         public TupleExpressionHandler(AnalysisWalker walker) : base(walker) { }
 
-        public async Task HandleTupleAssignmentAsync(TupleExpression lhs, Expression rhs, IMember value, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
+        public void HandleTupleAssignment(TupleExpression lhs, Expression rhs, IMember value) {
 
             if (rhs is TupleExpression tex) {
                 var returnedExpressions = tex.Items.ToArray();
                 var names = lhs.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
                 for (var i = 0; i < Math.Min(names.Length, returnedExpressions.Length); i++) {
                     if (returnedExpressions[i] != null && !string.IsNullOrEmpty(names[i])) {
-                        var v = await Eval.GetValueFromExpressionAsync(returnedExpressions[i], cancellationToken);
+                        var v = Eval.GetValueFromExpression(returnedExpressions[i]);
                         Eval.DeclareVariable(names[i], v ?? Eval.UnknownType, VariableSource.Declaration, returnedExpressions[i]);
                     }
                 }

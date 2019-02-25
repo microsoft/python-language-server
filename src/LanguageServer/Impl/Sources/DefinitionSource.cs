@@ -13,8 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Documents;
@@ -28,7 +26,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class DefinitionSource {
-        public async Task<Reference> FindDefinitionAsync(IDocumentAnalysis analysis, SourceLocation location, CancellationToken cancellationToken = default) {
+        public Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location) {
             ExpressionLocator.FindExpression(analysis.Ast, location,
                 FindExpressionOptions.Hover, out var exprNode, out var statement, out var exprScope);
 
@@ -50,14 +48,12 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     }
                 }
 
-                var value = await eval.GetValueFromExpressionAsync(expr, cancellationToken);
-                return await FromMemberAsync(value, expr, statement, analysis, cancellationToken);
+                var value = eval.GetValueFromExpression(expr);
+                return FromMember(value, expr, statement, analysis);
             }
         }
 
-        private async Task<Reference> FromMemberAsync(IMember value, Expression expr, Node statement, IDocumentAnalysis analysis, CancellationToken cancellationToken) {
-            cancellationToken.ThrowIfCancellationRequested();
-
+        private Reference FromMember(IMember value, Expression expr, Node statement, IDocumentAnalysis analysis) {
             Node node = null;
             IPythonModule module = null;
             LocationInfo location = null;
@@ -97,13 +93,13 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         break;
                     }
                 case IPythonInstance _ when expr is MemberExpression mex: {
-                        var target = await eval.GetValueFromExpressionAsync(mex.Target, cancellationToken);
+                        var target = eval.GetValueFromExpression(mex.Target);
                         var type = target?.GetPythonType();
                         var member = type?.GetMember(mex.Name);
                         if (member is IPythonInstance v) {
                             return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
                         }
-                        return await FromMemberAsync(member, null, statement, analysis, cancellationToken);
+                        return FromMember(member, null, statement, analysis);
                     }
             }
 

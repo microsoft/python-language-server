@@ -46,7 +46,7 @@ C().method()
             var analysis = await GetAnalysisAsync(code);
             var src = new SignatureSource(new PlainTextDocumentationSource());
 
-            var sig = await src.GetSignatureAsync(analysis, new SourceLocation(6, 12));
+            var sig = src.GetSignature(analysis, new SourceLocation(6, 12));
             sig.activeSignature.Should().Be(0);
             sig.activeParameter.Should().Be(0);
             sig.signatures.Length.Should().Be(1);
@@ -73,12 +73,12 @@ y = boxedstr.get()
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var src = new SignatureSource(new PlainTextDocumentationSource());
 
-            var sig = await src.GetSignatureAsync(analysis, new SourceLocation(11, 18));
+            var sig = src.GetSignature(analysis, new SourceLocation(11, 18));
             sig.signatures.Should().NotBeNull();
             sig.signatures.Length.Should().Be(1);
             sig.signatures[0].label.Should().Be("get() -> int");
 
-            sig = await src.GetSignatureAsync(analysis, new SourceLocation(14, 18));
+            sig = src.GetSignature(analysis, new SourceLocation(14, 18));
             sig.signatures.Should().NotBeNull();
             sig.signatures.Length.Should().Be(1);
             sig.signatures[0].label.Should().Be("get() -> str");

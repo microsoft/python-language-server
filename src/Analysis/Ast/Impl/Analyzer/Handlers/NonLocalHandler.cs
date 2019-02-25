@@ -13,26 +13,24 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class NonLocalHandler : StatementHandler {
         public NonLocalHandler(AnalysisWalker walker) : base(walker) { }
 
-        public Task<bool> HandleNonLocalAsync(NonlocalStatement node, CancellationToken cancellationToken = default) {
+        public bool HandleNonLocal(NonlocalStatement node) {
             foreach (var nex in node.Names) {
                 Eval.CurrentScope.DeclareNonLocal(nex.Name, Eval.GetLoc(nex));
             }
-            return Task.FromResult(false);
+            return false;
         }
 
-        public Task<bool> HandleGlobalAsync(GlobalStatement node, CancellationToken cancellationToken = default) {
+        public bool HandleGlobal(GlobalStatement node) {
             foreach (var nex in node.Names) {
                 Eval.CurrentScope.DeclareGlobal(nex.Name, Eval.GetLoc(nex));
             }
-            return Task.FromResult(false);
+            return false;
         }
     }
 }
