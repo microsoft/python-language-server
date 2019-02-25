@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
@@ -52,15 +53,22 @@ namespace Microsoft.Python.Analysis.Tests {
             mod.GetMember("g").Should().BeAssignableTo<IPythonFunctionType>();
             mod.GetMember("h").Should().BeAssignableTo<IPythonFunctionType>();
 
+            var o = analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+            var expected = new[] { "i", "j", "C2", "__class__", "__base__", "__bases__" };
+            expected = expected.Concat(o.GetMemberNames()).Distinct().ToArray();
+
             var c = mod.GetMember("C").Should().BeAssignableTo<IPythonClassType>().Which;
-            c.GetMemberNames().Should().OnlyContain("i", "j", "C2", "__class__", "__bases__");
+            c.GetMemberNames().Should().OnlyContain(expected);
             c.GetMember("i").Should().BeAssignableTo<IPythonFunctionType>();
             c.GetMember("j").Should().BeAssignableTo<IPythonFunctionType>();
             c.GetMember("__class__").Should().BeAssignableTo<IPythonClassType>();
             c.GetMember("__bases__").Should().BeAssignableTo<IPythonCollection>();
 
+            expected = new[] { "k", "__class__", "__base__", "__bases__" };
+            expected = expected.Concat(o.GetMemberNames()).Distinct().ToArray();
+
             var c2 = c.GetMember("C2").Should().BeAssignableTo<IPythonClassType>().Which;
-            c2.GetMemberNames().Should().OnlyContain("k", "__class__", "__bases__");
+            c2.GetMemberNames().Should().OnlyContain(expected);
             c2.GetMember("k").Should().BeAssignableTo<IPythonFunctionType>();
             c2.GetMember("__class__").Should().BeAssignableTo<IPythonClassType>();
             c2.GetMember("__bases__").Should().BeAssignableTo<IPythonCollection>();

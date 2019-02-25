@@ -661,10 +661,11 @@ _E = TypeVar('_E')
 class B(Generic[_E]):
     a: A[_E]
     def func(self) -> A[_E]: ...
+    def __init__(self, v: _E): ...
 
-class A(Generic[_E], List[_E]): ...
+class A(Generic[_E]): ...
 
-b = B[str]()
+b = B('a')
 x = b.func()
 y = b.a
 ";
@@ -673,34 +674,10 @@ y = b.a
                 .Which.Should().HaveType("B[str]");
 
             analysis.Should().HaveVariable("x")
-                .Which.Should().HaveType("A[str]")
-                .Which.Should().HaveMembers("append", "index");
+                .Which.Should().HaveType("A[str]");
 
             analysis.Should().HaveVariable("y")
-                .Which.Should().HaveType("A[str]")
-                .Which.Should().HaveMembers("append", "index");
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task GenericClassInstantiation() {
-            const string code = @"
-from typing import TypeVar, Generic
-
-_T = TypeVar('_T')
-
-class Box(Generic[_T]):
-    def __init__(self, v: _T):
-        self.v = v
-
-    def get(self) -> _T:
-        return self.v
-
-boxed = Box[int]()
-x = boxed.get()
-";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Should().HaveVariable("x")
-                .Which.Should().HaveType(BuiltinTypeId.Int);
+                .Which.Should().HaveType("A[str]");
         }
 
         [TestMethod, Priority(0)]
@@ -762,7 +739,7 @@ class Box(Generic[_T], List[_T]):
     def get(self) -> _T:
         return self.v
 
-boxed = Box(List[int])
+boxed = Box(1)
 x = boxed.get()
 y = boxed[0]
 ";
@@ -774,36 +751,6 @@ y = boxed[0]
             boxed.Should().NotHaveMember("bit_length");
 
             analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task GenericClassMultipleArgumentsListBase() {
-            const string code = @"
-from typing import TypeVar, Generic, List
-
-_T = TypeVar('_T')
-_E = TypeVar('_E')
-
-class Box(Generic[_T, _E], List[_E]):
-    def __init__(self, v: _T):
-        self.v = v
-
-    def get(self) -> _T:
-        return self.v
-
-l: List[str] = {'a', 'b', 'c'}
-boxed = Box(1234, l)
-x = boxed.get()
-y = boxed[0]
-";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
-
-            var boxed = analysis.Should().HaveVariable("boxed").Which;
-            boxed.Should().HaveMembers("append", "index");
-            boxed.Should().NotHaveMember("bit_length");
-
-            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]

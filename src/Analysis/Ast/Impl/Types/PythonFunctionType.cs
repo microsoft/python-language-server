@@ -82,19 +82,15 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonType declaringType,
             LocationInfo location = null
         ) : base(fd.Name, declaringModule, fd.Documentation, location ?? LocationInfo.Empty,
-                declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;
-
-            if (fd.Name == "__init__") {
-                _doc = declaringType?.Documentation;
-            }
-
             ProcessDecorators(fd);
         }
 
         #region IPythonType
+
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
 
@@ -108,6 +104,7 @@ namespace Microsoft.Python.Analysis.Types {
             foreach (var o in Overloads) {
                 (o as PythonFunctionOverload)?.SetDocumentationProvider(provider);
             }
+
             base.SetDocumentationProvider(provider);
         }
 
@@ -116,8 +113,14 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonFunction
         public FunctionDefinition FunctionDefinition { get; }
         public IPythonType DeclaringType { get; }
-        public override string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
-        public virtual bool IsClassMethod { get; private set; }
+        public override string Documentation {
+            get {
+                var doc = FunctionDefinition?.Name == "__init__" ? DeclaringType?.Documentation : null;
+                return doc ?? _overloads.FirstOrDefault()?.Documentation;
+            }
+        }
+
+    public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;
         public override bool IsSpecialized => _isSpecialized;

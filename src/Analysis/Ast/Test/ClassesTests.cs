@@ -68,7 +68,11 @@ namespace Microsoft.Python.Analysis.Tests {
             var f1 = all.First(x => x.Name == "F1");
             var c = f1.Value.Should().BeAssignableTo<IPythonClassType>().Which;
 
-            c.GetMemberNames().Should().OnlyContain("F2", "F3", "F6", "__class__", "__bases__");
+            var o = analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+            var expected = new[] { "F2", "F3", "F6", "__class__", "__base__", "__bases__" };
+            expected = expected.Concat(o.GetMemberNames()).Distinct().ToArray();
+            c.GetMemberNames().Should().OnlyContain(expected);
+
             c.GetMember("F6").Should().BeAssignableTo<IPythonClassType>()
                 .Which.Documentation.Should().Be("C1");
 
@@ -82,6 +86,7 @@ namespace Microsoft.Python.Analysis.Tests {
         public async Task Mro() {
             using (var s = await CreateServicesAsync(null, null, null)) {
                 var interpreter = s.GetService<IPythonInterpreter>();
+                var o = interpreter.GetBuiltinType(BuiltinTypeId.Object);
                 var m = new SentinelModule("test", s);
 
                 var O = new PythonClassType("O", m);
@@ -92,6 +97,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 var E = new PythonClassType("E", m);
                 var F = new PythonClassType("F", m);
 
+                O.SetBases(new[] { o });
                 F.SetBases(new[] { O });
                 E.SetBases(new[] { O });
                 D.SetBases(new[] { O });
@@ -99,9 +105,14 @@ namespace Microsoft.Python.Analysis.Tests {
                 B.SetBases(new[] { D, E });
                 A.SetBases(new[] { B, C });
 
-                PythonClassType.CalculateMro(A).Should().Equal(new[] { "A", "B", "C", "D", "E", "F", "O" }, (p, n) => p.Name == n);
-                PythonClassType.CalculateMro(B).Should().Equal(new[] { "B", "D", "E", "O" }, (p, n) => p.Name == n);
-                PythonClassType.CalculateMro(C).Should().Equal(new[] { "C", "D", "F", "O" }, (p, n) => p.Name == n);
+                var mroA = PythonClassType.CalculateMro(A).Select(p => p.Name);
+                mroA.Should().Equal("A", "B", "C", "D", "E", "F", "O", "object");
+
+                var mroB = PythonClassType.CalculateMro(B).Select(p => p.Name);
+                mroB.Should().Equal("B", "D", "E", "O", "object");
+
+                var mroC = PythonClassType.CalculateMro(C).Select(p => p.Name);
+                mroC.Should().Equal("C", "D", "F", "O", "object");
             }
         }
 
