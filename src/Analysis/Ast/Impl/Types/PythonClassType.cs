@@ -31,6 +31,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
     internal class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
+        private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
         private readonly object _lock = new object();
         private readonly AsyncLocal<IPythonClassType> _processing = new AsyncLocal<IPythonClassType>();
         private List<IPythonType> _bases;
@@ -61,7 +62,7 @@ namespace Microsoft.Python.Analysis.Types {
             foreach (var m in Mro.Skip(1)) {
                 names.UnionWith(m.GetMemberNames());
             }
-            return names;
+            return DeclaringModule.Interpreter.LanguageVersion.Is3x() ? names.Concat(_classMethods) : names;
         }
 
         public override IMember GetMember(string name) {
@@ -72,10 +73,15 @@ namespace Microsoft.Python.Analysis.Types {
                 }
 
                 // Special case names that we want to add to our own Members dict
+                var is3x = DeclaringModule.Interpreter.LanguageVersion.Is3x();
                 switch (name) {
                     case "__mro__":
-                        member = AddMember(name, PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro), true);
-                        return member;
+                    case "mro":
+                        return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro) : UnknownType;
+                    case "__dict__":
+                        return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
+                    case @"__weakref__":
+                        return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
                 }
             }
             if (Push(this)) {

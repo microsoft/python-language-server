@@ -26,7 +26,6 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
     internal class PythonFunctionType : PythonType, IPythonFunctionType {
         private readonly List<IPythonFunctionOverload> _overloads = new List<IPythonFunctionOverload>();
-        private readonly string _doc;
         private readonly object _lock = new object();
         private bool _isAbstract;
         private bool _isSpecialized;
@@ -120,7 +119,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-    public virtual bool IsClassMethod { get; private set; }
+        public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;
         public override bool IsSpecialized => _isSpecialized;

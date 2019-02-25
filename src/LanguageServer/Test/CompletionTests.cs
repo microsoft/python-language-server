@@ -321,30 +321,17 @@ x
             result.Should().HaveLabels("x", "abs");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task MethodFromBaseClass2X() {
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task MethodFromBaseClass(bool is3x) {
             const string code = @"
 import unittest
 class Simple(unittest.TestCase):
     def test_exception(self):
         self.assertRaises(TypeError).
 ";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-
-            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 38));
-            result.Should().HaveInsertTexts("exception");
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task MethodFromBaseClass3X() {
-            const string code = @"
-import unittest
-class Simple(unittest.TestCase):
-    def test_exception(self):
-        self.assertRaises(TypeError).
-";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
             var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 38));
@@ -900,5 +887,26 @@ E
             result.Completions.Count(c => c.label.EqualsOrdinal(@"sys")).Should().Be(1);
             result.Completions.Count(c => c.label.EqualsOrdinal(@"sysconfig")).Should().Be(1);
         }
+
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task ExtraClassMembers(bool is3x) {
+            const string code = @"
+class A: ...
+a = A()
+a.
+";
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var extraMembers = new[] { "mro", "__dict__", @"__weakref__" };
+            var result = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 3));
+            if (is3x) {
+                result.Should().HaveLabels(extraMembers);
+            } else {
+                result.Should().NotContainLabels(extraMembers);
+            }
+        }
+
     }
 }
