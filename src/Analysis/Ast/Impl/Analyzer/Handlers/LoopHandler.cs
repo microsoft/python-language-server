@@ -14,8 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
@@ -23,10 +21,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class LoopHandler : StatementHandler {
         public LoopHandler(AnalysisWalker walker) : base(walker) { }
 
-        public async Task HandleForAsync(ForStatement node, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var iterable = await Eval.GetValueFromExpressionAsync(node.List, cancellationToken);
+        public void HandleFor(ForStatement node) {
+            var iterable = Eval.GetValueFromExpression(node.List);
             var iterator = (iterable as IPythonIterable)?.GetIterator();
             if (iterator == null) {
                 // TODO: report that expression does not evaluate to iterable.
@@ -53,19 +49,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     break;
             }
 
-            if (node.Body != null) {
-                await node.Body.WalkAsync(Walker, cancellationToken);
-            }
+            node.Body?.Walk(Walker);
         }
 
-        public async Task HandleWhileAsync(WhileStatement node, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (node.Body != null) {
-                await node.Body.WalkAsync(Walker, cancellationToken);
-            }
-            if (node.ElseStatement != null) {
-                await node.ElseStatement.WalkAsync(Walker, cancellationToken);
-            }
+        public void HandleWhile(WhileStatement node) {
+            node.Body?.Walk(Walker);
+            node.ElseStatement?.Walk(Walker);
         }
     }
 }

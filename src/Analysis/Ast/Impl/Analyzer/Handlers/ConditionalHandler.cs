@@ -15,15 +15,11 @@
 
 using System;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
-using OSPlatform = System.Runtime.InteropServices.OSPlatform;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class ConditionalHandler : StatementHandler {
@@ -39,14 +35,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             _platformService = Eval.Services.GetService<IOSPlatform>();
         }
 
-        public async Task<bool> HandleIfAsync(IfStatement node, CancellationToken cancellationToken = default) {
+        public bool HandleIf(IfStatement node) {
             // System version, platform and os.path specializations
             var someRecognized = false;
             foreach (var test in node.Tests) {
-                var result = TryHandleSysVersionInfoAsync(test);
+                var result = TryHandleSysVersionInfo(test);
                 if (result != ConditionTestResult.Unrecognized) {
                     if (result == ConditionTestResult.WalkBody) {
-                        await test.WalkAsync(Walker, cancellationToken);
+                        test.Walk(Walker);
                     }
                     someRecognized = true;
                     continue;
@@ -55,7 +51,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 result = TryHandleSysPlatform(test);
                 if (result != ConditionTestResult.Unrecognized) {
                     if (result == ConditionTestResult.WalkBody) {
-                        await test.WalkAsync(Walker, cancellationToken);
+                        test.Walk(Walker);
                     }
                     someRecognized = true;
                     continue;
@@ -64,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 result = TryHandleOsPath(test);
                 if (result != ConditionTestResult.Unrecognized) {
                     if (result == ConditionTestResult.WalkBody) {
-                        await test.WalkAsync(Walker, cancellationToken);
+                        test.Walk(Walker);
                         return false; // Execute only one condition.
                     }
                     someRecognized = true;
@@ -91,7 +87,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return !someRecognized;
         }
 
-        private ConditionTestResult TryHandleSysVersionInfoAsync(IfStatementTest test) {
+        private ConditionTestResult TryHandleSysVersionInfo(IfStatementTest test) {
             if (test.Test is BinaryExpression cmp &&
                 cmp.Left is MemberExpression me && (me.Target as NameExpression)?.Name == "sys" && me.Name == "version_info" &&
                 cmp.Right is TupleExpression te && te.Items.All(i => (i as ConstantExpression)?.Value is int)) {

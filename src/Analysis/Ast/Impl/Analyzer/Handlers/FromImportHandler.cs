@@ -15,8 +15,6 @@
 
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -26,8 +24,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed partial class ImportHandler {
-        public bool HandleFromImport(FromImportStatement node, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
+        public bool HandleFromImport(FromImportStatement node) {
             if (Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
@@ -122,10 +119,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        private void HandleModuleImportStar(IPythonModule module, CancellationToken cancellationToken = default) {
+        private void HandleModuleImportStar(IPythonModule module) {
             foreach (var memberName in module.GetMemberNames()) {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 var member = module.GetMember(memberName);
                 if (member == null) {
                     Log?.Log(TraceEventType.Verbose, $"Undefined import: {module.Name}, {memberName}");

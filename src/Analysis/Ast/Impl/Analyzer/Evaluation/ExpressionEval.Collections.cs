@@ -15,8 +15,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
@@ -25,14 +23,14 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        public async Task<IMember> GetValueFromIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
+        public IMember GetValueFromIndex(IndexExpression expr) {
             if (expr?.Target == null) {
                 return null;
             }
 
-            var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
+            var target = GetValueFromExpression(expr.Target);
             // Try generics first since this may be an expression like Dict[int, str]
-            var result = await GetValueFromGenericAsync(target, expr, cancellationToken);
+            var result = GetValueFromGeneric(target, expr);
             if (result != null) {
                 return result;
             }
@@ -47,7 +45,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (!(target is IPythonInstance instance)) {
                     instance = new PythonInstance(type);
                 }
-                var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
+                var index = GetValueFromExpression(expr.Index);
                 if (index != null) {
                     return type.Index(instance, index);
                 }
@@ -56,47 +54,47 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        public async Task<IMember> GetValueFromListAsync(ListExpression expression, CancellationToken cancellationToken = default) {
+        public IMember GetValueFromList(ListExpression expression) {
             var contents = new List<IMember>();
             foreach (var item in expression.Items) {
-                var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
+                var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
             return PythonCollectionType.CreateList(Module.Interpreter, GetLoc(expression), contents);
         }
 
-        public async Task<IMember> GetValueFromDictionaryAsync(DictionaryExpression expression, CancellationToken cancellationToken = default) {
+        public IMember GetValueFromDictionary(DictionaryExpression expression) {
             var contents = new Dictionary<IMember, IMember>();
             foreach (var item in expression.Items) {
-                var key = await GetValueFromExpressionAsync(item.SliceStart, cancellationToken) ?? UnknownType;
-                var value = await GetValueFromExpressionAsync(item.SliceStop, cancellationToken) ?? UnknownType;
+                var key = GetValueFromExpression(item.SliceStart) ?? UnknownType;
+                var value = GetValueFromExpression(item.SliceStop) ?? UnknownType;
                 contents[key] = value;
             }
             return new PythonDictionary(Interpreter, GetLoc(expression), contents);
         }
 
-        private async Task<IMember> GetValueFromTupleAsync(TupleExpression expression, CancellationToken cancellationToken = default) {
+        private IMember GetValueFromTuple(TupleExpression expression) {
             var contents = new List<IMember>();
             foreach (var item in expression.Items) {
-                var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
+                var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
             return PythonCollectionType.CreateTuple(Module.Interpreter, GetLoc(expression), contents);
         }
 
-        public async Task<IMember> GetValueFromSetAsync(SetExpression expression, CancellationToken cancellationToken = default) {
+        public IMember GetValueFromSet(SetExpression expression) {
             var contents = new List<IMember>();
             foreach (var item in expression.Items) {
-                var value = await GetValueFromExpressionAsync(item, cancellationToken) ?? UnknownType;
+                var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
             return PythonCollectionType.CreateSet(Interpreter, GetLoc(expression), contents);
         }
 
-        public async Task<IMember> GetValueFromGeneratorAsync(GeneratorExpression expression, CancellationToken cancellationToken = default) {
+        public IMember GetValueFromGenerator(GeneratorExpression expression) {
             var iter = expression.Iterators.OfType<ComprehensionFor>().FirstOrDefault();
             if (iter != null) {
-                return await GetValueFromExpressionAsync(iter.List, cancellationToken) ?? UnknownType;
+                return GetValueFromExpression(iter.List) ?? UnknownType;
             }
             return UnknownType;
         }

@@ -15,31 +15,27 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static  class ExpressionCompletion {
-        public static Task<IEnumerable<CompletionItem>> GetCompletionsFromMembersAsync(Expression e, IScope scope, CompletionContext context, CancellationToken cancellationToken = default) {
+        public static IEnumerable<CompletionItem> GetCompletionsFromMembers(Expression e, IScope scope, CompletionContext context) {
             using (context.Analysis.ExpressionEvaluator.OpenScope(scope)) {
-                return GetItemsFromExpressionAsync(e, context, cancellationToken);
+                return GetItemsFromExpression(e, context);
             }
         }
 
-        public static Task<IEnumerable<CompletionItem>> GetCompletionsFromMembersAsync(Expression e, ScopeStatement scope, CompletionContext context, CancellationToken cancellationToken = default) {
+        public static IEnumerable<CompletionItem> GetCompletionsFromMembers(Expression e, ScopeStatement scope, CompletionContext context) {
             using (context.Analysis.ExpressionEvaluator.OpenScope(context.Analysis.Document, scope)) {
-                return GetItemsFromExpressionAsync(e, context, cancellationToken);
+                return GetItemsFromExpression(e, context);
             }
         }
 
-        private static async Task<IEnumerable<CompletionItem>> GetItemsFromExpressionAsync(Expression e, CompletionContext context, CancellationToken cancellationToken = default) {
-            var value = await context.Analysis.ExpressionEvaluator.GetValueFromExpressionAsync(e, cancellationToken);
+        private static IEnumerable<CompletionItem> GetItemsFromExpression(Expression e, CompletionContext context) {
+            var value = context.Analysis.ExpressionEvaluator.GetValueFromExpression(e);
             if (!value.IsUnknown()) {
                 var items = new List<CompletionItem>();
                 var type = value.GetPythonType();

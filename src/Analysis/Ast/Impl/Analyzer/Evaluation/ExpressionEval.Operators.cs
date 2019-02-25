@@ -13,9 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -24,7 +21,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        private async Task<IMember> GetValueFromUnaryOpAsync(UnaryExpression expr, CancellationToken cancellationToken = default) {
+        private IMember GetValueFromUnaryOp(UnaryExpression expr) {
             switch (expr.Op) {
                 case PythonOperator.Not:
                 case PythonOperator.Is:
@@ -33,17 +30,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
 
                 case PythonOperator.Invert:
-                    return await GetValueFromUnaryOpAsync(expr, "__invert__", cancellationToken);
+                    return GetValueFromUnaryOp(expr, "__invert__");
                 case PythonOperator.Negate:
-                    return await GetValueFromUnaryOpAsync(expr, "__neg__", cancellationToken);
+                    return GetValueFromUnaryOp(expr, "__neg__");
                 case PythonOperator.Pos:
-                    return await GetValueFromUnaryOpAsync(expr, "__pos__", cancellationToken);
+                    return GetValueFromUnaryOp(expr, "__pos__");
             }
             return UnknownType;
         }
 
-        private async Task<IMember> GetValueFromUnaryOpAsync(UnaryExpression expr, string op, CancellationToken cancellationToken = default) {
-            var target = await GetValueFromExpressionAsync(expr.Expression, cancellationToken);
+        private IMember GetValueFromUnaryOp(UnaryExpression expr, string op) {
+            var target = GetValueFromExpression(expr.Expression);
             if (target is IPythonInstance instance) {
                 var fn = instance.GetPythonType()?.GetMember<IPythonFunctionType>(op);
                 // Process functions declared in code modules. Scraped/compiled/stub modules do not actually perform any operations.
@@ -60,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        private async Task<IMember> GetValueFromBinaryOpAsync(Expression expr, CancellationToken cancellationToken = default) {
+        private IMember GetValueFromBinaryOp(Expression expr) {
             if (expr is AndExpression || expr is OrExpression) {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             }
@@ -87,8 +84,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             }
 
-            var left = await GetValueFromExpressionAsync(binop.Left, cancellationToken) ?? UnknownType;
-            var right = await GetValueFromExpressionAsync(binop.Right, cancellationToken) ?? UnknownType;
+            var left = GetValueFromExpression(binop.Left) ?? UnknownType;
+            var right = GetValueFromExpression(binop.Right) ?? UnknownType;
 
             switch (binop.Operator) {
                 case PythonOperator.Divide:

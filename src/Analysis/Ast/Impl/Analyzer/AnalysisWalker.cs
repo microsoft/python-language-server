@@ -15,8 +15,6 @@
 
 using System;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
@@ -28,7 +26,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Base class with common functionality to module and function analysis walkers.
     /// </summary>
-    internal abstract class AnalysisWalker : PythonWalkerAsync {
+    internal abstract class AnalysisWalker : PythonWalker {
         protected ImportHandler ImportHandler { get; }
         protected LoopHandler LoopHandler { get; }
         protected ConditionalHandler ConditionalHandler { get; }
@@ -58,49 +56,43 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         #region AST walker overrides
-        public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
-            await AssignmentHandler.HandleAssignmentAsync(node, cancellationToken);
-            return await base.WalkAsync(node, cancellationToken);
+        public override bool Walk(AssignmentStatement node) {
+            AssignmentHandler.HandleAssignment(node);
+            return base.Walk(node);
         }
 
-        public override async Task<bool> WalkAsync(ExpressionStatement node, CancellationToken cancellationToken = default) {
-            await AssignmentHandler.HandleAnnotatedExpressionAsync(node.Expression as ExpressionWithAnnotation, null, cancellationToken);
+        public override bool Walk(ExpressionStatement node) {
+            AssignmentHandler.HandleAnnotatedExpression(node.Expression as ExpressionWithAnnotation, null);
             return false;
         }
 
-        public override async Task<bool> WalkAsync(ForStatement node, CancellationToken cancellationToken = default) {
-            await LoopHandler.HandleForAsync(node, cancellationToken);
-            return await base.WalkAsync(node, cancellationToken);
+        public override bool Walk(ForStatement node) {
+            LoopHandler.HandleFor(node);
+            return base.Walk(node);
         }
 
-        public override Task<bool> WalkAsync(FromImportStatement node, CancellationToken cancellationToken = default)
-            => Task.FromResult(ImportHandler.HandleFromImport(node, cancellationToken));
+        public override bool Walk(FromImportStatement node) => ImportHandler.HandleFromImport(node);
+        public override bool Walk(GlobalStatement node) => NonLocalHandler.HandleGlobal(node);
+        public override bool Walk(IfStatement node) => ConditionalHandler.HandleIf(node);
 
-        public override Task<bool> WalkAsync(GlobalStatement node, CancellationToken cancellationToken = default)
-            => NonLocalHandler.HandleGlobalAsync(node, cancellationToken);
+        public override bool Walk(ImportStatement node) => ImportHandler.HandleImport(node);
 
-        public override Task<bool> WalkAsync(IfStatement node, CancellationToken cancellationToken = default)
-            => ConditionalHandler.HandleIfAsync(node, cancellationToken);
+        public override bool Walk(NonlocalStatement node)
+            => NonLocalHandler.HandleNonLocal(node);
 
-        public override Task<bool> WalkAsync(ImportStatement node, CancellationToken cancellationToken = default)
-            => Task.FromResult(ImportHandler.HandleImport(node, cancellationToken));
-
-        public override Task<bool> WalkAsync(NonlocalStatement node, CancellationToken cancellationToken = default)
-            => NonLocalHandler.HandleNonLocalAsync(node, cancellationToken);
-
-        public override async Task<bool> WalkAsync(TryStatement node, CancellationToken cancellationToken = default) {
-            await TryExceptHandler.HandleTryExceptAsync(node, cancellationToken);
-            return await base.WalkAsync(node, cancellationToken);
+        public override bool Walk(TryStatement node) {
+            TryExceptHandler.HandleTryExcept(node);
+            return base.Walk(node);
         }
 
-        public override async Task<bool> WalkAsync(WhileStatement node, CancellationToken cancellationToken = default) {
-            await LoopHandler.HandleWhileAsync(node, cancellationToken);
-            return await base.WalkAsync(node, cancellationToken);
+        public override bool Walk(WhileStatement node) {
+            LoopHandler.HandleWhile(node);
+            return base.Walk(node);
         }
 
-        public override async Task<bool> WalkAsync(WithStatement node, CancellationToken cancellationToken = default) {
-            await WithHandler.HandleWithAsync(node, cancellationToken);
-            return await base.WalkAsync(node, cancellationToken);
+        public override bool Walk(WithStatement node) {
+            WithHandler.HandleWith(node);
+            return base.Walk(node);
         }
         #endregion
 

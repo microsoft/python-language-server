@@ -13,8 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -23,22 +21,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class TryExceptHandler : StatementHandler {
         public TryExceptHandler(AnalysisWalker walker) : base(walker) { }
 
-        public async Task<bool> HandleTryExceptAsync(TryStatement node, CancellationToken cancellationToken = default) {
-            await node.Body.WalkAsync(Walker, cancellationToken);
+        public bool HandleTryExcept(TryStatement node) {
+            node.Body.Walk(Walker);
             foreach (var handler in node.Handlers.MaybeEnumerate()) {
                 if (handler.Test != null && handler.Target is NameExpression nex) {
-                    var value = await Eval.GetValueFromExpressionAsync(handler.Test, cancellationToken);
+                    var value = Eval.GetValueFromExpression(handler.Test);
                     Eval.DeclareVariable(nex.Name, value ?? Eval.UnknownType, VariableSource.Declaration, nex);
                 }
-                await handler.Body.WalkAsync(Walker, cancellationToken);
+                handler.Body.Walk(Walker);
             }
 
-            if (node.Finally != null) {
-                await node.Finally.WalkAsync(Walker, cancellationToken);
-            }
-            if (node.Else != null) {
-                await node.Else.WalkAsync(Walker, cancellationToken);
-            }
+            node.Finally?.Walk(Walker);
+            node.Else?.Walk(Walker);
             return false;
         }
     }
