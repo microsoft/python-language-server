@@ -16,8 +16,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -26,44 +24,43 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
         private readonly Stack<FunctionDefinition> _callEvalStack = new Stack<FunctionDefinition>();
 
-        public async Task<IMember> GetValueFromCallableAsync(CallExpression expr, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
+        public IMember GetValueFromCallable(CallExpression expr) {
             if (expr?.Target == null) {
                 return null;
             }
 
-            var target = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
+            var target = GetValueFromExpression(expr.Target);
             using (OpenScope(target.GetPythonType()?.DeclaringModule, GetScope(target), out _)) {
                 // Try generics
-                var result = await GetValueFromGenericAsync(target, expr, cancellationToken);
+                var result = GetValueFromGeneric(target, expr);
                 if (result != null) {
                     return result;
                 }
 
-                // Should only be two types of returns here. First, an bound type
-                // so we can invoke Call over the instance. Second, an type info
-                // so we can create an instance of the type (as in C() where C is class).
-                IMember value = null;
-                switch (target) {
-                    case IPythonBoundType bt: // Bound property, method or an iterator.
-                        value = await GetValueFromBoundAsync(bt, expr, cancellationToken);
-                        break;
-                    case IPythonInstance pi:
-                        value = await GetValueFromInstanceCall(pi, expr, cancellationToken);
-                        break;
-                    case IPythonFunctionType ft: // Standalone function or a class method call.
-                        var instance = ft.DeclaringType != null ? new PythonInstance(ft.DeclaringType) : null;
-                        value = await GetValueFromFunctionTypeAsync(ft, instance, expr, cancellationToken);
-                        break;
-                    case IPythonClassType cls:
-                        value = await GetValueFromClassCtorAsync(cls, expr, cancellationToken);
-                        break;
-                    case IPythonType t:
-                        // Target is type (info), the call creates instance.
-                        // For example, 'x = C; y = x()' or 'x = C()' where C is class
-                        value = new PythonInstance(t, GetLoc(expr));
-                        break;
-                }
+            // Should only be two types of returns here. First, an bound type
+            // so we can invoke Call over the instance. Second, an type info
+            // so we can create an instance of the type (as in C() where C is class).
+            IMember value = null;
+            switch (target) {
+                case IPythonBoundType bt: // Bound property, method or an iterator.
+                    value = GetValueFromBound(bt, expr);
+                    break;
+                case IPythonInstance pi:
+                    value = GetValueFromInstanceCall(pi, expr);
+                    break;
+                case IPythonFunctionType ft: // Standalone function or a class method call.
+                    var instance = ft.DeclaringType != null ? new PythonInstance(ft.DeclaringType) : null;
+                    value = GetValueFromFunctionType(ft, instance, expr);
+                    break;
+                case IPythonClassType cls:
+                    value = GetValueFromClassCtor(cls, expr);
+                    break;
+                case IPythonType t:
+                    // Target is type (info), the call creates instance.
+                    // For example, 'x = C; y = x()' or 'x = C()' where C is class
+                    value = new PythonInstance(t, GetLoc(expr));
+                    break;
+            }
 
                 if (value == null) {
                     Log?.Log(TraceEventType.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
@@ -73,8 +70,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
         }
 
-        public async Task<IMember> GetValueFromClassCtorAsync(IPythonClassType cls, CallExpression expr, CancellationToken cancellationToken = default) {
-            await SymbolTable.EvaluateAsync(cls.ClassDefinition, cancellationToken);
+        public IMember GetValueFromClassCtor(IPythonClassType cls, CallExpression expr) {
+            SymbolTable.Evaluate(cls.ClassDefinition);
             // Determine argument types
             var args = ArgumentSet.Empty;
             var init = cls.GetMember<IPythonFunctionType>(@"__init__");
@@ -83,47 +80,49 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (a.Errors.Count > 0) {
                     // AddDiagnostics(Module.Uri, a.Errors);
                 }
-                args = await a.EvaluateAsync(cancellationToken);
+                args = a.Evaluate();
             }
             return cls.CreateInstance(cls.Name, GetLoc(expr), args);
         }
 
-        public async Task<IMember> GetValueFromBoundAsync(IPythonBoundType t, CallExpression expr, CancellationToken cancellationToken = default) {
+        public IMember GetValueFromBound(IPythonBoundType t, CallExpression expr) {
             switch (t.Type) {
                 case IPythonFunctionType fn:
-                    return await GetValueFromFunctionTypeAsync(fn, t.Self, expr, cancellationToken);
+                    return GetValueFromFunctionType(fn, t.Self, expr);
                 case IPythonPropertyType p:
-                    return await GetValueFromPropertyAsync(p, t.Self, cancellationToken);
+                    return GetValueFromProperty(p, t.Self);
                 case IPythonIteratorType it when t.Self is IPythonCollection seq:
                     return seq.GetIterator();
             }
             return UnknownType;
         }
 
-        public async Task<IMember> GetValueFromInstanceCall(IPythonInstance pi, CallExpression expr, CancellationToken cancellationToken = default) {
+        public IMember GetValueFromInstanceCall(IPythonInstance pi, CallExpression expr) {
             // Call on an instance such as 'a = 1; a()'
             // If instance is a function (such as an unbound method), then invoke it.
             var type = pi.GetPythonType();
             if (type is IPythonFunctionType pft) {
-                return await GetValueFromFunctionTypeAsync(pft, pi, expr, cancellationToken);
+                return GetValueFromFunctionType(pft, pi, expr);
             }
 
             // Try using __call__
             var call = type.GetMember("__call__").GetPythonType<IPythonFunctionType>();
             if (call != null) {
-                return await GetValueFromFunctionTypeAsync(call, pi, expr, cancellationToken);
+                return GetValueFromFunctionType(call, pi, expr);
             }
 
-            return null;
+            // Optimistically return the instance itself. This happens when the call is
+            // over 'function' that was actually replaced by a instance of a type.
+            return pi;
         }
 
-        public async Task<IMember> GetValueFromFunctionTypeAsync(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr, CancellationToken cancellationToken = default) {
+        public IMember GetValueFromFunctionType(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr) {
             // If order to be able to find matching overload, we need to know
             // parameter types and count. This requires function to be analyzed.
             // Since we don't know which overload we will need, we have to 
             // process all known overloads for the function.
             foreach (var o in fn.Overloads) {
-                await SymbolTable.EvaluateAsync(o.FunctionDefinition, cancellationToken);
+                SymbolTable.Evaluate(o.FunctionDefinition);
             }
 
             // Pick the best overload.
@@ -132,9 +131,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (fn.Overloads.Count == 1) {
                 fd = fn.Overloads[0].FunctionDefinition;
                 args = new ArgumentSet(fn, 0, instance, expr, this);
-                args = await args.EvaluateAsync(cancellationToken);
+                args = args.Evaluate();
             } else {
-                args = await FindOverloadAsync(fn, instance, expr, cancellationToken);
+                args = FindOverload(fn, instance, expr);
                 if (args == null) {
                     return UnknownType;
                 }
@@ -163,7 +162,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
                 if (fn.IsSpecialized && fn is PythonFunctionType ft) {
                     foreach (var moduleName in ft.Dependencies) {
-                        cancellationToken.ThrowIfCancellationRequested();
                         Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
                     }
                 }
@@ -175,16 +173,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             // Try and evaluate with specific arguments but prevent recursion.
-            return await TryEvaluateWithArgumentsAsync(fn.DeclaringModule, fd, args, cancellationToken);
+            return TryEvaluateWithArguments(fn.DeclaringModule, fd, args);
         }
 
-        public async Task<IMember> GetValueFromPropertyAsync(IPythonPropertyType p, IPythonInstance instance, CancellationToken cancellationToken = default) {
+        public IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance) {
             // Function may not have been walked yet. Do it now.
-            await SymbolTable.EvaluateAsync(p.FunctionDefinition, cancellationToken);
+            SymbolTable.Evaluate(p.FunctionDefinition);
             return instance.Call(p.Name, ArgumentSet.Empty);
         }
 
-        private async Task<IMember> TryEvaluateWithArgumentsAsync(IPythonModule module, FunctionDefinition fd, IArgumentSet args, CancellationToken cancellationToken = default) {
+        private IMember TryEvaluateWithArguments(IPythonModule module, FunctionDefinition fd, IArgumentSet args) {
             // Attempt to evaluate with specific arguments but prevent recursion.
             IMember result = UnknownType;
             if (fd != null && !_callEvalStack.Contains(fd)) {
@@ -193,7 +191,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     try {
                         // TODO: cache results per function + argument set?
                         var eval = new FunctionCallEvaluator(module, fd, this);
-                        result = await eval.EvaluateCallAsync(args, cancellationToken);
+                        result = eval.EvaluateCall(args);
                     } finally {
                         _callEvalStack.Pop();
                     }
@@ -202,16 +200,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return result;
         }
 
-        private async Task<ArgumentSet> FindOverloadAsync(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr, CancellationToken cancellationToken = default) {
+        private ArgumentSet FindOverload(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr) {
             if (fn.Overloads.Count == 1) {
                 return null;
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
             var sets = new List<ArgumentSet>();
             for (var i = 0; i < fn.Overloads.Count; i++) {
                 var a = new ArgumentSet(fn, i, instance, expr, this);
-                var args = await a.EvaluateAsync(cancellationToken);
+                var args = a.Evaluate();
                 sets.Add(args);
             }
 

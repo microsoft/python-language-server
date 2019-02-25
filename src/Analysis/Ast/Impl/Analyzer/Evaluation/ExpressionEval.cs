@@ -16,8 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -71,8 +69,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public LocationInfo GetLocation(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
         public IEnumerable<DiagnosticsEntry> Diagnostics => _diagnostics;
 
-        public Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default)
-            => GetValueFromExpressionAsync(expr, DefaultLookupOptions, cancellationToken);
+        public IMember GetValueFromExpression(Expression expr)
+            => GetValueFromExpression(expr, DefaultLookupOptions);
 
         public IDisposable OpenScope(IScope scope) {
             if (!(scope is Scope s)) {
@@ -86,8 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IDisposable OpenScope(IPythonModule module, ScopeStatement scope) => OpenScope(module, scope, out _);
         #endregion
 
-        public async Task<IMember> GetValueFromExpressionAsync(Expression expr, LookupOptions options, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
+        public IMember GetValueFromExpression(Expression expr, LookupOptions options) {
             if (expr == null) {
                 return null;
             }
@@ -99,43 +96,43 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             IMember m;
             switch (expr) {
                 case NameExpression nex:
-                    m = await GetValueFromNameAsync(nex, options, cancellationToken);
+                    m = GetValueFromName(nex, options);
                     break;
                 case MemberExpression mex:
-                    m = await GetValueFromMemberAsync(mex, cancellationToken);
+                    m = GetValueFromMember(mex);
                     break;
                 case CallExpression cex:
-                    m = await GetValueFromCallableAsync(cex, cancellationToken);
+                    m = GetValueFromCallable(cex);
                     break;
                 case UnaryExpression uex:
-                    m = await GetValueFromUnaryOpAsync(uex, cancellationToken);
+                    m = GetValueFromUnaryOp(uex);
                     break;
                 case IndexExpression iex:
-                    m = await GetValueFromIndexAsync(iex, cancellationToken);
+                    m = GetValueFromIndex(iex);
                     break;
                 case ConditionalExpression coex:
-                    m = await GetValueFromConditionalAsync(coex, cancellationToken);
+                    m = GetValueFromConditional(coex);
                     break;
                 case ListExpression listex:
-                    m = await GetValueFromListAsync(listex, cancellationToken);
+                    m = GetValueFromList(listex);
                     break;
                 case DictionaryExpression dictex:
-                    m = await GetValueFromDictionaryAsync(dictex, cancellationToken);
+                    m = GetValueFromDictionary(dictex);
                     break;
                 case SetExpression setex:
-                    m = await GetValueFromSetAsync(setex, cancellationToken);
+                    m = GetValueFromSet(setex);
                     break;
                 case TupleExpression tex:
-                    m = await GetValueFromTupleAsync(tex, cancellationToken);
+                    m = GetValueFromTuple(tex);
                     break;
                 case YieldExpression yex:
-                    m = await GetValueFromExpressionAsync(yex.Expression, cancellationToken);
+                    m = GetValueFromExpression(yex.Expression);
                     break;
                 case GeneratorExpression genex:
-                    m = await GetValueFromGeneratorAsync(genex, cancellationToken);
+                    m = GetValueFromGenerator(genex);
                     break;
                 default:
-                    m = await GetValueFromBinaryOpAsync(expr, cancellationToken) ?? GetConstantFromLiteral(expr, options);
+                    m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr, options);
                     break;
             }
             if (m == null) {
@@ -144,7 +141,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return m;
         }
 
-        private async Task<IMember> GetValueFromNameAsync(NameExpression expr, LookupOptions options, CancellationToken cancellationToken = default) {
+        private IMember GetValueFromName(NameExpression expr, LookupOptions options) {
             if (expr == null || string.IsNullOrEmpty(expr.Name)) {
                 return null;
             }
@@ -153,18 +150,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return Module;
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
             var member = LookupNameInScopes(expr.Name, options);
             if (member != null) {
                 switch (member.GetPythonType()) {
                     case IPythonClassType cls:
-                        await SymbolTable.EvaluateAsync(cls.ClassDefinition, cancellationToken);
+                        SymbolTable.Evaluate(cls.ClassDefinition);
                         break;
                     case IPythonFunctionType fn:
-                        await SymbolTable.EvaluateAsync(fn.FunctionDefinition, cancellationToken);
+                        SymbolTable.Evaluate(fn.FunctionDefinition);
                         break;
                     case IPythonPropertyType prop:
-                        await SymbolTable.EvaluateAsync(prop.FunctionDefinition, cancellationToken);
+                        SymbolTable.Evaluate(prop.FunctionDefinition);
                         break;
                 }
                 return member;
@@ -174,13 +170,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        private async Task<IMember> GetValueFromMemberAsync(MemberExpression expr, CancellationToken cancellationToken = default) {
+        private IMember GetValueFromMember(MemberExpression expr) {
             if (expr?.Target == null || string.IsNullOrEmpty(expr.Name)) {
                 return null;
             }
 
             IPythonInstance instance = null;
-            var m = await GetValueFromExpressionAsync(expr.Target, cancellationToken);
+            var m = GetValueFromExpression(expr.Target);
             if (m is IPythonType typeInfo) {
                 var member = typeInfo.GetMember(expr.Name);
                 // If container is class/type info rather than the instance, then the method is an unbound function.
@@ -222,13 +218,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
         }
 
-        private async Task<IMember> GetValueFromConditionalAsync(ConditionalExpression expr, CancellationToken cancellationToken = default) {
+        private IMember GetValueFromConditional(ConditionalExpression expr) {
             if (expr == null) {
                 return null;
             }
 
-            var trueValue = await GetValueFromExpressionAsync(expr.TrueExpression, cancellationToken);
-            var falseValue = await GetValueFromExpressionAsync(expr.FalseExpression, cancellationToken);
+            var trueValue = GetValueFromExpression(expr.TrueExpression);
+            var falseValue = GetValueFromExpression(expr.FalseExpression);
 
             return trueValue ?? falseValue ?? UnknownType;
         }

@@ -15,8 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -57,7 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Evaluates expression in the currently open scope.
         /// </summary>
-        Task<IMember> GetValueFromExpressionAsync(Expression expr, CancellationToken cancellationToken = default);
+        IMember GetValueFromExpression(Expression expr);
 
         IMember LookupNameInScopes(string name, out IScope scope);
 

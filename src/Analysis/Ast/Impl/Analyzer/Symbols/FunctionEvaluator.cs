@@ -17,8 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
@@ -49,14 +47,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         public FunctionDefinition FunctionDefinition { get; }
 
-        public override async Task EvaluateAsync(CancellationToken cancellationToken = default) {
+        public override void Evaluate() {
             if (SymbolTable.ReplacedByStubs.Contains(Target)) {
                 return;
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
             // Process annotations.
-            var annotationType = await Eval.GetTypeFromAnnotationAsync(FunctionDefinition.ReturnAnnotation, cancellationToken);
+            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
             if (!annotationType.IsUnknown()) {
                 // Annotations are typically types while actually functions return
                 // instances unless specifically annotated to a type such as Type[T].
@@ -68,27 +65,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
                 if (yieldExpr != null) {
                     // Function return is an iterator
-                    var yieldValue = await Eval.GetValueFromExpressionAsync(yieldExpr.Expression, cancellationToken) ?? Eval.UnknownType;
+                    var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
                     var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
                     _overload.SetReturnValue(returnValue, true);
                 }
             }
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
-                await DeclareParametersAsync(cancellationToken);
+                DeclareParameters();
                 // Return type from the annotation is sufficient for libraries
                 // and stubs, no need to walk the body. Exceptions are constructors
                 // since they can be adding class members.
                 if (_function.IsConstructor() || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     if (FunctionDefinition.Body != null && Module.ModuleType != ModuleType.Specialized) {
-                        await FunctionDefinition.Body.WalkAsync(this, cancellationToken);
+                        FunctionDefinition.Body.Walk(this);
                     }
                 }
             }
+            Result = _function;
         }
 
-        public override async Task<bool> WalkAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
-            var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken) ?? Eval.UnknownType;
+        public override bool Walk(AssignmentStatement node) {
+            var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
 
             foreach (var lhs in node.Left) {
                 switch (lhs) {
@@ -102,11 +100,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         return true; // Don't assign to 'self'
                 }
             }
-            return await base.WalkAsync(node, cancellationToken);
+            return base.Walk(node);
         }
 
-        public override async Task<bool> WalkAsync(ReturnStatement node, CancellationToken cancellationToken = default) {
-            var value = await Eval.GetValueFromExpressionAsync(node.Expression, cancellationToken);
+        public override bool Walk(ReturnStatement node) {
+            var value = Eval.GetValueFromExpression(node.Expression);
             if (value != null) {
                 _overload.AddReturnValue(value);
             }
@@ -114,13 +112,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         // Classes and functions are walked by their respective evaluators
-        public override Task<bool> WalkAsync(ClassDefinition node, CancellationToken cancellationToken = default) => Task.FromResult(false);
-        public override async Task<bool> WalkAsync(FunctionDefinition node, CancellationToken cancellationToken = default) {
-            await SymbolTable.EvaluateAsync(node, cancellationToken);
+        public override bool Walk(ClassDefinition node) => false;
+        public override bool Walk(FunctionDefinition node) {
+            // Inner function, declare as variable.
+            var m = SymbolTable.Evaluate(node);
+            if (m != null) {
+                Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, Eval.GetLoc(node));
+            }
             return false;
         }
 
-        private async Task DeclareParametersAsync(CancellationToken cancellationToken = default) {
+        private void DeclareParameters() {
             // For class method no need to add extra parameters, but first parameter type should be the class.
             // For static and unbound methods do not add or set anything.
             // For regular bound methods add first parameter and set it to the class.
@@ -144,34 +146,32 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             // Declare parameters in scope
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 var p = FunctionDefinition.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
                     // If parameter has default value, look for the annotation locally first
                     // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
                     IPythonType paramType = null;
                     if (p.DefaultValue != null) {
-                        paramType = await Eval.GetTypeFromAnnotationAsync(p.Annotation, cancellationToken, LookupOptions.Local | LookupOptions.Builtins);
+                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, LookupOptions.Local | LookupOptions.Builtins);
                         if (paramType == null) {
-                            var defaultValue = await Eval.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken);
+                            var defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
                             if (!defaultValue.IsUnknown()) {
                                 paramType = defaultValue.GetPythonType();
                             }
                         }
                     }
                     // If all else fails, look up globally.
-                    paramType = paramType ?? await Eval.GetTypeFromAnnotationAsync(p.Annotation, cancellationToken);
+                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation);
 
                     var pi = new ParameterInfo(Ast, p, paramType);
-                    await DeclareParameterAsync(p, i, pi, cancellationToken);
+                    DeclareParameter(p, i, pi);
                     parameters.Add(pi);
                 }
             }
             _overload.SetParameters(parameters);
         }
 
-        private async Task DeclareParameterAsync(Parameter p, int index, ParameterInfo pi, CancellationToken cancellationToken = default) {
+        private void DeclareParameter(Parameter p, int index, ParameterInfo pi) {
             IPythonType paramType;
 
             // If type is known from annotation, use it.
@@ -179,7 +179,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // TODO: technically generics may have constraints. Should we consider them?
                 paramType = pi.Type;
             } else {
-                var defaultValue = await Eval.GetValueFromExpressionAsync(p.DefaultValue, cancellationToken) ?? Eval.UnknownType;
+                var defaultValue = Eval.GetValueFromExpression(p.DefaultValue) ?? Eval.UnknownType;
 
                 paramType = defaultValue?.GetPythonType();
                 if (!paramType.IsUnknown()) {
@@ -188,20 +188,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
 
             Eval.DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
-        }
-
-        private async Task EvaluateInnerFunctionsAsync(FunctionDefinition fd, CancellationToken cancellationToken = default) {
-            // Do not use foreach since walker list is dynamically modified and walkers are removed
-            // after processing. Handle __init__ and __new__ first so class variables are initialized.
-            var innerFunctions = SymbolTable.Evaluators
-                .Where(kvp => kvp.Key.Parent == fd && (kvp.Key is FunctionDefinition))
-                .Select(c => c.Value)
-                .ExcludeDefault()
-                .ToArray();
-
-            foreach (var c in innerFunctions) {
-                await SymbolTable.EvaluateAsync(c, cancellationToken);
-            }
         }
     }
 }

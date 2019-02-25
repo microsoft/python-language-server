@@ -16,8 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
@@ -32,8 +30,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// and the specific type arguments, such as Generic[T] or constructor
         /// of a generic class.
         /// </summary>
-        private async Task<IMember> GetValueFromGenericAsync(IMember target, Expression expr, CancellationToken cancellationToken = default) {
-            if (!(target is PythonClassType c && c.IsGeneric()) && !(target.GetPythonType() is IGenericType)) {
+
+        private IMember GetValueFromGeneric(IMember target, Expression expr) {
+            if (!(target is PythonClassType c && c.IsGeneric()) && !(target is IGenericType)) {
                 return null;
             }
             // Evaluate index to check if the result is generic parameter.
@@ -44,15 +43,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // Indexing returns type as from A[int]
                 case IndexExpression indexExpr when target is IGenericType gt:
                     // Generic[T1, T2, ...]
-                    var indices = await EvaluateIndexAsync(indexExpr, cancellationToken);
+                    var indices = EvaluateIndex(indexExpr);
                     return CreateSpecificTypeFromIndex(gt, indices, expr);
 
                 case CallExpression callExpr when target is PythonClassType c1:
                     // Alternative instantiation:
                     //  class A(Generic[T]): ...
                     //  x = A(1234)
-                    var arguments = (await EvaluateCallArgsAsync(callExpr, cancellationToken)).ToArray();
-                    return await CreateClassInstanceAsync(c1, arguments, callExpr, cancellationToken);
+                    var arguments = EvaluateCallArgs(callExpr).ToArray();
+                    return CreateClassInstance(c1, arguments, callExpr);
             }
             return null;
         }
@@ -89,32 +88,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         }
 
-        private async Task<IReadOnlyList<IMember>> EvaluateIndexAsync(IndexExpression expr, CancellationToken cancellationToken = default) {
+        private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr) {
             var indices = new List<IMember>();
             if (expr.Index is TupleExpression tex) {
-                cancellationToken.ThrowIfCancellationRequested();
                 foreach (var item in tex.Items) {
-                    var e = await GetValueFromExpressionAsync(item, cancellationToken);
+                    var e = GetValueFromExpression(item);
                     indices.Add(e);
                 }
             } else {
-                var index = await GetValueFromExpressionAsync(expr.Index, cancellationToken);
+                var index = GetValueFromExpression(expr.Index);
                 indices.Add(index ?? UnknownType);
             }
             return indices;
         }
 
-        private async Task<IReadOnlyList<IMember>> EvaluateCallArgsAsync(CallExpression expr, CancellationToken cancellationToken = default) {
+        private IReadOnlyList<IMember> EvaluateCallArgs(CallExpression expr) {
             var indices = new List<IMember>();
-            cancellationToken.ThrowIfCancellationRequested();
             foreach (var e in expr.Args.Select(a => a.Expression)) {
-                var value = await GetValueFromExpressionAsync(e, cancellationToken) ?? UnknownType;
+                var value = GetValueFromExpression(e) ?? UnknownType;
                 indices.Add(value);
             }
             return indices;
         }
 
-        private async Task<IMember> CreateClassInstanceAsync(PythonClassType cls, IReadOnlyList<IMember> constructorArguments, CallExpression callExpr, CancellationToken cancellationToken = default) {
+        private IMember CreateClassInstance(PythonClassType cls, IReadOnlyList<IMember> constructorArguments, CallExpression callExpr) {
             // Look at the constructor arguments and create argument set
             // based on the __init__ definition.
             var location = GetLoc(callExpr);
@@ -125,7 +122,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     ? new ArgumentSet(initFunc, 0, null, callExpr, this)
                     : new ArgumentSet(constructorArguments);
 
-            await argSet.EvaluateAsync(cancellationToken);
+            argSet.Evaluate();
             var specificType = cls.CreateSpecificType(argSet, Module, location);
             return new PythonInstance(specificType, location);
         }

@@ -16,9 +16,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
@@ -40,22 +39,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public MemberEvaluator Get(ScopeStatement target) => _evaluators.TryGetValue(target, out var w) ? w : null;
         public bool Contains(ScopeStatement node) => _evaluators.ContainsKey(node) || _processed.Contains(node);
 
-
-        public Task BuildAsync(ExpressionEval eval, CancellationToken cancellationToken = default)
+        public void Build(ExpressionEval eval)
             // This part only adds definition for the function and its overloads
             // to the walker list. It does NOT resolve return types or parameters.
             // Function body is not walked. For the actual function code walk
             // and the type resolution see FunctionWalker class.
-            => SymbolCollector.CollectSymbolsAsync(this, eval, cancellationToken);
+            => SymbolCollector.CollectSymbols(this, eval);
 
-        public async Task EvaluateAllAsync(CancellationToken cancellationToken = default) {
+        public void EvaluateAll() {
             // Evaluate top-level functions first.
             while (_evaluators.Count > 0) {
                 var walker = _evaluators.FirstOrDefault(e => e.Value.Target is FunctionDefinition fd && fd.Parent == null).Value;
                 if (walker == null) {
                     break;
                 }
-                await EvaluateAsync(walker, cancellationToken);
+                Evaluate(walker);
             }
 
             // Evaluate classes.
@@ -64,18 +62,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (walker == null) {
                     break;
                 }
-                await EvaluateAsync(walker, cancellationToken);
+                Evaluate(walker);
             }
 
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             while (_evaluators.Count > 0) {
                 var walker = _evaluators.First().Value;
-                await EvaluateAsync(walker, cancellationToken);
+                Evaluate(walker);
             }
         }
 
-        public async Task EvaluateScopeAsync(ScopeStatement target, CancellationToken cancellationToken = default) {
+        public void EvaluateScope(ScopeStatement target) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             while (_evaluators.Count > 0) {
@@ -83,23 +81,25 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (member == null) {
                     break;
                 }
-                await EvaluateAsync(_evaluators[member], cancellationToken);
+                Evaluate(_evaluators[member]);
             }
         }
 
-        public async Task EvaluateAsync(ScopeStatement target, CancellationToken cancellationToken = default) {
+        public IMember Evaluate(ScopeStatement target) {
             if (target != null && _evaluators.TryGetValue(target, out var w)) {
-                await EvaluateAsync(w, cancellationToken);
+                Evaluate(w);
+                return w.Result;
             }
+            return null;
         }
 
-        public Task EvaluateAsync(MemberEvaluator e, CancellationToken cancellationToken = default) {
+        public void Evaluate(MemberEvaluator e) {
             // Remove walker before processing as to prevent reentrancy.
             // NOTE: first add then remove so we don't get moment when
             // walker is missing from either set.
             _processed.Add(e.Target);
             _evaluators.TryRemove(e.Target, out _);
-            return e.EvaluateAsync(cancellationToken);
+            e.Evaluate();
         }
     }
 }

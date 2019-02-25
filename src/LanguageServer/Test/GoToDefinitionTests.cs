@@ -17,9 +17,9 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Sources;
+using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
-using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 
 namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
@@ -59,31 +59,31 @@ c.method(1, 2)
             var analysis = await GetAnalysisAsync(code);
             var ds = new DefinitionSource();
 
-            var reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(4, 5));
+            var reference = ds.FindDefinition(analysis, new SourceLocation(4, 5));
             reference.range.Should().Be(1, 7, 1, 9);
 
-            reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(9, 9));
+            reference = ds.FindDefinition(analysis, new SourceLocation(9, 9));
             reference.range.Should().Be(7, 15, 7, 19);
 
-            reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(9, 14));
+            reference = ds.FindDefinition(analysis, new SourceLocation(9, 14));
             reference.range.Should().Be(6, 4, 6, 5);
 
-            reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(13, 5));
+            reference = ds.FindDefinition(analysis, new SourceLocation(13, 5));
             reference.range.Should().Be(11, 9, 11, 10);
 
-            reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(14, 9));
+            reference = ds.FindDefinition(analysis, new SourceLocation(14, 9));
             reference.range.Should().Be(11, 9, 11, 10);
 
-            reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(17, 5));
+            reference = ds.FindDefinition(analysis, new SourceLocation(17, 5));
             reference.range.Should().Be(11, 0, 14, 12);
 
-            reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(18, 1));
+            reference = ds.FindDefinition(analysis, new SourceLocation(18, 1));
             reference.range.Should().Be(17, 0, 17, 1); // TODO: store all locations
 
-            reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(19, 5));
+            reference = ds.FindDefinition(analysis, new SourceLocation(19, 5));
             reference.range.Should().Be(5, 0, 9, 18);
 
-            reference = await ds.FindDefinitionAsync(analysis, new SourceLocation(20, 5));
+            reference = ds.FindDefinition(analysis, new SourceLocation(20, 5));
             reference.range.Should().Be(7, 4, 9, 18);
         }
     }
