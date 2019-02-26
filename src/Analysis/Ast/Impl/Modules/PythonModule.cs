@@ -81,7 +81,7 @@ namespace Microsoft.Python.Analysis.Modules {
             _diagnosticsService = services.GetService<IDiagnosticsService>();
         }
 
-        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, IServiceContainer services) :
+        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonStubModule stub, IServiceContainer services) :
             this(new ModuleCreationOptions {
                 ModuleName = moduleName,
                 FilePath = filePath,
@@ -183,7 +183,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Associated stub module. Note that in case of specialized modules
         /// stub may be actually a real module that is being specialized in code.
         /// </summary>
-        public IPythonModule Stub { get; }
+        public IPythonStubModule Stub { get; }
 
         /// <summary>
         /// Global cope of the module.
@@ -325,6 +325,8 @@ namespace Microsoft.Python.Analysis.Modules {
                 _buffer.Update(changes);
                 Parse();
             }
+
+            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
         public void Reset(string content) {

@@ -85,12 +85,20 @@ namespace Microsoft.Python.Core.Collections {
         }
 
         [Pure]
-        public ImmutableArray<T> AddRange(T[] items) {
-            if (items.Length == 0) {
+        public ImmutableArray<T> AddRange(in ImmutableArray<T> items) 
+            => AddRange(items._items, items.Count);
+
+        [Pure]
+        public ImmutableArray<T> AddRange(in T[] items) 
+            => AddRange(items, items.Length);
+
+        [Pure]
+        private ImmutableArray<T> AddRange(in T[] items, int itemsCount) {
+            if (itemsCount == 0) {
                 return this;
             }
 
-            var newCount = Count + items.Length;
+            var newCount = Count + itemsCount;
             var newItems = _items;
 
             if (newCount > _items.Length) {
@@ -99,7 +107,7 @@ namespace Microsoft.Python.Core.Collections {
                 Array.Copy(_items, 0, newItems, 0, Count);
             }
 
-            Array.Copy(items, 0, newItems, Count, items.Length);
+            Array.Copy(items, 0, newItems, Count, itemsCount);
             return new ImmutableArray<T>(newItems, newCount);
         }
 

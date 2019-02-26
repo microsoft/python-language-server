@@ -92,7 +92,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             // First check stub next to the module.
             if (!TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
                 // If nothing found, try Typeshed.
-                stub = _interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
+                stub = _interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName) as IPythonStubModule;
             }
 
             // If stub is created and its path equals to module, return that stub as module
@@ -193,7 +193,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         internal void AddUnimportableModule(string moduleName) 
             => _modules[moduleName] = new ModuleRef(new SentinelModule(moduleName, _services));
 
-        private bool TryCreateModuleStub(string name, string modulePath, out IPythonModule module) {
+        private bool TryCreateModuleStub(string name, string modulePath, out IPythonStubModule module) {
             // First check stub next to the module.
             if (!string.IsNullOrEmpty(modulePath)) {
                 var pyiPath = Path.ChangeExtension(modulePath, "pyi");

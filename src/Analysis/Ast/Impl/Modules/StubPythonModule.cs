@@ -13,23 +13,24 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
     /// Represents module that contains stub code such as from typeshed.
     /// </summary>
-    internal class StubPythonModule : CompiledPythonModule {
+    internal class StubPythonModule : CompiledPythonModule, IPythonStubModule {
         public bool IsTypeshed { get; }
 
         public StubPythonModule(string moduleName, string stubPath, bool isTypeshed, IServiceContainer services)
             : base(moduleName, ModuleType.Stub, stubPath, null, services) {
             IsTypeshed = isTypeshed;
         }
+
+        public IPythonModule PrimaryModule { get; set; }
 
         protected override string LoadContent() {
             // Exceptions are handled in the base
