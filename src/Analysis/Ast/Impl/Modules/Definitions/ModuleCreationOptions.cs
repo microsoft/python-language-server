@@ -46,6 +46,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Module stub, if any.
         /// </summary>
-        public IPythonStubModule Stub { get; set; }
+        public IPythonModule Stub { get; set; }
     }
 }

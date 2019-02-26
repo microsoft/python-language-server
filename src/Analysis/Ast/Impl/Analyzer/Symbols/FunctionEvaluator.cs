@@ -48,36 +48,37 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public FunctionDefinition FunctionDefinition { get; }
 
         public override void Evaluate() {
-            if (SymbolTable.ReplacedByStubs.Contains(Target) || _function.DeclaringModule.ModuleType == ModuleType.Stub) {
-                return;
-            }
-
-            // Process annotations.
-            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
-            if (!annotationType.IsUnknown()) {
-                // Annotations are typically types while actually functions return
-                // instances unless specifically annotated to a type such as Type[T].
-                var instance = annotationType.CreateInstance(annotationType.Name, Eval.GetLoc(FunctionDefinition), ArgumentSet.Empty);
-                _overload.SetReturnValue(instance, true);
-            } else {
-                // Check if function is a generator
-                var suite = FunctionDefinition.Body as SuiteStatement;
-                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
-                if (yieldExpr != null) {
-                    // Function return is an iterator
-                    var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
-                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
-                    _overload.SetReturnValue(returnValue, true);
-                }
-            }
+            var stub = SymbolTable.ReplacedByStubs.Contains(Target) 
+                       || _function.DeclaringModule.ModuleType == ModuleType.Stub
+                       || Module.ModuleType == ModuleType.Specialized;
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
-                DeclareParameters();
+                // Process annotations.
+                var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+                if (!annotationType.IsUnknown()) {
+                    // Annotations are typically types while actually functions return
+                    // instances unless specifically annotated to a type such as Type[T].
+                    var instance = annotationType.CreateInstance(annotationType.Name, Eval.GetLoc(FunctionDefinition), ArgumentSet.Empty);
+                    _overload.SetReturnValue(instance, true);
+                } else {
+                    // Check if function is a generator
+                    var suite = FunctionDefinition.Body as SuiteStatement;
+                    var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
+                    if (yieldExpr != null) {
+                        // Function return is an iterator
+                        var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
+                        var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
+                        _overload.SetReturnValue(returnValue, true);
+                    }
+                }
+
+                DeclareParameters(!stub);
+
                 if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries
                     // and stubs, no need to walk the body.
-                    if (FunctionDefinition.Body != null && Module.ModuleType != ModuleType.Specialized) {
-                        FunctionDefinition.Body.Walk(this);
+                    if (!stub) {
+                        FunctionDefinition.Body?.Walk(this);
                     }
                 }
             }
@@ -90,11 +91,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             foreach (var lhs in node.Left) {
                 switch (lhs) {
                     case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1: {
-                        if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
-                            t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, false);
+                            if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
+                                t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, false);
+                            }
+                            continue;
                         }
-                        continue;
-                    }
                     case NameExpression nameExp2 when nameExp2.Name == "self":
                         return true; // Don't assign to 'self'
                 }
@@ -121,7 +122,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return false;
         }
 
-        private void DeclareParameters() {
+        private void DeclareParameters(bool declareVariables) {
             // For class method no need to add extra parameters, but first parameter type should be the class.
             // For static and unbound methods do not add or set anything.
             // For regular bound methods add first parameter and set it to the class.
@@ -134,7 +135,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // Actual parameter type will be determined when method is invoked.
                     // The reason is that if method might be called on a derived class.
                     // Declare self or cls in this scope.
-                    Eval.DeclareVariable(p0.Name, new PythonInstance(_self), VariableSource.Declaration, p0.NameExpression);
+                    if (declareVariables) {
+                        Eval.DeclareVariable(p0.Name, new PythonInstance(_self), VariableSource.Declaration, p0.NameExpression);
+                    }
                     // Set parameter info.
                     var pi = new ParameterInfo(Ast, p0, _self);
                     pi.SetType(_self);
@@ -163,14 +166,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation);
 
                     var pi = new ParameterInfo(Ast, p, paramType);
-                    DeclareParameter(p, i, pi);
+                    DeclareParameter(p, i, pi, declareVariables);
                     parameters.Add(pi);
                 }
             }
             _overload.SetParameters(parameters);
         }
 
-        private void DeclareParameter(Parameter p, int index, ParameterInfo pi) {
+        private void DeclareParameter(Parameter p, int index, ParameterInfo pi, bool declareVariables) {
             IPythonType paramType;
 
             // If type is known from annotation, use it.
@@ -186,7 +189,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 }
             }
 
-            Eval.DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
+            if (declareVariables) {
+                Eval.DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
+            }
         }
     }
 }
