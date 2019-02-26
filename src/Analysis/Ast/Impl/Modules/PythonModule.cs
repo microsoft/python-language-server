@@ -103,6 +103,9 @@ namespace Microsoft.Python.Analysis.Modules {
             Uri = uri;
             FilePath = creationOptions.FilePath ?? uri?.LocalPath;
             Stub = creationOptions.Stub;
+            if (Stub is PythonModule stub && ModuleType != ModuleType.Stub) {
+                stub.PrimaryModule = this;
+            }
 
             if (ModuleType == ModuleType.Specialized || ModuleType == ModuleType.Unresolved) {
                 ContentState = State.Analyzed;
@@ -198,6 +201,13 @@ namespace Microsoft.Python.Analysis.Modules {
             await GetAstAsync(cancellationToken);
             await Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, -1, cancellationToken);
         }
+
+        /// <summary>
+        /// If module is a stub points to the primary module.
+        /// Typically used in code navigation scenarios when user
+        /// wants to see library code and not a stub.
+        /// </summary>
+        public IPythonModule PrimaryModule { get; internal set; }
 
         protected virtual string LoadContent() {
             if (ContentState < State.Loading) {

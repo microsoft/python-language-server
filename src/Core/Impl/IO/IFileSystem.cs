@@ -41,6 +41,7 @@ namespace Microsoft.Python.Core.IO {
 
         Stream CreateFile(string path);
         Stream FileOpen(string path, FileMode mode);
+        Stream FileOpen(string path, FileMode mode, FileAccess access, FileShare share);
 
         Version GetFileVersion(string path);
         void DeleteFile(string path);

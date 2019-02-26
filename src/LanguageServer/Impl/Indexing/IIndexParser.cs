@@ -13,13 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Core.IO {
-    public interface IDirectoryInfo : IFileSystemInfo {
-        IDirectoryInfo Parent { get; }
-        IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos();
-        IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includeFiles, string[] excludeFiles);
-        bool Match(string path, string[] includePatterns = default, string[] excludePatterns = default);
+namespace Microsoft.Python.LanguageServer.Indexing {
+    internal interface IIndexParser : IDisposable {
+        Task<PythonAst> ParseAsync(string path, CancellationToken cancellationToken = default);
     }
 }

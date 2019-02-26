@@ -13,9 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 
 namespace Microsoft.Python.Core.IO {
     public sealed class DirectoryInfoProxy : IDirectoryInfo {
@@ -39,6 +42,39 @@ namespace Microsoft.Python.Core.IO {
         public IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos() => _directoryInfo
                 .EnumerateFileSystemInfos()
                 .Select(CreateFileSystemInfoProxy);
+
+        public IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includePatterns, string[] excludePatterns) {
+            var matcher = GetMatcher(includePatterns, excludePatterns);
+            PatternMatchingResult matchResult = SafeExecuteMatcher(matcher);
+            return matchResult.Files.Select((filePatternMatch) => {
+                var fileSystemInfo = _directoryInfo.GetFileSystemInfos(filePatternMatch.Stem).First();
+                return CreateFileSystemInfoProxy(fileSystemInfo);
+            });
+        }
+
+        public bool Match(string path, string[] includePatterns = default, string[] excludePatterns = default) {
+            var matcher = GetMatcher(includePatterns, excludePatterns);
+            return matcher.Match(FullName, path).HasMatches;
+        }
+
+        private static Matcher GetMatcher(string[] includePatterns, string[] excludePatterns) {
+            Matcher matcher = new Matcher();
+            matcher.AddIncludePatterns(includePatterns.IsNullOrEmpty() ? new[] { "**/*" } : includePatterns);
+            if (!excludePatterns.IsNullOrEmpty()) {
+                matcher.AddExcludePatterns(excludePatterns);
+            }
+            return matcher;
+        }
+
+        private PatternMatchingResult SafeExecuteMatcher(Matcher matcher) {
+            var directoryInfo = new DirectoryInfoWrapper(_directoryInfo);
+            for (var retries = 5; retries > 0; retries--) {
+                try {
+                    return matcher.Execute(directoryInfo);
+                } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { }
+            }
+            return new PatternMatchingResult(Enumerable.Empty<FilePatternMatch>());
+        }
 
         private static IFileSystemInfo CreateFileSystemInfoProxy(FileSystemInfo fileSystemInfo)
             => fileSystemInfo is DirectoryInfo directoryInfo
