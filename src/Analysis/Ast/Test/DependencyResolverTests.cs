@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
                     foreach (var task in tasks) {
                         result.Append(task.Result.Value[0]);
-                        task.Result.MarkCompleted();
+                        task.Result.Commit();
                     }
 
                     if (tasks.Count > 1) {
@@ -101,7 +101,7 @@ namespace Microsoft.Python.Analysis.Tests {
             while (!walker.IsCompleted) {
                 var node = await walker.GetNextAsync(default);
                 result.Append(node.Value[0]);
-                node.MarkCompleted();
+                node.Commit();
             }
 
             result.ToString().Should().Be("CBA");
@@ -111,7 +111,7 @@ namespace Microsoft.Python.Analysis.Tests {
             while (!walker.IsCompleted) {
                 var node = await walker.GetNextAsync(default);
                 result.Append(node.Value[0]);
-                node.MarkCompleted();
+                node.Commit();
             }
 
             result.ToString().Should().Be("BA");
@@ -129,7 +129,7 @@ namespace Microsoft.Python.Analysis.Tests {
             while (!walker.IsCompleted) {
                 var node = await walker.GetNextAsync(default);
                 result.Append(node.Value[0]);
-                node.MarkCompleted();
+                node.Commit();
             }
 
             result.ToString().Should().Be("BDAC");
@@ -141,7 +141,7 @@ namespace Microsoft.Python.Analysis.Tests {
             while (!walker.IsCompleted) {
                 var node = await walker.GetNextAsync(default);
                 result.Append(node.Value[0]);
-                node.MarkCompleted();
+                node.Commit();
             }
 
             result.ToString().Should().Be("DCBA");
@@ -157,11 +157,11 @@ namespace Microsoft.Python.Analysis.Tests {
             var result = new StringBuilder();
             var node = await walker.GetNextAsync(default);
             result.Append(node.Value[0]);
-            node.MarkCompleted();
+            node.Commit();
             
             node = await walker.GetNextAsync(default);
             result.Append(node.Value[0]);
-            node.MarkCompleted();
+            node.Commit();
             
             walker.MissingKeys.Should().Equal("D");
             result.ToString().Should().Be("BC");
@@ -173,6 +173,33 @@ namespace Microsoft.Python.Analysis.Tests {
             
             walker.MissingKeys.Should().BeEmpty();
             result.ToString().Should().Be("AD");
+        }
+
+        [TestMethod]
+        public async Task AddChangesAsync_Skip() {
+            var resolver = new DependencyResolver<string, string>(new AddChangesAsyncTestDependencyFinder());
+            resolver.AddChangesAsync("A", "A:B", default).DoNotWait();
+            resolver.AddChangesAsync("B", "B", default).DoNotWait();
+            resolver.AddChangesAsync("D", "D", default).DoNotWait();
+            var walker = await resolver.AddChangesAsync("C", "C:D", default);
+            
+            var result = new StringBuilder();
+            var node = await walker.GetNextAsync(default);
+            result.Append(node.Value[0]);
+            node.Skip();
+            
+            node = await walker.GetNextAsync(default);
+            result.Append(node.Value[0]);
+            node.Skip();
+            
+            result.ToString().Should().Be("BD");
+
+            walker = await resolver.AddChangesAsync("D", "D", default);
+            result = new StringBuilder();
+            result.Append((await walker.GetNextAsync(default)).Value[0]);
+            result.Append((await walker.GetNextAsync(default)).Value[0]);
+
+            result.ToString().Should().Be("BD");
         }
 
         private sealed class AddChangesAsyncParallelTestDependencyFinder : IDependencyFinder<int, int> {

@@ -292,7 +292,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             public Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken) =>
                 _ppc.ConsumeAsync(cancellationToken);
 
-            public void MarkCompleted(WalkingVertex<TKey, TValue> vertex) {
+            public void MarkCompleted(WalkingVertex<TKey, TValue> vertex, bool commitChanges) {
                 var verticesToProduce = new List<WalkingVertex<TKey, TValue>>();
                 var isCompleted = false;
                 lock (_syncObj) {
@@ -315,14 +315,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     }
                 }
 
-                if (vertex.SecondPass == null) {
+                if (commitChanges && vertex.SecondPass == null) {
                     _dependencyResolver.CommitChanges(vertex.DependencyVertex);
                 }
                 
                 if (isCompleted) {
                     _ppc.Produce(null);
                     _ppc.Dispose();
-                    _dependencyResolver.CommitChanges(Version);
                 } else {
                     foreach (var toProduce in verticesToProduce) {
                         _ppc.Produce(new DependencyChainNode(this, toProduce));
@@ -341,7 +340,8 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 _vertex = vertex;
             }
 
-            public void MarkCompleted() => Interlocked.Exchange(ref _walker, null)?.MarkCompleted(_vertex);
+            public void Commit() => Interlocked.Exchange(ref _walker, null)?.MarkCompleted(_vertex, true);
+            public void Skip() => Interlocked.Exchange(ref _walker, null)?.MarkCompleted(_vertex, false);
         }
 
         private sealed class ChangedVerticesAwaitable {
