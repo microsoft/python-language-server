@@ -823,6 +823,21 @@ y = c.X
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericFunctionArguments() {
+            const string code = @"
+import unittest
+
+class Simple(unittest.TestCase):
+    def test_exception(self):
+        return self.assertRaises(TypeError).exception
+
+x = Simple().test_exception();
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").Which.Should().HaveType("TypeError");
+        }
+
+        [TestMethod, Priority(0)]
         public void AnnotationParsing() {
             AssertTransform("List", "NameOp:List");
             AssertTransform("List[Int]", "NameOp:List", "NameOp:Int", "MakeGenericOp");

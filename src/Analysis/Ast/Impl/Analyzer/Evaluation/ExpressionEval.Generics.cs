@@ -33,10 +33,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (!(target is PythonClassType c && c.IsGeneric()) && !(target is IGenericType)) {
                 return null;
             }
-            // Evaluate index to check if the result is generic parameter.
+            // Evaluate index to check if the result is a generic parameter.
             // If it is, then this is a declaration expression such as Generic[T]
             // rather than specific type instantiation as in List[str].
-
             switch (expr) {
                 // Indexing returns type as from A[int]
                 case IndexExpression indexExpr when target is IGenericType gt:
@@ -54,6 +53,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return null;
         }
 
+        /// <summary>
+        /// Given generic type and list of indices in the expression like
+        /// Generic[T1, T2, ...] or List[str] creates generic class base
+        /// (if the former) on specific type (if the latter).
+        /// </summary>
         private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> indices, Expression expr) {
             // See which ones are generic parameters as defined by TypeVar() 
             // and which are specific types. Normally there should not be a mix.
@@ -109,6 +113,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return indices;
         }
 
+        /// <summary>
+        /// Given generic class type and the passed constructor arguments
+        /// creates specific type and instance of the type. Attempts to match
+        /// supplied arguments to either __init__ signature or to the
+        /// list of generic definitions in Generic[T1, T2, ...].
+        /// </summary>
         private IMember CreateClassInstance(PythonClassType cls, IReadOnlyList<IMember> constructorArguments, CallExpression callExpr) {
             // Look at the constructor arguments and create argument set
             // based on the __init__ definition.

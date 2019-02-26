@@ -424,7 +424,6 @@ namespace Microsoft.Python.Analysis.Types {
                     if (!keyType.IsUnknown()) {
                         specificTypes[gt.Parameters[0].Name] = keyType;
                     }
-
                     if (!valueType.IsUnknown()) {
                         specificTypes[gt.Parameters[1].Name] = valueType;
                     }
@@ -457,7 +456,7 @@ namespace Microsoft.Python.Analysis.Types {
             // Resolve return types of methods, if any were annotated as generics
             var members = classType.GetMemberNames()
                 .Except(new[] { "__class__", "__bases__", "__base__" })
-                .ToDictionary(n => n, n => classType.GetMember(n));
+                .ToDictionary(n => n, classType.GetMember);
 
             // Create specific types.
             // Functions handle generics internally upon the call to Call.
@@ -487,7 +486,6 @@ namespace Microsoft.Python.Analysis.Types {
                         }
                 }
             }
-
         }
     }
 }

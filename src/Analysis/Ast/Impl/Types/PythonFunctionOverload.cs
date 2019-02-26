@@ -224,9 +224,9 @@ namespace Microsoft.Python.Analysis.Types {
 
         /// <summary>
         /// Given argument attempts to extract specific types for the function generic
-        /// parameters. Handles common cases such as dictionary, list and tuple.
-        /// Typically used on value that is passed to the generic function
-        /// in place of the generic parameter.
+        /// parameter(s). Handles common cases such as dictionary, list and tuple.
+        /// Typically used on a value that is being passed to the function in place
+        /// of the generic parameter.
         /// </summary>
         /// <remarks>
         /// Consider 'def func(x: Mapping[K, V]) -> K: ...'
