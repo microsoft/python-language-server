@@ -108,7 +108,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                         // Get documentation from the current type, if any, since stubs
                         // typically do not contain documentation while scraped code does.
-                        member?.GetPythonType()?.TransferDocumentation(stubMember.GetPythonType());
+                        member?.GetPythonType()?.TransferDocumentationAndLocation(stubMember.GetPythonType());
                         cls.AddMember(name, stubMember, overwrite: true);
                     }
                 } else {
@@ -116,7 +116,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Modules members that are modules should remain as they are, i.e. os.path
                     // should remain library with its own stub attached.
                     if (!stubType.IsUnknown() && !(stubType is IPythonModule)) {
-                        sourceType.TransferDocumentation(stubType);
+                        sourceType.TransferDocumentationAndLocation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;
                         Eval.DeclareVariable(v.Name, v.Value, source, LocationInfo.Empty, overwrite: true);

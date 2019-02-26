@@ -116,7 +116,7 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonFunction
         public FunctionDefinition FunctionDefinition { get; }
         public IPythonType DeclaringType { get; }
-        public override string Documentation => _doc ?? _overloads.FirstOrDefault()?.Documentation;
+        public override string Documentation => _doc ?? base.Documentation ?? _overloads.FirstOrDefault()?.Documentation;
         public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;
