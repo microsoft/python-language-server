@@ -66,7 +66,7 @@ projectA.";
             rdt.OpenDocument(new Uri(init4Path), string.Empty);
 
             var doc = rdt.OpenDocument(new Uri(appPath), appCode, appPath);
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = cs.GetCompletions(analysis, new SourceLocation(7, 10));
@@ -94,7 +94,7 @@ VALUE = 42";
             rdt.OpenDocument(uri2, content2);
             rdt.OpenDocument(uri3, content3);
 
-            var analysis = await doc1.GetAnalysisAsync(0);
+            var analysis = await doc1.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = cs.GetCompletions(analysis, new SourceLocation(2, 5));
@@ -117,7 +117,7 @@ VALUE = 42");
             var doc = rdt.OpenDocument(TestData.GetDefaultModuleUri(), content);
             await doc.GetAstAsync();
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = cs.GetCompletions(analysis, new SourceLocation(2, 5));
@@ -145,7 +145,7 @@ module2.";
             rdt.OpenDocument(new Uri(module2Path), "Y = 6 * 9");
 
             var doc = rdt.OpenDocument(new Uri(appPath), appCode1);
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
@@ -160,7 +160,7 @@ module2.";
             });
 
             await doc.GetAstAsync();
-            analysis = await doc.GetAnalysisAsync(0);
+            analysis = await doc.GetAnalysisAsync(-1);
 
             comps = cs.GetCompletions(analysis, new SourceLocation(2, 9));
             comps.Should().HaveLabels("X").And.NotContainLabels("Y");
@@ -202,7 +202,7 @@ mod2.B.";
 
             var mainPath = Path.Combine(root, "main.py");
             var doc = rdt.OpenDocument(new Uri(mainPath), mainContent);
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = cs.GetCompletions(analysis, new SourceLocation(2, 6));
@@ -241,7 +241,7 @@ package.sub_package.module2.";
             rdt.OpenDocument(new Uri(module2Path), "Y = 6 * 9");
 
             var doc = rdt.OpenDocument(new Uri(appPath), appCode);
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = cs.GetCompletions(analysis, new SourceLocation(5, 9));
@@ -284,7 +284,7 @@ package.sub_package.module2.";
 
             rdt.OpenDocument(new Uri(modulePath), "X = 42");
             var doc = rdt.OpenDocument(new Uri(appPath), appCode1);
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = cs.GetCompletions(analysis, new SourceLocation(2, 13));
@@ -297,7 +297,7 @@ package.sub_package.module2.";
                 }
             });
 
-            analysis = await doc.GetAnalysisAsync(0);
+            analysis = await doc.GetAnalysisAsync(-1);
             comps = cs.GetCompletions(analysis, new SourceLocation(2, 21));
             comps.Should().HaveLabels("X");
         }

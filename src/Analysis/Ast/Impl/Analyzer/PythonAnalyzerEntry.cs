@@ -18,6 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -27,15 +28,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IPythonModule Module { get; }
         public PythonAst Ast { get; private set; }
         public IDocumentAnalysis PreviousAnalysis { get; private set; }
-        public int Version { get; private set; }
-        public bool UserNotAnalyzed => PreviousAnalysis is EmptyAnalysis && Module.ModuleType == ModuleType.User;
+        public ImmutableArray<IPythonModule> AnalysisDependencies { get; private set; }
+        public int BufferVersion { get; private set; }
+        public int AnalysisVersion { get; private set; }
+        public bool NotAnalyzed => PreviousAnalysis is EmptyAnalysis;
 
-        public PythonAnalyzerEntry(IPythonModule module, PythonAst ast, IDocumentAnalysis previousAnalysis, int version) {
+        public PythonAnalyzerEntry(IPythonModule module, PythonAst ast, IDocumentAnalysis previousAnalysis, int bufferVersion, int analysisVersion) {
             Module = module;
             Ast = ast;
             PreviousAnalysis = previousAnalysis;
+            AnalysisDependencies = ImmutableArray<IPythonModule>.Empty;
 
-            Version = version;
+            BufferVersion = bufferVersion;
+            AnalysisVersion = analysisVersion;
             _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
@@ -44,15 +49,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void TrySetAnalysis(IDocumentAnalysis analysis, int version, object syncObj) {
             lock (syncObj) {
-                if (UserNotAnalyzed) {
+                if (NotAnalyzed) {
                     PreviousAnalysis = analysis;
                 }
 
-                if (Version > version) {
+                if (AnalysisVersion > version) {
                     return;
                 }
 
-                Version = version;
+                AnalysisDependencies = ImmutableArray<IPythonModule>.Empty;
+                UpdateAnalysisTcs(version);
             }
 
             _analysisTcs.TrySetResult(analysis);
@@ -60,11 +66,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void TrySetException(Exception ex, int version, object syncObj) {
             lock (syncObj) {
-                if (Version > version) {
+                if (AnalysisVersion > version) {
                     return;
                 }
 
-                Version = version;
+                AnalysisVersion = version;
             }
 
             _analysisTcs.TrySetException(ex);
@@ -72,29 +78,43 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void TryCancel(OperationCanceledException oce, int version, object syncObj) {
             lock (syncObj) {
-                if (Version > version) {
+                if (AnalysisVersion > version) {
                     return;
                 }
 
-                Version = version;
+                AnalysisVersion = version;
             }
             
             _analysisTcs.TrySetCanceled(oce.CancellationToken);
         }
 
-        public void Invalidate(int version, PythonAst ast) {
-            if (Version >= version) {
+        public void Invalidate(int analysisVersion)
+            => Invalidate(Ast, BufferVersion, analysisVersion);
+
+        public void AddAnalysisDependencies(ImmutableArray<IPythonModule> dependencies) {
+            AnalysisDependencies = AnalysisDependencies.AddRange(dependencies);
+        }
+
+        public void Invalidate(PythonAst ast, int bufferVersion, int analysisVersion) {
+            if (AnalysisVersion >= analysisVersion && BufferVersion >= bufferVersion) {
                 return;
             }
 
-            Version = version;
             Ast = ast;
+            BufferVersion = bufferVersion;
+            
+            UpdateAnalysisTcs(analysisVersion);
+        }
+
+        private void UpdateAnalysisTcs(int analysisVersion) {
+            AnalysisVersion = analysisVersion;
             if (_analysisTcs.Task.Status == TaskStatus.RanToCompletion) {
                 PreviousAnalysis = _analysisTcs.Task.Result;
+                AnalysisDependencies = ImmutableArray<IPythonModule>.Empty;
             }
 
             if (_analysisTcs.Task.IsCompleted) {
-                _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>();
+                _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
         }
     }

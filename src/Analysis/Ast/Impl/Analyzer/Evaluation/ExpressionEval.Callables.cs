@@ -16,8 +16,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -160,10 +162,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 instanceType.Equals(fn.DeclaringType) ||
                 fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation(null))) {
 
-                if (fn.IsSpecialized && fn is PythonFunctionType ft) {
+                if (fn.IsSpecialized && fn is PythonFunctionType ft && ft.Dependencies.Count > 0) {
+                    var dependencies = ImmutableArray<IPythonModule>.Empty;
                     foreach (var moduleName in ft.Dependencies) {
-                        Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
+                        var dependency = Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
+                        if (dependency != null) {
+                            dependencies = dependencies.Add(dependency);
+                        }
                     }
+                    Services.GetService<IPythonAnalyzer>().EnqueueDocumentForAnalysis(Module, dependencies);
                 }
 
                 var t = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
