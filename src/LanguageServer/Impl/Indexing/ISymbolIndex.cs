@@ -13,13 +13,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Documents;
 
-namespace Microsoft.Python.Core.IO {
-    public interface IDirectoryInfo : IFileSystemInfo {
-        IDirectoryInfo Parent { get; }
-        IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos();
-        IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includeFiles, string[] excludeFiles);
-        bool Match(string path, string[] includePatterns = default, string[] excludePatterns = default);
+namespace Microsoft.Python.LanguageServer.Indexing {
+    internal interface ISymbolIndex : IDisposable {
+        Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken ct = default);
+        Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken ct = default);
+        void Add(string path, IDocument doc);
+        void Parse(string path);
+        void Delete(string path);
+        void ReIndex(string path, IDocument doc);
+        void MarkAsPending(string path);
     }
 }

@@ -21,20 +21,24 @@ namespace Microsoft.Python.Analysis {
         public static bool IsUnknown(this IPythonType value) =>
             value == null || (value.TypeId == BuiltinTypeId.Unknown && value.MemberType == PythonMemberType.Unknown && value.Name.Equals("Unknown"));
 
-        public static bool IsGenericParameter(this IPythonType value) 
+        public static bool IsGenericParameter(this IPythonType value)
             => value is IGenericTypeParameter;
 
         public static bool IsGeneric(this IPythonType value)
             => value is IGenericTypeParameter || value is IGenericType || (value is IPythonClassType c && c.IsGeneric());
 
-        public static void TransferDocumentationAndLocation(this IPythonType s, IPythonType d) {
-            if (s != null && s != d && s is PythonType src && d is PythonType dst) {
-                dst.TrySetTypeId(src.TypeId);
+        public static void TransferDocumentationAndLocation(this IPythonType src, IPythonType dst) {
+            if (src != null && dst is PythonType pt) {
+                pt.TrySetTypeId(dst.TypeId);
                 var documentation = src.Documentation;
                 if (!string.IsNullOrEmpty(documentation)) {
-                    dst.SetDocumentation(documentation);
+                    if (!string.IsNullOrEmpty(documentation)) {
+                        pt.SetDocumentation(documentation);
+                    }
                 }
-                dst.SetLocation(src.Location);
+                if (src is ILocatedMember lm) {
+                    pt.SetLocation(lm.Location);
+                }
             }
         }
     }

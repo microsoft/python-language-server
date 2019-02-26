@@ -55,5 +55,12 @@ namespace Microsoft.Python.Analysis.Types {
         /// analysis until later time, when module members are actually needed.
         /// </summary>
         Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// If module is a stub points to the primary module.
+        /// Typically used in code navigation scenarios when user
+        /// wants to see library code and not a stub.
+        /// </summary>
+        IPythonModule PrimaryModule { get; }
     }
 }

@@ -24,11 +24,11 @@ namespace Microsoft.Python.Analysis.Types {
     internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName, IEquatable<IPythonType> {
         private readonly object _lock = new object();
         private readonly string _name;
-        private Dictionary<string, IMember> _members;
         private Func<string, string> _documentationProvider;
         private Func<string, LocationInfo> _locationProvider;
         private string _documentation;
         private LocationInfo _location;
+        private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
         private bool _readonly;
 
@@ -38,7 +38,8 @@ namespace Microsoft.Python.Analysis.Types {
             _members ?? (_members = new Dictionary<string, IMember>());
 
         public PythonType(
-            string name, IPythonModule declaringModule,
+            string name,
+            IPythonModule declaringModule,
             string documentation,
             LocationInfo location,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
@@ -48,12 +49,12 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public PythonType(
-            string name,
-            IPythonModule declaringModule,
-            Func<string, string> documentationProvider,
-            Func<string, LocationInfo> locationProvider,
-            BuiltinTypeId typeId = BuiltinTypeId.Unknown
-        ) : this(name, declaringModule, typeId) {
+                string name,
+                IPythonModule declaringModule,
+                Func<string, string> documentationProvider,
+                Func<string, LocationInfo> locationProvider,
+                BuiltinTypeId typeId = BuiltinTypeId.Unknown
+            ) : this(name, declaringModule, typeId) {
             _documentationProvider = documentationProvider;
             _locationProvider = locationProvider;
         }
@@ -61,7 +62,7 @@ namespace Microsoft.Python.Analysis.Types {
         private PythonType(string name, IPythonModule declaringModule, BuiltinTypeId typeId = BuiltinTypeId.Unknown) {
             _name = name ?? throw new ArgumentNullException(nameof(name));
             DeclaringModule = declaringModule;
-            _typeId = typeId;
+            _typeId = typeId; _typeId = typeId;
         }
 
         #region IPythonType
@@ -103,8 +104,8 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region ILocatedMember
-
-        public virtual LocationInfo Location => _location;
+        public virtual LocationInfo Location => _locationProvider != null
+            ? _locationProvider?.Invoke(Name) : _location ?? LocationInfo.Empty;
         #endregion
 
         #region IHasQualifiedName
