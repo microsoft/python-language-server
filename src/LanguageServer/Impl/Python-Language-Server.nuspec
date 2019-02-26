@@ -11,7 +11,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Microsoft Python Language Server</description>
     <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
-    <copyright>Copyright (c) 2018</copyright>
+    <copyright>Copyright (c) 2018-2019</copyright>
     <tags>Python;VS Code</tags>
   </metadata>
   <files>
