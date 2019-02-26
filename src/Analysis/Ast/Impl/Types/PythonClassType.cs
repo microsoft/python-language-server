@@ -333,7 +333,7 @@ namespace Microsoft.Python.Analysis.Types {
                         }
                         // Just match passed types to generic parameters in order
                         for (var i = 0; i < Math.Min(genericTypeDefinitions.Count, args.Arguments.Count); i++) {
-                            if (args.Arguments[i].Value is IPythonType t) {
+                            if ((args.Arguments[i].Value as IMember)?.GetPythonType() is IPythonType t) {
                                 specificClassTypeParameters[genericTypeDefinitions[i].Name] = t;
                             }
                         }

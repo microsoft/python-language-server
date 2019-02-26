@@ -94,7 +94,7 @@ datetime.datetime.now().day
 
             await AssertHover(hs, analysis, new SourceLocation(3, 2), "module datetime*", new SourceSpan(3, 1, 3, 9));
             await AssertHover(hs, analysis, new SourceLocation(3, 11), "class datetime*", new SourceSpan(3, 9, 3, 18));
-            await AssertHover(hs, analysis, new SourceLocation(3, 20), "datetime.now(tz: Optional[tzinfo]) -> datetime*", new SourceSpan(3, 18, 3, 22));
+            await AssertHover(hs, analysis, new SourceLocation(3, 20), @"datetime.now(tz: tzinfo) -> datetime*", new SourceSpan(3, 18, 3, 22));
         }
 
         [TestMethod, Priority(0)]
