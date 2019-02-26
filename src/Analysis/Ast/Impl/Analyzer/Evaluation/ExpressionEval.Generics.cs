@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -147,6 +148,62 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     return ct.FunctionDefinition;
             }
             return null;
+        }
+
+        public static IReadOnlyList<IPythonType> GetTypeArgumentsFromParameters(IPythonFunctionOverload o, IArgumentSet args) {
+            if (o.Parameters.Any(p => p.IsGeneric)) {
+                // Declaring class is not generic, but the function is and arguments
+                // should provide actual specific types.
+                // TODO: handle keyword and dict args
+                var list = new List<IPythonType>();
+                for (var i = 0; i < Math.Min(o.Parameters.Count, args.Arguments.Count); i++) {
+                    if (o.Parameters[i].IsGeneric) {
+                        list.AddRange(GetSpecificTypeFromArgumentValue(args.Arguments[i].Value));
+                    }
+                }
+                return list;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Given argument attempts to extract specific types for the function generic
+        /// parameter(s). Handles common cases such as dictionary, list and tuple.
+        /// Typically used on a value that is being passed to the function in place
+        /// of the generic parameter.
+        /// </summary>
+        /// <remarks>
+        /// Consider 'def func(x: Mapping[K, V]) -> K: ...'
+        /// </remarks>
+        private static IReadOnlyList<IPythonType> GetSpecificTypeFromArgumentValue(object argumentValue) {
+            var specificTypes = new List<IPythonType>();
+            switch (argumentValue) {
+                case IPythonDictionary dict:
+                    var keyType = dict.Keys.FirstOrDefault()?.GetPythonType();
+                    var valueType = dict.Values.FirstOrDefault()?.GetPythonType();
+                    if (!keyType.IsUnknown()) {
+                        specificTypes.Add(keyType);
+                    }
+                    if (!valueType.IsUnknown()) {
+                        specificTypes.Add(valueType);
+                    }
+                    break;
+                case IPythonCollection coll:
+                    specificTypes.AddRange(coll.Contents.Select(m => m.GetPythonType()));
+                    break;
+                case IPythonIterable iter:
+                    var itemType = iter.GetIterator().Next.GetPythonType();
+                    if (!itemType.IsUnknown()) {
+                        specificTypes.Add(itemType);
+                    }
+                    break;
+                case IMember m:
+                    if (!m.IsUnknown()) {
+                        specificTypes.Add(m.GetPythonType());
+                    }
+                    break;
+            }
+            return specificTypes;
         }
     }
 }
