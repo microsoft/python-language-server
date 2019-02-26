@@ -142,7 +142,7 @@ class A(object):
             var ds = new DefinitionSource();
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(2, 12));
-            reference.uri.AbsolutePath.Should().Contain("python.pyi");
+            reference.Should().BeNull();
         }
     }
 }

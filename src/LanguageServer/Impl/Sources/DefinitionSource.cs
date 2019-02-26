@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -46,7 +45,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     !(statement is ImportStatement) && !(statement is FromImportStatement)) {
                     var m = eval.LookupNameInScopes(nex.Name, out var scope);
                     if (m != null && scope.Variables[nex.Name] is IVariable v) {
-                        return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+                        if (CanNavigateToModule(v.Value.GetPythonType()?.DeclaringModule, analysis)) {
+                            return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+                        }
                     }
                 }
 
@@ -84,29 +85,27 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     module = ft.DeclaringModule;
                     location = ft.Location;
                     break;
-                case IPythonInstance instance when instance.Type is IPythonFunctionType ft: {
-                        node = ft.FunctionDefinition;
-                        module = ft.DeclaringModule;
-                        break;
-                    }
-                case IPythonInstance _ when expr is NameExpression nex: {
-                        var member = eval.LookupNameInScopes(nex.Name, out var scope);
-                        if (member != null && scope != null) {
-                            var v = scope.Variables[nex.Name];
-                            if (v != null) {
-                                return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
-                            }
+                case IPythonInstance instance when instance.Type is IPythonFunctionType ft:
+                    node = ft.FunctionDefinition;
+                    module = ft.DeclaringModule;
+                    break;
+                case IPythonInstance _ when expr is NameExpression nex:
+                    var m1 = eval.LookupNameInScopes(nex.Name, out var scope);
+                    if (m1 != null && scope != null) {
+                        var v = scope.Variables[nex.Name];
+                        if (v != null) {
+                            return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
                         }
-                        break;
                     }
+                    break;
                 case IPythonInstance _ when expr is MemberExpression mex: {
                         var target = eval.GetValueFromExpression(mex.Target);
                         var type = target?.GetPythonType();
-                        var member = type?.GetMember(mex.Name);
-                        if (member is IPythonInstance v) {
+                        var m2 = type?.GetMember(mex.Name);
+                        if (m2 is IPythonInstance v) {
                             return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
                         }
-                        return FromMember(member, null, statement, analysis);
+                        return FromMember(m2, null, statement, analysis);
                     }
             }
 
@@ -131,6 +130,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private static bool CanNavigateToModule(IPythonModule m, IDocumentAnalysis analysis) {
+            if (m == null) {
+                return false;
+            }
             var canNavigate = m.ModuleType == ModuleType.User || m.ModuleType == ModuleType.Package || m.ModuleType == ModuleType.Library;
 #if DEBUG
             // Allow navigation anywhere in debug.
