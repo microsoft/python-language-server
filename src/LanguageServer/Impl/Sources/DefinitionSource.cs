@@ -45,7 +45,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     !(statement is ImportStatement) && !(statement is FromImportStatement)) {
                     var m = eval.LookupNameInScopes(nex.Name, out var scope);
                     if (m != null && scope.Variables[nex.Name] is IVariable v) {
-                        if (CanNavigateToModule(v.Value.GetPythonType()?.DeclaringModule, analysis)) {
+                        var type = v.Value.GetPythonType();
+                        var module = type as IPythonModule ?? type?.DeclaringModule;
+                        if (CanNavigateToModule(module, analysis)) {
                             return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
                         }
                     }
