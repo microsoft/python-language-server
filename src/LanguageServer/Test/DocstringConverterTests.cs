@@ -80,6 +80,9 @@ Heading 2
 
 Heading 3
 ~~~~~~~~~
+
+Heading 4
++++++++++
 ";
 
             var markdown = @"Heading 1
@@ -90,7 +93,22 @@ Heading 2
 
 Heading 3
 ---------
+
+Heading 4
+---------
 ";
+            docstring.Should().ConvertToMarkdown(markdown);
+        }
+
+
+        [DataRow("======", "======")]
+        [DataRow("=== ==", "======")]
+        [DataRow("---------", "---------")]
+        [DataRow("--  -- --", "---------")]
+        [DataRow("~~~~~~~~", "--------")]
+        [DataRow("~~~  ~ ~", "--------")]
+        [DataTestMethod, Priority(0)]
+        public void HeadingsWithExtraSpaces(string docstring, string markdown) {
             docstring.Should().ConvertToMarkdown(markdown);
         }
 
