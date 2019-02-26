@@ -170,11 +170,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 await _analysisRunningEvent.WaitAsync(cancellationToken);
-
                 var stopWatch = Stopwatch.StartNew();
 
                 try {
-                    
                     lock (_syncObj) {
                         foreach (var affectedEntry in walker.AffectedValues) {
                             affectedEntry.Invalidate(_version);
