@@ -23,6 +23,8 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.LanguageServer.Documentation {
     internal class DocstringConverter {
+        private static readonly string[] PotentialHeaders = new[] { "=", "-", "~", "+" };
+
         /// <summary>
         /// Converts a docstring to a plaintext, human readable form. This will
         /// first strip any common leading indention (like inspect.cleandoc),
@@ -176,11 +178,32 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 }
 
                 if (i == 0) {
-                    // Replace ReST style ~~~ header to prevent it being interpreted as a code block
-                    // (an alternative in Markdown to triple backtick blocks).
-                    if (parts.Length == 1 && Regex.IsMatch(part, @"^\s*~~~+$")) {
-                        Append(part.Replace('~', '-'));
-                        continue;
+                    // Only one part, and not inside code, so check header cases.
+                    if (parts.Length == 1) {
+                        // Handle weird separator lines which contain random spaces.
+                        foreach (var h in PotentialHeaders) {
+                            var hEsc = Regex.Escape(h);
+                            if (Regex.IsMatch(part, $"^\\s*{hEsc}+(\\s+{hEsc}+)+$")) {
+                                part = Regex.Replace(part, @"\s", h);
+                                break;
+                            }
+                        }
+
+                        // Replace ReST style ~~~ header to prevent it being interpreted as a code block
+                        // (an alternative in Markdown to triple backtick blocks).
+                        if (Regex.IsMatch(part, @"^\s*~~~+$")) {
+                            Append(part.Replace('~', '-'));
+                            continue;
+                        }
+
+                        // Replace +++ heading too.
+                        // TODO: Handle the rest of these, and the precedence order (which depends on the
+                        // order heading lines are seen, not what the line contains).
+                        // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#sections
+                        if (Regex.IsMatch(part, @"^\s*\+\+\++$")) {
+                            Append(part.Replace('+', '-'));
+                            continue;
+                        }
                     }
 
                     // Don't strip away asterisk-based bullet point lists.
