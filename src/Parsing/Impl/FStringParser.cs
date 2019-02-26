@@ -82,7 +82,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private void AddStringToChildren(string x) {
-            var parser = Parser.CreateParser(new MemoryStream(Encoding.UTF8.GetBytes(x)), PythonLanguageVersion.V36);
+            var parser = Parser.CreateParser(new StringReader(x), PythonLanguageVersion.V36);
             var expr = Statement.GetExpression(parser.ParseTopExpression().Body);
             if (expr is null) {
                 throw new Exception();
