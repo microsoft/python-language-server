@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Modules {
     internal class CompiledPythonModule : PythonModule {
         protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
 
-        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonStubModule stub, IServiceContainer services)
+        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, IServiceContainer services)
             : base(moduleName, filePath, moduleType, stub, services) { }
 
         public override string Documentation

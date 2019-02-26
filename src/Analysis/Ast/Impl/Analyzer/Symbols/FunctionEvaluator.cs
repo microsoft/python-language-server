@@ -50,7 +50,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public override void Evaluate() {
             var stub = SymbolTable.ReplacedByStubs.Contains(Target) 
                        || _function.DeclaringModule.ModuleType == ModuleType.Stub
-                       || FunctionDefinition.Body == null 
                        || Module.ModuleType == ModuleType.Specialized;
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
@@ -79,7 +78,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // Return type from the annotation is sufficient for libraries
                     // and stubs, no need to walk the body.
                     if (!stub) {
-                        FunctionDefinition.Body.Walk(this);
+                        FunctionDefinition.Body?.Walk(this);
                     }
                 }
             }
