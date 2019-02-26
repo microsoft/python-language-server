@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public FunctionDefinition FunctionDefinition { get; }
 
         public override void Evaluate() {
-            var stub = SymbolTable.ReplacedByStubs.Contains(Target) 
+            var stub = SymbolTable.ReplacedByStubs.Contains(Target)
                        || _function.DeclaringModule.ModuleType == ModuleType.Stub
                        || Module.ModuleType == ModuleType.Specialized;
 
@@ -74,12 +74,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 DeclareParameters(!stub);
 
-                if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
+                // Do process body of constructors since they may be declaring
+                // variables that are later used to determine return type of other
+                // methods and properties.
+                var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
+                if (!stub && (ctor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User)) {
                     // Return type from the annotation is sufficient for libraries
                     // and stubs, no need to walk the body.
-                    if (!stub) {
-                        FunctionDefinition.Body?.Walk(this);
-                    }
+                    FunctionDefinition.Body?.Walk(this);
                 }
             }
             Result = _function;

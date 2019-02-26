@@ -438,6 +438,23 @@ class H(object):
         }
 
         [TestMethod, Priority(0)]
+        public async Task CtorDefinesVariables() {
+            const string code = @"
+class C: 
+    def __init__(self) -> None:
+        self.x = 1
+
+    @property
+    def X(self):
+        return self.x
+
+z = C().X
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("z").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task NestedMethod() {
             const string code = @"
 class MyClass:

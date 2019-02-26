@@ -17,6 +17,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
@@ -907,5 +909,27 @@ a.
             }
         }
 
+        [TestMethod, Priority(0)]
+        public async Task AzureFunctions() {
+            const string code = @"
+import azure.functions as func
+
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    name = req.params.
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var v = analysis.GlobalScope.Variables["func"];
+            v.Should().NotBeNull();
+            if (v.Value.GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
+                var ver = analysis.Document.Interpreter.Configuration.Version;
+                Assert.Inconclusive(
+                    $"'azure.functions' package is not installed for Python {ver}, see https://github.com/Microsoft/python-language-server/issues/462");
+            }
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(5, 23));
+            result.Should().HaveLabels("get");
+            result.Completions.First(x => x.label == "get").Should().HaveDocumentation("dict.get*");
+        }
     }
 }
