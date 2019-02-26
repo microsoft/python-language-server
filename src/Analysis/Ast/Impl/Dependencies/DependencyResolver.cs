@@ -266,6 +266,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
             public int Version { get; }
             public bool IsCompleted { get; private set; }
 
+            public int Remaining {
+                get {
+                    lock (_syncObj) {
+                        return _remaining;
+                    }
+                }
+            }
+
             public DependencyChainWalker(in DependencyResolver<TKey, TValue> dependencyResolver, in ImmutableArray<WalkingVertex<TKey, TValue>> startingVertices, in ImmutableArray<TValue> affectedValues, in ImmutableArray<TKey> missingKeys, in int totalNodesCount, in int version) {
                 _syncObj = new object();
                 _dependencyResolver = dependencyResolver;

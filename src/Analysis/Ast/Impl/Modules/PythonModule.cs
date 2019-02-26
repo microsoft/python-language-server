@@ -325,6 +325,8 @@ namespace Microsoft.Python.Analysis.Modules {
                 _buffer.Update(changes);
                 Parse();
             }
+
+            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
         public void Reset(string content) {

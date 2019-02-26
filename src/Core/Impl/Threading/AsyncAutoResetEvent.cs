@@ -20,7 +20,7 @@ using Microsoft.Python.Core.Threading;
 
 namespace Microsoft.Python.Core {
     public sealed class AsyncAutoResetEvent {
-        private readonly Queue<TaskCompletionSource<bool>> _waiters = new Queue<TaskCompletionSource<bool>>(); 
+        private readonly Queue<(CancellationTokenRegistration, TaskCompletionSource<bool>)> _waiters = new Queue<(CancellationTokenRegistration, TaskCompletionSource<bool>)>(); 
         private bool _isSignaled;
 
         public Task WaitAsync(in CancellationToken cancellationToken = default) {
@@ -32,8 +32,9 @@ namespace Microsoft.Python.Core {
                     return Task.CompletedTask; 
                 }
                 
-                tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously); 
-                _waiters.Enqueue(tcs); 
+                tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var ctr = cancellationToken.CanBeCanceled ? tcs.RegisterForCancellation(cancellationToken) : default;
+                _waiters.Enqueue((ctr, tcs)); 
             }
 
             if (cancellationToken.CanBeCanceled) {
@@ -44,10 +45,13 @@ namespace Microsoft.Python.Core {
         }
 
         public void Set() {
-            var  waiterToRelease = default(TaskCompletionSource<bool>);
+            var waiterToRelease = default(TaskCompletionSource<bool>);
+            var ctr = default(CancellationTokenRegistration);
             lock (_waiters) {
                 while (_waiters.Count > 0) {
-                    waiterToRelease = _waiters.Dequeue();
+                    (ctr, waiterToRelease) = _waiters.Dequeue();
+                    ctr.Dispose();
+
                     if (!waiterToRelease.Task.IsCompleted) {
                         break;
                     }
@@ -58,9 +62,7 @@ namespace Microsoft.Python.Core {
                 }
             }
 
-            if (waiterToRelease != null && !waiterToRelease.Task.IsCompleted) {
-                waiterToRelease.TrySetResult(true);
-            }
+            waiterToRelease?.TrySetResult(true);
         }
     }
 }

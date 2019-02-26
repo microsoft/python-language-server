@@ -163,34 +163,43 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
 
                     _version = walker.Version;
-                    foreach (var affectedEntry in walker.AffectedValues) {
-                        affectedEntry.Invalidate(_version);
-                        if (affectedEntry.NotAnalyzed) {
-                            stopOnVersionChange = false;
-                        }
-                    }
                 }
 
                 if (walker.MissingKeys.Count > 0) {
                     LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
                 }
 
-                var stopWatch = Stopwatch.StartNew();
                 await _analysisRunningEvent.WaitAsync(cancellationToken);
-                
+
+                var stopWatch = Stopwatch.StartNew();
+
                 try {
-                    if (stopOnVersionChange) {
-                        lock (_syncObj) {
-                            if (_version > walker.Version) {
-                                return;
+                    
+                    lock (_syncObj) {
+                        foreach (var affectedEntry in walker.AffectedValues) {
+                            affectedEntry.Invalidate(_version);
+                            if (affectedEntry.NotAnalyzed) {
+                                stopOnVersionChange = false;
                             }
+                        }
+
+                        if (_version > walker.Version && stopOnVersionChange) {
+                            return;
                         }
                     }
 
+                    _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {walker.AffectedValues.Count} entries has started.");
                     await AnalyzeAffectedEntriesAsync(walker, stopOnVersionChange, stopWatch, analysisToken);
                 } finally {
                     _analysisRunningEvent.Set();
                     stopWatch.Stop();
+                    if (_log != null) {
+                        if (walker.Remaining == 0) {
+                            _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms.");
+                        } else {
+                            _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been canceled in {stopWatch.Elapsed.TotalMilliseconds} ms with {walker.Remaining} remaining entries.");
+                        }
+                    }
                 }
             }
         }
