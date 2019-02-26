@@ -92,9 +92,9 @@ datetime.datetime.now().day
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var hs = new HoverSource(new PlainTextDocumentationSource());
 
-            await AssertHover(hs, analysis, new SourceLocation(3, 2), "module datetime*", new SourceSpan(3, 1, 3, 9));
-            await AssertHover(hs, analysis, new SourceLocation(3, 11), "class datetime*", new SourceSpan(3, 9, 3, 18));
-            await AssertHover(hs, analysis, new SourceLocation(3, 20), "datetime.now(tz: Optional[tzinfo]) -> datetime*", new SourceSpan(3, 18, 3, 22));
+            AssertHover(hs, analysis, new SourceLocation(3, 2), "module datetime*", new SourceSpan(3, 1, 3, 9));
+            AssertHover(hs, analysis, new SourceLocation(3, 11), "class datetime*", new SourceSpan(3, 9, 3, 18));
+            AssertHover(hs, analysis, new SourceLocation(3, 20), "datetime.now(tz: Optional[tzinfo]) -> datetime*", new SourceSpan(3, 18, 3, 22));
         }
 
         [TestMethod, Priority(0)]
@@ -105,9 +105,9 @@ from os import path as p
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var hs = new HoverSource(new PlainTextDocumentationSource());
 
-            await AssertHover(hs, analysis, new SourceLocation(2, 6), "module os*", new SourceSpan(2, 6, 2, 8));
-            await AssertHover(hs, analysis, new SourceLocation(2, 16), "module*", new SourceSpan(2, 16, 2, 20));
-            await AssertHover(hs, analysis, new SourceLocation(2, 24), "module*", new SourceSpan(2, 24, 2, 25));
+            AssertHover(hs, analysis, new SourceLocation(2, 6), "module os*", new SourceSpan(2, 6, 2, 8));
+            AssertHover(hs, analysis, new SourceLocation(2, 16), "module*", new SourceSpan(2, 16, 2, 20));
+            AssertHover(hs, analysis, new SourceLocation(2, 24), "module*", new SourceSpan(2, 24, 2, 25));
         }
 
         [TestMethod, Priority(0)]
@@ -118,8 +118,8 @@ import datetime as d123
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var hs = new HoverSource(new PlainTextDocumentationSource());
 
-            await AssertHover(hs, analysis, new SourceLocation(2, 11), "module datetime*", new SourceSpan(2, 8, 2, 16));
-            await AssertHover(hs, analysis, new SourceLocation(2, 21), "module datetime*", new SourceSpan(2, 20, 2, 24));
+            AssertHover(hs, analysis, new SourceLocation(2, 11), "module datetime*", new SourceSpan(2, 8, 2, 16));
+            AssertHover(hs, analysis, new SourceLocation(2, 21), "module datetime*", new SourceSpan(2, 20, 2, 24));
         }
 
         [TestMethod, Priority(0)]
@@ -136,8 +136,8 @@ class Derived(Base):
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var hs = new HoverSource(new PlainTextDocumentationSource());
-            await AssertHover(hs, analysis, new SourceLocation(3, 19), "class Base*", new SourceSpan(3, 18, 3, 22));
-            await AssertHover(hs, analysis, new SourceLocation(8, 8), "class Derived*", new SourceSpan(8, 8, 8, 12));
+            AssertHover(hs, analysis, new SourceLocation(3, 19), "class Base*", new SourceSpan(3, 18, 3, 22));
+            AssertHover(hs, analysis, new SourceLocation(8, 8), "class Derived*", new SourceSpan(8, 8, 8, 12));
         }
 
         [TestMethod, Priority(0)]
@@ -162,8 +162,8 @@ y = boxedstr.get()
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var hs = new HoverSource(new PlainTextDocumentationSource());
-            await AssertHover(hs, analysis, new SourceLocation(14, 15), "Box.get() -> int", new SourceSpan(14, 13, 14, 17));
-            await AssertHover(hs, analysis, new SourceLocation(17, 15), "Box.get() -> str", new SourceSpan(17, 13, 17, 17));
+            AssertHover(hs, analysis, new SourceLocation(14, 15), "Box.get() -> int", new SourceSpan(14, 13, 14, 17));
+            AssertHover(hs, analysis, new SourceLocation(17, 15), "Box.get() -> str", new SourceSpan(17, 13, 17, 17));
         }
 
         [TestMethod, Priority(0)]
@@ -173,8 +173,8 @@ from time import time
 ";
             var analysis = await GetAnalysisAsync(code);
             var hs = new HoverSource(new PlainTextDocumentationSource());
-            await AssertHover(hs, analysis, new SourceLocation(2, 7), @"module time*", new SourceSpan(2, 6, 2, 10));
-            await AssertHover(hs, analysis, new SourceLocation(2, 22), @"time() -> float*", new SourceSpan(2, 18, 2, 22));
+            AssertHover(hs, analysis, new SourceLocation(2, 7), @"module time*", new SourceSpan(2, 6, 2, 10));
+            AssertHover(hs, analysis, new SourceLocation(2, 22), @"time() -> float*", new SourceSpan(2, 18, 2, 22));
         }
 
         [TestMethod, Priority(0)]
@@ -184,13 +184,13 @@ from os.path import join as JOIN
 ";
             var analysis = await GetAnalysisAsync(code);
             var hs = new HoverSource(new PlainTextDocumentationSource());
-            await AssertHover(hs, analysis, new SourceLocation(2, 7), @"module os*", new SourceSpan(2, 6, 2, 8));
+            AssertHover(hs, analysis, new SourceLocation(2, 7), @"module os*", new SourceSpan(2, 6, 2, 8));
 
             var name = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"ntpath" : @"posixpath";
-            await AssertHover(hs, analysis, new SourceLocation(2, 10), $"module {name}*", new SourceSpan(2, 9, 2, 13));
+            AssertHover(hs, analysis, new SourceLocation(2, 10), $"module {name}*", new SourceSpan(2, 9, 2, 13));
 
-            await AssertHover(hs, analysis, new SourceLocation(2, 22), @"join(path: str, paths: str) -> str", new SourceSpan(2, 21, 2, 25));
-            await AssertHover(hs, analysis, new SourceLocation(2, 30), @"join(path: str, paths: str) -> str", new SourceSpan(2, 29, 2, 33));
+            AssertHover(hs, analysis, new SourceLocation(2, 22), @"join(path: str, paths: str) -> str", new SourceSpan(2, 21, 2, 25));
+            AssertHover(hs, analysis, new SourceLocation(2, 30), @"join(path: str, paths: str) -> str", new SourceSpan(2, 29, 2, 33));
         }
 
         [TestMethod, Priority(0)]
@@ -200,13 +200,13 @@ import os.path as PATH
 ";
             var analysis = await GetAnalysisAsync(code);
             var hs = new HoverSource(new PlainTextDocumentationSource());
-            await AssertHover(hs, analysis, new SourceLocation(2, 9), @"module os*", new SourceSpan(2, 8, 2, 10));
+            AssertHover(hs, analysis, new SourceLocation(2, 9), @"module os*", new SourceSpan(2, 8, 2, 10));
             var name = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"ntpath" : @"posixpath";
-            await AssertHover(hs, analysis, new SourceLocation(2, 12), $"module {name}*", new SourceSpan(2, 11, 2, 15));
-            await AssertHover(hs, analysis, new SourceLocation(2, 20), $"module {name}*", new SourceSpan(2, 19, 2, 23));
+            AssertHover(hs, analysis, new SourceLocation(2, 12), $"module {name}*", new SourceSpan(2, 11, 2, 15));
+            AssertHover(hs, analysis, new SourceLocation(2, 20), $"module {name}*", new SourceSpan(2, 19, 2, 23));
         }
 
-        private static async Task AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
+        private static void AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
             var hover = hs.GetHover(analysis, position);
 
             if (hoverText.EndsWith("*")) {
