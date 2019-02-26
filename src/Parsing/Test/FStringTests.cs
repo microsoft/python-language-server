@@ -36,11 +36,12 @@ namespace Microsoft.Python.Parsing.Tests {
             var parser = Parser.CreateParser(MakeStream("f'bla'"), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
             ast.Walk(new MyPythonWalker(expr => {
-                if (expr is ConstantExpression) {
-                    var constExpr = expr as ConstantExpression;
-                    if (!constExpr.Value.Equals("bla")) {
-                        throw new InternalTestFailureException("Internal const expr didn't match substring");
-                    }
+                switch (expr) {
+                    case ConstantExpression constExpr:
+                        if (!constExpr.Value.Equals("bla")) {
+                            throw new InternalTestFailureException("Internal const expr didn't match substring");
+                        }
+                        break;
                 }
             }));
         }
@@ -50,11 +51,12 @@ namespace Microsoft.Python.Parsing.Tests {
             var parser = Parser.CreateParser(MakeStream("f'{{bla}}'"), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
             ast.Walk(new MyPythonWalker(expr => {
-                if (expr is ConstantExpression) {
-                    var constExpr = expr as ConstantExpression;
-                    if (!constExpr.Value.Equals("{bla}")) {
-                        throw new InternalTestFailureException("Internal const expr didn't match substring");
-                    }
+                switch (expr) {
+                    case ConstantExpression constExpr:
+                        if (!constExpr.Value.Equals("{bla}")) {
+                            throw new InternalTestFailureException("Internal const expr didn't match substring");
+                        }
+                        break;
                 }
             }));
         }
