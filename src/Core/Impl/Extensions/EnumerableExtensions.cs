@@ -88,10 +88,30 @@ namespace Microsoft.Python.Core {
                 i++;
             }
         }
+        
+        public static IEnumerable<T> TraverseBreadthFirst<T>(this T root, Func<T, IEnumerable<T>> selectChildren)
+            => Enumerable.Repeat(root, 1).TraverseBreadthFirst(selectChildren);
+
+        public static IEnumerable<T> TraverseBreadthFirst<T>(this IEnumerable<T> roots, Func<T, IEnumerable<T>> selectChildren) {
+            var items = new Queue<T>(roots);
+            while (items.Count > 0) {
+                var item = items.Dequeue();
+                yield return item;
+
+                var children = selectChildren(item);
+                if (children == null) {
+                    continue;
+                }
+
+                foreach (var child in children) {
+                    items.Enqueue(child);
+                }
+            }
+        }
 
         public static Dictionary<TKey, TValue> ToDictionary<TSource, TKey, TValue>(this IEnumerable<TSource> source, Func<TSource, int, TKey> keySelector, Func<TSource, int, TValue> valueSelector) {
-            var dictionary = source is IReadOnlyCollection<TSource> collection 
-                ? new Dictionary<TKey, TValue>(collection.Count) 
+            var dictionary = source is IReadOnlyCollection<TSource> collection
+                ? new Dictionary<TKey, TValue>(collection.Count)
                 : new Dictionary<TKey, TValue>();
 
             var index = 0;
@@ -128,24 +148,6 @@ namespace Microsoft.Python.Core {
                 }
 
                 reverseChildren.Clear();
-            }
-        }
-
-        public static IEnumerable<T> TraverseBreadthFirst<T>(this T root, Func<T, IEnumerable<T>> selectChildren) {
-            var items = new Queue<T>();
-            items.Enqueue(root);
-            while (items.Count > 0) {
-                var item = items.Dequeue();
-                yield return item;
-
-                var children = selectChildren(item);
-                if (children == null) {
-                    continue;
-                }
-
-                foreach (var child in children) {
-                    items.Enqueue(child);
-                }
             }
         }
     }

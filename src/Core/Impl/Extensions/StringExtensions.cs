@@ -206,6 +206,8 @@ namespace Microsoft.Python.Core {
 
         public static bool EqualsOrdinal(this string s, int index, string other, int otherIndex, int length, bool ignoreCase = false)
             => string.Compare(s, index, other, otherIndex, length, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) == 0;
+        public static bool ContainsOrdinal(this string s, string value, bool ignoreCase = false)
+            => s.IndexOfOrdinal(value, ignoreCase: ignoreCase) != -1;
 
         public static int GetPathHashCode(this string s)
             => IgnoreCaseInPaths ? StringComparer.OrdinalIgnoreCase.GetHashCode(s) : StringComparer.Ordinal.GetHashCode(s);

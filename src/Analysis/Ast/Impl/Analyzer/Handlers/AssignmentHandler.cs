@@ -15,8 +15,6 @@
 
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -26,13 +24,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class AssignmentHandler : StatementHandler {
         public AssignmentHandler(AnalysisWalker walker) : base(walker) { }
 
-        public async Task HandleAssignmentAsync(AssignmentStatement node, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
+        public void HandleAssignment(AssignmentStatement node) {
             if (node.Right is ErrorExpression) {
                 return;
             }
 
-            var value = await Eval.GetValueFromExpressionAsync(node.Right, cancellationToken) ?? Eval.UnknownType;
+            var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
             // Check PEP hint first
             var valueType = Eval.GetTypeFromPepHint(node.Right);
             if (valueType != null) {
@@ -50,14 +47,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (node.Left.FirstOrDefault() is TupleExpression lhs) {
                 // Tuple = Tuple. Transfer values.
                 var texHandler = new TupleExpressionHandler(Walker);
-                await texHandler.HandleTupleAssignmentAsync(lhs, node.Right, value, cancellationToken);
+                texHandler.HandleTupleAssignment(lhs, node.Right, value);
                 return;
             }
 
             // Process annotations, if any.
             foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                 // x: List[str] = [...]
-                await HandleAnnotatedExpressionAsync(expr, value, cancellationToken);
+                HandleAnnotatedExpression(expr, value);
             }
 
             foreach (var ne in node.Left.OfType<NameExpression>()) {
@@ -86,12 +83,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        public async Task HandleAnnotatedExpressionAsync(ExpressionWithAnnotation expr, IMember value, CancellationToken cancellationToken = default) {
+        public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value) {
             if (expr?.Annotation == null) {
                 return;
             }
 
-            var variableType = await Eval.GetTypeFromAnnotationAsync(expr.Annotation, cancellationToken);
+            var variableType = Eval.GetTypeFromAnnotation(expr.Annotation);
             // If value is null, then this is a pure declaration like 
             //   x: List[str]
             // without a value. If value is provided, then this is

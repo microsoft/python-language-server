@@ -157,7 +157,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             TestLogger.Log(TraceEventType.Information, "Analysis begin");
             await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
             analysis.Should().NotBeNull();
             TestLogger.Log(TraceEventType.Information, "Analysis end");
 

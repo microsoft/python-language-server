@@ -14,13 +14,12 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Core {
-    public class AsyncManualResetEvent {
+    public sealed class AsyncManualResetEvent {
         private TaskCompletionSource<bool> _tcs;
         public Task WaitAsync() => _tcs.Task;
         public void Set() => _tcs.TrySetResult(true);

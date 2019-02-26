@@ -14,12 +14,8 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
@@ -29,7 +25,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ErrorExpressionCompletion {
-        public static async Task<CompletionResult> GetCompletionsAsync(ScopeStatement scope, Node statement, Node expression, CompletionContext context, CancellationToken cancellationToken = default) {
+        public static CompletionResult GetCompletions(ScopeStatement scope, Node statement, Node expression, CompletionContext context) {
             if (!(expression is ErrorExpression)) {
                 return CompletionResult.Empty;
             }
@@ -54,7 +50,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     code = es.ReadExpression(tokens.Skip(1));
                     applicableSpan = new SourceSpan(context.Location, context.Location);
                     e = GetExpressionFromText(code, context, out var s1, out _);
-                    items = await ExpressionCompletion.GetCompletionsFromMembersAsync(e, s1, context, cancellationToken);
+                    items = ExpressionCompletion.GetCompletionsFromMembers(e, s1, context);
                     break;
 
                 case TokenKind.KeywordDef when lastToken.Key.End < context.Position && scope is FunctionDefinition fd: {
@@ -71,7 +67,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     code = es.ReadExpression(tokens.Skip(2));
                     applicableSpan = new SourceSpan(context.TokenSource.GetTokenSpan(lastToken.Key).Start, context.Location);
                     e = GetExpressionFromText(code, context, out var s2, out _);
-                    items = await ExpressionCompletion.GetCompletionsFromMembersAsync(e, s2, context, cancellationToken);
+                    items = ExpressionCompletion.GetCompletionsFromMembers(e, s2, context);
                     break;
 
                 case TokenKind.Name when nextLast == TokenKind.KeywordDef && scope is FunctionDefinition fd: {

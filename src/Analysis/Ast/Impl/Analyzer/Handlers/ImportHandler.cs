@@ -15,7 +15,6 @@
 
 using System;
 using System.Linq;
-using System.Threading;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -30,16 +29,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed partial class ImportHandler : StatementHandler {
         public ImportHandler(AnalysisWalker walker) : base(walker) { }
 
-        public bool HandleImport(ImportStatement node, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
+        public bool HandleImport(ImportStatement node) {
             if (Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
 
             var len = Math.Min(node.Names.Count, node.AsNames.Count);
             for (var i = 0; i < len; i++) {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 var moduleImportExpression = node.Names[i];
                 var importNames = moduleImportExpression.Names.Select(n => n.Name).ToArray();
                 var asNameExpression = node.AsNames[i];

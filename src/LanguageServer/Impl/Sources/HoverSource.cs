@@ -13,15 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
@@ -37,7 +32,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             _docSource = docSource;
         }
 
-        public async Task<Hover> GetHoverAsync(IDocumentAnalysis analysis, SourceLocation location, CancellationToken cancellationToken = default) {
+        public Hover GetHover(IDocumentAnalysis analysis, SourceLocation location) {
             if (analysis is EmptyAnalysis) {
                 return new Hover { contents = Resources.AnalysisIsInProgressHover };
             }
@@ -83,7 +78,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             IMember value;
             IPythonType type;
             using (eval.OpenScope(analysis.Document, scope)) {
-                value = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(expr, cancellationToken);
+                value = analysis.ExpressionEvaluator.GetValueFromExpression(expr);
                 type = value?.GetPythonType();
                 if (type == null) {
                     return null;
@@ -103,7 +98,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 // In case of a member expression get the target since if we end up with method
                 // of a generic class, the function will need specific type to determine its return
                 // value correctly. I.e. in x.func() we need to determine type of x (self for func).
-                var v = await analysis.ExpressionEvaluator.GetValueFromExpressionAsync(mex.Target, cancellationToken);
+                var v = analysis.ExpressionEvaluator.GetValueFromExpression(mex.Target);
                 self = v?.GetPythonType();
             }
 

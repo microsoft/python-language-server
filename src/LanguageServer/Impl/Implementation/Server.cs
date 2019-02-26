@@ -25,11 +25,13 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
+using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Diagnostics;
+using Microsoft.Python.LanguageServer.Indexing;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.Sources;
 
@@ -43,6 +45,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IRunningDocumentTable _rdt;
         private ClientCapabilities _clientCaps;
         private ILogger _log;
+        private IIndexManager _indexManager;
 
         public static InformationDisplayOptions DisplayOptions { get; private set; } = new InformationDisplayOptions {
             preferredFormat = MarkupKind.PlainText,
@@ -81,7 +84,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     triggerCharacters = new[] { "." }
                 },
                 hoverProvider = true,
-                signatureHelpProvider = new SignatureHelpOptions { triggerCharacters = new[] { "(,)" } },
+                signatureHelpProvider = new SignatureHelpOptions { triggerCharacters = new[] { "(", ",", ")" } },
                 definitionProvider = true,
                 referencesProvider = true,
                 workspaceSymbolProvider = true,
@@ -119,6 +122,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _interpreter = await PythonInterpreter.CreateAsync(configuration, rootDir, _services, cancellationToken);
             _services.AddService(_interpreter);
+
+            var fileSystem = _services.GetService<IFileSystem>();
+            _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, rootDir,
+                                            @params.initializationOptions.includeFiles,
+                                            @params.initializationOptions.excludeFiles,
+                                            _services.GetService<IIdleTimeService>());
+            _services.AddService(_indexManager);
+            _disposableBag.Add(_indexManager);
 
             DisplayStartupInfo();
 
@@ -171,7 +182,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var oldSettings = Settings;
             Settings = newSettings;
 
-            _symbolHierarchyDepthLimit = Settings.analysis.symbolsHierarchyDepthLimit;
             _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
 
             if (oldSettings == null) {

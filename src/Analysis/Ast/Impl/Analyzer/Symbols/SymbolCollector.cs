@@ -16,8 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -29,15 +27,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// Walks module AST and collect all classes, functions and method
     /// so the symbol table can resolve references on demand.
     /// </summary>
-    internal sealed class SymbolCollector : PythonWalkerAsync {
+    internal sealed class SymbolCollector : PythonWalker {
         private readonly Dictionary<ScopeStatement, IPythonType> _typeMap = new Dictionary<ScopeStatement, IPythonType>();
         private readonly Stack<IDisposable> _scopes = new Stack<IDisposable>();
         private readonly ModuleSymbolTable _table;
         private readonly ExpressionEval _eval;
 
-        public static Task CollectSymbolsAsync(ModuleSymbolTable table, ExpressionEval eval, CancellationToken cancellationToken = default) {
+        public static void CollectSymbols(ModuleSymbolTable table, ExpressionEval eval) {
             var symbolCollector = new SymbolCollector(table, eval);
-            return symbolCollector.WalkAsync(cancellationToken);
+            symbolCollector.Walk();
         }
 
         private SymbolCollector(ModuleSymbolTable table, ExpressionEval eval) {
@@ -45,10 +43,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             _eval = eval;
         }
 
-        private Task WalkAsync(CancellationToken cancellationToken = default) => _eval.Ast.WalkAsync(this, cancellationToken);
+        private void Walk() => _eval.Ast.Walk(this);
 
-        public override Task<bool> WalkAsync(ClassDefinition cd, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
+        public override bool Walk(ClassDefinition cd) {
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 var classInfo = CreateClass(cd);
                 _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, GetLoc(cd));
@@ -56,32 +53,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
             }
-            return Task.FromResult(true);
+            return true;
         }
 
-        public override Task PostWalkAsync(ClassDefinition cd, CancellationToken cancellationToken = default) {
+        public override void PostWalk(ClassDefinition cd) {
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 _scopes.Pop().Dispose();
             }
-            return base.PostWalkAsync(cd, cancellationToken);
+            base.PostWalk(cd);
         }
 
-        public override Task<bool> WalkAsync(FunctionDefinition fd, CancellationToken cancellationToken = default) {
-            cancellationToken.ThrowIfCancellationRequested();
+        public override bool Walk(FunctionDefinition fd) {
             if (!string.IsNullOrEmpty(fd.NameExpression?.Name)) {
                 AddFunctionOrProperty(fd);
                 // Open function scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, fd, out _));
             }
-
-            return Task.FromResult(true);
+            return true;
         }
 
-        public override Task PostWalkAsync(FunctionDefinition fd, CancellationToken cancellationToken = default) {
+        public override void PostWalk(FunctionDefinition fd) {
             if (!string.IsNullOrEmpty(fd.NameExpression?.Name)) {
                 _scopes.Pop().Dispose();
             }
-            return base.PostWalkAsync(fd, cancellationToken);
+            base.PostWalk(fd);
         }
 
         private PythonClassType CreateClass(ClassDefinition node) {

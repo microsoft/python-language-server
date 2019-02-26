@@ -16,8 +16,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
@@ -266,25 +264,25 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public async Task<ArgumentSet> EvaluateAsync(CancellationToken cancellationToken = default) {
+        public ArgumentSet Evaluate() {
             if (_evaluated || Eval == null) {
                 return this;
             }
 
             foreach (var a in _arguments.Where(x => x.Value == null)) {
-                a.Value = await Eval.GetValueFromExpressionAsync(a.Expression, cancellationToken) ?? _eval.UnknownType;
+                a.Value = Eval.GetValueFromExpression(a.Expression) ?? _eval.UnknownType;
             }
 
             if (_listArgument != null) {
                 foreach (var e in _listArgument.Expressions) {
-                    var value = await Eval.GetValueFromExpressionAsync(e, cancellationToken) ?? _eval.UnknownType;
+                    var value = Eval.GetValueFromExpression(e) ?? _eval.UnknownType;
                     _listArgument._Values.Add(value);
                 }
             }
 
             if (_dictArgument != null) {
                 foreach (var e in _dictArgument.Expressions) {
-                    var value = await Eval.GetValueFromExpressionAsync(e.Value, cancellationToken) ?? _eval.UnknownType;
+                    var value = Eval.GetValueFromExpression(e.Value) ?? _eval.UnknownType;
                     _dictArgument._Args[e.Key] = value;
                 }
             }

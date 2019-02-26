@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var walker = default(IDependencyChainWalker<string, string>);
             foreach (var value in splitInput) {
-                walker = await resolver.AddChangesAsync(value.Split(":")[0], value, 0, default);
+                walker = await resolver.AddChangesAsync(value.Split(":")[0], value, default);
             }
 
             var result = new StringBuilder();
@@ -74,12 +74,12 @@ namespace Microsoft.Python.Analysis.Tests {
         public void AddChangesAsync_Parallel() {
             var resolver = new DependencyResolver<int, int>(new AddChangesAsyncParallelTestDependencyFinder());
             var tasks = new List<Task<IDependencyChainWalker<int, int>>> {
-                resolver.AddChangesAsync(0, 0, 0, default),
-                resolver.AddChangesAsync(1, 1, 0, default),
-                resolver.AddChangesAsync(0, 0, 1, default),
-                resolver.AddChangesAsync(1, 1, 1, default),
-                resolver.AddChangesAsync(0, 0, 2, default),
-                resolver.AddChangesAsync(1, 1, 2, default)
+                resolver.AddChangesAsync(0, 0, default),
+                resolver.AddChangesAsync(1, 1, default),
+                resolver.AddChangesAsync(0, 0, default),
+                resolver.AddChangesAsync(1, 1, default),
+                resolver.AddChangesAsync(0, 0, default),
+                resolver.AddChangesAsync(1, 1, default)
             };
 
             tasks[0].Should().BeCanceled();
@@ -91,30 +91,11 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod]
-        public void AddChangesAsync_WrongOrder() {
-            var resolver = new DependencyResolver<int, int>(new AddChangesAsyncParallelTestDependencyFinder());
-            var tasks = new List<Task<IDependencyChainWalker<int, int>>> {
-                resolver.AddChangesAsync(0, 0, 2, default),
-                resolver.AddChangesAsync(0, 0, 0, default),
-                resolver.AddChangesAsync(0, 0, 1, default),
-                resolver.AddChangesAsync(1, 1, 0, default),
-                resolver.AddChangesAsync(1, 1, 1, default)
-            };
-
-
-            tasks[0].Should().NotBeCompleted();
-            tasks[1].Should().BeCanceled();
-            tasks[2].Should().BeCanceled();
-            tasks[3].Should().BeCanceled();
-            tasks[4].Should().NotBeCompleted();
-        }
-
-        [TestMethod]
         public async Task AddChangesAsync_RepeatedChange() {
             var resolver = new DependencyResolver<string, string>(new AddChangesAsyncTestDependencyFinder());
-            resolver.AddChangesAsync("A", "A:B", 0, default).DoNotWait();
-            resolver.AddChangesAsync("B", "B:C", 0, default).DoNotWait();
-            var walker = await resolver.AddChangesAsync("C", "C", 0, default);
+            resolver.AddChangesAsync("A", "A:B", default).DoNotWait();
+            resolver.AddChangesAsync("B", "B:C", default).DoNotWait();
+            var walker = await resolver.AddChangesAsync("C", "C", default);
 
             var result = new StringBuilder();
             while (!walker.IsCompleted) {
@@ -125,7 +106,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             result.ToString().Should().Be("CBA");
 
-            walker = await resolver.AddChangesAsync("B", "B:C", 1, default);
+            walker = await resolver.AddChangesAsync("B", "B:C", default);
             result = new StringBuilder();
             while (!walker.IsCompleted) {
                 var node = await walker.GetNextAsync(default);
@@ -139,10 +120,10 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod]
         public async Task AddChangesAsync_RepeatedChange2() {
             var resolver = new DependencyResolver<string, string>(new AddChangesAsyncTestDependencyFinder());
-            resolver.AddChangesAsync("A", "A:B", 0, default).DoNotWait();
-            resolver.AddChangesAsync("B", "B", 0, default).DoNotWait();
-            resolver.AddChangesAsync("C", "C:D", 0, default).DoNotWait();
-            var walker = await resolver.AddChangesAsync("D", "D", 0, default);
+            resolver.AddChangesAsync("A", "A:B", default).DoNotWait();
+            resolver.AddChangesAsync("B", "B", default).DoNotWait();
+            resolver.AddChangesAsync("C", "C:D", default).DoNotWait();
+            var walker = await resolver.AddChangesAsync("D", "D", default);
 
             var result = new StringBuilder();
             while (!walker.IsCompleted) {
@@ -154,8 +135,8 @@ namespace Microsoft.Python.Analysis.Tests {
             result.ToString().Should().Be("BDAC");
 
 
-            resolver.AddChangesAsync("D", "D", 1, default).DoNotWait();
-            walker = await resolver.AddChangesAsync("B", "B:C", 1, default);
+            resolver.AddChangesAsync("D", "D", default).DoNotWait();
+            walker = await resolver.AddChangesAsync("B", "B:C", default);
             result = new StringBuilder();
             while (!walker.IsCompleted) {
                 var node = await walker.GetNextAsync(default);
@@ -164,6 +145,34 @@ namespace Microsoft.Python.Analysis.Tests {
             }
 
             result.ToString().Should().Be("DCBA");
+        }
+
+        [TestMethod]
+        public async Task AddChangesAsync_MissingKeys() {
+            var resolver = new DependencyResolver<string, string>(new AddChangesAsyncTestDependencyFinder());
+            resolver.AddChangesAsync("A", "A:B", default).DoNotWait();
+            resolver.AddChangesAsync("B", "B", default).DoNotWait();
+            var walker = await resolver.AddChangesAsync("C", "C:D", default);
+            
+            var result = new StringBuilder();
+            var node = await walker.GetNextAsync(default);
+            result.Append(node.Value[0]);
+            node.MarkCompleted();
+            
+            node = await walker.GetNextAsync(default);
+            result.Append(node.Value[0]);
+            node.MarkCompleted();
+            
+            walker.MissingKeys.Should().Equal("D");
+            result.ToString().Should().Be("BC");
+
+            walker = await resolver.AddChangesAsync("D", "D", default);
+            result = new StringBuilder();
+            result.Append((await walker.GetNextAsync(default)).Value[0]);
+            result.Append((await walker.GetNextAsync(default)).Value[0]);
+            
+            walker.MissingKeys.Should().BeEmpty();
+            result.ToString().Should().Be("AD");
         }
 
         private sealed class AddChangesAsyncParallelTestDependencyFinder : IDependencyFinder<int, int> {

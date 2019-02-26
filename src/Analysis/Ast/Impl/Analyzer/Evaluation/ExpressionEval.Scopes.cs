@@ -16,8 +16,6 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -80,34 +78,36 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             var value = scope?.Variables[name].Value;
             if (value == null) {
-                if (Module != Interpreter.ModuleResolution.BuiltinsModule && options.HasFlag(LookupOptions.Builtins)) {
-                    value = Interpreter.ModuleResolution.BuiltinsModule.GetMember(name);
+                var builtins = Interpreter.ModuleResolution.BuiltinsModule;
+                value = Interpreter.ModuleResolution.BuiltinsModule.GetMember(name);
+                if (Module != builtins && options.HasFlag(LookupOptions.Builtins)) {
+                    value = builtins.GetMember(name);
+                    scope = builtins.GlobalScope;
                 }
             }
 
             return value;
         }
 
-        public async Task<IPythonType> GetTypeFromAnnotationAsync(Expression expr, CancellationToken cancellationToken = default, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
+        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
             if (expr == null) {
                 return null;
             }
 
             if (expr is CallExpression callExpr) {
                 // x: NamedTuple(...)
-                return (await GetValueFromCallableAsync(callExpr, cancellationToken))?.GetPythonType() ?? UnknownType;
+                return GetValueFromCallable(callExpr)?.GetPythonType() ?? UnknownType;
             }
 
             if (expr is IndexExpression indexExpr) {
                 // Try generics
-                var target = await GetValueFromExpressionAsync(indexExpr.Target, cancellationToken);
-                var result = await GetValueFromGenericAsync(target, indexExpr, cancellationToken);
-                if(result != null) {
+                var target = GetValueFromExpression(indexExpr.Target);
+                var result = GetValueFromGeneric(target, indexExpr);
+                if (result != null) {
                     return result.GetPythonType();
                 }
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
             // Look at specialization and typing first
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             return ann.GetValue(new TypeAnnotationConverter(this, options));
@@ -128,6 +128,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // When the analysis completed. Therefore if module is the one we are
             // analyzing, use scope from the evaluator rather than from the module.
             var gs = Module.Equals(module) || module == null ? GlobalScope : module.GlobalScope as Scope;
+            if (gs == null) {
+                return Disposable.Empty;
+            }
+
             if (node.Parent != null) {
                 fromScope = gs
                     .TraverseBreadthFirst(s => s.Children.OfType<Scope>())
@@ -156,8 +160,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             public void Dispose() {
-                Debug.Assert(_eval._openScopes.Count > 0, "Attempt to close global scope");
-                _eval._openScopes.Pop();
+                // in case of quick hovering over various items there may be issues
+                // with interleaving Open/Close scope requests which may trigger
+                // the AF. They are generally harmless, but we may consider handling
+                // them better.
+                // TODO: figure out threading/locking for the Open/Close pairs.
+                // Debug.Assert(_eval._openScopes.Count > 0, "Attempt to close global scope");
+                if (_eval._openScopes.Count > 0) {
+                    _eval._openScopes.Pop();
+                }
                 _eval.CurrentScope = _eval._openScopes.Count == 0 ? _eval.GlobalScope : _eval._openScopes.Peek();
             }
         }

@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <param name="library">Root of the standard library.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
         /// <remarks>New in 2.2, moved in 3.3</remarks>
-        public static List<PythonLibraryPath> GetDefaultDatabaseSearchPaths(string library) {
+        public static List<PythonLibraryPath> GetDefaultSearchPaths(string library) {
             var result = new List<PythonLibraryPath>();
             if (!Directory.Exists(library)) {
                 return result;
@@ -95,41 +95,24 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         }
 
         /// <summary>
-        /// Gets the set of search paths for the specified factory as
-        /// efficiently as possible. This may involve executing the
-        /// interpreter, and may cache the paths for retrieval later.
+        /// Gets the set of search paths for the specified factory.
         /// </summary>
-        public static async Task<IList<PythonLibraryPath>> GetDatabaseSearchPathsAsync(InterpreterConfiguration config, string cachePath) {
+        public static async Task<IList<PythonLibraryPath>> GetSearchPathsAsync(InterpreterConfiguration config) {
             for (int retries = 5; retries > 0; --retries) {
-                List<PythonLibraryPath> paths;
-                if (!string.IsNullOrEmpty(cachePath)) {
-                    paths = GetCachedDatabaseSearchPaths(cachePath);
-                    if (paths != null && paths.Count > 2) {
-                        return paths;
-                    }
-                }
-
                 try {
-                    paths = await GetUncachedDatabaseSearchPathsAsync(config.InterpreterPath);
-                    if (!string.IsNullOrEmpty(cachePath)) {
-                        WriteDatabaseSearchPaths(cachePath, paths);
-                    }
-                    return paths;
+                    return await GetSearchPathsFromInterpreterAsync(config.InterpreterPath);
                 } catch (InvalidOperationException) {
                     // Failed to get paths
                     break;
-                } catch (UnauthorizedAccessException) {
-                    // Failed to write paths - sleep and then loop
-                    Thread.Sleep(50);
-                } catch (IOException) {
-                    // Failed to write paths - sleep and then loop
+                } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
+                    // Failed to get paths due to IO exception - sleep and then loop
                     Thread.Sleep(50);
                 }
             }
 
             var ospy = PathUtils.FindFile(config.LibraryPath, "os.py");
             if (!string.IsNullOrEmpty(ospy)) {
-                return GetDefaultDatabaseSearchPaths(IOPath.GetDirectoryName(ospy));
+                return GetDefaultSearchPaths(IOPath.GetDirectoryName(ospy));
             }
 
             return Array.Empty<PythonLibraryPath>();
@@ -141,7 +124,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <param name="interpreter">Path to the interpreter.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
         /// <remarks>Added in 2.2, moved in 3.3</remarks>
-        public static async Task<List<PythonLibraryPath>> GetUncachedDatabaseSearchPathsAsync(string interpreter) {
+        public static async Task<List<PythonLibraryPath>> GetSearchPathsFromInterpreterAsync(string interpreter) {
             // sys.path will include the working directory, so we make an empty
             // path that we can filter out later
             var tempWorkingDir = IOPath.Combine(IOPath.GetTempPath(), IOPath.GetRandomFileName());
@@ -193,53 +176,5 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 }
             }).Where(p => p != null).ToList();
         }
-
-        /// <summary>
-        /// Gets the set of search paths that were last saved for a database.
-        /// </summary>
-        /// <param name="databasePath">Path containing the database.</param>
-        /// <returns>The cached list of search paths.</returns>
-        /// <remarks>Added in 2.2, moved in 3.3</remarks>
-        public static List<PythonLibraryPath> GetCachedDatabaseSearchPaths(string cachePath) {
-            if (!File.Exists(cachePath)) {
-                return null;
-            }
-
-            try {
-                var result = new List<PythonLibraryPath>();
-                using (var file = File.OpenText(cachePath)) {
-                    string line;
-                    while ((line = file.ReadLine()) != null) {
-                        try {
-                            result.Add(Parse(line));
-                        } catch (ArgumentException) {
-                            Debug.Fail("Invalid search path: " + (line ?? "<null>"));
-                        } catch (FormatException) {
-                            Debug.Fail("Invalid format for search path: " + line);
-                        }
-                    }
-                }
-
-                return result;
-            } catch (IOException) {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Saves search paths for a database.
-        /// </summary>
-        /// <param name="databasePath">The path to the database.</param>
-        /// <param name="paths">The list of search paths.</param>
-        /// <remarks>Added in 2.2, moved in 3.3</remarks>
-        public static void WriteDatabaseSearchPaths(string cachePath, IEnumerable<PythonLibraryPath> paths) {
-            Directory.CreateDirectory(IOPath.GetDirectoryName(cachePath));
-            using (var file = new StreamWriter(cachePath)) {
-                foreach (var path in paths) {
-                    file.WriteLine(path.ToString());
-                }
-            }
-        }
-
     }
 }

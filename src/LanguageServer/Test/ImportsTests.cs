@@ -15,7 +15,6 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
@@ -67,10 +66,10 @@ projectA.";
             rdt.OpenDocument(new Uri(init4Path), string.Empty);
 
             var doc = rdt.OpenDocument(new Uri(appPath), appCode, appPath);
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 10));
+            var comps = cs.GetCompletions(analysis, new SourceLocation(7, 10));
             comps.Should().HaveLabels("foo");
         }
 
@@ -95,10 +94,10 @@ VALUE = 42";
             rdt.OpenDocument(uri2, content2);
             rdt.OpenDocument(uri3, content3);
 
-            var analysis = await doc1.GetAnalysisAsync(0);
+            var analysis = await doc1.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
+            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 5));
             comps.Should().HaveLabels("VALUE");
         }
 
@@ -118,10 +117,10 @@ VALUE = 42");
             var doc = rdt.OpenDocument(TestData.GetDefaultModuleUri(), content);
             await doc.GetAstAsync();
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
+            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 5));
             comps.Should().HaveLabels("VALUE");
         }
 
@@ -146,11 +145,11 @@ module2.";
             rdt.OpenDocument(new Uri(module2Path), "Y = 6 * 9");
 
             var doc = rdt.OpenDocument(new Uri(appPath), appCode1);
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 21));
+            var comps = cs.GetCompletions(analysis, new SourceLocation(1, 21));
             comps.Should().HaveLabels("module1", "module2");
 
             doc.Update(new[] {
@@ -161,12 +160,12 @@ module2.";
             });
 
             await doc.GetAstAsync();
-            analysis = await doc.GetAnalysisAsync(0);
+            analysis = await doc.GetAnalysisAsync(-1);
 
-            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 9));
+            comps = cs.GetCompletions(analysis, new SourceLocation(2, 9));
             comps.Should().HaveLabels("X").And.NotContainLabels("Y");
 
-            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
+            comps = cs.GetCompletions(analysis, new SourceLocation(3, 9));
             comps.Should().HaveLabels("Y").And.NotContainLabels("X");
         }
 
@@ -203,19 +202,19 @@ mod2.B.";
 
             var mainPath = Path.Combine(root, "main.py");
             var doc = rdt.OpenDocument(new Uri(mainPath), mainContent);
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 6));
+            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 6));
             comps.Should().HaveLabels("A").And.NotContainLabels("B");
 
-            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 6));
+            comps = cs.GetCompletions(analysis, new SourceLocation(3, 6));
             comps.Should().HaveLabels("B").And.NotContainLabels("A");
 
-            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8));
+            comps = cs.GetCompletions(analysis, new SourceLocation(4, 8));
             comps.Should().HaveLabels("method1");
 
-            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 8));
+            comps = cs.GetCompletions(analysis, new SourceLocation(5, 8));
             comps.Should().HaveLabels("method2");
         }
 
@@ -242,19 +241,19 @@ package.sub_package.module2.";
             rdt.OpenDocument(new Uri(module2Path), "Y = 6 * 9");
 
             var doc = rdt.OpenDocument(new Uri(appPath), appCode);
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 9));
+            var comps = cs.GetCompletions(analysis, new SourceLocation(5, 9));
             comps.Should().OnlyHaveLabels("sub_package");
 
-            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 21));
+            comps = cs.GetCompletions(analysis, new SourceLocation(6, 21));
             comps.Should().OnlyHaveLabels("module1", "module2");
 
-            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 29));
+            comps = cs.GetCompletions(analysis, new SourceLocation(7, 29));
             comps.Should().HaveLabels("X").And.NotContainLabels("Y");
 
-            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 29));
+            comps = cs.GetCompletions(analysis, new SourceLocation(8, 29));
             comps.Should().HaveLabels("Y").And.NotContainLabels("X");
         }
 
@@ -262,7 +261,7 @@ package.sub_package.module2.";
         public async Task TypingModule() {
             var analysis = await GetAnalysisAsync(@"from typing import ");
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 20));
+            var comps = cs.GetCompletions(analysis, new SourceLocation(1, 20));
             comps.Should().HaveLabels("TypeVar", "List", "Dict", "Union");
         }
 
@@ -285,10 +284,10 @@ package.sub_package.module2.";
 
             rdt.OpenDocument(new Uri(modulePath), "X = 42");
             var doc = rdt.OpenDocument(new Uri(appPath), appCode1);
-            var analysis = await doc.GetAnalysisAsync(0);
+            var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 13));
+            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 13));
             comps.Should().OnlyHaveLabels("module");
 
             doc.Update(new[] {
@@ -298,8 +297,8 @@ package.sub_package.module2.";
                 }
             });
 
-            analysis = await doc.GetAnalysisAsync(0);
-            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 21));
+            analysis = await doc.GetAnalysisAsync(-1);
+            comps = cs.GetCompletions(analysis, new SourceLocation(2, 21));
             comps.Should().HaveLabels("X");
         }
     }
