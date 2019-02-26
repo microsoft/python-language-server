@@ -205,16 +205,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private async Task AnalyzeAffectedEntriesAsync(IDependencyChainWalker<ModuleKey, PythonAnalyzerEntry> walker, bool stopOnVersionChange, Stopwatch stopWatch, CancellationToken cancellationToken) {
             IDependencyChainNode<PythonAnalyzerEntry> node;
             while ((node = await walker.GetNextAsync(cancellationToken)) != null) {
+                int version;
                 lock (_syncObj) {
-                    if (_version > walker.Version) {
-                        if (stopOnVersionChange) {
-                            return;
-                        }
+                    version = _version;
+                }
 
-                        if (!node.Value.NotAnalyzed) {
-                            node.MarkCompleted();
-                            continue;
-                        }
+                if (version > walker.Version) {
+                    if (stopOnVersionChange) {
+                        return;
+                    }
+
+                    if (!node.Value.NotAnalyzed) {
+                        node.Skip();
+                        continue;
                     }
                 }
 
@@ -248,7 +251,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken) {
             try {
-                var startTime = stopWatch.ElapsedMilliseconds;
+                var startTime = stopWatch.Elapsed;
                 var module = node.Value.Module;
                 var ast = node.Value.Ast;
 
@@ -267,14 +270,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
                 node.Value.TrySetAnalysis(analysis, version, _syncObj);
 
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) complete in {stopWatch.ElapsedMilliseconds - startTime} ms.");
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) complete in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
             } catch (OperationCanceledException oce) {
                 node.Value.TryCancel(oce, version, _syncObj);
             } catch (Exception exception) {
                 node.Value.TrySetException(exception, version, _syncObj);
             } finally {
                 Interlocked.Decrement(ref _runningTasks);
-                node.MarkCompleted();
+                node.Commit();
             }
         }
 
