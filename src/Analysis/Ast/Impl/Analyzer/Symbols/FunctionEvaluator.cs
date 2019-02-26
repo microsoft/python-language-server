@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public FunctionDefinition FunctionDefinition { get; }
 
         public override void Evaluate() {
-            if (SymbolTable.ReplacedByStubs.Contains(Target)) {
+            if (SymbolTable.ReplacedByStubs.Contains(Target) || _function.DeclaringModule.ModuleType == ModuleType.Stub) {
                 return;
             }
 
