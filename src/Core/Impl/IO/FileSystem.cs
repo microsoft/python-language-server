@@ -32,6 +32,7 @@ namespace Microsoft.Python.Core.IO {
         public void FileWriteAllBytes(string path, byte[] bytes) => File.WriteAllBytes(path, bytes);
         public Stream CreateFile(string path) => File.Create(path);
         public Stream FileOpen(string path, FileMode mode) => File.Open(path, mode);
+        public Stream FileOpen(string path, FileMode mode, FileAccess access, FileShare share) => File.Open(path, mode, access, share);
         public bool DirectoryExists(string path) => Directory.Exists(path);
         public FileAttributes GetFileAttributes(string path) => File.GetAttributes(path);
         public void SetFileAttributes(string fullPath, FileAttributes attributes) => File.SetAttributes(fullPath, attributes);

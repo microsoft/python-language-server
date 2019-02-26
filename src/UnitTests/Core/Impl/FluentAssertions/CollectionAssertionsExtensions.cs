@@ -35,5 +35,9 @@ namespace Microsoft.Python.Tests.Utilities.FluentAssertions {
         public static AndConstraint<StringCollectionAssertions> OnlyContain(
             this StringCollectionAssertions assertions, IReadOnlyCollection<string> expected, string because = "", params object[] reasonArgs) 
             => assertions.HaveCount(expected.Count, because, reasonArgs).And.Contain(expected, because, reasonArgs);
+
+        public static AndConstraint<GenericCollectionAssertions<TAssertions>> BeEquivalentToWithStrictOrdering<TAssertions>(
+            this GenericCollectionAssertions<TAssertions> assertions, IEnumerable<TAssertions> expected, string because = "", params object[] reasonArgs)
+            => assertions.BeEquivalentTo(expected, options => options.WithStrictOrdering(), because, reasonArgs);
     }
 }
