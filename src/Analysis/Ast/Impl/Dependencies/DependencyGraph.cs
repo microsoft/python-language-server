@@ -28,24 +28,20 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         public int Version { get; private set; }
 
-        public bool TryAddOrUpdate(TKey key, TValue value, int version, out DependencyVertex<TKey, TValue> vertex) {
+        public DependencyVertex<TKey, TValue> AddOrUpdate(TKey key, TValue value) {
+            Version++;
+            
+            DependencyVertex<TKey, TValue> vertex;
             if (_verticesByKey.TryGetValue(key, out var currentVertex)) {
-                if (version <= currentVertex.Version) {
-                    // We aren't interested in older versions
-                    vertex = null;
-                    return false;
-                }
-
-                vertex = new DependencyVertex<TKey, TValue>(currentVertex, value, version);
+                vertex = new DependencyVertex<TKey, TValue>(currentVertex, value, Version);
                 _verticesByIndex[vertex.Index] = vertex;
             } else {
-                vertex = new DependencyVertex<TKey, TValue>(key, value, _verticesByIndex.Count, version);
+                vertex = new DependencyVertex<TKey, TValue>(key, value, Version, _verticesByIndex.Count);
                 _verticesByIndex.Add(vertex);
             }
-
-            Version++;
+            
             _verticesByKey[key] = vertex;
-            return true;
+            return vertex;
         }
 
         public void ResolveDependencies(out ImmutableArray<DependencyVertex<TKey, TValue>> snapshot, out ImmutableArray<TKey> missingKeys) {
@@ -100,7 +96,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     return vertex;
                 }
 
-                vertex = new DependencyVertex<TKey, TValue>(vertex, vertex.Value, vertex.Version);
+                vertex = new DependencyVertex<TKey, TValue>(vertex, vertex.Value, Version);
                 _verticesByIndex[index] = vertex;
                 _verticesByKey[vertex.Key] = vertex;
                 return vertex;

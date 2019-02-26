@@ -13,20 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Dependencies {
+namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
-    /// Represents subsystem that can resolve module dependencies for analysis.
-    /// Given module the subsystem can return ordered chain of dependencies 
-    /// for the analysis. The chain is a tree where child branches can be analyzed
-    /// concurrently.
+    /// Represents stub module.
     /// </summary>
-    internal interface IDependencyResolver<TKey, TValue> {
-        ImmutableArray<TKey> MissingKeys { get; }
-        Task<IDependencyChainWalker<TKey, TValue>> AddChangesAsync(TKey key, TValue value, CancellationToken cancellationToken);
+    public interface IPythonStubModule: IPythonModule {
+        /// <summary>
+        /// Primary module the stub is for.
+        /// </summary>
+        IPythonModule PrimaryModule { get; }
     }
 }

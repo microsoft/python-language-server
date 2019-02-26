@@ -17,19 +17,30 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public interface IPythonAnalyzer {
         Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default);
-
         /// <summary>
-        /// Schedules module for re-analysis
+        /// Schedules module for analysis. Module will be scheduled if version of AST is greater than the one used to get previous analysis
         /// </summary>
         void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int version, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// 
+        /// Schedules module for analysis for its existing AST, but with new dependencies.
+        /// Module will be scheduled if any of the dependencies has analysis version greater than the module.
+        /// </summary>
+        void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> dependencies);
+        
+        /// <summary>
+        /// Invalidates current analysis for the module, assuming that AST for the new analysis will be provided later.
+        /// </summary>
+        void InvalidateAnalysis(IPythonModule module);
+        
+        /// <summary>
+        /// Get most recent analysis for module. If after specified time analysis isn't available, returns previously calculated analysis.
         /// </summary>
         Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime = 200, CancellationToken cancellationToken = default);
     }

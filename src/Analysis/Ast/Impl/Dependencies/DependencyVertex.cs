@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             Outgoing = oldVertex.Outgoing;
         }
 
-        public DependencyVertex(TKey key, TValue value, int index, int version) {
+        public DependencyVertex(TKey key, TValue value, int version, int index) {
             Key = key;
             Value = value;
             Version = version;

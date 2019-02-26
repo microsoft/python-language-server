@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -278,10 +279,14 @@ namespace Microsoft.Python.Analysis.Tests {
             set = set.Where(x => x.Item2 != null && x.Item2.Contains("grammar")).ToArray();
 
             foreach (var r in set) {
+                interpreter.ModuleResolution.GetOrLoadModule(r.Item2);
+            }
+            
+            await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            
+            foreach (var r in set) {
                 var modName = r.Item1;
-
                 var mod = interpreter.ModuleResolution.GetOrLoadModule(r.Item2);
-                await mod.LoadAndAnalyzeAsync(new CancellationTokenSource(10000).Token);
 
                 anyExtensionSeen |= modName.IsNativeExtension;
                 switch (mod) {
