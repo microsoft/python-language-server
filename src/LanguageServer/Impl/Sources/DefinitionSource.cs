@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Documents;
@@ -38,13 +39,13 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             var eval = analysis.ExpressionEvaluator;
-            using (eval.OpenScope(analysis.Document, exprScope)) {
+            var name = (expr as NameExpression)?.Name;
 
+            using (eval.OpenScope(analysis.Document, exprScope)) {
                 // First try variables, except in imports
-                if (expr is NameExpression nex && !string.IsNullOrEmpty(nex.Name) &&
-                    !(statement is ImportStatement) && !(statement is FromImportStatement)) {
-                    var m = eval.LookupNameInScopes(nex.Name, out var scope);
-                    if (m != null && scope.Variables[nex.Name] is IVariable v) {
+                if (!string.IsNullOrEmpty(name) && !(statement is ImportStatement) && !(statement is FromImportStatement)) {
+                    var m = eval.LookupNameInScopes(name, out var scope);
+                    if (m != null && scope.Variables[name] is IVariable v) {
                         var type = v.Value.GetPythonType();
                         var module = type as IPythonModule ?? type?.DeclaringModule;
                         if (CanNavigateToModule(module, analysis)) {
@@ -54,6 +55,29 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
 
                 var value = eval.GetValueFromExpression(expr);
+                if (value.IsUnknown()) {
+                    // If this is 'import A as B' A is not declared as a variable, so try modules.
+                    string moduleName = null;
+                    if (!string.IsNullOrEmpty(name)) {
+                        switch (statement) {
+                            case ImportStatement imp when imp.Names.Any(x => x?.MakeString() == name):
+                            case FromImportStatement fimp when fimp.Names.Any(x => x?.Name == name):
+                                moduleName = name;
+                                break;
+                        }
+
+                        if (moduleName != null) {
+                            var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(moduleName);
+                            if (module != null && CanNavigateToModule(module, analysis)) {
+                                return new Reference {range = default, uri = module.Uri};
+                            }
+                        }
+                    }
+                }
+
+                if (value.IsUnknown()) {
+                    return null;
+                }
                 return FromMember(value, expr, statement, analysis);
             }
         }

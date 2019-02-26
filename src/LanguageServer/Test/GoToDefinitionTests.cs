@@ -124,10 +124,27 @@ log
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var ds = new DefinitionSource();
 
-            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 2));
+            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 10));
+            reference.range.Should().Be(0, 0, 0, 0);
+            reference.uri.AbsolutePath.Should().Contain("logging");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(3, 2));
             reference.range.Should().Be(1, 18, 1, 21);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(2, 20));
+            reference.uri.AbsolutePath.Should().Contain("logging");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoModuleSourceFromImport() {
+            const string code = @"from logging import A";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource();
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 7));
+            reference.range.Should().Be(0, 0, 0, 0);
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
