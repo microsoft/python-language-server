@@ -33,22 +33,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (!(target is PythonClassType c && c.IsGeneric()) && !(target is IGenericType)) {
                 return null;
             }
-            // Evaluate index to check if the result is a generic parameter.
-            // If it is, then this is a declaration expression such as Generic[T]
-            // rather than specific type instantiation as in List[str].
-            switch (expr) {
-                // Indexing returns type as from A[int]
-                case IndexExpression indexExpr when target is IGenericType gt:
-                    // Generic[T1, T2, ...]
-                    var indices = EvaluateIndex(indexExpr);
-                    return CreateSpecificTypeFromIndex(gt, indices, expr);
 
-                case CallExpression callExpr when target is PythonClassType c1:
-                    // Alternative instantiation:
-                    //  class A(Generic[T]): ...
-                    //  x = A(1234)
-                    var arguments = EvaluateCallArgs(callExpr).ToArray();
-                    return CreateClassInstance(c1, arguments, callExpr);
+            using (OpenScope(target.GetPythonType()?.DeclaringModule, GetScope(target), out _)) {
+                // Try generics
+                // Evaluate index to check if the result is a generic parameter.
+                // If it is, then this is a declaration expression such as Generic[T]
+                // rather than specific type instantiation as in List[str].
+                switch (expr) {
+                    // Indexing returns type as from A[int]
+                    case IndexExpression indexExpr when target is IGenericType gt:
+                        // Generic[T1, T2, ...]
+                        var indices = EvaluateIndex(indexExpr);
+                        return CreateSpecificTypeFromIndex(gt, indices, expr);
+
+                    case CallExpression callExpr when target is PythonClassType c1:
+                        // Alternative instantiation:
+                        //  class A(Generic[T]): ...
+                        //  x = A(1234)
+                        var arguments = EvaluateCallArgs(callExpr).ToArray();
+                        return CreateClassInstance(c1, arguments, callExpr);
+                }
             }
             return null;
         }
@@ -133,6 +137,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             argSet.Evaluate();
             var specificType = cls.CreateSpecificType(argSet, Module, location);
             return new PythonInstance(specificType, location);
+        }
+
+        private ScopeStatement GetScope(IMember m) {
+            switch (m.GetPythonType()) {
+                case IPythonClassType ct:
+                    return ct.ClassDefinition;
+                case IPythonFunctionType ct:
+                    return ct.FunctionDefinition;
+            }
+            return null;
         }
     }
 }

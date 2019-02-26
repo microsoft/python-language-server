@@ -27,6 +27,7 @@ namespace Microsoft.Python.Analysis.Types {
     internal class PythonFunctionType : PythonType, IPythonFunctionType {
         private readonly List<IPythonFunctionOverload> _overloads = new List<IPythonFunctionOverload>();
         private readonly object _lock = new object();
+        private readonly string _documentation;
         private bool _isAbstract;
         private bool _isSpecialized;
 
@@ -85,6 +86,10 @@ namespace Microsoft.Python.Analysis.Types {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;
+
+            if (fd.Name == "__init__") {
+                _documentation = declaringType?.Documentation;
+            }
             ProcessDecorators(fd);
         }
 
@@ -112,13 +117,7 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonFunction
         public FunctionDefinition FunctionDefinition { get; }
         public IPythonType DeclaringType { get; }
-        public override string Documentation {
-            get {
-                var doc = "__init__".EqualsOrdinal(FunctionDefinition?.Name) ? DeclaringType?.Documentation : null;
-                return doc ?? _overloads.FirstOrDefault()?.Documentation;
-            }
-        }
-
+        public override string Documentation => _documentation ?? _overloads.FirstOrDefault()?.Documentation;
         public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;

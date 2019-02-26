@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly object _lock = new object();
         private readonly string _name;
         private Func<string, string> _documentationProvider;
-        private Func<string, LocationInfo> _locationProvider;
+        private readonly Func<string, LocationInfo> _locationProvider;
         private string _documentation;
         private LocationInfo _location;
         private Dictionary<string, IMember> _members;

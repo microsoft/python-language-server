@@ -102,18 +102,16 @@ namespace Microsoft.Python.Analysis.Types {
         public override string Documentation {
             get {
                 // Try doc from the type (class definition AST node).
-                var doc = ClassDefinition.GetDocumentation();
-                if (string.IsNullOrEmpty(doc)) {
-                    doc = base.Documentation;
-                }
+                var doc = base.Documentation;
                 // Try docs __init__.
                 if (string.IsNullOrEmpty(doc)) {
-                    // Don't call GetMember("__init__").Documentation or you stack overflow.
-                    doc = (GetMember("__init__") as IPythonFunctionType)?.FunctionDefinition?.Documentation;
+                    var init = GetMember("__init__") as IPythonFunctionType;
+                    doc = init?.DeclaringType == this ? init.Documentation : null;
                 }
                 // Try bases.
                 if (string.IsNullOrEmpty(doc) && Bases != null) {
-                    doc = Bases.FirstOrDefault(b => !string.IsNullOrEmpty(b?.Documentation))?.Documentation;
+                    var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+                    doc = Bases.Except(Enumerable.Repeat(o, 1)).FirstOrDefault(b => !string.IsNullOrEmpty(b?.Documentation))?.Documentation;
                 }
                 return doc;
             }

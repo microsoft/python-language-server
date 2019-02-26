@@ -32,12 +32,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = GetValueFromExpression(expr.Target);
-            using (OpenScope(target.GetPythonType()?.DeclaringModule, GetScope(target), out _)) {
-                // Try generics
-                var result = GetValueFromGeneric(target, expr);
-                if (result != null) {
-                    return result;
-                }
+            var result = GetValueFromGeneric(target, expr);
+            if (result != null) {
+                return result;
+            }
 
             // Should only be two types of returns here. First, an bound type
             // so we can invoke Call over the instance. Second, an type info
@@ -64,12 +62,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
             }
 
-                if (value == null) {
-                    Log?.Log(TraceEventType.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
-                }
-
-                return value;
+            if (value == null) {
+                Log?.Log(TraceEventType.Verbose, $"Unknown callable: {expr.Target.ToCodeString(Ast).Trim()}");
             }
+
+            return value;
         }
 
         public IMember GetValueFromClassCtor(IPythonClassType cls, CallExpression expr) {
@@ -259,16 +256,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
             return true;
-        }
-
-        private ScopeStatement GetScope(IMember m) {
-            switch (m.GetPythonType()) {
-                case IPythonClassType ct:
-                    return ct.ClassDefinition;
-                case IPythonFunctionType ct:
-                    return ct.FunctionDefinition;
-            }
-            return null;
         }
     }
 }
