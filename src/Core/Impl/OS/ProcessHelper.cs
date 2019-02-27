@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -22,9 +23,11 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Core.OS {
     public sealed class ProcessHelper : IDisposable {
+        private readonly CancellationTokenSource _workerCts = new CancellationTokenSource();
+        private readonly EventPipelineHandler _dataHandler;
+        private readonly EventPipelineHandler _errorHandler;
         private Process _process;
         private int? _exitCode;
-        private readonly AsyncManualResetEvent _seenNullOutput, _seenNullError;
 
         public ProcessHelper(string filename, IEnumerable<string> arguments, string workingDir = null) {
             if (!File.Exists(filename)) {
@@ -44,8 +47,8 @@ namespace Microsoft.Python.Core.OS {
                 RedirectStandardError = true
             };
 
-            _seenNullOutput = new AsyncManualResetEvent();
-            _seenNullError = new AsyncManualResetEvent();
+            _dataHandler = new EventPipelineHandler(s => OnOutputLine?.Invoke(s.TrimEnd()), _workerCts.Token);
+            _errorHandler = new EventPipelineHandler(s => OnErrorLine?.Invoke(s.TrimEnd()), _workerCts.Token);
         }
 
         public ProcessStartInfo StartInfo { get; }
@@ -56,77 +59,38 @@ namespace Microsoft.Python.Core.OS {
         public Action<string> OnErrorLine { get; set; }
 
         public void Dispose() {
-            _seenNullOutput.Set();
-            _seenNullError.Set();
+            _workerCts.Cancel();
             _process?.Dispose();
+            Disconnect();
         }
 
         public void Start() {
-            _seenNullOutput.Reset();
-            _seenNullError.Reset();
-
-            var p = new Process {
-                StartInfo = StartInfo
-            };
-
-            p.Exited += Process_Exited;
-            p.OutputDataReceived += Process_OutputDataReceived;
-            p.ErrorDataReceived += Process_ErrorDataReceived;
+            _process = new Process { StartInfo = StartInfo };
+            _process.OutputDataReceived += Process_OutputDataReceived;
+            _process.ErrorDataReceived += Process_ErrorDataReceived;
 
             try {
-                p.Start();
+                _process.Start();
             } catch (Exception ex) {
                 // Capture the error as stderr and exit code, then
                 // clean up.
                 _exitCode = ex.HResult;
                 OnErrorLine?.Invoke(ex.ToString());
-                _seenNullOutput.Set();
-                _seenNullError.Set();
-                p.OutputDataReceived -= Process_OutputDataReceived;
-                p.ErrorDataReceived -= Process_ErrorDataReceived;
-                p.Exited -= Process_Exited;
+                Disconnect();
+                _workerCts.Cancel();
                 return;
             }
 
-            p.BeginOutputReadLine();
-            p.BeginErrorReadLine();
-
-            p.EnableRaisingEvents = true;
+            _process.BeginOutputReadLine();
+            _process.BeginErrorReadLine();
+            _process.EnableRaisingEvents = true;
 
             // Close stdin so that if the process tries to read it will exit
-            p.StandardInput.Close();
-
-            _process = p;
+            _process.StandardInput.Close();
         }
 
-        private void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e) {
-            try {
-                if (e.Data == null) {
-                    _seenNullError.Set();
-                } else {
-                    OnErrorLine?.Invoke(e.Data.TrimEnd());
-                }
-            } catch (ObjectDisposedException) {
-                ((Process)sender).ErrorDataReceived -= Process_ErrorDataReceived;
-            }
-        }
-
-        private void Process_Exited(object sender, EventArgs eventArgs) {
-            _seenNullOutput.Set();
-            _seenNullError.Set();
-        }
-
-        private void Process_OutputDataReceived(object sender, DataReceivedEventArgs e) {
-            try {
-                if (e.Data == null) {
-                    _seenNullOutput.Set();
-                } else {
-                    OnOutputLine?.Invoke(e.Data.TrimEnd());
-                }
-            } catch (ObjectDisposedException) {
-                ((Process)sender).OutputDataReceived -= Process_OutputDataReceived;
-            }
-        }
+        private void Process_OutputDataReceived(object sender, DataReceivedEventArgs e) => _dataHandler.OnDataReceived(e);
+        private void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e) => _errorHandler.OnDataReceived(e);
 
         public void Kill() {
             try {
@@ -163,8 +127,8 @@ namespace Microsoft.Python.Core.OS {
                 throw new InvalidOperationException("Process was not started");
             }
 
-            await _seenNullOutput.WaitAsync(cancellationToken).ConfigureAwait(false);
-            await _seenNullError.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _dataHandler.Completed.WaitAsync(_workerCts.Token);
+            await _errorHandler.Completed.WaitAsync(_workerCts.Token);
 
             for (var i = 0; i < 5 && !_process.HasExited; i++) {
                 await Task.Delay(100, cancellationToken);
@@ -172,6 +136,56 @@ namespace Microsoft.Python.Core.OS {
 
             Debug.Assert(_process.HasExited, "Process still has not exited.");
             return _process.ExitCode;
+        }
+
+        private void Disconnect() {
+            if (_process != null) {
+                _process.OutputDataReceived -= Process_OutputDataReceived;
+                _process.ErrorDataReceived -= Process_ErrorDataReceived;
+            }
+        }
+
+        private sealed class EventPipelineHandler {
+            private readonly ConcurrentQueue<DataReceivedEventArgs> _events = new ConcurrentQueue<DataReceivedEventArgs>();
+            private readonly ManualResetEventSlim _dataAvailable = new ManualResetEventSlim();
+            private readonly Action<string> _action;
+            private readonly CancellationToken _cancellationToken;
+
+            public EventPipelineHandler(Action<string> action, CancellationToken cancellationToken) {
+                _cancellationToken = cancellationToken;
+                _action = action;
+                Task.Run(QueueWorker).DoNotWait();
+            }
+
+            public void OnDataReceived(DataReceivedEventArgs e) {
+                _events.Enqueue(e);
+                _dataAvailable.Set();
+            }
+
+            public AsyncManualResetEvent Completed { get; } = new AsyncManualResetEvent();
+
+            private void QueueWorker() {
+                while (!_cancellationToken.IsCancellationRequested) {
+                    if (!_events.TryDequeue(out var e)) {
+                        _dataAvailable.Reset();
+                        try {
+                            _dataAvailable.Wait(_cancellationToken);
+                        } catch (OperationCanceledException) {
+                            break;
+                        }
+                    } else {
+                        try {
+                            if (e.Data == null) {
+                                Completed.Set();
+                                break;
+                            }
+                            _action?.Invoke(e.Data.TrimEnd());
+                        } catch (ObjectDisposedException) {
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 }
