@@ -65,7 +65,7 @@ namespace Microsoft.Python.Core.OS {
         }
 
         public void Start() {
-            _process = new Process { StartInfo = StartInfo };
+            _process = new Process {StartInfo = StartInfo};
             _process.OutputDataReceived += Process_OutputDataReceived;
             _process.ErrorDataReceived += Process_ErrorDataReceived;
 
@@ -97,14 +97,14 @@ namespace Microsoft.Python.Core.OS {
                 if (_process != null && !_process.HasExited) {
                     _process.Kill();
                 }
-            } catch (SystemException) {
-            }
+            } catch (SystemException) { }
         }
 
         public int? Wait(int milliseconds) {
             if (_exitCode != null) {
                 return _exitCode;
             }
+
             var cts = new CancellationTokenSource(milliseconds);
             try {
                 var t = WaitAsync(cts.Token);
@@ -123,6 +123,7 @@ namespace Microsoft.Python.Core.OS {
             if (_exitCode != null) {
                 return _exitCode.Value;
             }
+
             if (_process == null) {
                 throw new InvalidOperationException("Process was not started");
             }
@@ -150,6 +151,7 @@ namespace Microsoft.Python.Core.OS {
             private readonly ManualResetEventSlim _dataAvailable = new ManualResetEventSlim();
             private readonly Action<string> _action;
             private readonly CancellationToken _cancellationToken;
+            private readonly object _lock = new object();
 
             public EventPipelineHandler(Action<string> action, CancellationToken cancellationToken) {
                 _cancellationToken = cancellationToken;
@@ -158,31 +160,45 @@ namespace Microsoft.Python.Core.OS {
             }
 
             public void OnDataReceived(DataReceivedEventArgs e) {
-                _events.Enqueue(e);
-                _dataAvailable.Set();
+                lock (_lock) {
+                    _events.Enqueue(e);
+                    _dataAvailable.Set();
+                }
             }
 
             public AsyncManualResetEvent Completed { get; } = new AsyncManualResetEvent();
 
             private void QueueWorker() {
                 while (!_cancellationToken.IsCancellationRequested) {
-                    if (!_events.TryDequeue(out var e)) {
-                        _dataAvailable.Reset();
+                    DataReceivedEventArgs e;
+                    // Make sure trying to get data and resetting the event is atomic
+                    // so we don't get into a situation when caller places item
+                    // in the queue, sets the 'available' event and then
+                    // thread switches into between `TryDequeue` and `Reset`.
+                    lock (_lock) {
+                        if (!_events.TryDequeue(out e)) {
+                            _dataAvailable.Reset();
+                        }
+                    }
+
+                    if (e == null) {
                         try {
                             _dataAvailable.Wait(_cancellationToken);
+                            continue;
                         } catch (OperationCanceledException) {
                             break;
                         }
-                    } else {
-                        try {
-                            if (e.Data == null) {
-                                Completed.Set();
-                                break;
-                            }
-                            _action?.Invoke(e.Data.TrimEnd());
-                        } catch (ObjectDisposedException) {
+                    }
+
+                    try {
+                        if (e.Data == null) {
+                            Completed.Set();
                             break;
                         }
+
+                        _action?.Invoke(e.Data.TrimEnd());
+                    } catch (ObjectDisposedException) {
+                        break;
                     }
                 }
             }
