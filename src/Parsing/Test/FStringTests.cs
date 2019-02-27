@@ -148,9 +148,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
         [TestMethod, Priority(0)]
         public void NestedFString() {
-            var code = @"
-print(f'''result: {f'{value}'} ''')
-";
+            var code = "print(f'''first: {f'second {value}'} ''')";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
             var found = false;
@@ -161,11 +159,11 @@ print(f'''result: {f'{value}'} ''')
                         break;
                 }
             }));
-            found.Should().BeFalse();
+            found.Should().BeTrue();
         }
 
         [TestMethod, Priority(0)]
-        public void UsingQuotes() {
+        public void NestedFStringWithDoubleQuotes() {
             var code = "f\"first: {f'{thing}'}\"";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
@@ -194,7 +192,7 @@ print(f'''result: {f'{value}'} ''')
                         break;
                 }
             }));
-            found.Should().BeFalse();
+            found.Should().BeTrue();
         }
 
         [TestMethod, Priority(0)]
@@ -262,8 +260,8 @@ print(f'''result: {f'{value}'} ''')
         }
 
         [TestMethod, Priority(0)]
-        public void RawFString() {
-            var code = "rf'{thing}'";
+        public void fRawString() {
+            var code = "fr'{thing}'";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
             var found = false;
@@ -278,6 +276,23 @@ print(f'''result: {f'{value}'} ''')
         }
 
         [TestMethod, Priority(0)]
+        public void bracesInsideDoubleBraces () {
+            var code = "f'{{blablabla {thing} }}'";
+            var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
+            var ast = parser.ParseFile();
+            var found = false;
+            ast.Walk(new MyPythonWalker(expr => {
+                switch (expr) {
+                    case NameExpression nameExpr:
+                        found |= nameExpr.Name.Equals("thing");
+                        break;
+                }
+            }));
+            found.Should().BeTrue();
+        }
+
+
+        [TestMethod, Priority(0)]
         [ExpectedException(typeof(Exception))]
         public void CloseWithSingleBrace() {
             var code = @"f'{{ mistake}'";
@@ -286,7 +301,6 @@ print(f'''result: {f'{value}'} ''')
         }
 
         [TestMethod, Priority(0)]
-        [ExpectedException(typeof(Exception))]
         public void NoEndOfEscapedBraces() {
             var code = @"f'{{ mistake'";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
