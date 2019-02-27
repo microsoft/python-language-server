@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Modules;

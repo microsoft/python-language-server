@@ -29,6 +29,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
@@ -129,7 +130,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             _log?.Log(TraceEventType.Information, "GetCurrentSearchPaths", Configuration.InterpreterPath);
             try {
-                var paths = await PythonLibraryPath.GetSearchPathsAsync(Configuration);
+                var fs = _services.GetService<IFileSystem>();
+                var ps = _services.GetService<IProcessServices>();
+                var paths = await PythonLibraryPath.GetSearchPathsAsync(Configuration, fs, ps, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
             } catch (InvalidOperationException) {

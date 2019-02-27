@@ -57,6 +57,7 @@ namespace Microsoft.Python.LanguageServer.Server {
                         .AddService(new TelemetryService(clientApp))
                         .AddService(new IdleTimeService())
                         .AddService(osp)
+                        .AddService(new ProcessServices())
                         .AddService(new FileSystem(osp));
 
                     services.AddService(messageFormatter.JsonSerializer);

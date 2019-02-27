@@ -97,10 +97,10 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <summary>
         /// Gets the set of search paths for the specified factory.
         /// </summary>
-        public static async Task<IList<PythonLibraryPath>> GetSearchPathsAsync(InterpreterConfiguration config) {
+        public static async Task<IList<PythonLibraryPath>> GetSearchPathsAsync(InterpreterConfiguration config, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
             for (int retries = 5; retries > 0; --retries) {
                 try {
-                    return await GetSearchPathsFromInterpreterAsync(config.InterpreterPath);
+                    return await GetSearchPathsFromInterpreterAsync(config.InterpreterPath, fs, ps, cancellationToken);
                 } catch (InvalidOperationException) {
                     // Failed to get paths
                     break;
@@ -122,59 +122,53 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// Gets the set of search paths by running the interpreter.
         /// </summary>
         /// <param name="interpreter">Path to the interpreter.</param>
+        /// <param name="fs">File system services.</param>
+        /// <param name="ps">Process services.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
-        /// <remarks>Added in 2.2, moved in 3.3</remarks>
-        public static async Task<List<PythonLibraryPath>> GetSearchPathsFromInterpreterAsync(string interpreter) {
+        public static async Task<List<PythonLibraryPath>> GetSearchPathsFromInterpreterAsync(string interpreter, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
             // sys.path will include the working directory, so we make an empty
             // path that we can filter out later
             var tempWorkingDir = IOPath.Combine(IOPath.GetTempPath(), IOPath.GetRandomFileName());
-            Directory.CreateDirectory(tempWorkingDir);
+            fs.CreateDirectory(tempWorkingDir);
             if (!InstallPath.TryGetFile("get_search_paths.py", out var srcGetSearchPaths)) {
                 return new List<PythonLibraryPath>();
             }
             var getSearchPaths = IOPath.Combine(tempWorkingDir, PathUtils.GetFileName(srcGetSearchPaths));
             File.Copy(srcGetSearchPaths, getSearchPaths);
 
-            var lines = new List<string>();
-            var errorLines = new List<string> { "Cannot obtain list of paths" };
+            var startInfo = new ProcessStartInfo(
+                interpreter,
+                new[] { "-S", "-E", getSearchPaths }.AsQuotedArguments()
+            ) {
+                WorkingDirectory = tempWorkingDir,
+                UseShellExecute = false,
+                ErrorDialog = false,
+                CreateNoWindow = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
 
             try {
-                using (var proc = new ProcessHelper(interpreter, new[] { "-S", "-E", getSearchPaths }, tempWorkingDir)) {
-                    proc.OnOutputLine = lines.Add;
-                    proc.OnErrorLine = errorLines.Add;
-
-                    proc.Start();
-                    using (var cts = new CancellationTokenSource(30000)) {
-                        int exitCode;
-                        try {
-                            exitCode = await proc.WaitAsync(cts.Token);
-                        } catch (OperationCanceledException) {
-                            proc.Kill();
-                            exitCode = -1;
-                        }
-                        if (exitCode != 0) {
-                            throw new InvalidOperationException(string.Join(Environment.NewLine, errorLines));
-                        }
+                var lines = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
+                return lines.Select(s => {
+                    if (s.StartsWithOrdinal(tempWorkingDir, ignoreCase: true)) {
+                        return null;
                     }
-                }
+                    try {
+                        return Parse(s);
+                    } catch (ArgumentException) {
+                        Debug.Fail("Invalid search path: " + (s ?? "<null>"));
+                        return null;
+                    } catch (FormatException) {
+                        Debug.Fail("Invalid format for search path: " + s);
+                        return null;
+                    }
+                }).Where(p => p != null).ToList();
             } finally {
-                PathUtils.DeleteDirectory(tempWorkingDir);
+                fs.DeleteDirectory(tempWorkingDir, true);
             }
-
-            return lines.Select(s => {
-                if (s.StartsWithOrdinal(tempWorkingDir, ignoreCase: true)) {
-                    return null;
-                }
-                try {
-                    return Parse(s);
-                } catch (ArgumentException) {
-                    Debug.Fail("Invalid search path: " + (s ?? "<null>"));
-                    return null;
-                } catch (FormatException) {
-                    Debug.Fail("Invalid format for search path: " + s);
-                    return null;
-                }
-            }).Where(p => p != null).ToList();
         }
     }
 }

@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices.ComTypes;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -27,9 +28,8 @@ namespace Microsoft.Python.Analysis.Modules {
         public CompiledBuiltinPythonModule(string moduleName, IPythonModule stub, IServiceContainer services)
             : base(moduleName, ModuleType.CompiledBuiltin, MakeFakeFilePath(moduleName, services), stub, services) { }
 
-        protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter)
-            => !InstallPath.TryGetFile("scrape_module.py", out var sm)
-                ? null : new List<string> { "-B", "-E", sm, "-u8", Name };
+        protected override string[] GetScrapeArguments(IPythonInterpreter interpreter)
+            => !InstallPath.TryGetFile("scrape_module.py", out var sm) ? null : new [] { "-B", "-E", sm, "-u8", Name };
 
         private static string MakeFakeFilePath(string name, IServiceContainer services) {
             var interpreterPath = services.GetService<IPythonInterpreter>().Configuration.InterpreterPath;
