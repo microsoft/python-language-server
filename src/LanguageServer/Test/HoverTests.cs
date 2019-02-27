@@ -92,9 +92,9 @@ datetime.datetime.now().day
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var hs = new HoverSource(new PlainTextDocumentationSource());
 
-            await AssertHover(hs, analysis, new SourceLocation(3, 2), "module datetime*", new SourceSpan(3, 1, 3, 9));
-            await AssertHover(hs, analysis, new SourceLocation(3, 11), "class datetime*", new SourceSpan(3, 9, 3, 18));
-            await AssertHover(hs, analysis, new SourceLocation(3, 20), @"datetime.now(tz: tzinfo) -> datetime*", new SourceSpan(3, 18, 3, 22));
+            AssertHover(hs, analysis, new SourceLocation(3, 2), "module datetime*", new SourceSpan(3, 1, 3, 9));
+            AssertHover(hs, analysis, new SourceLocation(3, 11), "class datetime*", new SourceSpan(3, 9, 3, 18));
+            AssertHover(hs, analysis, new SourceLocation(3, 20), @"datetime.now(tz: tzinfo) -> datetime*", new SourceSpan(3, 18, 3, 22));
         }
 
         [TestMethod, Priority(0)]
