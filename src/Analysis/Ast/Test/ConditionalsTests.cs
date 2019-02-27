@@ -147,6 +147,7 @@ if 'posix' in _names:
             sm
                 .AddService(TestLogger)
                 .AddService(platform)
+                .AddService(new ProcessServices())
                 .AddService(new FileSystem(platform));
             return platform;
         }
