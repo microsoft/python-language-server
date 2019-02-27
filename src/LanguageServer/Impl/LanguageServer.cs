@@ -17,10 +17,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
@@ -377,19 +380,29 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // Were not watching OR were watching but paths have changed. Recreate the watcher.
                 _pathsWatcher?.Dispose();
                 var interpreter = _services.GetService<IPythonInterpreter>();
+                var logger = _services.GetService<ILogger>();
                 _pathsWatcher = new PathsWatcher(
                     _initParams.initializationOptions.searchPaths,
-                    () => interpreter.ModuleResolution.ReloadAsync(cancellationToken).DoNotWait(),
-                    _services.GetService<ILogger>()
-                 );
+                    () => {
+                        logger.Log(TraceEventType.Information, Resources.ReloadingModules);
+                        interpreter.ModuleResolution.ReloadAsync(cancellationToken).ContinueWith(t => {
+                            logger.Log(TraceEventType.Information, Resources.Done);
+                            logger.Log(TraceEventType.Information, Resources.RestartingAnalysis);
+                            var rdt = _services.GetService<IRunningDocumentTable>();
+                            foreach (var doc in rdt) {
+                                doc.Reset(null);
+                            }
+                        }, cancellationToken).DoNotWait();
+                    },
+                        _services.GetService<ILogger>()
+                    );
+
+                _watchSearchPaths = true;
+                _searchPaths = _initParams.initializationOptions.searchPaths;
             }
-
-            _watchSearchPaths = true;
-            _searchPaths = _initParams.initializationOptions.searchPaths;
         }
-
         private static CancellationToken GetToken(CancellationToken original)
-            => Debugger.IsAttached ? CancellationToken.None : original;
+                => Debugger.IsAttached ? CancellationToken.None : original;
 
         private class Prioritizer : IDisposable {
             private const int InitializePriority = 0;
