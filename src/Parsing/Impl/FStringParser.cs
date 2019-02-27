@@ -2,28 +2,24 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
     public class FStringParser {
         private readonly string _fString;
-        private readonly StringBuilder _buffer;
-        private readonly List<Expression> _children;
-        private int _position;
+        private readonly StringBuilder _buffer = new StringBuilder();
+        private readonly List<Expression> _children = new List<Expression>();
+        private int _position = 0;
 
         public FStringParser(string fString) {
             _fString = fString;
-            _position = 0;
-            _buffer = new StringBuilder();
-            _children = new List<Expression>();
         }
 
         public FStringExpression Parse() {
             while (HasNextChar()) {
                 if (IsDoubleBrace()) {
-                    var brace = NextChar();
-                    Read(brace);
-                    _buffer.Append(brace);
+                    BufferEscapedBracesSubExpr();
                 } else if (PeekChar() == '{') {
                     AddBufferedSubstring();
                     ParseInnerExpression();
@@ -50,16 +46,41 @@ namespace Microsoft.Python.Parsing {
         private void ParseInnerExpression() {
             Read('{');
             while (HasNextChar() && PeekChar() != '}') {
-                _buffer.Append(NextChar());
+                if (PeekChar() == '{') {
+                    ParseInnerExpression();
+                } else {
+                    _buffer.Append(NextChar());
+                }
             }
             if (!HasNextChar()) {
-                throw new Exception();
+                throw new Exception("Inner expression without closing '}'");
             }
 
-            AddStringToChildren(_buffer.ToString());
+            _children.Add(ParseChildExpression(_buffer.ToString()));
             _buffer.Clear();
 
             Read('}');
+        }
+
+        private void BufferEscapedBracesSubExpr() {
+            Check.InvalidOperation(IsDoubleBrace());
+
+            var brace = NextChar();
+            Read(brace);
+            _buffer.Append(brace);
+            while (HasNextChar()) {
+                if (IsDoubleChar('}')) {
+                    Read('}');
+                    Read('}');
+                    _buffer.Append('}');
+                    return;
+                } else if (PeekChar() == '}') {
+                    throw new Exception("single '}' is not allowed");
+                } else {
+                    _buffer.Append(NextChar());
+                }
+            }
+            throw new Exception("End of double '}' not found");
         }
 
         private void Read(char nextChar) {
@@ -74,20 +95,18 @@ namespace Microsoft.Python.Parsing {
             if (_buffer.Length == 0) {
                 return;
             }
-
-            var openQuote = "'";
-            var x = $"{openQuote}{_buffer.ToString()}{openQuote}";
-            AddStringToChildren(x);
+            var s = _buffer.ToString();
+            _children.Add(new ConstantExpression(s));
             _buffer.Clear();
         }
 
-        private void AddStringToChildren(string x) {
+        private Expression ParseChildExpression(string x) {
             var parser = Parser.CreateParser(new StringReader(x), PythonLanguageVersion.V36);
             var expr = Statement.GetExpression(parser.ParseTopExpression().Body);
             if (expr is null) {
                 throw new Exception();
             }
-            _children.Add(expr);
+            return expr;
         }
 
         private char NextChar() {

@@ -24,6 +24,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     child.Walk(walker);
                 }
             }
+            walker.PostWalk(this);
         }
 
         public override Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
