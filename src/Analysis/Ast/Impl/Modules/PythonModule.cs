@@ -152,15 +152,10 @@ namespace Microsoft.Python.Analysis.Modules {
             // Try __all__ since it contains exported members
             var all = Analysis.GlobalScope.Variables["__all__"];
             if (all?.Value is IPythonCollection collection) {
-                var content = collection.Contents
+                return collection.Contents
                     .OfType<IPythonConstant>()
                     .Select(c => c.GetString())
-                    .ExcludeDefault()
-                    .Where(s => !string.IsNullOrEmpty(s))
-                    .ToArray();
-                if (content.Any()) {
-                    return content;
-                }
+                    .Where(s => !string.IsNullOrEmpty(s));
             }
 
             // __all__ is not declared. Try filtering by origin:
