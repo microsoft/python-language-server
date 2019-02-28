@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             var value = scope?.Variables[name].Value;
-            if (value == null) {
+            if (value == null && options.HasFlag(LookupOptions.Builtins)) {
                 var builtins = Interpreter.ModuleResolution.BuiltinsModule;
                 value = Interpreter.ModuleResolution.BuiltinsModule.GetMember(name);
                 if (Module != builtins && options.HasFlag(LookupOptions.Builtins)) {
@@ -140,10 +140,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             fromScope = fromScope ?? gs;
             if (fromScope != null) {
-                var scope = fromScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
-                if (scope == null) {
-                    scope = new Scope(node, fromScope, true);
-                    fromScope.AddChildScope(scope);
+                Scope scope;
+                if (node is PythonAst) {
+                    // node points to global scope, it is not a function or a class.
+                    scope = gs;
+                } else {
+                    scope = fromScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
+                    if (scope == null) {
+                        scope = new Scope(node, fromScope, true);
+                        fromScope.AddChildScope(scope);
+                    }
                 }
 
                 _openScopes.Push(scope);
