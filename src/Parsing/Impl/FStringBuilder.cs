@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
@@ -28,6 +29,26 @@ namespace Microsoft.Python.Parsing {
 
         public void AppendExpression(string subExprStr) {
             completeFString.Append(subExprStr);
+
+            int formatColon;
+            if ((formatColon = subExprStr.LastIndexOf(':')) != -1) {
+                var formatSpecifier = subExprStr.Substring(formatColon + 1);
+                // ToDo: Check if format comes before conversion (illegal) ":width!r"
+
+                if (!formatSpecifier.IsNullOrEmpty()) {
+                    _children.Add(CreateExpression(formatSpecifier.Trim(new char[] { '{', '}' })));
+                }
+                subExprStr = subExprStr.Substring(0, formatColon);
+            }
+
+            int conversionExclamation;
+            if ((conversionExclamation = subExprStr.LastIndexOf('!')) != -1) {
+                var conversion = subExprStr.Substring(conversionExclamation + 1);
+                if (!conversion.IsNullOrEmpty()) {
+                    _children.Add(CreateExpression(conversion.Trim(new char[] { '{', '}' })));
+                }
+                subExprStr = subExprStr.Substring(0, conversionExclamation);
+            }
             _children.Add(CreateExpression(subExprStr));
         }
 
