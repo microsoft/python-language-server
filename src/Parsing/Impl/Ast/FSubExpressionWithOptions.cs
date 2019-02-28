@@ -21,10 +21,11 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override void Walk(PythonWalker walker) {
-            walker.Walk(this);
-            _expr.Walk(walker);
-            _formatExpression?.Walk(walker);
-            _conversionExpression?.Walk(walker);
+            if (walker.Walk(this)) {
+                _expr.Walk(walker);
+                _formatExpression?.Walk(walker);
+                _conversionExpression?.Walk(walker);
+            }
             walker.PostWalk(this);
         }
 

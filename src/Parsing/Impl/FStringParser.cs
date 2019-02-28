@@ -12,6 +12,7 @@ namespace Microsoft.Python.Parsing {
         private readonly StringBuilder _buffer = new StringBuilder();
         private readonly FStringBuilder _builder;
         private readonly ErrorSink _errors;
+        private int _errorCode = 0;
         private int _position = 0;
 
         public FStringParser(FStringBuilder builder, string fString, ErrorSink errors) {
@@ -66,9 +67,9 @@ namespace Microsoft.Python.Parsing {
 
             var parser = Parser.CreateParser(new StringReader(subExprStr), PythonLanguageVersion.V36);
             var expr = parser.ParseFStrSubExpr(out var formatExpression, out var conversionExpression);
-            /*if (expr is null) {
-                throw new Exception("Expression failed to parse");
-            }*/
+            if (expr is null) {
+                ReportSyntaxError("Subexpression failed to parse");
+            }
 
             if (formatExpression != null || conversionExpression != null) {
                 return new FSubExpressionWithOptions(expr, formatExpression, conversionExpression);
@@ -122,6 +123,25 @@ namespace Microsoft.Python.Parsing {
 
         private bool EndOfFString() {
             return _position >= _fString.Length;
+        }
+
+        private void ReportSyntaxError(string message) { }
+        //private void ReportSyntaxError(string message) => ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, message);
+
+        private void ReportSyntaxError(int start, int end, string message) => ReportSyntaxError(start, end, message, ErrorCodes.SyntaxError);
+
+        private void ReportSyntaxError(int start, int end, string message, int errorCode) {
+            // save the first one, the next error codes may be induced errors:
+            if (_errorCode == 0) {
+                _errorCode = errorCode;
+            }
+            /*
+            _errors.Add(
+                message,
+                _tokenizer.GetLineLocations(),
+                start, end,
+                errorCode,
+                Severity.Error);*/
         }
     }
 }

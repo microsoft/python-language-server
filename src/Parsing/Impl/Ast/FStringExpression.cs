@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FStringExpression : Expression {
-        public readonly List<Expression> Children;
+        public List<Expression> Children { get; }
 
         public FStringExpression(List<Expression> children) {
             Children = children;
@@ -17,9 +17,10 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override void Walk(PythonWalker walker) {
-            walker.Walk(this);
-            foreach (var child in Children) {
-                child.Walk(walker);
+            if (walker.Walk(this)) {
+                foreach (var child in Children) {
+                    child.Walk(walker);
+                }
             }
             walker.PostWalk(this);
         }
