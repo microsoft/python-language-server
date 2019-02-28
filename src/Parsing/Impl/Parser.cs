@@ -3176,41 +3176,36 @@ namespace Microsoft.Python.Parsing {
 
         private Expression FinishStringPlus(string s, List<string> verbatimImages, List<string> verbatimWhiteSpace) {
             var t = PeekToken();
-            while (true) {
+            while (t is ConstantValueToken) {
+                AsciiString bytes;
                 if (t is FStringToken) {
                     FStringBuilder builder = new FStringBuilder();
                     builder.AppendString(s);
                     return FinishFStringPlus(builder, verbatimImages, verbatimWhiteSpace);
-                }
-                if (t is ConstantValueToken) {
-                    AsciiString bytes;
-                    if (t.Value is String cvs) {
-                        s += cvs;
-                        NextToken();
-                        if (_verbatim) {
-                            verbatimWhiteSpace.Add(_tokenWhiteSpace);
-                            verbatimImages.Add(t.VerbatimImage);
-                        }
-                        t = PeekToken();
-                        continue;
-                    } else if ((bytes = t.Value as AsciiString) != null) {
-                        if (_langVersion.Is3x()) {
-                            ReportSyntaxError("cannot mix bytes and nonbytes literals");
-                        }
-
-                        s += bytes.String;
-                        NextToken();
-                        if (_verbatim) {
-                            verbatimWhiteSpace.Add(_tokenWhiteSpace);
-                            verbatimImages.Add(t.VerbatimImage);
-                        }
-                        t = PeekToken();
-                        continue;
-                    } else {
-                        ReportSyntaxError("invalid syntax");
+                } else if (t.Value is String cvs) {
+                    s += cvs;
+                    NextToken();
+                    if (_verbatim) {
+                        verbatimWhiteSpace.Add(_tokenWhiteSpace);
+                        verbatimImages.Add(t.VerbatimImage);
                     }
+                    t = PeekToken();
+                } else if ((bytes = t.Value as AsciiString) != null) {
+                    if (_langVersion.Is3x()) {
+                        ReportSyntaxError("cannot mix bytes and nonbytes literals");
+                    }
+
+                    s += bytes.String;
+                    NextToken();
+                    if (_verbatim) {
+                        verbatimWhiteSpace.Add(_tokenWhiteSpace);
+                        verbatimImages.Add(t.VerbatimImage);
+                    }
+                    t = PeekToken();
+                } else {
+                    ReportSyntaxError("invalid syntax");
+                    break;
                 }
-                break;
             }
             return new ConstantExpression(s);
         }
