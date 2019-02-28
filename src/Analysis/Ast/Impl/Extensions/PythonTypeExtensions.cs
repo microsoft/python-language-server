@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis {
             => value is IGenericTypeDefinition || value is IGenericType || (value is IPythonClassType c && c.IsGeneric());
 
         public static void TransferDocumentationAndLocation(this IPythonType s, IPythonType d) {
-            if (s != null && s != d && s is PythonType src && d is PythonType dst) {
+            if (s != d && s is PythonType src && d is PythonType dst) {
                 dst.TrySetTypeId(src.TypeId);
                 var documentation = src.Documentation;
                 if (!string.IsNullOrEmpty(documentation)) {
