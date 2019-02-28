@@ -31,6 +31,7 @@ namespace Microsoft.Python.Parsing {
         ExclamationMark = 12,
         Dot = 31,
 
+
         #region Generated Token Kinds
 
         Add = 32,
