@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis {
             // For regular bound methods add first parameter and set it to the class.
 
             foreach (var a in args.Arguments) {
-                if (a.Value is IMember m) {
+                if (a.Value is IMember m && !string.IsNullOrEmpty(a.Name)) {
                     eval.DeclareVariable(a.Name, m, VariableSource.Declaration, a.Location, false);
                 }
             }
