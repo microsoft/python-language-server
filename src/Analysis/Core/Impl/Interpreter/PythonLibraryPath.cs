@@ -153,7 +153,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             try {
                 var lines = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
                 return lines.Select(s => {
-                    if (s.StartsWithOrdinal(tempWorkingDir, ignoreCase: true)) {
+                    if (s.PathStartsWith(tempWorkingDir)) {
                         return null;
                     }
                     try {
