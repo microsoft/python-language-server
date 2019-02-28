@@ -28,18 +28,14 @@ namespace Microsoft.Python.Analysis {
         public static bool IsGeneric(this IPythonType value)
             => value is IGenericTypeDefinition || value is IGenericType || (value is IPythonClassType c && c.IsGeneric());
 
-        public static void TransferDocumentationAndLocation(this IPythonType src, IPythonType dst) {
-            if (src != null && dst is PythonType pt) {
-                pt.TrySetTypeId(dst.TypeId);
+        public static void TransferDocumentationAndLocation(this IPythonType s, IPythonType d) {
+            if (s != null && s != d && s is PythonType src && d is PythonType dst) {
+                dst.TrySetTypeId(src.TypeId);
                 var documentation = src.Documentation;
                 if (!string.IsNullOrEmpty(documentation)) {
-                    if (!string.IsNullOrEmpty(documentation)) {
-                        pt.SetDocumentation(documentation);
-                    }
+                    dst.SetDocumentationProvider(_ => documentation);
                 }
-                if (src is ILocatedMember lm) {
-                    pt.SetLocation(lm.Location);
-                }
+                dst.SetLocation(src.Location);
             }
         }
 

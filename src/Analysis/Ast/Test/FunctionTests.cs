@@ -153,6 +153,19 @@ y = f(1, 2)
         }
 
         [TestMethod, Priority(0)]
+        public async Task ReturnValueDefaultNone() {
+            const string code = @"
+def g(x=None):
+    return x
+
+y = g('4')
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should()
+                .HaveVariable("y").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ReturnValueAnnotated() {
             const string code = @"
 def f(a, b) -> str:
