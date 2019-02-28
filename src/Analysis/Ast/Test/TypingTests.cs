@@ -833,6 +833,26 @@ y = boxedstr.get()
         }
 
         [TestMethod, Priority(0)]
+        public async Task UnionMembers() {
+            const string code = @"
+from typing import Union, List
+
+class A:
+    def m1(self): ...
+
+u = Union[A, List[str]]
+z = u[0]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("u")
+                .Which.Should().HaveType("Union[A, List[str]]")
+                .Which.Should().HaveMembers("m1", "index", "append");
+
+            analysis.Should().HaveVariable("z")
+                .Which.Should().HaveType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
         public void AnnotationParsing() {
             AssertTransform("List", "NameOp:List");
             AssertTransform("List[Int]", "NameOp:List", "NameOp:Int", "MakeGenericOp");

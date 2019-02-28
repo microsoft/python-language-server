@@ -54,5 +54,12 @@ namespace Microsoft.Python.Analysis {
             }
             return LocationInfo.Empty;
         }
+
+        public static bool IsInAst(this ScopeStatement node, PythonAst ast) {
+            while (node.Parent != null) {
+                node = node.Parent;
+            }
+            return ast == node;
+        }
     }
 }

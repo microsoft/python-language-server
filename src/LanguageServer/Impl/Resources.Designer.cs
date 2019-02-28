@@ -176,5 +176,14 @@ namespace Microsoft.Python.LanguageServer {
                 return ResourceManager.GetString("RenameVariable_UnableGetExpressionAnalysis", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restarting analysis....
+        /// </summary>
+        internal static string RestartingAnalysis {
+            get {
+                return ResourceManager.GetString("RestartingAnalysis", resourceCulture);
+            }
+        }
     }
 }
