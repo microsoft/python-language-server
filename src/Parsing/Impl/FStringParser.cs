@@ -11,11 +11,13 @@ namespace Microsoft.Python.Parsing {
         private readonly string _fString;
         private readonly StringBuilder _buffer = new StringBuilder();
         private readonly FStringBuilder _builder;
+        private readonly ErrorSink _errors;
         private int _position = 0;
 
-        public FStringParser(FStringBuilder builder, string fString) {
+        public FStringParser(FStringBuilder builder, string fString, ErrorSink errors) {
             _fString = fString;
             _builder = builder;
+            _errors = errors;
         }
 
         public void Parse() {
@@ -54,9 +56,25 @@ namespace Microsoft.Python.Parsing {
 
             var subExprStr = _buffer.ToString();
             if (!subExprStr.IsNullOrEmpty()) {
-                _builder.AppendExpression(_buffer.ToString());
+                _builder.AppendExpression(CreateExpression(_buffer.ToString()));
             }
             _buffer.Clear();
+        }
+
+        private Expression CreateExpression(string subExprStr) {
+            Check.ArgumentNotNullOrEmpty(nameof(subExprStr), subExprStr);
+
+            var parser = Parser.CreateParser(new StringReader(subExprStr), PythonLanguageVersion.V36);
+            var expr = parser.ParseFStrSubExpr(out var formatExpression, out var conversionExpression);
+            /*if (expr is null) {
+                throw new Exception("Expression failed to parse");
+            }*/
+
+            if (formatExpression != null || conversionExpression != null) {
+                return new FSubExpressionWithOptions(expr, formatExpression, conversionExpression);
+            } else {
+                return expr;
+            }
         }
 
         private void AppendAllSubExpression() {
@@ -90,17 +108,6 @@ namespace Microsoft.Python.Parsing {
             var s = _buffer.ToString();
             _builder.AppendString(s);
             _buffer.Clear();
-        }
-
-        private Expression CreateExpression(string subExprStr) {
-            Check.ArgumentNotNullOrEmpty(nameof(subExprStr), subExprStr);
-
-            var parser = Parser.CreateParser(new StringReader(subExprStr), PythonLanguageVersion.V36);
-            var expr = Statement.GetExpression(parser.ParseTopExpression().Body);
-            if (expr is null) {
-                throw new Exception("Expression failed to parse");
-            }
-            return expr;
         }
 
         private char NextChar() {

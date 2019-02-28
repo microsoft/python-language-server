@@ -5,22 +5,26 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public class FStringExpression : Expression {
-        public readonly List<Expression> Children;
+    public class FSubExpressionWithOptions : Expression {
+        private Expression _expr;
+        private Expression _formatExpression;
+        private Expression _conversionExpression;
 
-        public FStringExpression(List<Expression> children) {
-            Children = children;
+        public FSubExpressionWithOptions(Expression expr, Expression formatExpression, Expression conversionExpression) {
+            _expr = expr;
+            _formatExpression = formatExpression;
+            _conversionExpression = conversionExpression;
         }
 
         public override IEnumerable<Node> GetChildNodes() {
-            return Children;
+            return new List<Node>() { _expr, _formatExpression, _conversionExpression };
         }
 
         public override void Walk(PythonWalker walker) {
             walker.Walk(this);
-            foreach (var child in Children) {
-                child.Walk(walker);
-            }
+            _expr.Walk(walker);
+            _formatExpression?.Walk(walker);
+            _conversionExpression?.Walk(walker);
             walker.PostWalk(this);
         }
 

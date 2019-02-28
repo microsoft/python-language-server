@@ -1784,7 +1784,7 @@ namespace Microsoft.Python.Parsing {
                     if (NextChar('=')) {
                         return Tokens.NotEqualsToken;
                     }
-                    return BadChar(ch);
+                    return Tokens.ExclamationMarkToken;
                 case '(':
                     _state.ParenLevel++;
                     return Tokens.LeftParenthesisToken;

@@ -287,6 +287,9 @@ namespace Microsoft.Python.Parsing.Ast {
         // FStringExpression
         public virtual bool Walk(FStringExpression node) { return true; }
         public virtual void PostWalk(FStringExpression node) { }
+        // FStringExpression
+        public virtual bool Walk(FSubExpressionWithOptions node) { return true; }
+        public virtual void PostWalk(FSubExpressionWithOptions node) { }
     }
 
 

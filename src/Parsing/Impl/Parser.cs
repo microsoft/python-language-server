@@ -196,6 +196,34 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
+        public Expression ParseFStrSubExpr(out Expression formatExpression, out Expression conversionExpression) {
+            _alwaysAllowContextDependentSyntax = true;
+            StartParsing();
+
+            if (PeekToken(TokenKind.KeywordYield)) {
+                Eat(TokenKind.KeywordYield);
+            }
+            var expr = ParseTestListAsExpr();
+
+            formatExpression = null;
+            conversionExpression = null;
+            if (PeekToken(TokenKind.ExclamationMark)) {
+                Eat(TokenKind.ExclamationMark);
+                MaybeEat(TokenKind.LeftBrace);
+                conversionExpression = ParseTestListAsExpr();
+                MaybeEat(TokenKind.RightBrace);
+            }
+            if (PeekToken(TokenKind.Colon)) {
+                Eat(TokenKind.Colon);
+                MaybeEat(TokenKind.LeftBrace);
+                formatExpression = ParseTestListAsExpr();
+                MaybeEat(TokenKind.RightBrace);
+            }
+            // ToDo: Is There more input?
+            _alwaysAllowContextDependentSyntax = false;
+            return expr;
+        }
+
         private PythonAst CreateAst(Statement ret) {
             var ast = new PythonAst(ret, _tokenizer.GetLineLocations(), _tokenizer.LanguageVersion, _tokenizer.GetCommentLocations());
             ast.HasVerbatim = _verbatim;
@@ -3097,7 +3125,7 @@ namespace Microsoft.Python.Parsing {
                     } else {
                         if (t is FStringToken) {
                             var builder = new FStringBuilder();
-                            new FStringParser(builder, (string)cv).Parse();
+                            new FStringParser(builder, (string)cv, _errors).Parse();
                             ret = builder.Build();
                         } else {
                             ret = new ConstantExpression(cv);
@@ -3138,7 +3166,7 @@ namespace Microsoft.Python.Parsing {
             }
             if (initialToken is FStringToken) {
                 FStringBuilder builder = new FStringBuilder();
-                new FStringParser(builder, (string)initialToken.Value).Parse();
+                new FStringParser(builder, (string)initialToken.Value, _errors).Parse();
                 var verbatimImagesList = new List<string>() { initialToken.VerbatimImage };
                 var verbatimWhiteSpaceList = new List<string>() { _tokenWhiteSpace };
                 expr = FinishFStringPlus(builder, verbatimImagesList, verbatimWhiteSpaceList);
@@ -3216,7 +3244,7 @@ namespace Microsoft.Python.Parsing {
                 if (t is ConstantValueToken) {
                     AsciiString bytes;
                     if (t is FStringToken) {
-                        new FStringParser(builder, (string)t.Value).Parse();
+                        new FStringParser(builder, (string)t.Value, _errors).Parse();
                         if (_verbatim) {
                             verbatimWhiteSpace.Add(_tokenWhiteSpace);
                             verbatimImages.Add(t.VerbatimImage);
