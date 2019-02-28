@@ -65,10 +65,26 @@ namespace Microsoft.Python.Analysis.Types {
         public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
             => new PythonUnion(this, location);
 
-        public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => DeclaringModule.Interpreter.UnknownType;
-        public IMember Index(IPythonInstance instance, object index)
-            => DeclaringModule.Interpreter.UnknownType;
+        public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
+            lock (_lock) {
+                // Check if any types support calls
+                var result = _types
+                    .Select(t => t.Call(instance, memberName, args))
+                    .FirstOrDefault(r => !r.IsUnknown() && r.GetPythonType() != this);
+                return result ?? DeclaringModule.Interpreter.UnknownType;
+            }
+        }
+
+        public IMember Index(IPythonInstance instance, object index) {
+            lock (_lock) {
+                // Check if any types support indexing
+                var result = _types
+                    .Select(t => t.Index(instance, index))
+                    .FirstOrDefault(r => !r.IsUnknown() && r.GetPythonType() != this);
+                return result ?? DeclaringModule.Interpreter.UnknownType;
+            }
+        }
+
         #endregion
 
         #region IPythonUnionType
