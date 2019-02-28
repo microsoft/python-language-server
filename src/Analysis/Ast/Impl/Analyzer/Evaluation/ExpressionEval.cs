@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -34,6 +35,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval: IExpressionEvaluator {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+        private readonly AsyncLocal<Scope> _currentScope = new AsyncLocal<Scope>();
         private readonly object _lock = new object();
 
         public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
@@ -50,7 +52,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public LookupOptions DefaultLookupOptions { get; set; }
         public GlobalScope GlobalScope { get; }
-        public Scope CurrentScope { get; private set; }
+
+        public Scope CurrentScope {
+            get => _currentScope.Value;
+            private set => _currentScope.Value = value;
+        }
+
         public bool SuppressBuiltinLookup => Module.ModuleType == ModuleType.Builtins;
         public ILogger Log { get; }
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
