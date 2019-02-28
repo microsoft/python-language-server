@@ -141,60 +141,53 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         Eval.DeclareVariable(p0.Name, new PythonInstance(_self), VariableSource.Declaration, p0.NameExpression);
                     }
                     // Set parameter info.
-                    var pi = new ParameterInfo(Ast, p0, _self, false);
-                    pi.SetType(_self);
+                    var pi = new ParameterInfo(Ast, p0, _self, null, false);
                     parameters.Add(pi);
                     skip++;
                 }
             }
 
             // Declare parameters in scope
+            IMember defaultValue = null;
+            var meaningfuleDefautValue = false;
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
                 var isGeneric = false;
                 var p = FunctionDefinition.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
-                    // If parameter has default value, look for the annotation locally first
-                    // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
                     IPythonType paramType = null;
                     if (p.DefaultValue != null) {
+                        defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
+                        // If parameter has default value, look for the annotation locally first
+                        // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
                         paramType = Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
-                        if (paramType == null) {
-                            var defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
-                            if (!defaultValue.IsUnknown()) {
-                                paramType = defaultValue.GetPythonType();
-                            }
+                        // Default value of None does not mean the parameter is None, just says it can be missing.
+                        defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.NoneType) ? null : defaultValue;
+                        if (paramType == null && defaultValue != null) {
+                            paramType = defaultValue.GetPythonType();
                         }
                     }
                     // If all else fails, look up globally.
-                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric);
-
-                    var pi = new ParameterInfo(Ast, p, paramType, isGeneric);
-                    DeclareParameter(p, i, pi, declareVariables);
+                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric) ?? Eval.UnknownType;
+                    var pi = new ParameterInfo(Ast, p, paramType, defaultValue, isGeneric);
+                    if (declareVariables) {
+                        DeclareParameter(p, pi);
+                    }
                     parameters.Add(pi);
                 }
             }
             _overload.SetParameters(parameters);
         }
 
-        private void DeclareParameter(Parameter p, int index, ParameterInfo pi, bool declareVariables) {
+        private void DeclareParameter(Parameter p, ParameterInfo pi) {
             IPythonType paramType;
-
             // If type is known from annotation, use it.
             if (pi != null && !pi.Type.IsUnknown() && !pi.Type.IsGenericParameter()) {
                 // TODO: technically generics may have constraints. Should we consider them?
                 paramType = pi.Type;
             } else {
-                var defaultValue = Eval.GetValueFromExpression(p.DefaultValue) ?? Eval.UnknownType;
-
-                paramType = defaultValue?.GetPythonType();
-                if (!paramType.IsUnknown()) {
-                    pi?.SetDefaultValueType(paramType);
-                }
+                paramType = pi?.DefaultValue?.GetPythonType() ?? Eval.UnknownType;
             }
-
-            if (declareVariables) {
-                Eval.DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
-            }
+            Eval.DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
         }
     }
 }

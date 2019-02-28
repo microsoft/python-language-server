@@ -57,8 +57,8 @@ namespace Microsoft.Python.Analysis.Types {
         string DefaultValueString { get; }
 
         /// <summary>
-        /// Default value type.
+        /// Default value.
         /// </summary>
-        IPythonType DefaultValueType { get; }
+        IMember DefaultValue { get; }
     }
 }

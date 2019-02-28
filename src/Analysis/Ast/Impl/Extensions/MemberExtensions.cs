@@ -31,6 +31,9 @@ namespace Microsoft.Python.Analysis {
             }
         }
 
+        public static bool IsOfType(this IMember m, BuiltinTypeId typeId)
+            => m?.GetPythonType().TypeId == typeId;
+
         public static IPythonType GetPythonType(this IMember m) {
             switch (m) {
                 case IPythonType pt:
