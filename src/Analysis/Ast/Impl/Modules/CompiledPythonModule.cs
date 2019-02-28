@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -90,14 +91,14 @@ namespace Microsoft.Python.Analysis.Modules {
             var ps = Services.GetService<IProcessServices>();
 
             Log?.Log(TraceEventType.Verbose, "Scrape", startInfo.FileName, startInfo.Arguments);
-            Task<IReadOnlyList<string>> task = null;
 
             try {
-                task = ps.ExecuteAndCaptureOutputAsync(startInfo);
-                task.Wait(60000);
-            } catch (OperationCanceledException) { }
+                var token = new CancellationTokenSource(30000).Token;
+                var lines = ps.ExecuteAndCaptureOutputAsync(startInfo, token).GetAwaiter().GetResult();
+                return string.Join(Environment.NewLine, lines);
+            } catch (Exception ex) when (!ex.IsCriticalException()) { }
 
-            return task != null && task.IsCompleted ? string.Join(Environment.NewLine, task.Result) : string.Empty;
+            return string.Empty;
         }
     }
 }
