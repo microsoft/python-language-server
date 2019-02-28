@@ -3087,25 +3087,21 @@ namespace Microsoft.Python.Parsing {
                     var start = GetStart();
                     var cv = t.Value;
                     var cvs = cv as string;
-                    AsciiString bytes;
-                    if (cv is FormattedString) {
-                        var fString = cv as FormattedString;
-                        return new FStringParser(fString.Value).Parse();
-                    } else if (PeekToken() is ConstantValueToken && (cv is string || cv is AsciiString)) {
+                    if (FinishConcatString(t, out ret, out var verbatimImages, out var verbatimWhiteSpace)) {
                         // string plus
-                        string[] verbatimImages = null, verbatimWhiteSpace = null;
-                        if (cvs != null) {
-                            cv = FinishStringPlus(cvs, t, out verbatimImages, out verbatimWhiteSpace);
-                        } else if ((bytes = cv as AsciiString) != null) {
-                            cv = FinishBytesPlus(bytes, t, out verbatimImages, out verbatimWhiteSpace);
-                        }
-                        ret = new ConstantExpression(cv);
+
                         if (_verbatim) {
                             AddListWhiteSpace(ret, verbatimWhiteSpace);
                             AddVerbatimNames(ret, verbatimImages);
                         }
                     } else {
-                        ret = new ConstantExpression(cv);
+                        if (t is FStringToken) {
+                            var builder = new FStringBuilder();
+                            new FStringParser(builder, (string)cv).Parse();
+                            ret = builder.Build();
+                        } else {
+                            ret = new ConstantExpression(cv);
+                        }
                         if (_verbatim) {
                             AddExtraVerbatimText(ret, t.VerbatimImage);
                             AddPreceedingWhiteSpace(ret, _tokenWhiteSpace);
@@ -3133,7 +3129,32 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        private string FinishStringPlus(string s, Token initialToken, out string[] verbatimImages, out string[] verbatimWhiteSpace) {
+        private bool FinishConcatString(Token initialToken, out Expression expr, out string[] verbatimImages, out string[] verbatimWhiteSpace) {
+            expr = null;
+            verbatimImages = null;
+            verbatimWhiteSpace = null;
+            if (!(PeekToken() is ConstantValueToken)) {
+                return false;
+            }
+            if (initialToken is FStringToken) {
+                FStringBuilder builder = new FStringBuilder();
+                new FStringParser(builder, (string)initialToken.Value).Parse();
+                var verbatimImagesList = new List<string>() { initialToken.VerbatimImage };
+                var verbatimWhiteSpaceList = new List<string>() { _tokenWhiteSpace };
+                expr = FinishFStringPlus(builder, verbatimImagesList, verbatimWhiteSpaceList);
+                verbatimImages = verbatimImagesList.ToArray();
+                verbatimWhiteSpace = verbatimWhiteSpaceList.ToArray();
+            } else if (initialToken.Value is string str) {
+                expr = FinishStringPlus(str, initialToken, out verbatimImages, out verbatimWhiteSpace);
+            } else if (initialToken.Value is AsciiString bytes) {
+                expr = FinishBytesPlus(bytes, initialToken, out verbatimImages, out verbatimWhiteSpace);
+            } else {
+                return false;
+            }
+            return true;
+        }
+
+        private Expression FinishStringPlus(string s, Token initialToken, out string[] verbatimImages, out string[] verbatimWhiteSpace) {
             List<string> verbatimImagesList = null;
             List<string> verbatimWhiteSpaceList = null;
             if (_verbatim) {
@@ -3153,9 +3174,14 @@ namespace Microsoft.Python.Parsing {
             return res;
         }
 
-        private string FinishStringPlus(string s, List<string> verbatimImages, List<string> verbatimWhiteSpace) {
+        private Expression FinishStringPlus(string s, List<string> verbatimImages, List<string> verbatimWhiteSpace) {
             var t = PeekToken();
             while (true) {
+                if (t is FStringToken) {
+                    FStringBuilder builder = new FStringBuilder();
+                    builder.AppendString(s);
+                    return FinishFStringPlus(builder, verbatimImages, verbatimWhiteSpace);
+                }
                 if (t is ConstantValueToken) {
                     AsciiString bytes;
                     if (t.Value is String cvs) {
@@ -3186,7 +3212,49 @@ namespace Microsoft.Python.Parsing {
                 }
                 break;
             }
-            return s;
+            return new ConstantExpression(s);
+        }
+
+        private Expression FinishFStringPlus(FStringBuilder builder, List<string> verbatimImages, List<string> verbatimWhiteSpace) {
+            var t = PeekToken();
+            while (true) {
+                if (t is ConstantValueToken) {
+                    AsciiString bytes;
+                    if (t is FStringToken) {
+                        new FStringParser(builder, (string)t.Value).Parse();
+                        if (_verbatim) {
+                            verbatimWhiteSpace.Add(_tokenWhiteSpace);
+                            verbatimImages.Add(t.VerbatimImage);
+                        }
+                    } else if (t.Value is String cvs) {
+                        builder.AppendString(cvs);
+                        NextToken();
+                        if (_verbatim) {
+                            verbatimWhiteSpace.Add(_tokenWhiteSpace);
+                            verbatimImages.Add(t.VerbatimImage);
+                        }
+                        t = PeekToken();
+                        continue;
+                    } else if ((bytes = t.Value as AsciiString) != null) {
+                        if (_langVersion.Is3x()) {
+                            ReportSyntaxError("cannot mix bytes and nonbytes literals");
+                        }
+
+                        builder.AppendString(bytes.String);
+                        NextToken();
+                        if (_verbatim) {
+                            verbatimWhiteSpace.Add(_tokenWhiteSpace);
+                            verbatimImages.Add(t.VerbatimImage);
+                        }
+                        t = PeekToken();
+                        continue;
+                    } else {
+                        ReportSyntaxError("invalid syntax");
+                    }
+                }
+                break;
+            }
+            return builder.Build();
         }
 
         internal static string MakeString(IList<byte> bytes) {
@@ -3197,7 +3265,7 @@ namespace Microsoft.Python.Parsing {
             return res.ToString();
         }
 
-        private object FinishBytesPlus(AsciiString s, Token initialToken, out string[] verbatimImages, out string[] verbatimWhiteSpace) {
+        private Expression FinishBytesPlus(AsciiString s, Token initialToken, out string[] verbatimImages, out string[] verbatimWhiteSpace) {
             List<string> verbatimImagesList = null;
             List<string> verbatimWhiteSpaceList = null;
             if (_verbatim) {
@@ -3218,7 +3286,7 @@ namespace Microsoft.Python.Parsing {
             return res;
         }
 
-        private object FinishBytesPlus(AsciiString s, List<string> verbatimImages, List<string> verbatimWhiteSpace) {
+        private Expression FinishBytesPlus(AsciiString s, List<string> verbatimImages, List<string> verbatimWhiteSpace) {
             var t = PeekToken();
             while (true) {
                 if (t is ConstantValueToken) {
@@ -3253,7 +3321,7 @@ namespace Microsoft.Python.Parsing {
                 }
                 break;
             }
-            return s;
+            return new ConstantExpression(s);
         }
 
         private Expression AddTrailers(Expression ret) => AddTrailers(ret, true);

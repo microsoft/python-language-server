@@ -6,21 +6,21 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FStringExpression : Expression {
-        private readonly List<Expression> _children;
-        private readonly string _fString;
+        public readonly List<Expression> Children;
+        public readonly string String;
 
         public FStringExpression(List<Expression> children, string fString) {
-            _children = children;
-            _fString = fString;
+            Children = children;
+            String = fString;
         }
 
         public override IEnumerable<Node> GetChildNodes() {
-            return _children;
+            return Children;
         }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (var child in _children) {
+                foreach (var child in Children) {
                     child.Walk(walker);
                 }
             }

@@ -64,9 +64,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
         [TestMethod, Priority(0)]
         public void FStringWithExpressionInside() {
-            var parser = Parser.CreateParser(MakeReader(@"
-            s = f'{x}'
-"), PythonLanguageVersion.V36);
+            var parser = Parser.CreateParser(MakeReader("f'{x}'"), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
             var found = false;
             ast.Walk(new MyPythonWalker(expr => {
@@ -106,9 +104,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
         [TestMethod, Priority(0)]
         public void ConfusingSubExpression() {
-            var code = @"
-            s = f'''ok now this {f'is'} confusing'''
-            ";
+            var code = "f'''ok now this {f'is'} confusing'''";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
             var found = false;
@@ -197,7 +193,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
         [TestMethod, Priority(0)]
         public void FormatterOptions() {
-            var code = @"f'{casa!r:#06x}'";
+            var code = "f'{casa!r:#06x}'";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
             var found = false;
@@ -260,7 +256,7 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public void fRawString() {
+        public void FormattedRawString() {
             var code = "fr'{thing}'";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
@@ -276,7 +272,7 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public void bracesInsideDoubleBraces () {
+        public void BracesInsideDoubleBraces () {
             var code = "f'{{blablabla {thing} }}'";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
@@ -291,18 +287,56 @@ namespace Microsoft.Python.Parsing.Tests {
             found.Should().BeTrue();
         }
 
+        [TestMethod, Priority(0)]
+        public void FormattedStringPlus() {
+            var code = "'a mess with 'f'concat of {some}' 'strings' 'and {things}'";
+            var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
+            var ast = parser.ParseFile();
+            var foundSome = false;
+            var foundThings = false;
+            ast.Walk(new MyPythonWalker(expr => {
+                switch (expr) {
+                    case NameExpression nameExpr:
+                        foundSome |= nameExpr.Name.Equals("some");
+                        foundThings |= nameExpr.Name.Equals("things");
+                        break;
+                }
+            }));
+            foundSome.Should().BeTrue();
+            foundThings.Should().BeFalse();
+        }
+
+        [TestMethod, Priority(0)]
+        public void FormattedStringConcat() {
+            var code = "f'concat of {some}' f'{other}'";
+            var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
+            var ast = parser.ParseFile();
+            var foundSome = false;
+            var foundOther = false;
+            ast.Walk(new MyPythonWalker(expr => {
+                switch (expr) {
+                    case NameExpression nameExpr:
+                        foundSome |= nameExpr.Name.Equals("some");
+                        foundOther |= nameExpr.Name.Equals("other");
+                        break;
+                }
+            }));
+            foundSome.Should().BeTrue();
+            foundOther.Should().BeTrue();
+        }
+
 
         [TestMethod, Priority(0)]
         [ExpectedException(typeof(Exception))]
         public void CloseWithSingleBrace() {
-            var code = @"f'{{ mistake}'";
+            var code = "f'{{ mistake}'";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
         }
 
         [TestMethod, Priority(0)]
         public void NoEndOfEscapedBraces() {
-            var code = @"f'{{ mistake'";
+            var code = "f'{{ mistake'";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);
             var ast = parser.ParseFile();
         }

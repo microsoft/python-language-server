@@ -1013,12 +1013,18 @@ namespace Microsoft.Python.Parsing {
                     contents = "";
                 }
 
-                if (Verbatim) {
-                    return new VerbatimUnicodeStringToken(contents, GetTokenString());
-                } else if (isFormatted){
-                    return new ConstantValueToken(new FormattedString(contents));
+                if (isFormatted) {
+                    if (Verbatim) {
+                        return new VerbatimFStringToken(contents, GetTokenString());
+                    } else {
+                        return new FStringToken(contents);
+                    }
                 } else {
-                    return new UnicodeStringToken(contents);
+                    if (Verbatim) {
+                        return new VerbatimUnicodeStringToken(contents, GetTokenString());
+                    } else {
+                        return new UnicodeStringToken(contents);
+                    }
                 }
             } else {
                 var data = LiteralParser.ParseBytes(_buffer, start, length, isRaw, !_disableLineFeedLineSeparator);

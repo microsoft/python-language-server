@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Microsoft.Python.Core;
@@ -11,14 +10,15 @@ namespace Microsoft.Python.Parsing {
     public class FStringParser {
         private readonly string _fString;
         private readonly StringBuilder _buffer = new StringBuilder();
-        private readonly List<Expression> _children = new List<Expression>();
+        private readonly FStringBuilder _builder;
         private int _position = 0;
 
-        public FStringParser(string fString) {
+        public FStringParser(FStringBuilder builder, string fString) {
             _fString = fString;
+            _builder = builder;
         }
 
-        public FStringExpression Parse() {
+        public void Parse() {
             while (!EndOfFString()) {
                 if (IsDoubleBrace()) {
                     NextChar();
@@ -33,7 +33,6 @@ namespace Microsoft.Python.Parsing {
                 }
             }
             AddBufferedSubstring();
-            return new FStringExpression(_children, _fString);
         }
 
         private bool IsDoubleBrace() {
@@ -55,7 +54,7 @@ namespace Microsoft.Python.Parsing {
 
             var subExprStr = _buffer.ToString();
             if (!subExprStr.IsNullOrEmpty()) {
-                _children.Add(CreateExpression(_buffer.ToString()));
+                _builder.AppendExpression(_buffer.ToString());
             }
             _buffer.Clear();
         }
@@ -89,7 +88,7 @@ namespace Microsoft.Python.Parsing {
                 return;
             }
             var s = _buffer.ToString();
-            _children.Add(new ConstantExpression(s));
+            _builder.AppendString(s);
             _buffer.Clear();
         }
 
