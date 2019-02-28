@@ -385,6 +385,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     _initParams.initializationOptions.searchPaths,
                     () => {
                         logger.Log(TraceEventType.Information, Resources.ReloadingModules);
+                        // No need to reload typeshed resolution since it is a static storage.
+                        // User does can add stubs while application is running, but it is
+                        // by design at this time that the app should be restarted.
                         interpreter.ModuleResolution.ReloadAsync(cancellationToken).ContinueWith(t => {
                             logger.Log(TraceEventType.Information, Resources.Done);
                             logger.Log(TraceEventType.Information, Resources.RestartingAnalysis);

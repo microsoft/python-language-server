@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public TypeshedResolution(IServiceContainer services) : base(null, services) {
             BuiltinsModule = _interpreter.ModuleResolution.BuiltinsModule;
-            _modules[BuiltinModuleName] = new ModuleRef(BuiltinsModule);
+            Modules[BuiltinModuleName] = new ModuleRef(BuiltinsModule);
 
             _root = _interpreter.Configuration?.TypeshedPath;
             // TODO: merge with user-provided stub paths
@@ -67,6 +67,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public Task ReloadAsync(CancellationToken cancellationToken = default) {
+            Modules.Clear();
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
             var addedRoots = PathResolver.SetRoot(_root);
