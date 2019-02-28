@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             var value = scope?.Variables[name].Value;
-            if (value == null && (options & LookupOptions.Builtins) == LookupOptions.Builtins) {
+            if (value == null && options.HasFlag(LookupOptions.Builtins)) {
                 var builtins = Interpreter.ModuleResolution.BuiltinsModule;
                 value = Interpreter.ModuleResolution.BuiltinsModule.GetMember(name);
                 if (Module != builtins && options.HasFlag(LookupOptions.Builtins)) {
