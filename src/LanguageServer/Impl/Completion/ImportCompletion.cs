@@ -143,7 +143,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             IPythonModule module;
             switch (importSearchResult) {
                 case ModuleImport moduleImports:
-                    module = mres.GetImportedModule(moduleImports.Name);
+                    module = mres.GetImportedModule(moduleImports.FullName);
                     break;
                 case PossibleModuleImport possibleModuleImport:
                     module = mres.GetImportedModule(possibleModuleImport.PossibleModuleFullName);

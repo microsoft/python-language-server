@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task Random() {
-            var analysis = await GetAnalysisAsync("from random import *");
+            var analysis = await GetAnalysisAsync("from random import *", PythonVersions.LatestAvailable3X);
 
             foreach (var fnName in new[] { @"seed", @"randrange", @"gauss" }) {
                 var v = analysis.Should().HaveVariable(fnName).Which;

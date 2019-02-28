@@ -20,6 +20,6 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis {
     public static class PythonClassExtensions {
         public static bool IsGeneric(this IPythonClassType cls) 
-            => cls.Bases != null && cls.Bases.Any(b => b is IGenericType || b is IGenericClassBaseType);
+            => cls.Bases != null && cls.Bases.Any(b => b is IGenericType || b is IGenericClassParameter);
     }
 }

@@ -58,10 +58,9 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task DocStrings() {
-            var code = @"
+            const string code = @"
 def f():
     '''func doc'''
-
 
 def funicode():
     u'''unicode func doc'''

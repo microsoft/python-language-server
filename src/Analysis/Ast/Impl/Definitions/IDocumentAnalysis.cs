@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis {
         IGlobalScope GlobalScope { get; }
 
         /// <summary>
-        /// Expression evaluator used in the analysis.
+        /// ValueExpression evaluator used in the analysis.
         /// </summary>
         IExpressionEvaluator ExpressionEvaluator { get; }
 

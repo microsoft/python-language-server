@@ -16,16 +16,15 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
+namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
-    /// Represents Generic[T1, T2, ...]
+    /// Represents generic type definition. Typically value returned by TypeVar.
     /// </summary>
-    internal sealed class GenericClassBaseType: PythonClassType, IGenericClassBaseType {
-        internal GenericClassBaseType(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule, LocationInfo location) 
-            : base("Generic", declaringModule, location) {
-            TypeArgs = typeArgs;
-        }
-
-        public IReadOnlyList<IGenericTypeParameter> TypeArgs { get; }
+    public interface IGenericTypeDefinition: IPythonType {
+        /// <summary>
+        /// List of constraints for the type.
+        /// </summary>
+        /// <remarks>See 'https://docs.python.org/3/library/typing.html#typing.TypeVar'</remarks>
+        IReadOnlyList<IPythonType> Constraints { get; }
     }
 }

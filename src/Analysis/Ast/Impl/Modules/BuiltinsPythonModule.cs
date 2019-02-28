@@ -128,6 +128,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 if (t.TypeId == BuiltinTypeId.Unknown && t.MemberType != PythonMemberType.Unknown) {
                     if (t is PythonType pt) {
                         pt.TrySetTypeId(BuiltinTypeId.Type);
+                        // For Python 3+ make sure base is object
                     }
                 }
             }

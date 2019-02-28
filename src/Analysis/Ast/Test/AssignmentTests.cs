@@ -187,7 +187,6 @@ class C:
     def __init__(self):
         self.abc = 42
 
-
 class D(C):
     def __init__(self):
         self.fob = self.abc

@@ -191,6 +191,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var type = m?.GetPythonType(); // Try inner type
             var value = type?.GetMember(expr.Name);
 
+            if (type is IPythonModule) {
+                return value;
+            }
+
             // Class type GetMember returns a type. However, class members are
             // mostly instances (consider self.x = 1, x is an instance of int).
             // However, it is indeed possible to have them as types, like in

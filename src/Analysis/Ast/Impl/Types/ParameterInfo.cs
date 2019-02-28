@@ -18,7 +18,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class ParameterInfo : IParameterInfo {
-        public ParameterInfo(PythonAst ast, Parameter p, IPythonType type) {
+        public ParameterInfo(PythonAst ast, Parameter p, IPythonType type, bool isGeneric) {
             Name = p?.Name ?? throw new ArgumentNullException(nameof(p));
             Documentation = string.Empty;
             DefaultValueString = p.DefaultValue?.ToCodeString(ast).Trim();
@@ -27,6 +27,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
             IsParamArray = p.Kind == ParameterKind.List;
             IsKeywordDict = p.Kind == ParameterKind.Dictionary;
+            IsGeneric = isGeneric;
             Type = type;
         }
 
@@ -34,6 +35,7 @@ namespace Microsoft.Python.Analysis.Types {
         public string Documentation { get; }
         public bool IsParamArray { get; }
         public bool IsKeywordDict { get; }
+        public bool IsGeneric { get; }
         public IPythonType Type { get; private set; }
         public string DefaultValueString { get; }
         public IPythonType DefaultValueType { get; private set; }

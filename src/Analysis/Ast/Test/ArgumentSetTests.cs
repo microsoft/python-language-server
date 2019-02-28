@@ -57,9 +57,9 @@ f(b=1, a=2)
             var argSet = await GetArgSetAsync(code);
             argSet.Arguments.Count.Should().Be(2);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.ListArgument.Should().BeNull();
             argSet.DictionaryArgument.Should().BeNull();
         }
@@ -73,11 +73,11 @@ f(b=1, a=2)
             var argSet = await GetArgSetAsync(code);
             argSet.Arguments.Count.Should().Be(3);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[2].Name.Should().Be("c");
-            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("str");
+            argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("str");
             argSet.ListArgument.Should().BeNull();
             argSet.DictionaryArgument.Should().BeNull();
         }
@@ -91,13 +91,13 @@ f(1, 2, d=False)
             var argSet = await GetArgSetAsync(code);
             argSet.Arguments.Count.Should().Be(4);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[2].Name.Should().Be("c");
-            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("str");
+            argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("str");
             argSet.Arguments[3].Name.Should().Be("d");
-            argSet.Arguments[3].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(false);
+            argSet.Arguments[3].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(false);
             argSet.ListArgument.Should().BeNull();
             argSet.DictionaryArgument.Should().BeNull();
         }
@@ -133,13 +133,13 @@ f(1, 2, 3, 4, 5, c='a')
             var argSet = await GetArgSetAsync(code);
             argSet.Arguments.Count.Should().Be(4);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[2].Name.Should().Be("c");
-            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("a");
+            argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("a");
             argSet.Arguments[3].Name.Should().Be("d");
-            argSet.Arguments[3].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(true);
+            argSet.Arguments[3].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(true);
             argSet.ListArgument.Should().NotBeNull();
             argSet.ListArgument.Name.Should().Be("list");
             argSet.ListArgument.Expressions.OfType<ConstantExpression>().Select(c => c.Value).Should().ContainInOrder(3, 4, 5);
@@ -155,9 +155,9 @@ f(b=1, a=2, c=3, d=4, e='str')
             var argSet = await GetArgSetAsync(code);
             argSet.Arguments.Count.Should().Be(2);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.ListArgument.Should().BeNull();
             argSet.DictionaryArgument.Should().NotBeNull();
             argSet.DictionaryArgument.Name.Should().Be("dict");
@@ -252,12 +252,12 @@ a.f(1, 2)
             argSet.Arguments.Count.Should().Be(3);
             argSet.Errors.Count.Should().Be(0);
             argSet.Arguments[0].Name.Should().Be("self");
-            argSet.Arguments[0].Expression.Should().BeNull();
+            argSet.Arguments[0].ValueExpression.Should().BeNull();
             argSet.Arguments[0].Value.Should().BeAssignableTo<IPythonClassType>();
             argSet.Arguments[1].Name.Should().Be("a");
-            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[2].Name.Should().Be("b");
-            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
         }
 
         [TestMethod, Priority(0)]
@@ -273,9 +273,9 @@ A.f(1, 2)
             argSet.Arguments.Count.Should().Be(2);
             argSet.Errors.Count.Should().Be(0);
             argSet.Arguments[0].Name.Should().Be("a");
-            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[1].Name.Should().Be("b");
-            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
         }
 
         [TestMethod, Priority(0)]
@@ -292,12 +292,12 @@ a.f(b=1, a=2)
             argSet.Arguments.Count.Should().Be(3);
             argSet.Errors.Count.Should().Be(0);
             argSet.Arguments[0].Name.Should().Be("cls");
-            argSet.Arguments[0].Expression.Should().BeNull();
+            argSet.Arguments[0].ValueExpression.Should().BeNull();
             argSet.Arguments[0].Value.Should().BeAssignableTo<IPythonClassType>();
             argSet.Arguments[1].Name.Should().Be("a");
-            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[2].Name.Should().Be("b");
-            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
         }
 
         [TestMethod, Priority(0)]
@@ -314,11 +314,11 @@ f(a, 1, 2)
             argSet.Arguments.Count.Should().Be(3);
             argSet.Errors.Count.Should().Be(0);
             argSet.Arguments[0].Name.Should().Be("self");
-            argSet.Arguments[0].Expression.Should().BeOfType<NameExpression>().Which.Name.Should().Be("a");
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<NameExpression>().Which.Name.Should().Be("a");
             argSet.Arguments[1].Name.Should().Be("a");
-            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[2].Name.Should().Be("b");
-            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
         }
 
         [TestMethod, Priority(0)]
@@ -337,11 +337,11 @@ pow(1, 2)
             argSet.Arguments.Count.Should().Be(2);
             argSet.Errors.Count.Should().Be(0);
             argSet.Arguments[0].Name.Should().Be("x");
-            argSet.Arguments[0].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[1].Name.Should().Be("y");
-            argSet.Arguments[1].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
             argSet.Arguments[2].Name.Should().Be("z");
-            argSet.Arguments[2].Expression.Should().BeOfType<ConstantExpression>().Which.Value.Should().BeNull(); // Value has not been evaluated yet.
+            argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().BeNull(); // Value has not been evaluated yet.
         }
 
         private async Task<ArgumentSet> GetArgSetAsync(string code, string funcName = "f") {

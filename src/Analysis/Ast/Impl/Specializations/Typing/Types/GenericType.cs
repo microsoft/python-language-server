@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Constructs generic type with generic type parameters. Typically used
         /// in generic classes such as when handling Generic[_T] base.
         /// </summary>
-        public GenericType(string name, IPythonModule declaringModule, IReadOnlyList<IGenericTypeParameter> parameters)
+        public GenericType(string name, IPythonModule declaringModule, IReadOnlyList<IGenericTypeDefinition> parameters)
             : this(name, declaringModule) {
             Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         }
@@ -55,11 +55,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             IPythonModule declaringModule,
             SpecificTypeConstructor specificTypeConstructor,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown,
-            IReadOnlyList<IGenericTypeParameter> parameters = null
+            IReadOnlyList<IGenericTypeDefinition> parameters = null
             ) : this(name, declaringModule) {
             SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
             TypeId = typeId;
-            Parameters = parameters ?? Array.Empty<IGenericTypeParameter>();
+            Parameters = parameters ?? Array.Empty<IGenericTypeDefinition>();
         }
 
         private GenericType(string name, IPythonModule declaringModule) {
@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Type parameters such as in Tuple[T1, T2. ...] or
         /// Generic[_T1, _T2, ...] as returned by TypeVar.
         /// </summary>
-        public IReadOnlyList<IGenericTypeParameter> Parameters { get; }
+        public IReadOnlyList<IGenericTypeDefinition> Parameters { get; }
 
         /// <summary>
         /// Creates instance of a type information with the specific

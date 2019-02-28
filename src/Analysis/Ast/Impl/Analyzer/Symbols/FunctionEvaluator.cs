@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public FunctionDefinition FunctionDefinition { get; }
 
         public override void Evaluate() {
-            var stub = SymbolTable.ReplacedByStubs.Contains(Target) 
+            var stub = SymbolTable.ReplacedByStubs.Contains(Target)
                        || _function.DeclaringModule.ModuleType == ModuleType.Stub
                        || Module.ModuleType == ModuleType.Specialized;
 
@@ -74,12 +74,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 DeclareParameters(!stub);
 
-                if (annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
+                // Do process body of constructors since they may be declaring
+                // variables that are later used to determine return type of other
+                // methods and properties.
+                var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
+                if (!stub && (ctor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User)) {
                     // Return type from the annotation is sufficient for libraries
                     // and stubs, no need to walk the body.
-                    if (!stub) {
-                        FunctionDefinition.Body?.Walk(this);
-                    }
+                    FunctionDefinition.Body?.Walk(this);
                 }
             }
             Result = _function;
@@ -139,7 +141,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         Eval.DeclareVariable(p0.Name, new PythonInstance(_self), VariableSource.Declaration, p0.NameExpression);
                     }
                     // Set parameter info.
-                    var pi = new ParameterInfo(Ast, p0, _self);
+                    var pi = new ParameterInfo(Ast, p0, _self, false);
                     pi.SetType(_self);
                     parameters.Add(pi);
                     skip++;
@@ -148,13 +150,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             // Declare parameters in scope
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
+                var isGeneric = false;
                 var p = FunctionDefinition.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
                     // If parameter has default value, look for the annotation locally first
                     // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
                     IPythonType paramType = null;
                     if (p.DefaultValue != null) {
-                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, LookupOptions.Local | LookupOptions.Builtins);
+                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
                         if (paramType == null) {
                             var defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
                             if (!defaultValue.IsUnknown()) {
@@ -163,9 +166,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         }
                     }
                     // If all else fails, look up globally.
-                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation);
+                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric);
 
-                    var pi = new ParameterInfo(Ast, p, paramType);
+                    var pi = new ParameterInfo(Ast, p, paramType, isGeneric);
                     DeclareParameter(p, i, pi, declareVariables);
                     parameters.Add(pi);
                 }

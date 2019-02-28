@@ -107,7 +107,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         private void AssignImportedVariables(IPythonModule module, DottedName moduleImportExpression, NameExpression asNameExpression) {
             // "import fob.oar as baz" is handled as
             // baz = import_module('fob.oar')
-            if (asNameExpression != null) {
+            if (!string.IsNullOrEmpty(asNameExpression?.Name)) {
                 Eval.DeclareVariable(asNameExpression.Name, module, VariableSource.Import, asNameExpression);
                 return;
             }

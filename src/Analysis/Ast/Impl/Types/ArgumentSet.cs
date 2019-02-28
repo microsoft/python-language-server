@@ -94,9 +94,7 @@ namespace Microsoft.Python.Analysis.Types {
                         name = fd != null && i < fd.Parameters.Length ? fd.Parameters[i].Name : null;
                     }
                     name = name ?? $"arg{i}";
-                    _arguments.Add(new Argument(name, ParameterKind.Normal, location) {
-                        Expression = callExpr.Args[i].Expression
-                    });
+                    _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, location));
                 }
                 return;
             }
@@ -115,7 +113,7 @@ namespace Microsoft.Python.Analysis.Types {
             // had values assigned to them are marked as 'filled'.Slots which have
             // no value assigned to them yet are considered 'empty'.
 
-            var slots = fd.Parameters.Select(p => new Argument(p.Name, p.Kind, p.GetLocation(module))).ToArray();
+            var slots = fd.Parameters.Select(p => new Argument(p, p.GetLocation(module))).ToArray();
             // Locate sequence argument, if any
             var sa = slots.Where(s => s.Kind == ParameterKind.List).ToArray();
             if (sa.Length > 1) {
@@ -129,8 +127,8 @@ namespace Microsoft.Python.Analysis.Types {
                 return;
             }
 
-            _listArgument = sa.Length == 1 && sa[0].Name.Length > 0 ? new ListArg(sa[0].Name, sa[0].Expression, sa[0].Location) : null;
-            _dictArgument = da.Length == 1 ? new DictArg(da[0].Name, da[0].Expression, da[0].Location) : null;
+            _listArgument = sa.Length == 1 && sa[0].Name.Length > 0 ? new ListArg(sa[0].Name, sa[0].ValueExpression, sa[0].Location) : null;
+            _dictArgument = da.Length == 1 ? new DictArg(da[0].Name, da[0].ValueExpression, da[0].Location) : null;
 
             // Class methods
             var formalParamIndex = 0;
@@ -196,7 +194,7 @@ namespace Microsoft.Python.Analysis.Types {
                     }
 
                     // Regular parameter
-                    slots[formalParamIndex].Expression = arg.Expression;
+                    slots[formalParamIndex].ValueExpression = arg.Expression;
                 }
 
                 // Keyword arguments
@@ -231,7 +229,7 @@ namespace Microsoft.Python.Analysis.Types {
                         continue;
                     }
 
-                    if (nvp.Expression != null || nvp.Value != null) {
+                    if (nvp.ValueExpression != null || nvp.Value != null) {
                         // Slot is already filled.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(module).Span,
                             ErrorCodes.ParameterAlreadySpecified, Severity.Warning));
@@ -239,7 +237,7 @@ namespace Microsoft.Python.Analysis.Types {
                     }
 
                     // OK keyword parameter
-                    nvp.Expression = arg.Expression;
+                    nvp.ValueExpression = arg.Expression;
                 }
 
                 // We went through all positionals and keywords.
@@ -247,7 +245,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // then fill the slot with the default value. If there is no default value,
                 // then it is an error.
                 foreach (var slot in slots.Where(s => s.Kind != ParameterKind.List && s.Kind != ParameterKind.Dictionary && s.Value == null)) {
-                    if (slot.Expression == null) {
+                    if (slot.ValueExpression == null) {
                         var parameter = fd.Parameters.First(p => p.Name == slot.Name);
                         if (parameter.DefaultValue == null) {
                             // TODO: parameter is not assigned and has no default value.
@@ -255,7 +253,7 @@ namespace Microsoft.Python.Analysis.Types {
                                 ErrorCodes.ParameterMissing, Severity.Warning));
                         }
 
-                        slot.Expression = parameter.DefaultValue;
+                        slot.ValueExpression = parameter.DefaultValue;
                     }
                 }
             } finally {
@@ -270,7 +268,8 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             foreach (var a in _arguments.Where(x => x.Value == null)) {
-                a.Value = Eval.GetValueFromExpression(a.Expression) ?? _eval.UnknownType;
+                a.Value = Eval.GetValueFromExpression(a.ValueExpression) ?? _eval.UnknownType;
+                a.Type = Eval.GetValueFromExpression(a.TypeExpression) as IPythonType;
             }
 
             if (_listArgument != null) {
@@ -294,14 +293,20 @@ namespace Microsoft.Python.Analysis.Types {
         private sealed class Argument : IArgument {
             public string Name { get; }
             public object Value { get; internal set; }
-
             public ParameterKind Kind { get; }
-            public Expression Expression { get; set; }
+            public Expression ValueExpression { get; set; }
             public LocationInfo Location { get; }
+            public IPythonType Type { get; internal set; }
+            public Expression TypeExpression { get; }
 
-            public Argument(string name, ParameterKind kind, LocationInfo location) {
+            public Argument(Parameter p, LocationInfo location) :
+                this(p.Name, p.Kind, null, p.Annotation, location) { }
+
+            public Argument(string name, ParameterKind kind, Expression valueValueExpression, Expression typeExpression, LocationInfo location) {
                 Name = name;
                 Kind = kind;
+                ValueExpression = valueValueExpression;
+                TypeExpression = typeExpression;
                 Location = location;
             }
 

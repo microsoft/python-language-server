@@ -58,8 +58,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         private IMember GetValueFromBinaryOp(Expression expr) {
-            if (expr is AndExpression || expr is OrExpression) {
+            if (expr is AndExpression) {
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
+            }
+
+            if (expr is OrExpression orexp) {
+                // Consider 'self.__params = types.MappingProxyType(params or {})'
+                var leftSide = GetValueFromExpression(orexp.Left);
+                if (!leftSide.IsUnknown()) {
+                    return leftSide;
+                }
+                var rightSide = GetValueFromExpression(orexp.Right);
+                return rightSide.IsUnknown() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : rightSide;
             }
 
             if (!(expr is BinaryExpression binop) || binop.Left == null) {

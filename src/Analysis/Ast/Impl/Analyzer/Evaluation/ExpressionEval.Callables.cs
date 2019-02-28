@@ -32,7 +32,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = GetValueFromExpression(expr.Target);
-            // Try generics
             var result = GetValueFromGeneric(target, expr);
             if (result != null) {
                 return result;

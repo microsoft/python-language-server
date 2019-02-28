@@ -26,8 +26,8 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
     internal class PythonFunctionType : PythonType, IPythonFunctionType {
         private readonly List<IPythonFunctionOverload> _overloads = new List<IPythonFunctionOverload>();
-        private readonly string _doc;
         private readonly object _lock = new object();
+        private readonly string _documentation;
         private bool _isAbstract;
         private bool _isSpecialized;
 
@@ -82,19 +82,19 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonType declaringType,
             LocationInfo location = null
         ) : base(fd.Name, declaringModule, fd.Documentation, location ?? LocationInfo.Empty,
-                declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;
 
             if (fd.Name == "__init__") {
-                _doc = declaringType?.Documentation;
+                _documentation = declaringType?.Documentation;
             }
-
             ProcessDecorators(fd);
         }
 
         #region IPythonType
+
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
 
@@ -108,6 +108,7 @@ namespace Microsoft.Python.Analysis.Types {
             foreach (var o in Overloads) {
                 (o as PythonFunctionOverload)?.SetDocumentationProvider(provider);
             }
+
             base.SetDocumentationProvider(provider);
         }
 
@@ -116,7 +117,7 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonFunction
         public FunctionDefinition FunctionDefinition { get; }
         public IPythonType DeclaringType { get; }
-        public override string Documentation => _doc ?? base.Documentation ?? _overloads.FirstOrDefault()?.Documentation;
+        public override string Documentation => _documentation ?? base.Documentation ?? _overloads.FirstOrDefault()?.Documentation;
         public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;
