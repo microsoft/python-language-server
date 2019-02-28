@@ -28,7 +28,6 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
@@ -49,7 +48,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
             BuiltinsModule = b;
-            _modules[BuiltinModuleName] = new ModuleRef(b);
+            Modules[BuiltinModuleName] = new ModuleRef(b);
         }
 
         public async Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default) {
@@ -59,8 +58,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             _searchPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
             Debug.Assert(_searchPaths != null, "Should have search paths");
-            _searchPaths = _searchPaths != null 
-                ? Configuration.SearchPaths != null 
+            _searchPaths = _searchPaths != null
+                ? Configuration.SearchPaths != null
                     ? _searchPaths.Concat(Configuration.SearchPaths).ToArray()
                     : _searchPaths
                 : Array.Empty<string>();
@@ -99,7 +98,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
                 return stub;
             }
-            
+
             if (moduleImport.IsBuiltin) {
                 _log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
                 module = new CompiledBuiltinPythonModule(name, stub, _services);
@@ -173,15 +172,17 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
+            Modules.Clear();
+
             ModuleCache = new ModuleCache(_interpreter, _services);
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
-            
+
             var addedRoots = new HashSet<string>();
             addedRoots.UnionWith(PathResolver.SetRoot(_root));
-            
+
             var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
             addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(interpreterPaths));
-            
+
             addedRoots.UnionWith(SetUserSearchPaths(_interpreter.Configuration.SearchPaths));
             ReloadModulePaths(addedRoots);
         }
@@ -190,8 +191,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             => PathResolver.SetUserSearchPaths(searchPaths);
 
         // For tests
-        internal void AddUnimportableModule(string moduleName) 
-            => _modules[moduleName] = new ModuleRef(new SentinelModule(moduleName, _services));
+        internal void AddUnimportableModule(string moduleName)
+            => Modules[moduleName] = new ModuleRef(new SentinelModule(moduleName, _services));
 
         private bool TryCreateModuleStub(string name, string modulePath, out IPythonModule module) {
             // First check stub next to the module.

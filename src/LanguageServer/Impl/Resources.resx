@@ -156,4 +156,7 @@
   <data name="RenameVariable_UnableGetExpressionAnalysis" xml:space="preserve">
     <value>Unable to get analysis for the selected expression.</value>
   </data>
+  <data name="RestartingAnalysis" xml:space="preserve">
+    <value>Restarting analysis...</value>
+  </data>
 </root>

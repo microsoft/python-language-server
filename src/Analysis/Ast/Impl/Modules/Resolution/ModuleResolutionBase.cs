@@ -28,7 +28,6 @@ using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal abstract class ModuleResolutionBase {
-        protected readonly ConcurrentDictionary<string, ModuleRef> _modules = new ConcurrentDictionary<string, ModuleRef>();
         protected readonly IServiceContainer _services;
         protected readonly IPythonInterpreter _interpreter;
         protected readonly IFileSystem _fs;
@@ -36,6 +35,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         protected readonly bool _requireInitPy;
         protected string _root;
 
+        protected ConcurrentDictionary<string, ModuleRef> Modules { get; } = new ConcurrentDictionary<string, ModuleRef>();
         protected PathResolver PathResolver { get; set; }
 
         protected InterpreterConfiguration Configuration => _interpreter.Configuration;
@@ -75,10 +75,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public IPythonModule GetImportedModule(string name) 
-            => _modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
+            => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
 
         public IPythonModule GetOrLoadModule(string name) {
-            if (_modules.TryGetValue(name, out var moduleRef)) {
+            if (Modules.TryGetValue(name, out var moduleRef)) {
                 return moduleRef.GetOrCreate(name, this);
             }
 
@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return module;
             }
 
-            moduleRef = _modules.GetOrAdd(name, new ModuleRef());
+            moduleRef = Modules.GetOrAdd(name, new ModuleRef());
             return moduleRef.GetOrCreate(name, this);
         }
 

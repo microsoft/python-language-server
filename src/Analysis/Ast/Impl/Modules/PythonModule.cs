@@ -155,7 +155,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 return collection.Contents
                     .OfType<IPythonConstant>()
                     .Select(c => c.GetString())
-                    .ExcludeDefault()
                     .Where(s => !string.IsNullOrEmpty(s));
             }
 
@@ -236,7 +235,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ContentState < State.Loading) {
                 try {
                     content = content ?? LoadContent();
-                    _buffer.Reset(0, content);
+                    _buffer.Reset(Version + 1, content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
@@ -331,7 +330,9 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void Reset(string content) {
             lock (AnalysisLock) {
-                if (content != Content) {
+                if (content != Content || content == null) {
+                    ContentState = State.None;
+                    Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
                     InitializeContent(content);
                 }
             }
@@ -441,7 +442,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #region Analysis
         public IDocumentAnalysis GetAnyAnalysis() => Analysis;
 
-        public Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime = 200, CancellationToken cancellationToken = default) 
+        public Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime = 200, CancellationToken cancellationToken = default)
             => Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, waitTime, cancellationToken);
 
         #endregion
