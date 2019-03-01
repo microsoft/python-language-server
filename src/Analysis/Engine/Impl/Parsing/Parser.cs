@@ -2340,7 +2340,7 @@ namespace Microsoft.PythonTools.Parsing {
                 AddSecondPreceedingWhiteSpace(ret, isAsync ? withWhiteSpace : null);
                 AddListWhiteSpace(ret, itemWhiteSpace.ToArray());
             }
-            ret.SetLoc(start, GetEndForStatement());
+            ret.SetLoc(start, body.EndIndex);
             ret.SetKeywordEndIndex(keywordEnd);
             return ret;
         }
@@ -2526,7 +2526,7 @@ namespace Microsoft.PythonTools.Parsing {
             var header = GetEnd();
             Statement suite = ParseSuite();
             IfStatementTest ret = new IfStatementTest(expr, suite);
-            ret.SetLoc(start, GetEndForStatement());
+            ret.SetLoc(start, suite.EndIndex);
             ret.HeaderIndex = header;
             return ret;
         }
@@ -2556,12 +2556,14 @@ namespace Microsoft.PythonTools.Parsing {
             Statement finallySuite = null;
             Statement elseSuite = null;
             TryStatement ret;
+            int end = body.EndIndex;
 
             string finallyWhiteSpace = null, elseWhiteSpace = null;
             if (MaybeEat(TokenKind.KeywordFinally)) {
                 finallyWhiteSpace = _tokenWhiteSpace;
                 finallyIndex = _lookahead.Span.End;
                 finallySuite = ParseFinallySuite(finallySuite);
+                end = finallySuite.EndIndex;
                 ret = new TryStatement(body, null, elseSuite, finallySuite);
                 ret.HeaderIndex = mid;
             } else {
@@ -2572,6 +2574,7 @@ namespace Microsoft.PythonTools.Parsing {
                         break;
                     }
                     TryStatementHandler handler = ParseTryStmtHandler();
+                    end = handler.EndIndex;
 
                     handlers.Add(handler);
 
@@ -2587,6 +2590,7 @@ namespace Microsoft.PythonTools.Parsing {
                     elseWhiteSpace = _tokenWhiteSpace;
                     elseIndex = _lookahead.Span.End;
                     elseSuite = ParseSuite();
+                    end = elseSuite.EndIndex;
                 }
 
                 if (MaybeEat(TokenKind.KeywordFinally)) {
@@ -2594,6 +2598,7 @@ namespace Microsoft.PythonTools.Parsing {
                     finallyWhiteSpace = _tokenWhiteSpace;
                     finallyIndex = _lookahead.Span.End;
                     finallySuite = ParseFinallySuite(finallySuite);
+                    end = finallySuite.EndIndex;
                 }
 
                 ret = new TryStatement(body, handlers.ToArray(), elseSuite, finallySuite);
@@ -2610,7 +2615,7 @@ namespace Microsoft.PythonTools.Parsing {
                     AddThirdPreceedingWhiteSpace(ret, finallyWhiteSpace);
                 }
             }
-            ret.SetLoc(start, GetEndForStatement());
+            ret.SetLoc(start, end);
 
             return ret;
         }

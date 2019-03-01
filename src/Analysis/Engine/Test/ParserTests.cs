@@ -3025,6 +3025,36 @@ pass
             );
         }
 
+        [TestMethod, Priority(0)]
+        public void FunctionLocations() {
+            foreach (var version in V3Versions) {
+                var ast = ParseFileNoErrors("FunctionLocations.py", version);
+
+                Action<Statement, string, int, int> checkFunctionLocation = (Statement stmt, string name, int startIndex, int endIndex) => {
+                    Assert.AreEqual(typeof(FunctionDefinition), stmt.GetType());
+                    var funcDef = (FunctionDefinition)stmt;
+                    Assert.AreEqual(name, funcDef.Name);
+                    Assert.AreEqual(startIndex, funcDef.StartIndex);
+                    Assert.AreEqual(endIndex, funcDef.EndIndex);
+                };
+
+                CheckAst(
+                    ast,
+                    CheckSuite(
+                        (stmt) => checkFunctionLocation(stmt, "if_statement", 0, 48),
+                        (stmt) => checkFunctionLocation(stmt, "if_else_statement", 50, 129),
+                        (stmt) => checkFunctionLocation(stmt, "with_statement", 131, 183),
+                        (stmt) => checkFunctionLocation(stmt, "try_statement", 185, 230),
+                        (stmt) => checkFunctionLocation(stmt, "try_except_statement", 232, 312),
+                        (stmt) => checkFunctionLocation(stmt, "try_else_statement", 314, 418),
+                        (stmt) => checkFunctionLocation(stmt, "for_statement", 420, 483),
+                        (stmt) => checkFunctionLocation(stmt, "assign_statements", 485, 542),
+                        (stmt) => checkFunctionLocation(stmt, "assign_statement", 544, 578)
+                    )
+                );
+            }
+        }
+
         #endregion
 
         #region Checker Factories / Helpers
