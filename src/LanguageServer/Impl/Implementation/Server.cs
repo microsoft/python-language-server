@@ -154,17 +154,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return Task.CompletedTask;
         }
 
-        public async Task DidChangeConfiguration(DidChangeConfigurationParams @params, CancellationToken cancellationToken) {
+        public void DidChangeConfiguration(DidChangeConfigurationParams @params, CancellationToken cancellationToken) {
             _disposableBag.ThrowIfDisposed();
-
-            var reanalyze = true;
-            if (@params.settings != null) {
-                if (@params.settings is ServerSettings settings) {
-                    reanalyze = HandleConfigurationChanges(settings);
-                } else {
-                    _log?.Log(TraceEventType.Error, "change configuration notification sent unsupported settings");
+            switch (@params.settings) {
+                case null:
                     return;
+                case ServerSettings settings: {
+                    if (HandleConfigurationChanges(settings)) {
+                        RestartAnalysis();
+                    }
+                    break;
                 }
+                default:
+                    _log?.Log(TraceEventType.Error, "change configuration notification sent unsupported settings");
+                    break;
             }
         }
         #endregion
@@ -198,5 +201,25 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return false;
         }
         #endregion
+
+        public void NotifyPackagesChanged(CancellationToken cancellationToken) {
+            var interpreter = _services.GetService<IPythonInterpreter>();
+            _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
+            // No need to reload typeshed resolution since it is a static storage.
+            // User does can add stubs while application is running, but it is
+            // by design at this time that the app should be restarted.
+            interpreter.ModuleResolution.ReloadAsync(cancellationToken).ContinueWith(t => {
+                _log?.Log(TraceEventType.Information, Resources.Done);
+                _log?.Log(TraceEventType.Information, Resources.RestartingAnalysis);
+                RestartAnalysis();
+            }, cancellationToken).DoNotWait();
+
+        }
+
+        private void RestartAnalysis() {
+            foreach (var doc in _rdt) {
+                doc.Reset(null);
+            }
+        }
     }
 }
