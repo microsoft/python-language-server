@@ -17,13 +17,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
@@ -126,7 +124,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     GetSetting(analysis, "information", Array.Empty<string>()),
                     GetSetting(analysis, "disabled", Array.Empty<string>()));
 
-                await _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
+                _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
             }
         }
 
@@ -383,20 +381,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 var logger = _services.GetService<ILogger>();
                 _pathsWatcher = new PathsWatcher(
                     _initParams.initializationOptions.searchPaths,
-                    () => {
-                        logger.Log(TraceEventType.Information, Resources.ReloadingModules);
-                        // No need to reload typeshed resolution since it is a static storage.
-                        // User does can add stubs while application is running, but it is
-                        // by design at this time that the app should be restarted.
-                        interpreter.ModuleResolution.ReloadAsync(cancellationToken).ContinueWith(t => {
-                            logger.Log(TraceEventType.Information, Resources.Done);
-                            logger.Log(TraceEventType.Information, Resources.RestartingAnalysis);
-                            var rdt = _services.GetService<IRunningDocumentTable>();
-                            foreach (var doc in rdt) {
-                                doc.Reset(null);
-                            }
-                        }, cancellationToken).DoNotWait();
-                    },
+                    () =>_server.NotifyPackagesChanged(cancellationToken),
                         _services.GetService<ILogger>()
                     );
 
@@ -404,6 +389,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _searchPaths = _initParams.initializationOptions.searchPaths;
             }
         }
+
         private static CancellationToken GetToken(CancellationToken original)
                 => Debugger.IsAttached ? CancellationToken.None : original;
 

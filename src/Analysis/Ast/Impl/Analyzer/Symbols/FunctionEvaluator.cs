@@ -149,7 +149,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             // Declare parameters in scope
             IMember defaultValue = null;
-            var meaningfuleDefautValue = false;
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
                 var isGeneric = false;
                 var p = FunctionDefinition.Parameters[i];
