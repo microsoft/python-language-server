@@ -19,6 +19,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Threading;
 
@@ -28,14 +29,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private readonly DependencyGraph<TKey, TValue> _vertices = new DependencyGraph<TKey, TValue>();
         private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _changedVertices = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
         private readonly object _syncObj = new object();
-
         public ImmutableArray<TKey> MissingKeys { get; private set; }
 
         public DependencyResolver(IDependencyFinder<TKey, TValue> dependencyFinder) {
             _dependencyFinder = dependencyFinder;
         }
 
-        public async Task<IDependencyChainWalker<TKey, TValue>> AddChangesAsync(TKey key, TValue value, CancellationToken cancellationToken) {
+        public async Task<IDependencyChainWalker<TKey, TValue>> AddChangesAsync(TKey key, TValue value, CancellationToken cancellationToken, IProgressReporter progress = null) {
             int version;
             ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices;
 
@@ -47,6 +47,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 changedVertices = ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_changedVertices.Values);
             }
 
+            progress?.ReportRemaining(_changedVertices.Count);
             if (changedVertices.Count == 1) {
                 await changedVertices[0].EnsureDependenciesAsync(_dependencyFinder);
             } else {
@@ -69,6 +70,8 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             var walkingGraph = CreateWalkingGraph(snapshot, changedVertices);
             var affectedValues = walkingGraph.Select(v => v.DependencyVertex.Value);
+            progress?.ReportRemaining(affectedValues.Count);
+
             var loopsCount = FindLoops(walkingGraph);
             var (startingVertices, totalNodesCount) = ResolveLoops(walkingGraph, loopsCount);
             foreach (var vertex in walkingGraph) {
@@ -84,8 +87,8 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
                 MissingKeys = missingKeys;
             }
-            
-            return new DependencyChainWalker(this, startingVertices, affectedValues, missingKeys, totalNodesCount, version);
+
+            return new DependencyChainWalker(this, startingVertices, affectedValues, missingKeys, totalNodesCount, version, progress);
         }
 
         private void CommitChanges(DependencyVertex<TKey, TValue> vertex) {
@@ -259,6 +262,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             private readonly DependencyResolver<TKey, TValue> _dependencyResolver;
             private readonly PriorityProducerConsumer<IDependencyChainNode<TValue>> _ppc;
             private readonly object _syncObj;
+            private IProgressReporter _progress;
             private int _remaining;
 
             public ImmutableArray<TKey> MissingKeys { get; }
@@ -274,7 +278,15 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
             }
 
-            public DependencyChainWalker(in DependencyResolver<TKey, TValue> dependencyResolver, in ImmutableArray<WalkingVertex<TKey, TValue>> startingVertices, in ImmutableArray<TValue> affectedValues, in ImmutableArray<TKey> missingKeys, in int totalNodesCount, in int version) {
+            public DependencyChainWalker(
+                in DependencyResolver<TKey, TValue> dependencyResolver,
+                in ImmutableArray<WalkingVertex<TKey, TValue>> startingVertices,
+                in ImmutableArray<TValue> affectedValues,
+                in ImmutableArray<TKey> missingKeys,
+                in int totalNodesCount,
+                in int version,
+                in IProgressReporter progress) {
+
                 _syncObj = new object();
                 _dependencyResolver = dependencyResolver;
                 _ppc = new PriorityProducerConsumer<IDependencyChainNode<TValue>>();
@@ -287,6 +299,9 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 foreach (var vertex in startingVertices) {
                     _ppc.Produce(new DependencyChainNode(this, vertex));
                 }
+
+                _progress = progress;
+                _progress?.ReportRemaining(_remaining);
             }
 
             public Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken) =>
@@ -318,7 +333,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 if (commitChanges && vertex.SecondPass == null) {
                     _dependencyResolver.CommitChanges(vertex.DependencyVertex);
                 }
-                
+
                 if (isCompleted) {
                     _ppc.Produce(null);
                     _ppc.Dispose();
@@ -326,6 +341,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     foreach (var toProduce in verticesToProduce) {
                         _ppc.Produce(new DependencyChainNode(this, toProduce));
                     }
+                    _progress?.ReportRemaining(_remaining);
                 }
             }
         }

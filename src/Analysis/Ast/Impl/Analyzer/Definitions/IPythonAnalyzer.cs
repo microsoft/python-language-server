@@ -15,7 +15,6 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;

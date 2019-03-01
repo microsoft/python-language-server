@@ -15,7 +15,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {
@@ -27,6 +27,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// </summary>
     internal interface IDependencyResolver<TKey, TValue> {
         ImmutableArray<TKey> MissingKeys { get; }
-        Task<IDependencyChainWalker<TKey, TValue>> AddChangesAsync(TKey key, TValue value, CancellationToken cancellationToken);
+        Task<IDependencyChainWalker<TKey, TValue>> AddChangesAsync(TKey key, TValue value, CancellationToken cancellationToken, IProgressReporter progress = null);
     }
 }
