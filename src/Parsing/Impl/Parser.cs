@@ -3234,7 +3234,7 @@ namespace Microsoft.Python.Parsing {
                     default:
                         throw new InvalidOperationException();
                 }
-                new FStringParser((FStringBuilder)_builder, fStr, _errors).Parse();
+                new FStringParser((FStringBuilder)_builder, fStr, _errors, _langVersion).Parse();
             }
 
             public Expression Build() {

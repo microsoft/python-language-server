@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Microsoft.Python.Core;
@@ -8,22 +9,30 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
     public class FStringParser {
-        private readonly string _fString;
-        private readonly StringBuilder _buffer = new StringBuilder();
         private readonly FStringBuilder _builder;
+        private readonly string _fString;
         private readonly ErrorSink _errors;
+        private readonly PythonLanguageVersion _langVersion;
+        private readonly StringBuilder _buffer = new StringBuilder();
         private int _errorCode = 0;
         private int _position = 0;
 
-        public FStringParser(FStringBuilder builder, string fString, ErrorSink errors) {
+        private static readonly StringSpan doubleOpen = new StringSpan("{{", 0, 2);
+        private static readonly StringSpan doubleClose = new StringSpan("}}", 0, 2);
+
+        public FStringParser(FStringBuilder builder, string fString, ErrorSink errors, PythonLanguageVersion langVersion) {
             _fString = fString;
             _builder = builder;
             _errors = errors;
+            _langVersion = langVersion;
         }
 
         public void Parse() {
             while (!EndOfFString()) {
-                if (IsDoubleBrace()) {
+                if (IsNext(doubleOpen)) {
+                    NextChar();
+                    _buffer.Append(NextChar());
+                } else if (IsNext(doubleClose)) {
                     NextChar();
                     _buffer.Append(NextChar());
                 } else if (CurrentChar() == '{') {
@@ -38,18 +47,11 @@ namespace Microsoft.Python.Parsing {
             AddBufferedSubstring();
         }
 
-        private bool IsDoubleBrace() {
-            StringSpan doubleOpen = new StringSpan("{{", 0, 2);
-            StringSpan doubleClose = new StringSpan("}}", 0, 2);
-            return IsNext(doubleOpen) || IsNext(doubleClose);
-        }
-
-        private bool IsNext(StringSpan span) {
-            return _fString.Slice(_position, span.Length).Equals(span);
-        }
+        private bool IsNext(StringSpan span)
+            => _fString.Slice(_position, span.Length).Equals(span);
 
         private void ParseInnerExpression() {
-            Check.InvalidOperation(_buffer.Length == 0, "Current buffer is not empty");
+            Debug.Assert(_buffer.Length == 0, "Current buffer is not empty");
 
             Read('{');
             AppendAllSubExpression();
@@ -63,12 +65,12 @@ namespace Microsoft.Python.Parsing {
         }
 
         private Expression CreateExpression(string subExprStr) {
-            Check.ArgumentNotNullOrEmpty(nameof(subExprStr), subExprStr);
-
-            var parser = Parser.CreateParser(new StringReader(subExprStr), PythonLanguageVersion.V36);
+            var parser = Parser.CreateParser(new StringReader(subExprStr), _langVersion);
             var expr = parser.ParseFStrSubExpr(out var formatExpression, out var conversionExpression);
             if (expr is null) {
+                // Should not happen but just in case
                 ReportSyntaxError("Subexpression failed to parse");
+                return new ConstantExpression("");
             }
 
             if (formatExpression != null || conversionExpression != null) {
@@ -82,7 +84,7 @@ namespace Microsoft.Python.Parsing {
             int openedBraces = 1;
             while (!(CurrentChar() == '}' && openedBraces == 1)) {
                 if (EndOfFString()) {
-                    throw new Exception("Inner expression without closing '}'");
+                    ReportSyntaxError("Inner expression without closing '}'");
                 }
 
                 if (CurrentChar() == '{') {
@@ -97,7 +99,7 @@ namespace Microsoft.Python.Parsing {
 
         private void Read(char nextChar) {
             if (CurrentChar() != nextChar) {
-                throw new Exception($"'{nextChar}' expected but found '{CurrentChar()}'");
+                ReportSyntaxError($"'{nextChar}' expected but found '{CurrentChar()}'");
             }
             NextChar();
         }
@@ -117,13 +119,9 @@ namespace Microsoft.Python.Parsing {
             return peek;
         }
 
-        private char CurrentChar() {
-            return _fString[_position];
-        }
+        private char CurrentChar() => _fString[_position];
 
-        private bool EndOfFString() {
-            return _position >= _fString.Length;
-        }
+        private bool EndOfFString() => _position >= _fString.Length;
 
         private void ReportSyntaxError(string message) { }
         //private void ReportSyntaxError(string message) => ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, message);

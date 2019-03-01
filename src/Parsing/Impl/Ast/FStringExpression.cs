@@ -6,19 +6,19 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FStringExpression : Expression {
-        public List<Expression> Children { get; }
+        public IEnumerable<Node> _children { get; }
 
-        public FStringExpression(List<Expression> children) {
-            Children = children;
+        public FStringExpression(IEnumerable<Node> children) {
+            _children = children;
         }
 
         public override IEnumerable<Node> GetChildNodes() {
-            return Children;
+            return _children;
         }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                foreach (var child in Children) {
+                foreach (var child in _children) {
                     child.Walk(walker);
                 }
             }

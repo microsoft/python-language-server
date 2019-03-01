@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FSubExpressionWithOptions : Expression {
-        private Expression _expr;
-        private Expression _formatExpression;
-        private Expression _conversionExpression;
+        private readonly Expression _expr;
+        private readonly Expression _formatExpression;
+        private readonly Expression _conversionExpression;
 
         public FSubExpressionWithOptions(Expression expr, Expression formatExpression, Expression conversionExpression) {
             _expr = expr;
@@ -17,7 +17,7 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override IEnumerable<Node> GetChildNodes() {
-            return new List<Node>() { _expr, _formatExpression, _conversionExpression };
+            return new[] { _expr, _formatExpression, _conversionExpression };
         }
 
         public override void Walk(PythonWalker walker) {

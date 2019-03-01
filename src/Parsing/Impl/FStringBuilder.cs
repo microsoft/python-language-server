@@ -3,7 +3,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
     public class FStringBuilder {
-        private readonly List<Expression> _children = new List<Expression>();
+        private readonly List<Node> _children = new List<Node>();
 
         public FStringBuilder() { }
 
@@ -16,7 +16,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         public void Append(FStringExpression fStr) {
-            _children.AddRange(fStr.Children);
+            _children.AddRange(fStr.GetChildNodes());
         }
 
         public void AppendExpression(Expression subExpr) {
