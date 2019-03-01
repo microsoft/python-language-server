@@ -3111,25 +3111,15 @@ namespace Microsoft.Python.Parsing {
                     ret.SetLoc(GetStart(), GetEnd());
                     return ret;
                 case TokenKind.Constant:        // literal
-                    NextToken();
-                    var start = GetStart();
+                    var start = _lookahead.Span.Start;
                     var cv = t.Value;
                     var cvs = cv as string;
-                    if (FinishConcatString(t, out ret, out var verbatimImages, out var verbatimWhiteSpace)) {
-                        // string plus
-
-                        if (_verbatim) {
-                            AddListWhiteSpace(ret, verbatimWhiteSpace);
-                            AddVerbatimNames(ret, verbatimImages);
-                        }
+                    if (ParseString(out ret)) {
+                        // Might read several tokens
+                        // For string concatanation
                     } else {
-                        if (t is FStringToken) {
-                            var builder = new FStringBuilder();
-                            new FStringParser(builder, (string)cv, _errors).Parse();
-                            ret = builder.Build();
-                        } else {
-                            ret = new ConstantExpression(cv);
-                        }
+                        NextToken();
+                        ret = new ConstantExpression(cv);
                         if (_verbatim) {
                             AddExtraVerbatimText(ret, t.VerbatimImage);
                             AddPreceedingWhiteSpace(ret, _tokenWhiteSpace);
@@ -3157,127 +3147,170 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        private bool FinishConcatString(Token initialToken, out Expression expr, out string[] verbatimImages, out string[] verbatimWhiteSpace) {
-            expr = null;
-            verbatimImages = null;
-            verbatimWhiteSpace = null;
-            if (!(PeekToken() is ConstantValueToken)) {
-                return false;
+        private bool IsStringToken(Token t) {
+            if (t is FStringToken) {
+                return true;
+            } else if (t is ConstantValueToken && (t.Value is string || t.Value is AsciiString)) {
+                return true;
             }
-            if (initialToken is FStringToken) {
-                FStringBuilder builder = new FStringBuilder();
-                new FStringParser(builder, (string)initialToken.Value, _errors).Parse();
-                var verbatimImagesList = new List<string>() { initialToken.VerbatimImage };
-                var verbatimWhiteSpaceList = new List<string>() { _tokenWhiteSpace };
-                expr = FinishFStringPlus(builder, verbatimImagesList, verbatimWhiteSpaceList);
-                verbatimImages = verbatimImagesList.ToArray();
-                verbatimWhiteSpace = verbatimWhiteSpaceList.ToArray();
-            } else if (initialToken.Value is string str) {
-                expr = FinishStringPlus(str, initialToken, out verbatimImages, out verbatimWhiteSpace);
-            } else if (initialToken.Value is AsciiString bytes) {
-                expr = FinishBytesPlus(bytes, initialToken, out verbatimImages, out verbatimWhiteSpace);
-            } else {
-                return false;
-            }
-            return true;
+            return false;
         }
 
-        private Expression FinishStringPlus(string s, Token initialToken, out string[] verbatimImages, out string[] verbatimWhiteSpace) {
-            List<string> verbatimImagesList = null;
-            List<string> verbatimWhiteSpaceList = null;
-            if (_verbatim) {
-                verbatimWhiteSpaceList = new List<string>();
-                verbatimImagesList = new List<string>();
-                verbatimWhiteSpaceList.Add(_tokenWhiteSpace);
-                verbatimImagesList.Add(initialToken.VerbatimImage);
+        private class AllStringBuilder {
+            private object _builder;
+            private readonly ErrorSink _errors;
+            private readonly PythonLanguageVersion _langVersion;
+
+            private AllStringBuilder(object builder, ErrorSink errors, PythonLanguageVersion langVersion) {
+                _builder = builder;
+                _errors = errors;
+                _langVersion = langVersion;
             }
 
-            var res = FinishStringPlus(s, verbatimImagesList, verbatimWhiteSpaceList);
-            if (_verbatim) {
-                verbatimWhiteSpace = verbatimWhiteSpaceList.ToArray();
-                verbatimImages = verbatimImagesList.ToArray();
-            } else {
-                verbatimWhiteSpace = verbatimImages = null;
+            public static AllStringBuilder CreateForAsciiString(ErrorSink errors, PythonLanguageVersion langVersion) {
+                return new AllStringBuilder(new AsciiString(new byte[] { }, ""), errors, langVersion);
             }
-            return res;
+
+            public static AllStringBuilder CreateForString(ErrorSink errors, PythonLanguageVersion langVersion) {
+                //if (!_langVersion.)
+                return new AllStringBuilder(new StringBuilder(), errors, langVersion);
+            }
+
+            public static AllStringBuilder CreateForFString(ErrorSink errors, PythonLanguageVersion langVersion) {
+                return new AllStringBuilder(new FStringBuilder(), errors, langVersion);
+            }
+
+            public void Add(string s) {
+                switch (_builder) {
+                    case AsciiString prevAsciiString:
+                        if (_langVersion.Is3x()) {
+                            throw new InvalidOperationException("cannot mix bytes and nonbytes literals");
+                        }
+                        var newStrBuilder = new StringBuilder();
+                        newStrBuilder.Append(s);
+                        _builder = newStrBuilder;
+                        break;
+                    case StringBuilder strBuilder:
+                        strBuilder.Append(s);
+                        break;
+                    case FStringBuilder fStrBuilder:
+                        fStrBuilder.AppendString(s);
+                        break;
+                    default:
+                        throw new InvalidOperationException();
+                }
+            }
+
+            public void Add(AsciiString s) {
+                switch (_builder) {
+                    case AsciiString prevAsciiString:
+                        _builder = new AsciiString(prevAsciiString.Bytes.Concat(s.Bytes).ToArray(), prevAsciiString.String + s.String);
+                        break;
+                    case StringBuilder strBuilder:
+                        if (_langVersion.Is3x()) {
+                            throw new InvalidOperationException("cannot mix bytes and nonbytes literals");
+                        }
+                        strBuilder.Append(s.String);
+                        break;
+                    case FStringBuilder fStrBuilder:
+                        throw new InvalidOperationException("cannot mix bytes and nonbytes literals");
+                    default:
+                        throw new InvalidOperationException();
+                }
+            }
+
+            public void AddFString(string fStr) {
+                //if (!_langVersion.)
+                switch (_builder) {
+                    case AsciiString prevAsciiString:
+                        throw new InvalidOperationException("cannot mix bytes and nonbytes literals");
+                    case StringBuilder strBuilder:
+                        var builderFromStr = new FStringBuilder();
+                        builderFromStr.AppendString(strBuilder.ToString());
+                        _builder = builderFromStr;
+                        break;
+                    case FStringBuilder fStrBuilder:
+                        break;
+                    default:
+                        throw new InvalidOperationException();
+                }
+                new FStringParser((FStringBuilder)_builder, fStr, _errors).Parse();
+            }
+
+            public Expression Build() {
+                switch (_builder) {
+                    case AsciiString prevAsciiString:
+                        return new ConstantExpression(prevAsciiString);
+                    case StringBuilder strBuilder:
+                        return new ConstantExpression(strBuilder.ToString());
+                    case FStringBuilder fStrBuilder:
+                        return fStrBuilder.Build();
+                    default:
+                        throw new InvalidOperationException();
+                }
+            }
         }
 
-        private Expression FinishStringPlus(string s, List<string> verbatimImages, List<string> verbatimWhiteSpace) {
+        private bool ParseString(out Expression expr) {
+            var verbatimWhiteSpaceList = new List<string>();
+            var verbatimImagesList = new List<string>();
+
             var t = PeekToken();
-            while (t is ConstantValueToken) {
-                AsciiString bytes;
-                if (t is FStringToken) {
-                    FStringBuilder builder = new FStringBuilder();
-                    builder.AppendString(s);
-                    return FinishFStringPlus(builder, verbatimImages, verbatimWhiteSpace);
-                } else if (t.Value is String cvs) {
-                    s += cvs;
-                    NextToken();
-                    if (_verbatim) {
-                        verbatimWhiteSpace.Add(_tokenWhiteSpace);
-                        verbatimImages.Add(t.VerbatimImage);
-                    }
-                    t = PeekToken();
-                } else if ((bytes = t.Value as AsciiString) != null) {
-                    if (_langVersion.Is3x()) {
-                        ReportSyntaxError("cannot mix bytes and nonbytes literals");
+            if (!IsStringToken(t)) {
+                expr = null;
+                return false;
+            }
+            AllStringBuilder builder = null;
+            if (t is FStringToken) {
+                builder = AllStringBuilder.CreateForFString(_errors, _langVersion);
+            } else if (t.Value is string str) {
+                builder = AllStringBuilder.CreateForString(_errors, _langVersion);
+            } else if (t.Value is AsciiString asciiStr) {
+                builder = AllStringBuilder.CreateForAsciiString(_errors, _langVersion);
+            } else {
+                // Invalid state?
+            }
+            var readStringTokens = 0;
+            while (IsStringToken(t)) {
+                try {
+                    if (t is FStringToken) {
+                        builder.AddFString((string)t.Value);
+                    } else if (t.Value is string str) {
+                        builder.Add(str);
+                    } else if (t.Value is AsciiString asciiStr) {
+                        builder.Add(asciiStr);
+                    } else {
+                        // invalid state?
                     }
 
-                    s += bytes.String;
                     NextToken();
                     if (_verbatim) {
-                        verbatimWhiteSpace.Add(_tokenWhiteSpace);
-                        verbatimImages.Add(t.VerbatimImage);
+                        verbatimWhiteSpaceList.Add(_tokenWhiteSpace);
+                        verbatimImagesList.Add(t.VerbatimImage);
                     }
                     t = PeekToken();
-                } else {
-                    ReportSyntaxError("invalid syntax");
+                    readStringTokens++;
+                } catch (InvalidOperationException ex) {
+                    ReportSyntaxError(ex.Message);
+                    NextToken();
                     break;
                 }
             }
-            return new ConstantExpression(s);
-        }
-
-        private Expression FinishFStringPlus(FStringBuilder builder, List<string> verbatimImages, List<string> verbatimWhiteSpace) {
-            var t = PeekToken();
-            while (true) {
-                if (t is ConstantValueToken) {
-                    AsciiString bytes;
-                    if (t is FStringToken) {
-                        new FStringParser(builder, (string)t.Value, _errors).Parse();
-                        if (_verbatim) {
-                            verbatimWhiteSpace.Add(_tokenWhiteSpace);
-                            verbatimImages.Add(t.VerbatimImage);
-                        }
-                    } else if (t.Value is String cvs) {
-                        builder.AppendString(cvs);
-                        NextToken();
-                        if (_verbatim) {
-                            verbatimWhiteSpace.Add(_tokenWhiteSpace);
-                            verbatimImages.Add(t.VerbatimImage);
-                        }
-                        t = PeekToken();
-                        continue;
-                    } else if ((bytes = t.Value as AsciiString) != null) {
-                        if (_langVersion.Is3x()) {
-                            ReportSyntaxError("cannot mix bytes and nonbytes literals");
-                        }
-
-                        builder.AppendString(bytes.String);
-                        NextToken();
-                        if (_verbatim) {
-                            verbatimWhiteSpace.Add(_tokenWhiteSpace);
-                            verbatimImages.Add(t.VerbatimImage);
-                        }
-                        t = PeekToken();
-                        continue;
-                    } else {
-                        ReportSyntaxError("invalid syntax");
-                    }
-                }
-                break;
+            if (PeekToken(TokenKind.Constant) && !IsStringToken(t)) {
+                // A string was read and then a Constant that is not a string
+                ReportSyntaxError("invalid syntax");
             }
-            return builder.Build();
+            expr = builder.Build();
+            if (_verbatim) {
+                if (readStringTokens > 1) {
+                    AddVerbatimNames(expr, verbatimImagesList.ToArray());
+                    AddListWhiteSpace(expr, verbatimWhiteSpaceList.ToArray());
+                } else {
+                    AddExtraVerbatimText(expr, verbatimImagesList.First());
+                    AddPreceedingWhiteSpace(expr, verbatimWhiteSpaceList.First());
+                }
+            }
+            return true;
         }
 
         internal static string MakeString(IList<byte> bytes) {
@@ -3286,65 +3319,6 @@ namespace Microsoft.Python.Parsing {
                 res.Append((char)bytes[i]);
             }
             return res.ToString();
-        }
-
-        private Expression FinishBytesPlus(AsciiString s, Token initialToken, out string[] verbatimImages, out string[] verbatimWhiteSpace) {
-            List<string> verbatimImagesList = null;
-            List<string> verbatimWhiteSpaceList = null;
-            if (_verbatim) {
-                verbatimWhiteSpaceList = new List<string>();
-                verbatimImagesList = new List<string>();
-                verbatimWhiteSpaceList.Add(_tokenWhiteSpace);
-                verbatimImagesList.Add(initialToken.VerbatimImage);
-            }
-
-            var res = FinishBytesPlus(s, verbatimImagesList, verbatimWhiteSpaceList);
-
-            if (_verbatim) {
-                verbatimWhiteSpace = verbatimWhiteSpaceList.ToArray();
-                verbatimImages = verbatimImagesList.ToArray();
-            } else {
-                verbatimWhiteSpace = verbatimImages = null;
-            }
-            return res;
-        }
-
-        private Expression FinishBytesPlus(AsciiString s, List<string> verbatimImages, List<string> verbatimWhiteSpace) {
-            var t = PeekToken();
-            while (true) {
-                if (t is ConstantValueToken) {
-                    string str;
-                    if (t.Value is AsciiString cvs) {
-                        var res = new List<byte>(s.Bytes);
-                        res.AddRange(cvs.Bytes);
-                        s = new AsciiString(res.ToArray(), s.String + cvs.String);
-                        NextToken();
-                        if (_verbatim) {
-                            verbatimWhiteSpace.Add(_tokenWhiteSpace);
-                            verbatimImages.Add(t.VerbatimImage);
-                        }
-                        t = PeekToken();
-                        continue;
-                    } else if ((str = t.Value as string) != null) {
-                        if (_langVersion.Is3x()) {
-                            ReportSyntaxError("cannot mix bytes and nonbytes literals");
-                        }
-
-                        var final = s.String + str;
-                        NextToken();
-                        if (_verbatim) {
-                            verbatimWhiteSpace.Add(_tokenWhiteSpace);
-                            verbatimImages.Add(t.VerbatimImage);
-                        }
-
-                        return FinishStringPlus(final, verbatimImages, verbatimWhiteSpace);
-                    } else {
-                        ReportSyntaxError("invalid syntax");
-                    }
-                }
-                break;
-            }
-            return new ConstantExpression(s);
         }
 
         private Expression AddTrailers(Expression ret) => AddTrailers(ret, true);
