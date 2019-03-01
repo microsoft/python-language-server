@@ -66,24 +66,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     someRecognized = true;
                 }
             }
-
-            // Handle basic check such as
-            // if isinstance(value, type):
-            //    return value
-            // by assigning type to the value unless clause is raising exception.
-            var ce = node.Tests.FirstOrDefault()?.Test as CallExpression;
-            if (ce?.Target is NameExpression ne && ne.Name == @"isinstance" && ce.Args.Count == 2) {
-                var nex = ce.Args[0].Expression as NameExpression;
-                var name = nex?.Name;
-                var typeName = (ce.Args[1].Expression as NameExpression)?.Name;
-                if (name != null && typeName != null) {
-                    var typeId = typeName.GetTypeId();
-                    if (typeId != BuiltinTypeId.Unknown) {
-                        var t = new PythonType(typeName, Module, string.Empty, LocationInfo.Empty, typeId);
-                        Eval.DeclareVariable(name, t, VariableSource.Declaration, nex);
-                    }
-                }
-            }
             return !someRecognized;
         }
 
