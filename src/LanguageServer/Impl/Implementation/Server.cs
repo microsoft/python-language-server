@@ -157,8 +157,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void DidChangeConfiguration(DidChangeConfigurationParams @params, CancellationToken cancellationToken) {
             _disposableBag.ThrowIfDisposed();
             switch (@params.settings) {
-                case null:
-                    return;
                 case ServerSettings settings: {
                     if (HandleConfigurationChanges(settings)) {
                         RestartAnalysis();
