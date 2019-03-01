@@ -124,7 +124,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     GetSetting(analysis, "information", Array.Empty<string>()),
                     GetSetting(analysis, "disabled", Array.Empty<string>()));
 
-                await _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
+                _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
             }
         }
 
