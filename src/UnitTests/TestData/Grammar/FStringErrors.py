@@ -1,4 +1,10 @@
 f'{'
 f'''    
-{import tuvieja}
+{import something}
 '''
+f'''    
+{def test:
+    pass}
+'''
+
+f'' b''
