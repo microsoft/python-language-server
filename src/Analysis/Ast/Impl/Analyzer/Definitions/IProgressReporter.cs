@@ -15,6 +15,6 @@
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal interface IProgressReporter {
-        void ReportRemaining(int count);
+        void ReportRemaining(int count = -1);
     }
 }

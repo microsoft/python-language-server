@@ -21,8 +21,8 @@ using Microsoft.Python.Core.Services;
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class ProgressReporter : IProgressReporter, IDisposable {
         private const int _initialDelay = 100;
-        private const int _reportingInterval = 300;
-        private const int _disposeInterval = 1500;
+        private const int _reportingInterval = 200;
+        private const int _disposeInterval = 2000;
 
         private readonly IProgressService _progressService;
         private readonly object _lock = new object();
@@ -32,6 +32,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private Timer _reportTimer;
         private Timer _disposeTimer;
         private bool _running;
+        private int _disposedId;
 
         public ProgressReporter(IProgressService progressService) {
             _progressService = progressService;
@@ -39,14 +40,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void Dispose() {
             lock (_lock) {
-                _running = false;
-                _reportTimer.Dispose();
-                _disposeTimer.Dispose();
-                _progress?.Dispose();
+                EndReport();
             }
         }
 
-        public void ReportRemaining(int count) {
+        public void ReportRemaining(int count = -1) {
             lock (_lock) {
                 if (!_running) {
                     // Delay reporting a bit in case the analysis is short in order to reduce UI flicker.
@@ -56,8 +54,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 _disposeTimer?.Dispose();
-                _disposeTimer = new Timer(OnDisposeTimer, null, _disposeInterval, Timeout.Infinite);
-                _lastReportedCount = count;
+                _disposeTimer = new Timer(OnDisposeTimer, ++_disposedId, _disposeInterval, Timeout.Infinite);
+                if (count >= 0) {
+                    _lastReportedCount = count;
+                }
             }
         }
 
@@ -75,14 +75,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void OnDisposeTimer(object o) {
             lock (_lock) {
-                if (_running) {
-                    _running = false;
-                    _progress?.Dispose();
-                    _progress = null;
-
-                    _reportTimer.Dispose();
-                    _disposeTimer.Dispose();
+                if (_disposedId == (int)o) {
+                    EndReport();
                 }
+            }
+        }
+
+        private void EndReport() {
+            if (_running) {
+                _running = false;
+                _progress?.Dispose();
+                _progress = null;
+
+                _reportTimer?.Dispose();
+                _disposeTimer?.Dispose();
             }
         }
     }
