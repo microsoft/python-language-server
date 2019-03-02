@@ -100,6 +100,15 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void FStringErrors() {
+            ParseErrors("FStringErrors.py",
+                PythonLanguageVersion.V36,
+                new ErrorInfo("f-string: expecting '}'", 1, 1, 4, 1, 1, 4),
+                new ErrorInfo("unexpected token 'import'", 0, 1, 1, 6, 1, 7)
+            );
+        }
+
+        [TestMethod, Priority(0)]
         public void GeneralizedUnpacking() {
             foreach (var version in V35AndUp) {
                 CheckAst(

@@ -327,7 +327,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
 
         [TestMethod, Priority(0)]
-        [ExpectedException(typeof(Exception))]
+        //[ExpectedException(typeof(Exception))]
         public void CloseWithSingleBrace() {
             var code = "f'{{ mistake}'";
             var parser = Parser.CreateParser(MakeReader(code), PythonLanguageVersion.V36);

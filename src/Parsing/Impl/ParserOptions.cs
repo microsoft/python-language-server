@@ -22,6 +22,7 @@ namespace Microsoft.Python.Parsing {
         public static ParserOptions Default = new ParserOptions();
         public ParserOptions() {
             ErrorSink = ErrorSink.Null;
+            InitialSourceLocation = SourceLocation.MinValue;
         }
 
         public ParserOptions Clone() => (ParserOptions)MemberwiseClone();
@@ -57,6 +58,8 @@ namespace Microsoft.Python.Parsing {
         public event EventHandler<CommentEventArgs> ProcessComment;
 
         internal void RaiseProcessComment(object sender, CommentEventArgs e) => ProcessComment?.Invoke(sender, e);
+
+        public SourceLocation? InitialSourceLocation { get; set; }
     }
 
     public class CommentEventArgs : EventArgs {

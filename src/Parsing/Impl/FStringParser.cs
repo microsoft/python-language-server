@@ -1,9 +1,7 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
@@ -16,15 +14,21 @@ namespace Microsoft.Python.Parsing {
         private readonly StringBuilder _buffer = new StringBuilder();
         private int _errorCode = 0;
         private int _position = 0;
-
+        private int _lineNumber;
+        private int _colNumber;
+        private readonly SourceLocation _start;
         private static readonly StringSpan doubleOpen = new StringSpan("{{", 0, 2);
         private static readonly StringSpan doubleClose = new StringSpan("}}", 0, 2);
 
-        public FStringParser(FStringBuilder builder, string fString, ErrorSink errors, PythonLanguageVersion langVersion) {
+        public FStringParser(FStringBuilder builder, string fString, ErrorSink errors, PythonLanguageVersion langVersion,
+            SourceLocation start) {
             _fString = fString;
             _builder = builder;
             _errors = errors;
             _langVersion = langVersion;
+            _lineNumber = start.Line;
+            _colNumber = start.Column + 2;
+            _start = start;
         }
 
         public void Parse() {
@@ -39,7 +43,8 @@ namespace Microsoft.Python.Parsing {
                     AddBufferedSubstring();
                     ParseInnerExpression();
                 } else if (CurrentChar() == '}') {
-                    throw new Exception("closing '}' without opening");
+                    ReportSyntaxError("closing '}' without opening");
+                    _buffer.Append(NextChar());
                 } else {
                     _buffer.Append(NextChar());
                 }
@@ -65,7 +70,10 @@ namespace Microsoft.Python.Parsing {
         }
 
         private Expression CreateExpression(string subExprStr) {
-            var parser = Parser.CreateParser(new StringReader(subExprStr), _langVersion);
+            var parser = Parser.CreateParser(new StringReader(subExprStr), _langVersion, new ParserOptions() {
+                ErrorSink = _errors,
+                InitialSourceLocation = new SourceLocation(_start.Index + _position, _lineNumber, _colNumber)
+            });
             var expr = parser.ParseFStrSubExpr(out var formatExpression, out var conversionExpression);
             if (expr is null) {
                 // Should not happen but just in case
@@ -82,11 +90,7 @@ namespace Microsoft.Python.Parsing {
 
         private void AppendAllSubExpression() {
             int openedBraces = 1;
-            while (!(CurrentChar() == '}' && openedBraces == 1)) {
-                if (EndOfFString()) {
-                    ReportSyntaxError("Inner expression without closing '}'");
-                }
-
+            while (!EndOfFString() && !(CurrentChar() == '}' && openedBraces == 1)) {
                 if (CurrentChar() == '{') {
                     openedBraces++;
                 }
@@ -97,11 +101,17 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        private void Read(char nextChar) {
+        private bool Read(char nextChar) {
+            if (EndOfFString()) {
+                ReportSyntaxError($"f-string: expecting '{nextChar}'");
+                return false;
+            }
             if (CurrentChar() != nextChar) {
-                ReportSyntaxError($"'{nextChar}' expected but found '{CurrentChar()}'");
+                ReportSyntaxError($"f-string: expecting '{nextChar}' but found '{CurrentChar()}'");
+                return false;
             }
             NextChar();
+            return true;
         }
 
         private void AddBufferedSubstring() {
@@ -114,32 +124,33 @@ namespace Microsoft.Python.Parsing {
         }
 
         private char NextChar() {
-            var peek = CurrentChar();
+            var prev = CurrentChar();
             _position++;
-            return peek;
+            _colNumber++;
+            if (prev == '\n') {
+                _colNumber = 1;
+                _lineNumber++;
+            }
+            return prev;
         }
 
         private char CurrentChar() => _fString[_position];
 
         private bool EndOfFString() => _position >= _fString.Length;
 
-        private void ReportSyntaxError(string message) { }
-        //private void ReportSyntaxError(string message) => ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, message);
+        private void ReportSyntaxError(string message)
+            => ReportSyntaxError(_lineNumber, _colNumber, _lineNumber, _colNumber, message, ErrorCodes.SyntaxError);
 
-        private void ReportSyntaxError(int start, int end, string message) => ReportSyntaxError(start, end, message, ErrorCodes.SyntaxError);
-
-        private void ReportSyntaxError(int start, int end, string message, int errorCode) {
+        private void ReportSyntaxError(int startLine, int startColumn, int endLine, int endColumn, string message, int errorCode) {
             // save the first one, the next error codes may be induced errors:
             if (_errorCode == 0) {
                 _errorCode = errorCode;
             }
-            /*
-            _errors.Add(
-                message,
-                _tokenizer.GetLineLocations(),
-                start, end,
-                errorCode,
-                Severity.Error);*/
+            var span = new SourceSpan(new SourceLocation(_start.Index + _position, startLine, startColumn),
+                new SourceLocation(_start.Index + _position, endLine, endColumn));
+            _errors.Add(message, span, _errorCode, Severity.Error);
         }
+
+
     }
 }

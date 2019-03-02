@@ -104,7 +104,7 @@ namespace Microsoft.Python.Parsing {
                     TokenizerOptions.GroupingRecovery |
                     (options.StubFile ? TokenizerOptions.StubFile : 0),
                 (span, text) => options.RaiseProcessComment(parser, new CommentEventArgs(span, text)));
-            tokenizer.Initialize(null, reader, SourceLocation.MinValue);
+            tokenizer.Initialize(null, reader, options.InitialSourceLocation ?? SourceLocation.MinValue);
             tokenizer.IndentationInconsistencySeverity = options.IndentationInconsistencySeverity;
 
             parser = new Parser(
@@ -3219,7 +3219,7 @@ namespace Microsoft.Python.Parsing {
                 }
             }
 
-            public void AddFString(string fStr) {
+            public void AddFString(string fStr, SourceLocation start) {
                 //if (!_langVersion.)
                 switch (_builder) {
                     case AsciiString prevAsciiString:
@@ -3234,7 +3234,7 @@ namespace Microsoft.Python.Parsing {
                     default:
                         throw new InvalidOperationException();
                 }
-                new FStringParser((FStringBuilder)_builder, fStr, _errors, _langVersion).Parse();
+                new FStringParser((FStringBuilder)_builder, fStr, _errors, _langVersion, start).Parse();
             }
 
             public Expression Build() {
@@ -3274,7 +3274,7 @@ namespace Microsoft.Python.Parsing {
             while (IsStringToken(t)) {
                 try {
                     if (t is FStringToken) {
-                        builder.AddFString((string)t.Value);
+                        builder.AddFString((string)t.Value, _tokenizer.IndexToLocation(_lookahead.Span.Start));
                     } else if (t.Value is string str) {
                         builder.Add(str);
                     } else if (t.Value is AsciiString asciiStr) {
