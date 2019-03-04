@@ -16,77 +16,32 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Linting {
-    internal sealed class LinterWalker: PythonWalker {
-        private readonly IDocumentAnalysis _analysis;
+    internal abstract class LinterWalker: PythonWalker {
         private readonly Stack<IDisposable> _scopeStack = new Stack<IDisposable>();
-        private readonly ExpressionWalker _expressionWalker;
 
-        public LinterWalker(IDocumentAnalysis analysis) {
-            _analysis = analysis;
-            _expressionWalker = new ExpressionWalker(_analysis);
+        protected IDocumentAnalysis Analysis { get; }
+        protected IExpressionEvaluator Eval => Analysis.ExpressionEvaluator;
+        protected IServiceContainer Services { get; }
+
+        protected LinterWalker(IDocumentAnalysis analysis, IServiceContainer services) {
+            Analysis = analysis;
+            Services = services;
         }
 
         public override bool Walk(ClassDefinition cd) {
-            _scopeStack.Push(_analysis.ExpressionEvaluator.OpenScope(_analysis.Document, cd));
+            _scopeStack.Push(Eval.OpenScope(Analysis.Document, cd));
             return true;
         }
         public override void PostWalk(ClassDefinition cd) => _scopeStack.Pop().Dispose();
 
         public override bool Walk(FunctionDefinition fd) {
-            _scopeStack.Push(_analysis.ExpressionEvaluator.OpenScope(_analysis.Document, fd));
+            _scopeStack.Push(Eval.OpenScope(Analysis.Document, fd));
             return true;
         }
         public override void PostWalk(FunctionDefinition cd) => _scopeStack.Pop().Dispose();
-
-        public override bool Walk(AssignmentStatement node) {
-            if (node.Right is ErrorExpression) {
-                return false;
-            }
-            node.Right?.Walk(_expressionWalker);
-            return false;
-        }
-
-        public override bool Walk(CallExpression node) {
-            foreach (var arg in node.Args) {
-                arg?.Expression?.Walk(_expressionWalker);
-           }
-            return false;
-        }
-
-        public override bool Walk(IfStatement node) {
-            foreach (var test in node.Tests) {
-                test.Test.Walk(_expressionWalker);
-            }
-            return true;
-        }
-
-        public override bool Walk(GlobalStatement node) {
-            foreach (var nex in node.Names) {
-                var m = _analysis.ExpressionEvaluator.LookupNameInScopes(nex.Name, out _, LookupOptions.Global);
-                if (m == null) {
-                    _analysis.ReportUndefinedVariable(nex);
-                }
-            }
-            return false;
-        }
-
-        public override bool Walk(NonlocalStatement node) {
-            foreach (var nex in node.Names) {
-                var m = _analysis.ExpressionEvaluator.LookupNameInScopes(nex.Name, out _, LookupOptions.Nonlocal);
-                if (m == null) {
-                    _analysis.ReportUndefinedVariable(nex);
-                }
-            }
-            return false;
-        }
-        public override bool Walk(ComprehensionFor cfor) {
-            return false;
-        }
-        public override bool Walk(ComprehensionIf cif) {
-            return false;
-        }
     }
 }

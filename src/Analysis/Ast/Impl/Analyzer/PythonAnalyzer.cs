@@ -267,8 +267,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 cancellationToken.ThrowIfCancellationRequested();
                 var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
 
-                var linter = new Linter();
-                linter.Lint(analysis);
+                var linter = new LinterAggregator();
+                linter.Lint(analysis, _services);
 
                 (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
                 node.Value.TrySetAnalysis(analysis, version, _syncObj);

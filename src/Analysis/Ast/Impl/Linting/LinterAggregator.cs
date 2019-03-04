@@ -13,11 +13,21 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.Python.Core;
+
 namespace Microsoft.Python.Analysis.Linting {
-    internal sealed class Linter {
-        public void Lint(IDocumentAnalysis analysis) {
-            var w = new LinterWalker(analysis);
-            analysis.Ast.Walk(w);
+    internal sealed class LinterAggregator {
+        private readonly List<ILinter> _linters = new List<ILinter>();
+
+        public LinterAggregator() {
+            // TODO: develop mechanism for dynamic and external linter discovery.
+            _linters.Add(new UndefinedVariablesLinter());
+        }
+        public void Lint(IDocumentAnalysis analysis, IServiceContainer services) {
+            foreach (var l in _linters) {
+                l.Lint(analysis, services);
+            }
         }
     }
 }
