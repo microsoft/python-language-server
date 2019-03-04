@@ -17,62 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Linting {
-    internal sealed class ExpressionWalker : PythonWalker {
-        private readonly IDocumentAnalysis _analysis;
-        private readonly HashSet<string> _additionalNames;
-        private readonly HashSet<NameExpression> _additionalNameNodes;
-
-        public ExpressionWalker(IDocumentAnalysis analysis)
-            : this(analysis, null, null) { }
-
-        public ExpressionWalker(IDocumentAnalysis analysis, HashSet<string> additionalNames, HashSet<NameExpression> additionalNameNodes) {
-            _analysis = analysis;
-            _additionalNames = additionalNames;
-            _additionalNameNodes = additionalNameNodes;
-        }
-
-        public override bool Walk(CallExpression node) {
-            foreach (var arg in node.Args) {
-                arg?.Expression?.Walk(this);
-            }
-            return false;
-        }
-
-        public override bool Walk(ListComprehension node) {
-            node.Walk(new ComprehensionWalker(_analysis));
-            return false;
-        }
-
-        public override bool Walk(SetComprehension node) {
-            node.Walk(new ComprehensionWalker(_analysis));
-            return false;
-        }
-        public override bool Walk(DictionaryComprehension node) {
-            node.Walk(new ComprehensionWalker(_analysis));
-            return false;
-        }
-
-        public override bool Walk(GeneratorExpression node) {
-            node.Walk(new ComprehensionWalker(_analysis));
-            return false;
-        }
-
-        public override bool Walk(NameExpression node) {
-            if (_additionalNames?.Contains(node.Name) == true) {
-                return false;
-            }
-            if (_additionalNameNodes?.Contains(node) == true) {
-                return false;
-            }
-            var m = _analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out _);
-            if (m == null) {
-                _analysis.ReportUndefinedVariable(node);
-            }
-            return false;
-        }
-    }
-
+namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class ComprehensionWalker : PythonWalker {
         private readonly IDocumentAnalysis _analysis;
         private readonly HashSet<string> _names = new HashSet<string>();
@@ -104,6 +49,7 @@ namespace Microsoft.Python.Analysis.Linting {
             foreach (var iter in node.Iterators) {
                 iter?.Walk(new ExpressionWalker(_analysis, null, _additionalNameNodes));
             }
+
             return true;
         }
 
@@ -126,7 +72,7 @@ namespace Microsoft.Python.Analysis.Linting {
             private readonly HashSet<string> _names;
             private readonly HashSet<NameExpression> _additionalNameNodes;
 
-            public NameCollectorWalker(HashSet<string> names, HashSet<NameExpression>  additionalNameNodes) {
+            public NameCollectorWalker(HashSet<string> names, HashSet<NameExpression> additionalNameNodes) {
                 _names = names;
                 _additionalNameNodes = additionalNameNodes;
             }
@@ -136,6 +82,7 @@ namespace Microsoft.Python.Analysis.Linting {
                     _names.Add(nex.Name);
                     _additionalNameNodes.Add(nex);
                 }
+
                 return false;
             }
         }

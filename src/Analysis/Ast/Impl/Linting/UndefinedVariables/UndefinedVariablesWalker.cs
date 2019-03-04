@@ -17,7 +17,7 @@ using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Linting {
+namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UndefinedVariablesWalker : LinterWalker {
         private readonly ExpressionWalker _expressionWalker;
 

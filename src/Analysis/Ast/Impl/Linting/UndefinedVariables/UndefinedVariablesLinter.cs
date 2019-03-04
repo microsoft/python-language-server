@@ -13,19 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
-using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
-namespace Microsoft.Python.Analysis.Linting {
-    internal static class AnalysisExtensions {
-        public static void ReportUndefinedVariable(this IDocumentAnalysis analysis, NameExpression node) {
-            var eval = analysis.ExpressionEvaluator;
-            eval.ReportDiagnostics(analysis.Document.Uri, new DiagnosticsEntry(
-                Resources.UndefinedVariable.FormatInvariant(node.Name),
-                eval.GetLocation(node).Span, ErrorCodes.UndefinedVariable, Severity.Warning));
+namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
+    internal sealed class UndefinedVariablesLinter : ILinter {
+        public void Lint(IDocumentAnalysis analysis, IServiceContainer services) {
+            var w = new UndefinedVariablesWalker(analysis, services);
+            analysis.Ast.Walk(w);
         }
     }
 }

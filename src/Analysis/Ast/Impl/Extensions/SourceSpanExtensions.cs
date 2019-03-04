@@ -1,4 +1,5 @@
-﻿// Copyright(c) Microsoft Corporation
+﻿// Python Tools for Visual Studio
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,22 +14,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Linting.UndefinedVariables;
-using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 
-namespace Microsoft.Python.Analysis.Linting {
-    internal sealed class LinterAggregator {
-        private readonly List<ILinter> _linters = new List<ILinter>();
-
-        public LinterAggregator() {
-            // TODO: develop mechanism for dynamic and external linter discovery.
-            _linters.Add(new UndefinedVariablesLinter());
-        }
-        public void Lint(IDocumentAnalysis analysis, IServiceContainer services) {
-            foreach (var l in _linters) {
-                l.Lint(analysis, services);
+namespace Microsoft.Python.Analysis {
+    public static class SourceSpanExtensions {
+        public static bool IsAfter(this SourceSpan span, SourceSpan other) {
+            if (!span.IsValid || !other.IsValid) {
+                return false;
             }
+            return span.Start > other.Start;
         }
     }
 }
