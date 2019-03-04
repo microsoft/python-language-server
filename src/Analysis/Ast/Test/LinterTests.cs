@@ -129,6 +129,16 @@ def foo(m):
 
 
         [TestMethod, Priority(0)]
+        public async Task AssignmentBefore() {
+            const string code = @"
+x = 1
+y = x
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task AssignmentAfter() {
             const string code = @"
 y = x
