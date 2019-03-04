@@ -16,12 +16,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Linting;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -266,6 +266,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 walker.Complete();
                 cancellationToken.ThrowIfCancellationRequested();
                 var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
+
+                var linter = new Linter();
+                linter.Lint(analysis);
 
                 (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
                 node.Value.TrySetAnalysis(analysis, version, _syncObj);

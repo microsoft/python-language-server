@@ -15,9 +15,9 @@
 
 using System;
 
-namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
+namespace Microsoft.Python.Analysis.Analyzer {
     [Flags]
-    internal enum LookupOptions {
+    public enum LookupOptions {
         None = 0,
         Local,
         Nonlocal,
