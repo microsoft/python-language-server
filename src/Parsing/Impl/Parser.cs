@@ -3156,153 +3156,26 @@ namespace Microsoft.Python.Parsing {
             return false;
         }
 
-        private class AllStringBuilder {
-            private object _builder;
-            private readonly ErrorSink _errors;
-            private readonly PythonLanguageVersion _langVersion;
-
-            private AllStringBuilder(object builder, ErrorSink errors, PythonLanguageVersion langVersion) {
-                _builder = builder;
-                _errors = errors;
-                _langVersion = langVersion;
-            }
-
-            public static AllStringBuilder CreateForAsciiString(ErrorSink errors, PythonLanguageVersion langVersion) {
-                return new AllStringBuilder(new AsciiString(new byte[] { }, ""), errors, langVersion);
-            }
-
-            public static AllStringBuilder CreateForString(ErrorSink errors, PythonLanguageVersion langVersion) {
-                //if (!_langVersion.)
-                return new AllStringBuilder(new StringBuilder(), errors, langVersion);
-            }
-
-            public static AllStringBuilder CreateForFString(ErrorSink errors, PythonLanguageVersion langVersion) {
-                return new AllStringBuilder(new FStringBuilder(), errors, langVersion);
-            }
-
-            public void Add(string s) {
-                switch (_builder) {
-                    case AsciiString prevAsciiString:
-                        if (_langVersion.Is3x()) {
-                            throw new InvalidOperationException("cannot mix bytes and nonbytes literals");
-                        }
-                        var newStrBuilder = new StringBuilder();
-                        newStrBuilder.Append(s);
-                        _builder = newStrBuilder;
-                        break;
-                    case StringBuilder strBuilder:
-                        strBuilder.Append(s);
-                        break;
-                    case FStringBuilder fStrBuilder:
-                        fStrBuilder.AppendString(s);
-                        break;
-                    default:
-                        throw new InvalidOperationException();
-                }
-            }
-
-            public void Add(AsciiString s) {
-                switch (_builder) {
-                    case AsciiString prevAsciiString:
-                        _builder = new AsciiString(prevAsciiString.Bytes.Concat(s.Bytes).ToArray(), prevAsciiString.String + s.String);
-                        break;
-                    case StringBuilder strBuilder:
-                        if (_langVersion.Is3x()) {
-                            throw new InvalidOperationException("cannot mix bytes and nonbytes literals");
-                        }
-                        strBuilder.Append(s.String);
-                        break;
-                    case FStringBuilder fStrBuilder:
-                        throw new InvalidOperationException("cannot mix bytes and nonbytes literals");
-                    default:
-                        throw new InvalidOperationException();
-                }
-            }
-
-            public void AddFString(string fStr, SourceLocation start) {
-                //if (!_langVersion.)
-                switch (_builder) {
-                    case AsciiString prevAsciiString:
-                        throw new InvalidOperationException("cannot mix bytes and nonbytes literals");
-                    case StringBuilder strBuilder:
-                        var builderFromStr = new FStringBuilder();
-                        builderFromStr.AppendString(strBuilder.ToString());
-                        _builder = builderFromStr;
-                        break;
-                    case FStringBuilder fStrBuilder:
-                        break;
-                    default:
-                        throw new InvalidOperationException();
-                }
-                new FStringParser((FStringBuilder)_builder, fStr, _errors, _langVersion, start).Parse();
-            }
-
-            public Expression Build() {
-                switch (_builder) {
-                    case AsciiString prevAsciiString:
-                        return new ConstantExpression(prevAsciiString);
-                    case StringBuilder strBuilder:
-                        return new ConstantExpression(strBuilder.ToString());
-                    case FStringBuilder fStrBuilder:
-                        return fStrBuilder.Build();
-                    default:
-                        throw new InvalidOperationException();
-                }
-            }
-        }
-
         private bool ParseString(out Expression expr) {
-            var verbatimWhiteSpaceList = new List<string>();
-            var verbatimImagesList = new List<string>();
-
-            var t = PeekToken();
-            if (!IsStringToken(t)) {
+            if (!IsStringToken(PeekToken())) {
                 expr = null;
                 return false;
             }
-            AllStringBuilder builder = null;
-            if (t is FStringToken) {
-                builder = AllStringBuilder.CreateForFString(_errors, _langVersion);
-            } else if (t.Value is string str) {
-                builder = AllStringBuilder.CreateForString(_errors, _langVersion);
-            } else if (t.Value is AsciiString asciiStr) {
-                builder = AllStringBuilder.CreateForAsciiString(_errors, _langVersion);
-            } else {
-                // Invalid state?
-            }
-            var readStringTokens = 0;
-            while (IsStringToken(t)) {
-                try {
-                    if (t is FStringToken) {
-                        builder.AddFString((string)t.Value, _tokenizer.IndexToLocation(_lookahead.Span.Start));
-                    } else if (t.Value is string str) {
-                        builder.Add(str);
-                    } else if (t.Value is AsciiString asciiStr) {
-                        builder.Add(asciiStr);
-                    } else {
-                        // invalid state?
-                    }
 
-                    NextToken();
-                    if (_verbatim) {
-                        verbatimWhiteSpaceList.Add(_tokenWhiteSpace);
-                        verbatimImagesList.Add(t.VerbatimImage);
-                    }
-                    t = PeekToken();
-                    readStringTokens++;
-                } catch (InvalidOperationException ex) {
-                    ReportSyntaxError(ex.Message);
-                    NextToken();
-                    break;
-                }
+            var verbatimWhiteSpaceList = new List<string>();
+            var verbatimImagesList = new List<string>();
+            var readTokens = ReadStringTokens(verbatimWhiteSpaceList, verbatimImagesList, out var hasFStrings, 
+                out var hasStrings, out var hasAsciiStrings);
+
+            if (hasFStrings) {
+                expr = buildFStringExpr(readTokens);
+            } else if (hasStrings) {
+                expr = buildStringExpr(readTokens);
+            } else {
+                expr = buildAsciiStringExpr(readTokens);
             }
-            if (PeekToken(TokenKind.Constant) && !IsStringToken(t)) {
-                // A string was read and then a Constant that is not a string
-                ReportSyntaxError("invalid syntax");
-            }
-            expr = builder.Build();
             if (_verbatim) {
-                if (readStringTokens > 1) {
+                if (readTokens.Count > 1) {
                     AddVerbatimNames(expr, verbatimImagesList.ToArray());
                     AddListWhiteSpace(expr, verbatimWhiteSpaceList.ToArray());
                 } else {
@@ -3311,6 +3184,113 @@ namespace Microsoft.Python.Parsing {
                 }
             }
             return true;
+        }
+
+        private List<TokenWithSpan> ReadStringTokens(List<string> verbatimWhiteSpaceList, List<string> verbatimImagesList, out bool hasFStrings,
+            out bool hasStrings, out bool hasAsciiStrings) {
+            var t = PeekToken();
+            var readTokens = new List<TokenWithSpan>();
+            hasFStrings = false;
+            hasStrings = false;
+            hasAsciiStrings = false;
+            while (IsStringToken(t)) {
+                try {
+                    if (t is FStringToken) {
+                        //builder.AddFString((string)t.Value, _tokenizer.IndexToLocation(_lookahead.Span.Start))
+                        if (hasAsciiStrings) {
+                            ReportSyntaxError("cannot mix bytes and nonbytes literals");
+                        }
+
+                        hasFStrings = true;
+                    }
+                    else if (t.Value is string str) {
+                        if (hasAsciiStrings && _langVersion.Is3x()) {
+                            ReportSyntaxError("cannot mix bytes and nonbytes literals");
+                        }
+
+                        hasStrings = true;
+                    }
+                    else if (t.Value is AsciiString asciiStr) {
+                        if ((hasStrings && _langVersion.Is3x()) || hasFStrings) {
+                            ReportSyntaxError("cannot mix bytes and nonbytes literals");
+                        }
+
+                        hasAsciiStrings = true;
+                    }
+                    else {
+                        // invalid state?
+                    }
+
+                    readTokens.Add(_lookahead);
+                    NextToken();
+                    if (_verbatim) {
+                        verbatimWhiteSpaceList.Add(_tokenWhiteSpace);
+                        verbatimImagesList.Add(t.VerbatimImage);
+                    }
+
+                    t = PeekToken();
+                }
+                catch (InvalidOperationException ex) {
+                    ReportSyntaxError(ex.Message);
+                    NextToken();
+                    break;
+                }
+            }
+
+            if (PeekToken(TokenKind.Constant) && !IsStringToken(t)) {
+                // A string was read and then a Constant that is not a string
+                ReportSyntaxError("invalid syntax");
+            }
+
+            return readTokens;
+        }
+
+        private Expression buildAsciiStringExpr(IEnumerable<TokenWithSpan> readTokens) {
+            var strBuilder = new StringBuilder();
+            var bytes = new List<byte>();
+            foreach (var tokenWithSpan in readTokens) {
+                if (tokenWithSpan.Token.Value is AsciiString asciiString) {
+                    strBuilder.Append(asciiString.String);
+                    bytes.AddRange(asciiString.Bytes);
+                } else {
+                    
+                }
+            }
+            
+            return new ConstantExpression(new AsciiString(bytes.ToArray(), strBuilder.ToString()));
+        }
+
+        private Expression buildStringExpr(IEnumerable<TokenWithSpan> readTokens) {
+            var builder = new StringBuilder();
+            foreach (var tokenWithSpan in readTokens) {
+                if (tokenWithSpan.Token.Value is string str) {
+                   builder.Append(str);
+                } else if (tokenWithSpan.Token.Value is AsciiString asciiString) {
+                    builder.Append(asciiString.String);
+                } else {
+                    
+                }
+            }
+            
+            return new ConstantExpression(builder.ToString());
+        }
+
+        private Expression buildFStringExpr(IEnumerable<TokenWithSpan> readTokens) {
+            var builder = new FStringBuilder();
+            foreach (var tokenWithSpan in readTokens) {
+                if (tokenWithSpan.Token is FStringToken) {
+                    new FStringParser(builder, (string)tokenWithSpan.Token.Value, _errors, 
+                        _langVersion, _tokenizer.IndexToLocation(_lookahead.Span.Start)).Parse();
+                } else if (tokenWithSpan.Token.Value is string str) {
+                    builder.AppendString(str);
+                } else if (tokenWithSpan.Token.Value is AsciiString asciiString) {
+                    builder.AppendString(asciiString.String);
+                } else {
+                    
+                }
+            }
+
+            return builder.Build();
         }
 
         internal static string MakeString(IList<byte> bytes) {
