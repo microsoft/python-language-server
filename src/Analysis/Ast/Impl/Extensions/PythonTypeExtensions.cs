@@ -30,10 +30,9 @@ namespace Microsoft.Python.Analysis {
 
         public static void TransferDocumentationAndLocation(this IPythonType s, IPythonType d) {
             if (s != d && s is PythonType src && d is PythonType dst) {
-                dst.TrySetTypeId(src.TypeId);
                 var documentation = src.Documentation;
                 if (!string.IsNullOrEmpty(documentation)) {
-                    dst.SetDocumentationProvider(_ => documentation);
+                    dst.SetDocumentation(documentation);
                 }
                 dst.SetLocation(src.Location);
             }

@@ -139,7 +139,7 @@ namespace Microsoft.Python.Analysis.Modules {
                         if (assemblyTime > cacheTime) {
                             cachedFileOlderThanAssembly = true;
                         } else {
-                            return _fs.ReadAllText(cachePath);
+                            return _fs.ReadTextWithRetry(cachePath);
                         }
                     }
                 }
