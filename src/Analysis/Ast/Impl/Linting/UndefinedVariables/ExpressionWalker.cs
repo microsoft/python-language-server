@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             // undefined x in 
             //    y = x
             //    x = 1
-            if(m is ILocatedMember lm) {
+            if(m is ILocatedMember lm && lm.Location.DocumentUri == _analysis.Document.Uri) {
                 var span = lm.Location.Span;
                 var nodeLoc = node.GetLocation(_analysis.Document);
                 if (span.IsAfter(nodeLoc.Span)) {

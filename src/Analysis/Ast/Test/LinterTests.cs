@@ -202,6 +202,16 @@ class A:
             analysis.Diagnostics.Should().HaveCount(enabled ? 1 : 0);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task Builtins() {
+            const string code = @"
+print(1)
+abs(3)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
         private class AnalysisOptionsProvider: IAnalysisOptionsProvider {
             public AnalysisOptions Options { get; } = new AnalysisOptions();
         }

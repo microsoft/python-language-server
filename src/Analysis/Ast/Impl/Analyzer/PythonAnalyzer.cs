@@ -267,10 +267,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 cancellationToken.ThrowIfCancellationRequested();
                 var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
 
-                var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-                if (optionsProvider?.Options?.LintingEnabled != false) {
-                    var linter = new LinterAggregator();
-                    linter.Lint(analysis, _services);
+                if (module.ModuleType == ModuleType.User) {
+                    var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+                    if (optionsProvider?.Options?.LintingEnabled != false) {
+                        var linter = new LinterAggregator();
+                        linter.Lint(analysis, _services);
+                    }
                 }
 
                 (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
