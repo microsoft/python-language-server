@@ -75,12 +75,14 @@ y = c.method()
 import sys
 x = sys.path
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.GlobalScope.Variables.Count.Should().Be(2);
+            for (var i = 0; i < 20; i++) {
+                var analysis = await GetAnalysisAsync(code);
+                analysis.GlobalScope.Variables.Count.Should().Be(2);
 
-            analysis.Should()
-                .HaveVariable("sys").OfType(BuiltinTypeId.Module)
-                .And.HaveVariable("x").OfType(BuiltinTypeId.List);
+                analysis.Should()
+                    .HaveVariable("sys").OfType(BuiltinTypeId.Module)
+                    .And.HaveVariable("x").OfType(BuiltinTypeId.List);
+            }
         }
 
         [TestMethod, Priority(0)]

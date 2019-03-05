@@ -227,8 +227,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     StartAnalysis(node, walker.Version, stopWatch, cancellationToken);
                 }
             }
-            
-            if (walker.MissingKeys.Where(k => !k.IsTypeshed).Count == 0) {
+
+            var count = walker.MissingKeys.Where(k => !k.IsTypeshed).Count;
+            _log?.Log(TraceEventType.Verbose, $"Walker count is {count}, missing keys:");
+            foreach (var key in walker.MissingKeys) {
+                _log?.Log(TraceEventType.Verbose, $"    Name: {key.Name}, Path: {key.FilePath}");
+            }
+
+            if (count == 0) {
                 Interlocked.Exchange(ref _runningTasks, 0);
                 _analysisCompleteEvent.Set();
             }
