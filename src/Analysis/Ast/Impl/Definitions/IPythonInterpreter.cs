@@ -58,12 +58,5 @@ namespace Microsoft.Python.Analysis {
         /// Stub resolution service.
         /// </summary>
         IModuleResolution TypeshedResolution { get; }
-
-        /// <summary>
-        /// Tells analyzer that module set has changed. Client application that tracks changes
-        /// to the Python libraries (via watching file system or otherwise) should call this
-        /// method in order to tell analyzer that modules were added or removed.
-        /// </summary>
-        void NotifyImportableModulesChanged();
     }
 }

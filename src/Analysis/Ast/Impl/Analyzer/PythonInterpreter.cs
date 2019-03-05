@@ -131,7 +131,5 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Unknown type.
         /// </summary>
         public IPythonType UnknownType { get; private set; }
-
-        public void NotifyImportableModulesChanged() => ModuleResolution.ReloadAsync().DoNotWait();
     }
 }

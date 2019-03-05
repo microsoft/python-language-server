@@ -74,8 +74,8 @@ namespace Microsoft.Python.Analysis.Modules {
             Services = services ?? throw new ArgumentNullException(nameof(services));
             ModuleType = moduleType;
 
-            Log = services?.GetService<ILogger>();
-            Interpreter = services?.GetService<IPythonInterpreter>();
+            Log = services.GetService<ILogger>();
+            Interpreter = services.GetService<IPythonInterpreter>();
             Analysis = new EmptyAnalysis(services, this);
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
@@ -330,9 +330,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void Reset(string content) {
             lock (AnalysisLock) {
-                if (content != Content || content == null) {
-                    ContentState = State.None;
-                    Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
+                if (content != Content) {
                     InitializeContent(content);
                 }
             }
