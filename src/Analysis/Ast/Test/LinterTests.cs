@@ -104,6 +104,39 @@ a, *b, c = range(5)
         }
 
         [TestMethod, Priority(0)]
+        public async Task TupleUsage() {
+            const string code = @"
+a, b = 1
+x = a
+y = b
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FunctionNoneArgument() {
+            const string code = @"
+def func(a=None, b=True):
+    x = a
+    y = b
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForVariables() {
+            const string code = @"
+c = {}
+for i in c:
+    x = i
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ListComprehension() {
             const string code = @"
 NAME = ' '.join(str(x) for x in {z, 2, 3})

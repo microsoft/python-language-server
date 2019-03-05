@@ -13,10 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
@@ -24,29 +24,45 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         public TupleExpressionHandler(AnalysisWalker walker) : base(walker) { }
 
         public void HandleTupleAssignment(TupleExpression lhs, Expression rhs, IMember value) {
+            string[] names;
 
             if (rhs is TupleExpression tex) {
                 var returnedExpressions = tex.Items.ToArray();
-                var names = lhs.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
-                for (var i = 0; i < Math.Min(names.Length, returnedExpressions.Length); i++) {
-                    if (returnedExpressions[i] != null && !string.IsNullOrEmpty(names[i])) {
-                        var v = Eval.GetValueFromExpression(returnedExpressions[i]);
-                        Eval.DeclareVariable(names[i], v ?? Eval.UnknownType, VariableSource.Declaration, returnedExpressions[i]);
+                names = lhs.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
+                for (var i = 0; i < names.Length; i++) {
+                    Expression e = null;
+                    if (returnedExpressions.Length > 0) {
+                        e = i < returnedExpressions.Length ? returnedExpressions[i] : returnedExpressions[returnedExpressions.Length - 1];
+                    }
+
+                    if (e != null && !string.IsNullOrEmpty(names[i])) {
+                        var v = Eval.GetValueFromExpression(e);
+                        Eval.DeclareVariable(names[i], v ?? Eval.UnknownType, VariableSource.Declaration, e);
                     }
                 }
+
                 return;
             }
 
             // Tuple = 'tuple value' (such as from callable). Transfer values.
+            var expressions = lhs.Items.OfType<NameExpression>().ToArray();
+            names = expressions.Select(x => x.Name).ToArray();
             if (value is IPythonCollection seq) {
                 var types = seq.Contents.Select(c => c.GetPythonType()).ToArray();
-                var expressions = lhs.Items.OfType<NameExpression>().ToArray();
-                var names = expressions.Select(x => x.Name).ToArray();
-                for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {
-                    if (names[i] != null && types[i] != null) {
-                        var instance = types[i].CreateInstance(null, Eval.GetLoc(expressions[i]), ArgumentSet.Empty);
+                for (var i = 0; i < names.Length; i++) {
+                    IPythonType t = null;
+                    if (types.Length > 0) {
+                        t = i < types.Length ? types[i] : types[types.Length - 1];
+                    }
+
+                    if (names[i] != null && t != null) {
+                        var instance = t.CreateInstance(null, Eval.GetLoc(expressions[i]), ArgumentSet.Empty);
                         Eval.DeclareVariable(names[i], instance, VariableSource.Declaration, expressions[i]);
                     }
+                }
+            } else {
+                foreach (var n in names.ExcludeDefault()) {
+                    Eval.DeclareVariable(n, value, VariableSource.Declaration, rhs);
                 }
             }
         }

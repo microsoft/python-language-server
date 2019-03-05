@@ -280,5 +280,15 @@ x = a[0]
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task IncompleteTuple() {
+            const string code = @"
+a, b = 1
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int);
+        }
     }
 }
