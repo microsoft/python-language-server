@@ -5,26 +5,27 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public class FSubExpressionWithOptions : Expression {
+    public class FormattedValue : Expression {
         private readonly Expression _expr;
         private readonly Expression _formatExpression;
-        private readonly Expression _conversionExpression;
+        private readonly char _conversionExpression;
 
-        public FSubExpressionWithOptions(Expression expr, Expression formatExpression, Expression conversionExpression) {
+        public FormattedValue(Expression expr, char conversion, Expression formatExpression) {
             _expr = expr;
             _formatExpression = formatExpression;
-            _conversionExpression = conversionExpression;
+            _conversionExpression = conversion;
         }
 
         public override IEnumerable<Node> GetChildNodes() {
-            return new[] { _expr, _formatExpression, _conversionExpression };
+            // _conversionExpression ???
+            return new[] { _expr, _formatExpression };
         }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 _expr.Walk(walker);
                 _formatExpression?.Walk(walker);
-                _conversionExpression?.Walk(walker);
+                //_conversionExpression?.Walk(walker);
             }
             walker.PostWalk(this);
         }

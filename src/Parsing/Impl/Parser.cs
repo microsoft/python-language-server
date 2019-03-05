@@ -196,30 +196,23 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        public Expression ParseFStrSubExpr(out Expression formatExpression, out Expression conversionExpression) {
+        public Expression ParseFStrSubExpr() {
             _alwaysAllowContextDependentSyntax = true;
             StartParsing();
 
+            // Yield expressions are allowed
             if (PeekToken(TokenKind.KeywordYield)) {
                 Eat(TokenKind.KeywordYield);
+                // Now it's just a common expression
             }
-            var expr = ParseTestListAsExpr();
 
-            formatExpression = null;
-            conversionExpression = null;
-            if (PeekToken(TokenKind.ExclamationMark)) {
-                Eat(TokenKind.ExclamationMark);
-                MaybeEat(TokenKind.LeftBrace);
-                conversionExpression = ParseTestListAsExpr();
-                MaybeEat(TokenKind.RightBrace);
+            var expr = ParseTestListAsExpr();
+            while (PeekToken(TokenKind.NLToken)) {
+                NextToken();
             }
-            if (PeekToken(TokenKind.Colon)) {
-                Eat(TokenKind.Colon);
-                MaybeEat(TokenKind.LeftBrace);
-                formatExpression = ParseTestListAsExpr();
-                MaybeEat(TokenKind.RightBrace);
+            if (!(_tokenizer.IsEndOfFile || PeekToken(TokenKind.EndOfFile))) {
+                ReportSyntaxError("invalid syntax");
             }
-            // ToDo: Is There more input?
             _alwaysAllowContextDependentSyntax = false;
             return expr;
         }
@@ -327,12 +320,11 @@ namespace Microsoft.Python.Parsing {
             if (_errorCode == 0) {
                 _errorCode = errorCode;
             }
-            _errors.Add(
-                message,
-                _tokenizer.GetLineLocations(),
-                start, end,
+            _errors.Add(message,
+                new SourceSpan(_tokenizer.IndexToLocation(start), _tokenizer.IndexToLocation(end)),
                 errorCode,
-                Severity.Error);
+                Severity.Error
+            );
         }
 
         #endregion
@@ -3164,7 +3156,7 @@ namespace Microsoft.Python.Parsing {
 
             var verbatimWhiteSpaceList = new List<string>();
             var verbatimImagesList = new List<string>();
-            var readTokens = ReadStringTokens(verbatimWhiteSpaceList, verbatimImagesList, out var hasFStrings, 
+            var readTokens = ReadStringTokens(verbatimWhiteSpaceList, verbatimImagesList, out var hasFStrings,
                 out var hasStrings, out var hasAsciiStrings);
 
             if (hasFStrings) {
@@ -3194,47 +3186,33 @@ namespace Microsoft.Python.Parsing {
             hasStrings = false;
             hasAsciiStrings = false;
             while (IsStringToken(t)) {
-                try {
-                    if (t is FStringToken) {
-                        //builder.AddFString((string)t.Value, _tokenizer.IndexToLocation(_lookahead.Span.Start))
-                        if (hasAsciiStrings) {
-                            ReportSyntaxError("cannot mix bytes and nonbytes literals");
-                        }
-
-                        hasFStrings = true;
+                if (t is FStringToken) {
+                    if (hasAsciiStrings) {
+                        ReportSyntaxError("cannot mix bytes and nonbytes literals");
                     }
-                    else if (t.Value is string str) {
-                        if (hasAsciiStrings && _langVersion.Is3x()) {
-                            ReportSyntaxError("cannot mix bytes and nonbytes literals");
-                        }
-
-                        hasStrings = true;
+                    hasFStrings = true;
+                } else if (t.Value is string str) {
+                    if (hasAsciiStrings && _langVersion.Is3x()) {
+                        ReportSyntaxError("cannot mix bytes and nonbytes literals");
                     }
-                    else if (t.Value is AsciiString asciiStr) {
-                        if ((hasStrings && _langVersion.Is3x()) || hasFStrings) {
-                            ReportSyntaxError("cannot mix bytes and nonbytes literals");
-                        }
-
-                        hasAsciiStrings = true;
+                    hasStrings = true;
+                } else if (t.Value is AsciiString asciiStr) {
+                    if ((hasStrings && _langVersion.Is3x()) || hasFStrings) {
+                        ReportSyntaxError("cannot mix bytes and nonbytes literals");
                     }
-                    else {
-                        // invalid state?
-                    }
-
-                    readTokens.Add(_lookahead);
-                    NextToken();
-                    if (_verbatim) {
-                        verbatimWhiteSpaceList.Add(_tokenWhiteSpace);
-                        verbatimImagesList.Add(t.VerbatimImage);
-                    }
-
-                    t = PeekToken();
+                    hasAsciiStrings = true;
+                } else {
+                    // invalid state?
                 }
-                catch (InvalidOperationException ex) {
-                    ReportSyntaxError(ex.Message);
-                    NextToken();
-                    break;
+
+                readTokens.Add(_lookahead);
+                NextToken();
+                if (_verbatim) {
+                    verbatimWhiteSpaceList.Add(_tokenWhiteSpace);
+                    verbatimImagesList.Add(t.VerbatimImage);
                 }
+
+                t = PeekToken();
             }
 
             if (PeekToken(TokenKind.Constant) && !IsStringToken(t)) {
@@ -3253,10 +3231,10 @@ namespace Microsoft.Python.Parsing {
                     strBuilder.Append(asciiString.String);
                     bytes.AddRange(asciiString.Bytes);
                 } else {
-                    
+
                 }
             }
-            
+
             return new ConstantExpression(new AsciiString(bytes.ToArray(), strBuilder.ToString()));
         }
 
@@ -3264,14 +3242,14 @@ namespace Microsoft.Python.Parsing {
             var builder = new StringBuilder();
             foreach (var tokenWithSpan in readTokens) {
                 if (tokenWithSpan.Token.Value is string str) {
-                   builder.Append(str);
+                    builder.Append(str);
                 } else if (tokenWithSpan.Token.Value is AsciiString asciiString) {
                     builder.Append(asciiString.String);
                 } else {
-                    
+
                 }
             }
-            
+
             return new ConstantExpression(builder.ToString());
         }
 
@@ -3279,14 +3257,14 @@ namespace Microsoft.Python.Parsing {
             var builder = new FStringBuilder();
             foreach (var tokenWithSpan in readTokens) {
                 if (tokenWithSpan.Token is FStringToken) {
-                    new FStringParser(builder, (string)tokenWithSpan.Token.Value, _errors, 
-                        _langVersion, _tokenizer.IndexToLocation(_lookahead.Span.Start)).Parse();
+                    new FStringParser(builder, (string)tokenWithSpan.Token.Value, _errors,
+                        _langVersion, _tokenizer.IndexToLocation(tokenWithSpan.Span.Start)).Parse();
                 } else if (tokenWithSpan.Token.Value is string str) {
                     builder.AppendString(str);
                 } else if (tokenWithSpan.Token.Value is AsciiString asciiString) {
                     builder.AppendString(asciiString.String);
                 } else {
-                    
+
                 }
             }
 
