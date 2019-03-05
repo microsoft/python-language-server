@@ -24,8 +24,9 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
-    /// Represents package with child modules. Typically
-    /// used in scenarios such as 'import a.b.c'.
+    /// Module-scoped representation of the module or implicit package
+    /// Contains either module members, members + imported children of explicit package or imported implicit package children
+    /// Instance is unique for each module analysis
     /// </summary>
     internal sealed class PythonVariableModule : IPythonModule, IEquatable<IPythonModule> {
         private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();

@@ -61,7 +61,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     if (!string.IsNullOrEmpty(name)) {
                         switch (statement) {
                             case ImportStatement imp when imp.Names.Any(x => x?.MakeString() == name):
-                            case FromImportStatement fimp when fimp.Names.Any(x => x?.Name == name):
+                            case FromImportStatement fimp when fimp.Root.Names.Any(x => x?.Name == name):
                                 moduleName = name;
                                 break;
                         }
