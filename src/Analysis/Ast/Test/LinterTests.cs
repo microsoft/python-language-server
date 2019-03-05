@@ -126,6 +126,33 @@ def func(a=None, b=True):
         }
 
         [TestMethod, Priority(0)]
+        public async Task FunctionReference() {
+            const string code = @"
+def func1():
+    func2()
+    return
+
+def func2(a=None, b=True): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassReference() {
+            const string code = @"
+class A(B):
+    def __init__(self):
+        x = B()
+        return
+
+class B(): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ForVariables() {
             const string code = @"
 c = {}

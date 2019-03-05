@@ -80,10 +80,12 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             //    y = x
             //    x = 1
             if(m is ILocatedMember lm && lm.Location.DocumentUri == _analysis.Document.Uri) {
-                var span = lm.Location.Span;
-                var nodeLoc = node.GetLocation(_analysis.Document);
-                if (span.IsAfter(nodeLoc.Span)) {
-                    _analysis.ReportUndefinedVariable(node);
+                if (!(m is IPythonFunctionType || m is IPythonClassType)) {
+                    var span = lm.Location.Span;
+                    var nodeLoc = node.GetLocation(_analysis.Document);
+                    if (span.IsAfter(nodeLoc.Span)) {
+                        _analysis.ReportUndefinedVariable(node);
+                    }
                 }
             }
             return false;

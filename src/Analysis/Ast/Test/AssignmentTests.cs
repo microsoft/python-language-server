@@ -156,6 +156,15 @@ x, y, z = 1, 'str', 3.0
         }
 
         [TestMethod, Priority(0)]
+        public async Task TupleUnknownReturn() {
+            const string code = @"
+x, y, z = func()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").And.HaveVariable("y").And.HaveVariable("z");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task AnnotatedAssign() {
             const string code = @"
 x : int = 42
