@@ -111,7 +111,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzed;
             }
             InitializeContent(creationOptions.Content);
-            Log?.Log(TraceEventType.Verbose, $"Created module: {Name} {FilePath}");
         }
 
         #region IPythonType
@@ -386,16 +385,21 @@ namespace Microsoft.Python.Analysis.Modules {
                     _diagnosticsService?.Replace(Uri, _parseErrors);
                 }
 
-                ContentState = State.Analyzing;
-
-                Log?.Log(TraceEventType.Verbose, $"Enqueue: {Name} {FilePath}");
-                var analyzer = Services.GetService<IPythonAnalyzer>();
-                analyzer.EnqueueDocumentForAnalysis(this, ast, version, _allProcessingCts.Token);
-
-                _parsingTask = null;
+                ContentState = State.Parsed;
             }
 
             NewAst?.Invoke(this, EventArgs.Empty);
+
+            if (ContentState < State.Analyzing) {
+                ContentState = State.Analyzing;
+
+                var analyzer = Services.GetService<IPythonAnalyzer>();
+                analyzer.EnqueueDocumentForAnalysis(this, ast, version, _allProcessingCts.Token);
+            }
+
+            lock (AnalysisLock) {
+                _parsingTask = null;
+            }
         }
 
         private class CollectingErrorSink : ErrorSink {
