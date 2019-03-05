@@ -208,7 +208,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             // by design at this time that the app should be restarted.
             interpreter.ModuleResolution.ReloadAsync(cancellationToken).ContinueWith(t => {
                 _log?.Log(TraceEventType.Information, Resources.Done);
-                _log?.Log(TraceEventType.Information, Resources.RestartingAnalysis);
+                _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
                 RestartAnalysis();
             }, cancellationToken).DoNotWait();
 
