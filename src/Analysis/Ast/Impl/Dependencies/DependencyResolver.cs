@@ -19,6 +19,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Threading;
 
@@ -28,7 +29,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private readonly DependencyGraph<TKey, TValue> _vertices = new DependencyGraph<TKey, TValue>();
         private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _changedVertices = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
         private readonly object _syncObj = new object();
-
         public ImmutableArray<TKey> MissingKeys { get; private set; }
 
         public DependencyResolver(IDependencyFinder<TKey, TValue> dependencyFinder) {
@@ -69,6 +69,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             var walkingGraph = CreateWalkingGraph(snapshot, changedVertices);
             var affectedValues = walkingGraph.Select(v => v.DependencyVertex.Value);
+
             var loopsCount = FindLoops(walkingGraph);
             var (startingVertices, totalNodesCount) = ResolveLoops(walkingGraph, loopsCount);
             foreach (var vertex in walkingGraph) {
@@ -84,7 +85,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
                 MissingKeys = missingKeys;
             }
-            
+
             return new DependencyChainWalker(this, startingVertices, affectedValues, missingKeys, totalNodesCount, version);
         }
 
@@ -274,7 +275,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
             }
 
-            public DependencyChainWalker(in DependencyResolver<TKey, TValue> dependencyResolver, in ImmutableArray<WalkingVertex<TKey, TValue>> startingVertices, in ImmutableArray<TValue> affectedValues, in ImmutableArray<TKey> missingKeys, in int totalNodesCount, in int version) {
+            public DependencyChainWalker(
+                in DependencyResolver<TKey, TValue> dependencyResolver,
+                in ImmutableArray<WalkingVertex<TKey, TValue>> startingVertices,
+                in ImmutableArray<TValue> affectedValues,
+                in ImmutableArray<TKey> missingKeys,
+                in int totalNodesCount,
+                in int version) {
+
                 _syncObj = new object();
                 _dependencyResolver = dependencyResolver;
                 _ppc = new PriorityProducerConsumer<IDependencyChainNode<TValue>>();
@@ -318,7 +326,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 if (commitChanges && vertex.SecondPass == null) {
                     _dependencyResolver.CommitChanges(vertex.DependencyVertex);
                 }
-                
+
                 if (isCompleted) {
                     _ppc.Produce(null);
                     _ppc.Dispose();
