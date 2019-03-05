@@ -13,8 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Core.Collections;
+
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
-    public class ModuleImport : IImportSearchResult {
+    public class ModuleImport : IImportSearchResult, IImportChildrenSource {
+        private readonly IImportChildrenSource _childrenSource;
+
         public string Name { get; }
         public string FullName { get; }
         public string RootPath { get; }
@@ -23,7 +27,8 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         public bool IsLibrary { get; }
         public bool IsBuiltin => IsCompiled && ModulePath == null;
 
-        public ModuleImport(string name, string fullName, string rootPath, string modulePath, bool isCompiled, bool isLibrary) {
+        public ModuleImport(IImportChildrenSource childrenSource, string name, string fullName, string rootPath, string modulePath, bool isCompiled, bool isLibrary) {
+            _childrenSource = childrenSource;
             Name = name;
             FullName = fullName;
             RootPath = rootPath;
@@ -31,5 +36,8 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             IsCompiled = isCompiled;
             IsLibrary = isLibrary;
         }
+
+        public ImmutableArray<string> GetChildrenNames() => _childrenSource.GetChildrenNames();
+        public bool TryGetChildImport(string name, out IImportSearchResult child) => _childrenSource.TryGetChildImport(name, out child);
     }
 }
