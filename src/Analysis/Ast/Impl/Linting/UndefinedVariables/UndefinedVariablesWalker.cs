@@ -35,6 +35,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         }
 
         public override bool Walk(CallExpression node) {
+            node.Target?.Walk(_expressionWalker);
             foreach (var arg in node.Args) {
                 arg?.Expression?.Walk(_expressionWalker);
             }

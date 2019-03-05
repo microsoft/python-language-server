@@ -500,5 +500,18 @@ y2 = x.get('oar')(42, [])
             analysis.Should().HaveVariable("y1").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("y2").OfType(BuiltinTypeId.Tuple);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NamedTuple() {
+            const string code = @"
+from collections import namedtuple
+nt = namedtuple('Point', ['x', 'y'])
+pt = nt(1, 2)
+";
+            var analysis = await GetAnalysisAsync(code);
+            var nt = analysis.Should().HaveVariable("nt").Which;
+            nt.Should().HaveType(BuiltinTypeId.Tuple);
+            nt.Should().HaveMembers("x", "y");
+        }
     }
 }

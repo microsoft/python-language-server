@@ -267,8 +267,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 cancellationToken.ThrowIfCancellationRequested();
                 var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
 
-                var linter = new LinterAggregator();
-                linter.Lint(analysis, _services);
+                var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+                if (optionsProvider?.Options?.LintingEnabled != false) {
+                    var linter = new LinterAggregator();
+                    linter.Lint(analysis, _services);
+                }
 
                 (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
                 node.Value.TrySetAnalysis(analysis, version, _syncObj);

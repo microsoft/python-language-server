@@ -17,6 +17,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
@@ -84,11 +85,13 @@ func(x, 1, y+1, z)
 ";
             var analysis = await GetAnalysisAsync(code);
             var d = analysis.Diagnostics.ToArray();
-            d.Should().HaveCount(2);
+            d.Should().HaveCount(3);
             d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
-            d[0].SourceSpan.Should().Be(3, 6, 3, 7);
+            d[0].SourceSpan.Should().Be(3, 1, 3, 5);
             d[1].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
-            d[1].SourceSpan.Should().Be(3, 12, 3, 13);
+            d[1].SourceSpan.Should().Be(3, 6, 3, 7);
+            d[2].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[2].SourceSpan.Should().Be(3, 12, 3, 13);
         }
 
         [TestMethod, Priority(0)]
@@ -182,6 +185,25 @@ class A:
             d.Should().HaveCount(1);
             d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
             d[0].SourceSpan.Should().Be(6, 19, 6, 20);
+        }
+
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task OptionsSwitch(bool enabled) {
+            const string code = @"x = y";
+
+            var sm = CreateServiceManager();
+            var op = new AnalysisOptionsProvider();
+            sm.AddService(op);
+
+            op.Options.LintingEnabled = enabled;
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X, sm);
+            analysis.Diagnostics.Should().HaveCount(enabled ? 1 : 0);
+        }
+
+        private class AnalysisOptionsProvider: IAnalysisOptionsProvider {
+            public AnalysisOptions Options { get; } = new AnalysisOptions();
         }
     }
 }

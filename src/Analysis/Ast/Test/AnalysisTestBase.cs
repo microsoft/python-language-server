@@ -14,16 +14,13 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
-using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -32,7 +29,6 @@ using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
-using Microsoft.Python.Core.Shell;
 using Microsoft.Python.Core.Tests;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
