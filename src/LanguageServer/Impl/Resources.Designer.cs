@@ -70,6 +70,15 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Analysis restarted..
+        /// </summary>
+        internal static string AnalysisRestarted {
+            get {
+                return ResourceManager.GetString("AnalysisRestarted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to done..
         /// </summary>
         internal static string Done {
@@ -174,15 +183,6 @@ namespace Microsoft.Python.LanguageServer {
         internal static string RenameVariable_UnableGetExpressionAnalysis {
             get {
                 return ResourceManager.GetString("RenameVariable_UnableGetExpressionAnalysis", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Analysis restarted..
-        /// </summary>
-        internal static string RestartingAnalysis {
-            get {
-                return ResourceManager.GetString("RestartingAnalysis", resourceCulture);
             }
         }
     }

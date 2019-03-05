@@ -120,6 +120,9 @@
   <data name="AnalysisIsInProgressHover" xml:space="preserve">
     <value>Code analysis is in progress...</value>
   </data>
+  <data name="AnalysisRestarted" xml:space="preserve">
+    <value>Analysis restarted.</value>
+  </data>
   <data name="Done" xml:space="preserve">
     <value>done.</value>
   </data>
@@ -155,8 +158,5 @@
   </data>
   <data name="RenameVariable_UnableGetExpressionAnalysis" xml:space="preserve">
     <value>Unable to get analysis for the selected expression.</value>
-  </data>
-  <data name="RestartingAnalysis" xml:space="preserve">
-    <value>Analysis restarted.</value>
   </data>
 </root>
