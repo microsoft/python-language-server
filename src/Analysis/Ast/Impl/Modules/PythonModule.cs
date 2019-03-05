@@ -235,7 +235,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ContentState < State.Loading) {
                 try {
                     content = content ?? LoadContent();
-                    _buffer.Reset(Version + 1, content);
+                    _buffer.Reset(0, content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }

@@ -157,6 +157,6 @@
     <value>Unable to get analysis for the selected expression.</value>
   </data>
   <data name="RestartingAnalysis" xml:space="preserve">
-    <value>Restarting analysis...</value>
+    <value>Analysis restarted.</value>
   </data>
 </root>

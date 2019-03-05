@@ -178,7 +178,7 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restarting analysis....
+        ///   Looks up a localized string similar to Analysis restarted..
         /// </summary>
         internal static string RestartingAnalysis {
             get {
