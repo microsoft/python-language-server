@@ -65,7 +65,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             lock (_lock) {
                 if (_running && _lastReportedToClient != _lastReportedCount) {
                     _lastReportedToClient = _lastReportedCount;
-                    _progress = _progress ?? _progressService.BeginProgress();
+                    _progress = _progress ?? _progressService?.BeginProgress();
                     if (_lastReportedCount > 0) {
                         _progress?.Report(Resources.AnalysisProgress.FormatUI(_lastReportedCount)).DoNotWait();
                     }

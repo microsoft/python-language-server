@@ -114,19 +114,23 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public void LockDocument(Uri uri) {
+        public int LockDocument(Uri uri) {
             lock (_lock) {
                 if (_documentsByUri.TryGetValue(uri, out var entry)) {
                     entry.LockCount++;
+                    return entry.LockCount;
                 }
+                return -1;
             }
         }
 
-        public void UnlockDocument(Uri uri) {
+        public int UnlockDocument(Uri uri) {
             lock (_lock) {
                 if (_documentsByUri.TryGetValue(uri, out var entry)) {
                     entry.LockCount--;
+                    return entry.LockCount;
                 }
+                return -1;
             }
         }
 

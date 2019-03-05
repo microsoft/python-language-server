@@ -59,13 +59,15 @@ namespace Microsoft.Python.Analysis.Documents {
         /// Increase reference count of the document.
         /// </summary>
         /// <param name="uri"></param>
-        void LockDocument(Uri uri);
+        /// <returns>New lock count or -1 if document was not found.</returns>
+        int LockDocument(Uri uri);
 
         /// <summary>
         /// Decrease reference count of the document.
         /// </summary>
         /// <param name="uri"></param>
-        void UnlockDocument(Uri uri);
+        /// <returns>New lock count or -1 if document was not found.</returns>
+        int UnlockDocument(Uri uri);
 
         /// <summary>
         /// Fires when document is opened.
