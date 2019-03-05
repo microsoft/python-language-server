@@ -48,14 +48,17 @@ import projectA.foo.bar
 import projectB.foo
 import projectB.foo.baz
 
-projectA.";
+projectA.
+projectA.foo.
+projectB.
+projectB.foo.";
 
             var appPath = TestData.GetTestSpecificPath("app.py");
             var root = Path.GetDirectoryName(appPath);
-            var init1Path = Path.Combine(root, "projectA", "foo", "bar", "__init__.py");
-            var init2Path = Path.Combine(root, "projectA", "foo", "__init__.py");
-            var init3Path = Path.Combine(root, "projectB", "foo", "bar", "__init__.py");
-            var init4Path = Path.Combine(root, "projectB", "foo", "__init__.py");
+            var init1Path = Path.Combine(root, "projectA", "foo", "__init__.py");
+            var init2Path = Path.Combine(root, "projectA", "foo", "bar", "__init__.py");
+            var init3Path = Path.Combine(root, "projectB", "foo", "__init__.py");
+            var init4Path = Path.Combine(root, "projectB", "foo", "baz", "__init__.py");
 
             await CreateServicesAsync(PythonVersions.LatestAvailable3X, appPath);
             var rdt = Services.GetService<IRunningDocumentTable>();
@@ -71,6 +74,61 @@ projectA.";
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = cs.GetCompletions(analysis, new SourceLocation(7, 10));
             comps.Should().HaveLabels("foo");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(8, 14));
+            comps.Should().HaveLabels("bar");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(9, 10));
+            comps.Should().HaveLabels("foo");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(10, 14));
+            comps.Should().HaveLabels("baz");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ExplicitImplicitPackageMix2() {
+            const string appCode = @"
+import projectA.foo
+import projectB.foo
+
+from projectA.foo import bar
+from projectB.foo import baz
+
+projectA.
+projectA.foo.
+projectB.
+projectB.foo.";
+
+            var appPath = TestData.GetTestSpecificPath("app.py");
+            var root = Path.GetDirectoryName(appPath);
+            var init1Path = Path.Combine(root, "projectA", "foo", "__init__.py");
+            var init2Path = Path.Combine(root, "projectA", "foo", "bar", "__init__.py");
+            var init3Path = Path.Combine(root, "projectB", "foo", "__init__.py");
+            var init4Path = Path.Combine(root, "projectB", "foo", "baz", "__init__.py");
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X, appPath);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(new Uri(init1Path), string.Empty);
+            rdt.OpenDocument(new Uri(init2Path), string.Empty);
+            rdt.OpenDocument(new Uri(init3Path), string.Empty);
+            rdt.OpenDocument(new Uri(init4Path), string.Empty);
+
+            var doc = rdt.OpenDocument(new Uri(appPath), appCode, appPath);
+            var analysis = await doc.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(8, 10));
+            comps.Should().HaveLabels("foo");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(9, 14));
+            comps.Should().HaveLabels("bar");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(10, 10));
+            comps.Should().HaveLabels("foo");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(11, 14));
+            comps.Should().HaveLabels("baz");
         }
 
         [TestMethod, Priority(0)]
@@ -265,11 +323,10 @@ package.sub_package.module2.";
             comps.Should().HaveLabels("TypeVar", "List", "Dict", "Union");
         }
 
-        [DataRow(@"from package import sub_package; import package.sub_package.module1")]
-        [DataRow(@"import package.sub_package.module1; from package import sub_package")]
+        [DataRow(@"from package import sub_package; import package.sub_package.module")]
+        [DataRow(@"import package.sub_package.module; from package import sub_package")]
         [DataRow(@"from package import sub_package; from package.sub_package import module")]
         [DataRow(@"from package.sub_package import module; from package import sub_package")]
-        [Ignore("Not yet implemented")]
         [TestMethod, Priority(0)]
         public async Task FromImport_ModuleAffectsPackage(string appCodeImport) {
             var appCode1 = appCodeImport + Environment.NewLine + "sub_package.";

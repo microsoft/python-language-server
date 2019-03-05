@@ -15,6 +15,7 @@
 
 using System;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -30,7 +31,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         protected override string LoadContent() {
             // Exceptions are handled in the base
-            return FileSystem.FileExists(FilePath) ? FileSystem.ReadAllText(FilePath) : string.Empty;
+            return FileSystem.FileExists(FilePath) ? FileSystem.ReadTextWithRetry(FilePath) : string.Empty;
         }
 
         protected override string[] GetScrapeArguments(IPythonInterpreter factory) => Array.Empty<string>();

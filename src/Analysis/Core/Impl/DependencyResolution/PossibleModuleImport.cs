@@ -19,13 +19,15 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
     public class PossibleModuleImport : IImportSearchResult {
         public string PossibleModuleFullName { get; }
         public string RootPath { get; }
+        public string PrecedingModuleName { get; }
         public string PrecedingModuleFullName { get; }
         public string PrecedingModulePath { get; }
         public IReadOnlyList<string> RemainingNameParts { get; }
 
-        public PossibleModuleImport(string possibleModuleFullName, string rootPath, string precedingModuleFullName, string precedingModulePath, IReadOnlyList<string> remainingNameParts) {
+        public PossibleModuleImport(string possibleModuleFullName, string rootPath, string precedingModuleName, string precedingModuleFullName, string precedingModulePath, IReadOnlyList<string> remainingNameParts) {
             PossibleModuleFullName = possibleModuleFullName;
             RootPath = rootPath;
+            PrecedingModuleName = precedingModuleName;
             PrecedingModuleFullName = precedingModuleFullName;
             PrecedingModulePath = precedingModulePath;
             RemainingNameParts = remainingNameParts;

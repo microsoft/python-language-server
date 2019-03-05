@@ -339,6 +339,9 @@
   <data name="Analysis_UnknownParameterName" xml:space="preserve">
     <value>Unknown parameter name.</value>
   </data>
+  <data name="AnalysisProgress" xml:space="preserve">
+    <value>Analyzing in background, {0} items left...</value>
+  </data>
   <data name="UndefinedVariable" xml:space="preserve">
     <value>Undefined variable: '{0}'</value>
   </data>

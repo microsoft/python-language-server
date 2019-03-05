@@ -74,8 +74,8 @@ namespace Microsoft.Python.Analysis.Modules {
             Services = services ?? throw new ArgumentNullException(nameof(services));
             ModuleType = moduleType;
 
-            Log = services?.GetService<ILogger>();
-            Interpreter = services?.GetService<IPythonInterpreter>();
+            Log = services.GetService<ILogger>();
+            Interpreter = services.GetService<IPythonInterpreter>();
             Analysis = new EmptyAnalysis(services, this);
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
@@ -212,7 +212,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ContentState < State.Loading) {
                 ContentState = State.Loading;
                 try {
-                    var code = FileSystem.ReadAllText(FilePath);
+                    var code = FileSystem.ReadTextWithRetry(FilePath);
                     ContentState = State.Loaded;
                     return code;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
@@ -235,7 +235,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ContentState < State.Loading) {
                 try {
                     content = content ?? LoadContent();
-                    _buffer.Reset(Version + 1, content);
+                    _buffer.Reset(0, content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
@@ -330,9 +330,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void Reset(string content) {
             lock (AnalysisLock) {
-                if (content != Content || content == null) {
-                    ContentState = State.None;
-                    Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
+                if (content != Content) {
                     InitializeContent(content);
                 }
             }

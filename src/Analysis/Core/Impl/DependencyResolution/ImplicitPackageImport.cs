@@ -13,16 +13,23 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Core.DependencyResolution {
-    public class PackageImport : IImportSearchResult {
-        public string Name { get; }
-        public ModuleImport[] Modules { get; }
-        public string[] Packages { get; }
+using System.Collections.Generic;
+using Microsoft.Python.Core.Collections;
 
-        public PackageImport(string name, ModuleImport[] modules, string[] packages) {
+namespace Microsoft.Python.Analysis.Core.DependencyResolution {
+    public class ImplicitPackageImport : IImportSearchResult, IImportChildrenSource {
+        private readonly IImportChildrenSource _childrenSource;
+
+        public string Name { get; }
+        public string FullName { get; }
+
+        public ImplicitPackageImport(IImportChildrenSource childrenSource, string name, string fullName) {
+            _childrenSource = childrenSource;
             Name = name;
-            Modules = modules;
-            Packages = packages;
+            FullName = fullName;
         }
+
+        public ImmutableArray<string> GetChildrenNames() => _childrenSource.GetChildrenNames();
+        public bool TryGetChildImport(string name, out IImportSearchResult child) => _childrenSource.TryGetChildImport(name, out child);
     }
 }

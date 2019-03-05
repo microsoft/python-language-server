@@ -13,9 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.IO;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// Specialization is helpful when it is easier to express module members
     /// behavior to the analyzer in code. Example of specialization is 'typing'
     /// module. Specialized module can use actual library module as a source
-    /// of documentation for its members. See <see cref="Typing.TypingModule"/>.
+    /// of documentation for its members. See <see cref="TypingModule"/>.
     /// </remarks>
     public abstract class SpecializedModule : PythonModule {
         protected SpecializedModule(string name, string modulePath, IServiceContainer services)
@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         protected override string LoadContent() {
             // Exceptions are handled in the base
-            return FileSystem.FileExists(FilePath) ? FileSystem.ReadAllText(FilePath) : string.Empty;
+            return FileSystem.FileExists(FilePath) ? FileSystem.ReadTextWithRetry(FilePath) : string.Empty;
         }
     }
 }

@@ -115,6 +115,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Analyzing in background, {0} items left....
+        /// </summary>
+        internal static string AnalysisProgress {
+            get {
+                return ResourceManager.GetString("AnalysisProgress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to If checked, statements separated by semicolons are moved onto individual lines. If unchecked, lines with multiple statements are not modified..
         /// </summary>
         internal static string BreakMultipleStatementsPerLineLong {

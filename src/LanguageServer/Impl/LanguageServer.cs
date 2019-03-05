@@ -332,9 +332,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #endregion
 
         #region Extensions
+
         [JsonRpcMethod("python/loadExtension")]
-        public Task LoadExtension(JToken token, CancellationToken cancellationToken)
-            => _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken);
+        public Task LoadExtension(JToken token, CancellationToken cancellationToken) => Task.CompletedTask;
+            //=> _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken);
 
         [JsonRpcMethod("python/extensionCommand")]
         public Task ExtensionCommand(JToken token, CancellationToken cancellationToken)
