@@ -356,7 +356,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                             }
                             break;
                         case FromImportStatement fromImport:
-                            HandleSearchResults(isTypeshed, dependencies, moduleResolution, pathResolver.FindImports(module.FilePath, fromImport));
+                            var imports = pathResolver.FindImports(module.FilePath, fromImport);
+                            HandleSearchResults(isTypeshed, dependencies, moduleResolution, imports);
+                            if (imports is IImportChildrenSource childrenSource) {
+                                foreach (var name in fromImport.Names) {
+                                    if (childrenSource.TryGetChildImport(name.Name, out var childImport)) {
+                                        HandleSearchResults(isTypeshed, dependencies, moduleResolution, childImport);
+                                    }
+                                }
+                            }
                             break;
                     }
                 }
