@@ -253,6 +253,7 @@ namespace Microsoft.Python.Analysis.Modules {
             _diagnosticsService?.Remove(Uri);
             _allProcessingCts.Cancel();
             _allProcessingCts.Dispose();
+            Services.GetService<IPythonAnalyzer>().RemoveAnalysis(this);
         }
         #endregion
 

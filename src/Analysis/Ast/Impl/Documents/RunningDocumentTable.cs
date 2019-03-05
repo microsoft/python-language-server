@@ -21,7 +21,6 @@ using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Documents {
     /// <summary>
@@ -52,6 +51,7 @@ namespace Microsoft.Python.Analysis.Documents {
 
         public event EventHandler<DocumentEventArgs> Opened;
         public event EventHandler<DocumentEventArgs> Closed;
+        public event EventHandler<DocumentEventArgs> Removed;
 
         /// <summary>
         /// Adds file to the list of available documents.
@@ -114,6 +114,23 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
+        public void LockDocument(Uri uri) {
+            lock (_lock) {
+                if (_documentsByUri.TryGetValue(uri, out var entry)) {
+                    entry.LockCount++;
+                }
+            }
+        }
+
+        public void UnlockDocument(Uri uri) {
+            lock (_lock) {
+                if (_documentsByUri.TryGetValue(uri, out var entry)) {
+                    entry.LockCount--;
+                }
+            }
+        }
+
+
         public IEnumerator<IDocument> GetEnumerator() => _documentsByUri.Values.Select(e => e.Document).GetEnumerator();
 
         public void CloseDocument(Uri documentUri) {
@@ -133,9 +150,9 @@ namespace Microsoft.Python.Analysis.Documents {
                     if (entry.LockCount == 0) {
                         _documentsByUri.Remove(documentUri);
                         _documentsByName.Remove(entry.Document.Name);
+                        Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
                         entry.Document.Dispose();
                     }
-                    // TODO: Remove from module resolution?
                 }
             }
             if(justClosed) {

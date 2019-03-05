@@ -34,10 +34,14 @@ using Microsoft.Python.Core.OS;
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
         private readonly ConcurrentDictionary<string, IPythonModule> _specialized = new ConcurrentDictionary<string, IPythonModule>();
+        private readonly IRunningDocumentTable _rdt;
         private IReadOnlyList<string> _searchPaths;
 
         public MainModuleResolution(string root, IServiceContainer services)
-            : base(root, services) { }
+            : base(root, services) {
+            _rdt = _services.GetService<IRunningDocumentTable>();
+            _rdt.Removed += OnDocumentRemoved;
+        }
 
         internal async Task InitializeAsync(CancellationToken cancellationToken = default) {
             // Add names from search paths
@@ -80,11 +84,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return null;
             }
 
-            var rdt = _services.GetService<IRunningDocumentTable>();
             IPythonModule module;
             if (!string.IsNullOrEmpty(moduleImport.ModulePath) && Uri.TryCreate(moduleImport.ModulePath, UriKind.Absolute, out var uri)) {
-                module = rdt.GetDocument(uri);
+                module = _rdt.GetDocument(uri);
                 if (module != null) {
+                    _rdt.LockDocument(uri);
                     return module;
                 }
             }
@@ -117,7 +121,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     FilePath = moduleImport.ModulePath,
                     Stub = stub
                 };
-                module = rdt.AddModule(mco);
+                module = _rdt.AddModule(mco);
             }
 
             return module;
@@ -176,6 +180,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
+            foreach (var m in Modules) {
+                _rdt.UnlockDocument(m.Value.Value.Uri);
+            }
             Modules.Clear();
 
             ModuleCache = new ModuleCache(_interpreter, _services);
@@ -213,5 +220,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             module = !string.IsNullOrEmpty(stubPath) ? new StubPythonModule(name, stubPath, false, _services) : null;
             return module != null;
         }
+
+        private void OnDocumentRemoved(object sender, DocumentEventArgs e) 
+            => PathResolver.RemoveModulePath(e.Document.FilePath);
     }
 }

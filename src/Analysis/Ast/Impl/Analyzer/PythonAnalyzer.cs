@@ -110,6 +110,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
+        public void RemoveAnalysis(IPythonModule module) {
+            lock (_syncObj) {
+                _analysisEntries.Remove(new ModuleKey(module));
+            }
+        }
+
         public void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> dependencies) {
             var key = new ModuleKey(module);
             PythonAnalyzerEntry entry;

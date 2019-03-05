@@ -37,7 +37,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Invalidates current analysis for the module, assuming that AST for the new analysis will be provided later.
         /// </summary>
         void InvalidateAnalysis(IPythonModule module);
-        
+
+        /// <summary>
+        /// Removes modules from the analysis.
+        /// </summary>
+        void RemoveAnalysis(IPythonModule module);
+
         /// <summary>
         /// Get most recent analysis for module. If after specified time analysis isn't available, returns previously calculated analysis.
         /// </summary>
