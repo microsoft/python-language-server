@@ -155,6 +155,21 @@ x = 1
         }
 
         [TestMethod, Priority(0)]
+        public async Task FunctionArguments() {
+            const string code = @"
+def z(x):
+    return x
+
+def func(a, b, c):
+    a = b
+    x = c
+    z(c * 3)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task NonLocal() {
             const string code = @"
 class A:
