@@ -27,7 +27,9 @@ namespace Microsoft.Python.LanguageServer.Services {
         }
 
         public Task NotifyAsync(string targetName, params object[] arguments)
-            => _rpc.NotifyAsync(targetName, arguments);
+            => arguments != null && arguments.Length > 0 
+                ?  _rpc.NotifyAsync(targetName, arguments)
+                :  _rpc.NotifyAsync(targetName);
 
         public Task NotifyWithParameterObjectAsync(string targetName, object argument = null)
             => _rpc.NotifyWithParameterObjectAsync(targetName, argument);

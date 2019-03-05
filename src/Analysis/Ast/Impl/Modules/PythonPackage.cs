@@ -13,40 +13,69 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Concurrent;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
-    /// Represents package with child modules. Typically
-    /// used in scenarios such as 'import a.b.c'.
+    /// Module-scoped representation of the module or implicit package
+    /// Contains either module members, members + imported children of explicit package or imported implicit package children
+    /// Instance is unique for each module analysis
     /// </summary>
-    internal sealed class PythonPackage : PythonModule, IPythonPackage {
-        private readonly ConcurrentDictionary<string, IPythonModule> _childModules = new ConcurrentDictionary<string, IPythonModule>();
+    internal sealed class PythonVariableModule : IPythonModule, IEquatable<IPythonModule> {
+        private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();
 
-        public PythonPackage(string name, IServiceContainer services)
-            : base(name, ModuleType.Package, services) { }
+        public string Name { get; }
+        public IPythonModule Module { get; }
+        public IPythonInterpreter Interpreter { get; }
+        public LocationInfo Location { get; }
 
-        public void AddChildModule(string name, IPythonModule module) {
-            if (!_childModules.ContainsKey(name)) {
-                _childModules[name] = module;
-            }
+        public IDocumentAnalysis Analysis => Module?.Analysis;
+        public IPythonModule DeclaringModule => null;
+        public string Documentation => Module?.Documentation ?? string.Empty;
+        public string FilePath => Module?.FilePath;
+        public bool IsBuiltin => true;
+        public bool IsAbstract => false;
+        public bool IsSpecialized => Module?.IsSpecialized ?? false;
+        public PythonMemberType MemberType => PythonMemberType.Module;
+        public ModuleType ModuleType => Module?.ModuleType ?? ModuleType.Package;
+        public IPythonModule PrimaryModule => null;
+        public IPythonModule Stub => null;
+        public IGlobalScope GlobalScope => Module?.GlobalScope;
+        public BuiltinTypeId TypeId => BuiltinTypeId.Module;
+        public Uri Uri => Module?.Uri;
+
+        public PythonVariableModule(string name, IPythonInterpreter interpreter) {
+            Name = name;
+            Location = LocationInfo.Empty;
+            Interpreter = interpreter;
         }
 
-        public override IEnumerable<string> GetMemberNames() => _childModules.Keys.ToArray();
-        public override IMember GetMember(string name) => _childModules.TryGetValue(name, out var v) ? v : null;
-        public IEnumerable<string> GetChildrenModuleNames() => GetMemberNames();
+        public PythonVariableModule(IPythonModule module) {
+            Name = module.Name;
+            Location = module.Location;
+            Interpreter = module.Interpreter;
 
-        protected override void OnAnalysisComplete() {
-            foreach (var childModuleName in GetChildrenModuleNames()) {
-                var name = $"{Name}.{childModuleName}";
-                Analysis.GlobalScope.DeclareVariable(name, this, VariableSource.Declaration, LocationInfo.Empty);
-            }
-            base.OnAnalysisComplete();
+            Module = module;
         }
+
+        public void AddChildModule(string memberName, PythonVariableModule module) => _children[memberName] = module;
+
+        public IMember GetMember(string name) => Module?.GetMember(name) ?? (_children.TryGetValue(name, out var module) ? module : default);
+        public IEnumerable<string> GetMemberNames() => Module != null ? Module.GetMemberNames().Concat(_children.Keys) : _children.Keys;
+
+        public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
+        public IMember Index(IPythonInstance instance, object index) => Interpreter.UnknownType;
+        public IMember CreateInstance(string typeName = null, LocationInfo location = null, IArgumentSet args = null) => this;
+
+        public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
+
+        public Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException("Can't analyze analysis-only type");
     }
 }
