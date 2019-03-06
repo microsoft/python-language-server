@@ -29,6 +29,8 @@ namespace Microsoft.Python.Parsing {
 
         public ErrorSink ErrorSink { get; set; }
 
+        public SourceLocation? InitialSourceLocation { get; set; }
+
         public Severity IndentationInconsistencySeverity { set; get; }
 
         public bool Verbatim { get; set; } = false;
@@ -58,8 +60,6 @@ namespace Microsoft.Python.Parsing {
         public event EventHandler<CommentEventArgs> ProcessComment;
 
         internal void RaiseProcessComment(object sender, CommentEventArgs e) => ProcessComment?.Invoke(sender, e);
-
-        public SourceLocation? InitialSourceLocation { get; set; }
     }
 
     public class CommentEventArgs : EventArgs {
