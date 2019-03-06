@@ -61,14 +61,17 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             _searchPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
             Debug.Assert(_searchPaths != null, "Should have search paths");
-            _searchPaths = _searchPaths != null
-                ? Configuration.SearchPaths != null
-                    ? _searchPaths.Concat(Configuration.SearchPaths).ToArray()
-                    : _searchPaths
-                : Array.Empty<string>();
+            _searchPaths = _searchPaths ?? Array.Empty<string>();
 
-            _log?.Log(TraceEventType.Information, "SearchPaths:");
+            _log?.Log(TraceEventType.Information, "Python search paths:");
             foreach (var s in _searchPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
+            }
+
+            var configurationSearchPaths = Configuration.SearchPaths ?? Array.Empty<string>();
+
+            _log?.Log(TraceEventType.Information, "Configuration search paths:");
+            foreach (var s in configurationSearchPaths) {
                 _log?.Log(TraceEventType.Information, $"    {s}");
             }
             return _searchPaths;
@@ -191,7 +194,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
             addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(interpreterPaths));
 
-            addedRoots.UnionWith(SetUserSearchPaths(_interpreter.Configuration.SearchPaths));
+            var userSearchPaths = _interpreter.Configuration.SearchPaths.Except(interpreterPaths, StringExtensions.PathsStringComparer);
+            addedRoots.UnionWith(SetUserSearchPaths(userSearchPaths));
             ReloadModulePaths(addedRoots);
         }
 

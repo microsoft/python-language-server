@@ -233,6 +233,20 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             return new ImportNotFound(fullName);
         }
 
+        public bool IsLibraryFile(string filePath) {
+            var directory = filePath;
+            while (true) {
+                directory = Path.GetDirectoryName(directory);
+                if (string.IsNullOrEmpty(directory)) {
+                    break;
+                }
+                if (IsLibraryPath(directory)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private bool TryGetSearchResults(in ImmutableArray<Edge> matchedEdges, out IImportSearchResult searchResult) {
             foreach (var edge in matchedEdges) {
                 if (TryCreateModuleImport(edge, out var moduleImport)) {
@@ -261,7 +275,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                     rootNode.Name,
                     initPyNode.ModulePath,
                     false,
-                    IsLibrary(rootNode.Name));
+                    IsLibraryPath(rootNode.Name));
 
                 return true;
             }
@@ -274,7 +288,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                     rootNode.Name,
                     moduleNode.ModulePath,
                     IsPythonCompiled(moduleNode.ModulePath),
-                    IsLibrary(rootNode.Name));
+                    IsLibraryPath(rootNode.Name));
 
                 return true;
             }
@@ -754,8 +768,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private static bool IsInitPyModule(in Node node, out Node initPyNode)
             => node.TryGetChild("__init__", out initPyNode) && initPyNode.IsModule;
 
-        private bool IsLibrary(string rootPath) 
-            => !_userSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer);
+        private bool IsLibraryPath(string rootPath) 
+            => !_userSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer) 
+               && _interpreterSearchPaths.Except(_userSearchPaths).Contains(rootPath, StringExtensions.PathsStringComparer);
 
         private PathResolverSnapshot ReplaceNonRooted(Node nonRooted)
             => new PathResolverSnapshot(_pythonLanguageVersion, _workDirectory, _userSearchPaths, _interpreterSearchPaths, _roots, _userRootsCount, nonRooted, _builtins, Version + 1);

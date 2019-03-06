@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
 
@@ -65,12 +66,14 @@ namespace Microsoft.Python.Analysis.Documents {
             lock (_lock) {
                 entry = FindDocument(null, uri);
                 if (entry == null) {
+                    var resolver = _services.GetService<IPythonInterpreter>()?.ModuleResolution?.CurrentPathResolver;
+                    var moduleType = resolver?.IsLibraryFile(uri.ToAbsolutePath()) == true ? ModuleType.Library : ModuleType.User;
                     var mco = new ModuleCreationOptions {
                         ModuleName = Path.GetFileNameWithoutExtension(uri.LocalPath),
                         Content = content,
                         FilePath = filePath,
                         Uri = uri,
-                        ModuleType = ModuleType.User
+                        ModuleType = moduleType
                     };
                     entry = CreateDocument(mco);
                 }
