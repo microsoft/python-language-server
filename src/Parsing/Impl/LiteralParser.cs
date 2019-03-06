@@ -42,7 +42,6 @@ namespace Microsoft.Python.Parsing {
             var l = start + length;
             while (i < l) {
                 var ch = text[i++];
-                // We treat formatted strings differently here so that we can detect '\\' inside fstrings
                 if ((!isRaw || isUni) && ch == '\\') {
                     if (buf == null) {
                         buf = new StringBuilder(length);
