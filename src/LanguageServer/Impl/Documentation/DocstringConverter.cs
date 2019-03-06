@@ -237,9 +237,9 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 // Applying this only when i == 0 or i == parts.Length-1 may work.
 
                 // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#hyperlink-references
-                // part = Regex.Replace(part, @"^_+", "", RegexOptions.Singleline | RegexOptions.Compiled);
+                // part = Regex.Replace(part, @"^_+", "");
                 // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#inline-internal-targets
-                // part = Regex.Replace(part, @"_+$", "", RegexOptions.Singleline | RegexOptions.Compiled);
+                // part = Regex.Replace(part, @"_+$", "");
 
                 // TODO: Strip footnote/citation references.
 
