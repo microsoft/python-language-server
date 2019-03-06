@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FString : Expression {
-        public IEnumerable<Node> _children { get; }
+        private readonly IEnumerable<Node> _children;
 
         public FString(IEnumerable<Node> children) {
             _children = children;

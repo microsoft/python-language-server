@@ -6,26 +6,24 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FormattedValue : Expression {
-        private readonly Expression _expr;
-        private readonly Expression _formatExpression;
-        private readonly char? _conversionExpression;
-
-        public FormattedValue(Expression expr, char? conversion, Expression formatExpression) {
-            _expr = expr;
-            _formatExpression = formatExpression;
-            _conversionExpression = conversion;
+        public FormattedValue(Expression value, char? conversion, Expression formatSpecifier) {
+            Value = value;
+            FormatSpecifier = formatSpecifier;
+            Conversion = conversion;
         }
 
+        public Expression Value { get; }
+        public Expression FormatSpecifier { get; }
+        public char? Conversion { get; }
+
         public override IEnumerable<Node> GetChildNodes() {
-            // _conversionExpression ???
-            return new[] { _expr, _formatExpression };
+            return new[] { Value, FormatSpecifier };
         }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                _expr.Walk(walker);
-                _formatExpression?.Walk(walker);
-                //_conversionExpression?.Walk(walker);
+                Value.Walk(walker);
+                FormatSpecifier?.Walk(walker);
             }
             walker.PostWalk(this);
         }
