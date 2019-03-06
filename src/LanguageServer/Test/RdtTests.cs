@@ -121,34 +121,34 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var ds = GetDiagnosticsService();
             PublishDiagnostics();
             ds.Diagnostics.Count.Should().Be(4);
-            ds.Diagnostics[uri].Count.Should().Be(0);
-            ds.Diagnostics[docLc1.Uri].Count.Should().Be(0);
-            ds.Diagnostics[docLc2.Uri].Count.Should().Be(0);
-            ds.Diagnostics[docLc3.Uri].Count.Should().Be(0);
+            ds.Diagnostics[uri].Should().BeEmpty();
+            ds.Diagnostics[docLc1.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
 
             rdt.OpenDocument(docLc1.Uri, null);
             PublishDiagnostics();
-            ds.Diagnostics[uri].Count.Should().Be(0);
+            ds.Diagnostics[uri].Should().BeEmpty();
             ds.Diagnostics[docLc1.Uri].Count.Should().Be(2);
-            ds.Diagnostics[docLc2.Uri].Count.Should().Be(0);
-            ds.Diagnostics[docLc3.Uri].Count.Should().Be(0);
+            ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
 
             rdt.CloseDocument(docLc1.Uri);
             PublishDiagnostics();
-            ds.Diagnostics[uri].Count.Should().Be(0);
-            ds.Diagnostics[docLc1.Uri].Count.Should().Be(0);
-            ds.Diagnostics[docLc2.Uri].Count.Should().Be(0);
-            ds.Diagnostics[docLc3.Uri].Count.Should().Be(0);
+            ds.Diagnostics[uri].Should().BeEmpty();
+            ds.Diagnostics[docLc1.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
 
             rdt.OpenDocument(docLc1.Uri, null);
             var analysis = await docLc1.GetAnalysisAsync(-1);
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);
 
             PublishDiagnostics();
-            ds.Diagnostics[uri].Count.Should().Be(0);
+            ds.Diagnostics[uri].Should().BeEmpty();
             ds.Diagnostics[docLc1.Uri].Count.Should().Be(2);
-            ds.Diagnostics[docLc2.Uri].Count.Should().Be(0);
-            ds.Diagnostics[docLc3.Uri].Count.Should().Be(0);
+            ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
         }
 
 

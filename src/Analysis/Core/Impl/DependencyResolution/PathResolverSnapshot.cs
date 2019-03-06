@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             .Where(n => n.IsModule)
             .Concat(_builtins.Children)
             .Select(n => n.FullModuleName);
-        
+
         public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {
             for (var rootIndex = 0; rootIndex < _roots.Count; rootIndex++) {
                 if (TryFindModuleByName(rootIndex, fullModuleName, out var lastEdge) && TryCreateModuleImport(lastEdge, out var moduleImports)) {
@@ -233,19 +233,8 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             return new ImportNotFound(fullName);
         }
 
-        public bool IsLibraryFile(string filePath) {
-            var directory = filePath;
-            while (true) {
-                directory = Path.GetDirectoryName(directory);
-                if (string.IsNullOrEmpty(directory)) {
-                    break;
-                }
-                if (IsLibraryPath(directory)) {
-                    return true;
-                }
-            }
-            return false;
-        }
+        public bool IsLibraryFile(string filePath)
+            => TryFindModule(filePath, out var edge, out _) && IsLibraryPath(edge.FirstEdge.End.Name);
 
         private bool TryGetSearchResults(in ImmutableArray<Edge> matchedEdges, out IImportSearchResult searchResult) {
             foreach (var edge in matchedEdges) {
@@ -263,7 +252,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             return false;
         }
 
-        private bool TryCreateModuleImport(Edge lastEdge, out ModuleImport moduleImport) { 
+        private bool TryCreateModuleImport(Edge lastEdge, out ModuleImport moduleImport) {
             var moduleNode = lastEdge.End;
             var rootNode = lastEdge.FirstEdge.End;
 
@@ -768,8 +757,8 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private static bool IsInitPyModule(in Node node, out Node initPyNode)
             => node.TryGetChild("__init__", out initPyNode) && initPyNode.IsModule;
 
-        private bool IsLibraryPath(string rootPath) 
-            => !_userSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer) 
+        private bool IsLibraryPath(string rootPath)
+            => !_userSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer)
                && _interpreterSearchPaths.Except(_userSearchPaths).Contains(rootPath, StringExtensions.PathsStringComparer);
 
         private PathResolverSnapshot ReplaceNonRooted(Node nonRooted)
