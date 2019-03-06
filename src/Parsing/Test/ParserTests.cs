@@ -2874,8 +2874,8 @@ namespace Microsoft.Python.Parsing.Tests {
         public void ReportsErrorsUsingLocationOffset() {
             const PythonLanguageVersion version = PythonLanguageVersion.V35;
             var errorSink = new CollectingErrorSink();
-            var code = @"x! + 1
-x! + 1";
+            var code = @"f = pass
+f = pass";
             using (var reader = new StringReader(code)) {
                 var parser = Parser.CreateParser(reader, version, new ParserOptions() {
                     ErrorSink = errorSink,
@@ -2884,8 +2884,8 @@ x! + 1";
                 parser.ParseFile();
             }
             errorSink.Errors.Should().BeEquivalentTo(new[] {
-                new ErrorResult("unexpected token '!'", new SourceSpan(10, 11, 10, 12)),
-                new ErrorResult("unexpected token '!'", new SourceSpan(11, 2, 11, 3))
+                new ErrorResult("unexpected token 'pass'", new SourceSpan(10, 14, 10, 18)),
+                new ErrorResult("unexpected token 'pass'", new SourceSpan(11, 5, 11, 9))
             });
         }
 
