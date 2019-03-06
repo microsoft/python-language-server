@@ -23,6 +23,7 @@ namespace Microsoft.Python.Parsing {
 
         public FStringParser(FStringBuilder builder, string fString, ErrorSink errors, PythonLanguageVersion langVersion,
             SourceLocation start) {
+
             _fString = fString;
             _builder = builder;
             _errors = errors;
@@ -36,10 +37,10 @@ namespace Microsoft.Python.Parsing {
         public void Parse() {
             while (!EndOfFString()) {
                 if (IsNext(doubleOpen)) {
-                    NextChar();
+                    _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
                 } else if (IsNext(doubleClose)) {
-                    NextChar();
+                    _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
                 } else if (CurrentChar() == '{') {
                     AddBufferedSubstring();
@@ -61,41 +62,39 @@ namespace Microsoft.Python.Parsing {
             _builder.AppendExpression(ParseFStringExpression());
         }
 
-        private Expression ParseFStringExpression(int recursLevel = 0) {
-            if (recursLevel >= 2) {
-                ReportSyntaxError("");
-            }
+        private Expression ParseFStringExpression() {
             Debug.Assert(_buffer.Length == 0, "Current buffer is not empty");
+            Read('{');
+            var initialSourceLocation = new SourceLocation(0, _currentLineNumber, _currentColNumber);
 
-            // Called on '{'
-            Debug.Assert(CurrentChar() != '{', "Open brace expected");
-            NextChar();
-
-            int startExprPosition = _position;
-            int startExprLineNumber = _currentLineNumber;
-            int startExprColNumber = _currentColNumber;
-            Stack<char> nestedParens = new Stack<char>();
+            var nestedParens = new Stack<char>();
             var errorReported = false;
-            while (!(EndOfFString())) {
-                char ch = CurrentChar();
+            while (!EndOfFString()) {
+                var ch = CurrentChar();
                 if (nestedParens.Count == 0 && (ch == '}' || ch == '!' || ch == ':')) {
                     // check that it's not a != comparison
                     if (ch != '!' || !IsNext(notEqualStringSpan)) {
                         break;
                     }
                 }
-                errorReported = false;
-
-                if (ch == '#') {
+                if (ch == '\\') {
+                    ReportSyntaxError("f-string expression part cannot include a backslash");
+                    errorReported = true;
+                    _buffer.Append(ch);
+                } else if (ch == '#') {
                     /* Error: can't include a comment character, inside parens
                        or not. */
                     ReportSyntaxError("f-string expression part cannot include '#'");
                     errorReported = true;
+                    _buffer.Append(ch);
                 } else if (ch == ')' || ch == '}') {
                     _buffer.Append(ch);
-                    if (nestedParens.Pop() != ch) {
-                        ReportSyntaxError("");
+                    char opening = nestedParens.Pop();
+                    if (!((opening == '{' && ch == '}') ||
+                        (opening == '(' && ch == ')') ||
+                        (opening == '[' && ch == ']'))) {
                         errorReported = true;
+                        ReportSyntaxError($"f-string: closing parenthesis '{ch}' does not match opening parenthesis '{opening}'");
                     }
                 } else if (ch == '(' || ch == '{') {
                     nestedParens.Push(ch);
@@ -108,30 +107,65 @@ namespace Microsoft.Python.Parsing {
             }
             if (EndOfFString()) {
                 if (nestedParens.Count > 0) {
-                    ReportSyntaxError("");
+                    ReportSyntaxError($"f-string: unmatched {nestedParens.Peek()}");
                 } else {
-                    ReportSyntaxError("");
+                    ReportSyntaxError("f-string: expecting '}'");
                 }
                 return new ErrorExpression(_buffer.ToString(), null);
             }
-            Expression fStringExpression;
-            if (CurrentChar() == '}' || CurrentChar() == '!' || CurrentChar() == ':') {
-
-                string subExprStr = _buffer.ToString();
+            if (errorReported) {
+                var expr = _buffer.ToString();
                 _buffer.Clear();
-                fStringExpression = CreateExpression(subExprStr,
-                        startExprPosition, startExprLineNumber, startExprColNumber);
-
-                if (CurrentChar() == '}') {
-                    return fStringExpression;
-                }
-            } else {
-                // try to recover
-                //return ErrorExpression();
-                return null;
+                Read('}');
+                return new ErrorExpression(expr, null);
             }
-            var conversion = ' ';
+
+            Debug.Assert(CurrentChar() == '}' || CurrentChar() == '!' || CurrentChar() == ':');
+
+            var fStringExpression = CreateExpression(_buffer.ToString(), initialSourceLocation);
+            _buffer.Clear();
+            if (CurrentChar() == '}') {
+                Read('}');
+                return fStringExpression;
+            }
+
+            var conversion = MaybeReadConversionChar();
+            var formatSpecifier = MaybeReadFormatSpecifier();
+            Read('}');
+            return new FormattedValue(fStringExpression, conversion, formatSpecifier);
+        }
+
+        private Expression MaybeReadFormatSpecifier() {
             Expression formatSpecifier = null;
+            if (CurrentChar() == ':') {
+                Read(':');
+                var start = new SourceLocation(_start.Index + _position, _currentLineNumber, _currentColNumber);
+                var openedBraces = 1;
+                Debug.Assert(_buffer.Length == 0);
+                while (!EndOfFString()) {
+                    if (CurrentChar() == '}') {
+                        openedBraces--;
+                        if (openedBraces == 0) {
+                            break;
+                        }
+                    } else if (CurrentChar() == '{') {
+                        openedBraces++;
+                    }
+                    _buffer.Append(NextChar());
+                }
+                if (openedBraces == 0) {
+                    var builder = new FStringBuilder();
+                    new FStringParser(builder, _buffer.ToString(), _errors, _langVersion, start).Parse();
+                    _buffer.Clear();
+                    formatSpecifier = builder.Build();
+                }
+            }
+
+            return formatSpecifier;
+        }
+
+        private char? MaybeReadConversionChar() {
+            char? conversion = null;
             if (CurrentChar() == '!') {
                 Read('!');
                 conversion = NextChar();
@@ -139,29 +173,23 @@ namespace Microsoft.Python.Parsing {
                     ReportSyntaxError($"f-string: invalid conversion character: {conversion} expected 's', 'r', or 'a'");
                 }
             }
-            if (CurrentChar() == ':') {
-                Read(':');
-                var formatBuilder = new FStringBuilder();
-                /*while(!)
-                formatSpecifier = new FStringParser(_builder, )*/
 
-            }
-            return new FormattedValue(fStringExpression, conversion, formatSpecifier);
+            return conversion;
         }
 
-        private Expression CreateExpression(string subExprStr, int startExprPosition, int startExprLineNumber,
-            int startExprColNumber) {
+        private Expression CreateExpression(string subExprStr, SourceLocation initialSourceLocation) {
             if (subExprStr.IsNullOrEmpty()) {
-
+                ReportSyntaxError("f-string: empty expression not allowed");
+                return new ErrorExpression(subExprStr, null);
             }
             var parser = Parser.CreateParser(new StringReader(subExprStr), _langVersion, new ParserOptions() {
                 ErrorSink = _errors,
-                InitialSourceLocation = new SourceLocation(_start.Index + startExprPosition, startExprLineNumber, startExprColNumber)
+                InitialSourceLocation = initialSourceLocation
             });
             var expr = parser.ParseFStrSubExpr();
             if (expr is null) {
                 // Should not happen but just in case
-                ReportSyntaxError("Subexpression failed to parse");
+                ReportSyntaxError("f-string: invalid expression");
                 return new ErrorExpression(subExprStr, null);
             }
             return expr;

@@ -8,9 +8,9 @@ namespace Microsoft.Python.Parsing.Ast {
     public class FormattedValue : Expression {
         private readonly Expression _expr;
         private readonly Expression _formatExpression;
-        private readonly char _conversionExpression;
+        private readonly char? _conversionExpression;
 
-        public FormattedValue(Expression expr, char conversion, Expression formatExpression) {
+        public FormattedValue(Expression expr, char? conversion, Expression formatExpression) {
             _expr = expr;
             _formatExpression = formatExpression;
             _conversionExpression = conversion;

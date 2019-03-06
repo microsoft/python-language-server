@@ -200,19 +200,22 @@ namespace Microsoft.Python.Parsing {
             _alwaysAllowContextDependentSyntax = true;
             StartParsing();
 
-            // Yield expressions are allowed
-            if (PeekToken(TokenKind.KeywordYield)) {
-                Eat(TokenKind.KeywordYield);
-                // Now it's just a common expression
+            while (MaybeEatNewLine() || MaybeEat(TokenKind.Dedent) || MaybeEat(TokenKind.Indent)) {
+                ;
             }
+            if (PeekToken(TokenKind.EndOfFile)) {
+                ReportSyntaxError("Empty expression not allowed");
+                return new ErrorExpression("", null);
+            }
+            // Yield expressions are allowed
+            MaybeEat(TokenKind.KeywordYield);
 
             var expr = ParseTestListAsExpr();
-            while (PeekToken(TokenKind.NLToken)) {
-                NextToken();
+            if (_errorCode == 0) {
+                // Detect if there are unexpected tokens
+                EatEndOfInput();
             }
-            if (!(_tokenizer.IsEndOfFile || PeekToken(TokenKind.EndOfFile))) {
-                ReportSyntaxError("invalid syntax");
-            }
+
             _alwaysAllowContextDependentSyntax = false;
             return expr;
         }

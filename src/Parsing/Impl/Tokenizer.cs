@@ -133,7 +133,7 @@ namespace Microsoft.Python.Parsing {
                 match = ~match - 1;
             }
 
-            return new SourceLocation(index + _initialLocation.Index, match + 2 + _initialLocation.Line - 1, index - _newLineLocations[match].EndIndex + _initialLocation.Column);
+            return new SourceLocation(index + _initialLocation.Index, match + 2 + _initialLocation.Line - 1, index - _newLineLocations[match].EndIndex + 1);
         }
 
         internal ErrorSink ErrorSink {
@@ -1007,7 +1007,7 @@ namespace Microsoft.Python.Parsing {
             if (makeUnicode) {
                 string contents;
                 try {
-                    contents = LiteralParser.ParseString(_buffer, start, length, isRaw, true, !_disableLineFeedLineSeparator);
+                    contents = LiteralParser.ParseString(_buffer, start, length, isRaw, true, isFormatted, !_disableLineFeedLineSeparator);
                 } catch (DecoderFallbackException e) {
                     _errors.Add(e.Message, _newLineLocations.ToArray(), _tokenStartIndex, _tokenEndIndex, ErrorCodes.SyntaxError, Severity.Error);
                     contents = "";
@@ -1784,7 +1784,7 @@ namespace Microsoft.Python.Parsing {
                     if (NextChar('=')) {
                         return Tokens.NotEqualsToken;
                     }
-                    return Tokens.ExclamationMarkToken;
+                    return BadChar(ch);
                 case '(':
                     _state.ParenLevel++;
                     return Tokens.LeftParenthesisToken;

@@ -28,7 +28,6 @@ namespace Microsoft.Python.Parsing {
         Constant = 9,
         Ellipsis = 10,
         Arrow = 11,
-        ExclamationMark = 12,
         Dot = 31,
 
 
@@ -195,7 +194,6 @@ namespace Microsoft.Python.Parsing {
         private static readonly Token symRightBraceToken = new SymbolToken(TokenKind.RightBrace, "}");
         private static readonly Token symCommaToken = new SymbolToken(TokenKind.Comma, ",");
         private static readonly Token symColonToken = new SymbolToken(TokenKind.Colon, ":");
-        private static readonly Token symExclamationMarkToken = new SymbolToken(TokenKind.ExclamationMark, "!");
         private static readonly Token symBackQuoteToken = new SymbolToken(TokenKind.BackQuote, "`");
         private static readonly Token symSemicolonToken = new SymbolToken(TokenKind.Semicolon, ";");
         private static readonly Token symAssignToken = new SymbolToken(TokenKind.Assign, "=");
@@ -365,10 +363,6 @@ namespace Microsoft.Python.Parsing {
 
         public static Token ColonToken {
             get { return symColonToken; }
-        }
-
-        public static Token ExclamationMarkToken {
-            get { return symExclamationMarkToken; }
         }
 
         public static Token BackQuoteToken {

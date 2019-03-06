@@ -54,7 +54,7 @@ namespace Microsoft.Python.Parsing.Tests {
             ast.Walk(new MyPythonWalker(expr => {
                 switch (expr) {
                     case ConstantExpression constExpr:
-                        if (!constExpr.Value.Equals("{bla}")) {
+                        if (!constExpr.Value.Equals("{{bla}}")) {
                             throw new InternalTestFailureException("Internal const expr didn't match substring");
                         }
                         break;
