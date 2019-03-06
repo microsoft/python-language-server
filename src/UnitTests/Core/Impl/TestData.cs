@@ -80,9 +80,11 @@ namespace TestUtilities {
         }
 
         public static Uri GetTestSpecificUri(string relativePath) => new Uri(GetTestSpecificPath(relativePath));
+        public static Uri GetTestSpecificUri(params string[] parts) => new Uri(GetTestSpecificPath(parts));
         public static Uri GetTestSpecificRootUri() => TestRunScopeAsyncLocal.Value.RootUri;
 
         public static string GetTestSpecificPath(string relativePath) => TestRunScopeAsyncLocal.Value.GetTestSpecificPath(relativePath);
+        public static string GetTestSpecificPath(params string[] parts) => TestRunScopeAsyncLocal.Value.GetTestSpecificPath(Path.Combine(parts));
         public static string GetTestRelativePath(Uri uri) => TestRunScopeAsyncLocal.Value.GetTestRelativePath(uri);
         public static string GetDefaultModulePath() => TestRunScopeAsyncLocal.Value.GetDefaultModulePath();
         public static string GetNextModulePath() => TestRunScopeAsyncLocal.Value.GetNextModulePath();

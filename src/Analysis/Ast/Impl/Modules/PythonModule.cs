@@ -149,20 +149,11 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IMemberContainer
         public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
         public virtual IEnumerable<string> GetMemberNames() {
-            // Try __all__ since it contains exported members
-            var all = Analysis.GlobalScope.Variables["__all__"];
-            if (all?.Value is IPythonCollection collection) {
-                return collection.Contents
-                    .OfType<IPythonConstant>()
-                    .Select(c => c.GetString())
-                    .Where(s => !string.IsNullOrEmpty(s));
-            }
+            // TODO: Filter __all__. See: https://github.com/Microsoft/python-language-server/issues/620
 
-            // __all__ is not declared. Try filtering by origin:
-            // drop imported modules and generics.
+            // drop imported modules and typing.
             return Analysis.GlobalScope.Variables
-                .Where(v => v.Value?.MemberType != PythonMemberType.Generic
-                            && !(v.Value?.GetPythonType() is PythonModule)
+                .Where(v => !(v.Value?.GetPythonType() is PythonModule)
                             && !(v.Value?.GetPythonType().DeclaringModule is TypingModule && !(this is TypingModule)))
                 .Select(v => v.Name);
         }
