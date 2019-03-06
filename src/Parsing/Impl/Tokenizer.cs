@@ -991,10 +991,10 @@ namespace Microsoft.Python.Parsing {
 
             MarkTokenEnd();
 
-            return MakeStringToken(quote, isRaw, isUnicode, isBytes, isTriple, isFormatted, _start + startAdd, TokenLength - startAdd - end_add);
+            return MakeStringToken(quote, isRaw, isUnicode, isBytes, isTriple, _start + startAdd, TokenLength - startAdd - end_add);
         }
 
-        private Token MakeStringToken(char quote, bool isRaw, bool isUnicode, bool isBytes, bool isTriple, bool isFormatted, int start, int length) {
+        private Token MakeStringToken(char quote, bool isRaw, bool isUnicode, bool isBytes, bool isTriple, int start, int length) {
             bool makeUnicode;
             if (isUnicode) {
                 makeUnicode = true;
@@ -1007,7 +1007,7 @@ namespace Microsoft.Python.Parsing {
             if (makeUnicode) {
                 string contents;
                 try {
-                    contents = LiteralParser.ParseString(_buffer, start, length, isRaw, true, isFormatted, !_disableLineFeedLineSeparator);
+                    contents = LiteralParser.ParseString(_buffer, start, length, isRaw, true, !_disableLineFeedLineSeparator);
                 } catch (DecoderFallbackException e) {
                     _errors.Add(e.Message, _newLineLocations.ToArray(), _tokenStartIndex, _tokenEndIndex, ErrorCodes.SyntaxError, Severity.Error);
                     contents = "";
