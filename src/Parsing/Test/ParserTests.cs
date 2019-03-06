@@ -2870,6 +2870,25 @@ namespace Microsoft.Python.Parsing.Tests {
         //    Assert.IsFalse(anyErrors, "Errors occurred. See output trace for details.");
         //}
 
+        [TestMethod, Priority(0)]
+        public void ReportsErrorsUsingLocationOffset() {
+            const PythonLanguageVersion version = PythonLanguageVersion.V35;
+            var errorSink = new CollectingErrorSink();
+            var code = @"x! + 1
+x! + 1";
+            using (var reader = new StringReader(code)) {
+                var parser = Parser.CreateParser(reader, version, new ParserOptions() {
+                    ErrorSink = errorSink,
+                    InitialSourceLocation = new SourceLocation(0, 10, 10)
+                });
+                parser.ParseFile();
+            }
+            errorSink.Errors.Should().BeEquivalentTo(new[] {
+                new ErrorResult("unexpected token '!'", new SourceSpan(10, 11, 10, 12)),
+                new ErrorResult("unexpected token '!'", new SourceSpan(11, 2, 11, 3))
+            });
+        }
+
         private static string StdLibWorker(InterpreterConfiguration configuration) {
             var files = new List<string>();
             var version = configuration.Version.ToLanguageVersion();
