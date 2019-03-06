@@ -134,11 +134,11 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-
         public IEnumerator<IDocument> GetEnumerator() => _documentsByUri.Values.Select(e => e.Document).GetEnumerator();
 
         public void CloseDocument(Uri documentUri) {
-            var justClosed = false;
+            var closed = false;
+            var removed = false;
             DocumentEntry entry;
             lock (_lock) {
                 if (_documentsByUri.TryGetValue(documentUri, out entry)) {
@@ -146,7 +146,7 @@ namespace Microsoft.Python.Analysis.Documents {
 
                     if (entry.Document.IsOpen) {
                         entry.Document.IsOpen = false;
-                        justClosed = true;
+                        closed = true;
                     }
 
                     entry.LockCount--;
@@ -154,13 +154,16 @@ namespace Microsoft.Python.Analysis.Documents {
                     if (entry.LockCount == 0) {
                         _documentsByUri.Remove(documentUri);
                         _documentsByName.Remove(entry.Document.Name);
-                        Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
+                        removed = true;
                         entry.Document.Dispose();
                     }
                 }
             }
-            if(justClosed) {
+            if(closed) {
                 Closed?.Invoke(this, new DocumentEventArgs(entry.Document));
+            }
+            if (removed) {
+                Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
             }
         }
 

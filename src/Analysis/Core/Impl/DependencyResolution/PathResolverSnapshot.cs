@@ -754,8 +754,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private static bool IsInitPyModule(in Node node, out Node initPyNode)
             => node.TryGetChild("__init__", out initPyNode) && initPyNode.IsModule;
 
-        private bool IsLibrary(string rootPath)
-            => _interpreterSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer);
+        private bool IsLibrary(string rootPath) 
+            => !_userSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer) 
+               && _interpreterSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer);
 
         private PathResolverSnapshot ReplaceNonRooted(Node nonRooted)
             => new PathResolverSnapshot(_pythonLanguageVersion, _workDirectory, _userSearchPaths, _interpreterSearchPaths, _roots, _userRootsCount, nonRooted, _builtins, Version + 1);
