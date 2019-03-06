@@ -222,15 +222,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return module != null;
         }
 
-        private IRunningDocumentTable GetRdt() {
-            if (_rdt == null) {
-                _rdt = _services.GetService<IRunningDocumentTable>();
-                _rdt.Removed += OnDocumentRemoved;
-            }
-            return _rdt;
-        }
-
-        private void OnDocumentRemoved(object sender, DocumentEventArgs e) 
-            => PathResolver.RemoveModulePath(e.Document.FilePath);
+        private IRunningDocumentTable GetRdt()
+            => _rdt ?? (_rdt = _services.GetService<IRunningDocumentTable>());
     }
 }
