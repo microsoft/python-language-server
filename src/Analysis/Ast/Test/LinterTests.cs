@@ -202,7 +202,17 @@ y = x
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/Microsoft/python-language-server/issues/682")]
+        public async Task AssignmentBeforeAndAfter() {
+            const string code = @"
+x = 1
+y = x
+x = 's'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task AssignmentAfter() {
             const string code = @"
 y = x
@@ -297,6 +307,19 @@ for a, b in enumerate(x):
         pass
     if b:
         pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReassignInLoop() {
+            const string code = @"
+x = {}
+for a, b in enumerate(x):
+    y = a
+    a = b
+    b = 1
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();

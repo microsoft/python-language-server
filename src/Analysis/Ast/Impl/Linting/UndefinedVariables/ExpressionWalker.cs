@@ -14,7 +14,9 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
@@ -71,7 +73,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             if (_additionalNameNodes?.Contains(node) == true) {
                 return false;
             }
-            var m = _analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out _);
+            var m = _analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out var scope);
             if (m == null) {
                 _analysis.ReportUndefinedVariable(node);
             }
@@ -79,20 +81,16 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             // undefined x in 
             //    y = x
             //    x = 1
-            if (m is ILocatedMember lm && lm.Location.DocumentUri == _analysis.Document.Uri) {
+            var v = scope?.Variables[node.Name];
+            if (v != null && v.Location.DocumentUri == _analysis.Document.Uri) {
                 // Do not complain about functions and classes that appear later in the file
-                if (m is IPythonFunctionType || m is IPythonClassType) {
-                    return false;
+                if (!(v.Value is IPythonFunctionType || v.Value is IPythonClassType)) {
+                    var span = v.Locations.First().Span;
+                    var nodeLoc = node.GetLocation(_analysis.Document);
+                    if (span.IsAfter(nodeLoc.Span)) {
+                        _analysis.ReportUndefinedVariable(node);
+                    }
                 }
-                // Since analyzer remembers the last assignment, it may look that the variable
-                // is not defined yet, but we also should look up, perhaps it was defined
-                // earlier and redefined later.
-                // https://github.com/Microsoft/python-language-server/issues/682
-                //var span = lm.Location.Span;
-                //var nodeLoc = node.GetLocation(_analysis.Document);
-                //if (span.IsAfter(nodeLoc.Span)) {
-                //    _analysis.ReportUndefinedVariable(node);
-                //}
             }
             return false;
         }
