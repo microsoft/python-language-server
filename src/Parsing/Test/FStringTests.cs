@@ -23,7 +23,7 @@ namespace Microsoft.Python.Parsing.Tests {
             var ast = parser.ParseFile();
             bool foundFStringExpression = false;
             ast.Walk(new MyPythonWalker(expr => {
-                if (expr is FStringExpression) {
+                if (expr is FString) {
                     foundFStringExpression = true;
                 }
             }));
@@ -69,7 +69,7 @@ namespace Microsoft.Python.Parsing.Tests {
             var found = false;
             ast.Walk(new MyPythonWalker(expr => {
                 switch (expr) {
-                    case FStringExpression fStringExpr:
+                    case FString fStringExpr:
                         if (fStringExpr.GetChildNodes().First() is NameExpression xVarExpr) {
                             xVarExpr.Name.Equals("x").Should().BeTrue();
                             found = true;
@@ -91,8 +91,8 @@ namespace Microsoft.Python.Parsing.Tests {
             var ast = parser.ParseFile();
             ast.Walk(new MyPythonWalker(expr => {
                 switch (expr) {
-                    case FStringExpression outerFstring:
-                        if (outerFstring.GetChildNodes().First() is FStringExpression innerFString) {
+                    case FString outerFstring:
+                        if (outerFstring.GetChildNodes().First() is FString innerFString) {
                             if (outerFstring.GetChildNodes().First() is ConstantExpression constExpr) {
                                 constExpr.Value.Should().BeEquivalentTo("f\"111\"");
                             }
@@ -350,7 +350,7 @@ namespace Microsoft.Python.Parsing.Tests {
             _t = t;
         }
 
-        public override bool Walk(FStringExpression node) {
+        public override bool Walk(FString node) {
             _t(node);
             return true;
         }

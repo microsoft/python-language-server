@@ -124,14 +124,21 @@ namespace Microsoft.Python.Parsing {
         public override string VerbatimImage { get; }
     }
 
-    public class FStringToken : UnicodeStringToken {
-        public FStringToken(object value)
-            : base(value) {
+    public class FStringToken : Token {
+        public FStringToken(string value)
+            : base(TokenKind.FString) {
+            Value = value;
         }
+
+        public object Constant => Value;
+
+        public override object Value { get; }
+
+        public override string Image => Value == null ? "None" : Value.ToString();
     }
 
     public sealed class VerbatimFStringToken : FStringToken {
-        public VerbatimFStringToken(object value, string verbatim)
+        public VerbatimFStringToken(string value, string verbatim)
             : base(value) {
             VerbatimImage = verbatim;
         }

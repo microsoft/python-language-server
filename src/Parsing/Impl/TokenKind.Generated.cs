@@ -28,6 +28,7 @@ namespace Microsoft.Python.Parsing {
         Constant = 9,
         Ellipsis = 10,
         Arrow = 11,
+        FString = 12,
         Dot = 31,
 
 

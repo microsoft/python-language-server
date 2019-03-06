@@ -3105,6 +3105,8 @@ namespace Microsoft.Python.Parsing {
                     }
                     ret.SetLoc(GetStart(), GetEnd());
                     return ret;
+
+                case TokenKind.FString:
                 case TokenKind.Constant:        // literal
                     var start = _lookahead.Span.Start;
                     var cv = t.Value;
@@ -3143,7 +3145,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private bool IsStringToken(Token t) {
-            if (t is FStringToken) {
+            if (t.Kind == TokenKind.FString) {
                 return true;
             } else if (t is ConstantValueToken && (t.Value is string || t.Value is AsciiString)) {
                 return true;
@@ -3189,7 +3191,7 @@ namespace Microsoft.Python.Parsing {
             hasStrings = false;
             hasAsciiStrings = false;
             while (IsStringToken(t)) {
-                if (t is FStringToken) {
+                if (t.Kind == TokenKind.FString) {
                     if (hasAsciiStrings) {
                         ReportSyntaxError("cannot mix bytes and nonbytes literals");
                     }
@@ -3259,7 +3261,7 @@ namespace Microsoft.Python.Parsing {
         private Expression buildFStringExpr(IEnumerable<TokenWithSpan> readTokens) {
             var builder = new FStringBuilder();
             foreach (var tokenWithSpan in readTokens) {
-                if (tokenWithSpan.Token is FStringToken) {
+                if (tokenWithSpan.Token.Kind == TokenKind.FString) {
                     new FStringParser(builder, (string)tokenWithSpan.Token.Value, _errors,
                         _langVersion, _tokenizer.IndexToLocation(tokenWithSpan.Span.Start)).Parse();
                 } else if (tokenWithSpan.Token.Value is string str) {

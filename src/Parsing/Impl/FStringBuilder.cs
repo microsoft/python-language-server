@@ -7,15 +7,15 @@ namespace Microsoft.Python.Parsing {
 
         public FStringBuilder() { }
 
-        public FStringExpression Build() {
-            return new FStringExpression(_children);
+        public FString Build() {
+            return new FString(_children);
         }
 
         public void AppendString(string s) {
             _children.Add(new ConstantExpression(s));
         }
 
-        public void Append(FStringExpression fStr) {
+        public void Append(FString fStr) {
             _children.AddRange(fStr.GetChildNodes());
         }
 
