@@ -77,7 +77,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                 lock (_lock) {
                     return _diagnostics.ToDictionary(
                         kvp => kvp.Key,
-                        kvp => Rdt.GetDocument(kvp.Key)?.IsOpen == true 
+                        kvp => Rdt.GetDocument(kvp.Key)?.IsOpen == true
                             ? FilterBySeverityMap(kvp.Value).ToList() as IReadOnlyList<DiagnosticsEntry>
                             : Array.Empty<DiagnosticsEntry>()
                     );
@@ -228,7 +228,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         }
 
         private void OnCloseDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, false);
-        private void OnRemoveDocument(object sender, DocumentEventArgs e)  => ClearDiagnostics(e.Document.Uri, true);
+        private void OnRemoveDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, true);
 
         private void ClearDiagnostics(Uri uri, bool remove) {
             lock (_lock) {

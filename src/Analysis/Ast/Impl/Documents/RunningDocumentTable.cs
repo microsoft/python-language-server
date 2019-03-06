@@ -159,7 +159,7 @@ namespace Microsoft.Python.Analysis.Documents {
                     }
                 }
             }
-            if(closed) {
+            if (closed) {
                 Closed?.Invoke(this, new DocumentEventArgs(entry.Document));
             }
             if (removed) {
@@ -170,7 +170,7 @@ namespace Microsoft.Python.Analysis.Documents {
         IEnumerator IEnumerable.GetEnumerator() => _documentsByUri.Values.GetEnumerator();
 
         public void Dispose() {
-            lock(_lock) {
+            lock (_lock) {
                 foreach (var d in _documentsByUri.Values.OfType<IDisposable>()) {
                     d.Dispose();
                 }
