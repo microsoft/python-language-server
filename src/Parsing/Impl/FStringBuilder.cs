@@ -11,7 +11,7 @@ namespace Microsoft.Python.Parsing {
             return new FString(_children);
         }
 
-        public void AppendString(string s) {
+        public void Append(string s) {
             _children.Add(new ConstantExpression(s));
         }
 
@@ -19,7 +19,7 @@ namespace Microsoft.Python.Parsing {
             _children.AddRange(fStr.GetChildNodes());
         }
 
-        public void AppendExpression(Expression subExpr) {
+        public void Append(Node subExpr) {
             _children.Add(subExpr);
         }
     }

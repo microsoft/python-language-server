@@ -196,10 +196,11 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        public Expression ParseFStrSubExpr() {
+        public Node ParseFStrSubExpr() {
             _alwaysAllowContextDependentSyntax = true;
             StartParsing();
 
+            // Read empty spaces
             while (MaybeEatNewLine() || MaybeEat(TokenKind.Dedent) || MaybeEat(TokenKind.Indent)) {
                 ;
             }
@@ -208,16 +209,21 @@ namespace Microsoft.Python.Parsing {
                 return new ErrorExpression("", null);
             }
             // Yield expressions are allowed
-            MaybeEat(TokenKind.KeywordYield);
 
-            var expr = ParseTestListAsExpr();
+            Node node = null;
+            if (PeekToken(TokenKind.KeywordYield)) {
+                node = ParseYieldStmt();
+            } else {
+                node = ParseTestListAsExpr();
+            }
+
             if (_errorCode == 0) {
                 // Detect if there are unexpected tokens
                 EatEndOfInput();
             }
 
             _alwaysAllowContextDependentSyntax = false;
-            return expr;
+            return node;
         }
 
         private PythonAst CreateAst(Statement ret) {
@@ -3207,7 +3213,9 @@ namespace Microsoft.Python.Parsing {
                     }
                     hasAsciiStrings = true;
                 } else {
-                    // invalid state?
+                    Debug.Fail("Unhandled string token");
+                    NextToken();
+                    continue;
                 }
 
                 readTokens.Add(_lookahead);
@@ -3235,8 +3243,6 @@ namespace Microsoft.Python.Parsing {
                 if (tokenWithSpan.Token.Value is AsciiString asciiString) {
                     strBuilder.Append(asciiString.String);
                     bytes.AddRange(asciiString.Bytes);
-                } else {
-
                 }
             }
 
@@ -3250,8 +3256,6 @@ namespace Microsoft.Python.Parsing {
                     builder.Append(str);
                 } else if (tokenWithSpan.Token.Value is AsciiString asciiString) {
                     builder.Append(asciiString.String);
-                } else {
-
                 }
             }
 
@@ -3265,11 +3269,9 @@ namespace Microsoft.Python.Parsing {
                     new FStringParser(builder, (string)tokenWithSpan.Token.Value, _errors,
                         _langVersion, _tokenizer.IndexToLocation(tokenWithSpan.Span.Start)).Parse();
                 } else if (tokenWithSpan.Token.Value is string str) {
-                    builder.AppendString(str);
+                    builder.Append(str);
                 } else if (tokenWithSpan.Token.Value is AsciiString asciiString) {
-                    builder.AppendString(asciiString.String);
-                } else {
-
+                    builder.Append(asciiString.String);
                 }
             }
 

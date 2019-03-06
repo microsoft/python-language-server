@@ -59,10 +59,10 @@ namespace Microsoft.Python.Parsing {
             => _fString.Slice(_position, span.Length).Equals(span);
 
         private void ParseInnerExpression() {
-            _builder.AppendExpression(ParseFStringExpression());
+            _builder.Append(ParseFStringExpression());
         }
 
-        private Expression ParseFStringExpression() {
+        private Node ParseFStringExpression() {
             Debug.Assert(_buffer.Length == 0, "Current buffer is not empty");
             Read('{');
             var initialSourceLocation = new SourceLocation(0, _currentLineNumber, _currentColNumber);
@@ -177,7 +177,7 @@ namespace Microsoft.Python.Parsing {
             return conversion;
         }
 
-        private Expression CreateExpression(string subExprStr, SourceLocation initialSourceLocation) {
+        private Node CreateExpression(string subExprStr, SourceLocation initialSourceLocation) {
             if (subExprStr.IsNullOrEmpty()) {
                 ReportSyntaxError("f-string: empty expression not allowed");
                 return new ErrorExpression(subExprStr, null);
@@ -213,7 +213,7 @@ namespace Microsoft.Python.Parsing {
                 return;
             }
             var s = _buffer.ToString();
-            _builder.AppendString(s);
+            _builder.Append(s);
             _buffer.Clear();
         }
 

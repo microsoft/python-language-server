@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FormattedValue : Expression {
-        public FormattedValue(Expression value, char? conversion, Expression formatSpecifier) {
+        public FormattedValue(Node value, char? conversion, Expression formatSpecifier) {
             Value = value;
             FormatSpecifier = formatSpecifier;
             Conversion = conversion;
         }
 
-        public Expression Value { get; }
+        public Node Value { get; }
         public Expression FormatSpecifier { get; }
         public char? Conversion { get; }
 
