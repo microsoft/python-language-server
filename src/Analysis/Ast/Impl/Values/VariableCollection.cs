@@ -20,13 +20,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("Count: {Count}")]
     internal sealed class VariableCollection : IVariableCollection {
         public static readonly IVariableCollection Empty = new VariableCollection();
-        private readonly ConcurrentDictionary<string, IVariable> _variables = new ConcurrentDictionary<string, IVariable>();
+        private readonly ConcurrentDictionary<string, Variable> _variables = new ConcurrentDictionary<string, Variable>();
 
         #region ICollection
         public int Count => _variables.Count;
@@ -37,8 +36,16 @@ namespace Microsoft.Python.Analysis.Values {
         #region IVariableCollection
         public IVariable this[string name] => _variables.TryGetValue(name, out var v) ? v : null;
         public bool Contains(string name) => _variables.ContainsKey(name);
-        public bool TryGetVariable(string key, out IVariable value) => _variables.TryGetValue(key, out value);
         public IReadOnlyList<string> Names => _variables.Keys.ToArray();
+
+        public bool TryGetVariable(string key, out IVariable value) {
+            value = null;
+            if (_variables.TryGetValue(key, out var v)) {
+                value = v;
+                return true;
+            }
+            return false;
+        }
         #endregion
 
         #region IMemberContainer
@@ -48,7 +55,11 @@ namespace Microsoft.Python.Analysis.Values {
 
         internal void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
-            _variables[name] = new Variable(name, value, source, location);
+            if (_variables.TryGetValue(name, out var existing)) {
+                existing.Assign(value, location);
+            } else {
+                _variables[name] = new Variable(name, value, source, location);
+            }
         }
     }
 }

@@ -61,16 +61,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             } else if (scopes.Count >= 2) {
                 if (!options.HasFlag(LookupOptions.Nonlocal)) {
+                    // Remove all scopes except global and current scopes.
                     while (scopes.Count > 2) {
                         scopes.RemoveAt(1);
                     }
                 }
 
                 if (!options.HasFlag(LookupOptions.Local)) {
+                    // Remove local scope.
                     scopes.RemoveAt(0);
                 }
 
                 if (!options.HasFlag(LookupOptions.Global)) {
+                    // Remove global scope.
                     scopes.RemoveAt(scopes.Count - 1);
                 }
             }

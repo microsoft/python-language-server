@@ -66,11 +66,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return false;
         }
 
-        public override bool Walk(ForStatement node) {
-            LoopHandler.HandleFor(node);
-            return base.Walk(node);
-        }
-
+        public override bool Walk(ForStatement node) => LoopHandler.HandleFor(node);
         public override bool Walk(FromImportStatement node) => ImportHandler.HandleFromImport(node);
         public override bool Walk(GlobalStatement node) => NonLocalHandler.HandleGlobal(node);
         public override bool Walk(IfStatement node) => ConditionalHandler.HandleIf(node);

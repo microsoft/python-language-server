@@ -21,26 +21,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class LoopHandler : StatementHandler {
         public LoopHandler(AnalysisWalker walker) : base(walker) { }
 
-        public void HandleFor(ForStatement node) {
+        public bool HandleFor(ForStatement node) {
             var iterable = Eval.GetValueFromExpression(node.List);
             var iterator = (iterable as IPythonIterable)?.GetIterator();
             var value = iterator?.Next ?? Eval.UnknownType;
             switch (node.Left) {
                 case NameExpression nex:
                     // for x in y:
-                    Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, Eval.GetLoc(node.Left));
+                    if (!string.IsNullOrEmpty(nex.Name)) {
+                        Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, Eval.GetLoc(nex));
+                    }
                     break;
                 case TupleExpression tex:
                     // x = [('abc', 42, True), ('abc', 23, False)]
                     // for some_str, some_int, some_bool in x:
-                    var names = tex.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
-                    foreach (var n in names) {
-                        Eval.DeclareVariable(n, value, VariableSource.Declaration, Eval.GetLoc(node.Left));
+                    foreach (var nex in tex.Items.OfType<NameExpression>()) {
+                        if (!string.IsNullOrEmpty(nex.Name)) {
+                            Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, Eval.GetLoc(nex));
+                        }
                     }
                     break;
             }
 
             node.Body?.Walk(Walker);
+            return false;
         }
 
         public void HandleWhile(WhileStatement node) {
