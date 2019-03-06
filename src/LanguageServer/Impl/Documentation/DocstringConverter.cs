@@ -23,8 +23,6 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.LanguageServer.Documentation {
     internal class DocstringConverter {
-        private static readonly string[] PotentialHeaders = new[] { "=", "-", "~", "+" };
-
         /// <summary>
         /// Converts a docstring to a plaintext, human readable form. This will
         /// first strip any common leading indention (like inspect.cleandoc),
@@ -55,7 +53,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         /// <returns>The converted docstring, with Environment.NewLine line endings.</returns>
         public static string ToMarkdown(string docstring) => new DocstringConverter(docstring).Convert();
 
-        private readonly StringBuilder _builder = new StringBuilder();
+        private readonly StringBuilder _builder;
         private bool _skipAppendEmptyLine = true;
         private bool _insideInlineCode = false;
         private bool _appendDirectiveBlock = false;
@@ -79,6 +77,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         private string CurrentLineWithinBlock => CurrentLine.Substring(_blockIndent);
 
         private DocstringConverter(string input) {
+            _builder = new StringBuilder(input.Length);
             _state = ParseText;
             _lines = SplitDocstring(input);
         }
@@ -153,12 +152,28 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             EatLine();
         }
 
+        private static readonly Regex DirectivesExtraNewlineRegex = new Regex(@"^\s*:(param|arg|type|return|rtype|raise|except|var|ivar|cvar|copyright|license)", RegexOptions.Singleline | RegexOptions.Compiled);
+
+        private static readonly (Regex, string)[] PotentialHeaders = new[] {
+            (new Regex(@"^\s*=+(\s+=+)+$", RegexOptions.Singleline | RegexOptions.Compiled), "="),
+            (new Regex(@"^\s*-+(\s+-+)+$", RegexOptions.Singleline | RegexOptions.Compiled), "-"),
+            (new Regex(@"^\s*~+(\s+~+)+$", RegexOptions.Singleline | RegexOptions.Compiled), "~"),
+            (new Regex(@"^\s*\++(\s+\++)+$", RegexOptions.Singleline | RegexOptions.Compiled), "+"),
+        };
+
+        private static readonly Regex WhitespaceRegex = new Regex(@"\s", RegexOptions.Singleline | RegexOptions.Compiled);
+
+        private static readonly Regex TildaHeaderRegex = new Regex(@"^\s*~~~+$", RegexOptions.Singleline | RegexOptions.Compiled);
+        private static readonly Regex PlusHeaderRegex = new Regex(@"^\s*\+\+\++$", RegexOptions.Singleline | RegexOptions.Compiled);
+        private static readonly Regex LeadingAsteriskRegex = new Regex(@"^(\s+\* )(.*)$", RegexOptions.Singleline | RegexOptions.Compiled);
+        private static readonly Regex UnescapedMarkdownCharsRegex = new Regex(@"(?<!\\)([_*~])", RegexOptions.Singleline | RegexOptions.Compiled);
+
         private void AppendTextLine(string line) {
             line = PreprocessTextLine(line);
 
             // Hack: attempt to put directives lines into their own paragraphs.
             // This should be removed once proper list-like parsing is written.
-            if (!_insideInlineCode && Regex.IsMatch(line, @"^\s*:(param|arg|type|return|rtype|raise|except|var|ivar|cvar|copyright|license)")) {
+            if (!_insideInlineCode && DirectivesExtraNewlineRegex.IsMatch(line)) {
                 AppendLine();
             }
 
@@ -181,17 +196,16 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                     // Only one part, and not inside code, so check header cases.
                     if (parts.Length == 1) {
                         // Handle weird separator lines which contain random spaces.
-                        foreach (var h in PotentialHeaders) {
-                            var hEsc = Regex.Escape(h);
-                            if (Regex.IsMatch(part, $"^\\s*{hEsc}+(\\s+{hEsc}+)+$")) {
-                                part = Regex.Replace(part, @"\s", h);
+                        foreach (var (regex, replacement) in PotentialHeaders) {
+                            if (regex.IsMatch(part)) {
+                                part = WhitespaceRegex.Replace(part, replacement);
                                 break;
                             }
                         }
 
                         // Replace ReST style ~~~ header to prevent it being interpreted as a code block
                         // (an alternative in Markdown to triple backtick blocks).
-                        if (Regex.IsMatch(part, @"^\s*~~~+$")) {
+                        if (TildaHeaderRegex.IsMatch(part)) {
                             Append(part.Replace('~', '-'));
                             continue;
                         }
@@ -200,7 +214,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                         // TODO: Handle the rest of these, and the precedence order (which depends on the
                         // order heading lines are seen, not what the line contains).
                         // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#sections
-                        if (Regex.IsMatch(part, @"^\s*\+\+\++$")) {
+                        if (PlusHeaderRegex.IsMatch(part)) {
                             Append(part.Replace('+', '-'));
                             continue;
                         }
@@ -211,7 +225,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                     // TODO: Replace this with real list parsing. This may have
                     // false positives and cause random italics when the ReST list
                     // doesn't match Markdown's specification.
-                    var match = Regex.Match(part, @"^(\s+\* )(.*)$");
+                    var match = LeadingAsteriskRegex.Match(part);
                     if (match.Success) {
                         Append(match.Groups[1].Value);
                         part = match.Groups[2].Value;
@@ -223,14 +237,14 @@ namespace Microsoft.Python.LanguageServer.Documentation {
                 // Applying this only when i == 0 or i == parts.Length-1 may work.
 
                 // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#hyperlink-references
-                // part = Regex.Replace(part, @"^_+", "");
+                // part = Regex.Replace(part, @"^_+", "", RegexOptions.Singleline | RegexOptions.Compiled);
                 // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#inline-internal-targets
-                // part = Regex.Replace(part, @"_+$", "");
+                // part = Regex.Replace(part, @"_+$", "", RegexOptions.Singleline | RegexOptions.Compiled);
 
                 // TODO: Strip footnote/citation references.
 
                 // Escape _, *, and ~, but ignore things like ":param \*\*kwargs:".
-                part = Regex.Replace(part, @"(?<!\\)([_*~])", @"\$1");
+                part = UnescapedMarkdownCharsRegex.Replace(part, @"\$1");
 
                 Append(part);
             }
@@ -242,17 +256,25 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             _builder.AppendLine();
         }
 
+        // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#literal-blocks
+        private static readonly Regex LiteralBlockEmptyRegex = new Regex(@"^\s*::$", RegexOptions.Singleline | RegexOptions.Compiled);
+        private static readonly (Regex, string)[] LiteralBlockReplacements = new[] {
+            (new Regex(@"\s+::$", RegexOptions.Singleline | RegexOptions.Compiled), ""),
+            (new Regex(@"(\S)\s*::$", RegexOptions.Singleline | RegexOptions.Compiled), "$1:"),
+            // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#interpreted-text
+            (new Regex(@":[\w_\-+:.]+:`", RegexOptions.Singleline | RegexOptions.Compiled), "`"),
+            (new Regex(@"`:[\w_\-+:.]+:", RegexOptions.Singleline | RegexOptions.Compiled), "`"),
+        };
+
         private string PreprocessTextLine(string line) {
             // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#literal-blocks
-            if (Regex.IsMatch(line, @"^\s*::$")) {
+            if (LiteralBlockEmptyRegex.IsMatch(line)) {
                 return string.Empty;
             }
-            line = Regex.Replace(line, @"\s+::$", "");
-            line = Regex.Replace(line, @"(\S)\s*::$", "$1:");
 
-            // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#interpreted-text
-            line = Regex.Replace(line, @":[\w_\-+:.]+:`", "`");
-            line = Regex.Replace(line, @"`:[\w_\-+:.]+:", "`");
+            foreach (var (regex, replacement) in LiteralBlockReplacements) {
+                line = regex.Replace(line, replacement);
+            }
 
             line = line.Replace("``", "`");
             return line;
@@ -296,8 +318,10 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             EatLine();
         }
 
+        private static readonly Regex DoctestRegex = new Regex(@" *>>> ", RegexOptions.Singleline | RegexOptions.Compiled);
+
         private bool BeginDoctest() {
-            if (!Regex.IsMatch(CurrentLine, @" *>>> ")) {
+            if (!DoctestRegex.IsMatch(CurrentLine)) {
                 return false;
             }
 
@@ -387,8 +411,10 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             EatLine();
         }
 
+        private static readonly Regex SpaceDotDotRegex = new Regex(@"^\s*\.\. ", RegexOptions.Singleline | RegexOptions.Compiled);
+
         private bool BeginDirective() {
-            if (!Regex.IsMatch(CurrentLine, @"^\s*\.\. ")) {
+            if (!SpaceDotDotRegex.IsMatch(CurrentLine)) {
                 return false;
             }
 
@@ -398,10 +424,12 @@ namespace Microsoft.Python.LanguageServer.Documentation {
             return true;
         }
 
+        private static readonly Regex DirectiveLikeRegex = new Regex(@"^\s*\.\.\s+(\w+)::\s*(.*)$", RegexOptions.Singleline | RegexOptions.Compiled);
+
         private void ParseDirective() {
             // http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#directives
 
-            var match = Regex.Match(CurrentLine, @"^\s*\.\.\s+(\w+)::\s*(.*)$");
+            var match = DirectiveLikeRegex.Match(CurrentLine);
             if (match.Success) {
                 var directiveType = match.Groups[1].Value;
                 var directive = match.Groups[2].Value;
