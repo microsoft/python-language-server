@@ -104,7 +104,7 @@ namespace Microsoft.Python.Parsing {
                     TokenizerOptions.GroupingRecovery |
                     (options.StubFile ? TokenizerOptions.StubFile : 0),
                 (span, text) => options.RaiseProcessComment(parser, new CommentEventArgs(span, text)));
-            tokenizer.Initialize(null, reader, SourceLocation.MinValue);
+            tokenizer.Initialize(null, reader, options.InitialSourceLocation ?? SourceLocation.MinValue);
             tokenizer.IndentationInconsistencySeverity = options.IndentationInconsistencySeverity;
 
             parser = new Parser(
@@ -299,12 +299,11 @@ namespace Microsoft.Python.Parsing {
             if (_errorCode == 0) {
                 _errorCode = errorCode;
             }
-            _errors.Add(
-                message,
-                _tokenizer.GetLineLocations(),
-                start, end,
+            _errors.Add(message,
+                new SourceSpan(_tokenizer.IndexToLocation(start), _tokenizer.IndexToLocation(end)),
                 errorCode,
-                Severity.Error);
+                Severity.Error
+            );
         }
 
         #endregion
