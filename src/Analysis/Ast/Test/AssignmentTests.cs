@@ -280,58 +280,5 @@ x = a[0]
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
-
-        [TestMethod, Priority(0)]
-        public async Task Locations() {
-            const string code = @"
-a = 1
-a = 2
-
-for x in y:
-    a = 3
-
-if True:
-    a = 4
-elif False:
-    a = 5
-else:
-    a = 6
-
-def func():
-    a = 0
-
-def func(a):
-    a = 0
-
-def func():
-    global a
-    a = 7
-
-class A:
-    a: int
-
-def outer():
-    b = 1
-    def inner():
-        nonlocal b
-        b = 2
-";
-            var analysis = await GetAnalysisAsync(code);
-            var a = analysis.Should().HaveVariable("a").Which;
-            a.Locations.Should().HaveCount(7);
-            a.Locations[0].Span.Should().Be(2, 1, 2, 2);
-            a.Locations[1].Span.Should().Be(3, 1, 3, 2);
-            a.Locations[2].Span.Should().Be(6, 5, 6, 6);
-            a.Locations[3].Span.Should().Be(9, 5, 9, 6);
-            a.Locations[4].Span.Should().Be(11, 5, 11, 6);
-            a.Locations[5].Span.Should().Be(13, 5, 13, 6);
-            a.Locations[6].Span.Should().Be(23, 5, 23, 6);
-
-            var outer = analysis.Should().HaveFunction("outer").Which;
-            var b = outer.Should().HaveVariable("b").Which;
-            b.Locations.Should().HaveCount(2);
-            b.Locations[0].Span.Should().Be(29, 5, 29, 6);
-            b.Locations[1].Span.Should().Be(32, 9, 32, 10);
-        }
     }
 }
