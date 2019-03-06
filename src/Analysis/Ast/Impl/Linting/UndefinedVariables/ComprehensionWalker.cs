@@ -42,6 +42,12 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             return false;
         }
 
+        public override bool Walk(ForStatement node) {
+            var nc = new NameCollectorWalker(_names, _additionalNameNodes);
+            node.Left?.Walk(nc);
+            return true;
+        }
+
         public override bool Walk(DictionaryComprehension node) {
             CollectNames(node);
             node.Key?.Walk(new ExpressionWalker(_analysis, _names, _additionalNameNodes));
@@ -65,25 +71,6 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             item?.Walk(new ExpressionWalker(_analysis, _names, _additionalNameNodes));
             foreach (var iter in iterators) {
                 iter.Walk(new ExpressionWalker(_analysis, null, _additionalNameNodes));
-            }
-        }
-
-        private sealed class NameCollectorWalker : PythonWalker {
-            private readonly HashSet<string> _names;
-            private readonly HashSet<NameExpression> _additionalNameNodes;
-
-            public NameCollectorWalker(HashSet<string> names, HashSet<NameExpression> additionalNameNodes) {
-                _names = names;
-                _additionalNameNodes = additionalNameNodes;
-            }
-
-            public override bool Walk(NameExpression nex) {
-                if (!string.IsNullOrEmpty(nex.Name)) {
-                    _names.Add(nex.Name);
-                    _additionalNameNodes.Add(nex);
-                }
-
-                return false;
             }
         }
     }

@@ -202,6 +202,7 @@ y = x
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/Microsoft/python-language-server/issues/682")]
         public async Task AssignmentAfter() {
             const string code = @"
 y = x
@@ -282,6 +283,20 @@ class A:
             const string code = @"
 print(1)
 abs(3)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Enumeration() {
+            const string code = @"
+x = {}
+for a, b in enumerate(x):
+    if a:
+        pass
+    if b:
+        pass
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();

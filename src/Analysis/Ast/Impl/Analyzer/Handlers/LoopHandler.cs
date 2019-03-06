@@ -24,11 +24,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         public void HandleFor(ForStatement node) {
             var iterable = Eval.GetValueFromExpression(node.List);
             var iterator = (iterable as IPythonIterable)?.GetIterator();
-            if (iterator == null) {
-                // TODO: report that expression does not evaluate to iterable.
-            }
             var value = iterator?.Next ?? Eval.UnknownType;
-
             switch (node.Left) {
                 case NameExpression nex:
                     // for x in y:
@@ -38,13 +34,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     // x = [('abc', 42, True), ('abc', 23, False)]
                     // for some_str, some_int, some_bool in x:
                     var names = tex.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
-                    if (value is IPythonIterable valueIterable) {
-                        var valueIterator = valueIterable.GetIterator();
-                        foreach (var n in names) {
-                            Eval.DeclareVariable(n, valueIterator?.Next ?? Eval.UnknownType, VariableSource.Declaration, Eval.GetLoc(node.Left));
-                        }
-                    } else {
-                        // TODO: report that expression yields value that does not evaluate to iterable.
+                    foreach (var n in names) {
+                        Eval.DeclareVariable(n, value, VariableSource.Declaration, Eval.GetLoc(node.Left));
                     }
                     break;
             }
