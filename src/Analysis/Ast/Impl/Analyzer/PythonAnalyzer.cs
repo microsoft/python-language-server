@@ -155,20 +155,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
             AnalyzeDocumentAsync(key, entry, version, cancellationToken).DoNotWait();
         }
 
-        private async Task AnalyzeDocumentAsync(ModuleKey key, PythonAnalyzerEntry entry, int version, CancellationToken cancellationToken) {
+        private async Task AnalyzeDocumentAsync(ModuleKey key, PythonAnalyzerEntry entry, int entryVersion, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
             _progress?.ReportRemaining();
 
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, cancellationToken)) {
                 var analysisToken = cts.Token;
-                if (!TryFindDependencies(entry, version, analysisToken, out var dependencies)) {
+                if (!TryFindDependencies(entry, entryVersion, analysisToken, out var dependencies)) {
+                    return;
+                }
+
+                if (entry.AnalysisVersion > entryVersion) {
                     return;
                 }
 
                 var walker = _dependencyResolver.NotifyChanges(key, entry, dependencies);
-                _progress?.ReportRemaining(walker.AffectedValues.Count);
-                var stopOnVersionChange = true;
                 lock (_syncObj) {
                     if (_version > walker.Version) {
                         return;
@@ -177,6 +179,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     _version = walker.Version;
                 }
 
+
+                var stopOnVersionChange = true;
+                _progress?.ReportRemaining(walker.AffectedValues.Count);
                 if (walker.MissingKeys.Count > 0) {
                     LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
                 }
@@ -272,6 +277,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var entry = node.Value;
                 if (!entry.IsValidVersion(version, out var module, out var ast)) {
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+                    node.Skip();
                     return;
                 }
 
