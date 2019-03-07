@@ -286,17 +286,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 entry.TrySetAnalysis(analysis, version);
                 node.Commit();
 
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) is completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
             } catch (OperationCanceledException oce) {
                 node.Value.TryCancel(oce, version);
                 node.Skip();
                 var module = node.Value.Module;
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) is canceled.");
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
             } catch (Exception exception) {
                 var module = node.Value.Module;
                 node.Value.TrySetException(exception, version);
                 node.Commit();
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) has failed.");
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
             } finally {
                 Interlocked.Decrement(ref _runningTasks);
             }
