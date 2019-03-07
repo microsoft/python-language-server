@@ -92,7 +92,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             lock (_syncObj) {
                 module = _module;
                 ast = _ast;
-                return _analysisVersion <= version;
+                return _previousAnalysis is EmptyAnalysis || _analysisVersion <= version;
             }
         }
 
