@@ -40,14 +40,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public PythonAst Ast {
-            get {
-                lock (_syncObj) {
-                    return _ast;
-                }
-            }
-        }
-
         public IDocumentAnalysis PreviousAnalysis {
             get {
                 lock (_syncObj) {
@@ -96,6 +88,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken) 
             => _analysisTcs.Task.ContinueWith(t => t.GetAwaiter().GetResult(), cancellationToken);
 
+        public bool IsValidVersion(int version, out IPythonModule module, out PythonAst ast) {
+            lock (_syncObj) {
+                module = _module;
+                ast = _ast;
+                return _analysisVersion <= version;
+            }
+        }
+
         public void TrySetAnalysis(IDocumentAnalysis analysis, int version) {
             lock (_syncObj) {
                 if (_previousAnalysis is EmptyAnalysis) {
@@ -137,7 +137,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analysisTcs.TrySetCanceled(oce.CancellationToken);
         }
 
-        public void Invalidate(int analysisVersion) => Invalidate(_ast, _bufferVersion, analysisVersion);
+        public void Invalidate(int analysisVersion) {
+            lock (_syncObj) {
+                if (_analysisVersion >= analysisVersion) {
+                    return;
+                }
+
+                UpdateAnalysisTcs(analysisVersion);
+            }
+        }
 
         public void Invalidate(ImmutableArray<IPythonModule> dependencies, int analysisVersion) {
             lock (_syncObj) {
@@ -150,13 +158,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public void Invalidate(PythonAst ast, int bufferVersion, int analysisVersion) {
+        public void Invalidate(IPythonModule module, PythonAst ast, int bufferVersion, int analysisVersion) {
             lock (_syncObj) {
                 if (_analysisVersion >= analysisVersion && _bufferVersion >= bufferVersion) {
                     return;
                 }
 
                 _ast = ast;
+                _module = module;
                 _bufferVersion = bufferVersion;
 
                 UpdateAnalysisTcs(analysisVersion);

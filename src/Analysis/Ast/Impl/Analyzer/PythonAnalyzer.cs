@@ -113,6 +113,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> dependencies) {
             var key = new ModuleKey(module);
             PythonAnalyzerEntry entry;
+            int version;
             lock (_syncObj) {
                 if (!_analysisEntries.TryGetValue(key, out entry)) {
                     return;
@@ -123,10 +124,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return;
                 }
 
-                entry.Invalidate(significantDependencies, _version + 1);
+                version = _version + 1;
+                entry.Invalidate(significantDependencies, version);
             }
 
-            AnalyzeDocumentAsync(key, entry, default).DoNotWait();
+            AnalyzeDocumentAsync(key, entry, version, default).DoNotWait();
 
             bool IsSignificant(IPythonModule m)
                 => m != entry.Module && ((m.ModuleType == ModuleType.User && m.Analysis.Version < entry.AnalysisVersion) || m.Analysis is EmptyAnalysis);
@@ -135,30 +137,32 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int bufferVersion, CancellationToken cancellationToken) {
             var key = new ModuleKey(module);
             PythonAnalyzerEntry entry;
+            int version;
             lock (_syncObj) {
+                version = _version + 1;
                 if (_analysisEntries.TryGetValue(key, out entry)) {
                     if (entry.BufferVersion >= bufferVersion) {
                         return;
                     }
 
-                    entry.Invalidate(ast, bufferVersion, _version + 1);
+                    entry.Invalidate(module, ast, bufferVersion, version);
                 } else {
-                    entry = new PythonAnalyzerEntry(module, ast, new EmptyAnalysis(_services, (IDocument)module), bufferVersion, _version + 1);
+                    entry = new PythonAnalyzerEntry(module, ast, new EmptyAnalysis(_services, (IDocument)module), bufferVersion, version);
                     _analysisEntries[key] = entry;
                 }
             }
 
-            AnalyzeDocumentAsync(key, entry, cancellationToken).DoNotWait();
+            AnalyzeDocumentAsync(key, entry, version, cancellationToken).DoNotWait();
         }
 
-        private async Task AnalyzeDocumentAsync(ModuleKey key, PythonAnalyzerEntry entry, CancellationToken cancellationToken) {
+        private async Task AnalyzeDocumentAsync(ModuleKey key, PythonAnalyzerEntry entry, int version, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
             _progress?.ReportRemaining();
 
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, cancellationToken)) {
                 var analysisToken = cts.Token;
-                if (!TryFindDependencies(entry, analysisToken, out var dependencies)) {
+                if (!TryFindDependencies(entry, version, analysisToken, out var dependencies)) {
                     return;
                 }
 
@@ -265,10 +269,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken) {
             try {
-                var startTime = stopWatch.Elapsed;
                 var entry = node.Value;
-                var module = entry.Module;
-                var ast = entry.Ast;
+                if (!entry.IsValidVersion(version, out var module, out var ast)) {
+                    _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+                    return;
+                }
+
+                var startTime = stopWatch.Elapsed;
 
                 // Now run the analysis.
                 var walker = new ModuleWalker(_services, module, ast);
@@ -302,9 +309,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private bool TryFindDependencies(PythonAnalyzerEntry value, CancellationToken cancellationToken, out ImmutableArray<ModuleKey> dependencies) {
+        private bool TryFindDependencies(PythonAnalyzerEntry entry, int version, CancellationToken cancellationToken, out ImmutableArray<ModuleKey> dependencies) {
+            IPythonModule module;
+            PythonAst ast;
+            lock (_syncObj) {
+                if (!entry.IsValidVersion(version, out module, out ast)) {
+                    dependencies = ImmutableArray<ModuleKey>.Empty;
+                    return false;
+                }
+            }
+
             var dependenciesHashSet = new HashSet<ModuleKey>();
-            var module = value.Module;
             var isTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
             var moduleResolution = module.Interpreter.ModuleResolution;
             var pathResolver = isTypeshed
@@ -315,11 +330,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 dependenciesHashSet.Add(new ModuleKey(module.Stub));
             }
 
-            foreach (var dependency in value.AnalysisDependencies) {
+            foreach (var dependency in entry.AnalysisDependencies) {
                 dependenciesHashSet.Add(new ModuleKey(dependency));
             }
 
-            foreach (var node in value.Ast.TraverseDepthFirst<Node>(n => n.GetChildNodes())) {
+            foreach (var node in ast.TraverseDepthFirst<Node>(n => n.GetChildNodes())) {
                 if (cancellationToken.IsCancellationRequested) {
                     dependencies = ImmutableArray<ModuleKey>.Empty;
                     return false;
@@ -345,7 +360,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            dependenciesHashSet.Remove(new ModuleKey(value.Module));
+            dependenciesHashSet.Remove(new ModuleKey(entry.Module));
             dependencies = ImmutableArray<ModuleKey>.Create(dependenciesHashSet);
             return true;
         }
