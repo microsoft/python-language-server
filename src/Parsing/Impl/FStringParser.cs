@@ -46,7 +46,7 @@ namespace Microsoft.Python.Parsing {
                     AddBufferedSubstring();
                     ParseInnerExpression();
                 } else if (CurrentChar() == '}') {
-                    ReportSyntaxError("f-string: single '}' is not allowed");
+                    ReportSyntaxError(Resources.SingleClosedBraceFStringErrorMsg);
                     _buffer.Append(NextChar());
                 } else {
                     _buffer.Append(NextChar());
@@ -78,13 +78,11 @@ namespace Microsoft.Python.Parsing {
                     }
                 }
                 if (ch == '\\') {
-                    ReportSyntaxError("f-string expression part cannot include a backslash");
+                    ReportSyntaxError(Resources.BackslashFStringExpressionErrorMsg);
                     errorReported = true;
                     _buffer.Append(ch);
                 } else if (ch == '#') {
-                    /* Error: can't include a comment character, inside parens
-                       or not. */
-                    ReportSyntaxError("f-string expression part cannot include '#'");
+                    ReportSyntaxError(Resources.NumberSignFStringExpressionErrorMsg);
                     errorReported = true;
                     _buffer.Append(ch);
                 } else if (ch == ')' || ch == '}') {
@@ -94,7 +92,7 @@ namespace Microsoft.Python.Parsing {
                         (opening == '(' && ch == ')') ||
                         (opening == '[' && ch == ']'))) {
                         errorReported = true;
-                        ReportSyntaxError($"f-string: closing parenthesis '{ch}' does not match opening parenthesis '{opening}'");
+                        ReportSyntaxError(Resources.ClosingParensNotMatchFStringErrorMsg.FormatInvariant(ch, opening));
                     }
                 } else if (ch == '(' || ch == '{') {
                     nestedParens.Push(ch);
@@ -107,9 +105,9 @@ namespace Microsoft.Python.Parsing {
             }
             if (EndOfFString()) {
                 if (nestedParens.Count > 0) {
-                    ReportSyntaxError($"f-string: unmatched {nestedParens.Peek()}");
+                    ReportSyntaxError(Resources.UnmatchedFStringErrorMsg.FormatInvariant(nestedParens.Peek()));
                 } else {
-                    ReportSyntaxError("f-string: expecting '}'");
+                    ReportSyntaxError(Resources.ExpectingCharFStringErrorMsg.FormatInvariant('}'));
                 }
                 return new ErrorExpression(_buffer.ToString(), null);
             }
@@ -170,7 +168,7 @@ namespace Microsoft.Python.Parsing {
                 Read('!');
                 conversion = NextChar();
                 if (!(conversion == 's' || conversion == 'r' || conversion == 'a')) {
-                    ReportSyntaxError($"f-string: invalid conversion character: {conversion} expected 's', 'r', or 'a'");
+                    ReportSyntaxError(Resources.InvalidConversionCharacterFStringErrorMsg.FormatInvariant(conversion));
                 }
             }
 
@@ -179,7 +177,7 @@ namespace Microsoft.Python.Parsing {
 
         private Node CreateExpression(string subExprStr, SourceLocation initialSourceLocation) {
             if (subExprStr.IsNullOrEmpty()) {
-                ReportSyntaxError("f-string: empty expression not allowed");
+                ReportSyntaxError(Resources.EmptyExpressionFStringErrorMsg);
                 return new ErrorExpression(subExprStr, null);
             }
             var parser = Parser.CreateParser(new StringReader(subExprStr), _langVersion, new ParserOptions() {
@@ -189,7 +187,7 @@ namespace Microsoft.Python.Parsing {
             var expr = parser.ParseFStrSubExpr();
             if (expr is null) {
                 // Should not happen but just in case
-                ReportSyntaxError("f-string: invalid expression");
+                ReportSyntaxError(Resources.InvalidExpressionFStringErrorMsg);
                 return new ErrorExpression(subExprStr, null);
             }
             return expr;
@@ -197,14 +195,16 @@ namespace Microsoft.Python.Parsing {
 
         private bool Read(char nextChar) {
             if (EndOfFString()) {
-                ReportSyntaxError($"f-string: expecting '{nextChar}'");
+                ReportSyntaxError(Resources.ExpectingCharFStringErrorMsg.FormatInvariant(nextChar));
                 return false;
             }
-            if (CurrentChar() != nextChar) {
-                ReportSyntaxError($"f-string: expecting '{nextChar}' but found '{CurrentChar()}'");
-                return false;
-            }
+            char ch = CurrentChar();
             NextChar();
+
+            if (ch != nextChar) {
+                ReportSyntaxError(Resources.ExpectingCharButFoundFStringErrorMsg.FormatInvariant(nextChar, CurrentChar()));
+                return false;
+            }
             return true;
         }
 

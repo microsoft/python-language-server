@@ -205,7 +205,7 @@ namespace Microsoft.Python.Parsing {
                 ;
             }
             if (PeekToken(TokenKind.EndOfFile)) {
-                ReportSyntaxError("Empty expression not allowed");
+                ReportSyntaxError(Resources.EmptyExpressionFStringErrorMsg);
                 return new ErrorExpression("", null);
             }
             // Yield expressions are allowed
