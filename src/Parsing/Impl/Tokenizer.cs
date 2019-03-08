@@ -1015,9 +1015,9 @@ namespace Microsoft.Python.Parsing {
 
                 if (isFormatted) {
                     if (Verbatim) {
-                        return new VerbatimFStringToken(contents, GetTokenString());
+                        return new VerbatimFStringToken(contents, quote, isTriple, GetTokenString());
                     } else {
-                        return new FStringToken(contents);
+                        return new FStringToken(contents, quote, isTriple);
                     }
                 } else {
                     if (Verbatim) {
@@ -2197,7 +2197,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private void ReportSyntaxError(IndexSpan span, string message, int errorCode)
-            => _errors.Add(message, _newLineLocations.ToArray(), span.Start, span.End, errorCode, Severity.Error);
+            => _errors.Add(message, IndexToLocation(span.Start), IndexToLocation(span.End), errorCode, Severity.Error);
 
         [Conditional("DUMP_TOKENS")]
         private static void DumpToken(Token token)

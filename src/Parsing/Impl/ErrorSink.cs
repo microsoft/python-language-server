@@ -27,6 +27,13 @@ namespace Microsoft.Python.Parsing {
                 severity
             );
 
+        internal void Add(string message, SourceLocation startSourceLoc, SourceLocation endSourceLoc, int errorCode, Severity severity) => Add(
+                message,
+                new SourceSpan(startSourceLoc, endSourceLoc),
+                errorCode,
+                severity
+            );
+
         public virtual void Add(string message, SourceSpan span, int errorCode, Severity severity) {
         }
     }

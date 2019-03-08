@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FormattedValue : Expression {
-        public FormattedValue(Node value, char? conversion, Expression formatSpecifier) {
+        public FormattedValue(Expression value, char? conversion, Expression formatSpecifier) {
             Value = value;
             FormatSpecifier = formatSpecifier;
             Conversion = conversion;
         }
 
-        public Node Value { get; }
+        public Expression Value { get; }
         public Expression FormatSpecifier { get; }
         public char? Conversion { get; }
 
@@ -33,7 +33,17 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            throw new NotImplementedException();
+            res.Append('{');
+            Value.AppendCodeString(res, ast, format);
+            if (Conversion.HasValue) {
+                res.Append('!');
+                res.Append(Conversion.Value);
+            }
+            if (FormatSpecifier != null) {
+                res.Append(':');
+                FormatSpecifier.AppendCodeString(res, ast, format);
+            }
+            res.Append('}');
         }
     }
 }

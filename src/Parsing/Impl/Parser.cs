@@ -196,7 +196,7 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        public Node ParseFStrSubExpr() {
+        public Expression ParseFStrSubExpr() {
             _alwaysAllowContextDependentSyntax = true;
             StartParsing();
 
@@ -206,13 +206,13 @@ namespace Microsoft.Python.Parsing {
             }
             if (PeekToken(TokenKind.EndOfFile)) {
                 ReportSyntaxError(Resources.EmptyExpressionFStringErrorMsg);
-                return new ErrorExpression("", null);
             }
             // Yield expressions are allowed
 
-            Node node = null;
+            Expression node = null;
             if (PeekToken(TokenKind.KeywordYield)) {
-                node = ParseYieldStmt();
+                Eat(TokenKind.KeywordYield);
+                node = ParseYieldExpression();
             } else {
                 node = ParseTestListAsExpr();
             }
@@ -3266,7 +3266,8 @@ namespace Microsoft.Python.Parsing {
             var builder = new FStringBuilder();
             foreach (var tokenWithSpan in readTokens) {
                 if (tokenWithSpan.Token.Kind == TokenKind.FString) {
-                    new FStringParser(builder, (string)tokenWithSpan.Token.Value, _errors,
+                    var fToken = (FStringToken)tokenWithSpan.Token;
+                    new FStringParser(builder, fToken.Text, _errors,
                         _langVersion, _tokenizer.IndexToLocation(tokenWithSpan.Span.Start)).Parse();
                 } else if (tokenWithSpan.Token.Value is string str) {
                     builder.Append(str);

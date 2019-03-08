@@ -125,21 +125,32 @@ namespace Microsoft.Python.Parsing {
     }
 
     public class FStringToken : Token {
-        public FStringToken(string value)
+        public FStringToken(string value, char openQuote, bool isTriple)
             : base(TokenKind.FString) {
             Value = value;
+            OpenQuote = openQuote;
+            IsTriple = isTriple;
         }
-
-        public object Constant => Value;
 
         public override object Value { get; }
 
-        public override string Image => Value == null ? "None" : Value.ToString();
+        public char OpenQuote { get; }
+
+        public bool IsTriple { get; }
+
+        public string Text => (string)Value;
+
+        public override string Image {
+            get {
+                var start = new String(OpenQuote, IsTriple ? 3 : 1);
+                return Value == null ? "None" : $"f{start}{Value.ToString()}{start}";
+            }
+        }
     }
 
     public sealed class VerbatimFStringToken : FStringToken {
-        public VerbatimFStringToken(string value, string verbatim)
-            : base(value) {
+        public VerbatimFStringToken(string value, char openQuote, bool isTriple, string verbatim)
+            : base(value, openQuote, isTriple) {
             VerbatimImage = verbatim;
         }
 

@@ -30,7 +30,21 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            throw new NotImplementedException();
+            var verbatimPieces = this.GetVerbatimNames(ast);
+            var verbatimComments = this.GetListWhiteSpace(ast);
+            if (verbatimPieces != null) {
+                // string+ / bytes+, such as "abc" "abc", which can spawn multiple lines, and 
+                // have comments in between the peices.
+                for (var i = 0; i < verbatimPieces.Length; i++) {
+                    if (verbatimComments != null && i < verbatimComments.Length) {
+                        format.ReflowComment(res, verbatimComments[i]);
+                    }
+                    res.Append(verbatimPieces[i]);
+                }
+            } else {
+                format.ReflowComment(res, this.GetPreceedingWhiteSpaceDefaultNull(ast));
+                res.Append(this.GetExtraVerbatimText(ast));
+            }
         }
     }
 }

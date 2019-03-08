@@ -284,11 +284,11 @@ namespace Microsoft.Python.Parsing.Ast {
         public virtual bool Walk(DecoratorStatement node) { return true; }
         public virtual void PostWalk(DecoratorStatement node) { }
 
-        // FStringExpression
+        // FString
         public virtual bool Walk(FString node) { return true; }
         public virtual void PostWalk(FString node) { }
-        
-        // FSubExpressionWithOptions 
+
+        // FormattedValue
         public virtual bool Walk(FormattedValue node) { return true; }
         public virtual void PostWalk(FormattedValue node) { }
     }
