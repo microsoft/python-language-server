@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -706,6 +707,38 @@ x.abc()
             result.Should().HaveNoCompletion();
         }
 
+
+        [TestMethod, Priority(0)]
+        public async Task ImportInPackage() {
+            var module1Path = TestData.GetTestSpecificUri("package", "module1.py");
+            var module2Path = TestData.GetTestSpecificUri("package", "module2.py");
+            var module3Path = TestData.GetTestSpecificUri("package", "sub_package", "module3.py");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            var module1 = rdt.OpenDocument(module1Path, "import package.");
+            var module2 = rdt.OpenDocument(module2Path, "import package.sub_package.");
+            var module3 = rdt.OpenDocument(module3Path, "import package.");
+
+            var analysis1 = await module1.GetAnalysisAsync(-1);
+            var analysis2 = await module2.GetAnalysisAsync(-1);
+            var analysis3 = await module3.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = cs.GetCompletions(analysis1, new SourceLocation(1, 16));
+            result.Should().OnlyHaveLabels("module2", "sub_package");
+            result = cs.GetCompletions(analysis2, new SourceLocation(1, 16));
+            result.Should().OnlyHaveLabels("module1", "sub_package");
+            result = cs.GetCompletions(analysis2, new SourceLocation(1, 28));
+            result.Should().OnlyHaveLabels("module3");
+            result = cs.GetCompletions(analysis3, new SourceLocation(1, 16));
+            result.Should().OnlyHaveLabels("module1", "module2", "sub_package");
+        }
+
+
         [TestMethod, Priority(0)]
         public async Task InImport() {
             var code = @"
@@ -858,6 +891,86 @@ os.path.
 
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
             result.Should().HaveLabels("split", @"getsize", @"islink", @"abspath");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FromDotInRoot() {
+            const string code = "from .";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
+            result.Should().HaveNoCompletion();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FromDotInExplicitPackage() {
+            var initPyPath = TestData.GetTestSpecificUri("package", "__init__.py");
+            var module1Path = TestData.GetTestSpecificUri("package", "module1.py");
+            var module2Path = TestData.GetTestSpecificUri("package", "module2.py");
+            var module3Path = TestData.GetTestSpecificUri("package", "sub_package", "module3.py");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(initPyPath, "answer = 42");
+            var module = rdt.OpenDocument(module1Path, "from .");
+            rdt.OpenDocument(module2Path, string.Empty);
+            rdt.OpenDocument(module3Path, string.Empty);
+
+            var analysis = await module.GetAnalysisAsync(-1);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
+            result.Should().OnlyHaveLabels("module2", "sub_package", "answer");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FromPartialName() {
+            var initPyPath = TestData.GetTestSpecificUri("package", "__init__.py");
+            var module1Path = TestData.GetTestSpecificUri("package", "module1.py");
+            var module2Path = TestData.GetTestSpecificUri("package", "sub_package", "module2.py");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            var module = rdt.OpenDocument(initPyPath, "answer = 42");
+            var module1 = rdt.OpenDocument(module1Path, "from pa");
+            var module2 = rdt.OpenDocument(module2Path, "from package.su");
+            module1.Interpreter.ModuleResolution.GetOrLoadModule("package");
+
+            await module.GetAnalysisAsync(-1);
+            var analysis1 = await module1.GetAnalysisAsync(-1);
+            var analysis2 = await module2.GetAnalysisAsync(-1);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = cs.GetCompletions(analysis1, new SourceLocation(1, 8));
+            result.Should().HaveLabels("package").And.NotContainLabels("module2", "sub_package", "answer");
+            result = cs.GetCompletions(analysis2, new SourceLocation(1, 16));
+            result.Should().OnlyHaveLabels("module1", "sub_package", "answer");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FromDotInImplicitPackage() {
+            var module1 = TestData.GetTestSpecificUri("package", "module1.py");
+            var module2 = TestData.GetTestSpecificUri("package", "module2.py");
+            var module3 = TestData.GetTestSpecificUri("package", "sub_package", "module3.py");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            var module = rdt.OpenDocument(module1, "from .");
+            rdt.OpenDocument(module2, string.Empty);
+            rdt.OpenDocument(module3, string.Empty);
+
+            var analysis = await module.GetAnalysisAsync(-1);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
+            result.Should().OnlyHaveLabels("module2", "sub_package");
         }
 
         [DataRow(false)]
