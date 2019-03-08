@@ -299,7 +299,8 @@ namespace Microsoft.Python.Parsing {
             if (_errorCode == 0) {
                 _errorCode = errorCode;
             }
-            _errors.Add(message,
+            _errors.Add(
+                message,
                 new SourceSpan(_tokenizer.IndexToLocation(start), _tokenizer.IndexToLocation(end)),
                 errorCode,
                 Severity.Error
