@@ -22,7 +22,8 @@ namespace Microsoft.Python.Parsing {
 
         internal void Add(string message, NewLineLocation[] lineLocations, int startIndex, int endIndex, int errorCode, Severity severity) => Add(
                 message,
-                new SourceSpan(NewLineLocation.IndexToLocation(lineLocations, startIndex), NewLineLocation.IndexToLocation(lineLocations, endIndex)),
+                NewLineLocation.IndexToLocation(lineLocations, startIndex),
+                NewLineLocation.IndexToLocation(lineLocations, endIndex),
                 errorCode,
                 severity
             );
