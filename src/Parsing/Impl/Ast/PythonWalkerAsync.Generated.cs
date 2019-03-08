@@ -285,6 +285,14 @@ namespace Microsoft.Python.Parsing.Ast {
         // DecoratorStatement
         public virtual Task<bool> WalkAsync(DecoratorStatement node, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public virtual Task PostWalkAsync(DecoratorStatement node, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        // FString
+        public virtual Task<bool> WalkAsync(FString node, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public virtual Task PostWalkAsync(FString node, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        // FormattedValue
+        public virtual Task<bool> WalkAsync(FormattedValue node, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public virtual Task PostWalkAsync(FormattedValue node, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
 
@@ -862,5 +870,13 @@ namespace Microsoft.Python.Parsing.Ast {
         // DecoratorStatement
         public override Task<bool> WalkAsync(DecoratorStatement node, CancellationToken cancellationToken = default)
             => Task.FromResult(Contains(node));
+
+        // FString
+        public override Task<bool> WalkAsync(FString node, CancellationToken cancellationToken = default)
+            => Task.FromResult(Location >= node.StartIndex && Location <= node.EndIndex);
+
+        // FormattedValue
+        public override Task<bool> WalkAsync(FormattedValue node, CancellationToken cancellationToken = default)
+            => Task.FromResult(Location >= node.StartIndex && Location <= node.EndIndex);
     }
 }

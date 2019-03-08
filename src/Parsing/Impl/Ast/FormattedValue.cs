@@ -28,8 +28,12 @@ namespace Microsoft.Python.Parsing.Ast {
             walker.PostWalk(this);
         }
 
-        public override Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
-            throw new NotImplementedException();
+        public async override Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                await Value.WalkAsync(walker, cancellationToken);
+                await FormatSpecifier?.WalkAsync(walker, cancellationToken);
+            }
+            await walker.PostWalkAsync(this, cancellationToken);
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
