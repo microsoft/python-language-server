@@ -2873,7 +2873,6 @@ namespace Microsoft.Python.Parsing.Tests {
         [TestMethod, Priority(0)]
         public void ReportsErrorsUsingLocationOffset() {
             foreach (var version in AllVersions) {
-
                 var errorSink = new CollectingErrorSink();
                 var code = @"f = pass
 f = pass";
@@ -2885,9 +2884,9 @@ f = pass";
                     parser.ParseFile();
                 }
                 errorSink.Errors.Should().BeEquivalentTo(new[] {
-                new ErrorResult("unexpected token 'pass'", new SourceSpan(10, 14, 10, 18)),
-                new ErrorResult("unexpected token 'pass'", new SourceSpan(11, 5, 11, 9))
-            });
+                    new ErrorResult("unexpected token 'pass'", new SourceSpan(10, 14, 10, 18)),
+                    new ErrorResult("unexpected token 'pass'", new SourceSpan(11, 5, 11, 9))
+                });
             }
         }
 
