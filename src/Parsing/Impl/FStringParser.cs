@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -17,6 +16,7 @@ namespace Microsoft.Python.Parsing {
         private readonly StringBuilder _buffer = new StringBuilder();
         private int _position = 0;
         private int _currentLineNumber;
+        private readonly bool _verbatim;
         private int _currentColNumber;
         private bool _hasErrors = false;
         private readonly Stack<char> _nestedParens = new Stack<char>();
@@ -25,22 +25,23 @@ namespace Microsoft.Python.Parsing {
         private static readonly StringSpan doubleClose = new StringSpan("}}", 0, 2);
         private static readonly StringSpan notEqualStringSpan = new StringSpan("!=", 0, 2);
 
-        public FStringParser(FStringBuilder builder, string fString, bool isRaw, ErrorSink errors, PythonLanguageVersion langVersion,
-            SourceLocation start) {
+        public FStringParser(FStringBuilder builder, string fString, bool isRaw,
+            ParserOptions options, PythonLanguageVersion langVersion) {
 
             _fString = fString;
             _isRaw = isRaw;
             _builder = builder;
-            _errors = errors;
+            _errors = options.ErrorSink ?? ErrorSink.Null;
             _langVersion = langVersion;
-            _currentLineNumber = start.Line;
+            _verbatim = options.Verbatim;
+            _start = options.InitialSourceLocation ?? SourceLocation.MinValue;
+            _currentLineNumber = _start.Line;
             // Adding offset because of f-string start: "f'"
-            _currentColNumber = start.Column + 2;
-            _start = start;
+            _currentColNumber = _start.Column + 2;
         }
 
         public void Parse() {
-            while (!EndOfFString()) {
+            while (!EndOfFString() && !_hasErrors) {
                 if (IsNext(doubleOpen)) {
                     _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
@@ -83,12 +84,12 @@ namespace Microsoft.Python.Parsing {
                 } else {
                     ReportSyntaxError(Resources.ExpectingCharFStringErrorMsg.FormatInvariant('}'));
                 }
-                return new ErrorExpression(_buffer.ToString(), null);
+                return Error(initialPosition);
             }
             if (_hasErrors) {
                 var expr = _buffer.ToString();
                 _buffer.Clear();
-                return new ErrorExpression(expr, null);
+                return Error(initialPosition);
             }
 
             Debug.Assert(CurrentChar() == '}' || CurrentChar() == '!' || CurrentChar() == ':');
@@ -101,7 +102,7 @@ namespace Microsoft.Python.Parsing {
             Read('}');
 
             if (_hasErrors) {
-                return new ErrorExpression(_fString.Substring(initialPosition, _position - initialPosition), null);
+                return Error(initialPosition);
             }
             return new FormattedValue(fStringExpression, conversion, formatSpecifier);
         }
@@ -112,7 +113,6 @@ namespace Microsoft.Python.Parsing {
             Expression formatSpecifier = null;
             if (CurrentChar() == ':') {
                 Read(':');
-                var start = new SourceLocation(_start.Index + _position, _currentLineNumber, _currentColNumber);
                 /* Ideally we would just call the FStringParser here. But we are relying on 
                  * an already cut of string, so we need to find the end of the format 
                  * specifier. */
@@ -121,7 +121,13 @@ namespace Microsoft.Python.Parsing {
                 // If we got to the end, there will be an error when we try to read '}'
                 if (!EndOfFString()) {
                     var formatSpecifierBuilder = new FStringBuilder();
-                    new FStringParser(formatSpecifierBuilder, _buffer.ToString(), _isRaw, _errors, _langVersion, start).Parse();
+                    var options = new ParserOptions() {
+                        ErrorSink = _errors,
+                        Verbatim = _verbatim,
+                        InitialSourceLocation = new SourceLocation(_start.Index + _position,
+                        _currentLineNumber, _currentColNumber)
+                    };
+                    new FStringParser(formatSpecifierBuilder, _buffer.ToString(), _isRaw, options, _langVersion).Parse();
                     _buffer.Clear();
                     formatSpecifier = formatSpecifierBuilder.Build();
                 }
@@ -298,7 +304,7 @@ namespace Microsoft.Python.Parsing {
             if (expr is null) {
                 // Should not happen but just in case
                 ReportSyntaxError(Resources.InvalidExpressionFStringErrorMsg);
-                return new ErrorExpression(subExprStr, null);
+                return Error(_position - subExprStr.Length);
             }
             return expr;
         }
@@ -332,7 +338,7 @@ namespace Microsoft.Python.Parsing {
             _position++;
             _currentColNumber++;
             if (IsLineEnding(prev)) {
-               _currentColNumber = 1;
+                _currentColNumber = 1;
                 _currentLineNumber++;
             }
             return prev;
@@ -358,6 +364,13 @@ namespace Microsoft.Python.Parsing {
                 new SourceLocation(_start.Index + _position + 1, _currentLineNumber, _currentColNumber + 1));
                 _errors.Add(message, span, ErrorCodes.SyntaxError, Severity.Error);
             }
+        }
+
+        private ErrorExpression Error(int startPos, string verbatimImage = null, Expression preceding = null) {
+            verbatimImage = verbatimImage ?? (_fString.Substring(startPos, _position - startPos));
+            var expr = new ErrorExpression(verbatimImage, preceding);
+            expr.SetLoc(_start.Index + startPos, _start.Index + _position);
+            return expr;
         }
     }
 }
