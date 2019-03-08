@@ -1,4 +1,5 @@
 f'{'
+f'{\n}'
 f'''    
 {import something}
 '''
@@ -8,3 +9,17 @@ f'''
 '''
 
 f'' b''
+
+f'{something'
+
+f'}'
+
+f'{#}'
+
+f"{"
+
+f'{import random}'
+
+f'{}'
+
+f'{a = 1}'
