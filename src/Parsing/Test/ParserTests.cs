@@ -109,6 +109,114 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void FStrings() {
+            foreach (var version in V36AndUp) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("FStrings.py", errors, version),
+                    CheckSuite(
+                        CheckAssignment(
+                            CheckNameExpr("some"),
+                            One
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckConstant("text")
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("some")
+                                )
+                            )
+                        ),
+                        CheckFuncDef("f", NoParameters, CheckSuite(
+                            CheckReturnStmt(
+                                CheckFString(
+                                    CheckFormattedValue(
+                                        CheckYieldExpr(CheckNameExpr("some"))
+                                    )
+                                )
+                           )
+                        )),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckConstant("result: "),
+                                CheckFormattedValue(
+                                    CheckFString(
+                                        CheckFormattedValue(
+                                            CheckNameExpr("some")
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckConstant("{{text "),
+                                CheckFormattedValue(
+                                    CheckNameExpr("some")
+                                ),
+                                CheckConstant(" }}")
+                            )
+                       ),
+                       CheckExprStmt(
+                           CheckFString(
+                               CheckFormattedValue(
+                                   CheckBinaryExpression(
+                                       CheckNameExpr("some"),
+                                        PythonOperator.Add,
+                                        One
+                                   )
+                               )
+                           )
+                       ),
+                       CheckExprStmt(CheckFString(
+                            CheckConstant("Has a :"))),
+                        CheckExprStmt(CheckFString(
+                            CheckFormattedValue(
+                                One,
+                                null,
+                                CheckFString(CheckFormattedValue(CheckConstant("{")),
+                                            CheckConstant(">10"))))),
+                        CheckExprStmt(CheckFString(
+                            CheckFormattedValue(
+                                CheckNameExpr("some")))),
+                        CheckExprStmt(CheckFString(
+                            CheckConstant("\n"))),
+                        CheckExprStmt(CheckFString(
+                            CheckConstant("space between opening braces: "),
+                            CheckFormattedValue(
+                                CheckSetComp(CheckNameExpr("thing"), CompFor(CheckNameExpr("thing"),
+                                CheckTupleExpr(One, CheckConstant(2), CheckConstant(3))))))),
+                        CheckExprStmt(
+                            CheckCallExpression(CheckNameExpr("print"),
+                            PositionalArg(
+                            CheckFString(
+                            CheckConstant("first: "),
+                            CheckFormattedValue(
+                                CheckFString(
+                                    CheckConstant("second "),
+                                    CheckFormattedValue(CheckNameExpr("some")))))))),
+                        CheckExprStmt(
+                            CheckFString(
+                            CheckFormattedValue(CheckNameExpr("some"), 'r',
+                                CheckFString(
+                                    CheckFormattedValue(CheckNameExpr("some")))))),
+                        CheckExprStmt(
+                            CheckFString(
+                            CheckFormattedValue(CheckNameExpr("some"), null,
+                                CheckFString(
+                                    CheckConstant("#06x")))))
+                    )
+                );
+
+                errors.Errors.Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void GeneralizedUnpacking() {
             foreach (var version in V35AndUp) {
                 CheckAst(
@@ -4110,6 +4218,33 @@ pass
                 Assert.AreEqual(values.Length, setLiteral.Items.Count);
                 for (var i = 0; i < values.Length; i++) {
                     values[i](setLiteral.Items[i]);
+                }
+            };
+        }
+
+        private static Action<Expression> CheckFString(params Action<Expression>[] subExpressions) {
+            return expr => {
+                Assert.AreEqual(typeof(FString), expr.GetType());
+                var nodes = expr.GetChildNodes().ToArray();
+                Assert.AreEqual(nodes.Length, subExpressions.Length, "Wrong amount of nodes in fstring");
+                for (var i = 0; i < subExpressions.Length; i++) {
+                    Assert.IsInstanceOfType(nodes[i], typeof(Expression), "fstring's child not an instance of expression");
+                    subExpressions[i]((Expression)nodes[i]);
+                }
+            };
+        }
+
+        private static Action<Expression> CheckFormattedValue(Action<Expression> value, char? conversion = null, Action<Expression> formatSpecifier = null) {
+            return expr => {
+                Assert.AreEqual(typeof(FormattedValue), expr.GetType());
+                var formattedValue = (FormattedValue)expr;
+
+                value(formattedValue.Value);
+                Assert.AreEqual(formattedValue.Conversion, conversion, "formatted value's conversion is not correct");
+                if (formatSpecifier == null) {
+                    Assert.AreEqual(formattedValue.FormatSpecifier, null, "format specifier is not null");
+                } else {
+                    formatSpecifier(formattedValue.FormatSpecifier);
                 }
             };
         }
