@@ -2872,21 +2872,23 @@ namespace Microsoft.Python.Parsing.Tests {
 
         [TestMethod, Priority(0)]
         public void ReportsErrorsUsingLocationOffset() {
-            const PythonLanguageVersion version = PythonLanguageVersion.V35;
-            var errorSink = new CollectingErrorSink();
-            var code = @"f = pass
+            foreach (var version in AllVersions) {
+
+                var errorSink = new CollectingErrorSink();
+                var code = @"f = pass
 f = pass";
-            using (var reader = new StringReader(code)) {
-                var parser = Parser.CreateParser(reader, version, new ParserOptions() {
-                    ErrorSink = errorSink,
-                    InitialSourceLocation = new SourceLocation(0, 10, 10)
-                });
-                parser.ParseFile();
-            }
-            errorSink.Errors.Should().BeEquivalentTo(new[] {
+                using (var reader = new StringReader(code)) {
+                    var parser = Parser.CreateParser(reader, version, new ParserOptions() {
+                        ErrorSink = errorSink,
+                        InitialSourceLocation = new SourceLocation(0, 10, 10)
+                    });
+                    parser.ParseFile();
+                }
+                errorSink.Errors.Should().BeEquivalentTo(new[] {
                 new ErrorResult("unexpected token 'pass'", new SourceSpan(10, 14, 10, 18)),
                 new ErrorResult("unexpected token 'pass'", new SourceSpan(11, 5, 11, 9))
             });
+            }
         }
 
         private static string StdLibWorker(InterpreterConfiguration configuration) {
