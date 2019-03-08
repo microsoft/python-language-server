@@ -59,7 +59,7 @@ namespace Microsoft.Python.Parsing.Tests {
             return new InterpreterConfiguration(
                 id: x64 ? "IronPython|2.7-64" : "IronPython|2.7-32",
                 description: string.Format("IronPython {0} 2.7", x64 ? "64-bit" : "32-bit"),
-                pythonExePath: Path.Combine(installPath, exeName),
+                interpreterPath: Path.Combine(installPath, exeName),
                 libPath: Path.Combine(installPath, "Lib"),
                 sitePackagesPath: Path.Combine(installPath, "Lib", "site-packages"),
                 architecture: x64 ? InterpreterArchitecture.x64 : InterpreterArchitecture.x86,
@@ -193,7 +193,7 @@ namespace Microsoft.Python.Parsing.Tests {
             return new InterpreterConfiguration(
                 id: id,
                 description: description,
-                pythonExePath: exePath,
+                interpreterPath: exePath,
                 pathVar: pathVar,
                 libPath: Path.Combine(prefixPath, "Lib"),
                 sitePackagesPath: Path.Combine(prefixPath, "Lib", "site-packages"),
