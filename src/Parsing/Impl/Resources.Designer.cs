@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.PythonTools.Core {
+namespace Microsoft.Python.Parsing {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Microsoft.PythonTools.Core {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.PythonTools.Core.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.Python.Parsing.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -57,6 +57,114 @@ namespace Microsoft.PythonTools.Core {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string expression part cannot include a backslash.
+        /// </summary>
+        internal static string BackslashFStringExpressionErrorMsg {
+            get {
+                return ResourceManager.GetString("BackslashFStringExpressionErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string: closing parenthesis &apos;{0}&apos; does not match opening parenthesis &apos;{1}&apos;.
+        /// </summary>
+        internal static string ClosingParensNotMatchFStringErrorMsg {
+            get {
+                return ResourceManager.GetString("ClosingParensNotMatchFStringErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string: empty expression not allowed.
+        /// </summary>
+        internal static string EmptyExpressionFStringErrorMsg {
+            get {
+                return ResourceManager.GetString("EmptyExpressionFStringErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string: expecting &apos;{0}&apos; but found &apos;{1}&apos;.
+        /// </summary>
+        internal static string ExpectingCharButFoundFStringErrorMsg {
+            get {
+                return ResourceManager.GetString("ExpectingCharButFoundFStringErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string: expecting &apos;{0}&apos;.
+        /// </summary>
+        internal static string ExpectingCharFStringErrorMsg {
+            get {
+                return ResourceManager.GetString("ExpectingCharFStringErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string: invalid conversion character: {0} expected &apos;s&apos;, &apos;r&apos;, or &apos;a&apos;.
+        /// </summary>
+        internal static string InvalidConversionCharacterFStringErrorMsg {
+            get {
+                return ResourceManager.GetString("InvalidConversionCharacterFStringErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string: invalid expression.
+        /// </summary>
+        internal static string InvalidExpressionFStringErrorMsg {
+            get {
+                return ResourceManager.GetString("InvalidExpressionFStringErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to invalid syntax.
+        /// </summary>
+        internal static string InvalidSyntaxErrorMsg {
+            get {
+                return ResourceManager.GetString("InvalidSyntaxErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to cannot mix bytes and nonbytes literals.
+        /// </summary>
+        internal static string MixingBytesAndNonBytesErrorMsg {
+            get {
+                return ResourceManager.GetString("MixingBytesAndNonBytesErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string expression part cannot include &apos;#&apos;.
+        /// </summary>
+        internal static string NumberSignFStringExpressionErrorMsg {
+            get {
+                return ResourceManager.GetString("NumberSignFStringExpressionErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string: single &apos;}&apos; is not allowed.
+        /// </summary>
+        internal static string SingleClosedBraceFStringErrorMsg {
+            get {
+                return ResourceManager.GetString("SingleClosedBraceFStringErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string: unmatched &apos;{0}&apos;.
+        /// </summary>
+        internal static string UnmatchedFStringErrorMsg {
+            get {
+                return ResourceManager.GetString("UnmatchedFStringErrorMsg", resourceCulture);
             }
         }
     }
