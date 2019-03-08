@@ -103,8 +103,18 @@ namespace Microsoft.Python.Parsing.Tests {
         public void FStringErrors() {
             ParseErrors("FStringErrors.py",
                 PythonLanguageVersion.V36,
-                new ErrorInfo("f-string: expecting '}'", 1, 1, 4, 1, 1, 4),
-                new ErrorInfo("unexpected token 'import'", 0, 1, 1, 6, 1, 7)
+                new ErrorInfo("f-string: expecting '}'", 1, 1, 4, 2, 1, 5),
+                new ErrorInfo("f-string expression part cannot include a backslash", 7, 2, 4, 8, 2, 5),
+                new ErrorInfo("unexpected token 'import'", 0, 4, 2, 6, 4, 8),
+                new ErrorInfo("unexpected token 'def'", 0, 7, 2, 3, 7, 5),
+                new ErrorInfo("cannot mix bytes and nonbytes literals", 94, 11, 5, 97, 11, 8),
+                new ErrorInfo("f-string: expecting '}'", 111, 13, 13, 112, 13, 14),
+                new ErrorInfo("f-string: single '}' is not allowed", 118, 15, 3, 119, 15, 4),
+                new ErrorInfo("f-string expression part cannot include '#'", 127, 17, 4, 128, 17, 5),
+                new ErrorInfo("f-string: expecting '}'", 137, 19, 4, 148, 19, 5),
+                new ErrorInfo("unexpected token 'import'", 0, 21, 4, 6, 21, 10),
+                new ErrorInfo("f-string: empty expression not allowed", 167, 23, 4, 168, 23, 5),
+                new ErrorInfo("unexpected token '='", 2, 25, 6, 3, 25, 7)
             );
         }
 
@@ -172,43 +182,97 @@ namespace Microsoft.Python.Parsing.Tests {
                                )
                            )
                        ),
-                       CheckExprStmt(CheckFString(
-                            CheckConstant("Has a :"))),
-                        CheckExprStmt(CheckFString(
-                            CheckFormattedValue(
-                                One,
-                                null,
-                                CheckFString(CheckFormattedValue(CheckConstant("{")),
-                                            CheckConstant(">10"))))),
-                        CheckExprStmt(CheckFString(
-                            CheckFormattedValue(
-                                CheckNameExpr("some")))),
-                        CheckExprStmt(CheckFString(
-                            CheckConstant("\n"))),
-                        CheckExprStmt(CheckFString(
-                            CheckConstant("space between opening braces: "),
-                            CheckFormattedValue(
-                                CheckSetComp(CheckNameExpr("thing"), CompFor(CheckNameExpr("thing"),
-                                CheckTupleExpr(One, CheckConstant(2), CheckConstant(3))))))),
-                        CheckExprStmt(
-                            CheckCallExpression(CheckNameExpr("print"),
-                            PositionalArg(
-                            CheckFString(
-                            CheckConstant("first: "),
-                            CheckFormattedValue(
-                                CheckFString(
-                                    CheckConstant("second "),
-                                    CheckFormattedValue(CheckNameExpr("some")))))))),
+                       CheckExprStmt(
+                           CheckFString(
+                               CheckConstant("Has a :")
+                           )
+                       ),
+                       CheckExprStmt(
+                           CheckFString(
+                               CheckFormattedValue(
+                                   One,
+                                   null,
+                                   CheckFString(
+                                       CheckFormattedValue(
+                                           CheckConstant("{")
+                                       ),
+                                       CheckConstant(">10")
+                                   )
+                               )
+                           )
+                        ),
                         CheckExprStmt(
                             CheckFString(
-                            CheckFormattedValue(CheckNameExpr("some"), 'r',
-                                CheckFString(
-                                    CheckFormattedValue(CheckNameExpr("some")))))),
+                                CheckFormattedValue(
+                                    CheckNameExpr("some")
+                                )
+                            )
+                        ),
                         CheckExprStmt(
                             CheckFString(
-                            CheckFormattedValue(CheckNameExpr("some"), null,
-                                CheckFString(
-                                    CheckConstant("#06x")))))
+                                CheckConstant("\n")
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckConstant("space between opening braces: "),
+                                CheckFormattedValue(
+                                    CheckSetComp(
+                                        CheckNameExpr("thing"),
+                                        CompFor(
+                                            CheckNameExpr("thing"),
+                                            CheckTupleExpr(
+                                                One,
+                                                CheckConstant(2),
+                                                CheckConstant(3)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckCallExpression(
+                                CheckNameExpr("print"),
+                                PositionalArg(
+                                    CheckFString(
+                                        CheckConstant("first: "),
+                                        CheckFormattedValue(
+                                            CheckFString(
+                                                CheckConstant("second "),
+                                                CheckFormattedValue(
+                                                    CheckNameExpr("some")
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("some"),
+                                    'r',
+                                    CheckFString(
+                                        CheckFormattedValue(
+                                            CheckNameExpr("some")
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("some"),
+                                    null,
+                                    CheckFString(
+                                        CheckConstant("#06x")
+                                    )
+                                )
+                            )
+                       )
                     )
                 );
 
