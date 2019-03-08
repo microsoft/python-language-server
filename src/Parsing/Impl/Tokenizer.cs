@@ -1007,6 +1007,7 @@ namespace Microsoft.Python.Parsing {
             if (makeUnicode) {
                 string contents;
                 if (isFormatted) {
+                    Debug.Assert(LanguageVersion >= PythonLanguageVersion.V36);
                     contents = new string(_buffer, start, length);
                     if (Verbatim) {
                         return new VerbatimFStringToken(contents, quote, isTriple, isRaw, GetTokenString());
