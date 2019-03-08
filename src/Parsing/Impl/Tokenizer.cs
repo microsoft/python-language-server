@@ -1018,7 +1018,8 @@ namespace Microsoft.Python.Parsing {
                     try {
                         contents = LiteralParser.ParseString(_buffer, start, length, isRaw, true, !_disableLineFeedLineSeparator);
                     } catch (DecoderFallbackException e) {
-                        _errors.Add(e.Message, _newLineLocations.ToArray(), _tokenStartIndex, _tokenEndIndex, ErrorCodes.SyntaxError, Severity.Error);
+                        _errors.Add(e.Message, IndexToLocation(_tokenStartIndex),
+                            IndexToLocation(_tokenEndIndex), ErrorCodes.SyntaxError, Severity.Error);
                         contents = "";
                     }
                     if (Verbatim) {
