@@ -3199,17 +3199,17 @@ namespace Microsoft.Python.Parsing {
             while (IsStringToken(t)) {
                 if (t.Kind == TokenKind.FString) {
                     if (hasAsciiStrings) {
-                        ReportSyntaxError("cannot mix bytes and nonbytes literals");
+                        ReportSyntaxError(Resources.MixingBytesAndNonBytesErrorMsg);
                     }
                     hasFStrings = true;
                 } else if (t.Value is string str) {
                     if (hasAsciiStrings && _langVersion.Is3x()) {
-                        ReportSyntaxError("cannot mix bytes and nonbytes literals");
+                        ReportSyntaxError(Resources.MixingBytesAndNonBytesErrorMsg);
                     }
                     hasStrings = true;
                 } else if (t.Value is AsciiString asciiStr) {
                     if ((hasStrings && _langVersion.Is3x()) || hasFStrings) {
-                        ReportSyntaxError("cannot mix bytes and nonbytes literals");
+                        ReportSyntaxError(Resources.MixingBytesAndNonBytesErrorMsg);
                     }
                     hasAsciiStrings = true;
                 } else {
@@ -3230,7 +3230,7 @@ namespace Microsoft.Python.Parsing {
 
             if (PeekToken(TokenKind.Constant) && !IsStringToken(t)) {
                 // A string was read and then a Constant that is not a string
-                ReportSyntaxError("invalid syntax");
+                ReportSyntaxError(Resources.InvalidSyntaxErrorMsg);
             }
 
             return readTokens;
