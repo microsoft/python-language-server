@@ -45,14 +45,20 @@ namespace Microsoft.Python.Analysis.Types {
         bool IsKeywordDict { get; }
 
         /// <summary>
+        /// Parameter type is generic and specific type will be
+        /// determined at the time of the function call.
+        /// </summary>
+        bool IsGeneric { get; }
+
+        /// <summary>
         /// Default value. Returns empty string  for optional parameters,
         /// or a string representation of the default value.
         /// </summary>
         string DefaultValueString { get; }
 
         /// <summary>
-        /// Default value type.
+        /// Default value.
         /// </summary>
-        IPythonType DefaultValueType { get; }
+        IMember DefaultValue { get; }
     }
 }

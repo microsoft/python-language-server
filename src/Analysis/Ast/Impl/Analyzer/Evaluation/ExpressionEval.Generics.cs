@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -26,97 +27,72 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
         /// <summary>
         /// Creates specific type from expression that involves generic type
-        /// and the specific type arguments.
+        /// and the specific type arguments, such as Generic[T] or constructor
+        /// of a generic class.
         /// </summary>
-        /// <example>
-        ///     x = List[T]
-        /// </example>
-        /// <example>
-        ///     T = TypeVar('T', Exception)
-        ///     class A(Generic[T]): ...
-        ///     x = A(TypeError)
-        /// </example>
         private IMember GetValueFromGeneric(IMember target, Expression expr) {
             if (!(target is PythonClassType c && c.IsGeneric()) && !(target is IGenericType)) {
                 return null;
             }
-            // Evaluate index to check if the result is generic parameter.
-            // If it is, then this is a declaration expression such as Generic[T]
-            // rather than specific type instantiation as in List[str].
 
-            IPythonType[] specificTypes;
-            var returnInstance = false;
-            switch (expr) {
-                // Indexing returns type as from A[int]
-                case IndexExpression indexExpr:
-                    // Generic[T1, T2, ...] or A[type]()
-                    var indices = EvaluateIndex(indexExpr);
-                    // See which ones are generic parameters as defined by TypeVar() 
-                    // and which are specific types. Normally there should not be a mix.
-                    var genericTypeArgs = indices.OfType<IGenericTypeParameter>().ToArray();
-                    specificTypes = indices.Where(i => !(i is IGenericTypeParameter)).OfType<IPythonType>().ToArray();
+            using (OpenScope(target.GetPythonType()?.DeclaringModule, GetScope(target), out _)) {
+                // Try generics
+                // Evaluate index to check if the result is a generic parameter.
+                // If it is, then this is a declaration expression such as Generic[T]
+                // rather than specific type instantiation as in List[str].
+                switch (expr) {
+                    // Indexing returns type as from A[int]
+                    case IndexExpression indexExpr when target is IGenericType gt:
+                        // Generic[T1, T2, ...]
+                        var indices = EvaluateIndex(indexExpr);
+                        return CreateSpecificTypeFromIndex(gt, indices, expr);
 
-                    if (specificTypes.Length == 0 && genericTypeArgs.Length > 0) {
-                        // The expression is still generic. For example, generic return
-                        // annotation of a class method, such as 'def func(self) -> A[_E]: ...'.
-                        // Leave it alone, we don't want resolve generic with generic.
-                        return null;
-                    }
-
-                    if (genericTypeArgs.Length > 0 && genericTypeArgs.Length != indices.Count) {
-                        // TODO: report that some type arguments are not declared with TypeVar.
-                    }
-
-                    if (specificTypes.Length > 0 && specificTypes.Length != indices.Count) {
-                        // TODO: report that arguments are not specific types or are not declared.
-                    }
-
-                    // Optimistically use what we have
-                    if (target is IGenericType gt) {
-                        if (gt.Name.EqualsOrdinal("Generic")) {
-                            if (genericTypeArgs.Length > 0) {
-                                // Generic[T1, T2, ...] expression. Create generic base for the class.
-                                return new GenericClassBaseType(genericTypeArgs, Module, GetLoc(expr));
-                            } else {
-                                // TODO: report too few type arguments for Generic[].
-                                return UnknownType;
-                            }
-                        }
-
-                        if (specificTypes.Length > 0) {
-                            // If target is a generic type and indexes are specific types, create specific class
-                            return gt.CreateSpecificType(new ArgumentSet(specificTypes), Module, GetLoc(expr));
-                        } else {
-                            // TODO: report too few type arguments for the Generic[].
-                            return UnknownType;
-                        }
-                    }
-                    break;
-
-                case CallExpression callExpr:
-                    // Alternative instantiation:
-                    //  class A(Generic[T]): ...
-                    //  x = A(1234)
-                    specificTypes = EvaluateCallArgs(callExpr).Select(x => x.GetPythonType()).ToArray();
-                    // Callable returns instance (as opposed to a type with index expression)
-                    returnInstance = true;
-                    break;
-
-                default:
-                    return null;
-            }
-
-            // This is a bit of a hack since we don't have GenericClassType at the moment.
-            // The reason is that PythonClassType is created before ClassDefinition is walked
-            // as we resolve classes on demand. Therefore we don't know if class is generic
-            // or not at the time of the PythonClassType creation.
-            // TODO: figure out if we could make GenericClassType: PythonClassType, IGenericType instead.
-            if (target is PythonClassType cls) {
-                var location = GetLoc(expr);
-                var type = cls.CreateSpecificType(new ArgumentSet(specificTypes), Module, location);
-                return returnInstance ? new PythonInstance(type, GetLoc(expr)) : (IMember)type;
+                    case CallExpression callExpr when target is PythonClassType c1:
+                        // Alternative instantiation:
+                        //  class A(Generic[T]): ...
+                        //  x = A(1234)
+                        var arguments = EvaluateCallArgs(callExpr).ToArray();
+                        return CreateClassInstance(c1, arguments, callExpr);
+                }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Given generic type and list of indices in the expression like
+        /// Generic[T1, T2, ...] or List[str] creates generic class base
+        /// (if the former) on specific type (if the latter).
+        /// </summary>
+        private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> indices, Expression expr) {
+            // See which ones are generic parameters as defined by TypeVar() 
+            // and which are specific types. Normally there should not be a mix.
+            var genericTypeArgs = indices.OfType<IGenericTypeDefinition>().ToArray();
+            var specificTypes = indices.Where(i => !(i is IGenericTypeDefinition)).OfType<IPythonType>().ToArray();
+
+            if (genericTypeArgs.Length > 0 && genericTypeArgs.Length != indices.Count) {
+                // TODO: report that some type arguments are not declared with TypeVar.
+            }
+            if (specificTypes.Length > 0 && specificTypes.Length != indices.Count) {
+                // TODO: report that arguments are not specific types or are not declared.
+            }
+
+            if (gt.Name.EqualsOrdinal("Generic")) {
+                // Generic[T1, T2, ...] expression. Create generic base for the class.
+                if (genericTypeArgs.Length > 0) {
+                    return new GenericClassParameter(genericTypeArgs, Module, GetLoc(expr));
+                } else {
+                    // TODO: report too few type arguments for Generic[].
+                    return UnknownType;
+                }
+            }
+
+            // For other types just use supplied arguments
+            if (indices.Count > 0) {
+                return gt.CreateSpecificType(new ArgumentSet(indices), Module, GetLoc(expr));
+            }
+            // TODO: report too few type arguments for the generic expression.
+            return UnknownType;
+
         }
 
         private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr) {
@@ -140,6 +116,94 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 indices.Add(value);
             }
             return indices;
+        }
+
+        /// <summary>
+        /// Given generic class type and the passed constructor arguments
+        /// creates specific type and instance of the type. Attempts to match
+        /// supplied arguments to either __init__ signature or to the
+        /// list of generic definitions in Generic[T1, T2, ...].
+        /// </summary>
+        private IMember CreateClassInstance(PythonClassType cls, IReadOnlyList<IMember> constructorArguments, CallExpression callExpr) {
+            // Look at the constructor arguments and create argument set
+            // based on the __init__ definition.
+            var location = GetLoc(callExpr);
+            var initFunc = cls.GetMember(@"__init__") as IPythonFunctionType;
+            var initOverload = initFunc?.DeclaringType == cls ? initFunc.Overloads.FirstOrDefault() : null;
+
+            var argSet = initOverload != null
+                    ? new ArgumentSet(initFunc, 0, null, callExpr, this)
+                    : new ArgumentSet(constructorArguments);
+
+            argSet.Evaluate();
+            var specificType = cls.CreateSpecificType(argSet, Module, location);
+            return new PythonInstance(specificType, location);
+        }
+
+        private ScopeStatement GetScope(IMember m) {
+            switch (m.GetPythonType()) {
+                case IPythonClassType ct:
+                    return ct.ClassDefinition;
+                case IPythonFunctionType ct:
+                    return ct.FunctionDefinition;
+            }
+            return null;
+        }
+
+        public static IReadOnlyList<IPythonType> GetTypeArgumentsFromParameters(IPythonFunctionOverload o, IArgumentSet args) {
+            if (o.Parameters.Any(p => p.IsGeneric)) {
+                // Declaring class is not generic, but the function is and arguments
+                // should provide actual specific types.
+                // TODO: handle keyword and dict args
+                var list = new List<IPythonType>();
+                for (var i = 0; i < Math.Min(o.Parameters.Count, args.Arguments.Count); i++) {
+                    if (o.Parameters[i].IsGeneric) {
+                        list.AddRange(GetSpecificTypeFromArgumentValue(args.Arguments[i].Value));
+                    }
+                }
+                return list;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Given argument attempts to extract specific types for the function generic
+        /// parameter(s). Handles common cases such as dictionary, list and tuple.
+        /// Typically used on a value that is being passed to the function in place
+        /// of the generic parameter.
+        /// </summary>
+        /// <remarks>
+        /// Consider 'def func(x: Mapping[K, V]) -> K: ...'
+        /// </remarks>
+        private static IReadOnlyList<IPythonType> GetSpecificTypeFromArgumentValue(object argumentValue) {
+            var specificTypes = new List<IPythonType>();
+            switch (argumentValue) {
+                case IPythonDictionary dict:
+                    var keyType = dict.Keys.FirstOrDefault()?.GetPythonType();
+                    var valueType = dict.Values.FirstOrDefault()?.GetPythonType();
+                    if (!keyType.IsUnknown()) {
+                        specificTypes.Add(keyType);
+                    }
+                    if (!valueType.IsUnknown()) {
+                        specificTypes.Add(valueType);
+                    }
+                    break;
+                case IPythonCollection coll:
+                    specificTypes.AddRange(coll.Contents.Select(m => m.GetPythonType()));
+                    break;
+                case IPythonIterable iter:
+                    var itemType = iter.GetIterator().Next.GetPythonType();
+                    if (!itemType.IsUnknown()) {
+                        specificTypes.Add(itemType);
+                    }
+                    break;
+                case IMember m:
+                    if (!m.IsUnknown()) {
+                        specificTypes.Add(m.GetPythonType());
+                    }
+                    break;
+            }
+            return specificTypes;
         }
     }
 }

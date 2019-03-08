@@ -13,13 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Linq;
-using Microsoft.Python.Analysis.Specializations.Typing;
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis {
-    public static class PythonClassExtensions {
-        public static bool IsGeneric(this IPythonClassType cls) 
-            => cls.Bases != null && cls.Bases.Any(b => b is IGenericType || b is IGenericClassParameter);
+namespace Microsoft.Python.Analysis.Specializations.Typing {
+    /// <summary>
+    /// Represents generic type definition. Typically value returned by TypeVar.
+    /// </summary>
+    public interface IGenericTypeDefinition: IPythonType {
+        /// <summary>
+        /// List of constraints for the type.
+        /// </summary>
+        /// <remarks>See 'https://docs.python.org/3/library/typing.html#typing.TypeVar'</remarks>
+        IReadOnlyList<IPythonType> Constraints { get; }
     }
 }

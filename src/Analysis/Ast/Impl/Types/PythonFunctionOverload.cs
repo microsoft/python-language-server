@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
@@ -129,7 +130,7 @@ namespace Microsoft.Python.Analysis.Types {
                         var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), _declaringModule);
                         return specificReturnValue.Name;
                     }
-                case IGenericTypeParameter gtp1 when self is IPythonClassType cls: {
+                case IGenericTypeDefinition gtp1 when self is IPythonClassType cls: {
                         // -> _T
                         if (cls.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
                             return specificType.Name;
@@ -138,7 +139,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
                         var name = StaticReturnValue.GetPythonType()?.Name;
                         var typeDefVar = _declaringModule.Analysis.GlobalScope.Variables[name];
-                        if (typeDefVar?.Value is IGenericTypeParameter gtp2) {
+                        if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
                             var t = gtp2.Constraints.FirstOrDefault();
                             if (t != null) {
                                 return t.Name;
@@ -166,23 +167,38 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             // If function returns generic, determine actual type based on the passed in specific type (self).
+            // If there is no self and no declaring type, the function is standalone.
+            if (self == null && StaticReturnValue.IsGeneric() && Parameters.Any(p => p.IsGeneric)) {
+                return null; // Evaluate standalone generic with arguments instead.
+            }
             if (!(self is IPythonClassType selfClassType)) {
                 return StaticReturnValue;
             }
 
             var returnType = StaticReturnValue.GetPythonType();
             switch (returnType) {
-                case PythonClassType cls when cls.IsGeneric(): {
-                        // -> A[_T1, _T2, ...]
-                        // Match arguments 
-                        var typeArgs = selfClassType.GenericParameters.Keys
+                case PythonClassType cls when cls.IsGeneric():
+                    // -> A[_T1, _T2, ...]
+                    // Match arguments
+                    IReadOnlyList<IPythonType> typeArgs = null;
+                    var classGenericParameters = selfClassType.GenericParameters.Keys.ToArray();
+                    if (classGenericParameters.Length > 0) {
+                        // Declaring class is specific and provides definitions of generic parameters
+                        typeArgs = classGenericParameters
                             .Select(n => selfClassType.GenericParameters.TryGetValue(n, out var t) ? t : null)
                             .ExcludeDefault()
                             .ToArray();
+                    } else {
+                        typeArgs = ExpressionEval.GetTypeArgumentsFromParameters(this, args);
+                    }
+
+                    if (typeArgs != null) {
                         var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), _declaringModule, callLocation);
                         return new PythonInstance(specificReturnValue, callLocation);
                     }
-                case IGenericTypeParameter gtp1: {
+                    break;
+
+                case IGenericTypeDefinition gtp1: {
                         // -> _T
                         if (selfClassType.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
                             return new PythonInstance(specificType, callLocation);
@@ -191,7 +207,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
                         var name = StaticReturnValue.GetPythonType()?.Name;
                         var typeDefVar = _declaringModule.Analysis.GlobalScope.Variables[name];
-                        if (typeDefVar?.Value is IGenericTypeParameter gtp2) {
+                        if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
                             return gtp2.Constraints.FirstOrDefault();
                         }
 

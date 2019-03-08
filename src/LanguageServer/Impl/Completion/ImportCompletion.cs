@@ -19,7 +19,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
@@ -143,26 +143,27 @@ namespace Microsoft.Python.LanguageServer.Completion {
             IPythonModule module;
             switch (importSearchResult) {
                 case ModuleImport moduleImports:
-                    module = mres.GetImportedModule(moduleImports.Name);
+                    module = mres.GetImportedModule(moduleImports.FullName);
                     break;
                 case PossibleModuleImport possibleModuleImport:
                     module = mres.GetImportedModule(possibleModuleImport.PossibleModuleFullName);
                     break;
-                case PackageImport packageImports:
-                    return new CompletionResult(packageImports.Modules
-                        .Select(m => CompletionItemSource.CreateCompletionItem(m.Name, CompletionItemKind.Module))
-                        .Prepend(CompletionItemSource.Star));
+                case ImplicitPackageImport _:
+                    module = null;
+                    break;
                 default:
                     return CompletionResult.Empty;
             }
-
-            if (module != null) {
-                var items = module.GetMemberNames()
-                    .Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n)))
-                    .Prepend(CompletionItemSource.Star);
-                return new CompletionResult(items);
+            
+            var moduleNames = (importSearchResult as IImportChildrenSource)?.GetChildrenNames() ?? ImmutableArray<string>.Empty;
+            if (module == null && moduleNames.Count == 0) {
+                return CompletionResult.Empty;
             }
-            return CompletionResult.Empty;
+
+            var memberNames = module?.GetMemberNames() ?? ImmutableArray<string>.Empty;
+            var members = memberNames.Select(n => context.ItemSource.CreateCompletionItem(n, module?.GetMember(n)));
+            var modules = moduleNames.Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
+            return new CompletionResult(members.Concat(modules).Prepend(CompletionItemSource.Star));
         }
 
         private static IReadOnlyList<CompletionItem> GetChildModules(string[] names, CompletionContext context) {

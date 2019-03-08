@@ -21,6 +21,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
@@ -123,7 +124,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     GetSetting(analysis, "information", Array.Empty<string>()),
                     GetSetting(analysis, "disabled", Array.Empty<string>()));
 
-                await _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
+                _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
             }
         }
 
@@ -327,9 +328,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #endregion
 
         #region Extensions
+
         [JsonRpcMethod("python/loadExtension")]
-        public Task LoadExtension(JToken token, CancellationToken cancellationToken)
-            => _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken);
+        public Task LoadExtension(JToken token, CancellationToken cancellationToken) => Task.CompletedTask;
+            //=> _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken);
 
         [JsonRpcMethod("python/extensionCommand")]
         public Task ExtensionCommand(JToken token, CancellationToken cancellationToken)
@@ -377,19 +379,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // Were not watching OR were watching but paths have changed. Recreate the watcher.
                 _pathsWatcher?.Dispose();
                 var interpreter = _services.GetService<IPythonInterpreter>();
+                var logger = _services.GetService<ILogger>();
                 _pathsWatcher = new PathsWatcher(
                     _initParams.initializationOptions.searchPaths,
-                    () => interpreter.ModuleResolution.ReloadAsync(cancellationToken).DoNotWait(),
-                    _services.GetService<ILogger>()
-                 );
-            }
+                    () =>_server.NotifyPackagesChanged(cancellationToken),
+                        _services.GetService<ILogger>()
+                    );
 
-            _watchSearchPaths = true;
-            _searchPaths = _initParams.initializationOptions.searchPaths;
+                _watchSearchPaths = true;
+                _searchPaths = _initParams.initializationOptions.searchPaths;
+            }
         }
 
         private static CancellationToken GetToken(CancellationToken original)
-            => Debugger.IsAttached ? CancellationToken.None : original;
+                => Debugger.IsAttached ? CancellationToken.None : original;
 
         private class Prioritizer : IDisposable {
             private const int InitializePriority = 0;

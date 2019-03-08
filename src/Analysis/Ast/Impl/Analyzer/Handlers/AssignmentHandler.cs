@@ -18,6 +18,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
@@ -81,6 +82,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
                 Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, Eval.GetLoc(ne));
             }
+
+            TryHandleClassVariable(node, value);
         }
 
         public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value) {
@@ -94,6 +97,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // without a value. If value is provided, then this is
             //   x: List[str] = [...]
             HandleTypedVariable(variableType, value, expr.Expression);
+        }
+
+        private void TryHandleClassVariable(AssignmentStatement node, IMember value) {
+            var mex = node.Left.OfType<MemberExpression>().FirstOrDefault();
+            if (!string.IsNullOrEmpty(mex?.Name) && mex?.Target is NameExpression nex && nex.Name.EqualsOrdinal("self")) {
+                var m = Eval.LookupNameInScopes(nex.Name, out var scope, LookupOptions.Local);
+                var cls = m.GetPythonType<IPythonClassType>();
+                if (cls != null) {
+                    using (Eval.OpenScope(Eval.Module, cls.ClassDefinition, out _)) {
+                        Eval.DeclareVariable(mex.Name, value, VariableSource.Declaration, Eval.GetLoc(node), true);
+                    }
+                }
+            }
         }
 
         private void HandleTypedVariable(IPythonType variableType, IMember value, Expression expr) {

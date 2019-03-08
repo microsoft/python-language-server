@@ -13,8 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
@@ -124,10 +127,27 @@ log
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var ds = new DefinitionSource();
 
-            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 2));
+            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 10));
+            reference.range.Should().Be(0, 0, 0, 0);
+            reference.uri.AbsolutePath.Should().Contain("logging");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(3, 2));
             reference.range.Should().Be(1, 18, 1, 21);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(2, 20));
+            reference.uri.AbsolutePath.Should().Contain("logging");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoModuleSourceFromImport() {
+            const string code = @"from logging import A";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource();
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 7));
+            reference.range.Should().Be(0, 0, 0, 0);
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
@@ -143,6 +163,28 @@ class A(object):
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(2, 12));
             reference.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoRelativeImportInExplicitPackage() {
+            var pkgPath = TestData.GetTestSpecificUri("pkg", "__init__.py");
+            var modPath = TestData.GetTestSpecificUri("pkg", "mod.py");
+            var subpkgPath = TestData.GetTestSpecificUri("pkg", "subpkg", "__init__.py");
+            var submodPath = TestData.GetTestSpecificUri("pkg", "submod", "__init__.py");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(pkgPath, string.Empty);
+            rdt.OpenDocument(modPath, "hello = 'World'");
+            rdt.OpenDocument(subpkgPath, string.Empty);
+            var submod = rdt.OpenDocument(submodPath, "from .. import mod");
+
+            var analysis = await submod.GetAnalysisAsync(-1);
+            var ds = new DefinitionSource();
+            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 18));
+            reference.uri.Should().Be(modPath);
         }
     }
 }

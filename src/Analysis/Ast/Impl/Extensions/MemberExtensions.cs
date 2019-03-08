@@ -31,6 +31,9 @@ namespace Microsoft.Python.Analysis {
             }
         }
 
+        public static bool IsOfType(this IMember m, BuiltinTypeId typeId)
+            => m?.GetPythonType().TypeId == typeId;
+
         public static IPythonType GetPythonType(this IMember m) {
             switch (m) {
                 case IPythonType pt:
@@ -48,7 +51,7 @@ namespace Microsoft.Python.Analysis {
 
         public static bool IsGeneric(this IMember m) {
             var t = m.GetPythonType();
-            if (t is IGenericType || t is IGenericTypeParameter) {
+            if (t is IGenericType || t is IGenericTypeDefinition) {
                 return true;
             }
             if (t is IPythonClassType c && c.IsGeneric()) {

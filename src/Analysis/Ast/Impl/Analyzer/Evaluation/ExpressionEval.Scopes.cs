@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             var value = scope?.Variables[name].Value;
-            if (value == null) {
+            if (value == null && options.HasFlag(LookupOptions.Builtins)) {
                 var builtins = Interpreter.ModuleResolution.BuiltinsModule;
                 value = Interpreter.ModuleResolution.BuiltinsModule.GetMember(name);
                 if (Module != builtins && options.HasFlag(LookupOptions.Builtins)) {
@@ -89,23 +89,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return value;
         }
 
-        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
-            if (expr == null) {
-                return null;
-            }
+        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins)
+            => GetTypeFromAnnotation(expr, out _, options);
 
-            if (expr is CallExpression callExpr) {
-                // x: NamedTuple(...)
-                return GetValueFromCallable(callExpr)?.GetPythonType() ?? UnknownType;
-            }
-
-            if (expr is IndexExpression indexExpr) {
-                // Try generics
-                var target = GetValueFromExpression(indexExpr.Target);
-                var result = GetValueFromGeneric(target, indexExpr);
-                if (result != null) {
-                    return result.GetPythonType();
-                }
+        public IPythonType GetTypeFromAnnotation(Expression expr, out bool isGeneric, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
+            isGeneric = false;
+            switch (expr) {
+                case null:
+                    return null;
+                case CallExpression callExpr:
+                    // x: NamedTuple(...)
+                    return GetValueFromCallable(callExpr)?.GetPythonType() ?? UnknownType;
+                case IndexExpression indexExpr:
+                    // Try generics
+                    var target = GetValueFromExpression(indexExpr.Target);
+                    var result = GetValueFromGeneric(target, indexExpr);
+                    if (result != null) {
+                        isGeneric = true;
+                        return result.GetPythonType();
+                    }
+                    break;
             }
 
             // Look at specialization and typing first
@@ -140,10 +143,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             fromScope = fromScope ?? gs;
             if (fromScope != null) {
-                var scope = fromScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
-                if (scope == null) {
-                    scope = new Scope(node, fromScope, true);
-                    fromScope.AddChildScope(scope);
+                Scope scope;
+                if (node is PythonAst) {
+                    // node points to global scope, it is not a function or a class.
+                    scope = gs;
+                } else {
+                    scope = fromScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
+                    if (scope == null) {
+                        scope = new Scope(node, fromScope, true);
+                        fromScope.AddChildScope(scope);
+                    }
                 }
 
                 _openScopes.Push(scope);

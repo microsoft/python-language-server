@@ -109,6 +109,18 @@ namespace Microsoft.Python.Core.IO {
             return null;
         }
 
+        public static string ReadTextWithRetry(this IFileSystem fs, string file) {
+            // Retry for up to one second
+            for (var retries = 100; retries > 0; --retries) {
+                try {
+                    return fs.ReadAllText(file);
+                } catch (UnauthorizedAccessException) {
+                    Thread.Sleep(10);
+                }
+            }
+            return null;
+        }
+
         public static void WriteTextWithRetry(this IFileSystem fs, string filePath, string text) {
             try {
                 using (var stream = fs.OpenWithRetry(filePath, FileMode.Create, FileAccess.Write, FileShare.Read)) {

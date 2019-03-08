@@ -15,31 +15,30 @@
 
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis {
     public static class PythonTypeExtensions {
         public static bool IsUnknown(this IPythonType value) =>
             value == null || (value.TypeId == BuiltinTypeId.Unknown && value.MemberType == PythonMemberType.Unknown && value.Name.Equals("Unknown"));
 
-        public static bool IsGenericParameter(this IPythonType value)
-            => value is IGenericTypeParameter;
+        public static bool IsGenericParameter(this IPythonType value) 
+            => value is IGenericTypeDefinition;
 
         public static bool IsGeneric(this IPythonType value)
-            => value is IGenericTypeParameter || value is IGenericType || (value is IPythonClassType c && c.IsGeneric());
+            => value is IGenericTypeDefinition || value is IGenericType || (value is IPythonClassType c && c.IsGeneric());
 
-        public static void TransferDocumentationAndLocation(this IPythonType src, IPythonType dst) {
-            if (src != null && dst is PythonType pt) {
-                pt.TrySetTypeId(dst.TypeId);
+        public static void TransferDocumentationAndLocation(this IPythonType s, IPythonType d) {
+            if (s != d && s is PythonType src && d is PythonType dst) {
                 var documentation = src.Documentation;
                 if (!string.IsNullOrEmpty(documentation)) {
-                    if (!string.IsNullOrEmpty(documentation)) {
-                        pt.SetDocumentation(documentation);
-                    }
+                    dst.SetDocumentation(documentation);
                 }
-                if (src is ILocatedMember lm) {
-                    pt.SetLocation(lm.Location);
-                }
+                dst.SetLocation(src.Location);
             }
         }
+
+        public static bool IsConstructor(this IPythonClassMember m)
+            => m.Name.EqualsOrdinal("__init__") ||  m.Name.EqualsOrdinal("__new__");
     }
 }

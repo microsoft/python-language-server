@@ -37,95 +37,53 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
             }
 
+            var location = Eval.GetLoc(node.Root);
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
-            switch (imports) {
-                case ModuleImport moduleImport when moduleImport.FullName == Module.Name:
-                    ImportMembersFromSelf(node);
-                    break;
-                case ModuleImport moduleImport:
-                    ImportMembersFromModule(node, moduleImport.FullName);
-                    break;
-                case PossibleModuleImport possibleModuleImport:
-                    var module = HandlePossibleImport(possibleModuleImport, possibleModuleImport.PossibleModuleFullName, Eval.GetLoc(node.Root));
-                    if (module != null) {
-                        ImportMembersFromModule(node, module.Name);
-                    }
-                    break;
-                case PackageImport packageImports:
-                    ImportMembersFromPackage(node, packageImports);
-                    break;
-                case ImportNotFound notFound:
-                    MakeUnresolvedImport(null, notFound.FullName, Eval.GetLoc(node.Root));
-                    break;
+            if (HandleImportSearchResult(imports, null, null, location, out var variableModule)) {
+                AssignVariables(node, imports, variableModule);
             }
             return false;
         }
 
-        private void ImportMembersFromSelf(FromImportStatement node) {
-            var names = node.Names;
-            var asNames = node.AsNames;
-
-            if (names.Count == 1 && names[0].Name == "*") {
-                // from self import * won't define any new members
+        private void AssignVariables(FromImportStatement node, IImportSearchResult imports, PythonVariableModule variableModule) {
+            if (variableModule == null) {
                 return;
             }
 
-            for (var i = 0; i < names.Count; i++) {
-                if (asNames[i] == null) {
-                    continue;
-                }
-
-                var importName = names[i].Name;
-                var memberReference = asNames[i];
-                var memberName = memberReference.Name;
-
-                var member = Module.GetMember(importName);
-                if (member == null && Eval.Module == Module) {
-                    // We are still evaluating this module so members are not complete yet.
-                    // Consider 'from . import path as path' in os.pyi in typeshed.
-                    var import = ModuleResolution.CurrentPathResolver.GetModuleImportFromModuleName($"{Module.Name}.{importName}");
-                    if (!string.IsNullOrEmpty(import?.FullName)) {
-                        member = ModuleResolution.GetOrLoadModule(import.FullName);
-                    }
-                }
-                Eval.DeclareVariable(memberName, member ?? Eval.UnknownType, VariableSource.Declaration, Eval.GetLoc(names[i]));
-            }
-        }
-
-        private void ImportMembersFromModule(FromImportStatement node, string moduleName) {
             var names = node.Names;
             var asNames = node.AsNames;
-            var module = ModuleResolution.GetOrLoadModule(moduleName);
-            if (module == null) {
-                return;
-            }
+
             if (names.Count == 1 && names[0].Name == "*") {
                 // TODO: warn this is not a good style per
                 // TODO: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
                 // TODO: warn this is invalid if not in the global scope.
-                HandleModuleImportStar(module);
+                HandleModuleImportStar(variableModule);
                 return;
             }
-
-            Eval.DeclareVariable(module.Name, module, VariableSource.Import, node);
 
             for (var i = 0; i < names.Count; i++) {
                 var memberName = names[i].Name;
                 if (!string.IsNullOrEmpty(memberName)) {
                     var variableName = asNames[i]?.Name ?? memberName;
-                    var type = module.GetMember(memberName) ?? Interpreter.UnknownType;
-                    Eval.DeclareVariable(variableName, type, VariableSource.Import, names[i]);
+                    var value = variableModule.GetMember(memberName) ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
+
+                    Eval.DeclareVariable(variableName, value, VariableSource.Import, names[i]);
                 }
             }
         }
 
-        private void HandleModuleImportStar(IPythonModule module) {
-            foreach (var memberName in module.GetMemberNames()) {
-                var member = module.GetMember(memberName);
+        private void HandleModuleImportStar(PythonVariableModule variableModule) {
+            if (variableModule.Module == Module) {
+                // from self import * won't define any new members
+                return;
+            }
+
+            foreach (var memberName in variableModule.GetMemberNames()) {
+                var member = variableModule.GetMember(memberName);
                 if (member == null) {
-                    Log?.Log(TraceEventType.Verbose, $"Undefined import: {module.Name}, {memberName}");
+                    Log?.Log(TraceEventType.Verbose, $"Undefined import: {variableModule.Name}, {memberName}");
                 } else if (member.MemberType == PythonMemberType.Unknown) {
-                    Log?.Log(TraceEventType.Verbose, $"Unknown import: {module.Name}, {memberName}");
+                    Log?.Log(TraceEventType.Verbose, $"Unknown import: {variableModule.Name}, {memberName}");
                 }
 
                 member = member ?? Eval.UnknownType;
@@ -133,32 +91,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     ModuleResolution.GetOrLoadModule(m.Name);
                 }
 
-                Eval.DeclareVariable(memberName, member, VariableSource.Import, module.Location);
+                Eval.DeclareVariable(memberName, member, VariableSource.Import, variableModule.Location);
             }
         }
 
-        private void ImportMembersFromPackage(FromImportStatement node, PackageImport packageImport) {
-            var names = node.Names;
-            var asNames = node.AsNames;
-
-            if (names.Count == 1 && names[0].Name == "*") {
-                // TODO: Need tracking of previous imports to determine possible imports for namespace package. For now import nothing
-                Eval.DeclareVariable("*", Eval.UnknownType, VariableSource.Import, Eval.GetLoc(names[0]));
-                return;
+        private IMember GetValueFromImports(PythonVariableModule parentModule, IImportChildrenSource childrenSource, string memberName) {
+            if (childrenSource == null || !childrenSource.TryGetChildImport(memberName, out var childImport)) {
+                return Interpreter.UnknownType;
             }
 
-            for (var i = 0; i < names.Count; i++) {
-                var importName = names[i].Name;
-                var memberReference = asNames[i] ?? names[i];
-                var memberName = memberReference.Name;
-                var location = Eval.GetLoc(memberReference);
-
-                var moduleImport = packageImport.Modules.FirstOrDefault(mi => mi.Name.EqualsOrdinal(importName));
-                var member = moduleImport != null 
-                    ? ModuleResolution.GetOrLoadModule(moduleImport.FullName) 
-                    : Eval.UnknownType;
-
-                Eval.DeclareVariable(memberName, member, VariableSource.Import, location);
+            switch (childImport) {
+                case ModuleImport moduleImport:
+                    var module = ModuleResolution.GetOrLoadModule(moduleImport.FullName);
+                    return module != null ? GetOrCreateVariableModule(module, parentModule, moduleImport.Name) : Interpreter.UnknownType;
+                case ImplicitPackageImport packageImport:
+                    return GetOrCreateVariableModule(packageImport.FullName, parentModule, memberName);
+                default:
+                    return Interpreter.UnknownType;
             }
         }
     }

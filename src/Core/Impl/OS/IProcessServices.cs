@@ -14,18 +14,17 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    /// <summary>
-    /// Represents Generic[T1, T2, ...]
-    /// </summary>
-    internal sealed class GenericClassBaseType: PythonClassType, IGenericClassBaseType {
-        internal GenericClassBaseType(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule, LocationInfo location) 
-            : base("Generic", declaringModule, location) {
-            TypeArgs = typeArgs;
-        }
-
-        public IReadOnlyList<IGenericTypeParameter> TypeArgs { get; }
+namespace Microsoft.Python.Core.OS {
+    public interface IProcessServices {
+        IProcess Start(ProcessStartInfo psi);
+        IProcess Start(string path);
+        void Kill(IProcess process);
+        void Kill(int pid);
+        bool IsProcessRunning(string processName);
+        Task<IReadOnlyList<string>> ExecuteAndCaptureOutputAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default);
     }
 }

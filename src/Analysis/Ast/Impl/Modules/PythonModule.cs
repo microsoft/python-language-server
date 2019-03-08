@@ -74,8 +74,8 @@ namespace Microsoft.Python.Analysis.Modules {
             Services = services ?? throw new ArgumentNullException(nameof(services));
             ModuleType = moduleType;
 
-            Log = services?.GetService<ILogger>();
-            Interpreter = services?.GetService<IPythonInterpreter>();
+            Log = services.GetService<ILogger>();
+            Interpreter = services.GetService<IPythonInterpreter>();
             Analysis = new EmptyAnalysis(services, this);
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
@@ -149,21 +149,11 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IMemberContainer
         public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
         public virtual IEnumerable<string> GetMemberNames() {
-            // Try __all__ since it contains exported members
-            var all = Analysis.GlobalScope.Variables["__all__"];
-            if (all?.Value is IPythonCollection collection) {
-                return collection.Contents
-                    .OfType<IPythonConstant>()
-                    .Select(c => c.GetString())
-                    .ExcludeDefault()
-                    .Where(s => !string.IsNullOrEmpty(s));
-            }
+            // TODO: Filter __all__. See: https://github.com/Microsoft/python-language-server/issues/620
 
-            // __all__ is not declared. Try filtering by origin:
-            // drop imported modules and generics.
+            // drop imported modules and typing.
             return Analysis.GlobalScope.Variables
-                .Where(v => v.Value?.MemberType != PythonMemberType.Generic
-                            && !(v.Value?.GetPythonType() is PythonModule)
+                .Where(v => !(v.Value?.GetPythonType() is PythonModule)
                             && !(v.Value?.GetPythonType().DeclaringModule is TypingModule && !(this is TypingModule)))
                 .Select(v => v.Name);
         }
@@ -213,7 +203,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ContentState < State.Loading) {
                 ContentState = State.Loading;
                 try {
-                    var code = FileSystem.ReadAllText(FilePath);
+                    var code = FileSystem.ReadTextWithRetry(FilePath);
                     ContentState = State.Loaded;
                     return code;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
@@ -441,7 +431,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #region Analysis
         public IDocumentAnalysis GetAnyAnalysis() => Analysis;
 
-        public Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime = 200, CancellationToken cancellationToken = default) 
+        public Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime = 200, CancellationToken cancellationToken = default)
             => Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, waitTime, cancellationToken);
 
         #endregion

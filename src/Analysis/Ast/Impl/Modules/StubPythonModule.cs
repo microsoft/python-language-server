@@ -13,10 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Python.Analysis.Types;
+using System;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -32,10 +31,10 @@ namespace Microsoft.Python.Analysis.Modules {
 
         protected override string LoadContent() {
             // Exceptions are handled in the base
-            return FileSystem.FileExists(FilePath) ? FileSystem.ReadAllText(FilePath) : string.Empty;
+            return FileSystem.FileExists(FilePath) ? FileSystem.ReadTextWithRetry(FilePath) : string.Empty;
         }
 
-        protected override IEnumerable<string> GetScrapeArguments(IPythonInterpreter factory) => Enumerable.Empty<string>();
+        protected override string[] GetScrapeArguments(IPythonInterpreter factory) => Array.Empty<string>();
         protected override void SaveCachedCode(string code) { }
     }
 }

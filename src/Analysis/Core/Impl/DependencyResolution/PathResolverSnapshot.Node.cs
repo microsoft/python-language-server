@@ -52,14 +52,14 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             public static Node CreateModule(string name, string modulePath, string fullModuleName)
                 => new Node(name, ImmutableArray<Node>.Empty, modulePath, fullModuleName);
 
-            public static Node CreatePackage(string name, Node child)
-                => new Node(name, ImmutableArray<Node>.Empty.Add(child), null, null);
+            public static Node CreatePackage(string name, string fullModuleName, Node child)
+                => new Node(name, ImmutableArray<Node>.Empty.Add(child), null, fullModuleName);
 
             public static Node CreateBuiltinModule(string name)
                 => new Node(name, ImmutableArray<Node>.Empty, null, name);
             
             public Node ToModuleNode(string modulePath, string fullModuleName) => new Node(Name, Children, modulePath, fullModuleName);
-            public Node ToPackage() => new Node(Name, Children, null, null);
+            public Node ToPackage() => new Node(Name, Children, null, FullModuleName);
             public Node AddChild(Node child) => new Node(Name, Children.Add(child), ModulePath, FullModuleName);
             public Node ReplaceChildAt(Node child, int index) => new Node(Name, Children.ReplaceAt(index, child), ModulePath, FullModuleName);
             public Node RemoveChildAt(int index) => new Node(Name, Children.RemoveAt(index), ModulePath, FullModuleName);
@@ -97,6 +97,63 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
             private static bool NameEquals(Node n, StringSpan span) 
                     => n.Name.Length == span.Length && n.Name.EqualsOrdinal(0, span.Source, span.Start, span.Length);
+        }
+
+        private sealed class ChildrenSource : IImportChildrenSource {
+            public static IImportChildrenSource Empty { get; } = new EmptyChildrenSource();
+
+            private readonly PathResolverSnapshot _snapshot;
+            private readonly ImmutableArray<Edge> _edges;
+
+            public ChildrenSource(PathResolverSnapshot snapshot, Edge edge) 
+                : this(snapshot, ImmutableArray<Edge>.Create(edge)) {}
+
+            public ChildrenSource(PathResolverSnapshot snapshot, ImmutableArray<Edge> edges) {
+                _snapshot = snapshot;
+                _edges = edges;
+            }
+
+            public ImmutableArray<string> GetChildrenNames() {
+                var results = ImmutableArray<string>.Empty;
+
+                foreach (var edge in _edges) {
+                    var children = edge.End.Children;
+                    foreach (var child in children) {
+                        results = results.Add(child.Name);
+                    }
+                }
+
+                return results;
+            }
+
+            public bool TryGetChildImport(string name, out IImportSearchResult child) {
+                foreach (var edge in _edges) {
+                    var index = edge.End.GetChildIndex(name);
+                    if (index == -1) {
+                        continue;
+                    }
+
+                    var childEdge = edge.Append(index);
+                    if (_snapshot.TryCreateModuleImport(childEdge, out var moduleImport)) {
+                        child = moduleImport;
+                    } else {
+                        child = new ImplicitPackageImport(new ChildrenSource(_snapshot, childEdge), childEdge.End.Name, childEdge.End.FullModuleName);
+                    }
+
+                    return true;
+                }
+
+                child = default;
+                return false;
+            }
+        }
+
+        private sealed class EmptyChildrenSource : IImportChildrenSource {
+            public ImmutableArray<string> GetChildrenNames() => ImmutableArray<string>.Empty;
+            public bool TryGetChildImport(string name, out IImportSearchResult child) {
+                child = default;
+                return false;
+            }
         }
     }
 }

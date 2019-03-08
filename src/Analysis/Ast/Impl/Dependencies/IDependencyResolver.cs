@@ -15,7 +15,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {

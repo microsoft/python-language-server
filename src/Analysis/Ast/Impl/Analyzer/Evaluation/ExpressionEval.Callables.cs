@@ -32,7 +32,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = GetValueFromExpression(expr.Target);
-            // Try generics
             var result = GetValueFromGeneric(target, expr);
             if (result != null) {
                 return result;
@@ -177,8 +176,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
 
-            // Try and evaluate with specific arguments but prevent recursion.
-            return TryEvaluateWithArguments(fn.DeclaringModule, fd, args);
+            // Try and evaluate with specific arguments. Note that it does not
+            // make sense to evaluate stubs since they already should be annotated.
+            if (fn.DeclaringModule is IDocument doc && fd?.IsInAst(doc.GetAnyAst()) == true) {
+                // Stubs are coming from another module.
+                return TryEvaluateWithArguments(fn.DeclaringModule, fd, args);
+            }
+            return UnknownType;
         }
 
         public IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance) {

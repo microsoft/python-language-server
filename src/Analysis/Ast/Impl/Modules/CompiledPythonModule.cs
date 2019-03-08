@@ -13,9 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -31,7 +34,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public override string Documentation
             => GetMember("__doc__").TryGetConstant<string>(out var s) ? s : string.Empty;
 
-        protected virtual IEnumerable<string> GetScrapeArguments(IPythonInterpreter interpreter) {
+        protected virtual string[] GetScrapeArguments(IPythonInterpreter interpreter) {
             var args = new List<string> { "-B", "-E" };
 
             var mp = Interpreter.ModuleResolution.FindModule(FilePath);
@@ -48,7 +51,7 @@ namespace Microsoft.Python.Analysis.Modules {
             args.Add(mp.ModuleName);
             args.Add(mp.LibraryPath);
 
-            return args;
+            return args.ToArray();
         }
 
         protected override string LoadContent() {
@@ -73,34 +76,29 @@ namespace Microsoft.Python.Analysis.Modules {
                 return string.Empty;
             }
 
-            var sb = new StringBuilder();
-            using (var proc = new ProcessHelper(
-                Interpreter.Configuration.InterpreterPath,
-                args,
-                Interpreter.Configuration.LibraryPath
-            )) {
-                proc.StartInfo.StandardOutputEncoding = Encoding.UTF8;
-                proc.OnOutputLine = s => sb.AppendLine(s);
-                proc.OnErrorLine = s => Log?.Log(TraceEventType.Warning, "Scrape", s);
+            var startInfo = new ProcessStartInfo { 
+                FileName = Interpreter.Configuration.InterpreterPath,
+                Arguments = args.AsQuotedArguments(),
+                WorkingDirectory = Interpreter.Configuration.LibraryPath,
+                UseShellExecute = false,
+                ErrorDialog = false,
+                CreateNoWindow = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            var ps = Services.GetService<IProcessServices>();
 
-                Log?.Log(TraceEventType.Verbose, "Scrape", proc.FileName, proc.Arguments);
+            Log?.Log(TraceEventType.Verbose, "Scrape", startInfo.FileName, startInfo.Arguments);
 
-                proc.Start();
-                var exitCode = proc.Wait(60000);
+            try {
+                var token = new CancellationTokenSource(30000).Token;
+                var lines = ps.ExecuteAndCaptureOutputAsync(startInfo, token).GetAwaiter().GetResult();
+                return string.Join(Environment.NewLine, lines);
+            } catch (Exception ex) when (!ex.IsCriticalException()) { }
 
-                if (exitCode == null) {
-                    proc.Kill();
-                    Log?.Log(TraceEventType.Warning, "ScrapeTimeout", proc.FileName, proc.Arguments);
-                    return string.Empty;
-                }
-
-                if (exitCode != 0) {
-                    Log?.Log(TraceEventType.Warning, "Scrape", "ExitCode", exitCode);
-                    return string.Empty;
-                }
-            }
-
-            return sb.ToString();
+            return string.Empty;
         }
     }
 }

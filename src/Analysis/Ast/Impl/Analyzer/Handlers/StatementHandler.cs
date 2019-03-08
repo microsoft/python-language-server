@@ -28,9 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         protected IPythonModule Module => Eval.Module;
         protected ILogger Log => Eval.Log;
         protected IPythonInterpreter Interpreter => Eval.Interpreter;
-        protected GlobalScope GlobalScope => Eval.GlobalScope;
         protected PythonAst Ast => Eval.Ast;
-        protected ModuleSymbolTable SymbolTable => Eval.SymbolTable;
 
         protected IModuleResolution ModuleResolution
             => Module.ModuleType == ModuleType.Stub

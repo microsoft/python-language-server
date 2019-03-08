@@ -29,14 +29,14 @@ namespace Microsoft.Python.Analysis.Types {
         string Name { get; }
 
         /// <summary>
-        /// Expression that evaluates to the value of the argument.
+        /// ValueExpression that evaluates to the value of the argument.
         /// Function call parameter.
         /// </summary>
-        Expression Expression { get; }
+        Expression ValueExpression { get; }
 
         /// <summary>
         /// Location of the argument in the function definition.
-        /// Not the same as location of the <see cref="Expression"/>.
+        /// Not the same as location of the <see cref="ValueExpression"/>.
         /// </summary>
         LocationInfo Location { get; }
 
@@ -44,6 +44,16 @@ namespace Microsoft.Python.Analysis.Types {
         /// Value of the argument.
         /// </summary>
         object Value { get; }
+
+        /// <summary>
+        /// Argument annotation type, if any.
+        /// </summary>
+        IPythonType Type { get; }
+        
+        /// <summary>
+        /// Annotation expression.
+        /// </summary>
+        Expression TypeExpression { get; }
     }
 
     /// <summary>
@@ -56,7 +66,7 @@ namespace Microsoft.Python.Analysis.Types {
         string Name { get; }
         
         /// <summary>
-        /// Expression that evaluates to the value of the argument.
+        /// ValueExpression that evaluates to the value of the argument.
         /// Function call parameter.
         /// </summary>
         Expression Expression { get; }
@@ -88,7 +98,7 @@ namespace Microsoft.Python.Analysis.Types {
         string Name { get; }
 
         /// <summary>
-        /// Expression that evaluates to the value of the argument.
+        /// ValueExpression that evaluates to the value of the argument.
         /// Function call parameter.
         /// </summary>
         Expression Expression { get; }

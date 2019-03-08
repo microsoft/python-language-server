@@ -180,6 +180,9 @@ namespace Microsoft.Python.Parsing.Ast {
                         return false;
                     }
                     var t = stack.Pop();
+                    if (string.IsNullOrEmpty(Member)) {
+                        return false;
+                    }
                     t = new KeyValuePair<string, T>(t.Key == null ? null : $"{t.Key}.{Member}", converter.GetTypeMember(t.Value, Member));
                     if (t.Value == null) {
                         return false;

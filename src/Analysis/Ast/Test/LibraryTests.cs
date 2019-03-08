@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Modules;
@@ -37,7 +36,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         [TestMethod, Priority(0)]
         public async Task Random() {
-            var analysis = await GetAnalysisAsync("from random import *");
+            var analysis = await GetAnalysisAsync("from random import *", PythonVersions.LatestAvailable3X);
 
             foreach (var fnName in new[] { @"seed", @"randrange", @"gauss" }) {
                 var v = analysis.Should().HaveVariable(fnName).Which;

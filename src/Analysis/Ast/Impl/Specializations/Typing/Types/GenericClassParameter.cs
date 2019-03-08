@@ -16,18 +16,20 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing {
+namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
-    /// Represents generic type, such as class or function.
-    /// Generic type is a template for the actual type.
+    /// Represents Generic[T1, T2, ...] parameter. When class is instantiated
+    /// or methods evaluated, class generic parameters are matched to
+    /// generic type parameters from TypeVar. <see cref="IGenericTypeDefinition"/>
     /// </summary>
-    public interface IGenericType : IPythonTemplateType {
-        /// <summary>
-        /// Type parameters such as in Tuple[T1, T2. ...] or
-        /// Generic[_T1, _T2, ...] as returned by TypeVar.
-        /// </summary>
-        IReadOnlyList<IGenericTypeDefinition> Parameters { get; }
+    internal sealed class GenericClassParameter : PythonClassType, IGenericClassParameter {
+        internal GenericClassParameter(IReadOnlyList<IGenericTypeDefinition> typeArgs, IPythonModule declaringModule, LocationInfo location)
+        : base("GenericParameter", declaringModule, location) {
+            TypeDefinitions = typeArgs;
+        }
 
-        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null);
+        public IReadOnlyList<IGenericTypeDefinition> TypeDefinitions { get; }
+
+        public override PythonMemberType MemberType => PythonMemberType.Generic;
     }
 }

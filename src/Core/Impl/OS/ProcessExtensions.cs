@@ -13,14 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Python.Core.Threading;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing {
-    /// <summary>
-    /// Represents Generic[T1, T2, ...]. Used as a base class to generic classes.
-    /// </summary>
-    public interface IGenericClassBaseType: IPythonType {
-        IReadOnlyList<IGenericTypeParameter> TypeArgs { get; }
+namespace Microsoft.Python.Core.OS {
+    public static class ProcessExtensions {
+        public static Task WaitForExitAsync(this IProcess process, int milliseconds, CancellationToken cancellationToken = default(CancellationToken)) {
+            var tcs = new TaskCompletionSource<int>();
+            process.Exited += (o, e) => tcs.TrySetResult(0);
+            tcs.RegisterForCancellation(milliseconds, cancellationToken).UnregisterOnCompletion(tcs.Task);
+            return tcs.Task;
+        }
     }
 }
