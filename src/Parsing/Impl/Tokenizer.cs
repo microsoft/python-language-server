@@ -2188,7 +2188,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private void ReportSyntaxError(IndexSpan span, string message, int errorCode)
-            => _errors.Add(message, _newLineLocations.ToArray(), span.Start, span.End, errorCode, Severity.Error);
+            => _errors.Add(message, IndexToLocation(span.Start), IndexToLocation(span.End), errorCode, Severity.Error);
 
         [Conditional("DUMP_TOKENS")]
         private static void DumpToken(Token token)
