@@ -26,9 +26,9 @@ namespace Microsoft.Python.Parsing {
     /// Summary description for ConstantValue.
     /// </summary>
     internal static class LiteralParser {
-        public static string ParseString(string text, bool isRaw, bool isUni, bool isFormatted) => ParseString(text.ToCharArray(), 0, text.Length, isRaw, isUni, isFormatted, false);
+        public static string ParseString(string text, bool isRaw, bool isUni) => ParseString(text.ToCharArray(), 0, text.Length, isRaw, isUni, false);
 
-        public static string ParseString(char[] text, int start, int length, bool isRaw, bool isUni, bool isFormatted, bool normalizeLineEndings) {
+        public static string ParseString(char[] text, int start, int length, bool isRaw, bool isUni, bool normalizeLineEndings) {
             if (text == null) {
                 throw new ArgumentNullException("text");
             }

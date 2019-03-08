@@ -24,3 +24,11 @@ print(f'''first: {f'second {some}'}''')
 f'{some!r:{some}}'
 
 f'{some:#06x}'
+
+f'''
+{
+    1}
+'''
+f'{{nothing'
+
+f'Hello \'{f"{some}" + "example"}'

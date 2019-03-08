@@ -11,8 +11,16 @@ namespace Microsoft.Python.Parsing {
             return new FString(_children);
         }
 
-        public void Append(string s) {
-            _children.Add(new ConstantExpression(s));
+        public void Append(string s, bool isRaw) {
+            if (isRaw) {
+                System.Console.WriteLine("");
+            }
+            _children.Add(new ConstantExpression(LiteralParser.ParseString(s.ToCharArray(), 
+                0, s.Length, isRaw, isUni:true, normalizeLineEndings:true)));
+        }
+
+        public void Append(ConstantExpression expr) {
+            _children.Add(expr);
         }
 
         public void Append(FString fStr) {

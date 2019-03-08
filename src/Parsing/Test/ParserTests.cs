@@ -272,6 +272,36 @@ namespace Microsoft.Python.Parsing.Tests {
                                     )
                                 )
                             )
+                       ),
+                       CheckExprStmt(
+                            CheckFString(
+                                CheckConstant("\n"),
+                                CheckFormattedValue(
+                                    One
+                                ),
+                                CheckConstant("\n")
+                            )
+                       ),
+                       CheckExprStmt(
+                            CheckFString(
+                                CheckConstant("{{nothing")
+                            )
+                       ),
+                       CheckExprStmt(
+                            CheckFString(
+                                CheckConstant("Hello '"),
+                                CheckFormattedValue(
+                                    CheckBinaryExpression(
+                                        CheckFString(
+                                            CheckFormattedValue(
+                                                CheckNameExpr("some")
+                                            )
+                                        ),
+                                        PythonOperator.Add,
+                                        CheckConstant("example")
+                                    )
+                                )
+                            )
                        )
                     )
                 );

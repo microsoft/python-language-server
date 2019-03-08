@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -10,6 +11,7 @@ namespace Microsoft.Python.Parsing {
     public class FStringParser {
         private readonly FStringBuilder _builder;
         private readonly string _fString;
+        private readonly bool _isRaw;
         private readonly ErrorSink _errors;
         private readonly PythonLanguageVersion _langVersion;
         private readonly StringBuilder _buffer = new StringBuilder();
@@ -23,10 +25,11 @@ namespace Microsoft.Python.Parsing {
         private static readonly StringSpan doubleClose = new StringSpan("}}", 0, 2);
         private static readonly StringSpan notEqualStringSpan = new StringSpan("!=", 0, 2);
 
-        public FStringParser(FStringBuilder builder, string fString, ErrorSink errors, PythonLanguageVersion langVersion,
+        public FStringParser(FStringBuilder builder, string fString, bool isRaw, ErrorSink errors, PythonLanguageVersion langVersion,
             SourceLocation start) {
 
             _fString = fString;
+            _isRaw = isRaw;
             _builder = builder;
             _errors = errors;
             _langVersion = langVersion;
@@ -118,7 +121,7 @@ namespace Microsoft.Python.Parsing {
                 // If we got to the end, there will be an error when we try to read '}'
                 if (!EndOfFString()) {
                     var formatSpecifierBuilder = new FStringBuilder();
-                    new FStringParser(formatSpecifierBuilder, _buffer.ToString(), _errors, _langVersion, start).Parse();
+                    new FStringParser(formatSpecifierBuilder, _buffer.ToString(), _isRaw, _errors, _langVersion, start).Parse();
                     _buffer.Clear();
                     formatSpecifier = formatSpecifierBuilder.Build();
                 }
@@ -320,7 +323,7 @@ namespace Microsoft.Python.Parsing {
                 return;
             }
             var s = _buffer.ToString();
-            _builder.Append(s);
+            _builder.Append(s, _isRaw);
             _buffer.Clear();
         }
 
@@ -328,15 +331,19 @@ namespace Microsoft.Python.Parsing {
             var prev = CurrentChar();
             _position++;
             _currentColNumber++;
-            if (prev == '\n') {
-                _currentColNumber = 1;
+            if (IsLineEnding(prev)) {
+               _currentColNumber = 1;
                 _currentLineNumber++;
             }
             return prev;
         }
 
+        private bool IsLineEnding(char prev) {
+            return prev == '\n' || (prev == '\\' && IsNext(new StringSpan("n", 0, 1)));
+        }
+
         private bool HasBackslash(char ch) {
-            return "\b\f\n\r\t\v\\".Contains($"{ch}");
+            return ch == '\\';
         }
 
         private char CurrentChar() => _fString[_position];

@@ -1006,20 +1006,20 @@ namespace Microsoft.Python.Parsing {
 
             if (makeUnicode) {
                 string contents;
-                try {
-                    contents = LiteralParser.ParseString(_buffer, start, length, isRaw, true, isFormatted, !_disableLineFeedLineSeparator);
-                } catch (DecoderFallbackException e) {
-                    _errors.Add(e.Message, _newLineLocations.ToArray(), _tokenStartIndex, _tokenEndIndex, ErrorCodes.SyntaxError, Severity.Error);
-                    contents = "";
-                }
-
                 if (isFormatted) {
+                    contents = new string(_buffer, start, length);
                     if (Verbatim) {
-                        return new VerbatimFStringToken(contents, quote, isTriple, GetTokenString());
+                        return new VerbatimFStringToken(contents, quote, isTriple, isRaw, GetTokenString());
                     } else {
-                        return new FStringToken(contents, quote, isTriple);
+                        return new FStringToken(contents, quote, isTriple, isRaw);
                     }
                 } else {
+                    try {
+                        contents = LiteralParser.ParseString(_buffer, start, length, isRaw, true, !_disableLineFeedLineSeparator);
+                    } catch (DecoderFallbackException e) {
+                        _errors.Add(e.Message, _newLineLocations.ToArray(), _tokenStartIndex, _tokenEndIndex, ErrorCodes.SyntaxError, Severity.Error);
+                        contents = "";
+                    }
                     if (Verbatim) {
                         return new VerbatimUnicodeStringToken(contents, GetTokenString());
                     } else {

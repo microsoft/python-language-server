@@ -3267,12 +3267,12 @@ namespace Microsoft.Python.Parsing {
             foreach (var tokenWithSpan in readTokens) {
                 if (tokenWithSpan.Token.Kind == TokenKind.FString) {
                     var fToken = (FStringToken)tokenWithSpan.Token;
-                    new FStringParser(builder, fToken.Text, _errors,
+                    new FStringParser(builder, fToken.Text, fToken.IsRaw, _errors,
                         _langVersion, _tokenizer.IndexToLocation(tokenWithSpan.Span.Start)).Parse();
                 } else if (tokenWithSpan.Token.Value is string str) {
-                    builder.Append(str);
+                    builder.Append(new ConstantExpression(str));
                 } else if (tokenWithSpan.Token.Value is AsciiString asciiString) {
-                    builder.Append(asciiString.String);
+                    builder.Append(new ConstantExpression(asciiString.String));
                 }
             }
 
