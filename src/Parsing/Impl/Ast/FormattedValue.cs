@@ -17,7 +17,10 @@ namespace Microsoft.Python.Parsing.Ast {
         public char? Conversion { get; }
 
         public override IEnumerable<Node> GetChildNodes() {
-            return new[] { Value, FormatSpecifier };
+            yield return Value;
+            if (FormatSpecifier != null) {
+                yield return FormatSpecifier;
+            }
         }
 
         public override void Walk(PythonWalker walker) {

@@ -802,6 +802,12 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // DecoratorStatement
         public override bool Walk(DecoratorStatement node) { return Contains(node); }
+
+        // FString
+        public override bool Walk(FString node) { return Location >= node.StartIndex && Location <= node.EndIndex; }
+
+        // FormattedValue
+        public override bool Walk(FormattedValue node) { return Location >= node.StartIndex && Location <= node.EndIndex; }
     }
 
 }

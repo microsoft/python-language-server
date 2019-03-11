@@ -344,13 +344,9 @@ namespace Microsoft.Python.Parsing {
             return prev;
         }
 
-        private bool IsLineEnding(char prev) {
-            return prev == '\n' || (prev == '\\' && IsNext(new StringSpan("n", 0, 1)));
-        }
+        private bool IsLineEnding(char prev) => prev == '\n' || (prev == '\\' && IsNext(new StringSpan("n", 0, 1)));
 
-        private bool HasBackslash(char ch) {
-            return ch == '\\';
-        }
+        private bool HasBackslash(char ch) => ch == '\\';
 
         private char CurrentChar() => _fString[_position];
 
