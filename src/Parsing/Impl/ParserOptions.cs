@@ -22,11 +22,14 @@ namespace Microsoft.Python.Parsing {
         public static ParserOptions Default = new ParserOptions();
         public ParserOptions() {
             ErrorSink = ErrorSink.Null;
+            InitialSourceLocation = SourceLocation.MinValue;
         }
 
         public ParserOptions Clone() => (ParserOptions)MemberwiseClone();
 
         public ErrorSink ErrorSink { get; set; }
+
+        public SourceLocation? InitialSourceLocation { get; set; }
 
         public Severity IndentationInconsistencySeverity { set; get; }
 

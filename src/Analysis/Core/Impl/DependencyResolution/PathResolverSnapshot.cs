@@ -135,7 +135,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 lastEdge = default;
             }
 
-            var fullNameList = fullName.ToList();
+            var fullNameList = fullName.TakeWhile(n => !string.IsNullOrEmpty(n)).ToList();
             if (fullNameList.Count == 1 && lastEdge.IsNonRooted && TryFindNonRootedModule(fullNameList[0], out var moduleImport)) {
                 return moduleImport;
             }
@@ -195,7 +195,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 return default;
             }
 
-            var fullNameList = relativePath.ToList();
+            var fullNameList = relativePath.TakeWhile(n => !string.IsNullOrEmpty(n)).ToList();
             if (lastEdge.IsNonRooted) {
                 // Handle relative imports only for modules in the same folder
                 if (parentCount > 1) {
@@ -215,9 +215,13 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             var relativeParentEdge = lastEdge.GetPrevious(parentCount);
 
             var rootEdges = new List<Edge>();
-            for (var i = 0; i < _roots.Count; i++) {
-                if (RootContains(i, relativeParentEdge, out var rootEdge)) {
-                    rootEdges.Add(rootEdge);
+            if (relativeParentEdge.IsFirst) {
+                rootEdges.Add(relativeParentEdge);
+            } else {
+                for (var i = 0; i < _roots.Count; i++) {
+                    if (RootContains(i, relativeParentEdge, out var rootEdge)) {
+                        rootEdges.Add(rootEdge);
+                    }
                 }
             }
 
@@ -296,14 +300,18 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         }
 
         private bool TryCreateNamespacePackageImports(in ImmutableArray<Edge> matchedEdges, out IImportSearchResult searchResult) {
-            if (matchedEdges.Count == 0) {
-                searchResult = default;
-                return false;
+            foreach (var edge in matchedEdges) {
+                if (edge.IsFirst) {
+                    continue;
+                }
+
+                var importNode = edge.End;
+                searchResult = new ImplicitPackageImport(new ChildrenSource(this, matchedEdges), importNode.Name, importNode.FullModuleName);
+                return true;
             }
 
-            var importNode = matchedEdges[0].End;
-            searchResult = new ImplicitPackageImport(new ChildrenSource(this, matchedEdges), importNode.Name, importNode.FullModuleName);
-            return true;
+            searchResult = default;
+            return false;
         }
 
         public PathResolverSnapshot SetWorkDirectory(in string workDirectory, out IEnumerable<string> addedRoots) {
@@ -750,6 +758,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
         private static bool IsNotInitPy(string name)
             => !name.EqualsOrdinal("__init__");
+
+        private static bool IsNotInitPy(in Node node)
+            => !node.IsModule || !node.Name.EqualsOrdinal("__init__");
 
         private static bool IsInitPyModule(in Node node, out Node initPyNode)
             => node.TryGetChild("__init__", out initPyNode) && initPyNode.IsModule;

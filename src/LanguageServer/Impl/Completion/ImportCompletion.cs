@@ -18,7 +18,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -32,18 +34,27 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 return new CompletionResult(GetAllImportableModules(context));
             }
 
-            foreach (var (name, asName) in ZipLongest(import.Names, import.AsNames).Reverse()) {
-                if (asName != null && context.Position >= asName.StartIndex) {
+            for (var i = import.Names.Count - 1; i >= 0; i--) {
+                if (import.AsNames.Count > i && import.AsNames[i] != null && context.Position >= import.AsNames[i].StartIndex) {
                     return CompletionResult.Empty;
                 }
 
+                var name = import.Names[i];
                 if (name != null && context.Position >= name.StartIndex) {
                     if (context.Position > name.EndIndex && name.EndIndex > name.StartIndex) {
                         var applicableSpan = context.GetApplicableSpanFromLastToken(import);
-                        return new CompletionResult(Enumerable.Repeat(CompletionItemSource.AsKeyword, 1), applicableSpan);
+                        return new CompletionResult(new []{ CompletionItemSource.AsKeyword }, applicableSpan);
                     }
 
-                    return new CompletionResult(GetImportsFromModuleName(name.Names, context));
+                    if (name.Names.Count == 0 || name.Names[0].EndIndex >= context.Position) {
+                        return new CompletionResult(GetAllImportableModules(context));
+                    }
+
+                    var document = context.Analysis.Document;
+                    var mres = document.Interpreter.ModuleResolution;
+                    var names = name.Names.TakeWhile(n => n.EndIndex < context.Position).Select(n => n.Name);
+                    var importSearchResult = mres.CurrentPathResolver.GetImportsFromAbsoluteName(document.FilePath, names, import.ForceAbsolute);
+                    return GetResultFromImportSearch(importSearchResult, context, false);
                 }
             }
             return null;
@@ -71,14 +82,15 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
                     if (context.Position >= name.StartIndex) {
                         var applicableSpan = name.GetSpan(context.Ast);
-                        return new CompletionResult(GetModuleMembers(fromImport.Root.Names, context), applicableSpan);
+                        var importSearchResult = mres.CurrentPathResolver.FindImports(document.FilePath, fromImport);
+                        return GetResultFromImportSearch(importSearchResult, context, false, applicableSpan);
                     }
                 }
             }
 
             if (fromImport.ImportIndex > fromImport.StartIndex && context.Position > fromImport.ImportIndex + 6) {
                 var importSearchResult = mres.CurrentPathResolver.FindImports(document.FilePath, fromImport);
-                var result = GetResultFromSearch(importSearchResult, context);
+                var result = GetResultFromImportSearch(importSearchResult, context, true);
                 if (result != CompletionResult.Empty) {
                     return result;
                 }
@@ -106,28 +118,21 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 return new CompletionResult(Enumerable.Repeat(CompletionItemSource.ImportKeyword, 1), applicableSpan);
             }
 
-            if (context.Position >= fromImport.Root.StartIndex) {
-                return new CompletionResult(GetImportsFromModuleName(fromImport.Root.Names, context));
+            if (context.Position > fromImport.Root.StartIndex && fromImport.Root is RelativeModuleName relativeName) {
+                var rootNames = relativeName.Names.Select(n => n.Name);
+                var importSearchResult = mres.CurrentPathResolver.GetImportsFromRelativePath(document.FilePath, relativeName.DotCount, rootNames);
+                return GetResultFromImportSearch(importSearchResult, context, false);
+            }
+
+            if (fromImport.Root.Names.Count > 1 && context.Position > fromImport.Root.Names[0].EndIndex) {
+                var rootNames = fromImport.Root.Names.TakeWhile(n => n.EndIndex < context.Position).Select(n => n.Name);
+                var importSearchResult = mres.CurrentPathResolver.GetImportsFromAbsoluteName(document.FilePath, rootNames, fromImport.ForceAbsolute);
+                return GetResultFromImportSearch(importSearchResult, context, false);
             }
 
             return context.Position > fromImport.KeywordEndIndex
                 ? new CompletionResult(GetAllImportableModules(context))
                 : null;
-        }
-
-        private static IEnumerable<CompletionItem> GetImportsFromModuleName(IEnumerable<NameExpression> nameExpressions, CompletionContext context) {
-            var names = nameExpressions.TakeWhile(n => n.StartIndex <= context.Position).Select(n => n.Name).ToArray();
-            return names.Length <= 1 ? GetAllImportableModules(context) : GetChildModules(names, context);
-        }
-
-        private static IEnumerable<CompletionItem> GetModuleMembers(IEnumerable<NameExpression> nameExpressions, CompletionContext context) {
-            var fullName = string.Join(".", nameExpressions.Select(n => n.Name));
-            var mres = context.Analysis.Document.Interpreter.ModuleResolution;
-
-            var module = mres.GetImportedModule(fullName);
-            return module != null 
-                ? module.GetMemberNames().Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))) 
-                : Enumerable.Empty<CompletionItem>();
         }
 
         private static IEnumerable<CompletionItem> GetAllImportableModules(CompletionContext context) {
@@ -136,7 +141,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             return modules.Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
         }
 
-        private static CompletionResult GetResultFromSearch(IImportSearchResult importSearchResult, CompletionContext context) {
+        private static CompletionResult GetResultFromImportSearch(IImportSearchResult importSearchResult, CompletionContext context, bool prependStar, SourceSpan? applicableSpan = null) {
             var document = context.Analysis.Document;
             var mres = document.Interpreter.ModuleResolution;
 
@@ -155,15 +160,33 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     return CompletionResult.Empty;
             }
             
-            var moduleNames = (importSearchResult as IImportChildrenSource)?.GetChildrenNames() ?? ImmutableArray<string>.Empty;
-            if (module == null && moduleNames.Count == 0) {
-                return CompletionResult.Empty;
+            var completions = new List<CompletionItem>();
+            if (prependStar) {
+                completions.Add(CompletionItemSource.Star);
             }
 
-            var memberNames = module?.GetMemberNames() ?? ImmutableArray<string>.Empty;
-            var members = memberNames.Select(n => context.ItemSource.CreateCompletionItem(n, module?.GetMember(n)));
-            var modules = moduleNames.Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
-            return new CompletionResult(members.Concat(modules).Prepend(CompletionItemSource.Star));
+            if (module != null) {
+                completions.AddRange(module.GetMemberNames().Select(n => context.ItemSource.CreateCompletionItem(n, module?.GetMember(n))));
+            }
+
+            if (importSearchResult is IImportChildrenSource children) {
+                foreach (var childName in children.GetChildrenNames()) {
+                    if (!children.TryGetChildImport(childName, out var imports)) {
+                        continue;
+                    }
+
+                    switch (imports) {
+                        case ImplicitPackageImport packageImport:
+                            completions.Add(CompletionItemSource.CreateCompletionItem(packageImport.Name, CompletionItemKind.Module));
+                            break;
+                        case ModuleImport moduleImport when !moduleImport.ModulePath.PathEquals(document.FilePath):
+                            completions.Add(CompletionItemSource.CreateCompletionItem(moduleImport.Name, CompletionItemKind.Module));
+                            break;
+                    }
+                }
+            }
+
+            return new CompletionResult(completions, applicableSpan);
         }
 
         private static IReadOnlyList<CompletionItem> GetChildModules(string[] names, CompletionContext context) {
