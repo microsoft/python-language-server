@@ -119,7 +119,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 foreach (var edge in _edges) {
                     var children = edge.End.Children;
                     foreach (var child in children) {
-                        results = results.Add(child.Name);
+                        if (IsNotInitPy(child)) {
+                            results = results.Add(child.Name);
+                        }
                     }
                 }
 
