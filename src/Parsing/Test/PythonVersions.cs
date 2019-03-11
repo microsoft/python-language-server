@@ -36,12 +36,16 @@ namespace Microsoft.Python.Parsing.Tests {
         public static readonly InterpreterConfiguration Anaconda27_x64 = GetAnacondaVersion(PythonLanguageVersion.V27, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Anaconda36 = GetAnacondaVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Anaconda36_x64 = GetAnacondaVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x64);
+        public static readonly InterpreterConfiguration Anaconda37 = GetAnacondaVersion(PythonLanguageVersion.V37, InterpreterArchitecture.x86);
+        public static readonly InterpreterConfiguration Anaconda37_x64 = GetAnacondaVersion(PythonLanguageVersion.V37, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration IronPython27_x64 = GetIronPythonVersion(true);
         public static readonly InterpreterConfiguration Jython27 = GetJythonVersion(PythonLanguageVersion.V27);
 
         public static IEnumerable<InterpreterConfiguration> AnacondaVersions => GetVersions(
             Anaconda36,
             Anaconda36_x64,
+            Anaconda37,
+            Anaconda37_x64,
             Anaconda27,
             Anaconda27_x64);
 
@@ -82,6 +86,8 @@ namespace Microsoft.Python.Parsing.Tests {
             Python27_x64).FirstOrDefault() ?? NotInstalled("v2");
 
         public static InterpreterConfiguration LatestAnaconda3X => GetVersions(
+            Anaconda37,
+            Anaconda37_x64,
             Anaconda36,
             Anaconda36_x64).FirstOrDefault() ?? NotInstalled("Anaconda v3");
 
