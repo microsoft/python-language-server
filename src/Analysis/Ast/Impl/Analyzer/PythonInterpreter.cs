@@ -49,6 +49,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _moduleResolution = new MainModuleResolution(root, sm);
             await _moduleResolution.InitializeAsync(cancellationToken);
 
+            _stubResolution = new TypeshedResolution(sm);
+            await _stubResolution.InitializeAsync(cancellationToken);
+
             var builtinModule = _moduleResolution.BuiltinsModule;
             lock (_lock) {
                 _builtinTypes[BuiltinTypeId.NoneType]
@@ -57,9 +60,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     = UnknownType = new PythonType("Unknown", builtinModule, string.Empty, LocationInfo.Empty);
             }
             await _moduleResolution.LoadBuiltinTypesAsync(cancellationToken);
-
-            _stubResolution = new TypeshedResolution(sm);
-            await _stubResolution.InitializeAsync(cancellationToken);
         }
 
         public static async Task<IPythonInterpreter> CreateAsync(InterpreterConfiguration configuration, string root, IServiceManager sm, CancellationToken cancellationToken = default) {
